@@ -8,28 +8,14 @@
 <body>
   <header>
     <h1>Ben Fraser - Home</h1>
-    <nav class="navbar">
-      <ul class="nav-menu">
-        <li><a href="index.html">Home</a></li>
-
-        <li class="dropdown">
-          <a href="calc1.html">MATH 121</a>
-          <ul class="dropdown-content">
-            <li><a href="another-lesson1.html">Lesson 1</a></li>
-            <li><a href="another-resources.html">Resources</a></li>
-          </ul>
-        </li>
-        
-        <li class="dropdown">
-          <a href="teach-math1.html">MATH 131</a>
-          <ul class="dropdown-content">
-            <li><a href="elementary-lesson1.html">Lesson 1</a></li>
-            <li><a href="elementary-games.html">Games</a></li>
-            <li><a href="elementary-assignments.html">Assignments</a></li>
-          </ul>
-        </li>
-      </ul>
-    </nav>
+    <div id="nav-placeholder"></div>
+      <script>
+        fetch("nav.html")
+          .then(response => response.text())
+          .then(data => {
+            document.getElementById("nav-placeholder").innerHTML = data;
+          });
+      </script>
   </header>
   <main>
     <p>This site is under construction.</p>

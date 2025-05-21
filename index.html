@@ -1,25 +1,20 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <title>My First Interactive Tool</title>
-    <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
-  </head>
-  <body>
-    <script>
-      let x = 0;
-
-      function setup() {
-        createCanvas(400, 200);
-        background(220);
-      }
-
-      function draw() {
-        background(220);
-        ellipse(x, height / 2, 50, 50);
-        x += 2;
-        if (x > width) x = 0;
-      }
-    </script>
-  </body>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Professor YourName - Home</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Welcome to My Teaching Website</h1>
+    <nav>
+      <a href="elementary-math.html">Math for Elementary Teachers</a> |
+      <a href="another-course.html">Another Course</a>
+    </nav>
+  </header>
+  <main>
+    <p>This site contains interactive learning tools, teaching materials, and games designed to support my courses.</p>
+  </main>
+</body>
 </html>

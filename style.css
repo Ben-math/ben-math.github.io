@@ -121,3 +121,34 @@ main {
 .dropdown-sub:hover > .dropdown-content-sub {
   display: block;
 }
+
+.rubber-button {
+  background-color: #ffde59;
+  color: #1a1a4b;
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  font-size: 18px;
+  font-weight: bold;
+  border: 3px solid #1a1a4b;
+  border-radius: 1em;
+  padding: 0.75em 1.5em;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
+  box-shadow: 3px 3px 0 #1a1a4b;
+}
+
+.rubber-button:hover {
+  animation: bounce 0.6s ease;
+}
+
+.rubber-button:active {
+  transform: scale(0.95);
+  box-shadow: 1px 1px 0 #1a1a4b;
+}
+
+@keyframes bounce {
+  0%   { transform: translateY(0); }
+  30%  { transform: translateY(-8px); }
+  60%  { transform: translateY(4px); }
+  100% { transform: translateY(0); }
+}
+

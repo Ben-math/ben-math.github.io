@@ -2,42 +2,35 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>MATH 121 - Calculus I</title>
+  <title>Courses</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header>
-    <h1>MATH 121 - Calculus I</h1>
+    <h1>Courses</h1>
     <div id="nav-placeholder"></div>
       <script>
-        // Determine how deep we are in the folder hierarchy
         const depth = window.location.pathname.split("/").filter(part => part).length - 1;
-      
-        // Build the correct relative path to nav.html
         let navPath = "";
         for (let i = 0; i < depth; i++) {
           navPath += "../";
         }
         navPath += "nav.html";
       
-        // Fetch and inject the navbar
         fetch(navPath)
-          .then(response => response.text())
+          .then(res => res.text())
           .then(data => {
             document.getElementById("nav-placeholder").innerHTML = data;
-            // Highlight current page's link in the nav
+      
+            // Highlight current link
             const currentPath = window.location.pathname;
             const navLinks = document.querySelectorAll("#nav-placeholder a");
-            
             navLinks.forEach(link => {
               const linkPath = new URL(link.href).pathname;
-              if (currentPath === linkPath || currentPath.endsWith("/") && linkPath.endsWith("/index.html")) {
+              if (currentPath === linkPath || (currentPath.endsWith("/") && linkPath.endsWith("/index.html"))) {
                 link.classList.add("active");
               }
             });
-          })
-          .catch(err => {
-            console.error("Failed to load nav.html:", err);
           });
       </script>
   </header>

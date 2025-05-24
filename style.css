@@ -142,4 +142,56 @@ main {
   box-shadow: 1px 1px 0 #1a1a4b;
 }
 
+.manipulator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5em;
+  margin: 1em;
+}
+
+.label {
+  font-weight: bold;
+  font-size: 20px;
+  color: #1a1a4b;
+  text-align: center;
+}
+
+.arrow-button {
+  background-color: #ffde59;
+  color: #1a1a4b;
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  font-size: 18px;
+  font-weight: bold;
+  border: 3px solid #1a1a4b;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+  box-shadow: 3px 3px 0 #1a1a4b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.arrow-button:hover {
+  background-color: #ffe97a;
+}
+
+.arrow-button:active {
+  transform: scale(0.95);
+  box-shadow: 1px 1px 0 #1a1a4b;
+}
+
+/* Optional: rotate the up/down buttons for a subtle arrow shape */
+.arrow-button.up::before {
+  content: "▲";
+  font-size: 24px;
+}
+
+.arrow-button.down::before {
+  content: "▼";
+  font-size: 24px;
+}
 

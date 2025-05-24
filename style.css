@@ -158,51 +158,57 @@ main {
 }
 
 .arrow-button {
+  position: relative;
   background-color: #ffde59;
   color: #1a1a4b;
   font-family: 'Comic Sans MS', cursive, sans-serif;
   font-size: 18px;
   font-weight: bold;
   border: 3px solid #1a1a4b;
+  border-radius: 1em;
+  width: 80px;
+  height: 60px;
   cursor: pointer;
   transition: transform 0.1s ease;
-  width: 80px;
-  height: 80px;
   box-shadow: 3px 3px 0 #1a1a4b;
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
   padding: 0;
+  overflow: visible;
 }
 
-/* Bounce squish */
 .arrow-button:active {
   transform: scale(0.95);
   box-shadow: 1px 1px 0 #1a1a4b;
 }
 
-/* Arrow shapes using clip-path */
-.arrow-button.up {
-  clip-path: polygon(
-    50% 0%,
-    100% 40%,
-    70% 40%,
-    70% 100%,
-    30% 100%,
-    30% 40%,
-    0% 40%
-  );
+.arrow-label {
+  z-index: 1;
+  position: relative;
 }
 
-.arrow-button.down {
-  clip-path: polygon(
-    30% 0%,
-    70% 0%,
-    70% 60%,
-    100% 60%,
-    50% 100%,
-    0% 60%,
-    30% 60%
-  );
+/* Add a triangle "tip" to the button using ::after */
+.arrow-button.up::after,
+.arrow-button.down::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 15px solid transparent;
+  border-right: 15px solid transparent;
+}
+
+.arrow-button.up::after {
+  bottom: 100%;
+  border-bottom: 15px solid #ffde59;
+  margin-bottom: -3px;
+}
+
+.arrow-button.down::after {
+  top: 100%;
+  border-top: 15px solid #ffde59;
+  margin-top: -3px;
 }

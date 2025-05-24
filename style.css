@@ -84,4 +84,6 @@ main {
   color: #000000;
   background-color: #ffe680;
   border-radius: 0.25em;
+  z-index: 1;
+  position: relative;
 }

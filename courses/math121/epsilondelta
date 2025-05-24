@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Epsilon-Delta Activity</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Epsilon-Delta Activity</h1>
+    <div id="nav-placeholder"></div>
+      <script>
+        const depth = window.location.pathname.split("/").filter(part => part).length - 1;
+        let navPath = "";
+        for (let i = 0; i < depth; i++) {
+          navPath += "../";
+        }
+        navPath += "nav.html";
+      
+        fetch(navPath)
+          .then(res => res.text())
+          .then(data => {
+            document.getElementById("nav-placeholder").innerHTML = data;
+      
+            // Highlight current link
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll("#nav-placeholder a");
+            navLinks.forEach(link => {
+              const linkPath = new URL(link.href).pathname;
+              if (currentPath === linkPath || (currentPath.endsWith("/") && linkPath.endsWith("/index.html"))) {
+                link.classList.add("active");
+              }
+            });
+          });
+      </script>
+  </header>
+  <main>
+    <p>This page will have an activity for the epsilon-delta definition of a limit.</p>
+  </main>
+</body>
+</html>

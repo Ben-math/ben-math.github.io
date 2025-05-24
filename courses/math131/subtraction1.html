@@ -10,15 +10,8 @@
     <h1>Subtraction Activity 1</h1>
     <div id="nav-placeholder"></div>
       <script>
-        const depth = window.location.pathname.split("/").filter(part => part).length - 1;
-        let navPath = "";
-        for (let i = 0; i < depth; i++) {
-          navPath += "../";
-        }
-        navPath += "nav.html";
-      
-        fetch(navPath)
-          .then(res => res.text())
+        fetch("/math-tools/nav.html")
+          .then(response => response.text())
           .then(data => {
             document.getElementById("nav-placeholder").innerHTML = data;
       

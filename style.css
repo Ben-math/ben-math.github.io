@@ -1,40 +1,40 @@
-/* Global site styling */
+/* Base site styling */
 body {
   font-family: 'Segoe UI', sans-serif;
-  background-color: #fdf6e3;
-  color: #333333;
+  background-color: #1e1e1e;
+  color: #f0f0f0;
   margin: 2em;
 }
 
-/* Link styling */
+/* General link styles */
 a {
-  color: #0077aa;
+  color: #66d9ef;
   text-decoration: none;
 }
 
 a:hover {
-  color: #004466;
+  color: #a1ecff;
   text-decoration: underline;
 }
 
-/* Header styling */
+/* Header */
 header {
-  background-color: #fff3c4;
+  background-color: #2e2e2e;
   padding: 1em;
   border-radius: 0.5em;
   margin-bottom: 2em;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(255, 255, 255, 0.05);
 }
 
-/* Main content styling */
+/* Main content area */
 main {
-  background: white;
+  background: #2a2a2a;
   padding: 1.5em;
   border-radius: 0.5em;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 10px rgba(255, 255, 255, 0.05);
 }
 
-/* Navigation menu */
+/* Nav bar structure */
 .nav-menu {
   list-style-type: none;
   padding: 0;
@@ -47,33 +47,35 @@ main {
   position: relative;
 }
 
+/* Navbar links */
 .navbar a {
   display: inline-block;
-  color: #0077aa;
+  color: #66d9ef;
   font-weight: bold;
   padding: 0.5em 0.75em;
   border-radius: 0.25em;
 }
 
-/* Active link highlight */
+/* Active link */
 .navbar a.active {
-  background-color: #ffe680;
+  background-color: #ffd866;
   color: #000000;
 }
 
-/* Dropdown menus */
+/* Dropdown menu base */
 .dropdown-content,
 .dropdown-content-sub {
   display: none;
   position: absolute;
-  background: #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  background: #2e2e2e;
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
   padding: 0.5em 0;
   border-radius: 0.25em;
   z-index: 1000;
   min-width: 180px;
 }
 
+/* Nested dropdown */
 .dropdown-content-sub {
   left: 100%;
   top: 0;
@@ -85,7 +87,7 @@ main {
   white-space: nowrap;
 }
 
-/* Show dropdowns on hover */
+/* Dropdown hover activation */
 .dropdown:hover > .dropdown-content,
 .dropdown-sub:hover > .dropdown-content-sub {
   display: block;

@@ -10,10 +10,27 @@
     <h1>MATH 131 - Mathematics for Elementary Education I</h1>
     <div id="nav-placeholder"></div>
       <script>
-        fetch("nav.html")
-          .then(response => response.text())
+        const depth = window.location.pathname.split("/").filter(part => part).length - 1;
+        let navPath = "";
+        for (let i = 0; i < depth; i++) {
+          navPath += "../";
+        }
+        navPath += "nav.html";
+      
+        fetch(navPath)
+          .then(res => res.text())
           .then(data => {
             document.getElementById("nav-placeholder").innerHTML = data;
+      
+            // Highlight current link
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll("#nav-placeholder a");
+            navLinks.forEach(link => {
+              const linkPath = new URL(link.href).pathname;
+              if (currentPath === linkPath || (currentPath.endsWith("/") && linkPath.endsWith("/index.html"))) {
+                link.classList.add("active");
+              }
+            });
           });
       </script>
   </header>

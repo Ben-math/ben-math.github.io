@@ -31,42 +31,51 @@ nav a:hover {
   position: relative;
 }
 
-.nav-menu a {
+.navbar a {
   text-decoration: none;
   padding: 0.5em;
   display: inline-block;
   color: #007acc;
 }
 
-.dropdown-content {
+.dropdown-content,
+.dropdown-content-sub {
   display: none;
   position: absolute;
-  top: 100%;
-  left: 0;
-  background: #ffffff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   padding: 0.5em 0;
   border-radius: 0.25em;
   z-index: 1000;
-  min-width: 160px;
+  min-width: 180px;
 }
 
-.dropdown-content li {
+.dropdown-content-sub {
+  left: 100%;
+  top: 0;
+}
+
+.dropdown-content li,
+.dropdown-content-sub li {
   margin: 0;
+  white-space: nowrap;
 }
 
-.dropdown-content a {
+.dropdown:hover > .dropdown-content,
+.dropdown-sub:hover > .dropdown-content-sub {
+  display: block;
+}
+
+.dropdown-content a,
+.dropdown-content-sub a {
   display: block;
   padding: 0.5em 1em;
   color: #333;
 }
 
-.dropdown-content a:hover {
+.dropdown-content a:hover,
+.dropdown-content-sub a:hover {
   background: #f0f0f0;
-}
-
-.dropdown:hover .dropdown-content {
-  display: block;
 }
 
 main {

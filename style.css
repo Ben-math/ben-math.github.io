@@ -164,34 +164,45 @@ main {
   font-size: 18px;
   font-weight: bold;
   border: 3px solid #1a1a4b;
-  border-radius: 50%;
-  width: 60px;
-  height: 60px;
   cursor: pointer;
   transition: transform 0.1s ease;
+  width: 80px;
+  height: 80px;
   box-shadow: 3px 3px 0 #1a1a4b;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  padding: 0;
 }
 
-.arrow-button:hover {
-  background-color: #ffe97a;
-}
-
+/* Bounce squish */
 .arrow-button:active {
   transform: scale(0.95);
   box-shadow: 1px 1px 0 #1a1a4b;
 }
 
-/* Optional: rotate the up/down buttons for a subtle arrow shape */
-.arrow-button.up::before {
-  content: "▲";
-  font-size: 24px;
+/* Arrow shapes using clip-path */
+.arrow-button.up {
+  clip-path: polygon(
+    50% 0%,
+    100% 40%,
+    70% 40%,
+    70% 100%,
+    30% 100%,
+    30% 40%,
+    0% 40%
+  );
 }
 
-.arrow-button.down::before {
-  content: "▼";
-  font-size: 24px;
+.arrow-button.down {
+  clip-path: polygon(
+    30% 0%,
+    70% 0%,
+    70% 60%,
+    100% 60%,
+    50% 100%,
+    0% 60%,
+    30% 60%
+  );
 }
-

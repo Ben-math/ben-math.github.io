@@ -25,6 +25,16 @@
           .then(response => response.text())
           .then(data => {
             document.getElementById("nav-placeholder").innerHTML = data;
+            // Highlight current page's link in the nav
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll("#nav-placeholder a");
+            
+            navLinks.forEach(link => {
+              const linkPath = new URL(link.href).pathname;
+              if (currentPath === linkPath || currentPath.endsWith("/") && linkPath.endsWith("/index.html")) {
+                link.classList.add("active");
+              }
+            });
           })
           .catch(err => {
             console.error("Failed to load nav.html:", err);

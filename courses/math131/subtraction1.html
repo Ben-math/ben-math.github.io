@@ -39,5 +39,46 @@
         </div>
       </div>
   </main>
+  <script>
+    const startBtn = document.getElementById("start-btn");
+    const problemDiv = document.getElementById("problem");
+    const questionText = document.getElementById("question-text");
+    const answerInput = document.getElementById("user-answer");
+    const checkBtn = document.getElementById("check-answer-btn");
+    const feedback = document.getElementById("feedback");
+  
+    let a = 0;
+    let b = 0;
+  
+    startBtn.addEventListener("click", () => {
+      // Generate two numbers between 1 and 200, ensure a ≥ b
+      a = Math.floor(Math.random() * 200) + 1;
+      b = Math.floor(Math.random() * 200) + 1;
+  
+      if (b > a) [a, b] = [b, a];
+  
+      questionText.textContent = `What is ${a} − ${b}?`;
+      problemDiv.style.display = "block";
+      feedback.textContent = "";
+      answerInput.value = "";
+      answerInput.focus();
+    });
+  
+    checkBtn.addEventListener("click", () => {
+      const userAnswer = parseInt(answerInput.value);
+      const correct = a - b;
+  
+      if (isNaN(userAnswer)) {
+        feedback.textContent = "Please enter a number!";
+        feedback.style.color = "darkred";
+      } else if (userAnswer === correct) {
+        feedback.textContent = "Correct! 🎉";
+        feedback.style.color = "green";
+      } else {
+        feedback.textContent = `Not quite! The correct answer was ${correct}.`;
+        feedback.style.color = "#d17f00";
+      }
+    });
+  </script>
 </body>
 </html>

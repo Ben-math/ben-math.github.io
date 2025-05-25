@@ -133,6 +133,30 @@
       const hundreds = Math.floor(a / 100);
       const tens = Math.floor((a % 100) / 10);
       const ones = a % 10;
+
+      function renderBlocks(count, containerId, className) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = ''; // Clear previous blocks
+        for (let i = 0; i < count; i++) {
+          const block = document.createElement('div');
+          block.classList.add('block-unit', className);
+          container.appendChild(block);
+        }
+      }
+      
+      renderBlocks(hundreds, 'minuend-hundreds', 'block-hundreds');
+      renderBlocks(tens, 'minuend-tens', 'block-tens');
+      renderBlocks(ones, 'minuend-ones', 'block-ones');
+      
+      renderBlocks(hundreds, 'difference-hundreds', 'block-hundreds');
+      renderBlocks(tens, 'difference-tens', 'block-tens');
+      renderBlocks(ones, 'difference-ones', 'block-ones');
+
+      ['hundreds', 'tens', 'ones'].forEach(place => {
+        document.getElementById(`subtrahend-${place}`).innerHTML = '';
+      });
+
+
       
       // Update count labels
       document.getElementById("minuend-hundreds-count").textContent = hundreds;

@@ -28,7 +28,16 @@
       </script>
   </header>
   <main>
-    <p>This page will have the first version of a subtraction activity.</p>
+    <div class="activity-box">
+        <button id="start-btn" class="rubber-button">Start!</button>
+    
+        <div id="problem" class="problem-area" style="display: none;">
+          <p id="question-text">What is ___ − ___?</p>
+          <input type="number" id="user-answer" placeholder="Enter your answer">
+          <button id="check-answer-btn" class="rubber-button">Check Answer</button>
+          <p id="feedback"></p>
+        </div>
+      </div>
   </main>
 </body>
 </html>

@@ -137,29 +137,26 @@
       function renderBlocks(count, containerId, className) {
         const container = document.getElementById(containerId);
       
-        // Preserve the regroup zone if present
-        const regroup = container.querySelector('.regroup-zone');
-
-        // Re-add the regroup zone to the top
-        if (regroup) {
-          container.appendChild(regroup);
-        }
+        // Keep regroup-zone and clear everything else
+        Array.from(container.children).forEach(child => {
+          if (!child.classList.contains('regroup-zone')) {
+            container.removeChild(child);
+          }
+        });
       
-        // Add a spacer so blocks don't enter regroup zone visually
+        // Add spacer so blocks stay below regroup zone
         const spacer = document.createElement('div');
         spacer.classList.add('stack-spacer');
         container.appendChild(spacer);
-        
-        // Clear just the block elements
-        container.innerHTML = '';
       
-        // Add the base-ten blocks
+        // Add base-ten blocks
         for (let i = 0; i < count; i++) {
           const block = document.createElement('div');
           block.classList.add('block-unit', className);
           container.appendChild(block);
         }
       }
+
 
       
       renderBlocks(hundreds, 'minuend-hundreds', 'block-hundreds');

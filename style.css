@@ -186,8 +186,9 @@ input[type="number"] {
 }
 
 .block-column {
-  flex: 1;
-  max-width: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 

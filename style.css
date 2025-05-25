@@ -162,7 +162,7 @@ input[type="number"] {
 
 .block-display {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   gap: 2em;
   margin-top: 2em;
   text-align: center;
@@ -186,10 +186,10 @@ input[type="number"] {
 }
 
 .block-column {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  flex: 1;
+  max-width: 120px;
 }
+
 
 .block-label {
   font-weight: bold;
@@ -199,7 +199,7 @@ input[type="number"] {
 /* Placeholder for future base-ten blocks */
 .block-stack {
   min-height: 100px;
-  width: 60px;
+  width: 100px;
   background-color: #f0f0f0;
   border: 2px dashed #ccc;
   border-radius: 0.5em;
@@ -219,7 +219,7 @@ input[type="number"] {
   font-family: 'Comic Sans MS', cursive, sans-serif;
   color: #1a1a4b;
   align-self: center;
-  margin: 0 0.5em;
+  margin: 0 0.1em;
   text-align: center;
   line-height: 1;
 }

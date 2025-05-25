@@ -136,13 +136,26 @@
 
       function renderBlocks(count, containerId, className) {
         const container = document.getElementById(containerId);
-        container.innerHTML = ''; // Clear previous blocks
+      
+        // Preserve the regroup zone if present
+        const regroup = container.querySelector('.regroup-zone');
+        
+        // Clear just the block elements
+        container.innerHTML = '';
+        
+        // Re-add the regroup zone to the top
+        if (regroup) {
+          container.appendChild(regroup);
+        }
+      
+        // Add the base-ten blocks
         for (let i = 0; i < count; i++) {
           const block = document.createElement('div');
           block.classList.add('block-unit', className);
           container.appendChild(block);
         }
       }
+
       
       renderBlocks(hundreds, 'minuend-hundreds', 'block-hundreds');
       renderBlocks(tens, 'minuend-tens', 'block-tens');

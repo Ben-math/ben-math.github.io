@@ -165,11 +165,6 @@
       renderBlocks(tens, 'difference-tens', 'block-tens');
       renderBlocks(ones, 'difference-ones', 'block-ones');
 
-      ['hundreds', 'tens', 'ones'].forEach(place => {
-        document.getElementById(`subtrahend-${place}`).innerHTML = '';
-      });
-
-
       
       // Update count labels
       document.getElementById("minuend-hundreds-count").textContent = hundreds;

@@ -272,3 +272,7 @@ input[type="number"] {
   height: 80px;
 }
 
+.stack-spacer {
+  height: 25%; /* same as regroup-zone height */
+  pointer-events: none;
+}

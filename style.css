@@ -160,3 +160,49 @@ input[type="number"] {
   margin: 0.5em;
 }
 
+.block-display {
+  display: flex;
+  justify-content: space-between;
+  gap: 2em;
+  margin-top: 2em;
+  text-align: center;
+  flex-wrap: wrap;
+}
+
+.block-section {
+  flex: 1;
+  min-width: 250px;
+  background-color: #fffbe0;
+  padding: 1em;
+  border: 3px solid #1a1a4b;
+  border-radius: 1em;
+  box-shadow: 4px 4px 0 #ffde59;
+}
+
+.block-columns {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 1em;
+}
+
+.block-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.block-label {
+  font-weight: bold;
+  margin-bottom: 0.5em;
+}
+
+/* Placeholder for future base-ten blocks */
+.block-stack {
+  min-height: 100px;
+  width: 60px;
+  background-color: #f0f0f0;
+  border: 2px dashed #ccc;
+  border-radius: 0.5em;
+  padding: 0.5em;
+}
+

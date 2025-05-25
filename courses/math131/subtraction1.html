@@ -33,6 +33,62 @@
     
         <div id="problem" class="problem-area" style="display: none;">
           <p id="question-text">What is ___ − ___?</p>
+          <div id="block-display" class="block-display" style="display: none;">
+            <div class="block-section">
+              <h3>Minuend</h3>
+              <div class="block-columns">
+                <div class="block-column">
+                  <div class="block-label">Hundreds</div>
+                  <div class="block-stack" id="minuend-hundreds"></div>
+                </div>
+                <div class="block-column">
+                  <div class="block-label">Tens</div>
+                  <div class="block-stack" id="minuend-tens"></div>
+                </div>
+                <div class="block-column">
+                  <div class="block-label">Ones</div>
+                  <div class="block-stack" id="minuend-ones"></div>
+                </div>
+              </div>
+            </div>
+          
+            <div class="block-section">
+              <h3>Subtrahend</h3>
+              <div class="block-columns">
+                <div class="block-column">
+                  <div class="block-label">Hundreds</div>
+                  <div class="block-stack" id="subtrahend-hundreds"></div>
+                </div>
+                <div class="block-column">
+                  <div class="block-label">Tens</div>
+                  <div class="block-stack" id="subtrahend-tens"></div>
+                </div>
+                <div class="block-column">
+                  <div class="block-label">Ones</div>
+                  <div class="block-stack" id="subtrahend-ones"></div>
+                </div>
+              </div>
+            </div>
+          
+            <div class="block-section">
+              <h3>Difference</h3>
+              <div class="block-columns">
+                <div class="block-column">
+                  <div class="block-label">Hundreds</div>
+                  <div class="block-stack" id="difference-hundreds"></div>
+                </div>
+                <div class="block-column">
+                  <div class="block-label">Tens</div>
+                  <div class="block-stack" id="difference-tens"></div>
+                </div>
+                <div class="block-column">
+                  <div class="block-label">Ones</div>
+                  <div class="block-stack" id="difference-ones"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <input type="number" id="user-answer" placeholder="Enter your answer">
           <button id="check-answer-btn" class="rubber-button">Check Answer</button>
           <p id="feedback"></p>
@@ -51,18 +107,19 @@
     let b = 0;
   
     startBtn.addEventListener("click", () => {
-      // Generate two numbers between 1 and 200, ensure a ≥ b
       a = Math.floor(Math.random() * 200) + 1;
       b = Math.floor(Math.random() * 200) + 1;
-  
       if (b > a) [a, b] = [b, a];
-  
+    
       questionText.textContent = `What is ${a} − ${b}?`;
       problemDiv.style.display = "block";
+      document.getElementById("block-display").style.display = "flex";
+    
       feedback.textContent = "";
       answerInput.value = "";
       answerInput.focus();
     });
+
   
     checkBtn.addEventListener("click", () => {
       const userAnswer = parseInt(answerInput.value);

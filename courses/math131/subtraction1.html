@@ -139,6 +139,17 @@
       
         // Preserve the regroup zone if present
         const regroup = container.querySelector('.regroup-zone');
+
+          // Re-add the regroup zone to the top
+          if (regroup) {
+            container.appendChild(regroup);
+          }
+        
+          // Add a spacer so blocks don't enter regroup zone visually
+          const spacer = document.createElement('div');
+          spacer.classList.add('stack-spacer');
+          container.appendChild(spacer);
+
         
         // Clear just the block elements
         container.innerHTML = '';

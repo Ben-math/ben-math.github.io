@@ -213,4 +213,13 @@ input[type="number"] {
   font-size: 20px;
 }
 
-
+.operator {
+  font-size: 48px;
+  font-weight: bold;
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  color: #1a1a4b;
+  align-self: center;
+  margin: 0 0.5em;
+  text-align: center;
+  line-height: 1;
+}

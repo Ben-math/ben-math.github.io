@@ -28,6 +28,10 @@
       </script>
   </header>
   <main>
+
+    <button id="start-btn" class="rubber-button">Start!</button>
+    <p id="question-text"></p>
+
     <div class="activity-box" id="my-activity">
       <div class="block" style="top: 300px; left: 50px;"></div>
       <div class="block" style="top: 260px; left: 50px;"></div>
@@ -38,100 +42,24 @@
 
   </main>
   <script>
-    //const startBtn = document.getElementById("start-btn");
-    //const problemDiv = document.getElementById("problem");
-    //const questionText = document.getElementById("question-text");
-    //const answerInput = document.getElementById("user-answer");
-    //const checkBtn = document.getElementById("check-answer-btn");
-    //const feedback = document.getElementById("feedback");
+    const startBtn = document.getElementById('start-btn');
+    const questionText = document.getElementById('question-text');
+    const activityBox = document.getElementById('my-activity');
   
-    //let a = 0;
-    //let b = 0;
+    startBtn.addEventListener('click', () => {
+      // Generate two numbers between 1 and 200
+      let a = Math.floor(Math.random() * 200) + 1;
+      let b = Math.floor(Math.random() * 200) + 1;
   
-    //startBtn.addEventListener("click", () => {
-      //a = Math.floor(Math.random() * 200) + 1;
-      //b = Math.floor(Math.random() * 200) + 1;
-      //if (b > a) [a, b] = [b, a];
-
-      // Decompose minuend into base-10
-      //const hundreds = Math.floor(a / 100);
-      //const tens = Math.floor((a % 100) / 10);
-      //const ones = a % 10;
-
-      //function renderBlocks(count, containerId, className) {
-        //const container = document.getElementById(containerId);
-      
-        // Keep regroup-zone and clear everything else
-        //Array.from(container.children).forEach(child => {
-          //if (!child.classList.contains('regroup-zone')) {
-            //container.removeChild(child);
-          //}
-        //});
-      
-        // Add spacer so blocks stay below regroup zone
-        //const spacer = document.createElement('div');
-        //spacer.classList.add('stack-spacer');
-        //container.appendChild(spacer);
-      
-        // Add base-ten blocks
-        //for (let i = 0; i < count; i++) {
-          //const block = document.createElement('div');
-          //block.classList.add('block-unit', className);
-          //container.appendChild(block);
-        //}
-      //}
-
-
-      
-      //renderBlocks(hundreds, 'minuend-hundreds', 'block-hundreds');
-      //renderBlocks(tens, 'minuend-tens', 'block-tens');
-      //renderBlocks(ones, 'minuend-ones', 'block-ones');
-      
-      //renderBlocks(hundreds, 'difference-hundreds', 'block-hundreds');
-      //renderBlocks(tens, 'difference-tens', 'block-tens');
-      //renderBlocks(ones, 'difference-ones', 'block-ones');
-
-      
-      // Update count labels
-      //document.getElementById("minuend-hundreds-count").textContent = hundreds;
-      //document.getElementById("minuend-tens-count").textContent = tens;
-      //document.getElementById("minuend-ones-count").textContent = ones;
-      
-      //document.getElementById("difference-hundreds-count").textContent = hundreds;
-      //document.getElementById("difference-tens-count").textContent = tens;
-      //document.getElementById("difference-ones-count").textContent = ones;
-      
-      // (Optional: clear Subtrahend column counts)
-      //["hundreds", "tens", "ones"].forEach(place => {
-        //document.getElementById(`subtrahend-${place}-count`).textContent = "0";
-      //});
-
-    
-      //questionText.textContent = `What is ${a} − ${b}?  (Recall that each place value column must contain between 0 and 9 at the end!)`;
-      //problemDiv.style.display = "block";
-      //document.getElementById("block-display").style.display = "flex";
-    
-      //feedback.textContent = "";
-      //answerInput.value = "";
-      //answerInput.focus();
-    //});
-
+      if (b > a) [a, b] = [b, a]; // ensure a ≥ b
   
-    //checkBtn.addEventListener("click", () => {
-      //const userAnswer = parseInt(answerInput.value);
-      //const correct = a - b;
+      // Display the question
+      questionText.textContent = `What is ${a} − ${b}?`;
   
-      //if (isNaN(userAnswer)) {
-        //feedback.textContent = "Please enter a number!";
-        //feedback.style.color = "darkred";
-      //} else if (userAnswer === correct) {
-        //feedback.textContent = "Correct! 🎉";
-        //feedback.style.color = "green";
-      //} else {
-        //feedback.textContent = `Not quite! The correct answer was ${correct}.`;
-        //feedback.style.color = "#d17f00";
-      //}
-    //});
+      // Clear the activity box
+      activityBox.innerHTML = '';
+    });
   </script>
+
 </body>
 </html>

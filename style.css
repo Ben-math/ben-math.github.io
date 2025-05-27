@@ -152,15 +152,6 @@ main {
   overflow: hidden;
 }
 
-.block {
-  position: absolute;
-  width: 40px;
-  height: 40px;
-  background-color: #ffde59;
-  border: 2px solid #1a1a4b;
-  box-shadow: 2px 2px 0 #1a1a4b;
-  border-radius: 6px;
-}
 
 #question-text {
   text-align: center;
@@ -224,4 +215,16 @@ main {
   font-family: 'Comic Sans MS', cursive, sans-serif;
   font-weight: bold;
 }
+
+.draggable-block {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  background-color: #ffde59;
+  border: 2px solid #1a1a4b;
+  border-radius: 6px;
+  box-shadow: 2px 2px 0 #1a1a4b;
+  cursor: grab;
+}
+
 

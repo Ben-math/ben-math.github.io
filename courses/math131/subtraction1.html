@@ -216,6 +216,8 @@
           element.style.top = `${targetY}px`;
         
           registerBlock(bestZone, type);
+          bestZone.appendChild(draggedBlock);
+          draggedBlock.currentZone = bestZone;
           element.currentZone = bestZone; // ✅ Track where it ended up
         } else {
           //  Invalid drop, return home

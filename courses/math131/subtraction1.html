@@ -156,6 +156,7 @@
         let bestZone = null;
         let bestOverlap = 0;
         let isValid = false;
+        let acceptsBlock = false;
       
         for (const zone of allZones) {
           const zoneRect = zone.getBoundingClientRect();
@@ -164,12 +165,13 @@
             bestOverlap = overlap;
             bestZone = zone;
             isValid = getValidDropZones(type).includes(zone);
+            acceptsBlock = isValidZone && canAcceptBlock(zone, type);
           }
         }
       
         if (bestZone) {
           lastHoveredZone = bestZone;
-          bestZone.classList.add(isValid ? 'valid-hover' : 'invalid-hover');
+          bestZone.classList.add(acceptsBlock ? 'valid-hover' : 'invalid-hover');
         }
       });
 

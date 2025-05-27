@@ -63,9 +63,9 @@
         regroup.classList.add('regroup-zone');
       
         // Add specific class based on place value
-        if (label.toLowerCase() === 'subtrahend-tens' || label.toLowerCase() === 'difference-tens') {
+        if (label.toLowerCase() === 'subtrahendtens' || label.toLowerCase() === 'differencetens') {
           regroup.classList.add('regroup-tens');
-        } else if (label.toLowerCase() === 'subtrahend-ones' || label.toLowerCase() === 'difference-ones') {
+        } else if (label.toLowerCase() === 'subtrahendones' || label.toLowerCase() === 'differenceones') {
           regroup.classList.add('regroup-ones');
         }
       
@@ -142,7 +142,7 @@
 
       const minuendHundredsColumn = createColumn({
         label: "Hundreds",
-        idPrefix: "minuend-hundreds",
+        idPrefix: "minuendhundreds",
         left: 25,
         top: 50,
         hasRegroup: false
@@ -150,7 +150,7 @@
 
       const minuendTensColumn = createColumn({
         label: "Tens",
-        idPrefix: "minuend-tens",
+        idPrefix: "minuendtens",
         left: 155,
         top: 50,
         hasRegroup: false
@@ -158,7 +158,7 @@
 
       const minuendOnesColumn = createColumn({
         label: "Ones",
-        idPrefix: "minuend-ones",
+        idPrefix: "minuendones",
         left: 285,
         top: 50,
         hasRegroup: false
@@ -169,7 +169,7 @@
 
       const subtrahendHundredsColumn = createColumn({
         label: "Hundreds",
-        idPrefix: "subtrahend-hundreds",
+        idPrefix: "subtrahendhundreds",
         left: 450,
         top: 50,
         hasRegroup: false
@@ -177,14 +177,14 @@
 
       const subtrahendTensColumn = createColumn({
         label: "Tens",
-        idPrefix: "subtrahend-tens",
+        idPrefix: "subtrahendtens",
         left: 580,
         top: 50,
       });
 
       const subtrahendOnesColumn = createColumn({
         label: "Ones",
-        idPrefix: "subtrahend-ones",
+        idPrefix: "subtrahendones",
         left: 710,
         top: 50,
       });
@@ -194,7 +194,7 @@
 
       const differenceHundredsColumn = createColumn({
         label: "Hundreds",
-        idPrefix: "difference-hundreds",
+        idPrefix: "differencehundreds",
         left: 875,
         top: 50,
         hasRegroup: false
@@ -202,14 +202,14 @@
 
       const differenceTensColumn = createColumn({
         label: "Tens",
-        idPrefix: "difference-tens",
+        idPrefix: "differencetens",
         left: 1005,
         top: 50,
       });
 
       const differenceOnesColumn = createColumn({
         label: "Ones",
-        idPrefix: "difference-ones",
+        idPrefix: "differenceones",
         left: 1135,
         top: 50,
       });

@@ -76,6 +76,8 @@
         column.appendChild(regroup);
         regroup.classList.add('drop-zone');
         regroup.classList.add(`drop-${place}-regroup`);
+        regroup.dataset.blockType = ''; // empty means nothing yet
+        regroup.dataset.blockCount = '0';
       }
 
     
@@ -85,6 +87,9 @@
       column.appendChild(stack);
       stack.classList.add('drop-zone');
       stack.classList.add(`drop-${place}`); // 'ones', 'tens', 'hundreds'
+      stack.dataset.blockType = ''; // optional, in case you later want to restrict
+      stack.dataset.blockCount = '0';
+
     
       const count = document.createElement('div');
       count.classList.add('block-count');
@@ -186,17 +191,20 @@
           }
         });
     
-        if (bestZone) {
+        if (bestZone && getValidDropZones(type).includes(bestZone) && canAcceptBlock(bestZone, type)) {
           const zoneBox = activityBox.getBoundingClientRect();
           const targetX = bestZone.getBoundingClientRect().left - zoneBox.left + 5;
           const targetY = bestZone.getBoundingClientRect().top - zoneBox.top + 5;
           element.style.left = `${targetX}px`;
           element.style.top = `${targetY}px`;
+        
+          registerBlock(bestZone, type);
         } else {
           // Invalid drop
           element.style.left = `${originalX}px`;
           element.style.top = `${originalY}px`;
         }
+
     
         lastHoveredZone = null;
       });
@@ -217,6 +225,50 @@
         rect1.top > rect2.bottom
       );
     }
+
+    function canAcceptBlock(zone, blockType) {
+      const currentType = zone.dataset.blockType;
+      const count = parseInt(zone.dataset.blockCount || '0');
+    
+      return currentType === '' || currentType === blockType;
+    }
+
+    function registerBlock(zone, blockType) {
+      let count = parseInt(zone.dataset.blockCount || '0');
+      zone.dataset.blockType = blockType;
+      zone.dataset.blockCount = count + 1;
+      updateZoneLabel(zone);
+    }
+
+    function unregisterBlock(zone, blockType) {
+      let count = parseInt(zone.dataset.blockCount || '0');
+      count = Math.max(0, count - 1);
+      zone.dataset.blockCount = count;
+    
+      if (count === 0) {
+        zone.dataset.blockType = '';
+      }
+    
+      updateZoneLabel(zone);
+    }
+
+    function updateZoneLabel(zone) {
+      if (!zone.querySelector('.zone-count')) {
+        const countLabel = document.createElement('div');
+        countLabel.classList.add('zone-count');
+        countLabel.style.position = 'absolute';
+        countLabel.style.bottom = '2px';
+        countLabel.style.right = '5px';
+        countLabel.style.fontSize = '12px';
+        countLabel.classList.add('zone-count');
+        zone.appendChild(countLabel);
+      }
+    
+      const label = zone.querySelector('.zone-count');
+      label.textContent = zone.dataset.blockCount;
+    }
+
+
     
     function getValidDropZones(type) {
       const zones = Array.from(document.querySelectorAll('.drop-zone'));
@@ -256,7 +308,7 @@
       if (b > a) [a, b] = [b, a]; // ensure a ≥ b
   
       // Display the question
-      questionText.textContent = `What is ${a} − ${b}?  Remember that each place value column should contain between 0 and 9 blocks at the end!`;
+      questionText.textContent = `What is ${a} − ${b}?  Remember that each place value column should contain a single digit at the end!`;
 
       
       // Clear the activity box

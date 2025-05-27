@@ -156,7 +156,8 @@
         let maxOverlap = 0;
         let bestZone = null;
         let bestZoneAcceptsBlock = false;
-        
+
+        const dropZones = Array.from(document.querySelectorAll('.drop-zone'));
         for (const zone of dropZones) {
           const isValidZone = getValidDropZones(type).includes(zone);
           const acceptsBlock = isValidZone && canAcceptBlock(zone, type);

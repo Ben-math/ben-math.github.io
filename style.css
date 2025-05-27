@@ -255,3 +255,12 @@ main {
   height: 100px;
   background-color: #4dd0e1;
 }
+
+.valid-hover {
+  background-color: rgba(144, 238, 144, 0.4); /* light green overlay */
+}
+
+.invalid-hover {
+  background-color: rgba(255, 99, 71, 0.4); /* light red overlay */
+}
+

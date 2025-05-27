@@ -36,7 +36,14 @@
     <p id="question-text"></p>
 
     <div class="activity-box" id="my-activity">
-      
+
+      <div class="column" style="left: 50px; top: 40px;">
+        <div class="column-label">Ones</div>
+        <div class="regroup-zone">Regroup</div>
+        <div class="block-stack" id="minuend-ones-stack"></div>
+        <div class="block-count" id="minuend-ones-count">0</div>
+      </div>
+
     </div>
 
 
@@ -56,7 +63,40 @@
   
       // Display the question
       questionText.textContent = `What is ${a} − ${b}?  Remember that each place value column should contain between 0 and 9 blocks at the end!`;
-  
+
+      function createColumn({ label, idPrefix, left, top, hasRegroup = true }) {
+        const column = document.createElement('div');
+        column.classList.add('column');
+        column.style.left = `${left}px`;
+        column.style.top = `${top}px`;
+      
+        const labelDiv = document.createElement('div');
+        labelDiv.classList.add('column-label');
+        labelDiv.textContent = label;
+        column.appendChild(labelDiv);
+      
+        if (hasRegroup) {
+          const regroup = document.createElement('div');
+          regroup.classList.add('regroup-zone');
+          regroup.textContent = 'Regroup';
+          column.appendChild(regroup);
+        }
+      
+        const stack = document.createElement('div');
+        stack.classList.add('block-stack');
+        stack.id = `${idPrefix}-stack`;
+        column.appendChild(stack);
+      
+        const count = document.createElement('div');
+        count.classList.add('block-count');
+        count.id = `${idPrefix}-count`;
+        count.textContent = '0';
+        column.appendChild(count);
+      
+        return column;
+      }
+
+      
       // Clear the activity box
       activityBox.innerHTML = '';
     });

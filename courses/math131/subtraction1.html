@@ -163,13 +163,14 @@
           if (overlap > bestOverlap) {
             bestOverlap = overlap;
             bestZone = zone;
-            isValid = getValidDropZones(type).includes(zone);
+            const isValidZone = getValidDropZones(type).includes(zone);
+            const acceptsBlock = isValidZone && canAcceptBlock(zone, type);
           }
         }
       
         if (bestZone) {
           lastHoveredZone = bestZone;
-          bestZone.classList.add(isValid ? 'valid-hover' : 'invalid-hover');
+          bestZone.classList.add(acceptsBlock ? 'valid-hover' : 'invalid-hover');
         }
       });
 
@@ -249,8 +250,32 @@
       const currentType = zone.dataset.blockType;
       const count = parseInt(zone.dataset.blockCount || '0');
     
-      return currentType === '' || currentType === blockType;
+      const isRegroupOnes = zone.classList.contains('regroup-ones');
+      const isRegroupTens = zone.classList.contains('regroup-tens');
+      const isStack = !isRegroupOnes && !isRegroupTens;
+    
+      if (isStack) {
+        // Stack zones can hold up to 19 blocks
+        return (count < 19);
+      }
+    
+      if (isRegroupOnes) {
+        if (currentType === '' || currentType === blockType) {
+          if (blockType === 'ones') return count < 10;
+          if (blockType === 'tens') return count < 1;
+        }
+      }
+    
+      if (isRegroupTens) {
+        if (currentType === '' || currentType === blockType) {
+          if (blockType === 'tens') return count < 10;
+          if (blockType === 'hundreds') return count < 1;
+        }
+      }
+    
+      return false;
     }
+
 
     function registerBlock(zone, blockType) {
       let count = parseInt(zone.dataset.blockCount || '0');

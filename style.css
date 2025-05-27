@@ -151,3 +151,13 @@ main {
   margin: 2em auto;
   overflow: hidden;
 }
+
+.block {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  background-color: #ffde59;
+  border: 2px solid #1a1a4b;
+  box-shadow: 2px 2px 0 #1a1a4b;
+  border-radius: 6px;
+}

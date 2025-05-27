@@ -153,26 +153,27 @@
         const blockRect = element.getBoundingClientRect();
         const allZones = Array.from(document.querySelectorAll('.drop-zone'));
       
+        let maxOverlap = 0;
         let bestZone = null;
-        let bestOverlap = 0;
-        let isValid = false;
-      
-        for (const zone of allZones) {
-          const zoneRect = zone.getBoundingClientRect();
-          const overlap = computeOverlapArea(blockRect, zoneRect);
-          if (overlap > bestOverlap) {
-            bestOverlap = overlap;
+        let bestZoneAcceptsBlock = false;
+        
+        for (const zone of dropZones) {
+          const isValidZone = getValidDropZones(type).includes(zone);
+          const acceptsBlock = isValidZone && canAcceptBlock(zone, type);
+          const overlap = getOverlap(zone);
+        
+          if (overlap > maxOverlap) {
+            maxOverlap = overlap;
             bestZone = zone;
-            const isValidZone = getValidDropZones(type).includes(zone);
-            const acceptsBlock = isValidZone && canAcceptBlock(zone, type);
+            bestZoneAcceptsBlock = acceptsBlock;
           }
         }
-      
+        
         if (bestZone) {
-          console.log('Best zone:', bestZone.classList, 'Accepts block?', acceptsBlock);
           lastHoveredZone = bestZone;
-          bestZone.classList.add(acceptsBlock ? 'valid-hover' : 'invalid-hover');
+          bestZone.classList.add(bestZoneAcceptsBlock ? 'valid-hover' : 'invalid-hover');
         }
+
       });
 
     

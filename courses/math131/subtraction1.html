@@ -29,13 +29,14 @@
   </header>
   <main>
 
-    <button id="start-btn" class="rubber-button">Start!</button>
+    <div class="button-container">
+      <button id="start-btn" class="rubber-button">Start!</button>
+    </div>
+    
     <p id="question-text"></p>
 
     <div class="activity-box" id="my-activity">
-      <div class="block" style="top: 300px; left: 50px;"></div>
-      <div class="block" style="top: 260px; left: 50px;"></div>
-      <div class="block" style="top: 220px; left: 50px;"></div>
+      
     </div>
 
 
@@ -54,7 +55,7 @@
       if (b > a) [a, b] = [b, a]; // ensure a ≥ b
   
       // Display the question
-      questionText.textContent = `What is ${a} − ${b}?`;
+      questionText.textContent = `What is ${a} − ${b}?  Remember that each place value column should contain between 0 and 9 blocks at the end!`;
   
       // Clear the activity box
       activityBox.innerHTML = '';

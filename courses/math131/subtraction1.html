@@ -308,7 +308,10 @@
 
 
     function repositionBlocks(zone) {
+      console.log("Repositioning blocks in zone:", zone.id || zone.className);
       const blocks = Array.from(zone.querySelectorAll('.block'));
+      console.log("Blocks to reposition:", blocks.length);
+    
       const blockType = zone.dataset.blockType;
       const isHorizontal = (blockType === 'tens');
     
@@ -322,6 +325,7 @@
         }
       });
     }
+
 
 
 

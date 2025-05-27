@@ -284,6 +284,22 @@
       return (currentType === '' || currentType === blockType) && count < 19;
     }
 
+    function restackZone(zone) {
+      const blockHeight = 20;  // Adjust as needed
+      const spacing = 4;
+    
+      // Get all children that are blocks
+      const blocks = Array.from(document.querySelectorAll('.draggable-block'))
+        .filter(block => block.currentZone === zone);
+    
+      blocks.forEach((block, index) => {
+        const baseX = parseFloat(zone.getBoundingClientRect().left) - activityBox.getBoundingClientRect().left + 4;
+        const baseY = parseFloat(zone.getBoundingClientRect().bottom) - activityBox.getBoundingClientRect().top;
+    
+        block.style.left = `${baseX}px`;
+        block.style.top = `${baseY - (blockHeight + spacing) * (index + 1)}px`;
+      });
+    }
 
 
     function registerBlock(zone, blockType) {
@@ -303,7 +319,9 @@
       }
     
       updateZoneLabel(zone);
+      restackZone(zone);  //  Restack after unregistering
     }
+
 
     function updateZoneLabel(zone) {
       if (!zone.querySelector('.zone-count')) {

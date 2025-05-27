@@ -125,7 +125,7 @@
       
         // ❗ Unregister from previous zone if it exists
         if (element.currentZone) {
-          unregisterBlock(element.currentZone, type);
+          unregisterBlock(element.currentZone, type, element);
           element.currentZone = null;
         }
       });
@@ -215,7 +215,7 @@
           element.style.left = `${targetX}px`;
           element.style.top = `${targetY}px`;
         
-          registerBlock(bestZone, type);
+          registerBlock(bestZone, type, element);
           element.currentZone = bestZone; // ✅ Track where it ended up
         } else {
           //  Invalid drop, return home
@@ -286,14 +286,17 @@
 
 
 
-    function registerBlock(zone, blockType) {
+    function registerBlock(zone, blockType, element) {
+      if (!zone.blockElements) zone.blockElements = [];
+      zone.blockElements.push(block);
+
       let count = parseInt(zone.dataset.blockCount || '0');
       zone.dataset.blockType = blockType;
       zone.dataset.blockCount = count + 1;
       updateZoneLabel(zone);
     }
 
-    function unregisterBlock(zone, blockType) {
+    function unregisterBlock(zone, blockType, element) {
       let count = parseInt(zone.dataset.blockCount || '0');
       count = Math.max(0, count - 1);
       zone.dataset.blockCount = count;
@@ -302,8 +305,32 @@
         zone.dataset.blockType = '';
       }
     
+      if (zone.blockElements) {
+        zone.blockElements = zone.blockElements.filter(b => b !== element);
+        restackZone(zone);
+      }
+    
       updateZoneLabel(zone);
     }
+
+
+    function restackZone(zone) {
+      const blockHeight = 20; // adjust based on your block styling
+      const spacing = 4;
+    
+      if (!zone.blockElements) return;
+    
+      const zoneBox = activityBox.getBoundingClientRect();
+      const zoneRect = zone.getBoundingClientRect();
+    
+      zone.blockElements.forEach((block, index) => {
+        const targetX = zoneRect.left - zoneBox.left + 2;
+        const targetY = zoneRect.bottom - zoneBox.top - ((index + 1) * (blockHeight + spacing)) - 10;
+        block.style.left = `${targetX}px`;
+        block.style.top = `${targetY}px`;
+      });
+    }
+
 
     function updateZoneLabel(zone) {
       if (!zone.querySelector('.zone-count')) {

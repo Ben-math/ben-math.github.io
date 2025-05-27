@@ -310,7 +310,7 @@
     function repositionBlocks(zone) {
       const blocks = Array.from(zone.querySelectorAll('.block'));
       const blockType = zone.dataset.blockType;
-      const isHorizontal = (blockType === 'tens'); // Only tens are horizontal in stacks
+      const isHorizontal = (blockType === 'tens');
     
       blocks.forEach((block, index) => {
         if (isHorizontal) {
@@ -322,6 +322,7 @@
         }
       });
     }
+
 
 
     function updateZoneLabel(zone) {

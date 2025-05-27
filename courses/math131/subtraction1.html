@@ -121,42 +121,46 @@
     
       document.addEventListener('mousemove', (e) => {
         if (!isDragging) return;
-    
+      
         const parentRect = activityBox.getBoundingClientRect();
         const newX = e.clientX - parentRect.left - offsetX;
         const newY = e.clientY - parentRect.top - offsetY;
-    
+      
         const maxX = activityBox.clientWidth - element.offsetWidth;
         const maxY = activityBox.clientHeight - element.offsetHeight;
-    
+      
         element.style.left = `${Math.max(0, Math.min(newX, maxX))}px`;
         element.style.top = `${Math.max(0, Math.min(newY, maxY))}px`;
-    
-        // Highlight best overlapping zone
+      
+        // Reset previous highlight
+        if (lastHoveredZone) {
+          lastHoveredZone.classList.remove('valid-hover', 'invalid-hover');
+          lastHoveredZone = null;
+        }
+      
         const blockRect = element.getBoundingClientRect();
-        const zones = getValidDropZones(type);
+        const allZones = Array.from(document.querySelectorAll('.drop-zone'));
+      
         let bestZone = null;
         let bestOverlap = 0;
-    
-        zones.forEach(zone => {
+        let isValid = false;
+      
+        for (const zone of allZones) {
           const zoneRect = zone.getBoundingClientRect();
           const overlap = computeOverlapArea(blockRect, zoneRect);
           if (overlap > bestOverlap) {
             bestOverlap = overlap;
             bestZone = zone;
+            isValid = getValidDropZones(type).includes(zone);
           }
-        });
-    
-        // Reset previous
-        if (lastHoveredZone && lastHoveredZone !== bestZone) {
-          lastHoveredZone.classList.remove('valid-hover', 'invalid-hover');
         }
-    
+      
         if (bestZone) {
-          bestZone.classList.add('valid-hover');
           lastHoveredZone = bestZone;
+          bestZone.classList.add(isValid ? 'valid-hover' : 'invalid-hover');
         }
       });
+
     
       document.addEventListener('mouseup', () => {
         if (!isDragging) return;

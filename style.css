@@ -257,12 +257,12 @@ input[type="number"] {
 /* Ones: Tall narrow block */
 .block-ones {
   width: 20px;
-  height: 40px;
+  height: 20px;
 }
 
 /* Tens: Flat horizontal block */
 .block-tens {
-  width: 60px;
+  width: 80px;
   height: 20px;
 }
 

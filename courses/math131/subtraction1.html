@@ -57,13 +57,22 @@
       labelDiv.classList.add('column-label');
       labelDiv.textContent = label;
       column.appendChild(labelDiv);
-    
+
       if (hasRegroup) {
         const regroup = document.createElement('div');
         regroup.classList.add('regroup-zone');
+      
+        // Add specific class based on place value
+        if (label.toLowerCase() === 'subtrahend-tens' || label.toLowerCase() === 'difference-tens') {
+          regroup.classList.add('regroup-tens');
+        } else if (label.toLowerCase() === 'subtrahend-ones' || label.toLowerCase() === 'difference-ones') {
+          regroup.classList.add('regroup-ones');
+        }
+      
         regroup.textContent = '⇆';
         column.appendChild(regroup);
       }
+
     
       const stack = document.createElement('div');
       stack.classList.add('block-stack');

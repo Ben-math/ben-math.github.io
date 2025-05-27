@@ -295,7 +295,7 @@
     
       blocks.forEach((block, index) => {
         const baseX = parseFloat(zone.getBoundingClientRect().left) - activityBox.getBoundingClientRect().left + 2;
-        const baseY = parseFloat(zone.getBoundingClientRect().bottom) - activityBox.getBoundingClientRect().top;
+        const baseY = parseFloat(zone.getBoundingClientRect().bottom) - activityBox.getBoundingClientRect().top - 10;
     
         block.style.left = `${baseX}px`;
         block.style.top = `${baseY - (blockHeight + spacing) * (index + 1)}px`;

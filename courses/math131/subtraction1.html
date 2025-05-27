@@ -88,6 +88,32 @@
       activityBox.appendChild(txt);
     }
 
+    function makeDraggable(element) {
+      let offsetX, offsetY;
+      let isDragging = false;
+    
+      element.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        offsetX = e.offsetX;
+        offsetY = e.offsetY;
+        element.style.zIndex = 1000;
+        element.style.cursor = 'grabbing';
+      });
+    
+      document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const parentRect = activityBox.getBoundingClientRect();
+        element.style.left = `${e.clientX - parentRect.left - offsetX}px`;
+        element.style.top = `${e.clientY - parentRect.top - offsetY}px`;
+      });
+    
+      document.addEventListener('mouseup', () => {
+        isDragging = false;
+        element.style.cursor = 'grab';
+      });
+    }
+
+
   
     startBtn.addEventListener('click', () => {
       // Generate two numbers between 1 and 200
@@ -188,6 +214,20 @@
       activityBox.appendChild(differenceHundredsColumn);
       activityBox.appendChild(differenceTensColumn);
       activityBox.appendChild(differenceOnesColumn);
+
+      function createDraggableBlock(x, y) {
+        const block = document.createElement('div');
+        block.classList.add('draggable-block');
+        block.style.left = `${x}px`;
+        block.style.top = `${y}px`;
+        activityBox.appendChild(block);
+        makeDraggable(block);
+      }
+      
+      createDraggableBlock(100, 100);
+      createDraggableBlock(200, 150);
+      createDraggableBlock(300, 120);
+
     });
   </script>
 

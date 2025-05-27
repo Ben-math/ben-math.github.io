@@ -219,7 +219,7 @@ main {
 .draggable-block {
   position: absolute;
   border: 2px solid #1a1a4b;
-  border-radius: 6px;
+  border-radius: 2px;
   box-shadow: 2px 2px 0 #1a1a4b;
   cursor: grab;
 }
@@ -228,14 +228,12 @@ main {
 .block-ones {
   width: 10px;
   height: 10px;
-  border-radius: 2px;
   background-color: #ffd966;
 }
 
 .block-tens {
   width: 100px;
   height: 10px;
-  border-radius: 3px;
   background-color: #f5a623;
 }
 

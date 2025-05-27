@@ -199,7 +199,7 @@ input[type="number"] {
 
 .block-stack {
   width: 100px;
-  height: 300px;
+  height: 600px;
   background-color: #f0f0f0;
   border: 2px dashed #ccc;
   border-radius: 0.5em;
@@ -256,14 +256,14 @@ input[type="number"] {
 
 /* Ones: Tall narrow block */
 .block-ones {
-  width: 10px;
-  height: 10px;
+  width: 9px;
+  height: 9px;
 }
 
 /* Tens: Flat horizontal block */
 .block-tens {
   width: 90px;
-  height: 10px;
+  height: 9px;
 }
 
 /* Hundreds: Large vertical square-ish block */

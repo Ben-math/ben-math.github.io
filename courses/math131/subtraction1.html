@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,25 +25,7 @@
               }
             });
           });
-      
-function restackZone(zone) {
-  const blockHeight = 20; // adjust based on your block styling
-  const spacing = 4;
-
-  if (!zone.blockElements) return;
-
-  const zoneBox = activityBox.getBoundingClientRect();
-  const zoneRect = zone.getBoundingClientRect();
-
-  zone.blockElements.forEach((block, index) => {
-    const targetX = zoneRect.left - zoneBox.left + 2;
-    const targetY = zoneRect.bottom - zoneBox.top - ((index + 1) * (blockHeight + spacing)) - 10;
-    block.style.left = `${targetX}px`;
-    block.style.top = `${targetY}px`;
-  });
-}
-
-</script>
+      </script>
   </header>
   <main>
 
@@ -305,41 +286,21 @@ function restackZone(zone) {
 
 
 
+    function registerBlock(zone, blockType) {
+      let count = parseInt(zone.dataset.blockCount || '0');
+      zone.dataset.blockType = blockType;
+      zone.dataset.blockCount = count + 1;
+      updateZoneLabel(zone);
+    }
+
+    function unregisterBlock(zone, blockType) {
+      let count = parseInt(zone.dataset.blockCount || '0');
+      count = Math.max(0, count - 1);
+      zone.dataset.blockCount = count;
     
-function registerBlock(zone, blockType, element) {
-  let count = parseInt(zone.dataset.blockCount || '0');
-  count += 1;
-  zone.dataset.blockCount = count;
-
-  if (!zone.dataset.blockType || zone.dataset.blockType === '') {
-    zone.dataset.blockType = blockType;
-  }
-
-  if (!zone.blockElements) zone.blockElements = [];
-  zone.blockElements.push(element);
-
-  updateZoneLabel(zone);
-}
-
-
-    
-function unregisterBlock(zone, blockType, element) {
-  let count = parseInt(zone.dataset.blockCount || '0');
-  count = Math.max(0, count - 1);
-  zone.dataset.blockCount = count;
-
-  if (count === 0) {
-    zone.dataset.blockType = '';
-  }
-
-  if (zone.blockElements) {
-    zone.blockElements = zone.blockElements.filter(b => b !== element);
-    restackZone(zone);
-  }
-
-  updateZoneLabel(zone);
-}
-
+      if (count === 0) {
+        zone.dataset.blockType = '';
+      }
     
       updateZoneLabel(zone);
     }
@@ -512,25 +473,7 @@ function unregisterBlock(zone, blockType, element) {
 
 
     });
-  
-function restackZone(zone) {
-  const blockHeight = 20; // adjust based on your block styling
-  const spacing = 4;
-
-  if (!zone.blockElements) return;
-
-  const zoneBox = activityBox.getBoundingClientRect();
-  const zoneRect = zone.getBoundingClientRect();
-
-  zone.blockElements.forEach((block, index) => {
-    const targetX = zoneRect.left - zoneBox.left + 2;
-    const targetY = zoneRect.bottom - zoneBox.top - ((index + 1) * (blockHeight + spacing)) - 10;
-    block.style.left = `${targetX}px`;
-    block.style.top = `${targetY}px`;
-  });
-}
-
-</script>
+  </script>
 
 </body>
 </html>

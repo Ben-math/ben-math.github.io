@@ -285,6 +285,7 @@
     }
 
     function restackZone(zone) {
+      console.log('Restacking zone:', zone.id || zone.className);
       const activityBox = document.getElementById('activity-box');
       const zoneBox = activityBox.getBoundingClientRect();
       const zoneRect = zone.getBoundingClientRect();

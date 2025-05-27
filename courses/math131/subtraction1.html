@@ -103,12 +103,12 @@
       // Clear the activity box
       activityBox.innerHTML = '';
 
-      addTextToActivityBox("Minuend", 80, 20);
+      addTextToActivityBox("Minuend", 185, 20);
 
       const minuendHundredsColumn = createColumn({
         label: "Hundreds",
         idPrefix: "minuend-hundreds",
-        left: 20,
+        left: 25,
         top: 40,
         hasRegroup: false
       });
@@ -116,7 +116,7 @@
       const minuendTensColumn = createColumn({
         label: "Tens",
         idPrefix: "minuend-tens",
-        left: 140,
+        left: 165,
         top: 40,
         hasRegroup: false
       });
@@ -124,59 +124,66 @@
       const minuendOnesColumn = createColumn({
         label: "Ones",
         idPrefix: "minuend-ones",
-        left: 260,
+        left: 305,
         top: 40,
         hasRegroup: false
       });
 
-      addTextToActivityBox("Subtrahend", 440, 20);
+      addTextToActivityBox("Subtrahend", 600, 20);
 
       const subtrahendHundredsColumn = createColumn({
         label: "Hundreds",
         idPrefix: "subtrahend-hundreds",
-        left: 380,
+        left: 450,
         top: 40,
       });
 
       const subtrahendTensColumn = createColumn({
         label: "Tens",
         idPrefix: "subtrahend-tens",
-        left: 500,
+        left: 590,
         top: 40,
       });
 
       const subtrahendOnesColumn = createColumn({
         label: "Ones",
         idPrefix: "subtrahend-ones",
-        left: 620,
+        left: 730,
         top: 40,
       });
 
-      addTextToActivityBox("Difference", 800, 20);
+      addTextToActivityBox("Difference", 1025, 20);
 
       const differenceHundredsColumn = createColumn({
         label: "Hundreds",
         idPrefix: "difference-hundreds",
-        left: 740,
+        left: 875,
         top: 40,
       });
 
       const differenceTensColumn = createColumn({
         label: "Tens",
         idPrefix: "difference-tens",
-        left: 860,
+        left: 1015,
         top: 40,
       });
 
       const differenceOnesColumn = createColumn({
         label: "Ones",
         idPrefix: "difference-ones",
-        left: 980,
+        left: 1155,
         top: 40,
       });
 
-      
-      activityBox.appendChild(onesColumn);
+      activityBox.appendChild(minuendHundredsColumn);
+      activityBox.appendChild(minuendTensColumn);
+      activityBox.appendChild(minuendOnesColumn);
+      activityBox.appendChild(subtrahendHundredsColumn);
+      activityBox.appendChild(subtrahendTensColumn);
+      activityBox.appendChild(subtrahendOnesColumn);
+      activityBox.appendChild(differenceHundredsColumn);
+      activityBox.appendChild(differenceTensColumn);
+      activityBox.appendChild(differenceOnesColumn);
     });
   </script>
 

@@ -228,12 +228,14 @@ main {
 .block-ones {
   width: 10px;
   height: 10px;
+  border-radius: 2px;
   background-color: #ffd966;
 }
 
 .block-tens {
   width: 100px;
   height: 10px;
+  border-radius: 3px;
   background-color: #f5a623;
 }
 

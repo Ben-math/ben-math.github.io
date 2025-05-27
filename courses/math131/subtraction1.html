@@ -287,14 +287,14 @@
     }
 
     function restackZone(zone, excludedBlock = null) {
-      const blockHeight = 20;
+      const blockHeight = 10;
       const spacing = 4;
     
       const blocks = Array.from(document.querySelectorAll('.draggable-block'))
         .filter(block => block.currentZone === zone && block !== excludedBlock);
     
       blocks.forEach((block, index) => {
-        const baseX = parseFloat(zone.getBoundingClientRect().left) - activityBox.getBoundingClientRect().left + 4;
+        const baseX = parseFloat(zone.getBoundingClientRect().left) - activityBox.getBoundingClientRect().left + 2;
         const baseY = parseFloat(zone.getBoundingClientRect().bottom) - activityBox.getBoundingClientRect().top;
     
         block.style.left = `${baseX}px`;

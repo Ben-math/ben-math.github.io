@@ -247,21 +247,43 @@
 
     function canAcceptBlock(zone, blockType) {
       const count = parseInt(zone.dataset.blockCount || '0');
-      const currentType = zone.dataset.blockType;
-      const zoneClass = zone.className;
+      const currentType = zone.dataset.blockType || '';
+      const classList = zone.classList;
     
-      if (zoneClass.includes('regroup')) {
-        // Regroup rules
-        if (currentType === '' || currentType === blockType) {
-          if ((blockType === 'ones' || blockType === 'tens') && count < 10) return true;
-          if ((blockType === 'tens' || blockType === 'hundreds') && count < 1) return true;
+      const isRegroup = classList.contains('regroup-zone');
+      const isOnesRegroup = classList.contains('regroup-ones');
+      const isTensRegroup = classList.contains('regroup-tens');
+    
+      if (isRegroup) {
+        // ONES regroup zone: accepts only tens or ones
+        if (isOnesRegroup) {
+          if (blockType === 'tens') {
+            return (currentType === '' || currentType === 'tens') && count < 1;
+          }
+          if (blockType === 'ones') {
+            return (currentType === '' || currentType === 'ones') && count < 10;
+          }
+          return false;
         }
-        return false;
-      } else {
-        // Stack rules: only allow up to 19 of any type
-        return (currentType === '' || currentType === blockType) && count < 19;
+    
+        // TENS regroup zone: accepts only hundreds or tens
+        if (isTensRegroup) {
+          if (blockType === 'hundreds') {
+            return (currentType === '' || currentType === 'hundreds') && count < 1;
+          }
+          if (blockType === 'tens') {
+            return (currentType === '' || currentType === 'tens') && count < 10;
+          }
+          return false;
+        }
+    
+        return false; // any unknown regroup zone
       }
+    
+      // Normal stack zone
+      return (currentType === '' || currentType === blockType) && count < 19;
     }
+
 
 
     function registerBlock(zone, blockType) {

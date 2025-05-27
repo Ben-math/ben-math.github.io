@@ -156,7 +156,6 @@
         let bestZone = null;
         let bestOverlap = 0;
         let isValid = false;
-        let acceptsBlock = false;
       
         for (const zone of allZones) {
           const zoneRect = zone.getBoundingClientRect();
@@ -164,8 +163,8 @@
           if (overlap > bestOverlap) {
             bestOverlap = overlap;
             bestZone = zone;
-            isValid = getValidDropZones(type).includes(zone);
-            acceptsBlock = isValidZone && canAcceptBlock(zone, type);
+            const isValidZone = getValidDropZones(type).includes(zone);
+            const acceptsBlock = isValidZone && canAcceptBlock(zone, type);
           }
         }
       

@@ -107,6 +107,7 @@
     function makeDraggable(element, type) {
       let offsetX, offsetY, originalX, originalY;
       let isDragging = false;
+      let lastHoveredZone = null;
     
       element.addEventListener('mousedown', (e) => {
         isDragging = true;
@@ -125,12 +126,36 @@
         const newX = e.clientX - parentRect.left - offsetX;
         const newY = e.clientY - parentRect.top - offsetY;
     
-        // Prevent dragging outside the box
         const maxX = activityBox.clientWidth - element.offsetWidth;
         const maxY = activityBox.clientHeight - element.offsetHeight;
     
         element.style.left = `${Math.max(0, Math.min(newX, maxX))}px`;
         element.style.top = `${Math.max(0, Math.min(newY, maxY))}px`;
+    
+        // Highlight best overlapping zone
+        const blockRect = element.getBoundingClientRect();
+        const zones = getValidDropZones(type);
+        let bestZone = null;
+        let bestOverlap = 0;
+    
+        zones.forEach(zone => {
+          const zoneRect = zone.getBoundingClientRect();
+          const overlap = computeOverlapArea(blockRect, zoneRect);
+          if (overlap > bestOverlap) {
+            bestOverlap = overlap;
+            bestZone = zone;
+          }
+        });
+    
+        // Reset previous
+        if (lastHoveredZone && lastHoveredZone !== bestZone) {
+          lastHoveredZone.classList.remove('valid-hover', 'invalid-hover');
+        }
+    
+        if (bestZone) {
+          bestZone.classList.add('valid-hover');
+          lastHoveredZone = bestZone;
+        }
       });
     
       document.addEventListener('mouseup', () => {
@@ -138,21 +163,47 @@
         isDragging = false;
         element.style.cursor = 'grab';
     
-        // Check for valid drop zone
-        const validZones = getValidDropZones(type);
+        if (lastHoveredZone) {
+          lastHoveredZone.classList.remove('valid-hover', 'invalid-hover');
+        }
+    
         const blockRect = element.getBoundingClientRect();
-        const droppedInsideValidZone = validZones.some(zone => {
+        const zones = getValidDropZones(type);
+    
+        let bestZone = null;
+        let bestOverlap = 0;
+    
+        zones.forEach(zone => {
           const zoneRect = zone.getBoundingClientRect();
-          return isOverlapping(blockRect, zoneRect);
+          const overlap = computeOverlapArea(blockRect, zoneRect);
+          if (overlap > bestOverlap) {
+            bestOverlap = overlap;
+            bestZone = zone;
+          }
         });
     
-        if (!droppedInsideValidZone) {
-          // Return to original position
+        if (bestZone) {
+          const zoneBox = activityBox.getBoundingClientRect();
+          const targetX = bestZone.getBoundingClientRect().left - zoneBox.left + 5;
+          const targetY = bestZone.getBoundingClientRect().top - zoneBox.top + 5;
+          element.style.left = `${targetX}px`;
+          element.style.top = `${targetY}px`;
+        } else {
+          // Invalid drop
           element.style.left = `${originalX}px`;
           element.style.top = `${originalY}px`;
         }
+    
+        lastHoveredZone = null;
       });
     }
+
+    function computeOverlapArea(r1, r2) {
+      const x_overlap = Math.max(0, Math.min(r1.right, r2.right) - Math.max(r1.left, r2.left));
+      const y_overlap = Math.max(0, Math.min(r1.bottom, r2.bottom) - Math.max(r1.top, r2.top));
+      return x_overlap * y_overlap;
+    }
+
 
     function isOverlapping(rect1, rect2) {
       return !(

@@ -215,18 +215,20 @@
       activityBox.appendChild(differenceTensColumn);
       activityBox.appendChild(differenceOnesColumn);
 
-      function createDraggableBlock(x, y) {
+      function createDraggableBlock(x, y, type = 'ones') {
         const block = document.createElement('div');
-        block.classList.add('draggable-block');
+        block.classList.add('draggable-block', `block-${type}`);
         block.style.left = `${x}px`;
         block.style.top = `${y}px`;
         activityBox.appendChild(block);
         makeDraggable(block);
       }
+
       
-      createDraggableBlock(100, 100);
-      createDraggableBlock(200, 150);
-      createDraggableBlock(300, 120);
+      createDraggableBlock(100, 100, 'ones');
+      createDraggableBlock(200, 120, 'tens');
+      createDraggableBlock(300, 140, 'hundreds');
+
 
     });
   </script>

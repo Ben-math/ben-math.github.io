@@ -126,9 +126,10 @@
       
         // ❗ Unregister from previous zone if it exists
         if (element.currentZone) {
-          unregisterBlock(element.currentZone, type);
+          unregisterBlock(element.currentZone, type, element);
           element.currentZone = null;
         }
+
       });
 
     
@@ -285,13 +286,12 @@
       return (currentType === '' || currentType === blockType) && count < 19;
     }
 
-    function restackZone(zone) {
-      const blockHeight = 20;  // Adjust as needed
+    function restackZone(zone, excludedBlock = null) {
+      const blockHeight = 20;
       const spacing = 4;
     
-      // Get all children that are blocks
       const blocks = Array.from(document.querySelectorAll('.draggable-block'))
-        .filter(block => block.currentZone === zone);
+        .filter(block => block.currentZone === zone && block !== excludedBlock);
     
       blocks.forEach((block, index) => {
         const baseX = parseFloat(zone.getBoundingClientRect().left) - activityBox.getBoundingClientRect().left + 4;
@@ -303,6 +303,7 @@
     }
 
 
+
     function registerBlock(zone, blockType) {
       let count = parseInt(zone.dataset.blockCount || '0');
       zone.dataset.blockType = blockType;
@@ -310,7 +311,7 @@
       updateZoneLabel(zone);
     }
 
-    function unregisterBlock(zone, blockType) {
+    function unregisterBlock(zone, blockType, blockElement) {
       let count = parseInt(zone.dataset.blockCount || '0');
       count = Math.max(0, count - 1);
       zone.dataset.blockCount = count;
@@ -320,8 +321,11 @@
       }
     
       updateZoneLabel(zone);
-      restackZone(zone);  //  Restack after unregistering
+    
+      // Restack remaining blocks, excluding the one just removed
+      restackZone(zone, blockElement);
     }
+
 
 
     function updateZoneLabel(zone) {

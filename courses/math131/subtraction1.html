@@ -122,7 +122,14 @@
         originalY = parseFloat(element.style.top);
         element.style.zIndex = 1000;
         element.style.cursor = 'grabbing';
+      
+        // ❗ Unregister from previous zone if it exists
+        if (element.currentZone) {
+          unregisterBlock(element.currentZone, type);
+          element.currentZone = null;
+        }
       });
+
     
       document.addEventListener('mousemove', (e) => {
         if (!isDragging) return;
@@ -199,11 +206,13 @@
           element.style.top = `${targetY}px`;
         
           registerBlock(bestZone, type);
+          element.currentZone = bestZone; // ✅ Track where it ended up
         } else {
-          // Invalid drop
+          //  Invalid drop, return home
           element.style.left = `${originalX}px`;
           element.style.top = `${originalY}px`;
         }
+
 
     
         lastHoveredZone = null;
@@ -405,6 +414,7 @@
         block.classList.add('draggable-block', `block-${type}`);
         block.style.left = `${x}px`;
         block.style.top = `${y}px`;
+        block.currentZone = null; // Initially not in a zone
         activityBox.appendChild(block);
         makeDraggable(block, type); // pass the type
       }

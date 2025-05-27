@@ -28,100 +28,69 @@
       </script>
   </header>
   <main>
-    <div class="activity-box">
-        <button id="start-btn" class="rubber-button">Start!</button>
+    <div class="block-grid">
+      <div class="section-label">Minuend</div>
+      <div class="section-label">Subtrahend</div>
+      <div class="section-label">Difference</div>
     
-        <div id="problem" class="problem-area" style="display: none;">
-          <p id="question-text">What is ___ − ___? (Recall that each place value column must contain between 0 and 9 at the end!)</p>
-          <div id="block-display" class="block-display" style="display: none;">
-            <div class="block-section">
-              <h3>Starting Amount (Minuend)</h3>
-              <div class="block-columns">
-                <div class="block-column">
-                  <div class="block-label">Hundreds</div>
-                  <div class="block-stack" id="minuend-hundreds">
-                    <div class="regroup-zone"></div>
-                  </div>
-                  <div class="block-count" id="minuend-hundreds-count">4</div>
-                </div>
-                <div class="block-column">
-                  <div class="block-label">Tens</div>
-                  <div class="block-stack" id="minuend-tens">
-                    <div class="regroup-zone"></div>
-                  </div>
-                  <div class="block-count" id="minuend-tens-count">4</div>
-                </div>
-                <div class="block-column">
-                  <div class="block-label">Ones</div>
-                  <div class="block-stack" id="minuend-ones">
-                    <div class="regroup-zone"></div>
-                  </div>
-                  <div class="block-count" id="minuend-ones-count">4</div>
-                </div>
-              </div>
-            </div>
-          
-            <div class="block-section">
-              <h3>Take Away/Minus (Subtrahend)</h3>
-              <div class="block-columns">
-                <div class="block-column">
-                  <div class="block-label">Hundreds</div>
-                  <div class="block-stack" id="subtrahend-hundreds">
-                    <div class="regroup-zone"></div>
-                  </div>
-                  <div class="block-count" id="subtrahend-hundreds-count">4</div>
-                </div>
-                <div class="block-column">
-                  <div class="block-label">Tens</div>
-                  <div class="block-stack" id="subtrahend-tens">
-                    <div class="regroup-zone"></div>
-                  </div>
-                  <div class="block-count" id="subtrahend-tens-count">4</div>
-                </div>
-                <div class="block-column">
-                  <div class="block-label">Ones</div>
-                  <div class="block-stack" id="subtrahend-ones">
-                    <div class="regroup-zone"></div>
-                  </div>
-                  <div class="block-count" id="subtrahend-ones-count">4</div>
-                </div>
-              </div>
-            </div>
-
-          
-            <div class="block-section">
-              <h3>Result/Answer (Difference)</h3>
-              <div class="block-columns">
-                <div class="block-column">
-                  <div class="block-label">Hundreds</div>
-                  <div class="block-stack" id="difference-hundreds">
-                    <div class="regroup-zone"></div>
-                  </div>
-                  <div class="block-count" id="difference-hundreds-count">4</div>
-                </div>
-                <div class="block-column">
-                  <div class="block-label">Tens</div>
-                  <div class="block-stack" id="difference-tens">
-                    <div class="regroup-zone"></div>
-                  </div>
-                  <div class="block-count" id="difference-tens-count">4</div>
-                </div>
-                <div class="block-column">
-                  <div class="block-label">Ones</div>
-                  <div class="block-stack" id="difference-ones">
-                    <div class="regroup-zone"></div>
-                  </div>
-                  <div class="block-count" id="difference-ones-count">4</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <input type="number" id="user-answer" placeholder="Enter your answer">
-          <button id="check-answer-btn" class="rubber-button">Check Answer</button>
-          <p id="feedback"></p>
-        </div>
+      <!-- HUNDREDS COLUMNS -->
+      <div class="block-column">
+        <div class="block-label">Hundreds</div>
+        <div class="block-stack" id="minuend-hundreds"></div>
+        <div class="block-count" id="minuend-hundreds-count">0</div>
       </div>
+      <div class="block-column">
+        <div class="block-label">Hundreds</div>
+        <div class="block-stack" id="subtrahend-hundreds"></div>
+        <div class="block-count" id="subtrahend-hundreds-count">0</div>
+      </div>
+      <div class="block-column">
+        <div class="block-label">Hundreds</div>
+        <div class="block-stack" id="difference-hundreds"></div>
+        <div class="block-count" id="difference-hundreds-count">0</div>
+      </div>
+    
+      <!-- TENS COLUMNS -->
+      <div class="block-column">
+        <div class="block-label">Tens</div>
+        <div class="regroup-zone">Regroup</div>
+        <div class="block-stack" id="minuend-tens"></div>
+        <div class="block-count" id="minuend-tens-count">0</div>
+      </div>
+      <div class="block-column">
+        <div class="block-label">Tens</div>
+        <div class="regroup-zone">Regroup</div>
+        <div class="block-stack" id="subtrahend-tens"></div>
+        <div class="block-count" id="subtrahend-tens-count">0</div>
+      </div>
+      <div class="block-column">
+        <div class="block-label">Tens</div>
+        <div class="regroup-zone">Regroup</div>
+        <div class="block-stack" id="difference-tens"></div>
+        <div class="block-count" id="difference-tens-count">0</div>
+      </div>
+    
+      <!-- ONES COLUMNS -->
+      <div class="block-column">
+        <div class="block-label">Ones</div>
+        <div class="regroup-zone">Regroup</div>
+        <div class="block-stack" id="minuend-ones"></div>
+        <div class="block-count" id="minuend-ones-count">0</div>
+      </div>
+      <div class="block-column">
+        <div class="block-label">Ones</div>
+        <div class="regroup-zone">Regroup</div>
+        <div class="block-stack" id="subtrahend-ones"></div>
+        <div class="block-count" id="subtrahend-ones-count">0</div>
+      </div>
+      <div class="block-column">
+        <div class="block-label">Ones</div>
+        <div class="regroup-zone">Regroup</div>
+        <div class="block-stack" id="difference-ones"></div>
+        <div class="block-count" id="difference-ones-count">0</div>
+      </div>
+    </div>
+
   </main>
   <script>
     const startBtn = document.getElementById("start-btn");

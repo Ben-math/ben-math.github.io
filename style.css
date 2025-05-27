@@ -162,12 +162,13 @@ input[type="number"] {
 
 .block-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr); /* 3 sections horizontally */
-  grid-template-rows: auto repeat(3, auto); /* label row, then 3 row groups */
+  grid-template-columns: repeat(3, 1fr);  /* Minuend, Subtrahend, Difference */
+  grid-template-rows: auto auto auto auto; /* Header + 3 rows */
   gap: 1.5em;
   margin-top: 2em;
   justify-items: center;
 }
+
 
 /* Section titles (Minuend, etc.) */
 .section-label {

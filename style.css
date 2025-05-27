@@ -185,15 +185,28 @@ main {
 
 .regroup-zone {
   width: 100%;
-  height: 50px;
   background-color: #f0f0f0;
   border-bottom: 2px dashed #1a1a4b;
   text-align: center;
-  line-height: 50px;
   font-size: 12px;
   font-weight: bold;
+  line-height: normal;
   margin-bottom: 0.25em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
+/* Specific height for tens regroup zone */
+.regroup-tens {
+  height: 120px;
+}
+
+/* Specific height for ones regroup zone */
+.regroup-ones {
+  height: 30px;
+}
+
 
 .block-stack {
   flex: 1;

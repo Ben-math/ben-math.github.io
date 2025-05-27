@@ -256,20 +256,20 @@ input[type="number"] {
 
 /* Ones: Tall narrow block */
 .block-ones {
-  width: 20px;
-  height: 20px;
+  width: 10px;
+  height: 10px;
 }
 
 /* Tens: Flat horizontal block */
 .block-tens {
-  width: 80px;
-  height: 20px;
+  width: 100px;
+  height: 10px;
 }
 
 /* Hundreds: Large vertical square-ish block */
 .block-hundreds {
-  width: 80px;
-  height: 80px;
+  width: 100px;
+  height: 100px;
 }
 
 .stack-spacer {

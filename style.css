@@ -161,3 +161,11 @@ main {
   box-shadow: 2px 2px 0 #1a1a4b;
   border-radius: 6px;
 }
+
+#question-text {
+  text-align: center;
+  font-weight: bold;
+  font-size: 20px;
+  margin: 1em 0;
+}
+

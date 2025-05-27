@@ -216,8 +216,6 @@
           element.style.top = `${targetY}px`;
         
           registerBlock(bestZone, type);
-          bestZone.appendChild(draggedBlock);
-          draggedBlock.currentZone = bestZone;
           element.currentZone = bestZone; // ✅ Track where it ended up
         } else {
           //  Invalid drop, return home
@@ -305,34 +303,7 @@
       }
     
       updateZoneLabel(zone);
-      repositionBlocks(zone);
     }
-
-
-    function repositionBlocks(zone) {
-      console.log("Repositioning blocks in zone:", zone.id || zone.className);
-    
-      const allBlocks = Array.from(document.querySelectorAll('.block'));
-      const zoneBlocks = allBlocks.filter(block => block.currentZone === zone);
-      console.log("Blocks to reposition:", zoneBlocks.length);
-    
-      const blockType = zone.dataset.blockType;
-      const isHorizontal = (blockType === 'tens');
-    
-      zoneBlocks.forEach((block, index) => {
-        if (isHorizontal) {
-          block.style.top = `${index * 15}px`;
-          block.style.left = `0px`;
-        } else {
-          block.style.top = `${-index * 15}px`;
-          block.style.left = `0px`;
-        }
-      });
-    }
-
-
-
-
 
     function updateZoneLabel(zone) {
       if (!zone.querySelector('.zone-count')) {

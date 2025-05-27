@@ -286,22 +286,41 @@
 
     function restackZone(zone) {
       console.log('Restacking zone:', zone.id || zone.className);
-      const activityBox = document.getElementById('activity-box');
-      const zoneBox = activityBox.getBoundingClientRect();
-      const zoneRect = zone.getBoundingClientRect();
-      const blockHeight = 20;  // Match actual block height
+      const blockHeight = 20;  // Adjust as needed
       const spacing = 4;
     
+      // Get all children that are blocks
       const blocks = Array.from(document.querySelectorAll('.draggable-block'))
         .filter(block => block.currentZone === zone);
     
       blocks.forEach((block, index) => {
-        const targetX = zoneRect.left - zoneBox.left + 2;
-        const targetY = zoneRect.bottom - zoneBox.top - (index + 1) * (blockHeight + spacing) - 10;
-        block.style.left = `${targetX}px`;
-        block.style.top = `${targetY}px`;
+        const baseX = parseFloat(zone.getBoundingClientRect().left) - activityBox.getBoundingClientRect().left + 4;
+        const baseY = parseFloat(zone.getBoundingClientRect().bottom) - activityBox.getBoundingClientRect().top;
+    
+        block.style.left = `${baseX}px`;
+        block.style.top = `${baseY - (blockHeight + spacing) * (index + 1)}px`;
       });
     }
+        
+    
+    //function restackZone(zone) {
+      //console.log('Restacking zone:', zone.id || zone.className);
+      //const activityBox = document.getElementById('activity-box');
+      //const zoneBox = activityBox.getBoundingClientRect();
+      //const zoneRect = zone.getBoundingClientRect();
+      //const blockHeight = 20;  // Match actual block height
+      //const spacing = 4;
+    
+      //const blocks = Array.from(document.querySelectorAll('.draggable-block'))
+        //.filter(block => block.currentZone === zone);
+    
+      //blocks.forEach((block, index) => {
+        //const targetX = zoneRect.left - zoneBox.left + 2;
+        //const targetY = zoneRect.bottom - zoneBox.top - (index + 1) * (blockHeight + spacing) - 10;
+        //block.style.left = `${targetX}px`;
+        //block.style.top = `${targetY}px`;
+      //});
+    //}
 
     function registerBlock(zone, blockType) {
       let count = parseInt(zone.dataset.blockCount || '0');

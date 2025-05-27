@@ -170,6 +170,7 @@
         }
       
         if (bestZone) {
+          console.log('Best zone:', bestZone.classList, 'Accepts block?', acceptsBlock);
           lastHoveredZone = bestZone;
           bestZone.classList.add(acceptsBlock ? 'valid-hover' : 'invalid-hover');
         }

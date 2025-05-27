@@ -262,14 +262,14 @@ input[type="number"] {
 
 /* Tens: Flat horizontal block */
 .block-tens {
-  width: 100px;
+  width: 90px;
   height: 10px;
 }
 
 /* Hundreds: Large vertical square-ish block */
 .block-hundreds {
-  width: 100px;
-  height: 100px;
+  width: 90px;
+  height: 90px;
 }
 
 .stack-spacer {

@@ -200,8 +200,18 @@
     
         if (bestZone && getValidDropZones(type).includes(bestZone) && canAcceptBlock(bestZone, type)) {
           const zoneBox = activityBox.getBoundingClientRect();
-          const targetX = bestZone.getBoundingClientRect().left - zoneBox.left + 5;
-          const targetY = bestZone.getBoundingClientRect().top - zoneBox.top + 5;
+          const zoneRect = bestZone.getBoundingClientRect();
+          const blockHeight = element.offsetHeight;
+          const blockCount = parseInt(bestZone.dataset.blockCount || '0');
+          
+          // Position from bottom up
+          const spacing = 4; // optional space between blocks
+          const targetX = zoneRect.left - zoneBox.left + 5;
+          const targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight + spacing);
+          
+          element.style.left = `${targetX}px`;
+          element.style.top = `${targetY}px`;
+
           element.style.left = `${targetX}px`;
           element.style.top = `${targetY}px`;
         

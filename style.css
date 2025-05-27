@@ -217,3 +217,11 @@ main {
   font-weight: bold;
 }
 
+.activity-text {
+  position: absolute;
+  font-size: 18px;
+  color: #1a1a4b;
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  font-weight: bold;
+}
+

@@ -199,12 +199,12 @@ main {
 
 /* Specific height for tens regroup zone */
 .regroup-tens {
-  height: 130px;
+  height: 120px;
 }
 
 /* Specific height for ones regroup zone */
 .regroup-ones {
-  height: 40px;
+  height: 30px;
 }
 
 

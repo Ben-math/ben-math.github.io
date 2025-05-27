@@ -58,6 +58,8 @@
       labelDiv.textContent = label;
       column.appendChild(labelDiv);
 
+      const place = label.toLowerCase();
+
       if (hasRegroup) {
         const regroup = document.createElement('div');
         regroup.classList.add('regroup-zone');
@@ -70,6 +72,8 @@
         }
       
         regroup.textContent = '⇆';
+        regroup.classList.add('drop-zone');
+        regroup.classList.add(`drop-${place}-regroup`);
         column.appendChild(regroup);
       }
 
@@ -78,6 +82,8 @@
       stack.classList.add('block-stack');
       stack.id = `${idPrefix}-stack`;
       column.appendChild(stack);
+      stack.classList.add('drop-zone');
+      stack.classList.add(`drop-${place}`); // 'ones', 'tens', 'hundreds'
     
       const count = document.createElement('div');
       count.classList.add('block-count');
@@ -97,30 +103,92 @@
       activityBox.appendChild(txt);
     }
 
-    function makeDraggable(element) {
-      let offsetX, offsetY;
+    function makeDraggable(element, type) {
+      let offsetX, offsetY, originalX, originalY;
       let isDragging = false;
     
       element.addEventListener('mousedown', (e) => {
         isDragging = true;
         offsetX = e.offsetX;
         offsetY = e.offsetY;
+        originalX = parseFloat(element.style.left);
+        originalY = parseFloat(element.style.top);
         element.style.zIndex = 1000;
         element.style.cursor = 'grabbing';
       });
     
       document.addEventListener('mousemove', (e) => {
         if (!isDragging) return;
+    
         const parentRect = activityBox.getBoundingClientRect();
-        element.style.left = `${e.clientX - parentRect.left - offsetX}px`;
-        element.style.top = `${e.clientY - parentRect.top - offsetY}px`;
+        const newX = e.clientX - parentRect.left - offsetX;
+        const newY = e.clientY - parentRect.top - offsetY;
+    
+        // Prevent dragging outside the box
+        const maxX = activityBox.clientWidth - element.offsetWidth;
+        const maxY = activityBox.clientHeight - element.offsetHeight;
+    
+        element.style.left = `${Math.max(0, Math.min(newX, maxX))}px`;
+        element.style.top = `${Math.max(0, Math.min(newY, maxY))}px`;
       });
     
       document.addEventListener('mouseup', () => {
+        if (!isDragging) return;
         isDragging = false;
         element.style.cursor = 'grab';
+    
+        // Check for valid drop zone
+        const validZones = getValidDropZones(type);
+        const blockRect = element.getBoundingClientRect();
+        const droppedInsideValidZone = validZones.some(zone => {
+          const zoneRect = zone.getBoundingClientRect();
+          return isOverlapping(blockRect, zoneRect);
+        });
+    
+        if (!droppedInsideValidZone) {
+          // Return to original position
+          element.style.left = `${originalX}px`;
+          element.style.top = `${originalY}px`;
+        }
       });
     }
+
+    function isOverlapping(rect1, rect2) {
+      return !(
+        rect1.right < rect2.left ||
+        rect1.left > rect2.right ||
+        rect1.bottom < rect2.top ||
+        rect1.top > rect2.bottom
+      );
+    }
+    
+    function getValidDropZones(type) {
+      const zones = Array.from(document.querySelectorAll('.drop-zone'));
+    
+      switch (type) {
+        case 'ones':
+          return zones.filter(z =>
+            z.classList.contains('drop-ones') &&
+            (z.id.includes('subtrahend') || z.id.includes('difference'))
+          );
+        case 'tens':
+          return zones.filter(z =>
+            (z.classList.contains('drop-tens') ||
+             z.classList.contains('drop-ones-regroup')) &&
+            (z.id.includes('subtrahend') || z.id.includes('difference'))
+          );
+        case 'hundreds':
+          return zones.filter(z =>
+            (z.classList.contains('drop-hundreds') ||
+             z.classList.contains('drop-tens-regroup')) &&
+            (z.id.includes('subtrahend') || z.id.includes('difference'))
+          );
+        default:
+          return [];
+      }
+    }
+
+
 
 
   
@@ -230,8 +298,9 @@
         block.style.left = `${x}px`;
         block.style.top = `${y}px`;
         activityBox.appendChild(block);
-        makeDraggable(block);
+        makeDraggable(block, type); // pass the type
       }
+
 
       
       createDraggableBlock(100, 100, 'ones');

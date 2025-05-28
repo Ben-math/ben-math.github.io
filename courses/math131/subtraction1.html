@@ -738,10 +738,10 @@
     
         console.log('Blocks to remove (MERGE):', blocks.length);
     
-        blocks.slice(0, 10).forEach(b => zone.removeChild(b));
-    
-        zone.dataset.blockCount = '0';
-        zone.dataset.blockType = '';
+        blocks.slice(0, 10).forEach(b => {
+          unregisterBlock(zone, zoneType, b);
+          b.remove();
+        });
     
         const zoneRect = zone.getBoundingClientRect();
         const boxRect = document.getElementById('activity-box').getBoundingClientRect();
@@ -749,33 +749,36 @@
         const y = zoneRect.bottom - boxRect.top - 30;
         createDraggableBlock(x, y, newType);
     
+        zone.dataset.blockCount = '0';
+        zone.dataset.blockType = '';
+    
       // --- BREAK ---
       } else if (count === 1 && zoneBlockType !== zoneType && zoneType !== null) {
         console.log('🟠 Attempting BREAK');
-      
-        const oldBlock = Array.from(zone.children).find(child => child.classList.contains('draggable-block'));
-
+    
+        const oldBlock = Array.from(document.querySelectorAll('.draggable-block'))
+          .find(block => block.currentZone === zone);
+    
         if (!oldBlock) {
           console.log('❌ No block found for breaking');
           return;
         }
-        
+    
         unregisterBlock(zone, zoneBlockType, oldBlock);
-        zone.removeChild(oldBlock);
-
-      
+        oldBlock.remove();
+    
         const newType = zoneType;
         const zoneRect = zone.getBoundingClientRect();
         const boxRect = document.getElementById('activity-box').getBoundingClientRect();
         const baseX = zoneRect.left - boxRect.left + 4;
         const baseY = zoneRect.bottom - boxRect.top - 30;
-      
+    
         for (let i = 0; i < 10; i++) {
           const x = newType === 'ones' ? baseX + i * 12 : baseX;
           const y = newType === 'ones' ? baseY : baseY - i * 24;
           createDraggableBlock(x, y, newType);
         }
-      
+    
         zone.dataset.blockCount = '0';
         zone.dataset.blockType = '';
       } else {
@@ -784,6 +787,7 @@
     
       updateZoneLabel(zone);
     });
+
 
 
     

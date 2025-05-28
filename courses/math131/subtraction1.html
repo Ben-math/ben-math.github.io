@@ -400,7 +400,7 @@
       const count = parseInt(zone.dataset.blockCount || '0');
       label.textContent = count;
     
-      //  Check if this zone is part of a column and update the overall column value
+      // 🔍 Update total column value
       const column = zone.closest('.column');
       if (!column) return;
     
@@ -408,8 +408,13 @@
       const regroupZone = column.querySelector('.regroup-zone');
       let stackCount = parseInt(stackZone?.dataset.blockCount || '0');
       let regroupCount = parseInt(regroupZone?.dataset.blockCount || '0');
-      const stackType = stackZone?.dataset.blockType || '';
+      let stackType = stackZone?.dataset.blockType || '';
       const regroupType = regroupZone?.dataset.blockType || '';
+    
+      // ⚠ If stack is empty, assume regroupType is the column type
+      if (stackCount === 0) {
+        stackType = regroupType;
+      }
     
       let columnValue = stackCount;
     
@@ -426,6 +431,7 @@
         valueLabel.textContent = columnValue;
       }
     }
+
 
 
 

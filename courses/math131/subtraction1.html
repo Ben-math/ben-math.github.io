@@ -79,6 +79,17 @@
         regroup.classList.add(`drop-${place}-regroup`);
         regroup.dataset.blockType = ''; // empty means nothing yet
         regroup.dataset.blockCount = '0';
+        
+        // Add merge/break button (hidden by default)
+        const actionButton = document.createElement('button');
+        actionButton.classList.add('rubber-button', 'merge-break-btn');
+        actionButton.style.display = 'none';
+        actionButton.style.position = 'absolute';
+        actionButton.style.top = '-22px';
+        actionButton.style.right = '0px';
+        actionButton.textContent = '';
+        regroup.appendChild(actionButton);
+
       }
 
     
@@ -456,6 +467,37 @@
       if (valueLabel) {
         valueLabel.textContent = columnValue;
       }
+
+      //  Show Merge/Break button when regroup zone is full
+      const button = zone.querySelector('.merge-break-btn');
+      if (button) {
+        const isRegroup = zone.classList.contains('regroup-zone');
+    
+        if (!isRegroup) {
+          button.style.display = 'none';
+          return;
+        }
+    
+        const expectedType = stackType || regroupType;
+        let shouldShow = false;
+        let isMerge = false;
+    
+        if (regroupCount === 10 && regroupType === expectedType) {
+          shouldShow = true;
+          isMerge = true;
+        } else if (regroupCount === 1 && regroupType !== expectedType && expectedType !== '') {
+          shouldShow = true;
+          isMerge = false;
+        }
+    
+        if (shouldShow) {
+          button.style.display = 'block';
+          button.textContent = isMerge ? 'Merge' : 'Break';
+        } else {
+          button.style.display = 'none';
+        }
+      }
+
     }
 
 

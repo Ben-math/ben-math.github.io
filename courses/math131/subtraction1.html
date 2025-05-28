@@ -467,7 +467,7 @@
       if (valueLabel) {
         valueLabel.textContent = columnValue;
       }
-
+    
       //  Show Merge/Break button when regroup zone is full
       const button = zone.querySelector('.merge-break-btn');
       if (button) {
@@ -478,7 +478,6 @@
           return;
         }
     
-        const expectedType = stackType || regroupType;
         let shouldShow = false;
         let isMerge = false;
     
@@ -497,8 +496,8 @@
           button.style.display = 'none';
         }
       }
-
     }
+
 
 
 

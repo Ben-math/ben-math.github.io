@@ -300,7 +300,7 @@
       const isOnesRegroup = zone.classList.contains('regroup-ones');
       const isTensRegroup = zone.classList.contains('regroup-tens');
     
-      const blockWidth = 20;  // Adjust as needed
+      const blockWidth = 13;  // Adjust as needed
       const blockHeight = 13; // Adjust as needed
       const spacing = 4;
     
@@ -310,7 +310,7 @@
     
         if (isOnesRegroup) {
           // Stack horizontally in the ones regroup zone
-          x = baseX + 2 + index * (blockWidth + spacing);
+          x = baseX + 2 + index * (blockWidth);
           y = baseY - blockHeight - 10;
         } else if (isTensRegroup) {
           // Slightly tighter vertical stack in tens regroup

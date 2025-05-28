@@ -141,6 +141,13 @@
           element.currentZone = null;
         }
 
+        element.originalZone = element.currentZone;
+        if (element.currentZone) {
+          unregisterBlock(element.currentZone, type, element);
+          element.currentZone = null;
+        }
+
+
       });
 
     
@@ -242,11 +249,15 @@
             targetY = zoneRect.bottom - zoneBox.top - blockHeight - 10;
           }
           
-          element.style.left = `${targetX}px`;
-          element.style.top = `${targetY}px`;
+          element.style.left = `${originalX}px`;
+          element.style.top = `${originalY}px`;
+          
+          if (element.originalZone) {
+            registerBlock(element.originalZone, type);
+            element.currentZone = element.originalZone;
+            restackZone(element.originalZone);
+          }
 
-          element.style.left = `${targetX}px`;
-          element.style.top = `${targetY}px`;
         
           registerBlock(bestZone, type);
           element.currentZone = bestZone; //  Track where it ended up

@@ -205,11 +205,26 @@
           const zoneRect = bestZone.getBoundingClientRect();
           const blockHeight = element.offsetHeight;
           const blockCount = parseInt(bestZone.dataset.blockCount || '0');
-          
-          // Position from bottom up
-          const spacing = 4; // optional space between blocks
-          const targetX = zoneRect.left - zoneBox.left + 2;
-          const targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight + spacing) - 10;
+
+          const classList = zone.classList;
+    
+          const isRegroup = classList.contains('regroup-zone');
+          const isOnesRegroup = classList.contains('regroup-ones');
+          const isTensRegroup = classList.contains('regroup-tens');
+
+          if (!isRegroup) {
+            // Position from bottom up
+            const spacing = 4; // optional space between blocks
+            const targetX = zoneRect.left - zoneBox.left + 2;
+            const targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight + spacing) - 10;
+          } else if (isTensRegroup) {
+            // Position from bottom up, with less spacing
+            const spacing = 0; // optional space between blocks
+            const targetX = zoneRect.left - zoneBox.left + 2;
+            const targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight + spacing) - 10;
+          } else if (isOnesRegroup) {
+
+          }
           
           element.style.left = `${targetX}px`;
           element.style.top = `${targetY}px`;
@@ -313,7 +328,7 @@
           y = baseY - blockHeight - 10;
         } else if (isTensRegroup) {
           // Slightly tighter vertical stack in tens regroup
-          y = baseY - (blockHeight + 2) * (index + 1) - 10;
+          y = baseY - (blockHeight) * (index + 1) - 10;
         }
     
         block.style.left = `${x}px`;

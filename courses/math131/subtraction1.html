@@ -135,12 +135,15 @@
         originalY = parseFloat(element.style.top);
         element.style.zIndex = 1000;
         element.style.cursor = 'grabbing';
+        element.originalZone = element.currentZone;
       
         // ❗ Unregister from previous zone if it exists
         if (element.currentZone) {
           unregisterBlock(element.currentZone, type, element);
           element.currentZone = null;
         }
+
+
 
       });
 

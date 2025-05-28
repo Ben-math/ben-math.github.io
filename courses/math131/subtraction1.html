@@ -393,13 +393,40 @@
         countLabel.style.bottom = '2px';
         countLabel.style.right = '5px';
         countLabel.style.fontSize = '12px';
-        countLabel.classList.add('zone-count');
         zone.appendChild(countLabel);
       }
     
       const label = zone.querySelector('.zone-count');
-      label.textContent = zone.dataset.blockCount;
+      const count = parseInt(zone.dataset.blockCount || '0');
+      label.textContent = count;
+    
+      //  Check if this zone is part of a column and update the overall column value
+      const column = zone.closest('.column');
+      if (!column) return;
+    
+      const stackZone = column.querySelector('.block-stack');
+      const regroupZone = column.querySelector('.regroup-zone');
+      let stackCount = parseInt(stackZone?.dataset.blockCount || '0');
+      let regroupCount = parseInt(regroupZone?.dataset.blockCount || '0');
+      const stackType = stackZone?.dataset.blockType || '';
+      const regroupType = regroupZone?.dataset.blockType || '';
+    
+      let columnValue = stackCount;
+    
+      if (regroupCount > 0) {
+        if (regroupType === stackType) {
+          columnValue += regroupCount;
+        } else {
+          columnValue += 10 * regroupCount;
+        }
+      }
+    
+      const valueLabel = column.querySelector('.block-count');
+      if (valueLabel) {
+        valueLabel.textContent = columnValue;
+      }
     }
+
 
 
     

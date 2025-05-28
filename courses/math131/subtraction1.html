@@ -258,6 +258,13 @@
           //  Invalid drop, return home
           element.style.left = `${originalX}px`;
           element.style.top = `${originalY}px`;
+          
+          if (element.originalZone) {
+            registerBlock(element.originalZone, type);
+            element.currentZone = element.originalZone;
+            restackZone(element.originalZone);
+          }
+
         }
 
 

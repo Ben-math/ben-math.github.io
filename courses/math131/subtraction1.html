@@ -222,6 +222,7 @@
 
           const classList = bestZone.classList;
           const isRegroup = classList.contains('regroup-zone');
+          const isHundreds = zone.classList.contains('hundreds');
           const isOnesRegroup = classList.contains('regroup-ones');
           const isTensRegroup = classList.contains('regroup-tens');
 
@@ -231,7 +232,12 @@
           let targetX = 0;
           let targetY = 0;
 
-          if (!isRegroup) {
+          if (isHundreds) {
+            // Position from bottom up
+            const spacing = 4; // optional space between blocks
+            targetX = zoneRect.left - zoneBox.left + 2;
+            targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (103 + spacing) - 100;
+          } else if (!isRegroup) {
             // Position from bottom up
             const spacing = 4; // optional space between blocks
             targetX = zoneRect.left - zoneBox.left + 2;
@@ -343,7 +349,7 @@
         let y = baseY - (blockHeight + spacing) * (index + 1) - 10;
 
         if (isHundreds) {
-          y = baseY - (blockHeight + spacing) * (index + 1) - 100;
+          y = baseY - (103 + spacing) * (index + 1) - 100;
         } else if (isOnesRegroup) {
           // Stack horizontally in the ones regroup zone
           x = baseX + index * (blockWidth);
@@ -541,8 +547,8 @@
   
     startBtn.addEventListener('click', () => {
       // Generate two numbers between 1 and 199
-      let a = Math.floor(Math.random() * 199) + 1;
-      let b = Math.floor(Math.random() * 199) + 1;
+      let a = Math.floor(Math.random() * 500) + 1;
+      let b = Math.floor(Math.random() * 500) + 1;
   
       if (b > a) [a, b] = [b, a]; // ensure a ≥ b
   

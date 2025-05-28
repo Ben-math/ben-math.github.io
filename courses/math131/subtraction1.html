@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -385,30 +386,20 @@
 
 
     function updateZoneLabel(zone) {
-      const column = zone.closest('.column');
-      const countDisplay = column.querySelector('.block-count');
-      if (!countDisplay) return;
+      if (!zone.querySelector('.zone-count')) {
+        const countLabel = document.createElement('div');
+        countLabel.classList.add('zone-count');
+        countLabel.style.position = 'absolute';
+        countLabel.style.bottom = '2px';
+        countLabel.style.right = '5px';
+        countLabel.style.fontSize = '12px';
+        countLabel.classList.add('zone-count');
+        zone.appendChild(countLabel);
+      }
     
-      let totalValue = 0;
-    
-      // Sum values in the main stack
-      const stack = column.querySelector('.block-stack');
-      const stackBlocks = stack ? Array.from(document.querySelectorAll('.draggable-block')).filter(b => b.currentZone === stack) : [];
-      stackBlocks.forEach(block => {
-        totalValue += '1');
-      });
-    
-      // Sum values in the regroup zone
-      const regroupZone = column.querySelector('.regroup-zone');
-      const regroupBlocks = regroupZone ? Array.from(document.querySelectorAll('.draggable-block')).filter(b => b.currentZone === regroupZone) : [];
-      regroupBlocks.forEach(block => {
-        totalValue += '10');
-      });
-    
-      countDisplay.textContent = totalValue;
+      const label = zone.querySelector('.zone-count');
+      label.textContent = zone.dataset.blockCount;
     }
-
-
 
 
     

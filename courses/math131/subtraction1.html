@@ -700,45 +700,67 @@
     document.getElementById('activity-box').addEventListener('click', (e) => {
       if (!e.target.classList.contains('merge-break-btn')) return;
     
-      const zone = e.target.closest('.regroup-zone');
-      const column = zone.closest('.column');
+      console.log('Merge/Break button clicked');
     
+      const zone = e.target.closest('.regroup-zone');
+      if (!zone) {
+        console.log('❌ No regroup zone found');
+        return;
+      }
+    
+      const column = zone.closest('.column');
       const stackZone = column.querySelector('.block-stack');
       const zoneType = stackZone.id.includes('ones') ? 'ones' :
-                       stackZone.id.includes('tens') ? 'tens' : 'hundreds';
+                       stackZone.id.includes('tens') ? 'tens' :
+                       stackZone.id.includes('hundreds') ? 'hundreds' : null;
+    
+      console.log('Zone Type:', zoneType);
     
       const zoneBlockType = zone.dataset.blockType;
       const count = parseInt(zone.dataset.blockCount || '0');
     
+      console.log('Block Count:', count, 'Block Type:', zoneBlockType);
+    
+      // --- MERGE ---
       if (count === 10 && zoneBlockType === zoneType) {
-        // MERGE: 10 smaller blocks → 1 larger block
         const newType = zoneType === 'ones' ? 'tens' :
                         zoneType === 'tens' ? 'hundreds' : null;
-        if (!newType) return;
     
-        // Remove all 10 blocks
+        console.log('🟢 Attempting MERGE to:', newType);
+    
+        if (!newType) {
+          console.log('❌ Invalid merge target type');
+          return;
+        }
+    
         const blocks = Array.from(document.querySelectorAll('.draggable-block'))
           .filter(b => b.currentZone === zone);
-        blocks.slice(0, 10).forEach(b => {
-          zone.removeChild(b);
-        });
     
-        // Reset count
+        console.log('Blocks to remove (MERGE):', blocks.length);
+    
+        blocks.slice(0, 10).forEach(b => zone.removeChild(b));
+    
         zone.dataset.blockCount = '0';
         zone.dataset.blockType = '';
     
-        // Add 1 larger block
         const zoneRect = zone.getBoundingClientRect();
         const boxRect = document.getElementById('activity-box').getBoundingClientRect();
         const x = zoneRect.left - boxRect.left + 4;
         const y = zoneRect.bottom - boxRect.top - 30;
         createDraggableBlock(x, y, newType);
     
-      } else if (count === 1 && zoneBlockType !== zoneType) {
-        // BREAK: 1 larger block → 10 smaller blocks
+      // --- BREAK ---
+      } else if (count === 1 && zoneBlockType !== zoneType && zoneType !== null) {
+        console.log('🟠 Attempting BREAK');
+    
         const oldBlock = Array.from(document.querySelectorAll('.draggable-block'))
           .find(b => b.currentZone === zone);
-        if (!oldBlock) return;
+    
+        if (!oldBlock) {
+          console.log('❌ No block found for breaking');
+          return;
+        }
+    
         zone.removeChild(oldBlock);
     
         const newType = zoneType;
@@ -747,20 +769,21 @@
         const baseX = zoneRect.left - boxRect.left + 4;
         const baseY = zoneRect.bottom - boxRect.top - 30;
     
-        // Add 10 smaller blocks
         for (let i = 0; i < 10; i++) {
-          const x = baseX + (newType === 'ones' ? i * 12 : 0); // horizontal layout for ones
-          const y = baseY - (newType !== 'ones' ? i * 24 : 0); // vertical layout for tens
+          const x = newType === 'ones' ? baseX + i * 12 : baseX;
+          const y = newType === 'ones' ? baseY : baseY - i * 24;
           createDraggableBlock(x, y, newType);
         }
     
-        // Reset count
         zone.dataset.blockCount = '0';
         zone.dataset.blockType = '';
+      } else {
+        console.log('⚪ Condition not met for Merge or Break');
       }
     
       updateZoneLabel(zone);
     });
+
 
     
   </script>

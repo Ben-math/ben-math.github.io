@@ -365,6 +365,8 @@
       zone.dataset.blockType = blockType;
       zone.dataset.blockCount = count + 1;
       updateZoneLabel(zone);
+      const parentColumn = zone.closest('.column');
+      if (parentColumn) updateColumnValue(parentColumn);
     }
 
     function unregisterBlock(zone, blockType, blockElement) {
@@ -380,6 +382,8 @@
     
       // Restack remaining blocks, excluding the one just removed
       restackZone(zone, blockElement);
+      const parentColumn = zone.closest('.column');
+      if (parentColumn) updateColumnValue(parentColumn);
     }
 
 
@@ -399,6 +403,30 @@
       const label = zone.querySelector('.zone-count');
       label.textContent = zone.dataset.blockCount;
     }
+
+    function updateColumnValue(column) {
+      const countDisplay = column.querySelector('.block-count');
+      if (!countDisplay) return;
+    
+      let totalValue = 0;
+    
+      // Sum values in the main stack
+      const stack = column.querySelector('.block-stack');
+      const stackBlocks = stack ? Array.from(document.querySelectorAll('.draggable-block')).filter(b => b.currentZone === stack) : [];
+      stackBlocks.forEach(block => {
+        totalValue += parseInt(block.dataset.value || '0');
+      });
+    
+      // Sum values in the regroup zone
+      const regroupZone = column.querySelector('.regroup-zone');
+      const regroupBlocks = regroupZone ? Array.from(document.querySelectorAll('.draggable-block')).filter(b => b.currentZone === regroupZone) : [];
+      regroupBlocks.forEach(block => {
+        totalValue += parseInt(block.dataset.value || '0');
+      });
+    
+      countDisplay.textContent = totalValue;
+    }
+
 
 
     
@@ -534,6 +562,7 @@
 
       function createDraggableBlock(x, y, type = 'ones') {
         const block = document.createElement('div');
+        block.dataset.value = (type === 'ones') ? 1 : (type === 'tens') ? 10 : 100;
         block.classList.add('draggable-block', `block-${type}`);
         block.style.left = `${x}px`;
         block.style.top = `${y}px`;

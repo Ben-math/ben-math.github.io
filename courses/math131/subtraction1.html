@@ -206,25 +206,11 @@
           const blockHeight = element.offsetHeight;
           const blockCount = parseInt(bestZone.dataset.blockCount || '0');
 
-          const classList = zone.classList;
-    
-          const isRegroup = classList.contains('regroup-zone');
-          const isOnesRegroup = classList.contains('regroup-ones');
-          const isTensRegroup = classList.contains('regroup-tens');
 
-          if (!isRegroup) {
-            // Position from bottom up
-            const spacing = 4; // optional space between blocks
-            const targetX = zoneRect.left - zoneBox.left + 2;
-            const targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight + spacing) - 10;
-          } else if (isTensRegroup) {
-            // Position from bottom up, with less spacing
-            const spacing = 0; // optional space between blocks
-            const targetX = zoneRect.left - zoneBox.left + 2;
-            const targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight + spacing) - 10;
-          } else if (isOnesRegroup) {
-
-          }
+          // Position from bottom up
+          const spacing = 4; // optional space between blocks
+          const targetX = zoneRect.left - zoneBox.left + 2;
+          const targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight + spacing) - 10;
           
           element.style.left = `${targetX}px`;
           element.style.top = `${targetY}px`;

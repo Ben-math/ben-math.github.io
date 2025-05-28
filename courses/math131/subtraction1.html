@@ -239,7 +239,7 @@
           element.style.top = `${targetY}px`;
         
           registerBlock(bestZone, type);
-          element.currentZone = bestZone; // ✅ Track where it ended up
+          element.currentZone = bestZone; //  Track where it ended up
         } else {
           //  Invalid drop, return home
           element.style.left = `${originalX}px`;
@@ -400,7 +400,7 @@
       const count = parseInt(zone.dataset.blockCount || '0');
       label.textContent = count;
     
-      // 🔍 Update total column value
+      //  Update total column value
       const column = zone.closest('.column');
       if (!column) return;
     

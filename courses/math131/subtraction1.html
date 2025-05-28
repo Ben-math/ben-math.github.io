@@ -204,7 +204,6 @@
           const zoneBox = activityBox.getBoundingClientRect();
           const zoneRect = bestZone.getBoundingClientRect();
           const blockHeight = element.offsetHeight;
-          console.log('blockHeight is:', blockHeight);
           const blockCount = parseInt(bestZone.dataset.blockCount || '0');
           
           // Position from bottom up
@@ -288,7 +287,7 @@
     }
 
     function restackZone(zone, excludedBlock = null) {
-      const blockHeight = 10;
+      const blockHeight = 13;
       const spacing = 4;
     
       const blocks = Array.from(document.querySelectorAll('.draggable-block'))

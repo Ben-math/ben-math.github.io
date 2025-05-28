@@ -464,6 +464,23 @@
     }
 
 
+    function createBlock(x, y, type = 'ones', draggable = true) {
+      const block = document.createElement('div');
+      block.classList.add('draggable-block', `block-${type}`);
+      block.style.left = `${x}px`;
+      block.style.top = `${y}px`;
+      block.currentZone = null; // Initially not in a zone
+    
+      activityBox.appendChild(block);
+    
+      if (draggable) {
+        makeDraggable(block, type);
+      }
+    
+      return block;
+    }
+
+
 
 
   
@@ -567,33 +584,17 @@
       activityBox.appendChild(differenceTensColumn);
       activityBox.appendChild(differenceOnesColumn);
 
-      function createBlock(x, y, type = 'ones', draggable = true) {
-        const block = document.createElement('div');
-        block.classList.add('draggable-block', `block-${type}`);
-        block.style.left = `${x}px`;
-        block.style.top = `${y}px`;
-        block.currentZone = null; // Initially not in a zone
-      
-        activityBox.appendChild(block);
-      
-        if (draggable) {
-          makeDraggable(block, type);
-        }
-      
-        return block;
-      }
-
 
 
       
-      createDraggableBlock(100, 100, 'ones', true);
-      createDraggableBlock(100, 200, 'ones', true);
-      createDraggableBlock(100, 300, 'ones', true);
-      createDraggableBlock(100, 400, 'ones', true);
-      createDraggableBlock(200, 120, 'tens', true);
-      createDraggableBlock(400, 120, 'tens', true);
-      createDraggableBlock(500, 120, 'tens', true);
-      createDraggableBlock(300, 140, 'hundreds', true);
+      createBlock(100, 100, 'ones', true);
+      createBlock(100, 200, 'ones', true);
+      createBlock(100, 300, 'ones', true);
+      createBlock(100, 400, 'ones', true);
+      createBlock(200, 120, 'tens', true);
+      createBlock(400, 120, 'tens', true);
+      createBlock(500, 120, 'tens', true);
+      createBlock(300, 140, 'hundreds', true);
 
 
     });

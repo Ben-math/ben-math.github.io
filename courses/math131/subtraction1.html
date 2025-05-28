@@ -73,6 +73,10 @@
         } else if (label.toLowerCase() === 'ones') {
           regroup.classList.add('regroup-ones');
         }
+
+        if (label.toLowerCase() === 'hundreds') {
+          regroup.classList.add('hundreds');
+        }
       
         regroup.textContent = '⇆';
         regroup.id = `${idPrefix}-regroup`;

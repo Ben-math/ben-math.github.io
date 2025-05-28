@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -222,7 +223,6 @@
 
           const classList = bestZone.classList;
           const isRegroup = classList.contains('regroup-zone');
-          const isHundreds = zone.classList.contains('hundreds');
           const isOnesRegroup = classList.contains('regroup-ones');
           const isTensRegroup = classList.contains('regroup-tens');
 
@@ -232,11 +232,6 @@
           let targetX = 0;
           let targetY = 0;
 
-          //if (isHundreds) {
-            // Position from bottom up
-            //const spacing = 4; // optional space between blocks
-            //targetX = zoneRect.left - zoneBox.left + 2;
-            //targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (103 + spacing) - 100;
           if (!isRegroup) {
             // Position from bottom up
             const spacing = 4; // optional space between blocks

@@ -207,6 +207,14 @@
           const blockCount = parseInt(bestZone.dataset.blockCount || '0');
 
           const classList = bestZone.classList;
+          const isRegroup = classList.contains('regroup-zone');
+          const isOnesRegroup = classList.contains('regroup-ones');
+          const isTensRegroup = classList.contains('regroup-tens');
+
+          console.log('isRegroup is:', isRegroup);
+          console.log('isOnesRegroup is:', isOnesRegroup);
+          console.log('isTensRegroup is:', isTensRegroup);
+
           // Position from bottom up
           const spacing = 4; // optional space between blocks
           const targetX = zoneRect.left - zoneBox.left + 2;

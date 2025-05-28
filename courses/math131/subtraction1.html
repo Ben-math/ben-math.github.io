@@ -214,12 +214,14 @@
           console.log('isRegroup is:', isRegroup);
           console.log('isOnesRegroup is:', isOnesRegroup);
           console.log('isTensRegroup is:', isTensRegroup);
+          let targetX = 0;
+          let targetY = 0;
 
           if (!isRegroup) {
             // Position from bottom up
             const spacing = 4; // optional space between blocks
-            const targetX = zoneRect.left - zoneBox.left + 2;
-            const targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight + spacing) - 10;
+            targetX = zoneRect.left - zoneBox.left + 2;
+            targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight + spacing) - 10;
           }
           
           element.style.left = `${targetX}px`;

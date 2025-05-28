@@ -204,6 +204,7 @@
           const zoneBox = activityBox.getBoundingClientRect();
           const zoneRect = bestZone.getBoundingClientRect();
           const blockHeight = element.offsetHeight;
+          addTextToActivityBox(`The block height is ${blockheight}`, 300, 300);
           const blockCount = parseInt(bestZone.dataset.blockCount || '0');
           
           // Position from bottom up

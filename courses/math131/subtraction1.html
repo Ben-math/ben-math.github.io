@@ -232,12 +232,12 @@
           let targetX = 0;
           let targetY = 0;
 
-          if (isHundreds) {
+          //if (isHundreds) {
             // Position from bottom up
-            const spacing = 4; // optional space between blocks
-            targetX = zoneRect.left - zoneBox.left + 2;
-            targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (103 + spacing) - 100;
-          } else if (!isRegroup) {
+            //const spacing = 4; // optional space between blocks
+            //targetX = zoneRect.left - zoneBox.left + 2;
+            //targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (103 + spacing) - 100;
+          if (!isRegroup) {
             // Position from bottom up
             const spacing = 4; // optional space between blocks
             targetX = zoneRect.left - zoneBox.left + 2;
@@ -547,8 +547,8 @@
   
     startBtn.addEventListener('click', () => {
       // Generate two numbers between 1 and 199
-      let a = Math.floor(Math.random() * 500) + 1;
-      let b = Math.floor(Math.random() * 500) + 1;
+      let a = Math.floor(Math.random() * 199) + 1;
+      let b = Math.floor(Math.random() * 199) + 1;
   
       if (b > a) [a, b] = [b, a]; // ensure a ≥ b
   

@@ -286,21 +286,57 @@
       return (currentType === '' || currentType === blockType) && count < 19;
     }
 
+
     function restackZone(zone, excludedBlock = null) {
-      const blockHeight = 13;
-      const spacing = 4;
-    
       const blocks = Array.from(document.querySelectorAll('.draggable-block'))
         .filter(block => block.currentZone === zone && block !== excludedBlock);
     
-      blocks.forEach((block, index) => {
-        const baseX = parseFloat(zone.getBoundingClientRect().left) - activityBox.getBoundingClientRect().left + 2;
-        const baseY = parseFloat(zone.getBoundingClientRect().bottom) - activityBox.getBoundingClientRect().top - 10;
+      const zoneRect = zone.getBoundingClientRect();
+      const boxRect = activityBox.getBoundingClientRect();
+      const baseX = zoneRect.left - boxRect.left;
+      const baseY = zoneRect.bottom - boxRect.top;
     
-        block.style.left = `${baseX}px`;
-        block.style.top = `${baseY - (blockHeight + spacing) * (index + 1)}px`;
+      const isOnesRegroup = zone.classList.contains('regroup-ones');
+      const isTensRegroup = zone.classList.contains('regroup-tens');
+    
+      const blockWidth = 20;  // Adjust as needed
+      const blockHeight = 13; // Adjust as needed
+      const spacing = 4;
+    
+      blocks.forEach((block, index) => {
+        let x = baseX + 2;
+        let y = baseY - (blockHeight + spacing) * (index + 1) - 10;
+    
+        if (isOnesRegroup) {
+          // Stack horizontally in the ones regroup zone
+          x = baseX + 2 + index * (blockWidth + spacing);
+          y = baseY - blockHeight - 10;
+        } else if (isTensRegroup) {
+          // Slightly tighter vertical stack in tens regroup
+          y = baseY - (blockHeight + 2) * (index + 1) - 10;
+        }
+    
+        block.style.left = `${x}px`;
+        block.style.top = `${y}px`;
       });
     }
+
+
+    //function restackZone(zone, excludedBlock = null) {
+      //const blockHeight = 13;
+      //const spacing = 4;
+    
+      //const blocks = Array.from(document.querySelectorAll('.draggable-block'))
+        //.filter(block => block.currentZone === zone && block !== excludedBlock);
+    
+      //blocks.forEach((block, index) => {
+        //const baseX = parseFloat(zone.getBoundingClientRect().left) - activityBox.getBoundingClientRect().left + 2;
+        //const baseY = parseFloat(zone.getBoundingClientRect().bottom) - activityBox.getBoundingClientRect().top - 10;
+    
+        //block.style.left = `${baseX}px`;
+        //block.style.top = `${baseY - (blockHeight + spacing) * (index + 1)}px`;
+      //});
+    //}
 
 
 
@@ -489,6 +525,9 @@
 
       
       createDraggableBlock(100, 100, 'ones');
+      createDraggableBlock(100, 200, 'ones');
+      createDraggableBlock(100, 300, 'ones');
+      createDraggableBlock(100, 400, 'ones');
       createDraggableBlock(200, 120, 'tens');
       createDraggableBlock(400, 120, 'tens');
       createDraggableBlock(500, 120, 'tens');

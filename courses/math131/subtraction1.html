@@ -227,7 +227,8 @@
             targetX = zoneRect.left - zoneBox.left + 2;
             targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight) - 10;
           } else if (isOnesRegroup) {
-
+            targetX = zoneRect.left - zoneBox.left + 2 + index * (13);
+            targetY = zoneRect.bottom - zoneBox.top - blockHeight - 10;
           }
           
           element.style.left = `${targetX}px`;

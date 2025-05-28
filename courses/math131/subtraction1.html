@@ -695,6 +695,74 @@
 
 
     });
+
+
+    document.getElementById('activity-box').addEventListener('click', (e) => {
+      if (!e.target.classList.contains('merge-break-btn')) return;
+    
+      const zone = e.target.closest('.regroup-zone');
+      const column = zone.closest('.column');
+    
+      const stackZone = column.querySelector('.block-stack');
+      const zoneType = stackZone.id.includes('ones') ? 'ones' :
+                       stackZone.id.includes('tens') ? 'tens' : 'hundreds';
+    
+      const zoneBlockType = zone.dataset.blockType;
+      const count = parseInt(zone.dataset.blockCount || '0');
+    
+      if (count === 10 && zoneBlockType === zoneType) {
+        // MERGE: 10 smaller blocks → 1 larger block
+        const newType = zoneType === 'ones' ? 'tens' :
+                        zoneType === 'tens' ? 'hundreds' : null;
+        if (!newType) return;
+    
+        // Remove all 10 blocks
+        const blocks = Array.from(document.querySelectorAll('.draggable-block'))
+          .filter(b => b.currentZone === zone);
+        blocks.slice(0, 10).forEach(b => {
+          zone.removeChild(b);
+        });
+    
+        // Reset count
+        zone.dataset.blockCount = '0';
+        zone.dataset.blockType = '';
+    
+        // Add 1 larger block
+        const zoneRect = zone.getBoundingClientRect();
+        const boxRect = document.getElementById('activity-box').getBoundingClientRect();
+        const x = zoneRect.left - boxRect.left + 4;
+        const y = zoneRect.bottom - boxRect.top - 30;
+        createDraggableBlock(x, y, newType);
+    
+      } else if (count === 1 && zoneBlockType !== zoneType) {
+        // BREAK: 1 larger block → 10 smaller blocks
+        const oldBlock = Array.from(document.querySelectorAll('.draggable-block'))
+          .find(b => b.currentZone === zone);
+        if (!oldBlock) return;
+        zone.removeChild(oldBlock);
+    
+        const newType = zoneType;
+        const zoneRect = zone.getBoundingClientRect();
+        const boxRect = document.getElementById('activity-box').getBoundingClientRect();
+        const baseX = zoneRect.left - boxRect.left + 4;
+        const baseY = zoneRect.bottom - boxRect.top - 30;
+    
+        // Add 10 smaller blocks
+        for (let i = 0; i < 10; i++) {
+          const x = baseX + (newType === 'ones' ? i * 12 : 0); // horizontal layout for ones
+          const y = baseY - (newType !== 'ones' ? i * 24 : 0); // vertical layout for tens
+          createDraggableBlock(x, y, newType);
+        }
+    
+        // Reset count
+        zone.dataset.blockCount = '0';
+        zone.dataset.blockType = '';
+      }
+    
+      updateZoneLabel(zone);
+    });
+
+    
   </script>
 
 </body>

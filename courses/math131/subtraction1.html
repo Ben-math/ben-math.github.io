@@ -481,6 +481,45 @@
       return block;
     }
 
+    function populateColumnBlocks(value, idPrefix, draggable) {
+      const hundreds = Math.floor(value / 100);
+      const tens = Math.floor((value % 100) / 10);
+      const ones = value % 10;
+    
+      const baseX = {
+        'minuend': 40,
+        'difference': 890
+      }[idPrefix.split('-')[0]] || 0;
+    
+      const baseY = 80;
+      const spacing = 24;
+    
+      for (let i = 0; i < hundreds; i++) {
+        const block = createBlock(baseX, baseY + i * spacing, 'hundreds', draggable);
+        const zone = document.getElementById(`${idPrefix}-hundreds-stack`);
+        registerBlock(zone, 'hundreds');
+        block.currentZone = zone;
+        restackZone(zone);
+      }
+    
+      for (let i = 0; i < tens; i++) {
+        const block = createBlock(baseX + 130, baseY + i * spacing, 'tens', draggable);
+        const zone = document.getElementById(`${idPrefix}-tens-stack`);
+        registerBlock(zone, 'tens');
+        block.currentZone = zone;
+        restackZone(zone);
+      }
+    
+      for (let i = 0; i < ones; i++) {
+        const block = createBlock(baseX + 260, baseY + i * spacing, 'ones', draggable);
+        const zone = document.getElementById(`${idPrefix}-ones-stack`);
+        registerBlock(zone, 'ones');
+        block.currentZone = zone;
+        restackZone(zone);
+      }
+    }
+
+
 
 
 
@@ -586,16 +625,9 @@
       activityBox.appendChild(differenceOnesColumn);
 
 
+      populateColumnBlocks(a, 'minuend', false);     // Non-draggable blocks for starting amount
+      populateColumnBlocks(a, 'difference', true);   // Draggable blocks for working area
 
-      
-      createBlock(100, 100, 'ones', true);
-      createBlock(100, 200, 'ones', true);
-      createBlock(100, 300, 'ones', true);
-      createBlock(100, 400, 'ones', true);
-      createBlock(200, 120, 'tens', true);
-      createBlock(400, 120, 'tens', true);
-      createBlock(500, 120, 'tens', true);
-      createBlock(300, 140, 'hundreds', true);
 
 
     });

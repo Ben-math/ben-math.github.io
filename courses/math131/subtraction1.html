@@ -400,29 +400,29 @@
       const count = parseInt(zone.dataset.blockCount || '0');
       label.textContent = count;
     
-      //  Update total column value
+      // 🔍 Update total column value
       const column = zone.closest('.column');
       if (!column) return;
     
       const stackZone = column.querySelector('.block-stack');
       const regroupZone = column.querySelector('.regroup-zone');
-      let stackCount = parseInt(stackZone?.dataset.blockCount || '0');
-      let regroupCount = parseInt(regroupZone?.dataset.blockCount || '0');
-      let stackType = stackZone?.dataset.blockType || '';
+    
+      const stackCount = parseInt(stackZone?.dataset.blockCount || '0');
+      const regroupCount = parseInt(regroupZone?.dataset.blockCount || '0');
+      const stackType = stackZone?.dataset.blockType || '';
       const regroupType = regroupZone?.dataset.blockType || '';
     
-      // ⚠ If stack is empty, assume regroupType is the column type
-      if (stackCount === 0) {
-        stackType = regroupType;
-      }
+      let columnValue = 0;
     
-      let columnValue = stackCount;
-    
-      if (regroupCount > 0) {
-        if (regroupType === stackType) {
-          columnValue += regroupCount;
-        } else {
-          columnValue += 10 * regroupCount;
+      if (stackCount > 0) {
+        columnValue += stackCount;
+        if (regroupCount > 0) {
+          columnValue += (regroupType === stackType) ? regroupCount : 10 * regroupCount;
+        }
+      } else {
+        // stackCount == 0
+        if (regroupCount > 0) {
+          columnValue += (regroupType === stackType) ? regroupCount : 10 * regroupCount;
         }
       }
     
@@ -430,101 +430,7 @@
       if (valueLabel) {
         valueLabel.textContent = columnValue;
       }
-      // Add Break/Merge button if regroup zone is full
-      const buttonId = `${regroupZone.id || ''}-convert-btn`;
-      let convertBtn = document.getElementById(buttonId);
-      
-      // Clean up any existing button
-      if (convertBtn) {
-        convertBtn.remove();
-        convertBtn = null;
-      }
-      
-      if (regroupZone) {
-        const regroupType = regroupZone.dataset.blockType || '';
-        const regroupCount = parseInt(regroupZone.dataset.blockCount || '0');
-        
-        let action = null;
-        if (regroupCount === 10 && (regroupType === 'ones' || regroupType === 'tens')) {
-          action = 'merge';
-        } else if (regroupCount === 1 && (regroupType === 'tens' || regroupType === 'hundreds')) {
-          action = 'break';
-        }
-      
-        if (action) {
-          convertBtn = document.createElement('button');
-          convertBtn.textContent = action === 'merge' ? 'Merge' : 'Break';
-          convertBtn.id = buttonId;
-          convertBtn.style.position = 'absolute';
-          convertBtn.style.right = '-55px';
-          convertBtn.style.top = '0';
-          convertBtn.style.fontSize = '12px';
-          convertBtn.style.padding = '2px 6px';
-          convertBtn.style.zIndex = 10;
-      
-          convertBtn.addEventListener('click', () => {
-            if (action === 'merge') {
-              performMerge(regroupZone);
-            } else if (action === 'break') {
-              performBreak(regroupZone);
-            }
-          });
-      
-          regroupZone.parentElement.appendChild(convertBtn);
-        }
-      }
-
     }
-
-
-
-    function performMerge(regroupZone) {
-      const parentColumn = regroupZone.closest('.column');
-      const stackZone = parentColumn.querySelector('.block-stack');
-      const regroupType = regroupZone.dataset.blockType;
-    
-      // Remove 10 blocks
-      regroupZone.dataset.blockCount = '0';
-      regroupZone.dataset.blockType = '';
-      updateZoneLabel(regroupZone);
-      restackZone(regroupZone);
-    
-      // Add one larger block
-      const newType = regroupType === 'ones' ? 'tens' : 'hundreds';
-      const newBlock = createBlock(newType);
-      stackZone.appendChild(newBlock);
-      const validZones = getValidDropZones(newType);
-      registerBlock(stackZone, newType);
-      makeDraggable(newBlock, newType, validZones);
-      updateZoneLabel(stackZone);
-      restackZone(stackZone);
-    }
-    
-    function performBreak(regroupZone) {
-      const parentColumn = regroupZone.closest('.column');
-      const stackZone = parentColumn.querySelector('.block-stack');
-      const regroupType = regroupZone.dataset.blockType;
-    
-      regroupZone.dataset.blockCount = '0';
-      regroupZone.dataset.blockType = '';
-      updateZoneLabel(regroupZone);
-      restackZone(regroupZone);
-    
-      const newType = regroupType === 'tens' ? 'ones' : 'tens';
-      const validZones = getValidDropZones(newType);
-    
-      for (let i = 0; i < 10; i++) {
-        const newBlock = createBlock(newType);
-        stackZone.appendChild(newBlock);
-        registerBlock(stackZone, newType);
-        makeDraggable(newBlock, newType, validZones);
-      }
-    
-      updateZoneLabel(stackZone);
-      restackZone(stackZone);
-    }
-
-
 
     
     function getValidDropZones(type) {

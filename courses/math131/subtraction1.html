@@ -349,8 +349,7 @@
         let y = baseY - (blockHeight + spacing) * (index + 1) - 10;
 
         if (isHundreds) {
-          blockHeight = 103;
-          y = baseY - (blockHeight + spacing) * (index + 1) - 10;
+          y = baseY - (blockHeight + spacing) * (index + 1) - 100;
         } else if (isOnesRegroup) {
           // Stack horizontally in the ones regroup zone
           x = baseX + index * (blockWidth);

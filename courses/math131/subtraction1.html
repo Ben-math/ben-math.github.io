@@ -73,10 +73,6 @@
         } else if (label.toLowerCase() === 'ones') {
           regroup.classList.add('regroup-ones');
         }
-
-        if (label.toLowerCase() === 'hundreds') {
-          regroup.classList.add('hundreds');
-        }
       
         regroup.textContent = '⇆';
         regroup.id = `${idPrefix}-regroup`;
@@ -91,6 +87,9 @@
       const stack = document.createElement('div');
       stack.classList.add('block-stack');
       stack.id = `${idPrefix}-stack`;
+      if (label.toLowerCase() === 'hundreds') {
+          stack.classList.add('hundreds');
+      }
       column.appendChild(stack);
       stack.classList.add('drop-zone');
       stack.classList.add(`drop-${place}`); // 'ones', 'tens', 'hundreds'

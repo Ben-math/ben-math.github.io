@@ -567,26 +567,33 @@
       activityBox.appendChild(differenceTensColumn);
       activityBox.appendChild(differenceOnesColumn);
 
-      function createDraggableBlock(x, y, type = 'ones') {
+      function createBlock(x, y, type = 'ones', draggable = true) {
         const block = document.createElement('div');
         block.classList.add('draggable-block', `block-${type}`);
         block.style.left = `${x}px`;
         block.style.top = `${y}px`;
         block.currentZone = null; // Initially not in a zone
+      
         activityBox.appendChild(block);
-        makeDraggable(block, type); // pass the type
+      
+        if (draggable) {
+          makeDraggable(block, type);
+        }
+      
+        return block;
       }
 
 
+
       
-      createDraggableBlock(100, 100, 'ones');
-      createDraggableBlock(100, 200, 'ones');
-      createDraggableBlock(100, 300, 'ones');
-      createDraggableBlock(100, 400, 'ones');
-      createDraggableBlock(200, 120, 'tens');
-      createDraggableBlock(400, 120, 'tens');
-      createDraggableBlock(500, 120, 'tens');
-      createDraggableBlock(300, 140, 'hundreds');
+      createDraggableBlock(100, 100, 'ones', true);
+      createDraggableBlock(100, 200, 'ones', true);
+      createDraggableBlock(100, 300, 'ones', true);
+      createDraggableBlock(100, 400, 'ones', true);
+      createDraggableBlock(200, 120, 'tens', true);
+      createDraggableBlock(400, 120, 'tens', true);
+      createDraggableBlock(500, 120, 'tens', true);
+      createDraggableBlock(300, 140, 'hundreds', true);
 
 
     });

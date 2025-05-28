@@ -115,6 +115,15 @@
       activityBox.appendChild(txt);
     }
 
+    function addLargeTextToActivityBox(text, x, y) {
+      const txt = document.createElement('div');
+      txt.classList.add('activity-text-large');
+      txt.textContent = text;
+      txt.style.left = `${x}px`;
+      txt.style.top = `${y}px`;
+      activityBox.appendChild(txt);
+    }
+
     function makeDraggable(element, type) {
       let offsetX, offsetY, originalX, originalY;
       let isDragging = false;
@@ -571,7 +580,7 @@
       });
 
       addTextToActivityBox("Take Away/Minus (Subtrahend)", 510, 10);
-      addTextToActivityBox("-", 430, 320);
+      addLargeTextToActivityBox("-", 425, 320);
 
       const subtrahendHundredsColumn = createColumn({
         label: "Hundreds",
@@ -596,7 +605,7 @@
       });
 
       addTextToActivityBox("Result/Answer (Difference)", 955, 10);
-      addTextToActivityBox("=", 855, 320);
+      addLargeTextToActivityBox("=", 845, 320);
 
       const differenceHundredsColumn = createColumn({
         label: "Hundreds",

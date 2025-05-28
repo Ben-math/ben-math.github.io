@@ -400,7 +400,7 @@
       const count = parseInt(zone.dataset.blockCount || '0');
       label.textContent = count;
     
-      // 🔍 Update total column value
+      //  Update total column value
       const column = zone.closest('.column');
       if (!column) return;
     
@@ -409,27 +409,23 @@
     
       const stackCount = parseInt(stackZone?.dataset.blockCount || '0');
       const regroupCount = parseInt(regroupZone?.dataset.blockCount || '0');
-      let stackType = stackZone?.dataset.blockType || '';
+      const stackType = stackZone?.dataset.blockType || '';
       const regroupType = regroupZone?.dataset.blockType || '';
     
-      // Use regroup type if stack is empty
-      if (stackCount === 0) {
-        stackType = regroupType;
-      }
+      //  Determine column's expected type (ones, tens, hundreds) from its ID
+      let expectedType = '';
+      if (stackZone?.id.includes('ones')) expectedType = 'ones';
+      else if (stackZone?.id.includes('tens')) expectedType = 'tens';
+      else if (stackZone?.id.includes('hundreds')) expectedType = 'hundreds';
     
-      let columnValue = 0;
+      let columnValue = stackCount;
     
       if (regroupCount > 0) {
-        if (stackCount === 0) {
-          // No stack: check if regroup type is same as assumed stack type
-          columnValue += (regroupType === stackType) ? regroupCount : 10 * regroupCount;
+        if (regroupType === expectedType) {
+          columnValue += regroupCount;
         } else {
-          // Stack is not empty: normal logic
-          columnValue = stackCount + ((regroupType === stackType) ? regroupCount : 10 * regroupCount);
+          columnValue += 10 * regroupCount;
         }
-      } else {
-        // Only stack
-        columnValue = stackCount;
       }
     
       const valueLabel = column.querySelector('.block-count');
@@ -437,6 +433,7 @@
         valueLabel.textContent = columnValue;
       }
     }
+
 
 
     

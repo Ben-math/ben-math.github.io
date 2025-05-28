@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -482,85 +483,21 @@
 
 
 
-    function generateProblem() {
-      let minuend = Math.floor(Math.random() * 200) + 1;
-      let subtrahend = Math.floor(Math.random() * minuend); // ensure result is non-negative
-      if (subtrahend > minuend) [minuend, subtrahend] = [subtrahend, minuend]; // ensure a ≥ b
-      const difference = minuend - subtrahend;
-
-      questionText.textContent = `What is ${minuend} − ${subtrahend}?  Remember that each place value column should contain a single digit at the end!`;
-    
-      // Convert numbers to place values
-      const decompose = (num) => ({
-        hundreds: Math.floor(num / 100),
-        tens: Math.floor((num % 100) / 10),
-        ones: num % 10
-      });
-    
-      const minuendParts = decompose(minuend);
-      const differenceParts = decompose(difference);
-    
-      // Zone references
-      const zones = {
-        minuend: {
-          hundreds: document.getElementById('minuend-hundreds-stack'),
-          tens: document.getElementById('minuend-tens-stack'),
-          ones: document.getElementById('minuend-ones-stack')
-        },
-        difference: {
-          hundreds: document.getElementById('difference-hundreds-stack'),
-          tens: document.getElementById('difference-tens-stack'),
-          ones: document.getElementById('difference-ones-stack')
-        }
-      };
-    
-      const blockHeight = 20;
-      const spacing = 4;
-    
-      // Helper function to populate a zone
-      const populateZone = (zone, count, type, draggable) => {
-        for (let i = 0; i < count; i++) {
-          const zoneBox = zone.getBoundingClientRect();
-          const activityBoxBox = activityBox.getBoundingClientRect();
-          const x = zoneBox.left - activityBoxBox.left + 2;
-          const y = zoneBox.bottom - activityBoxBox.top - (i + 1) * (blockHeight + spacing);
-          createBlock(x, y, type, draggable);
-          registerBlock(zone, type);
-        }
-      };
-    
-      // Populate minuend (non-draggable)
-      populateZone(zones.minuend.hundreds, minuendParts.hundreds, 'hundreds', false);
-      populateZone(zones.minuend.tens, minuendParts.tens, 'tens', false);
-      populateZone(zones.minuend.ones, minuendParts.ones, 'ones', false);
-    
-      // Populate difference (draggable)
-      populateZone(zones.difference.hundreds, differenceParts.hundreds, 'hundreds', true);
-      populateZone(zones.difference.tens, differenceParts.tens, 'tens', true);
-      populateZone(zones.difference.ones, differenceParts.ones, 'ones', true);
-    
-      // Optionally clear subtrahend or display values here
-    }
-
-
-
-
 
   
     startBtn.addEventListener('click', () => {
-      // Clear the activity box
-      activityBox.innerHTML = '';
-      generateProblem();
       // Generate two numbers between 1 and 200
-      //let a = Math.floor(Math.random() * 200) + 1;
-      //let b = Math.floor(Math.random() * 200) + 1;
+      let a = Math.floor(Math.random() * 200) + 1;
+      let b = Math.floor(Math.random() * 200) + 1;
   
-      //if (b > a) [a, b] = [b, a]; // ensure a ≥ b
+      if (b > a) [a, b] = [b, a]; // ensure a ≥ b
   
       // Display the question
-      //questionText.textContent = `What is ${a} − ${b}?  Remember that each place value column should contain a single digit at the end!`;
+      questionText.textContent = `What is ${a} − ${b}?  Remember that each place value column should contain a single digit at the end!`;
 
       
+      // Clear the activity box
+      activityBox.innerHTML = '';
 
       addTextToActivityBox("Starting Amount (Minuend)", 105, 10);
 

@@ -753,15 +753,16 @@
       } else if (count === 1 && zoneBlockType !== zoneType && zoneType !== null) {
         console.log('🟠 Attempting BREAK');
       
-        const oldBlock = Array.from(document.querySelectorAll('.draggable-block'))
-          .find(b => b.currentZone === zone);
-      
+        const oldBlock = Array.from(zone.children).find(child => child.classList.contains('draggable-block'));
+
         if (!oldBlock) {
           console.log('❌ No block found for breaking');
           return;
         }
-      
-        oldBlock.remove(); // ✅ Properly removes from DOM regardless of parent
+        
+        unregisterBlock(zone, zoneBlockType, oldBlock);
+        zone.removeChild(oldBlock);
+
       
         const newType = zoneType;
         const zoneRect = zone.getBoundingClientRect();

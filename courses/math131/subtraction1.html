@@ -222,6 +222,12 @@
             const spacing = 4; // optional space between blocks
             targetX = zoneRect.left - zoneBox.left + 2;
             targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight + spacing) - 10;
+          } else if (isTensRegroup) {
+            // Position from bottom up, with less space
+            targetX = zoneRect.left - zoneBox.left + 2;
+            targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight) - 10;
+          } else if (isOnesRegroup) {
+
           }
           
           element.style.left = `${targetX}px`;

@@ -229,6 +229,14 @@ main {
   font-weight: bold;
 }
 
+.activity-text-large {
+  position: absolute;
+  font-size: 30px;
+  color: #1a1a4b;
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  font-weight: bold;
+}
+
 .draggable-block {
   position: absolute;
   border: 2px solid #1a1a4b;

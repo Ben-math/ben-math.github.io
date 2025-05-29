@@ -250,9 +250,15 @@
             targetX = zoneRect.left - zoneBox.left + 2;
             targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight + spacing) - 10;
           } else if (isTensRegroup) {
-            // Position from bottom up, with less space
-            targetX = zoneRect.left - zoneBox.left + 2;
-            targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight - 3) - 10;
+            if (blockHeight < 50) {
+              // Position from bottom up, with less space
+              targetX = zoneRect.left - zoneBox.left + 2;
+              targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight - 3) - 10;
+            } else {
+              // Position from bottom up, with less space
+              targetX = zoneRect.left - zoneBox.left + 2;
+              targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight - 3) - 15;
+            }
           } else if (isOnesRegroup) {
             targetX = zoneRect.left - zoneBox.left + (blockCount) * (10);
             targetY = zoneRect.bottom - zoneBox.top - blockHeight - 10;

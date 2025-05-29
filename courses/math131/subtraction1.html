@@ -751,9 +751,7 @@
     
         const newBlock = createBlock(x, y, newType, true);
         newBlock.currentZone = zone;
-        zone.appendChild(newBlock);
     
-        // Register the new block with the regroup zone
         const prevCount = parseInt(zone.dataset.blockCount || '0');
         zone.dataset.blockCount = (prevCount + 1).toString();
         zone.dataset.blockType = newType;
@@ -784,10 +782,8 @@
         for (let i = 0; i < 10; i++) {
           const x = newType === 'ones' ? baseX + i * 12 : baseX;
           const y = newType === 'ones' ? baseY : baseY - i * 24;
-    
           const block = createBlock(x, y, newType, true);
           block.currentZone = zone;
-          zone.appendChild(block);
     
           const prevCount = parseInt(zone.dataset.blockCount || '0');
           zone.dataset.blockCount = (prevCount + 1).toString();
@@ -795,7 +791,6 @@
         }
     
         restackZone(zone);
-    
       } else {
         console.log('⚪ Condition not met for Merge or Break');
       }

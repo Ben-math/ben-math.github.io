@@ -744,7 +744,7 @@
         });
     
         const zoneRect = zone.getBoundingClientRect();
-        const boxRect = document.getElementById('activity-box').getBoundingClientRect();
+        const boxRect = document.getElementById('my-activity').getBoundingClientRect();
         const x = zoneRect.left - boxRect.left + 4;
         const y = zoneRect.bottom - boxRect.top - 30;
         createDraggableBlock(x, y, newType);
@@ -769,7 +769,7 @@
     
         const newType = zoneType;
         const zoneRect = zone.getBoundingClientRect();
-        const boxRect = document.getElementById('activity-box').getBoundingClientRect();
+        const boxRect = document.getElementById('my-activity').getBoundingClientRect();
         const baseX = zoneRect.left - boxRect.left + 4;
         const baseY = zoneRect.bottom - boxRect.top - 30;
     

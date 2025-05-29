@@ -350,7 +350,8 @@
       const baseX = zoneRect.left - boxRect.left;
       const baseY = zoneRect.bottom - boxRect.top;
 
-      const isHundreds = zone.classList.contains('hundreds');
+      const isHundreds = zone.classList.contains('hundreds') ||
+                   (blocks.length > 0 && blocks[0].classList.contains('block-hundreds'));
       const isOnesRegroup = zone.classList.contains('regroup-ones');
       const isTensRegroup = zone.classList.contains('regroup-tens');
     

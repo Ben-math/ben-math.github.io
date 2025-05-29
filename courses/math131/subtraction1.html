@@ -749,10 +749,16 @@
         const x = zoneRect.left - boxRect.left + 4;
         const y = zoneRect.bottom - boxRect.top - 30;
     
-        createBlock(x, y, newType, true);
+        const newBlock = createBlock(x, y, newType, true);
+        newBlock.currentZone = zone;
+        zone.appendChild(newBlock);
     
-        zone.dataset.blockCount = '0';
-        zone.dataset.blockType = '';
+        // Register the new block with the regroup zone
+        const prevCount = parseInt(zone.dataset.blockCount || '0');
+        zone.dataset.blockCount = (prevCount + 1).toString();
+        zone.dataset.blockType = newType;
+    
+        restackZone(zone);
     
       // --- BREAK ---
       } else if (count === 1 && zoneBlockType !== zoneType && zoneType !== null) {
@@ -779,22 +785,17 @@
           const x = newType === 'ones' ? baseX + i * 12 : baseX;
           const y = newType === 'ones' ? baseY : baseY - i * 24;
     
-          const block = document.createElement('div');
-          block.classList.add('draggable-block', `block-${newType}`);
-          block.style.left = `${x}px`;
-          block.style.top = `${y}px`;
+          const block = createBlock(x, y, newType, true);
           block.currentZone = zone;
-    
           zone.appendChild(block);
-          makeDraggable(block, newType);
     
-          // Update dataset count and type
           const prevCount = parseInt(zone.dataset.blockCount || '0');
           zone.dataset.blockCount = (prevCount + 1).toString();
           zone.dataset.blockType = newType;
         }
     
         restackZone(zone);
+    
       } else {
         console.log('⚪ Condition not met for Merge or Break');
       }

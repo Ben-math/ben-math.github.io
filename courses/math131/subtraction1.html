@@ -749,7 +749,8 @@
         const x = zoneRect.left - boxRect.left + 4;
         const y = zoneRect.bottom - boxRect.top - 30;
     
-        createBlock(x, y, newType, true);
+        const mergedBlock = createBlock(x, y, newType, true);
+        registerBlock(zone, newType, mergedBlock);
     
         zone.dataset.blockCount = '0';
         zone.dataset.blockType = '';
@@ -778,19 +779,18 @@
         for (let i = 0; i < 10; i++) {
           const x = newType === 'ones' ? baseX + i * 12 : baseX;
           const y = newType === 'ones' ? baseY : baseY - i * 24;
-          createBlock(x, y, newType, true);
+          const newBlock = createBlock(x, y, newType, true);
+          registerBlock(zone, newType, newBlock);
         }
     
-        zone.dataset.blockCount = '0';
-        zone.dataset.blockType = '';
+        // We no longer manually zero the zone count — the registrations update it automatically.
       } else {
         console.log('⚪ Condition not met for Merge or Break');
       }
     
       updateZoneLabel(zone);
+      restackZone(zone);
     });
-    
-
 
 
     

@@ -275,3 +275,8 @@ main {
 .zone-count {
   
 }
+
+
+.non-draggable {
+  cursor: default !important;
+}

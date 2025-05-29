@@ -540,9 +540,10 @@
     function createBlock(x, y, type = 'ones', draggable = true) {
       const block = document.createElement('div');
       block.classList.add('draggable-block', `block-${type}`);
+      if (!draggable) block.classList.add('non-draggable');
       block.style.left = `${x}px`;
       block.style.top = `${y}px`;
-      block.currentZone = null; // Initially not in a zone
+      block.currentZone = null;
     
       activityBox.appendChild(block);
     
@@ -552,6 +553,7 @@
     
       return block;
     }
+
 
     function populateColumnBlocks(value, idPrefix, draggable) {
       const hundreds = Math.floor(value / 100);

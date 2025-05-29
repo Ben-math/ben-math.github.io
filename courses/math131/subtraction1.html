@@ -736,8 +736,6 @@
         const blocks = Array.from(document.querySelectorAll('.draggable-block'))
           .filter(b => b.currentZone === zone);
     
-        console.log('Blocks to remove (MERGE):', blocks.length);
-    
         blocks.slice(0, 10).forEach(b => {
           unregisterBlock(zone, zoneType, b);
           b.remove();
@@ -748,10 +746,11 @@
         const x = zoneRect.left - boxRect.left + 4;
         const y = zoneRect.bottom - boxRect.top - 30;
     
-        createBlock(x, y, newType, true);
+        const mergedBlock = createBlock(x, y, newType, true);
+        registerBlock(zone, newType, mergedBlock);
     
-        zone.dataset.blockCount = '0';
-        zone.dataset.blockType = '';
+        updateZoneLabel(zone);
+        restackZone(zone);
     
       // --- BREAK ---
       } else if (count === 1 && zoneBlockType !== zoneType && zoneType !== null) {
@@ -777,17 +776,17 @@
         for (let i = 0; i < 10; i++) {
           const x = newType === 'ones' ? baseX + i * 12 : baseX;
           const y = newType === 'ones' ? baseY : baseY - i * 24;
-          createBlock(x, y, newType, true);
+          const newBlock = createBlock(x, y, newType, true);
+          registerBlock(zone, newType, newBlock);
         }
     
-        zone.dataset.blockCount = '0';
-        zone.dataset.blockType = '';
+        updateZoneLabel(zone);
+        restackZone(zone);
       } else {
         console.log('⚪ Condition not met for Merge or Break');
       }
-    
-      updateZoneLabel(zone);
     });
+
     
 
 

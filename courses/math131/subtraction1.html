@@ -747,7 +747,8 @@
         const boxRect = document.getElementById('my-activity').getBoundingClientRect();
         const x = zoneRect.left - boxRect.left + 4;
         const y = zoneRect.bottom - boxRect.top - 30;
-        createDraggableBlock(x, y, newType);
+    
+        createBlock(x, y, newType, true);
     
         zone.dataset.blockCount = '0';
         zone.dataset.blockType = '';
@@ -776,7 +777,7 @@
         for (let i = 0; i < 10; i++) {
           const x = newType === 'ones' ? baseX + i * 12 : baseX;
           const y = newType === 'ones' ? baseY : baseY - i * 24;
-          createDraggableBlock(x, y, newType);
+          createBlock(x, y, newType, true);
         }
     
         zone.dataset.blockCount = '0';
@@ -787,6 +788,7 @@
     
       updateZoneLabel(zone);
     });
+    
 
 
 

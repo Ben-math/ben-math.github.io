@@ -272,6 +272,7 @@
         
           registerBlock(bestZone, type);
           element.currentZone = bestZone; //  Track where it ended up
+          document.getElementById('set-sound').play();
         } else {
           //  Invalid drop, return home
           element.style.left = `${originalX}px`;
@@ -814,6 +815,7 @@
   </script>
 
   <audio id="click-sound" src="button.mp3" preload="auto"></audio>
+  <audio id="set-sound" src="set2.mp3" preload="auto"></audio>
 
 </body>
 </html>

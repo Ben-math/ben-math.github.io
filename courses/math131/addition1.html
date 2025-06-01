@@ -518,19 +518,19 @@
         case 'ones':
           return zones.filter(z =>
             (z.classList.contains('drop-ones') || z.classList.contains('drop-ones-regroup'))&&
-            (z.id.includes('subtrahend') || z.id.includes('difference'))
+             z.id.includes('difference'))
           );
         case 'tens':
           return zones.filter(z =>
             (z.classList.contains('drop-tens') || z.classList.contains('drop-tens-regroup') ||
              z.classList.contains('drop-ones-regroup')) &&
-            (z.id.includes('subtrahend') || z.id.includes('difference'))
+             z.id.includes('difference'))
           );
         case 'hundreds':
           return zones.filter(z =>
             (z.classList.contains('drop-hundreds') ||
              z.classList.contains('drop-tens-regroup')) &&
-            (z.id.includes('subtrahend') || z.id.includes('difference'))
+             z.id.includes('difference'))
           );
         default:
           return [];

@@ -647,7 +647,7 @@
         hasRegroup: false
       });
 
-      addTextToActivityBox("Plus (Addend)", 600, 10);
+      addTextToActivityBox("Plus (Addend)", 585, 10);
       addLargeTextToActivityBox("-", 425, 320);
 
       const subtrahendHundredsColumn = createColumn({
@@ -710,9 +710,10 @@
       activityBox.appendChild(differenceOnesColumn);
 
 
-      populateColumnBlocks(a, 'minuend', false);     // Non-draggable blocks for starting amount
-      populateColumnBlocks(a, 'subtrahend', false);   // Draggable blocks for working area
-      populateColumnBlocks(a, 'difference', true);   // Draggable blocks for working area
+      populateColumnBlocks(a, 'minuend', false);     // Non-draggable blocks for first addend
+      populateColumnBlocks(a, 'subtrahend', false);   // Non-draggable blocks for second addend
+      populateColumnBlocks(a, 'difference', true);   // Draggable blocks for sum
+      populateColumnBlocks(b, 'difference', true);   // Draggable blocks for sum
 
 
 

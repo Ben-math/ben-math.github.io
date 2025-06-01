@@ -613,7 +613,7 @@
       // Clear the activity box
       activityBox.innerHTML = '';
 
-      addTextToActivityBox("Starting Amount (Addend)", 105, 10);
+      addTextToActivityBox("Starting Amount (Addend)", 110, 10);
 
       const minuendHundredsColumn = createColumn({
         label: "Hundreds",
@@ -639,7 +639,7 @@
         hasRegroup: false
       });
 
-      addTextToActivityBox("Plus (Addend)", 520, 10);
+      addTextToActivityBox("Plus (Addend)", 560, 10);
       addLargeTextToActivityBox("-", 425, 320);
 
       const subtrahendHundredsColumn = createColumn({
@@ -655,6 +655,7 @@
         idPrefix: "subtrahend-tens",
         left: 580,
         top: 50,
+        hasRegroup: false
       });
 
       const subtrahendOnesColumn = createColumn({
@@ -662,9 +663,10 @@
         idPrefix: "subtrahend-ones",
         left: 710,
         top: 50,
+        hasRegroup: false
       });
 
-      addTextToActivityBox("Result/Answer (Sum)", 960, 10);
+      addTextToActivityBox("Result/Answer (Sum)", 975, 10);
       addLargeTextToActivityBox("=", 850, 320);
 
       const differenceHundredsColumn = createColumn({
@@ -701,6 +703,7 @@
 
 
       populateColumnBlocks(a, 'minuend', false);     // Non-draggable blocks for starting amount
+      populateColumnBlocks(a, 'subtrahend', false);   // Draggable blocks for working area
       populateColumnBlocks(a, 'difference', true);   // Draggable blocks for working area
 
 

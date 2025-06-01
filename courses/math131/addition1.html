@@ -613,7 +613,7 @@
       // Clear the activity box
       activityBox.innerHTML = '';
 
-      addTextToActivityBox("Starting Amount (Minuend)", 105, 10);
+      addTextToActivityBox("Starting Amount (Addend)", 105, 10);
 
       const minuendHundredsColumn = createColumn({
         label: "Hundreds",
@@ -639,7 +639,7 @@
         hasRegroup: false
       });
 
-      addTextToActivityBox("Take Away/Minus (Subtrahend)", 510, 10);
+      addTextToActivityBox("Plus (Addend)", 520, 10);
       addLargeTextToActivityBox("-", 425, 320);
 
       const subtrahendHundredsColumn = createColumn({
@@ -664,7 +664,7 @@
         top: 50,
       });
 
-      addTextToActivityBox("Result/Answer (Difference)", 955, 10);
+      addTextToActivityBox("Result/Answer (Sum)", 960, 10);
       addLargeTextToActivityBox("=", 850, 320);
 
       const differenceHundredsColumn = createColumn({

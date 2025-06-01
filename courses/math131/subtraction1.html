@@ -41,6 +41,13 @@
 
     </div>
 
+    <div id="answer-section" style="margin-top: 20px; text-align: center;">
+      <label for="user-answer">Enter your answer:</label>
+      <input type="number" id="user-answer" />
+      <button id="check-answer-btn" class="rubber-button">Check Answer</button>
+      <p id="answer-feedback" style="font-weight: bold; margin-top: 10px;"></p>
+    </div>
+
 
 
   </main>
@@ -597,7 +604,7 @@
 
 
 
-
+    let correctAnswer = null;
   
     startBtn.addEventListener('click', () => {
       // Generate two numbers between 1 and 199
@@ -605,6 +612,7 @@
       let b = Math.floor(Math.random() * 400) + 1;
   
       if (b > a) [a, b] = [b, a]; // ensure a ≥ b
+      correctAnswer = a - b;
   
       // Display the question
       questionText.textContent = `What is ${a} − ${b}?  Remember that each place value column should contain a single digit at the end!`;
@@ -809,6 +817,22 @@
       updateZoneLabel(zone);
     });
 
+
+    document.getElementById('check-answer-btn').addEventListener('click', () => {
+      const userInput = parseInt(document.getElementById('user-answer').value);
+      const feedback = document.getElementById('answer-feedback');
+    
+      if (isNaN(userInput)) {
+        feedback.textContent = 'Please enter a number.';
+        feedback.style.color = 'black';
+      } else if (userInput === correctAnswer) {
+        feedback.textContent = '✅ Correct!';
+        feedback.style.color = 'green';
+      } else {
+        feedback.textContent = '❌ Incorrect. Try again!';
+        feedback.style.color = 'red';
+      }
+    });
 
 
     

@@ -55,9 +55,9 @@
     <div style="height: 10px;"></div>
 
     <div class="button-container">
-      <button id="epsilon-btn" class="rubber-button">Generate ε</button>
+      <button id="epsilon-btn" class="rubber-button" style="display: none;">Generate ε</button>
     </div>
-    
+
     <div id="epsilon-display" style="margin-top: 10px; font-weight: bold;"></div>
 
     <div id="delta-area" style="display: none; margin-top: 10px; text-align: center;">
@@ -108,6 +108,7 @@
           A, B, C, p, L,
           func: (x) => A * x * x + B * x + C
         };
+        document.getElementById('epsilon-btn').style.display = 'inline-block';
       }
 
       function handleGenerateEpsilon() {

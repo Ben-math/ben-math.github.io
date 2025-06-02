@@ -118,9 +118,11 @@
           epsilon = parseFloat(`0.00${x}`);
         }
 
-        document.getElementById('epsilon-display').innerHTML = `Let \\( \\epsilon = ${epsilon} \\). Find a \\( \\delta \\) such that `;
-        MathJax.typesetPromise([document.getElementById('epsilon-display')]);
+        document.getElementById('epsilon-display').innerHTML =
+        `Let \\( \\epsilon = ${epsilon} \\). Find a \\( \\delta \\) such that:<br>\\[ 0 < |x - ${p}| < \\delta \\Rightarrow |f(x) - ${latexLimit}| < \\epsilon \\]`;
+      MathJax.typesetPromise([document.getElementById('epsilon-display')]);
       
+            
         // Unhide delta input area
         document.getElementById('delta-area').style.display = 'block';
       

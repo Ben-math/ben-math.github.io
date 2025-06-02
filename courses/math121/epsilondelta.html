@@ -62,7 +62,7 @@
         const C = c * d;
         let fx;
         if (B !== 0) {
-          fx = `${A <= 0 ? '-' : ''}${Math.abs(A) !== 1 ? Math.abs(A) : ''}x² ${B >= 0 ? '+ ' : '- '}${Math.abs(B)}x ${C >= 0 ? '+ ' : '- '}${Math.abs(C)}`;
+          fx = `${A <= 0 ? '-' : ''}${Math.abs(A) !== 1 ? Math.abs(A) : ''}x² ${B >= 0 ? '+ ' : '- '}${Math.abs(B) !== 1 ? Math.abs(B) : ''}x ${C >= 0 ? '+ ' : '- '}${Math.abs(C)}`;
         } else {
           fx = `${A <= 0 ? '-' : ''}${Math.abs(A) !== 1 ? Math.abs(A) : ''}x² ${C >= 0 ? '+ ' : '- '}${Math.abs(C)}`;
         }

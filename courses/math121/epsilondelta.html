@@ -78,8 +78,28 @@
           func: (x) => A * x * x + B * x + C
         };
       }
+
+      function generateRandomEpsilon() {
+        const x = Math.floor(Math.random() * 9) + 1; // x in [1, 9]
+        const format = Math.floor(Math.random() * 3); // 0, 1, or 2
+      
+        let epsilon;
+        if (format === 0) {
+          epsilon = parseFloat(`0.${x}`);
+        } else if (format === 1) {
+          epsilon = parseFloat(`0.0${x}`);
+        } else {
+          epsilon = parseFloat(`0.00${x}`);
+        }
+      
+        return epsilon;
+      }
+
   
       document.getElementById('start-btn').addEventListener('click', generateRandomQuadratic);
+      const epsilon = generateRandomEpsilon();
+      console.log("Epsilon:", epsilon);
+
     </script>
   </main>
 </body>

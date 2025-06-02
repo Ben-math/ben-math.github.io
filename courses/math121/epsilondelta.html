@@ -121,13 +121,16 @@
       
         // Get current values of p and L from window.fxData
         const { p, L } = window.fxData;
+
+        // Format p with parentheses if it's negative
+        const formattedp = p < 0 ? `(${p})` : `${p}`;
       
         // Format L with parentheses if it's negative
         const formattedL = L < 0 ? `(${L})` : `${L}`;
       
         document.getElementById('epsilon-display').innerHTML = 
           `<p>Let \\( \\epsilon = ${epsilon} \\). Find \\(\\delta > 0\\) such that</p>
-           \\[0 < |x - ${p}| < \\delta \\Rightarrow |f(x) - ${formattedL}| < ${epsilon} \\]`;
+           \\[0 < |x - ${formattedp}| < \\delta \\Rightarrow |f(x) - ${formattedL}| < ${epsilon} \\]`;
       
         MathJax.typesetPromise([document.getElementById('epsilon-display')]);
       

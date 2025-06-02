@@ -71,31 +71,20 @@
     <script>
       function generateRandomQuadratic() {
 
-        let a, b, c, d;
+        let a, b;
 
         while (true) {
-          a = Math.floor(Math.random() * 7) - 3;
-          b = Math.floor(Math.random() * 7) - 3;
-          c = Math.floor(Math.random() * 7) - 3;
-          d = Math.floor(Math.random() * 7) - 3;
+          a = Math.floor(Math.random() * 19) - 10;
+          b = Math.floor(Math.random() * 41) - 20;
         
-          const firstProduct = a * b;
-          const secondProduct = c * d;
-        
-          if (firstProduct !== 0 && secondProduct !== 0) break;
+          if (a !== 0 && b !== 0) break;
         }
   
-        const A = a * b;
-        const B = a * d + b * c;
-        const C = c * d;
         let fx;
-        if (B !== 0) {
-          fx = `${A <= 0 ? '-' : ''}${Math.abs(A) !== 1 ? Math.abs(A) : ''}x² ${B >= 0 ? '+ ' : '- '}${Math.abs(B) !== 1 ? Math.abs(B) : ''}x ${C >= 0 ? '+ ' : '- '}${Math.abs(C)}`;
-        } else {
-          fx = `${A <= 0 ? '-' : ''}${Math.abs(A) !== 1 ? Math.abs(A) : ''}x² ${C >= 0 ? '+ ' : '- '}${Math.abs(C)}`;
-        }
+        fx = `${a <= 0 ? '-' : ''}${Math.abs(a) !== 1 ? Math.abs(a) : ''}x ${b >= 0 ? '+ ' : '- '}${Math.abs(b) !== 1 ? Math.abs(b) : ''}`;
+        
         const p = Math.floor(Math.random() * 11) - 5;
-        const L = A * p * p + B * p + C;
+        const L = a * p + b;
   
         document.getElementById('fx-display').textContent = `Given the function f(x) = ${fx}, we want to show that`;
         document.getElementById('p-value').textContent = ``;
@@ -105,8 +94,8 @@
 
   
         window.fxData = {
-          A, B, C, p, L,
-          func: (x) => A * x * x + B * x + C
+          a, b, p, L,
+          func: (x) => a * x + B
         };
         document.getElementById('epsilon-btn').style.display = 'inline-block';
       }

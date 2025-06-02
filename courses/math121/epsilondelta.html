@@ -84,8 +84,9 @@
         const p = Math.floor(Math.random() * 11) - 5;
         const L = A * p * p + B * p + C;
   
-        document.getElementById('fx-display').textContent = `f(x) = ${fx}`;
-        document.getElementById('p-value').textContent = `a = ${a}, b = ${b}, c = ${c}, d = ${d}, A = ${A}, B = ${B}, C = ${C}, p = ${p}`;
+        document.getElementById('fx-display').textContent = `Given the function f(x) = ${fx}, we want to show that`;
+        document.getElementById('p-value').textContent = ``;
+        //document.getElementById('p-value').textContent = `a = ${a}, b = ${b}, c = ${c}, d = ${d}, A = ${A}, B = ${B}, C = ${C}, p = ${p}`;
         document.getElementById('limit-value').innerHTML = `\\[\\lim_{x \\to ${p}} f(x) = ${L}\\]`;
         MathJax.typesetPromise([document.getElementById('limit-value')]);
 

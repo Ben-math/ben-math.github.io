@@ -64,7 +64,7 @@
         if (B !== 0) {
           fx = `${A}x² ${B >= 0 ? '+ ' : '- '}${Math.abs(B)}x ${C >= 0 ? '+ ' : '- '}${Math.abs(C)}`;
         } else {
-          fx = `${A}x² ${B >= 0 ? '+ ' : '- '} ${C >= 0 ? '+ ' : '- '}${Math.abs(C)}`;
+          fx = `${A}x² ${C >= 0 ? '+ ' : '- '}${Math.abs(C)}`;
         }
         const p = Math.floor(Math.random() * 11) - 5;
         const L = A * p * p + B * p + C;

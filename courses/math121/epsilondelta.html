@@ -39,6 +39,15 @@
       <div id="p-value" class="math"></div>
       <div id="limit-value" class="math"></div>
     </div>
+
+    <div style="height: 10px;"></div>
+
+    <div class="button-container">
+      <button class="rubber-button" onclick="handleGenerateEpsilon()">Generate ε</button>
+    </div>
+    
+    <div id="epsilon-display" style="margin-top: 10px; font-weight: bold;"></div>
+
   
     <script>
       function generateRandomQuadratic() {
@@ -79,7 +88,7 @@
         };
       }
 
-      function generateRandomEpsilon() {
+      function handleGenerateEpsilon() {
         const x = Math.floor(Math.random() * 9) + 1; // x in [1, 9]
         const format = Math.floor(Math.random() * 3); // 0, 1, or 2
       
@@ -92,13 +101,12 @@
           epsilon = parseFloat(`0.00${x}`);
         }
       
-        return epsilon;
+        document.getElementById('epsilon-display').textContent = `ε = ${epsilon}`;
       }
+
 
   
       document.getElementById('start-btn').addEventListener('click', generateRandomQuadratic);
-      const epsilon = generateRandomEpsilon();
-      console.log("Epsilon:", epsilon);
 
     </script>
   </main>

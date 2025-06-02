@@ -86,7 +86,9 @@
   
         document.getElementById('fx-display').textContent = `f(x) = ${fx}`;
         document.getElementById('p-value').textContent = `a = ${a}, b = ${b}, c = ${c}, d = ${d}, A = ${A}, B = ${B}, C = ${C}, p = ${p}`;
-        document.getElementById('limit-value').textContent = `L = f(p) = ${L}`;
+        document.getElementById('limit-value').innerHTML = `\\(\\lim_{x \\to ${p}} f(x) = ${L}\\)`;
+        MathJax.typesetPromise([document.getElementById('limit-value')]);
+
   
         window.fxData = {
           A, B, C, p, L,

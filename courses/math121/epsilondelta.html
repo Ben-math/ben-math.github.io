@@ -118,21 +118,24 @@
         } else {
           epsilon = parseFloat(`0.00${x}`);
         }
-
-
+      
+        // Get current values of p and L from window.fxData
+        const { p, L } = window.fxData;
+      
         document.getElementById('epsilon-display').innerHTML = 
-          `Let \\( \\epsilon = ${epsilon} \\).  Find \\(\\delta > 0\\) such that<br>` +
-          `\\[0 < |x - p| < \\delta \\Rightarrow |f(x) - L| < ${epsilon} \\]`;
-        
+          `<p>Let \\( \\epsilon = ${epsilon} \\). Find \\(\\delta > 0\\) such that</p>
+           \\[0 < |x - ${p}| < \\delta \\Rightarrow |f(x) - ${L}| < ${epsilon} \\]`;
+      
         MathJax.typesetPromise([document.getElementById('epsilon-display')]);
       
         // Unhide delta input area
         document.getElementById('delta-area').style.display = 'block';
       
-        // Optionally clear previous input/feedback
+        // Clear previous input/feedback
         document.getElementById('delta-input').value = '';
         document.getElementById('delta-feedback').textContent = '';
       }
+
 
 
 

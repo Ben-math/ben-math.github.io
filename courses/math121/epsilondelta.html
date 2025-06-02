@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -58,7 +59,7 @@
       <button id="epsilon-btn" class="rubber-button" style="display: none;">Generate ε</button>
     </div>
 
-    <p id="epsilon-display" style="margin-top: 10px;"></p>
+    <div id="epsilon-display" style="margin-top: 10px;"></div>
 
     <div id="delta-area" style="display: none; margin-top: 10px; text-align: center;">
       <label for="delta-input">Enter δ:</label>
@@ -117,12 +118,9 @@
         } else {
           epsilon = parseFloat(`0.00${x}`);
         }
-
-        document.getElementById('epsilon-display').innerHTML =
-          `Let \\( \\epsilon = ${epsilon} \\). Find a \\( \\delta \\) such that:<br>\\[ 0 < \\left| x - ${p} \\right| < \\delta \\Rightarrow \\left| f(x) - ${latexLimit} \\right| < \\epsilon \\]`;
-        MathJax.typesetPromise([document.getElementById('epsilon-display')]);
       
-            
+        document.getElementById('epsilon-display').textContent = `ε = ${epsilon}`;
+      
         // Unhide delta input area
         document.getElementById('delta-area').style.display = 'block';
       

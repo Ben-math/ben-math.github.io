@@ -82,8 +82,13 @@
   
         let fx;
         fx = `${a <= 0 ? '-' : ''}${Math.abs(a) !== 1 ? Math.abs(a) : ''}x ${b >= 0 ? '+ ' : '- '}${Math.abs(b) !== 1 ? Math.abs(b) : ''}`;
-        
-        const p = Math.floor(Math.random() * 11) - 5;
+
+        let p;
+        while (true) {
+          p = Math.floor(Math.random() * 11) - 5;
+          
+          if (p !== 0) break;
+        }
         const L = a * p + b;
   
         document.getElementById('fx-display').textContent = `Given the function f(x) = ${fx}, we want to show that`;

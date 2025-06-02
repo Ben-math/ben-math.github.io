@@ -60,6 +60,14 @@
     
     <div id="epsilon-display" style="margin-top: 10px; font-weight: bold;"></div>
 
+    <div id="delta-area" style="display: none; margin-top: 10px;">
+      <label for="delta-input">Enter δ:</label>
+      <input type="number" id="delta-input" step="0.01">
+      <button id="check-delta-btn" class="rubber-button">Check Answer</button>
+      <div id="delta-feedback" style="margin-top: 5px; font-weight: bold;"></div>
+    </div>
+
+
   
     <script>
       function generateRandomQuadratic() {
@@ -117,7 +125,15 @@
         }
       
         document.getElementById('epsilon-display').textContent = `ε = ${epsilon}`;
+      
+        // Unhide delta input area
+        document.getElementById('delta-area').style.display = 'block';
+      
+        // Optionally clear previous input/feedback
+        document.getElementById('delta-input').value = '';
+        document.getElementById('delta-feedback').textContent = '';
       }
+
 
 
   

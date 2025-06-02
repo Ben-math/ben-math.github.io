@@ -60,9 +60,13 @@
         const A = a * b;
         const B = a * d + b * c;
         const C = c * d;
-  
-        const fx = `${A}x² ${B >= 0 ? '+ ' : '- '}${Math.abs(B)}x ${C >= 0 ? '+ ' : '- '}${Math.abs(C)}`;
-        const p = Math.floor(Math.random() * 21) - 10;
+        let fx;
+        if (B !== 0) {
+          fx = `${A}x² ${B >= 0 ? '+ ' : '- '}${Math.abs(B)}x ${C >= 0 ? '+ ' : '- '}${Math.abs(C)}`;
+        } else {
+          fx = `${A}x² ${B >= 0 ? '+ ' : '- '} ${C >= 0 ? '+ ' : '- '}${Math.abs(C)}`;
+        }
+        const p = Math.floor(Math.random() * 11) - 5;
         const L = A * p * p + B * p + C;
   
         document.getElementById('fx-display').textContent = `f(x) = ${fx}`;

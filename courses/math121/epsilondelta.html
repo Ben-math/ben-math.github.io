@@ -55,7 +55,7 @@
     <div style="height: 10px;"></div>
 
     <div class="button-container">
-      <button class="rubber-button" onclick="handleGenerateEpsilon()">Generate ε</button>
+      <button id="epsilon-btn" class="rubber-button">Generate ε</button>
     </div>
     
     <div id="epsilon-display" style="margin-top: 10px; font-weight: bold;"></div>
@@ -122,6 +122,7 @@
 
   
       document.getElementById('start-btn').addEventListener('click', generateRandomQuadratic);
+      document.getElementById('epsilon-btn').addEventListener('click', handleGenerateEpsilon);
 
     </script>
   </main>

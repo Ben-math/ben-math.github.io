@@ -64,13 +64,13 @@
         if (B !== 0) {
           fx = `${A}x² ${B >= 0 ? '+ ' : '- '}${Math.abs(B)}x ${C >= 0 ? '+ ' : '- '}${Math.abs(C)}`;
         } else {
-          fx = `${A}x² ${C >= 0 ? '+ ' : '- '}${Math.abs(C)}`;
+          fx = `${A}x² ${C >= 0 ? '+ ' : '- '}${C}`;
         }
         const p = Math.floor(Math.random() * 11) - 5;
         const L = A * p * p + B * p + C;
   
         document.getElementById('fx-display').textContent = `f(x) = ${fx}`;
-        document.getElementById('p-value').textContent = `p = ${p}`;
+        document.getElementById('p-value').textContent = `a = ${a}, b = ${b}, c = ${c}, A = ${A}, B = ${B}, C = ${C}, p = ${p}`;
         document.getElementById('limit-value').textContent = `L = f(p) = ${L}`;
   
         window.fxData = {

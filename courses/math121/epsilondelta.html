@@ -122,7 +122,7 @@
 
         document.getElementById('epsilon-display').innerHTML = 
           `Let \\( \\epsilon = ${epsilon} \\).  Find \\(\\delta > 0\\) such that<br><br>` +
-          `\\[ \\text{Find } \\delta > 0 \\text{ such that } 0 < |x - p| < \\delta \\Rightarrow |f(x) - L| < ${epsilon} \\]`;
+          `\\[0 < |x - p| < \\delta \\Rightarrow |f(x) - L| < ${epsilon} \\]`;
         
         MathJax.typesetPromise([document.getElementById('epsilon-display')]);
       

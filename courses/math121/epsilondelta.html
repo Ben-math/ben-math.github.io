@@ -118,7 +118,7 @@
           epsilon = parseFloat(`0.00${x}`);
         }
 
-        document.getElementById('epsilon-display').innerHTML = `For this problem, let \\( \\epsilon = ${epsilon} \\). What value of \\( \\delta \\) guarantees the condition?`;
+        document.getElementById('epsilon-display').innerHTML = `Let \\( \\epsilon = ${epsilon} \\). Find a \\( \\delta \\) such that `;
         MathJax.typesetPromise([document.getElementById('epsilon-display')]);
       
         // Unhide delta input area

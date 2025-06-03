@@ -119,6 +119,8 @@
         } else {
           epsilon = parseFloat(`0.00${x}`);
         }
+
+        window.fxData.epsilon = epsilon;
       
         // Get current values of p and L from window.fxData
         const { p, L } = window.fxData;

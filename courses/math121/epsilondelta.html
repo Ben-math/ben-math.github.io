@@ -70,9 +70,12 @@
 
   
     <script>
+
+      let epsilon;
+      let a, b;
+      
       function generateRandomQuadratic() {
 
-        let a, b;
 
         while (true) {
           a = Math.floor(Math.random() * 19) - 10;
@@ -83,6 +86,8 @@
   
         let fx;
         fx = `${a <= 0 ? '-' : ''}${Math.abs(a) !== 1 ? Math.abs(a) : ''}x ${b >= 0 ? '+ ' : '- '}${Math.abs(b)}`;
+        window.fxData = { a }; // Add this line inside generateQuestion()
+        window.fxData = { a }; // Add this line inside generateQuestion()
 
         let p;
         while (true) {
@@ -110,7 +115,6 @@
         const x = Math.floor(Math.random() * 9) + 1; // x in [1, 9]
         const format = Math.floor(Math.random() * 3); // 0, 1, or 2
       
-        let epsilon;
         if (format === 0) {
           epsilon = parseFloat(`0.${x}`);
         } else if (format === 1) {
@@ -154,9 +158,19 @@
         const deltaInput = parseFloat(document.getElementById('delta-input').value);
         const feedback = document.getElementById('delta-feedback');
       
-        const { a } = window.fxData;
-        const epsilon = parseFloat(document.getElementById('epsilon-display').innerText.match(/epsilon = ([\d.]+)/)[1]);
-        const correctDelta = epsilon / Math.abs(a); // use absolute value for delta bound
+        // Check that we have stored fxData with both a and epsilon
+        if (!window.fxData || typeof window.fxData.a === 'undefined' || typeof window.fxData.epsilon === 'undefined') {
+          console.log('❌ Missing a or epsilon in global data');
+          feedback.textContent = 'Internal error: missing data.';
+          feedback.style.color = 'red';
+          return;
+        }
+      
+        const { a, epsilon } = window.fxData;
+        const correctDelta = window.fxData.epsilon / Math.abs(a); // Correct bound
+      
+        console.log(`🔍 delta entered: ${deltaInput}`);
+        console.log(`✔️  correct delta: ${correctDelta} (epsilon = ${epsilon}, a = ${a})`);
       
         if (isNaN(deltaInput)) {
           feedback.textContent = 'Please enter a valid number.';
@@ -172,6 +186,7 @@
           feedback.style.color = 'red';
         }
       });
+
 
 
     </script>

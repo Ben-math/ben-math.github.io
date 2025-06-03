@@ -71,12 +71,10 @@
   
     <script>
 
-      let epsilon;
-      let a, b;
       
       function generateRandomQuadratic() {
 
-
+        let a, b;
         while (true) {
           a = Math.floor(Math.random() * 19) - 10;
           b = Math.floor(Math.random() * 41) - 20;
@@ -86,8 +84,6 @@
   
         let fx;
         fx = `${a <= 0 ? '-' : ''}${Math.abs(a) !== 1 ? Math.abs(a) : ''}x ${b >= 0 ? '+ ' : '- '}${Math.abs(b)}`;
-        window.fxData = { a }; // Add this line inside generateQuestion()
-        window.fxData = { a }; // Add this line inside generateQuestion()
 
         let p;
         while (true) {
@@ -114,7 +110,8 @@
       function handleGenerateEpsilon() {
         const x = Math.floor(Math.random() * 9) + 1; // x in [1, 9]
         const format = Math.floor(Math.random() * 3); // 0, 1, or 2
-      
+
+        let epsilon;
         if (format === 0) {
           epsilon = parseFloat(`0.${x}`);
         } else if (format === 1) {

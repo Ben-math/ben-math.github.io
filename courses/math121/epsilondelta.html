@@ -63,7 +63,7 @@
 
     <div id="delta-area" style="display: none; margin-top: 10px; text-align: center;">
       <label for="delta-input">Enter δ:</label>
-      <input type="number" id="delta-input" step="0.01">
+      <input type="text" id="delta-input" placeholder="e.g. 0.5 or 1/2">
       <button id="check-delta-btn" class="rubber-button">Check Answer</button>
       <div id="delta-feedback" style="margin-top: 5px; font-weight: bold;"></div>
     </div>
@@ -154,7 +154,26 @@
       document.getElementById('epsilon-btn').addEventListener('click', handleGenerateEpsilon);
 
       document.getElementById('check-delta-btn').addEventListener('click', () => {
-        const deltaInput = parseFloat(document.getElementById('delta-input').value);
+        const rawInput = document.getElementById('delta-input').value.trim();
+        let deltaInput;
+        
+        if (rawInput.includes('/')) {
+          const parts = rawInput.split('/');
+          if (parts.length === 2) {
+            const numerator = parseFloat(parts[0]);
+            const denominator = parseFloat(parts[1]);
+            if (!isNaN(numerator) && !isNaN(denominator) && denominator !== 0) {
+              deltaInput = numerator / denominator;
+            } else {
+              deltaInput = NaN;
+            }
+          } else {
+            deltaInput = NaN;
+          }
+        } else {
+          deltaInput = parseFloat(rawInput);
+        }
+
         const feedback = document.getElementById('delta-feedback');
       
         // Check that we have stored fxData with both a and epsilon

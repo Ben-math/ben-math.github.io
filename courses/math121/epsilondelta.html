@@ -59,13 +59,15 @@
       <button id="epsilon-btn" class="rubber-button" style="display: none;">Generate ε</button>
     </div>
 
-    <div id="epsilon-display" style="margin-top: 10px;"></div>
-
-    <div id="delta-area" style="display: none; margin-top: 10px; text-align: center;">
-      <label for="delta-input">Enter δ:</label>
-      <input type="text" id="delta-input" placeholder="e.g. 0.5 or 1/2">
-      <button id="check-delta-btn" class="rubber-button">Check Answer</button>
-      <div id="delta-feedback" style="margin-top: 5px; font-weight: bold;"></div>
+    <div id="post-epsilon-content" style="display: none;">
+      <div id="epsilon-display" style="margin-top: 10px;"></div>
+  
+      <div id="delta-area" style="display: none; margin-top: 10px; text-align: center;">
+        <label for="delta-input">Enter δ:</label>
+        <input type="text" id="delta-input" placeholder="e.g. 0.5 or 1/2">
+        <button id="check-delta-btn" class="rubber-button">Check Answer</button>
+        <div id="delta-feedback" style="margin-top: 5px; font-weight: bold;"></div>
+      </div>
     </div>
 
   
@@ -105,6 +107,7 @@
           func: (x) => a * x + B
         };
         document.getElementById('epsilon-btn').style.display = 'inline-block';
+        document.getElementById('post-epsilon-content').style.display = 'none';
       }
 
       function handleGenerateEpsilon() {
@@ -143,6 +146,7 @@
         // Clear previous input/feedback
         document.getElementById('delta-input').value = '';
         document.getElementById('delta-feedback').textContent = '';
+        document.getElementById('post-epsilon-content').style.display = 'block';
       }
 
 

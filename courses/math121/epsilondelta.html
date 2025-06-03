@@ -150,6 +150,30 @@
       document.getElementById('start-btn').addEventListener('click', generateRandomQuadratic);
       document.getElementById('epsilon-btn').addEventListener('click', handleGenerateEpsilon);
 
+      document.getElementById('check-delta-btn').addEventListener('click', () => {
+        const deltaInput = parseFloat(document.getElementById('delta-input').value);
+        const feedback = document.getElementById('delta-feedback');
+      
+        const { a } = window.fxData;
+        const epsilon = parseFloat(document.getElementById('epsilon-display').innerText.match(/epsilon = ([\d.]+)/)[1]);
+        const correctDelta = epsilon / Math.abs(a); // use absolute value for delta bound
+      
+        if (isNaN(deltaInput)) {
+          feedback.textContent = 'Please enter a valid number.';
+          feedback.style.color = 'black';
+        } else if (Math.abs(deltaInput - correctDelta) < 1e-6) {
+          feedback.textContent = 'Optimal bound!';
+          feedback.style.color = 'green';
+        } else if (deltaInput < correctDelta) {
+          feedback.textContent = 'Correct!';
+          feedback.style.color = 'green';
+        } else {
+          feedback.textContent = 'Incorrect, try again!';
+          feedback.style.color = 'red';
+        }
+      });
+
+
     </script>
   </main>
 </body>

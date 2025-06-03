@@ -195,7 +195,7 @@
         console.log(`✔️  correct delta: ${correctDelta} (epsilon = ${epsilon}, a = ${a})`);
       
         if (isNaN(deltaInput) || deltaInput <= 0) {
-          feedback.textContent = 'Please enter a valid positive number.';
+          feedback.textContent = 'Please enter a positive number (in either decimal or fractional form).';
           feedback.style.color = 'black';
         } else if (Math.abs(deltaInput - correctDelta) < 1e-6) {
           feedback.textContent = 'Optimal bound!';

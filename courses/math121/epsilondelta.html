@@ -125,8 +125,9 @@
         ctx.font = '14px sans-serif';
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
-        ctx.fillText(`L + ε = ${(L + epsilon).toFixed(2)}`, 100, yToPx(L + epsilon));
-        ctx.fillText(`L - ε = ${(L - epsilon).toFixed(2)}`, 100, yToPx(L - epsilon));
+        ctx.fillText(`f(${p}) + ε = ${(L + epsilon).toFixed(2)}`, 100, yToPx(L + epsilon));
+        ctx.fillText(`f(${p}) = ${(L).toFixed(2)}`, 60, yToPx(L + epsilon));
+        ctx.fillText(`f(${p}) - ε = ${(L - epsilon).toFixed(2)}`, 100, yToPx(L - epsilon));
 
       
         // Draw axes

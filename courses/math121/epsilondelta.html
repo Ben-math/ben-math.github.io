@@ -69,6 +69,8 @@
         <div id="delta-feedback" style="margin-top: 5px; font-weight: bold;"></div>
       </div>
 
+      <canvas id="graph-canvas" width="600" height="400" style="margin-top: 20px; display: none;"></canvas>
+
       <p>When you have had enough practice with specific values of \(\epsilon\), try to find \(\delta\) in terms of a 
         general \(\epsilon\) which makes the implication true:</p>
 
@@ -83,6 +85,68 @@
 
   
     <script>
+
+
+      function drawGraph(fx, p, L, epsilon) {
+        const canvas = document.getElementById('graph-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.style.display = 'block';
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+        const width = canvas.width;
+        const height = canvas.height;
+      
+        const xMin = p - 5;
+        const xMax = p + 5;
+        const xRange = xMax - xMin;
+      
+        const yMin = L - 2.5 * epsilon;
+        const yMax = L + 2.5 * epsilon;
+        const yRange = yMax - yMin;
+      
+        function xToPx(x) {
+          return ((x - xMin) / xRange) * width;
+        }
+      
+        function yToPx(y) {
+          return height - ((y - yMin) / yRange) * height;
+        }
+      
+        // Highlight epsilon band
+        ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
+        const yTop = yToPx(L + epsilon);
+        const yBottom = yToPx(L - epsilon);
+        ctx.fillRect(0, yTop, width, yBottom - yTop);
+      
+        // Draw axes
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(xToPx(0), 0);
+        ctx.lineTo(xToPx(0), height);
+        ctx.moveTo(0, yToPx(0));
+        ctx.lineTo(width, yToPx(0));
+        ctx.stroke();
+      
+        // Draw function
+        ctx.strokeStyle = 'blue';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        let started = false;
+        for (let px = 0; px <= width; px++) {
+          const x = xMin + (px / width) * xRange;
+          const y = fx(x);
+          const py = yToPx(y);
+          if (!started) {
+            ctx.moveTo(px, py);
+            started = true;
+          } else {
+            ctx.lineTo(px, py);
+          }
+        }
+        ctx.stroke();
+      }
+
 
       
       function generateRandomQuadratic() {
@@ -115,7 +179,7 @@
   
         window.fxData = {
           a, b, p, L,
-          func: (x) => a * x + B
+          func: (x) => a * x + b
         };
         document.getElementById('epsilon-btn').style.display = 'inline-block';
         document.getElementById('post-epsilon-content').style.display = 'none';
@@ -218,9 +282,13 @@
         } else if (Math.abs(deltaInput - correctDelta) < 1e-6) {
           feedback.textContent = 'Optimal bound!';
           feedback.style.color = 'green';
+          const { func, p, L, epsilon } = window.fxData;
+          drawGraph(func, p, L, epsilon);
         } else if (deltaInput < correctDelta) {
           feedback.textContent = 'Correct!';
           feedback.style.color = 'green';
+          const { func, p, L, epsilon } = window.fxData;
+          drawGraph(func, p, L, epsilon);
         } else {
           feedback.textContent = 'Incorrect, try again!';
           feedback.style.color = 'red';

@@ -261,7 +261,7 @@
         }
       
         const { a, epsilon } = window.fxData;
-        const finalcorrectDelta = 1 / Math.abs(a); // Correct bound
+        const finalcorrectDelta = Math.abs(a); // Correct bound
       
         console.log(`🔍 delta entered: ${finaldeltaInput}`);
         console.log(`✔️  correct delta: ${finalcorrectDelta} (epsilon = ${epsilon}, a = ${a})`);

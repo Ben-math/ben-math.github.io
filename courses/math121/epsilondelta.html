@@ -255,7 +255,7 @@
       
         document.getElementById('epsilon-display').innerHTML = 
           `<p>Let \\( \\epsilon = ${epsilon} \\). Find \\(\\delta > 0\\) such that</p>
-           \\[0 < |x - ${formattedp}| < \\delta \\implies |f(x) - ${formattedL}| < ${epsilon} \\]`;
+           \\[0 < |x - ${formattedp}| < \\delta \\implies |f(x) - ${formattedL}| < \\epsilon \\]`;
       
         MathJax.typesetPromise([document.getElementById('epsilon-display')]);
       

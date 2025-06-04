@@ -228,6 +228,57 @@
 
 
 
+      document.getElementById('final-check-delta-btn').addEventListener('click', () => {
+        const finalrawInput = document.getElementById('final-delta-input').value.trim();
+        let finaldeltaInput;
+        
+        if (finalrawInput.includes('/')) {
+          const finalparts = finalrawInput.split('/');
+          if (finalparts.length === 2) {
+            const finalnumerator = parseFloat(finalparts[0]);
+            const finaldenominator = parseFloat(finalparts[1]);
+            if (!isNaN(finalnumerator) && !isNaN(finaldenominator) && finaldenominator !== 0) {
+              finaldeltaInput = finalnumerator / finaldenominator;
+            } else {
+              finaldeltaInput = NaN;
+            }
+          } else {
+            finaldeltaInput = NaN;
+          }
+        } else {
+          finaldeltaInput = parseFloat(rawInput);
+        }
+
+        const finalfeedback = document.getElementById('final-delta-feedback');
+      
+        // Check that we have stored fxData with both a and epsilon
+        if (!window.fxData || typeof window.fxData.a === 'undefined' || typeof window.fxData.epsilon === 'undefined') {
+          console.log('❌ Missing a or epsilon in global data');
+          feedback.textContent = 'Internal error: missing data.';
+          feedback.style.color = 'red';
+          return;
+        }
+      
+        const { a, epsilon } = window.fxData;
+        const finalcorrectDelta = window.fxData.epsilon / Math.abs(a); // Correct bound
+      
+        console.log(`🔍 delta entered: ${deltaInput}`);
+        console.log(`✔️  correct delta: ${correctDelta} (epsilon = ${epsilon}, a = ${a})`);
+      
+        if (isNaN(finaldeltaInput) || finaldeltaInput <= 0) {
+          feedback.textContent = 'Please enter a positive number (in either decimal or fractional form).';
+          feedback.style.color = 'black';
+        } else if (Math.abs(finaldeltaInput - finalcorrectDelta) < 1e-6) {
+          feedback.textContent = 'Correct!';
+          feedback.style.color = 'green';
+        } else {
+          feedback.textContent = 'Incorrect, try again!';
+          feedback.style.color = 'red';
+        }
+      });
+
+
+
     </script>
   </main>
 </body>

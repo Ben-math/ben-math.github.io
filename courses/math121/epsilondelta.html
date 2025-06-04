@@ -102,17 +102,8 @@
 
         const xRange = xMax - xMin;
       
-        let yMin = L - 2.5 * epsilon;
-        let yMax = L + 2.5 * epsilon;
-        
-        // Ensure minimum range for visibility (e.g., range ≥ 2)
-        const minRange = 2;
-        if (yMax - yMin < minRange) {
-          const center = (yMin + yMax) / 2;
-          yMin = center - minRange / 2;
-          yMax = center + minRange / 2;
-        }
-
+        const yMin = L - 2.5 * epsilon;
+        const yMax = L + 2.5 * epsilon;
         const yRange = yMax - yMin;
       
         function xToPx(x) {

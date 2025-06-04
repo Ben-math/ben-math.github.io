@@ -329,12 +329,12 @@
           const { func, p, L, epsilon } = window.fxData;
           drawGraph(func, p, L, epsilon, deltaInput, correctDelta);
         } else if (deltaInput < correctDelta) {
-          feedback.textContent = 'Correct!';
+          feedback.textContent = 'Success!';
           feedback.style.color = 'green';
           const { func, p, L, epsilon } = window.fxData;
           drawGraph(func, p, L, epsilon, deltaInput, correctDelta);
         } else {
-          feedback.textContent = 'Incorrect, try again!';
+          feedback.textContent = 'Not quite, try a narrower interval!';
           feedback.style.color = 'red';
           const { func, p, L, epsilon } = window.fxData;
           drawGraph(func, p, L, epsilon, deltaInput, correctDelta);
@@ -404,7 +404,7 @@
           proofDiv.style.display = 'block';
           MathJax.typesetPromise([proofDiv]);
         } else {
-          finalfeedback.textContent = 'Incorrect, try again!';
+          finalfeedback.textContent = 'Not quite optimal!';
           finalfeedback.style.color = 'red';
         }
       });

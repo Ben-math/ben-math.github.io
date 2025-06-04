@@ -77,6 +77,7 @@
         <input type="text" id="final-delta-input" placeholder="e.g. 0.5 or 1/2">
         <button id="final-check-delta-btn" class="rubber-button">Check Answer</button>
         <div id="final-delta-feedback" style="margin-top: 5px; font-weight: bold;"></div>
+        <div id="proof-display" class="math" style="margin-top: 15px; display: none;"></div>
       </div>
     </div>
 
@@ -271,6 +272,23 @@
         } else if (Math.abs(finaldeltaInput - finalcorrectDelta) < 1e-6) {
           finalfeedback.textContent = 'Correct!';
           finalfeedback.style.color = 'green';
+
+          const { a, b, p } = window.fxData;
+          const L = a * p + b;
+          const formattedL = L < 0 ? `(${L})` : `${L}`;
+          const formattedp = p < 0 ? `(${p})` : `${p}`;
+        
+          const proofText = `
+            Since \\( f(x) = ${a}x ${b >= 0 ? '+ ' + b : '- ' + Math.abs(b)} \\), we have: <br>
+            \\[ |f(x) - ${formattedL}| = |${a}x + ${b} - (${a}(${p}) + ${b})| = |${a}(x - ${p})| = ${Math.abs(a)}|x - ${p}| \\] <br>
+            Thus, if \\( |x - ${formattedp}| < \\delta = \\frac{\\epsilon}{${Math.abs(a)}} \\), then <br>
+            \\[ |f(x) - ${formattedL}| = ${Math.abs(a)}|x - ${formattedp}| < ${Math.abs(a)} \\cdot \\frac{\\epsilon}{${Math.abs(a)}} = \\epsilon. \\]
+          `;
+        
+          const proofDiv = document.getElementById('proof-display');
+          proofDiv.innerHTML = proofText;
+          proofDiv.style.display = 'block';
+          MathJax.typesetPromise([proofDiv]);
         } else {
           finalfeedback.textContent = 'Incorrect, try again!';
           finalfeedback.style.color = 'red';

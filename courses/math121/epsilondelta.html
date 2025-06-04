@@ -280,7 +280,7 @@
         
           const proofText = `
             Since \\( f(x) = ${a}x ${b >= 0 ? '+ ' + b : '- ' + Math.abs(b)} \\), we have: <br>
-            \\[ |f(x) - ${formattedL}| = |${a}x + ${b} - (${a}(${p}) + ${b})| = |${a}(x - ${p})| = ${Math.abs(a)}|x - ${p}| \\] <br>
+            \\[ |f(x) - ${formattedL}| = |${a}x + ${b} - (${a}(${p}) + ${b})| = |${a}(x - ${formattedp})| = ${Math.abs(a)}|x - ${formattedp}| \\] <br>
             Thus, if \\( |x - ${formattedp}| < \\delta = \\frac{\\epsilon}{${Math.abs(a)}} \\), then <br>
             \\[ |f(x) - ${formattedL}| = ${Math.abs(a)}|x - ${formattedp}| < ${Math.abs(a)} \\cdot \\frac{\\epsilon}{${Math.abs(a)}} = \\epsilon. \\]
           `;

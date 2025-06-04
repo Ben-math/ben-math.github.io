@@ -125,6 +125,7 @@
         ctx.font = '14px sans-serif';
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
+        ctx.textAlign = "left";
         ctx.fillText(`f(${p}) + ε = ${(L + epsilon).toFixed(2)}`, 105, yToPx(L + epsilon));
         ctx.fillText(`f(${p}) = ${(L).toFixed(2)}`, 85, yToPx(L));
         ctx.fillText(`f(${p}) - ε = ${(L - epsilon).toFixed(2)}`, 105, yToPx(L - epsilon));

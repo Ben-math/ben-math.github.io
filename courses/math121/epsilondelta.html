@@ -260,8 +260,8 @@
            \\[0 < |x - ${formattedp}| < \\delta \\implies |f(x) - ${formattedL}| < ${epsilon} \\]`;
 
         document.getElementById('implication-display').innerHTML = 
-          `<p>pooooop</p> 
-          \\[0 < |x - ${formattedp}| < \\delta \\implies |f(x) - ${formattedL}| < \\epsilon \\]`;
+          `<p>Let \\( \\epsilon = ${epsilon} \\). Find \\(\\delta > 0\\) such that</p>
+           \\[0 < |x - ${formattedp}| < \\delta \\implies |f(x) - ${formattedL}| < ${epsilon} \\]`;
       
         MathJax.typesetPromise([document.getElementById('epsilon-display')]);
       

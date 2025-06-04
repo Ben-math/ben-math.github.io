@@ -164,19 +164,19 @@
           ctx.strokeStyle = color;
           let started = false;
       
-          for (let px = 0; px <= width; px++) {
-            const x = xMin + (px / width) * xRange;
-            if (x < start || x > end) continue;
-            const y = fx(x);
-            const py = yToPx(y);
-            const screenX = xToPx(x);
-            if (!started) {
-              ctx.moveTo(screenX, py);
-              started = true;
-            } else {
-              ctx.lineTo(screenX, py);
-            }
+        const step = (xMax - xMin) / width;
+        for (let x = start; x <= end; x += step) {
+          const y = fx(x);
+          const screenX = xToPx(x);
+          const screenY = yToPx(y);
+          if (!started) {
+            ctx.moveTo(screenX, screenY);
+            started = true;
+          } else {
+            ctx.lineTo(screenX, screenY);
           }
+        }
+
       
           ctx.stroke();
         }

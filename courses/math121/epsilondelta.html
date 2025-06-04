@@ -74,8 +74,6 @@
       <p>When you have had enough practice with specific values of \(\epsilon\), try to find \(\delta\) in terms of a 
         general \(\epsilon\) which makes the implication true:</p>
 
-      <div id="implication-display" style="margin-top: 10px;"></div>
-
       <div id="final-delta-area" style="display: none; margin-top: 10px; text-align: center;">
         <label for="final-delta-input">Enter c such that \(\delta\) = \(\frac{\epsilon}{c}\):</label>
         <input type="text" id="final-delta-input" placeholder="e.g. 0.5 or 1/2">
@@ -256,10 +254,6 @@
         const formattedL = L < 0 ? `(${L})` : `${L}`;
       
         document.getElementById('epsilon-display').innerHTML = 
-          `<p>Let \\( \\epsilon = ${epsilon} \\). Find \\(\\delta > 0\\) such that</p>
-           \\[0 < |x - ${formattedp}| < \\delta \\implies |f(x) - ${formattedL}| < ${epsilon} \\]`;
-
-        document.getElementById('implication-display').innerHTML = 
           `<p>Let \\( \\epsilon = ${epsilon} \\). Find \\(\\delta > 0\\) such that</p>
            \\[0 < |x - ${formattedp}| < \\delta \\implies |f(x) - ${formattedL}| < ${epsilon} \\]`;
       

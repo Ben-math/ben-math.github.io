@@ -164,8 +164,13 @@
           ctx.strokeStyle = color;
           let started = false;
       
-        const step = (xMax - xMin) / width;
-        for (let x = start; x <= end; x += step) {
+        const resolutionFactor = 4;  // Sample 4× more finely than the pixel width
+        const numSteps = width * resolutionFactor;
+        const step = (xMax - xMin) / numSteps;
+        
+        for (let i = 0; i <= numSteps; i++) {
+          const x = start + (i / numSteps) * (end - start);
+          if (x < start || x > end) continue;  // stay within the segment
           const y = fx(x);
           const screenX = xToPx(x);
           const screenY = yToPx(y);
@@ -176,6 +181,7 @@
             ctx.lineTo(screenX, screenY);
           }
         }
+
 
       
           ctx.stroke();

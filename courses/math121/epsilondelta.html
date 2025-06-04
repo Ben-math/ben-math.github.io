@@ -262,8 +262,8 @@
         const { a, epsilon } = window.fxData;
         const finalcorrectDelta = window.fxData.epsilon / Math.abs(a); // Correct bound
       
-        console.log(`🔍 delta entered: ${deltaInput}`);
-        console.log(`✔️  correct delta: ${correctDelta} (epsilon = ${epsilon}, a = ${a})`);
+        console.log(`🔍 delta entered: ${finaldeltaInput}`);
+        console.log(`✔️  correct delta: ${finalcorrectDelta} (epsilon = ${epsilon}, a = ${a})`);
       
         if (isNaN(finaldeltaInput) || finaldeltaInput <= 0) {
           feedback.textContent = 'Please enter a positive number (in either decimal or fractional form).';

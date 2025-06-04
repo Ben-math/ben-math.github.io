@@ -266,14 +266,14 @@
         console.log(`✔️  correct delta: ${finalcorrectDelta} (epsilon = ${epsilon}, a = ${a})`);
       
         if (isNaN(finaldeltaInput) || finaldeltaInput <= 0) {
-          feedback.textContent = 'Please enter a positive number (in either decimal or fractional form).';
-          feedback.style.color = 'black';
+          finalfeedback.textContent = 'Please enter a positive number (in either decimal or fractional form).';
+          finalfeedback.style.color = 'black';
         } else if (Math.abs(finaldeltaInput - finalcorrectDelta) < 1e-6) {
-          feedback.textContent = 'Correct!';
-          feedback.style.color = 'green';
+          finalfeedback.textContent = 'Correct!';
+          finalfeedback.style.color = 'green';
         } else {
-          feedback.textContent = 'Incorrect, try again!';
-          feedback.style.color = 'red';
+          finalfeedback.textContent = 'Incorrect, try again!';
+          finalfeedback.style.color = 'red';
         }
       });
 

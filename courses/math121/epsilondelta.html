@@ -125,16 +125,16 @@
         ctx.lineWidth = 1;
         ctx.beginPath();
         // Only draw y-axis if 0 is within the x-range
-        if (xMin < 0 && xMax > 0) {
-          ctx.moveTo(xToPx(0), 0);
-          ctx.lineTo(xToPx(0), height);
-        }
+        //if (xMin < 0 && xMax > 0) {
+          //ctx.moveTo(xToPx(0), 0);
+          //ctx.lineTo(xToPx(0), height);
+        //}
 
         // Only draw x-axis if 0 is within the y-range
-        if (yMin < 0 && yMax > 0) {
-          ctx.moveTo(0, yToPx(0));
-          ctx.lineTo(width, yToPx(0));
-        }
+        //if (yMin < 0 && yMax > 0) {
+          //ctx.moveTo(0, yToPx(0));
+          //ctx.lineTo(width, yToPx(0));
+        //}
 
       
         // Choose color for delta interval

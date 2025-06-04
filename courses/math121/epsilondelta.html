@@ -119,6 +119,15 @@
         const yTop = yToPx(L + epsilon);
         const yBottom = yToPx(L - epsilon);
         ctx.fillRect(0, yTop, width, yBottom - yTop);
+
+        // Draw epsilon band value labels on the left
+        ctx.fillStyle = 'black';
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`L + ε = ${(L + epsilon).toFixed(2)}`, 60, yToPx(L + epsilon));
+        ctx.fillText(`L - ε = ${(L - epsilon).toFixed(2)}`, 60, yToPx(L - epsilon));
+
       
         // Draw axes
         ctx.strokeStyle = '#000';

@@ -135,6 +135,11 @@
         ctx.strokeStyle = '#000';
         ctx.lineWidth = 1;
         ctx.beginPath();
+        ctx.moveTo(xMin, yMin);
+        ctx.lineTo(xMin, yMax);
+        ctx.lineTo(xMax, yMax);
+        ctx.lineTo(xMax, yMin);
+        ctx.lineTo(xMin, yMin);
         // Only draw y-axis if 0 is within the x-range
         //if (xMin < 0 && xMax > 0) {
           //ctx.moveTo(xToPx(0), 0);

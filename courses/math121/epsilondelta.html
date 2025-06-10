@@ -96,7 +96,7 @@
         const width = canvas.width;
         const height = canvas.height;
       
-        const xRangeFactor = 2 / Math.abs(window.fxData.a); // narrower range for larger |a|
+        const xRangeFactor = 2 * epsilon / Math.abs(window.fxData.a); // narrower range for larger |a|
         const xMin = p - xRangeFactor;
         const xMax = p + xRangeFactor;
 

@@ -39,5 +39,53 @@
     </div>
 
   </main>
+
+  <script>
+
+    
+  startBtn.addEventListener('click', () => {
+
+      let a,b;
+      // Generate two numbers between 1 and 199
+      while (true) {
+        a = Math.floor(Math.random() * 400) + 1;
+        b = Math.floor(Math.random() * 400) + 1;
+        if (b > a) [a, b] = [b, a]; // ensure a ≥ b
+      
+        const aones = (a % 10);
+        const bones = (b % 10);
+        const atens = (Math.floor(a / 10) % 10);
+        const btens = (Math.floor(b / 10) % 10)
+      
+        if (btens > atens && bones > aones) break;
+      }
+      
+      correctAnswer = a - b;
+  
+      // Display the question
+      questionText.textContent = `What is ${a} − ${b}?  Drag blocks from the difference to the subtrahend section, regrouping as needed.  Remember each place value column should contain a single digit at the end!`;
+
+      
+      // Clear the activity box
+      activityBox.innerHTML = '';
+
+      addTextToActivityBox("Starting Amount (Minuend)", 105, 10);
+
+
+      addTextToActivityBox("Take Away/Minus (Subtrahend)", 510, 10);
+      addLargeTextToActivityBox("-", 425, 320);
+
+
+      addTextToActivityBox("Result/Answer (Difference)", 955, 10);
+      addLargeTextToActivityBox("=", 850, 320);
+
+
+
+
+
+    });
+    
+  </script>
+  
 </body>
 </html>

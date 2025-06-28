@@ -85,21 +85,18 @@
       correctAnswer = a - b;
   
       // Display the question
-      questionText.textContent = `What is ${a} − ${b}?  Drag blocks from the difference to the subtrahend section, regrouping as needed.  Remember each place value column should contain a single digit at the end!`;
+      questionText.textContent = `Drag and drop exponents to the empty slots to make the equation true!`;
 
       
       // Clear the activity box
       activityBox.innerHTML = '';
 
-      addTextToActivityBox("Starting Amount (Minuend)", 105, 10);
+      addTextToActivityBox("LHS goes approximately here", 205, 10);
 
 
-      addTextToActivityBox("Take Away/Minus (Subtrahend)", 510, 10);
-      addLargeTextToActivityBox("-", 425, 320);
 
 
-      addTextToActivityBox("Result/Answer (Difference)", 955, 10);
-      addLargeTextToActivityBox("=", 850, 320);
+      addTextToActivityBox("RHS does approximately here", 805, 10);
 
 
 

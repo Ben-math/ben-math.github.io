@@ -42,6 +42,24 @@
 
   <script>
 
+
+        function addTextToActivityBox(text, x, y) {
+      const txt = document.createElement('div');
+      txt.classList.add('activity-text');
+      txt.textContent = text;
+      txt.style.left = `${x}px`;
+      txt.style.top = `${y}px`;
+      activityBox.appendChild(txt);
+    }
+
+    function addLargeTextToActivityBox(text, x, y) {
+      const txt = document.createElement('div');
+      txt.classList.add('activity-text-large');
+      txt.textContent = text;
+      txt.style.left = `${x}px`;
+      txt.style.top = `${y}px`;
+      activityBox.appendChild(txt);
+    }
     
   startBtn.addEventListener('click', () => {
 

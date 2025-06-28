@@ -67,22 +67,17 @@
     
   startBtn.addEventListener('click', () => {
 
-      let a,b;
-      // Generate two numbers between 1 and 199
-      while (true) {
-        a = Math.floor(Math.random() * 400) + 1;
-        b = Math.floor(Math.random() * 400) + 1;
-        if (b > a) [a, b] = [b, a]; // ensure a ≥ b
+
+      let a2 = Math.floor(Math.random() * 21) - 10;
+      let a3 = Math.floor(Math.random() * 9) - 4;
+      let b1 = Math.floor(Math.random() * 21) - 10;
+      let b2 = Math.floor(Math.random() * 21) - 10;
+      let b3 = Math.floor(Math.random() * 9) - 4;
+      let c1 = Math.floor(Math.random() * 21) - 10;
+      let c2 = Math.floor(Math.random() * 21) - 10;
+      let c3 = Math.floor(Math.random() * 9) - 4;
+      let d1 = Math.floor(Math.random() * 9) - 4;
       
-        const aones = (a % 10);
-        const bones = (b % 10);
-        const atens = (Math.floor(a / 10) % 10);
-        const btens = (Math.floor(b / 10) % 10)
-      
-        if (btens > atens && bones > aones) break;
-      }
-      
-      correctAnswer = a - b;
   
       // Display the question
       questionText.textContent = `Drag and drop exponents to the empty slots to make the equation true!`;

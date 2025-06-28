@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- Root -->
+  <url><loc>https://ben-math.github.io/</loc></url>
+
+  <!-- Courses Index Pages -->
+  <url><loc>https://ben-math.github.io/courses/</loc></url>
+  <url><loc>https://ben-math.github.io/courses/math121/</loc></url>
+  <url><loc>https://ben-math.github.io/courses/math131/</loc></url>
+
+  <!-- Math121 Pages -->
+  <url><loc>https://ben-math.github.io/courses/math121/index.html</loc></url>
+  <url><loc>https://ben-math.github.io/courses/math121/epsilondelta.html</loc></url>
+
+  <!-- Math131 Pages -->
+  <url><loc>https://ben-math.github.io/courses/math131/index.html</loc></url>
+  <url><loc>https://ben-math.github.io/courses/math131/addition1.html</loc></url>
+  <url><loc>https://ben-math.github.io/courses/math131/addition2.html</loc></url>
+  <url><loc>https://ben-math.github.io/courses/math131/subtraction1.html</loc></url>
+  <url><loc>https://ben-math.github.io/courses/math131/subtraction2.html</loc></url>
+  <url><loc>https://ben-math.github.io/courses/math131/readings.html</loc></url>
+
+  <!-- Other Pages -->
+  <url><loc>https://ben-math.github.io/other/exponents.html</loc></url>
+  <url><loc>https://ben-math.github.io/other/resources.html</loc></url>
+  <url><loc>https://ben-math.github.io/other/cartoons.html</loc></url>
+
+</urlset>

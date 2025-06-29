@@ -300,3 +300,37 @@ main {
   font-size: 32px;
 }
 
+
+/* Base square box */
+.exponent-box {
+  width: 80px;
+  height: 80px;
+  border: 3px solid #1a1a4b;
+  border-radius: 0.5em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: bold;
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  position: absolute;
+  background-color: #ffde59;
+  box-shadow: 2px 2px 0 #1a1a4b;
+}
+
+/* Draggable exponent */
+.draggable-exponent {
+  cursor: grab;
+}
+
+/* Drop zone */
+.exponent-slot {
+  background-color: #fff;
+  border-style: dashed;
+}
+
+.exponent-slot.valid-hover {
+  background-color: rgba(144, 238, 144, 0.4); /* light green when valid */
+}
+
+

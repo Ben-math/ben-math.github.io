@@ -208,7 +208,26 @@
       }
 
 
-      addTextToActivityBox('(', 470, 40, 140);
+      addTextToActivityBox('(', 460, 40, 140);
+      addTextToActivityBox('x', 500, 100, 100);
+      if (lhsMissingIndex == 4) {
+        createExponentSlot(550, 100, 60, 40);
+      } else {
+        createFixedExponentBox(b1, 550, 100, 60, 40);
+      }
+
+      addTextToActivityBox('y', 600, 100, 100);
+      if (lhsMissingIndex == 5) {
+        createExponentSlot(650, 100, 60, 40);
+      } else {
+        createFixedExponentBox(b2, 650, 100, 60, 40);
+      }
+      addTextToActivityBox(')', 720, 40, 140);
+      if (lhsMissingIndex == 6) {
+        createExponentSlot(750, 50, 60, 40);
+      } else {
+        createFixedExponentBox(b3, 750, 50, 60, 40);
+      }
       
       //createFixedExponentBox('x', 200, 150, 80, 40);
       //createExponentSlot(280, 150, 80, 40);

@@ -75,23 +75,70 @@
       activityBox.appendChild(txt);
     }
 
-    function addExponentTermToActivityBox(base, exponent, x, y, isBlank = false, id = '') {
-      const term = document.createElement('div');
-      term.style.position = 'absolute';
-      term.style.left = `${x}px`;
-      term.style.top = `${y}px`;
-      term.style.fontSize = '50px';
-      term.style.fontFamily = "'Comic Sans MS', cursive, sans-serif";
-      term.style.fontWeight = 'bold';
-    
-      if (isBlank) {
-        term.innerHTML = `${base}<sup><span class="blank-exponent" id="${id}">___</span></sup>`;
-      } else {
-        term.innerHTML = `${base}<sup>${exponent}</sup>`;
-      }
-    
-      activityBox.appendChild(term);
+
+    function createFixedExponentBox(text, x, y) {
+      const box = document.createElement('div');
+      box.classList.add('exponent-box');
+      box.style.left = `${x}px`;
+      box.style.top = `${y}px`;
+      box.textContent = text;
+      activityBox.appendChild(box);
+      return box;
     }
+    
+    function createDraggableExponentBox(text, x, y) {
+      const box = document.createElement('div');
+      box.classList.add('exponent-box', 'draggable-exponent');
+      box.style.left = `${x}px`;
+      box.style.top = `${y}px`;
+      box.textContent = text;
+      activityBox.appendChild(box);
+      makeExponentDraggable(box);
+      return box;
+    }
+    
+    function createExponentSlot(x, y) {
+      const slot = document.createElement('div');
+      slot.classList.add('exponent-box', 'exponent-slot');
+      slot.style.left = `${x}px`;
+      slot.style.top = `${y}px`;
+      activityBox.appendChild(slot);
+      setupDropTarget(slot);
+      return slot;
+    }
+
+    function makeExponentDraggable(elem) {
+      elem.draggable = true;
+    
+      elem.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('text/plain', elem.textContent);
+        setTimeout(() => elem.style.visibility = 'hidden', 0);
+      });
+    
+      elem.addEventListener('dragend', () => {
+        elem.style.visibility = 'visible';
+      });
+    }
+    
+    function setupDropTarget(slot) {
+      slot.addEventListener('dragover', e => {
+        e.preventDefault();
+        slot.classList.add('valid-hover');
+      });
+    
+      slot.addEventListener('dragleave', () => {
+        slot.classList.remove('valid-hover');
+      });
+    
+      slot.addEventListener('drop', e => {
+        e.preventDefault();
+        slot.classList.remove('valid-hover');
+        const droppedText = e.dataTransfer.getData('text/plain');
+        slot.textContent = droppedText;
+      });
+    }
+
+
 
     
   startBtn.addEventListener('click', () => {
@@ -134,37 +181,12 @@
       // Clear the activity box
       activityBox.innerHTML = '';
       
-      let xStart = 100;
-      let yStart = 100;
-      
-      // Example: ((x^a1 y^a2)^a3 * (x^b1 y^b2)^b3) / ((x^c1 y^c2)^c3)
-      addHugeTextToActivityBox("(", xStart, yStart);
-      xStart += 30;
-      addExponentTermToActivityBox("x", lhsMissing === 'a1' ? '' : a1, xStart, yStart, lhsMissing === 'a1', 'blank-a1');
-      xStart += 70;
-      addExponentTermToActivityBox("y", lhsMissing === 'a2' ? '' : a2, xStart, yStart, lhsMissing === 'a2', 'blank-a2');
-      xStart += 70;
-      addHugeTextToActivityBox(")", xStart, yStart);
-      xStart += 30;
-      addHugeTextToActivityBox(`^${lhsMissing === 'a3' ? '___' : a3}`, xStart, yStart); // no need to use the term helper here
-      xStart += 60;
-      
-      addHugeTextToActivityBox("×", xStart, yStart);
-      xStart += 40;
-      
-      // Continue with second group...
-      addHugeTextToActivityBox("(", xStart, yStart);
-      xStart += 30;
-      addExponentTermToActivityBox("x", lhsMissing === 'b1' ? '' : b1, xStart, yStart, lhsMissing === 'b1', 'blank-b1');
-      xStart += 70;
-      addExponentTermToActivityBox("y", lhsMissing === 'b2' ? '' : b2, xStart, yStart, lhsMissing === 'b2', 'blank-b2');
-      xStart += 70;
-      addHugeTextToActivityBox(")", xStart, yStart);
-      xStart += 30;
-      addHugeTextToActivityBox(`^${lhsMissing === 'b3' ? '___' : b3}`, xStart, yStart);
-      xStart += 60;
-      
-      // Continue with denominator and RHS the same way...
+      createFixedExponentBox('x', 200, 150);
+      createExponentSlot(280, 150);
+      createFixedExponentBox('y', 400, 150);
+      createDraggableExponentBox('2', 1000, 500);
+      createDraggableExponentBox('3', 1100, 500);
+
 
 
 

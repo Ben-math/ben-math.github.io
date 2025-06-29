@@ -87,14 +87,14 @@
     
   startBtn.addEventListener('click', () => {
 
-      let a1 = Math.floor(Math.random() * 21) - 10;
-      let a2 = Math.floor(Math.random() * 21) - 10;
+      let a1 = Math.floor(Math.random() * 19) - 9;
+      let a2 = Math.floor(Math.random() * 19) - 9;
       let a3 = Math.floor(Math.random() * 9) - 4;
-      let b1 = Math.floor(Math.random() * 21) - 10;
-      let b2 = Math.floor(Math.random() * 21) - 10;
+      let b1 = Math.floor(Math.random() * 19) - 9;
+      let b2 = Math.floor(Math.random() * 19) - 9;
       let b3 = Math.floor(Math.random() * 9) - 4;
-      let c1 = Math.floor(Math.random() * 21) - 10;
-      let c2 = Math.floor(Math.random() * 21) - 10;
+      let c1 = Math.floor(Math.random() * 19) - 9;
+      let c2 = Math.floor(Math.random() * 19) - 9;
       let c3 = Math.floor(Math.random() * 9) - 4;
     
       let d1 = a1*a3 + b1*b3 - c1*c3;
@@ -162,7 +162,7 @@
 
       const options = new Set([lhsCorrectValue, rhsCorrectValue]);
       while (options.size < 8) {
-        options.add(Math.floor(Math.random() * 21) - 10);
+        options.add(Math.floor(Math.random() * 19) - 9);
       }
       const optionArray = [...options].sort(() => Math.random() - 0.5);
 

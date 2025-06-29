@@ -231,6 +231,20 @@
 
       addTextToActivityBox('=', 850, 170, 140);
 
+      addTextToActivityBox('x', 900, 170, 100);
+      if (rhsMissingIndex == 1) {
+        createExponentSlot(950, 170, 60, 40);
+      } else {
+        createFixedExponentBox(b1, 950, 170, 60, 40);
+      }
+
+      addTextToActivityBox('y', 1000, 170, 100);
+      if (rhsMissingIndex == 2) {
+        createExponentSlot(1050, 170, 60, 40);
+      } else {
+        createFixedExponentBox(b2, 1050, 170, 60, 40);
+      }
+
       
       
       //createFixedExponentBox('x', 200, 150, 80, 40);

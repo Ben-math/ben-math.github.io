@@ -65,6 +65,25 @@
       txt.style.top = `${y}px`;
       activityBox.appendChild(txt);
     }
+
+    function addExponentTermToActivityBox(base, exponent, x, y, isBlank = false, id = '') {
+      const term = document.createElement('div');
+      term.style.position = 'absolute';
+      term.style.left = `${x}px`;
+      term.style.top = `${y}px`;
+      term.style.fontSize = '50px';
+      term.style.fontFamily = "'Comic Sans MS', cursive, sans-serif";
+      term.style.fontWeight = 'bold';
+    
+      if (isBlank) {
+        term.innerHTML = `${base}<sup><span class="blank-exponent" id="${id}">___</span></sup>`;
+      } else {
+        term.innerHTML = `${base}<sup>${exponent}</sup>`;
+      }
+    
+      activityBox.appendChild(term);
+    }
+
     
   startBtn.addEventListener('click', () => {
 
@@ -105,13 +124,39 @@
       
       // Clear the activity box
       activityBox.innerHTML = '';
+      
+      let xStart = 100;
+      let yStart = 100;
+      
+      // Example: ((x^a1 y^a2)^a3 * (x^b1 y^b2)^b3) / ((x^c1 y^c2)^c3)
+      addLargeTextToActivityBox("(", xStart, yStart);
+      xStart += 30;
+      addExponentTermToActivityBox("x", lhsMissing === 'a1' ? '' : a1, xStart, yStart, lhsMissing === 'a1', 'blank-a1');
+      xStart += 70;
+      addExponentTermToActivityBox("y", lhsMissing === 'a2' ? '' : a2, xStart, yStart, lhsMissing === 'a2', 'blank-a2');
+      xStart += 70;
+      addLargeTextToActivityBox(")", xStart, yStart);
+      xStart += 30;
+      addLargeTextToActivityBox(`^${lhsMissing === 'a3' ? '___' : a3}`, xStart, yStart); // no need to use the term helper here
+      xStart += 60;
+      
+      addLargeTextToActivityBox("×", xStart, yStart);
+      xStart += 40;
+      
+      // Continue with second group...
+      addLargeTextToActivityBox("(", xStart, yStart);
+      xStart += 30;
+      addExponentTermToActivityBox("x", lhsMissing === 'b1' ? '' : b1, xStart, yStart, lhsMissing === 'b1', 'blank-b1');
+      xStart += 70;
+      addExponentTermToActivityBox("y", lhsMissing === 'b2' ? '' : b2, xStart, yStart, lhsMissing === 'b2', 'blank-b2');
+      xStart += 70;
+      addLargeTextToActivityBox(")", xStart, yStart);
+      xStart += 30;
+      addLargeTextToActivityBox(`^${lhsMissing === 'b3' ? '___' : b3}`, xStart, yStart);
+      xStart += 60;
+      
+      // Continue with denominator and RHS the same way...
 
-      addTextToActivityBox("LHS goes approximately here", 205, 10);
-
-
-
-
-      addTextToActivityBox("RHS does approximately here", 805, 10);
 
 
 

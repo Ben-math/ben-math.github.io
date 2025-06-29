@@ -76,36 +76,40 @@
     }
 
 
-    function createFixedExponentBox(text, x, y) {
+     function createFixedExponentBox(text, x, y, fontSize = 28) {
       const box = document.createElement('div');
       box.classList.add('exponent-box');
       box.style.left = `${x}px`;
       box.style.top = `${y}px`;
+      box.style.fontSize = `${fontSize}px`;
       box.textContent = text;
       activityBox.appendChild(box);
       return box;
     }
     
-    function createDraggableExponentBox(text, x, y) {
+    function createDraggableExponentBox(text, x, y, fontSize = 28) {
       const box = document.createElement('div');
       box.classList.add('exponent-box', 'draggable-exponent');
       box.style.left = `${x}px`;
       box.style.top = `${y}px`;
+      box.style.fontSize = `${fontSize}px`;
       box.textContent = text;
       activityBox.appendChild(box);
       makeExponentDraggable(box);
       return box;
     }
     
-    function createExponentSlot(x, y) {
+    function createExponentSlot(x, y, fontSize = 28) {
       const slot = document.createElement('div');
       slot.classList.add('exponent-box', 'exponent-slot');
       slot.style.left = `${x}px`;
       slot.style.top = `${y}px`;
+      slot.style.fontSize = `${fontSize}px`;
       activityBox.appendChild(slot);
       setupDropTarget(slot);
       return slot;
     }
+
 
     function makeExponentDraggable(elem) {
       elem.draggable = true;
@@ -181,11 +185,11 @@
       // Clear the activity box
       activityBox.innerHTML = '';
       
-      createFixedExponentBox('x', 200, 150);
-      createExponentSlot(280, 150);
-      createFixedExponentBox('y', 400, 150);
-      createDraggableExponentBox('2', 1000, 500);
-      createDraggableExponentBox('3', 1100, 500);
+      createFixedExponentBox('x', 200, 150, 42);
+      createExponentSlot(280, 150, 42);
+      createFixedExponentBox('y', 400, 150, 42);
+      createDraggableExponentBox('2', 1000, 500, 42);
+      createDraggableExponentBox('3', 1100, 500, 42);
 
 
 

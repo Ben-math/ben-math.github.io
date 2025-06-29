@@ -175,7 +175,12 @@
       // Clear the activity box
       activityBox.innerHTML = '';
 
-      addTextToActivityBox('x', 200, 150, 80);
+      addTextToActivityBox('x', 150, 100, 100);
+      if (lhsMissing == a1) {
+        createExponentSlot(200, 100, 60, 40);
+      else {
+        createFixedExponentBox(a1, 200, 100, 60, 40);
+      }
       
       //createFixedExponentBox('x', 200, 150, 80, 40);
       //createExponentSlot(280, 150, 80, 40);

@@ -81,8 +81,20 @@
       let d1 = a1*a3 + b1*b3 - c1*c3;
       let d2 = a2*a3 + b2*b3 - c2*c3;
 
-      let e1 = Math.floor(Math.random()*2) + 1;
-      let e2 = Math.floor(Math.random()*6) + 1;
+      // Choose RHS unknown
+      const rhsMissing = Math.random() < 0.5 ? 'd1' : 'd2';
+      const rhsCorrectValue = rhsMissing === 'd1' ? d1 : d2;
+      
+      // Possible LHS exponents
+      const lhsCandidates = rhsMissing === 'd1'
+        ? ['a1', 'a3', 'b1', 'b3', 'c1', 'c3']
+        : ['a2', 'a3', 'b2', 'b3', 'c2', 'c3'];
+      
+      const lhsMissing = lhsCandidates[Math.floor(Math.random() * lhsCandidates.length)];
+      const lhsCorrectValue = eval(lhsMissing); // grabs a1, a3, etc.
+
+
+
 
     
       
@@ -100,6 +112,15 @@
 
 
       addTextToActivityBox("RHS does approximately here", 805, 10);
+
+
+
+      const options = new Set([lhsCorrectValue, rhsCorrectValue]);
+      while (options.size < 8) {
+        options.add(Math.floor(Math.random() * 21) - 10);
+      }
+      const optionArray = [...options].sort(() => Math.random() - 0.5);
+
 
 
 

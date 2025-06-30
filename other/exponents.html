@@ -145,8 +145,16 @@
         slot.classList.remove('valid-hover');
         const droppedText = e.dataTransfer.getData('text/plain');
         slot.textContent = droppedText;
+    
+        // Play sound when an exponent is dropped
+        const sound = document.getElementById('set-sound');
+        if (sound) {
+          sound.currentTime = 0; // rewind to start in case it's still playing
+          sound.play();
+        }
       });
     }
+
 
 
 
@@ -397,6 +405,9 @@
 
     
   </script>
+
+  <audio id="click-sound" src="button.mp3" preload="auto"></audio>
+  <audio id="set-sound" src="set2.mp3" preload="auto"></audio>
   
 </body>
 </html>

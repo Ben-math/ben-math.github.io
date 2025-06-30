@@ -356,6 +356,13 @@
     const feedbackText = document.getElementById('feedbackText');
     
     checkBtn.addEventListener('click', () => {
+
+    // Play sound when an exponent is dropped
+    const sound = document.getElementById('click-sound');
+    if (sound) {
+      sound.currentTime = 0; // rewind to start in case it's still playing
+      sound.play();
+    }
     const lhsBox = document.getElementById('lhs-slot');
     const rhsBox = document.getElementById('rhs-slot');
   

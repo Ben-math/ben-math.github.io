@@ -284,13 +284,13 @@
 
 
       const options = new Set([lhsCorrectValue, rhsCorrectValue]);
-      while (options.size < 12) {
+      while (options.size < 15) {
         options.add(Math.floor(Math.random() * 33) - 16);
       }
       const optionArray = [...options].sort(() => Math.random() - 0.5);
 
-      for (let i = 0; i < 12; i++) {
-        createDraggableExponentBox(optionArray[i], 70+(i*80), 520, 60, 40);
+      for (let i = 0; i < 15; i++) {
+        createDraggableExponentBox(optionArray[i], 60+(i*80), 520, 60, 40);
       }
 
 

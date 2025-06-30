@@ -247,6 +247,28 @@
 
       addTextToActivityBox('________', 100, 90, 140);
 
+
+      addTextToActivityBox('(', 280, 140, 140);
+      addTextToActivityBox('x', 320, 200, 100);
+      if (lhsMissingIndex == 4) {
+        createExponentSlot(370, 200, 60, 40);
+      } else {
+        createFixedExponentBox(b1, 370, 200, 60, 40);
+      }
+
+      addTextToActivityBox('y', 420, 200, 100);
+      if (lhsMissingIndex == 5) {
+        createExponentSlot(470, 200, 60, 40);
+      } else {
+        createFixedExponentBox(b2, 470, 200, 60, 40);
+      }
+      addTextToActivityBox(')', 540, 140, 140);
+      if (lhsMissingIndex == 6) {
+        createExponentSlot(570, 150, 60, 40);
+      } else {
+        createFixedExponentBox(b3, 570, 150, 60, 40);
+      }
+
       
       
       

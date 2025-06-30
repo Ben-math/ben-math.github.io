@@ -333,4 +333,9 @@ main {
   background-color: rgba(144, 238, 144, 0.4); /* light green when valid */
 }
 
+.centered-feedback {
+  width: 100%;
+  text-align: center;
+  margin-top: 20px;
+}
 

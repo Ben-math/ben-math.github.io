@@ -43,9 +43,8 @@
       <button id="check-btn" class="rubber-button">Check Answer</button>
     </div>
     
-    <div class="centered-feedback">
-      <p id="feedbackText" class="activity-text"></p>
-    </div>
+    <div id="feedbackText" class="activity-text" style="margin-top: 20px; text-align: center;"></div>
+
 
 
 
@@ -381,11 +380,11 @@
     console.log("y exponent:", yExp, "vs", d2);
   
     if (correct) {
-      feedbackText.textContent = "Correct!";
-      feedbackText.style.color = "green";
+      document.getElementById("feedbackText").textContent = "Correct!";
+      document.getElementById("feedbackText").style.color = "green";
     } else {
-      feedbackText.textContent = "Incorrect.  Try again!";
-      feedbackText.style.color = "red";
+      document.getElementById("feedbackText").textContent = "Incorrect.  Try again!";
+      document.getElementById("feedbackText").style.color = "red";
     }
 
   

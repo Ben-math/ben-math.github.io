@@ -39,6 +39,12 @@
 
     </div>
 
+    <div class="button-container">
+      <button id="check-btn" class="rubber-button">Check Answer</button>
+    </div>
+    <p id="feedback-text"></p>
+
+
   </main>
 
   <script>
@@ -194,14 +200,16 @@
 
       addTextToActivityBox('x', 960, 180, 100);
       if (rhsMissingIndex == 1) {
-        createExponentSlot(1010, 180, 60, 40);
+        const slot1 = createExponentSlot(1010, 180, 60, 40);
+        slot1.setAttribute('data-role', 'rhs');
       } else {
         createFixedExponentBox(d1, 1010, 180, 60, 40);
       }
 
       addTextToActivityBox('y', 1060, 180, 100);
       if (rhsMissingIndex == 2) {
-        createExponentSlot(1110, 180, 60, 40);
+        const slot1 = createExponentSlot(1110, 180, 60, 40);
+        slot1.setAttribute('data-role', 'rhs');
       } else {
         createFixedExponentBox(d2, 1110, 180, 60, 40);
       }
@@ -212,20 +220,23 @@
       addTextToActivityBox('(', 280, 260, 140);
       addTextToActivityBox('x', 320, 320, 100);
       if (lhsMissingIndex == 7) {
-        createExponentSlot(370, 320, 60, 40);
+        const slot = createExponentSlot(370, 320, 60, 40);
+        slot.setAttribute('data-role', 'lhs');
       } else {
         createFixedExponentBox(c1, 370, 320, 60, 40);
       }
 
       addTextToActivityBox('y', 420, 320, 100);
       if (lhsMissingIndex == 8) {
-        createExponentSlot(470, 320, 60, 40);
+        const slot = createExponentSlot(470, 320, 60, 40);
+        slot.setAttribute('data-role', 'lhs');
       } else {
         createFixedExponentBox(c2, 470, 320, 60, 40);
       }
       addTextToActivityBox(')', 540, 260, 140);
       if (lhsMissingIndex == 9) {
-        createExponentSlot(570, 270, 60, 40);
+        const slot = createExponentSlot(570, 270, 60, 40);
+        slot.setAttribute('data-role', 'lhs');
       } else {
         createFixedExponentBox(c3, 570, 270, 60, 40);
       }
@@ -234,20 +245,23 @@
       addTextToActivityBox('(', 110, 40, 140);
       addTextToActivityBox('x', 150, 100, 100);
       if (lhsMissingIndex == 1) {
-        createExponentSlot(200, 100, 60, 40);
+        const slot = createExponentSlot(200, 100, 60, 40);
+        slot.setAttribute('data-role', 'lhs');
       } else {
         createFixedExponentBox(a1, 200, 100, 60, 40);
       }
 
       addTextToActivityBox('y', 250, 100, 100);
       if (lhsMissingIndex == 2) {
-        createExponentSlot(300, 100, 60, 40);
+        const slot = createExponentSlot(300, 100, 60, 40);
+        slot.setAttribute('data-role', 'lhs');
       } else {
         createFixedExponentBox(a2, 300, 100, 60, 40);
       }
       addTextToActivityBox(')', 370, 40, 140);
       if (lhsMissingIndex == 3) {
-        createExponentSlot(400, 50, 60, 40);
+        const slot = createExponentSlot(400, 50, 60, 40);
+        slot.setAttribute('data-role', 'lhs');
       } else {
         createFixedExponentBox(a3, 400, 50, 60, 40);
       }
@@ -256,20 +270,23 @@
       addTextToActivityBox('(', 460, 40, 140);
       addTextToActivityBox('x', 500, 100, 100);
       if (lhsMissingIndex == 4) {
-        createExponentSlot(550, 100, 60, 40);
+        const slot = createExponentSlot(550, 100, 60, 40);
+        slot.setAttribute('data-role', 'lhs');
       } else {
         createFixedExponentBox(b1, 550, 100, 60, 40);
       }
 
       addTextToActivityBox('y', 600, 100, 100);
       if (lhsMissingIndex == 5) {
-        createExponentSlot(650, 100, 60, 40);
+        const slot = createExponentSlot(650, 100, 60, 40);
+        slot.setAttribute('data-role', 'lhs');
       } else {
         createFixedExponentBox(b2, 650, 100, 60, 40);
       }
       addTextToActivityBox(')', 720, 40, 140);
       if (lhsMissingIndex == 6) {
-        createExponentSlot(750, 50, 60, 40);
+        const slot = createExponentSlot(750, 50, 60, 40);
+        slot.setAttribute('data-role', 'lhs');
       } else {
         createFixedExponentBox(b3, 750, 50, 60, 40);
       }
@@ -304,6 +321,27 @@
 
 
     });
+
+
+    const checkBtn = document.getElementById('check-btn');
+    const feedbackText = document.getElementById('feedback-text');
+    
+    checkBtn.addEventListener('click', () => {
+      const lhsSlot = document.querySelector('.exponent-slot[data-role="lhs"]');
+      const rhsSlot = document.querySelector('.exponent-slot[data-role="rhs"]');
+    
+      const lhsAnswer = lhsSlot ? parseInt(lhsSlot.textContent) : null;
+      const rhsAnswer = rhsSlot ? parseInt(rhsSlot.textContent) : null;
+    
+      if (lhsAnswer === lhsCorrectValue && rhsAnswer === rhsCorrectValue) {
+        feedbackText.textContent = '✅ Correct!';
+        feedbackText.style.color = 'green';
+      } else {
+        feedbackText.textContent = '❌ Incorrect, try again!';
+        feedbackText.style.color = 'red';
+      }
+    });
+
     
   </script>
   

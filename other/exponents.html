@@ -50,6 +50,8 @@
   <script>
 
     let a1, a2, a3, b1, b2, b3, c1, c2, c3, d1, d2;
+    let lhsMissingIndex, rhsMissing;
+
 
     const startBtn = document.getElementById('start-btn');
     const questionText = document.getElementById('question-text');
@@ -159,7 +161,7 @@
       d2 = a2*a3 + b2*b3 - c2*c3;
 
       // Choose RHS unknown
-      const rhsMissing = Math.random() < 0.5 ? 'd1' : 'd2';
+      rhsMissing = Math.random() < 0.5 ? 'd1' : 'd2';
       const rhsIndexMap = {
         d1: 1, d2: 2
       };
@@ -180,7 +182,7 @@
         b1: 4, b2: 5, b3: 6,
         c1: 7, c2: 8, c3: 9
       };
-      const lhsMissingIndex = lhsIndexMap[lhsMissing];
+      lhsMissingIndex = lhsIndexMap[lhsMissing];
 
       const lhsCorrectValue = eval(lhsMissing); // grabs a1, a3, etc.
 

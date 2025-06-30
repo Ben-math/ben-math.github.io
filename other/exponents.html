@@ -204,6 +204,7 @@
       if (rhsMissingIndex == 1) {
         const slot1 = createExponentSlot(1010, 180, 60, 40);
         slot1.setAttribute('data-role', 'rhs');
+        slot1.id = 'rhs-slot';
       } else {
         createFixedExponentBox(d1, 1010, 180, 60, 40);
       }
@@ -212,6 +213,7 @@
       if (rhsMissingIndex == 2) {
         const slot1 = createExponentSlot(1110, 180, 60, 40);
         slot1.setAttribute('data-role', 'rhs');
+        slot1.id = 'rhs-slot';
       } else {
         createFixedExponentBox(d2, 1110, 180, 60, 40);
       }
@@ -224,6 +226,7 @@
       if (lhsMissingIndex == 7) {
         const slot = createExponentSlot(370, 320, 60, 40);
         slot.setAttribute('data-role', 'lhs');
+        slot.id = 'lhs-slot';
       } else {
         createFixedExponentBox(c1, 370, 320, 60, 40);
       }
@@ -232,6 +235,7 @@
       if (lhsMissingIndex == 8) {
         const slot = createExponentSlot(470, 320, 60, 40);
         slot.setAttribute('data-role', 'lhs');
+        slot.id = 'lhs-slot';
       } else {
         createFixedExponentBox(c2, 470, 320, 60, 40);
       }
@@ -239,6 +243,7 @@
       if (lhsMissingIndex == 9) {
         const slot = createExponentSlot(570, 270, 60, 40);
         slot.setAttribute('data-role', 'lhs');
+        slot.id = 'lhs-slot';
       } else {
         createFixedExponentBox(c3, 570, 270, 60, 40);
       }
@@ -249,6 +254,7 @@
       if (lhsMissingIndex == 1) {
         const slot = createExponentSlot(200, 100, 60, 40);
         slot.setAttribute('data-role', 'lhs');
+        slot.id = 'lhs-slot';
       } else {
         createFixedExponentBox(a1, 200, 100, 60, 40);
       }
@@ -257,6 +263,7 @@
       if (lhsMissingIndex == 2) {
         const slot = createExponentSlot(300, 100, 60, 40);
         slot.setAttribute('data-role', 'lhs');
+        slot.id = 'lhs-slot';
       } else {
         createFixedExponentBox(a2, 300, 100, 60, 40);
       }
@@ -264,6 +271,7 @@
       if (lhsMissingIndex == 3) {
         const slot = createExponentSlot(400, 50, 60, 40);
         slot.setAttribute('data-role', 'lhs');
+        slot.id = 'lhs-slot';
       } else {
         createFixedExponentBox(a3, 400, 50, 60, 40);
       }
@@ -274,6 +282,7 @@
       if (lhsMissingIndex == 4) {
         const slot = createExponentSlot(550, 100, 60, 40);
         slot.setAttribute('data-role', 'lhs');
+        slot.id = 'lhs-slot';
       } else {
         createFixedExponentBox(b1, 550, 100, 60, 40);
       }
@@ -282,6 +291,7 @@
       if (lhsMissingIndex == 5) {
         const slot = createExponentSlot(650, 100, 60, 40);
         slot.setAttribute('data-role', 'lhs');
+        slot.id = 'lhs-slot';
       } else {
         createFixedExponentBox(b2, 650, 100, 60, 40);
       }
@@ -289,6 +299,7 @@
       if (lhsMissingIndex == 6) {
         const slot = createExponentSlot(750, 50, 60, 40);
         slot.setAttribute('data-role', 'lhs');
+        slot.id = 'lhs-slot';
       } else {
         createFixedExponentBox(b3, 750, 50, 60, 40);
       }
@@ -363,10 +374,13 @@
     console.log("y exponent:", yExp, "vs", d2);
   
     if (correct) {
-      alert("✅ Correct!");
+      feedbackText.textContent = "✅ Correct!";
+      feedbackText.style.color = "green";
     } else {
-      alert("❌ Try again.");
+      feedbackText.textContent = "❌ Try again.";
+      feedbackText.style.color = "red";
     }
+
   
     // Restore global values (optional, if you need them again)
     [a1, a2, a3, b1, b2, b3, c1, c2, c3, d1, d2] = [A1, A2, A3, B1, B2, B3, C1, C2, C3, D1, D2];

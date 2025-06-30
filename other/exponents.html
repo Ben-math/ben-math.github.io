@@ -49,6 +49,8 @@
 
   <script>
 
+    let a1, a2, a3, b1, b2, b3, c1, c2, c3, d1, d2;
+
     const startBtn = document.getElementById('start-btn');
     const questionText = document.getElementById('question-text');
     const activityBox = document.getElementById('my-activity');
@@ -143,18 +145,18 @@
     
   startBtn.addEventListener('click', () => {
 
-      let a1 = Math.floor(Math.random() * 13) - 6;
-      let a2 = Math.floor(Math.random() * 13) - 6;
-      let a3 = Math.floor(Math.random() * 7) - 3;
-      let b1 = Math.floor(Math.random() * 13) - 6;
-      let b2 = Math.floor(Math.random() * 13) - 6;
-      let b3 = Math.floor(Math.random() * 7) - 3;
-      let c1 = Math.floor(Math.random() * 13) - 6;
-      let c2 = Math.floor(Math.random() * 13) - 6;
-      let c3 = Math.floor(Math.random() * 7) - 3;
+      a1 = Math.floor(Math.random() * 13) - 6;
+      a2 = Math.floor(Math.random() * 13) - 6;
+      a3 = Math.floor(Math.random() * 7) - 3;
+      b1 = Math.floor(Math.random() * 13) - 6;
+      b2 = Math.floor(Math.random() * 13) - 6;
+      b3 = Math.floor(Math.random() * 7) - 3;
+      c1 = Math.floor(Math.random() * 13) - 6;
+      c2 = Math.floor(Math.random() * 13) - 6;
+      c3 = Math.floor(Math.random() * 7) - 3;
     
-      let d1 = a1*a3 + b1*b3 - c1*c3;
-      let d2 = a2*a3 + b2*b3 - c2*c3;
+      d1 = a1*a3 + b1*b3 - c1*c3;
+      d2 = a2*a3 + b2*b3 - c2*c3;
 
       // Choose RHS unknown
       const rhsMissing = Math.random() < 0.5 ? 'd1' : 'd2';
@@ -327,20 +329,49 @@
     const feedbackText = document.getElementById('feedback-text');
     
     checkBtn.addEventListener('click', () => {
-      const lhsSlot = document.querySelector('.exponent-slot[data-role="lhs"]');
-      const rhsSlot = document.querySelector('.exponent-slot[data-role="rhs"]');
-    
-      const lhsAnswer = lhsSlot ? parseInt(lhsSlot.textContent) : null;
-      const rhsAnswer = rhsSlot ? parseInt(rhsSlot.textContent) : null;
-    
-      if (lhsAnswer === lhsCorrectValue && rhsAnswer === rhsCorrectValue) {
-        feedbackText.textContent = '✅ Correct!';
-        feedbackText.style.color = 'green';
-      } else {
-        feedbackText.textContent = '❌ Incorrect, try again!';
-        feedbackText.style.color = 'red';
-      }
-    });
+    const lhsBox = document.getElementById('lhs-slot');
+    const rhsBox = document.getElementById('rhs-slot');
+  
+    const lhsValue = parseInt(lhsBox.textContent);
+    const rhsValue = parseInt(rhsBox.textContent);
+  
+    // Fill in the missing exponents based on lhsMissingIndex and rhsMissing
+    const [A1, A2, A3, B1, B2, B3, C1, C2, C3, D1, D2] = [a1, a2, a3, b1, b2, b3, c1, c2, c3, d1, d2];
+  
+    // Replace the missing exponents with user guesses
+    switch (lhsMissingIndex) {
+      case 1: a1 = lhsValue; break;
+      case 2: a2 = lhsValue; break;
+      case 3: a3 = lhsValue; break;
+      case 4: b1 = lhsValue; break;
+      case 5: b2 = lhsValue; break;
+      case 6: b3 = lhsValue; break;
+      case 7: c1 = lhsValue; break;
+      case 8: c2 = lhsValue; break;
+      case 9: c3 = lhsValue; break;
+    }
+    if (rhsMissing === 'd1') d1 = rhsValue;
+    if (rhsMissing === 'd2') d2 = rhsValue;
+  
+    // Evaluate both sides
+    const xExp = ((a1 * a3) + (b1 * b3)) - (c1 * c3);
+    const yExp = ((a2 * a3) + (b2 * b3)) - (c2 * c3);
+  
+    const correct = (xExp === d1) && (yExp === d2);
+  
+    console.log("x exponent:", xExp, "vs", d1);
+    console.log("y exponent:", yExp, "vs", d2);
+  
+    if (correct) {
+      alert("✅ Correct!");
+    } else {
+      alert("❌ Try again.");
+    }
+  
+    // Restore global values (optional, if you need them again)
+    [a1, a2, a3, b1, b2, b3, c1, c2, c3, d1, d2] = [A1, A2, A3, B1, B2, B3, C1, C2, C3, D1, D2];
+  });
+  
 
     
   </script>

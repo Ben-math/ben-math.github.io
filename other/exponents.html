@@ -189,6 +189,48 @@
       // Clear the activity box
       activityBox.innerHTML = '';
 
+
+      addTextToActivityBox('=', 850, 150, 140);
+
+      addTextToActivityBox('x', 960, 180, 100);
+      if (rhsMissingIndex == 1) {
+        createExponentSlot(1010, 180, 60, 40);
+      } else {
+        createFixedExponentBox(d1, 1010, 180, 60, 40);
+      }
+
+      addTextToActivityBox('y', 1060, 180, 100);
+      if (rhsMissingIndex == 2) {
+        createExponentSlot(1110, 180, 60, 40);
+      } else {
+        createFixedExponentBox(d2, 1110, 180, 60, 40);
+      }
+
+      addTextToActivityBox('________', 100, 90, 140);
+
+
+      addTextToActivityBox('(', 280, 260, 140);
+      addTextToActivityBox('x', 320, 320, 100);
+      if (lhsMissingIndex == 7) {
+        createExponentSlot(370, 320, 60, 40);
+      } else {
+        createFixedExponentBox(c1, 370, 320, 60, 40);
+      }
+
+      addTextToActivityBox('y', 420, 320, 100);
+      if (lhsMissingIndex == 8) {
+        createExponentSlot(470, 320, 60, 40);
+      } else {
+        createFixedExponentBox(c2, 470, 320, 60, 40);
+      }
+      addTextToActivityBox(')', 540, 260, 140);
+      if (lhsMissingIndex == 9) {
+        createExponentSlot(570, 270, 60, 40);
+      } else {
+        createFixedExponentBox(c3, 570, 270, 60, 40);
+      }
+
+
       addTextToActivityBox('(', 110, 40, 140);
       addTextToActivityBox('x', 150, 100, 100);
       if (lhsMissingIndex == 1) {
@@ -230,46 +272,6 @@
         createExponentSlot(750, 50, 60, 40);
       } else {
         createFixedExponentBox(b3, 750, 50, 60, 40);
-      }
-
-      addTextToActivityBox('=', 850, 150, 140);
-
-      addTextToActivityBox('x', 960, 180, 100);
-      if (rhsMissingIndex == 1) {
-        createExponentSlot(1010, 180, 60, 40);
-      } else {
-        createFixedExponentBox(d1, 1010, 180, 60, 40);
-      }
-
-      addTextToActivityBox('y', 1060, 180, 100);
-      if (rhsMissingIndex == 2) {
-        createExponentSlot(1110, 180, 60, 40);
-      } else {
-        createFixedExponentBox(d2, 1110, 180, 60, 40);
-      }
-
-      addTextToActivityBox('________', 100, 90, 140);
-
-
-      addTextToActivityBox('(', 280, 260, 140);
-      addTextToActivityBox('x', 320, 320, 100);
-      if (lhsMissingIndex == 7) {
-        createExponentSlot(370, 320, 60, 40);
-      } else {
-        createFixedExponentBox(c1, 370, 320, 60, 40);
-      }
-
-      addTextToActivityBox('y', 420, 320, 100);
-      if (lhsMissingIndex == 8) {
-        createExponentSlot(470, 320, 60, 40);
-      } else {
-        createFixedExponentBox(c2, 470, 320, 60, 40);
-      }
-      addTextToActivityBox(')', 540, 260, 140);
-      if (lhsMissingIndex == 9) {
-        createExponentSlot(570, 270, 60, 40);
-      } else {
-        createFixedExponentBox(c3, 570, 270, 60, 40);
       }
 
       

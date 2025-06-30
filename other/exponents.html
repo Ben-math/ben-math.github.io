@@ -159,9 +159,12 @@
       const rhsCorrectValue = rhsMissing === 'd1' ? d1 : d2;
       
       // Possible LHS exponents
-      const lhsCandidates = rhsMissing === 'd1'
-        ? ['a1', 'b1', 'c1']
-        : ['a2', 'b2', 'c2'];
+      let lhsCandidates;
+      if (rhsMissing == 'd1') {
+        lhsCandidates = ['a2', 'b2', 'c2'];
+      } else { 
+        lhsCandidates = ['a1', 'b1', 'c1'];
+      }
       
       const lhsMissing = lhsCandidates[Math.floor(Math.random() * lhsCandidates.length)];
       const lhsIndexMap = {

@@ -219,7 +219,7 @@
       ];
       
       const fxLatex = `\\[ f(x) = ${terms.join(' ')} \\]`; 
-      document.getElementById('fx-display').textContent = fxLatex; 
+      document.getElementById('fx-display').innerHTML = fxLatex; 
       MathJax.typesetPromise();
 
 

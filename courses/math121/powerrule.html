@@ -55,7 +55,7 @@
 
   <script>
 
-    let a1, a2, a3, b1, b2, b3, c1, c2, c3, d1, d2;
+    let a0, a1, a2, a3, e1, e2, e3;
     let lhsMissingIndex, rhsMissing;
 
 
@@ -161,49 +161,22 @@
     
   startBtn.addEventListener('click', () => {
 
-      a1 = Math.floor(Math.random() * 13) - 6;
-      a2 = Math.floor(Math.random() * 13) - 6;
-      a3 = Math.floor(Math.random() * 7) - 3;
-      b1 = Math.floor(Math.random() * 13) - 6;
-      b2 = Math.floor(Math.random() * 13) - 6;
-      b3 = Math.floor(Math.random() * 7) - 3;
-      c1 = Math.floor(Math.random() * 13) - 6;
-      c2 = Math.floor(Math.random() * 13) - 6;
-      c3 = Math.floor(Math.random() * 7) - 3;
-    
-      d1 = a1*a3 + b1*b3 - c1*c3;
-      d2 = a2*a3 + b2*b3 - c2*c3;
-
-      // Choose RHS unknown
-      rhsMissing = Math.random() < 0.5 ? 'd1' : 'd2';
-      const rhsIndexMap = {
-        d1: 1, d2: 2
-      };
-      const rhsMissingIndex = rhsIndexMap[rhsMissing];
-      const rhsCorrectValue = rhsMissing === 'd1' ? d1 : d2;
-      
-      // Possible LHS exponents
-      let lhsCandidates;
-      if (rhsMissing == 'd1') {
-        lhsCandidates = ['a2', 'b2', 'c2'];
-      } else { 
-        lhsCandidates = ['a1', 'b1', 'c1'];
+      let mode = Math.floor(Math.random() * 4) + 1;
+      a0 = Math.floor(Math.random() * 19 - 9;
+      a1 = Math.floor(Math.random() * 19 - 9;
+      a2 = Math.floor(Math.random() * 19 - 9;
+      a3 = Math.floor(Math.random() * 19 - 9;
+      e1 = Math.floor(Math.random() * 9 + 1;
+      e2 = Math.floor(Math.random() * 9 + 1;
+      while (e2 == e1) {
+        e2 = Math.floor(Math.random() * 9 + 1;
       }
-      
-      const lhsMissing = lhsCandidates[Math.floor(Math.random() * lhsCandidates.length)];
-      const lhsIndexMap = {
-        a1: 1, a2: 2, a3: 3,
-        b1: 4, b2: 5, b3: 6,
-        c1: 7, c2: 8, c3: 9
-      };
-      lhsMissingIndex = lhsIndexMap[lhsMissing];
-
-      const lhsCorrectValue = eval(lhsMissing); // grabs a1, a3, etc.
-
-
-
-
-    
+      e3 = Math.floor(Math.random() * 9 + 1;
+      while (e3 == e1 || e3 == e2) {
+        e3 = Math.floor(Math.random() * 9 + 1;
+      }
+      let sorted = [e1, e2, e3].sort((x, y) => x - y);
+      [e1, e2, e3] = sorted;
       
   
       // Display the question

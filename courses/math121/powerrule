@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta charset="UTF-8" />
+  <title>Power Rule Activity</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Power Rule Activity</h1>
+    <div id="nav-placeholder"></div>
+      <script>
+        fetch("/nav.html")
+          .then(response => response.text())
+          .then(data => {
+            document.getElementById("nav-placeholder").innerHTML = data;
+        
+            const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+            const navLinks = document.querySelectorAll("#nav-placeholder a");
+        
+            navLinks.forEach(link => {
+              const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+              if (linkPath === currentPath) {
+                link.classList.add("active");
+              }
+            });
+          });
+      </script>
+  </header>
+  <main>
+    <div class="button-container">
+      <button id="start-btn" class="rubber-button">Start!</button>
+    </div>
+    
+    <p id="question-text"></p>
+
+    <div class="activity-box" id="my-activity">
+
+    </div>
+
+    <div class="button-container">
+      <button id="check-btn" class="rubber-button">Check Answer</button>
+    </div>
+    
+    <div class="button-container">
+      <div id="feedbackText" class="center-feedback"></div>
+    </div>
+
+
+
+
+
+  </main>
+
+  <script>
+
+    let a1, a2, a3, b1, b2, b3, c1, c2, c3, d1, d2;
+    let lhsMissingIndex, rhsMissing;
+
+
+    const startBtn = document.getElementById('start-btn');
+    const questionText = document.getElementById('question-text');
+    const activityBox = document.getElementById('my-activity');
+
+
+        function addTextToActivityBox(text, x, y, fontSize = 28) {
+      const txt = document.createElement('div');
+      txt.classList.add('activity-text');
+      txt.textContent = text;
+      txt.style.left = `${x}px`;
+      txt.style.top = `${y}px`;
+      txt.style.fontSize = `${fontSize}px`;
+      activityBox.appendChild(txt);
+    }
+
+
+    function createFixedExponentBox(text, x, y, boxSize = 80, fontSize = 28) {
+      const box = document.createElement('div');
+      box.classList.add('exponent-box');
+      box.style.left = `${x}px`;
+      box.style.top = `${y}px`;
+      box.style.width = `${boxSize}px`;
+      box.style.height = `${boxSize}px`;
+      box.style.fontSize = `${fontSize}px`;
+      box.textContent = text;
+      activityBox.appendChild(box);
+      return box;
+    }
+    
+    function createDraggableExponentBox(text, x, y, boxSize = 80, fontSize = 28) {
+      const box = document.createElement('div');
+      box.classList.add('exponent-box', 'draggable-exponent');
+      box.style.left = `${x}px`;
+      box.style.top = `${y}px`;
+      box.style.width = `${boxSize}px`;
+      box.style.height = `${boxSize}px`;
+      box.style.fontSize = `${fontSize}px`;
+      box.textContent = text;
+      activityBox.appendChild(box);
+      makeExponentDraggable(box);
+      return box;
+    }
+    
+    function createExponentSlot(x, y, boxSize = 80, fontSize = 28) {
+      const slot = document.createElement('div');
+      slot.classList.add('exponent-box', 'exponent-slot');
+      slot.style.left = `${x}px`;
+      slot.style.top = `${y}px`;
+      slot.style.width = `${boxSize}px`;
+      slot.style.height = `${boxSize}px`;
+      slot.style.fontSize = `${fontSize}px`;
+      activityBox.appendChild(slot);
+      setupDropTarget(slot);
+      return slot;
+    }
+
+
+
+    function makeExponentDraggable(elem) {
+      elem.draggable = true;
+    
+      elem.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('text/plain', elem.textContent);
+        setTimeout(() => elem.style.visibility = 'hidden', 0);
+      });
+    
+      elem.addEventListener('dragend', () => {
+        elem.style.visibility = 'visible';
+      });
+    }
+    
+    function setupDropTarget(slot) {
+      slot.addEventListener('dragover', e => {
+        e.preventDefault();
+        slot.classList.add('valid-hover');
+      });
+    
+      slot.addEventListener('dragleave', () => {
+        slot.classList.remove('valid-hover');
+      });
+    
+      slot.addEventListener('drop', e => {
+        e.preventDefault();
+        slot.classList.remove('valid-hover');
+        const droppedText = e.dataTransfer.getData('text/plain');
+        slot.textContent = droppedText;
+    
+        // Play sound when an exponent is dropped
+        const sound = document.getElementById('set-sound');
+        if (sound) {
+          sound.currentTime = 0; // rewind to start in case it's still playing
+          sound.play();
+        }
+      });
+    }
+
+
+
+
+    
+  startBtn.addEventListener('click', () => {
+
+      a1 = Math.floor(Math.random() * 13) - 6;
+      a2 = Math.floor(Math.random() * 13) - 6;
+      a3 = Math.floor(Math.random() * 7) - 3;
+      b1 = Math.floor(Math.random() * 13) - 6;
+      b2 = Math.floor(Math.random() * 13) - 6;
+      b3 = Math.floor(Math.random() * 7) - 3;
+      c1 = Math.floor(Math.random() * 13) - 6;
+      c2 = Math.floor(Math.random() * 13) - 6;
+      c3 = Math.floor(Math.random() * 7) - 3;
+    
+      d1 = a1*a3 + b1*b3 - c1*c3;
+      d2 = a2*a3 + b2*b3 - c2*c3;
+
+      // Choose RHS unknown
+      rhsMissing = Math.random() < 0.5 ? 'd1' : 'd2';
+      const rhsIndexMap = {
+        d1: 1, d2: 2
+      };
+      const rhsMissingIndex = rhsIndexMap[rhsMissing];
+      const rhsCorrectValue = rhsMissing === 'd1' ? d1 : d2;
+      
+      // Possible LHS exponents
+      let lhsCandidates;
+      if (rhsMissing == 'd1') {
+        lhsCandidates = ['a2', 'b2', 'c2'];
+      } else { 
+        lhsCandidates = ['a1', 'b1', 'c1'];
+      }
+      
+      const lhsMissing = lhsCandidates[Math.floor(Math.random() * lhsCandidates.length)];
+      const lhsIndexMap = {
+        a1: 1, a2: 2, a3: 3,
+        b1: 4, b2: 5, b3: 6,
+        c1: 7, c2: 8, c3: 9
+      };
+      lhsMissingIndex = lhsIndexMap[lhsMissing];
+
+      const lhsCorrectValue = eval(lhsMissing); // grabs a1, a3, etc.
+
+
+
+
+    
+      
+  
+      // Display the question
+      questionText.textContent = `Drag and drop exponents to the empty slots to make the equation true!`;
+
+      
+      // Clear the activity box
+      activityBox.innerHTML = '';
+
+
+      addTextToActivityBox('=', 850, 150, 140);
+
+      addTextToActivityBox('x', 960, 180, 100);
+      if (rhsMissingIndex == 1) {
+        const slot1 = createExponentSlot(1010, 180, 60, 40);
+        slot1.setAttribute('data-role', 'rhs');
+        slot1.id = 'rhs-slot';
+      } else {
+        createFixedExponentBox(d1, 1010, 180, 60, 40);
+      }
+
+      addTextToActivityBox('y', 1060, 180, 100);
+      if (rhsMissingIndex == 2) {
+        const slot1 = createExponentSlot(1110, 180, 60, 40);
+        slot1.setAttribute('data-role', 'rhs');
+        slot1.id = 'rhs-slot';
+      } else {
+        createFixedExponentBox(d2, 1110, 180, 60, 40);
+      }
+
+      addTextToActivityBox('________', 100, 90, 140);
+
+
+      addTextToActivityBox('(', 280, 260, 140);
+      addTextToActivityBox('x', 320, 320, 100);
+      if (lhsMissingIndex == 7) {
+        const slot = createExponentSlot(370, 320, 60, 40);
+        slot.setAttribute('data-role', 'lhs');
+        slot.id = 'lhs-slot';
+      } else {
+        createFixedExponentBox(c1, 370, 320, 60, 40);
+      }
+
+      addTextToActivityBox('y', 420, 320, 100);
+      if (lhsMissingIndex == 8) {
+        const slot = createExponentSlot(470, 320, 60, 40);
+        slot.setAttribute('data-role', 'lhs');
+        slot.id = 'lhs-slot';
+      } else {
+        createFixedExponentBox(c2, 470, 320, 60, 40);
+      }
+      addTextToActivityBox(')', 540, 260, 140);
+      if (lhsMissingIndex == 9) {
+        const slot = createExponentSlot(570, 270, 60, 40);
+        slot.setAttribute('data-role', 'lhs');
+        slot.id = 'lhs-slot';
+      } else {
+        createFixedExponentBox(c3, 570, 270, 60, 40);
+      }
+
+
+      addTextToActivityBox('(', 110, 40, 140);
+      addTextToActivityBox('x', 150, 100, 100);
+      if (lhsMissingIndex == 1) {
+        const slot = createExponentSlot(200, 100, 60, 40);
+        slot.setAttribute('data-role', 'lhs');
+        slot.id = 'lhs-slot';
+      } else {
+        createFixedExponentBox(a1, 200, 100, 60, 40);
+      }
+
+      addTextToActivityBox('y', 250, 100, 100);
+      if (lhsMissingIndex == 2) {
+        const slot = createExponentSlot(300, 100, 60, 40);
+        slot.setAttribute('data-role', 'lhs');
+        slot.id = 'lhs-slot';
+      } else {
+        createFixedExponentBox(a2, 300, 100, 60, 40);
+      }
+      addTextToActivityBox(')', 370, 40, 140);
+      if (lhsMissingIndex == 3) {
+        const slot = createExponentSlot(400, 50, 60, 40);
+        slot.setAttribute('data-role', 'lhs');
+        slot.id = 'lhs-slot';
+      } else {
+        createFixedExponentBox(a3, 400, 50, 60, 40);
+      }
+
+
+      addTextToActivityBox('(', 460, 40, 140);
+      addTextToActivityBox('x', 500, 100, 100);
+      if (lhsMissingIndex == 4) {
+        const slot = createExponentSlot(550, 100, 60, 40);
+        slot.setAttribute('data-role', 'lhs');
+        slot.id = 'lhs-slot';
+      } else {
+        createFixedExponentBox(b1, 550, 100, 60, 40);
+      }
+
+      addTextToActivityBox('y', 600, 100, 100);
+      if (lhsMissingIndex == 5) {
+        const slot = createExponentSlot(650, 100, 60, 40);
+        slot.setAttribute('data-role', 'lhs');
+        slot.id = 'lhs-slot';
+      } else {
+        createFixedExponentBox(b2, 650, 100, 60, 40);
+      }
+      addTextToActivityBox(')', 720, 40, 140);
+      if (lhsMissingIndex == 6) {
+        const slot = createExponentSlot(750, 50, 60, 40);
+        slot.setAttribute('data-role', 'lhs');
+        slot.id = 'lhs-slot';
+      } else {
+        createFixedExponentBox(b3, 750, 50, 60, 40);
+      }
+
+      
+      
+      
+      //createFixedExponentBox('x', 200, 150, 80, 40);
+      //createExponentSlot(280, 150, 80, 40);
+      //createFixedExponentBox('y', 400, 150, 80, 40);
+      //createDraggableExponentBox('2', 1000, 500, 80, 36);
+      //createDraggableExponentBox('3', 1100, 500, 80, 36);
+
+
+
+
+
+
+      const options = new Set([lhsCorrectValue, rhsCorrectValue]);
+      while (options.size < 15) {
+        options.add(Math.floor(Math.random() * 33) - 16);
+      }
+      const optionArray = [...options].sort(() => Math.random() - 0.5);
+
+      for (let i = 0; i < 15; i++) {
+        createDraggableExponentBox(optionArray[i], 60+(i*80), 520, 60, 40);
+      }
+
+
+
+
+
+
+    });
+
+
+    const checkBtn = document.getElementById('check-btn');
+    const feedbackText = document.getElementById('feedbackText');
+    
+    checkBtn.addEventListener('click', () => {
+
+    // Play sound when an exponent is dropped
+    const sound = document.getElementById('click-sound');
+    if (sound) {
+      sound.currentTime = 0; // rewind to start in case it's still playing
+      sound.play();
+    }
+    const lhsBox = document.getElementById('lhs-slot');
+    const rhsBox = document.getElementById('rhs-slot');
+  
+    const lhsValue = parseInt(lhsBox.textContent);
+    const rhsValue = parseInt(rhsBox.textContent);
+  
+    // Fill in the missing exponents based on lhsMissingIndex and rhsMissing
+    const [A1, A2, A3, B1, B2, B3, C1, C2, C3, D1, D2] = [a1, a2, a3, b1, b2, b3, c1, c2, c3, d1, d2];
+  
+    // Replace the missing exponents with user guesses
+    switch (lhsMissingIndex) {
+      case 1: a1 = lhsValue; break;
+      case 2: a2 = lhsValue; break;
+      case 3: a3 = lhsValue; break;
+      case 4: b1 = lhsValue; break;
+      case 5: b2 = lhsValue; break;
+      case 6: b3 = lhsValue; break;
+      case 7: c1 = lhsValue; break;
+      case 8: c2 = lhsValue; break;
+      case 9: c3 = lhsValue; break;
+    }
+    if (rhsMissing === 'd1') d1 = rhsValue;
+    if (rhsMissing === 'd2') d2 = rhsValue;
+  
+    // Evaluate both sides
+    const xExp = ((a1 * a3) + (b1 * b3)) - (c1 * c3);
+    const yExp = ((a2 * a3) + (b2 * b3)) - (c2 * c3);
+  
+    const correct = (xExp === d1) && (yExp === d2);
+  
+    console.log("x exponent:", xExp, "vs", d1);
+    console.log("y exponent:", yExp, "vs", d2);
+  
+    if (correct) {
+      document.getElementById("feedbackText").textContent = "Correct!";
+      document.getElementById("feedbackText").style.color = "green";
+    } else {
+      document.getElementById("feedbackText").textContent = "Incorrect.  Try again!";
+      document.getElementById("feedbackText").style.color = "red";
+    }
+
+  
+    // Restore global values (optional, if you need them again)
+    [a1, a2, a3, b1, b2, b3, c1, c2, c3, d1, d2] = [A1, A2, A3, B1, B2, B3, C1, C2, C3, D1, D2];
+  });
+  
+
+    
+  </script>
+
+  <audio id="click-sound" src="button.mp3" preload="auto"></audio>
+  <audio id="set-sound" src="set2.mp3" preload="auto"></audio>
+  
+</body>
+</html>

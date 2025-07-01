@@ -202,7 +202,9 @@
       
   
       document.getElementById('question').textContent = `Find the derivative of`;
-      document.getElementById('fx-display').innerHTML = `\\[x\\]`;
+      document.getElementById('fx-display').innerHTML = `\\[x^2 + 3x + 5\\]`;
+      MathJax.typeset();
+
       
       // Clear the activity box
       activityBox.innerHTML = '';

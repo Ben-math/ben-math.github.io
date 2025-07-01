@@ -220,6 +220,7 @@
       
       const fxLatex = `\\[ \\text{Find the derivative of } \\hspace{5mm} f(x) = ${terms.join(' ')} \\]`; 
       console.log("Updating fx-display with LaTeX");
+      fxLatex = '\\[ x^2 + 3x + 4 \\]';]
       document.getElementById('fx-display').innerHTML = fxLatex;
       MathJax.typeset([document.getElementById('fx-display')]);
       console.log("Requested MathJax render");

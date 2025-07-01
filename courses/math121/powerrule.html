@@ -211,16 +211,32 @@
       [e1, e2, e3] = sorted;
       
   
+      const fxDisplay = document.getElementById('fx-display');
+
+      // Example variables (replace with actual ones)
       const terms = [
-        formatTerm(a3, e3, true),
-        formatTerm(a2, e2, false),
-        formatTerm(a1, e1, false),
-        formatTerm(a0, 0, false)
+        { coeff: a3, exp: e3 },
+        { coeff: a2, exp: e2 },
+        { coeff: a1, exp: e1 },
+        { coeff: a0, exp: 0 }
       ];
       
-      let fxLatex = '\\[ x^2 + 3x + 4 \\]';
-      let fxDisplay = document.getElementById('fx-display');
-      fxDisplay.textContent = fxLatex; // not innerHTML
+      // Build string term-by-term
+      let expr = terms
+        .filter(term => term.coeff !== 0)
+        .map((term, index) => {
+          const { coeff, exp } = term;
+          const absCoeff = Math.abs(coeff);
+          const sign = coeff >= 0 ? (index === 0 ? '' : ' + ') : ' - ';
+          const coeffStr = (absCoeff === 1 && exp !== 0) ? '' : absCoeff;
+          const xStr = exp === 0 ? '' : (exp === 1 ? 'x' : `x^{${exp}}`);
+          return `${sign}${coeffStr}${xStr}`;
+        })
+        .join('');
+      
+      const fxLatex = `\\[ ${expr} \\]`;
+      
+      fxDisplay.textContent = fxLatex;
       MathJax.typeset([fxDisplay]);
 
 

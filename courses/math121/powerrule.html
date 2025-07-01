@@ -219,8 +219,11 @@
       ];
       
       const fxLatex = `\\[ \\text{Find the derivative of } \\hspace{5mm} f(x) = ${terms.join(' ')} \\]`; 
-      document.getElementById('fx-display').innerHTML = fxLatex; 
-      MathJax.typesetPromise();
+      console.log("Updating fx-display with LaTeX");
+      document.getElementById('fx-display').innerHTML = fxLatex;
+      MathJax.typeset([document.getElementById('fx-display')]);
+      console.log("Requested MathJax render");
+
 
 
       

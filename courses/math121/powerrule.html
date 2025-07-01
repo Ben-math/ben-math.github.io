@@ -234,7 +234,7 @@
         })
         .join('');
       
-      const fxLatex = `\\[ ${expr} \\]`;
+      const fxLatex = `\\[ \\text{Find the derivative of } \\hspace{5mm} f(x) = ${expr} \\]`;
       
       fxDisplay.textContent = fxLatex;
       MathJax.typeset([fxDisplay]);

@@ -163,6 +163,16 @@
     }
 
 
+    function formatTerm(coef, exp, isFirst) {
+      const sign = coef < 0 ? '−' : (isFirst ? '' : '+');
+      const absCoef = Math.abs(coef);
+    
+      if (exp === 0) return `${sign} ${absCoef}`;
+      if (exp === 1) return `${sign} ${absCoef === 1 ? 'x' : `${absCoef}x`}`;
+      return `${sign} ${absCoef === 1 ? `x^{${exp}}` : `${absCoef}x^{${exp}`}`;
+    }
+
+
 
 
     
@@ -201,9 +211,16 @@
       [e1, e2, e3] = sorted;
       
   
-      document.getElementById('fx-display').innerHTML = `\\[ \\text{Find the derivative of } \\hspace{5mm} f(x) = x^2 + 6x \\]`;
+      const terms = [
+        formatTerm(a3, e3, true),
+        formatTerm(a2, e2, false),
+        formatTerm(a1, e1, false),
+        formatTerm(a0, 0, false)
+      ];
+      
+      const fxLatex = `\\[ f(x) = ${terms.join(' ')} \\]`;
+      document.getElementById('fx-display').innerHTML = fxLatex;
       MathJax.typeset();
-
 
       
       // Clear the activity box

@@ -34,6 +34,18 @@
       </script>
   </header>
   <main>
+
+    <div id="rule-select" style="text-align: center; margin-bottom: 1em;">
+      <label><input type="checkbox" class="rule-checkbox" id="product"> Product Rule</label>
+      <label><input type="checkbox" class="rule-checkbox" id="quotient"> Quotient Rule</label>
+      <label><input type="checkbox" class="rule-checkbox" id="chain"> Chain Rule</label>
+      <label><input type="checkbox" class="rule-checkbox" id="trig"> Trigonometric Functions</label>
+      <label><input type="checkbox" class="rule-checkbox" id="exp"> Exponential Functions</label>
+      <label><input type="checkbox" class="rule-checkbox" id="poly"> Polynomial Functions</label>
+      <label><input type="checkbox" class="rule-checkbox" id="random"> Random</label>
+    </div>
+
+    
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>
@@ -69,6 +81,41 @@
     const startBtn = document.getElementById('start-btn');
     const questionText = document.getElementById('question-text');
     const activityBox = document.getElementById('my-activity');
+
+    const ruleCheckboxes = {
+      product: document.getElementById('product'),
+      quotient: document.getElementById('quotient'),
+      chain: document.getElementById('chain'),
+      trig: document.getElementById('trig'),
+      exp: document.getElementById('exp'),
+      poly: document.getElementById('poly'),
+      random: document.getElementById('random'),
+    };
+    
+    Object.values(ruleCheckboxes).forEach(box => {
+      box.addEventListener('change', () => {
+        // Mutual exclusion for Product and Quotient Rules
+        if (box.id === 'product' && box.checked) {
+          ruleCheckboxes.quotient.checked = false;
+        }
+        if (box.id === 'quotient' && box.checked) {
+          ruleCheckboxes.product.checked = false;
+        }
+    
+        // If Random is checked, uncheck all others
+        if (box.id === 'random' && box.checked) {
+          Object.keys(ruleCheckboxes).forEach(key => {
+            if (key !== 'random') ruleCheckboxes[key].checked = false;
+          });
+        }
+    
+        // If any rule other than Random is checked, uncheck Random
+        if (box.id !== 'random' && box.checked) {
+          ruleCheckboxes.random.checked = false;
+        }
+      });
+    });
+
 
 
         function addTextToActivityBox(text, x, y, fontSize = 28) {

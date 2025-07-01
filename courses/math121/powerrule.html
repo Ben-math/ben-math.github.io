@@ -39,9 +39,8 @@
     </div>
     
     <div id="question-area">
+      <div id="question" class="math"></div>
       <div id="fx-display" class="math"></div>
-      <div id="p-value" class="math"></div>
-      <div id="limit-value" class="math"></div>
     </div>
 
     <div class="activity-box" id="my-activity">
@@ -202,9 +201,7 @@
       [e1, e2, e3] = sorted;
       
   
-      // Display the question
-      questionText.textContent = `Drag and drop exponents to the empty slots to make the equation true!`;
-
+      document.getElementById('fx-display').innerHTML = `\\[\\lim_{x \\to ${p}} f(x) = ${L}\\]`;
       
       // Clear the activity box
       activityBox.innerHTML = '';

@@ -275,7 +275,6 @@
     const a1Value = parseInt(a1Box.textContent);
     const a2Value = parseInt(a2Box.textContent);
     const a3Value = parseInt(a3Box.textContent);
-    const e1Value = parseInt(e1Box.textContent);
     const e2Value = parseInt(e2Box.textContent);
     const e3Value = parseInt(e3Box.textContent);
   
@@ -290,10 +289,14 @@
     const e3Ans = e3-1;
 
     let correct;
-    if (e1 != 1) {
-      correct = (a1Value == a1Ans) && (a2Value == a2Ans) && (a3Value == a3Ans) && (e1Value == e1Ans) && (e2Value == e2Ans) && (e3Value == e3Ans);
+    if (e1Box) {
+      const e1Value = parseInt(e1Box.textContent);
+      const e1Ans = e1 - 1;
+      correct = (a1Value == a1Ans) && (a2Value == a2Ans) && (a3Value == a3Ans) &&
+                (e1Value == e1Ans) && (e2Value == e2Ans) && (e3Value == e3Ans);
     } else {
-      correct = (a1Value == a1Ans) && (a2Value == a2Ans) && (a3Value == a3Ans) && (e2Value == e2Ans) && (e3Value == e3Ans);
+      correct = (a1Value == a1Ans) && (a2Value == a2Ans) && (a3Value == a3Ans) &&
+                (e2Value == e2Ans) && (e3Value == e3Ans);
     }
   
   

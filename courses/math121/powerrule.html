@@ -161,18 +161,18 @@
   startBtn.addEventListener('click', () => {
 
       let mode = Math.floor(Math.random() * 4) + 1;
-      a0 = Math.floor(Math.random() * 19 - 9;
-      a1 = Math.floor(Math.random() * 19 - 9;
-      a2 = Math.floor(Math.random() * 19 - 9;
-      a3 = Math.floor(Math.random() * 19 - 9;
-      e1 = Math.floor(Math.random() * 9 + 1;
-      e2 = Math.floor(Math.random() * 9 + 1;
+      a0 = Math.floor(Math.random() * 19) - 9;
+      a1 = Math.floor(Math.random() * 19) - 9;
+      a2 = Math.floor(Math.random() * 19) - 9;
+      a3 = Math.floor(Math.random() * 19) - 9;
+      e1 = Math.floor(Math.random() * 9) + 1;
+      e2 = Math.floor(Math.random() * 9) + 1;
       while (e2 == e1) {
-        e2 = Math.floor(Math.random() * 9 + 1;
+        e2 = Math.floor(Math.random() * 9) + 1;
       }
-      e3 = Math.floor(Math.random() * 9 + 1;
+      e3 = Math.floor(Math.random() * 9) + 1;
       while (e3 == e1 || e3 == e2) {
-        e3 = Math.floor(Math.random() * 9 + 1;
+        e3 = Math.floor(Math.random() * 9) + 1;
       }
       let sorted = [e1, e2, e3].sort((x, y) => x - y);
       [e1, e2, e3] = sorted;

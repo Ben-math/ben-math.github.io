@@ -218,9 +218,10 @@
         formatTerm(a0, 0, false)
       ];
       
-      const fxLatex = `\\[ f(x) = ${terms.join(' ')} \\]`;
-      document.getElementById('fx-display').innerHTML = fxLatex;
+      const fxLatex = `\\[ f(x) = ${terms.join(' ')} \\]`; 
+      document.getElementById('fx-display').textContent = fxLatex; 
       MathJax.typeset();
+
 
       
       // Clear the activity box

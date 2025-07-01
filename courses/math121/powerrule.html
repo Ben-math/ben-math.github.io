@@ -160,7 +160,9 @@
     
   startBtn.addEventListener('click', () => {
 
+
       let mode = Math.floor(Math.random() * 4) + 1;
+
       a0 = Math.floor(Math.random() * 19) - 9;
       a1 = Math.floor(Math.random() * 19) - 9;
       a2 = Math.floor(Math.random() * 19) - 9;
@@ -174,6 +176,7 @@
       while (e3 == e1 || e3 == e2) {
         e3 = Math.floor(Math.random() * 9) + 1;
       }
+
       let sorted = [e1, e2, e3].sort((x, y) => x - y);
       [e1, e2, e3] = sorted;
       
@@ -187,13 +190,13 @@
 
 
 
-      addTextToActivityBox('x', 150, 350, 100);
-      const a3slot = createSlot(100, 350, 60, 35);
+      addTextToActivityBox('x', 150, 200, 100);
+      const a3slot = createSlot(80, 250, 60, 35);
       a3slot.id = 'a3-slot';
-      const e3slot = createSlot(200, 380, 60, 35);
+      const e3slot = createSlot(220, 250, 60, 35);
       e3slot.id = 'e3-slot';
 
-      addTextToActivityBox('+', 250, 350, 100);
+      addTextToActivityBox('+', 310, 200, 100);
       
       addTextToActivityBox('x', 350, 350, 100);
       const a2slot = createSlot(300, 350, 60, 35);

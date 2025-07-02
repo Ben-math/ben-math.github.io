@@ -308,19 +308,25 @@
       }
     } else if (numExprs === 3) {
       // Use op1 and op2
-      const opSlots = [null, null];
-    
+      const opSlots = [];
+
       if (structuralRules.length === 0) {
-        opSlots[0] = chooseRandom(['sum', 'difference']);
-        opSlots[1] = chooseRandom(['sum', 'difference']);
+        opSlots.push(chooseRandom(['sum', 'difference']));
+        opSlots.push(chooseRandom(['sum', 'difference']));
+      } else if (structuralRules.length === 1) {
+        opSlots.push(structuralRules[0]);
+        opSlots.push(chooseRandom(['sum', 'difference']));
       } else {
-        // Pick one slot randomly for the structural rule
-        const specialSlot = chooseRandom([0, 1]);
-        opSlots[specialSlot] = chooseRandom(structuralRules);
-        opSlots[1 - specialSlot] = chooseRandom(['sum', 'difference']);
+        // Two structural rules — use both
+        opSlots.push(structuralRules[0]);
+        opSlots.push(structuralRules[1]);
       }
     
+      // Shuffle to avoid fixed positioning
+      opSlots.sort(() => Math.random() - 0.5);
+    
       [op1, op2] = opSlots;
+
     }
     
     console.log({ numExprs, expr1, expr2, expr3, op1, op2 });

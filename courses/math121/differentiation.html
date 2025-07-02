@@ -74,6 +74,10 @@
 
   <script>
 
+    let expr1 = {}, expr2 = {}, expr3 = {};
+    let op1 = null, op2 = null;
+
+
     let a0, a1, a2, a3, e1, e2, e3;
 
 
@@ -115,6 +119,9 @@
       });
     });
 
+    function chooseRandom(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
 
 
         function addTextToActivityBox(text, x, y, fontSize = 28) {
@@ -223,6 +230,103 @@
 
     
   startBtn.addEventListener('click', () => {
+
+
+    const useProduct = ruleCheckboxes.product.checked;
+    const useQuotient = ruleCheckboxes.quotient.checked;
+    const useChain = ruleCheckboxes.chain.checked;
+    const useTrig = ruleCheckboxes.trig.checked;
+    const useExp = ruleCheckboxes.exp.checked;
+    const usePoly = ruleCheckboxes.poly.checked;
+    const useRandom = ruleCheckboxes.random.checked;
+
+    // Determine number of expressions
+    let numExprs;
+    
+    const selectedTypes = [];
+    if (useTrig) selectedTypes.push('trig');
+    if (useExp) selectedTypes.push('exp');
+    if (usePoly) selectedTypes.push('poly');
+    
+    // Count how many expression types are checked
+    const numTypesChecked = selectedTypes.length;
+    
+    // Decide number of expressions to use
+    if (useProduct || useQuotient) {
+      numExprs = 2;
+      if (useChain) {
+        numExprs = (numTypesChecked === 3) ? 3 : chooseRandom([2, 3]);
+      }
+    } else if (useChain) {
+      numExprs = chooseRandom([1, 2]);
+    } else {
+      numExprs = Math.max(1, numTypesChecked); // default to 1–3
+    }
+    
+    // Default to polynomial if no type is selected
+    const availableTypes = selectedTypes.length > 0 ? [...selectedTypes, 'poly'] : ['poly'];
+    
+    // Ensure we include at least one of each selected type
+    let requiredTypes = [...selectedTypes];
+    while (requiredTypes.length < numExprs) {
+      requiredTypes.push(chooseRandom(availableTypes));
+    }
+    requiredTypes = requiredTypes.slice(0, numExprs); // in case we overshot
+    
+    // Shuffle required types
+    requiredTypes.sort(() => Math.random() - 0.5);
+    
+    // Assign expression types
+    [expr1, expr2, expr3] = [{}, {}, {}];
+    if (numExprs >= 1) expr1.type = requiredTypes[0];
+    if (numExprs >= 2) expr2.type = requiredTypes[1];
+    if (numExprs === 3) expr3.type = requiredTypes[2];
+    
+    // Determine how expressions are connected (op1/op2)
+    op1 = null;
+    op2 = null;
+    
+    const structuralRules = [];
+    if (useProduct) structuralRules.push('product');
+    if (useQuotient) structuralRules.push('quotient');
+    if (useChain) structuralRules.push('chain');
+    
+    if (numExprs === 1) {
+      // Single expression — no operators
+      op1 = null;
+      op2 = null;
+    } else if (numExprs === 2) {
+      // Use op1 only
+      if (structuralRules.length === 0) {
+        op1 = chooseRandom(['sum', 'difference']);
+      } else if (structuralRules.length === 1) {
+        op1 = structuralRules[0];
+      } else if (useProduct || useQuotient) {
+        op1 = useProduct ? 'product' : 'quotient';
+      } else {
+        op1 = 'chain';
+      }
+    } else if (numExprs === 3) {
+      // Use op1 and op2
+      const opSlots = [null, null];
+    
+      if (structuralRules.length === 0) {
+        opSlots[0] = chooseRandom(['sum', 'difference']);
+        opSlots[1] = chooseRandom(['sum', 'difference']);
+      } else {
+        // Pick one slot randomly for the structural rule
+        const specialSlot = chooseRandom([0, 1]);
+        opSlots[specialSlot] = chooseRandom(structuralRules);
+        opSlots[1 - specialSlot] = chooseRandom(['sum', 'difference']);
+      }
+    
+      [op1, op2] = opSlots;
+    }
+    
+    console.log({ numExprs, expr1, expr2, expr3, op1, op2 });
+
+
+
 
 
       let mode = Math.floor(Math.random() * 4) + 1;

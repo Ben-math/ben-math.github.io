@@ -306,14 +306,6 @@
     }
     requiredTypes = requiredTypes.slice(0, numExprs); // in case we overshot
     
-    // Shuffle required types
-    requiredTypes.sort(() => Math.random() - 0.5);
-    
-    // Assign expression types
-    [expr1, expr2, expr3] = [{}, {}, {}];
-    if (numExprs >= 1) expr1.type = requiredTypes[0];
-    if (numExprs >= 2) expr2.type = requiredTypes[1];
-    if (numExprs === 3) expr3.type = requiredTypes[2];
     
     // Determine how expressions are connected (op1/op2)
     op1 = null;
@@ -361,6 +353,15 @@
       [op1, op2] = opSlots;
 
     }
+
+    // Shuffle required types
+    requiredTypes.sort(() => Math.random() - 0.5);
+    
+    // Assign expression types
+    [expr1, expr2, expr3] = [{}, {}, {}];
+    if (numExprs >= 1) expr1.type = requiredTypes[0];
+    if (numExprs >= 2) expr2.type = requiredTypes[1];
+    if (numExprs === 3) expr3.type = requiredTypes[2];
     
     console.log({ numExprs, expr1, expr2, expr3, op1, op2 });
 

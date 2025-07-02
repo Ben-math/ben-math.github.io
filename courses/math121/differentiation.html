@@ -235,7 +235,25 @@
 
     let useRandom = ruleCheckboxes.random.checked;
     if (useRandom) {
-
+      // 33% chance for each of these to be true
+      useChain = Math.random() < 0.33;
+      useTrig = Math.random() < 0.33;
+      useExp = Math.random() < 0.33;
+      usePoly = Math.random() < 0.33;
+    
+      // 33% chance of picking one of product/quotient
+      if (Math.random() < 0.33) {
+        if (Math.random() < 0.5) {
+          useProduct = true;
+          useQuotient = false;
+        } else {
+          useProduct = false;
+          useQuotient = true;
+        }
+      } else {
+        useProduct = false;
+        useQuotient = false;
+      }
     } else {
       useProduct = ruleCheckboxes.product.checked;
       useQuotient = ruleCheckboxes.quotient.checked;

@@ -231,16 +231,18 @@
     
   startBtn.addEventListener('click', () => {
 
-    const useRandom = ruleCheckboxes.random.checked;
+    let useRandom, useProduct, useQuotient, useChain, useExp, usePoly;
+
+    let useRandom = ruleCheckboxes.random.checked;
     if (useRandom) {
 
     } else {
-      const useProduct = ruleCheckboxes.product.checked;
-      const useQuotient = ruleCheckboxes.quotient.checked;
-      const useChain = ruleCheckboxes.chain.checked;
-      const useTrig = ruleCheckboxes.trig.checked;
-      const useExp = ruleCheckboxes.exp.checked;
-      const usePoly = ruleCheckboxes.poly.checked;
+      useProduct = ruleCheckboxes.product.checked;
+      useQuotient = ruleCheckboxes.quotient.checked;
+      useChain = ruleCheckboxes.chain.checked;
+      useTrig = ruleCheckboxes.trig.checked;
+      useExp = ruleCheckboxes.exp.checked;
+      usePoly = ruleCheckboxes.poly.checked;
     }
     
     // Determine number of expressions

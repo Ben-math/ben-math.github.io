@@ -286,11 +286,15 @@
     } else {
       if (useProduct || useQuotient) {
         numExprs = 2;
-        if (useChain) {
-          numExprs = (numTypesChecked === 3) ? 3 : chooseRandom([2, 3]);
+        if (useChain && numTypesChecked === 2) {
+            numExprs = chooseRandom([2, 3]);
         }
       } else if (useChain) {
-        numExprs = chooseRandom([1, 2]);
+        if (usePoly || numTypesChecked === 0) {
+          numExprs = 1;
+        } else {
+          numExprs = chooseRandom([1, 2]);
+        }
       } else {
         numExprs = Math.max(1, numTypesChecked); // default to 1–3
       }

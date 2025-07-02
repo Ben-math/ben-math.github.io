@@ -252,15 +252,25 @@
     const numTypesChecked = selectedTypes.length;
     
     // Decide number of expressions to use
-    if (useProduct || useQuotient) {
-      numExprs = 2;
-      if (useChain) {
-        numExprs = (numTypesChecked === 3) ? 3 : chooseRandom([2, 3]);
+    if (numTypesChecked === 3) {
+      numExprs = 3;
+    } else if (numTypesChecked === 2) {
+      if ((useProduct || useQuotient) && useChain) {
+        numExprs = chooseRandom([2, 3]);
+      } else {
+        numExprs = 2;
       }
-    } else if (useChain) {
-      numExprs = chooseRandom([1, 2]);
     } else {
-      numExprs = Math.max(1, numTypesChecked); // default to 1–3
+      if (useProduct || useQuotient) {
+        numExprs = 2;
+        if (useChain) {
+          numExprs = (numTypesChecked === 3) ? 3 : chooseRandom([2, 3]);
+        }
+      } else if (useChain) {
+        numExprs = chooseRandom([1, 2]);
+      } else {
+        numExprs = Math.max(1, numTypesChecked); // default to 1–3
+      }
     }
     
     // Default to polynomial if no type is selected

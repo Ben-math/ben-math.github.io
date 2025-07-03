@@ -435,7 +435,7 @@
     const chainUsed = (op1 === 'chain' || op2 === 'chain');
     
     if (chainSelected && !chainUsed) {
-      op0 = 'chain';
+      op0 = generateRandomInt(2, 9);
     } else {
       op0 = null;
     }

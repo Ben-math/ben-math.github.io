@@ -227,6 +227,42 @@
     }
 
 
+    function generateTrigExpr() {
+      const funcs = ['sin', 'cos', 'tan', 'sec', 'csc', 'cot'];
+      return { type: 'trig', func: chooseRandom(funcs) };
+    }
+    
+    function generateExpExpr() {
+      const choice = Math.random() < 0.5 ? 'e' : generateNonZeroInteger(-9, 9);
+      return { type: 'exp', base: choice };
+    }
+    
+    function generatePolyExpr() {
+      const coeffs = [0, 0, 0].map(() => generateNonZeroInteger(-9, 9));
+      const exps = [generateRandomInt(1, 9), generateRandomInt(1, 9)];
+      return { type: 'poly', coeffs, exps };
+    }
+    
+    // Utility to generate integers
+    function generateRandomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+    
+    function generateNonZeroInteger(min, max) {
+      let num;
+      do {
+        num = generateRandomInt(min, max);
+      } while (num === 0);
+      return num;
+    }
+
+    function generateExpression(type) {
+      if (type === 'trig') return generateTrigExpr();
+      if (type === 'exp') return generateExpExpr();
+      if (type === 'poly') return generatePolyExpr();
+      throw new Error(`Unknown expression type: ${type}`);
+    }
+
 
 
     
@@ -394,6 +430,10 @@
     } else {
       op0 = null;
     }
+
+    expr1 = { ...expr1, ...generateExpression(expr1.type) };
+    if (numExprs >= 2) expr2 = { ...expr2, ...generateExpression(expr2.type) };
+    if (numExprs === 3) expr3 = { ...expr3, ...generateExpression(expr3.type) };
 
     
     console.log({ numExprs, expr1, expr2, expr3, op0, op1, op2 });

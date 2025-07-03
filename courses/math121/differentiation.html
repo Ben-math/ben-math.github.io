@@ -75,7 +75,8 @@
   <script>
 
     let expr1 = {}, expr2 = {}, expr3 = {};
-    let op1 = null, op2 = null;
+    let op0 = null, op1 = null, op2 = null;
+    
 
 
     let a0, a1, a2, a3, e1, e2, e3;
@@ -358,8 +359,19 @@
 
     }
 
-    // Shuffle required types
-    requiredTypes.sort(() => Math.random() - 0.5);
+    // Now, shuffle — possibly multiple times, based on op1/op2
+    let shuffled = false;
+    do {
+      shuffled = false;
+      requiredTypes.sort(() => Math.random() - 0.5);
+    
+      if (numExprs >= 2 && op1 === 'chain' && requiredTypes[0] === 'poly') {
+        shuffled = true;
+      }
+      if (numExprs === 3 && op2 === 'chain' && requiredTypes[1] === 'poly') {
+        shuffled = true;
+      }
+    } while (shuffled);
 
     
     // Assign expression types
@@ -367,8 +379,29 @@
     if (numExprs >= 1) expr1.type = requiredTypes[0];
     if (numExprs >= 2) expr2.type = requiredTypes[1];
     if (numExprs === 3) expr3.type = requiredTypes[2];
+
+    // Add op0 only in the special case:
+    // - All expressions used are polynomial
+    // - Chain rule was selected
+    // - Neither op1 nor op2 is chain
     
-    console.log({ numExprs, expr1, expr2, expr3, op1, op2 });
+    const allTypes = [expr1.type];
+    if (numExprs >= 2) allTypes.push(expr2.type);
+    if (numExprs === 3) allTypes.push(expr3.type);
+    
+    const allPoly = allTypes.every(type => type === 'poly');
+    const chainSelected = useChain;
+    const chainUsed = (op1 === 'chain' || op2 === 'chain');
+    
+    if (allPoly && chainSelected && !chainUsed) {
+      op0 = 'chain';
+    } else {
+      op0 = null;
+    }
+
+    
+    console.log({ numExprs, expr1, expr2, expr3, op0, op1, op2 });
+
 
 
 

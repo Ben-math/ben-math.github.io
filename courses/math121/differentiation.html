@@ -239,10 +239,19 @@
     
     function generatePolyExpr() {
       const coeffs = [0, 0, 0].map(() => generateNonZeroInteger(-9, 9));
-      const exps = [generateRandomInt(1, 9), generateRandomInt(1, 9)];
+      
+      let e1 = generateRandomInt(1, 9);
+      let e2;
+      do {
+        e2 = generateRandomInt(1, 9);
+      } while (e2 === e1);
+    
+      // Sort in descending order
+      const exps = [e1, e2].sort((a, b) => b - a);
+    
       return { type: 'poly', coeffs, exps };
     }
-    
+
     // Utility to generate integers
     function generateRandomInt(min, max) {
       return Math.floor(Math.random() * (max - min + 1)) + min;

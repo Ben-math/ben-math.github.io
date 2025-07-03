@@ -381,19 +381,13 @@
     if (numExprs === 3) expr3.type = requiredTypes[2];
 
     // Add op0 only in the special case:
-    // - All expressions used are polynomial
     // - Chain rule was selected
     // - Neither op1 nor op2 is chain
     
-    const allTypes = [expr1.type];
-    if (numExprs >= 2) allTypes.push(expr2.type);
-    if (numExprs === 3) allTypes.push(expr3.type);
-    
-    const allPoly = allTypes.every(type => type === 'poly');
     const chainSelected = useChain;
     const chainUsed = (op1 === 'chain' || op2 === 'chain');
     
-    if (allPoly && chainSelected && !chainUsed) {
+    if (chainSelected && !chainUsed) {
       op0 = 'chain';
     } else {
       op0 = null;

@@ -383,6 +383,8 @@
     // Add op0 only in the special case:
     // - Chain rule was selected
     // - Neither op1 nor op2 is chain
+    // - The above logic ensures that this happens only if at least one of the expressions is polynomial
+    // - In this case, op0 will raise that expression to a power
     
     const chainSelected = useChain;
     const chainUsed = (op1 === 'chain' || op2 === 'chain');

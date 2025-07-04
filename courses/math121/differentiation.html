@@ -563,6 +563,14 @@
       }
 
       expr += appendAnyExpr(expr1);
+
+      if (op1 != chain) {
+        if (expr1.type === 'exp') {
+          expr += `^x`;
+        } else if (expr1.type === 'trig') {
+          expr += `(x)`;
+        }
+      }
     
       if (op0 !== null) {
         expr += `\\right)^{${op0}}`;

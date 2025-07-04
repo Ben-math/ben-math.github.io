@@ -233,7 +233,7 @@
     }
     
     function generateExpExpr() {
-      const choice = Math.random() < 0.5 ? 'e' : generateNonZeroInteger(-9, 9);
+      const choice = Math.random() < 0.5 ? 'e' : generateRestrictedInteger();
       return { type: 'exp', base: choice };
     }
     
@@ -264,6 +264,15 @@
       } while (num === 0);
       return num;
     }
+
+    function generateRestrictedInteger() {
+      let num;
+      do {
+        num = Math.floor(Math.random() * 19) - 9;  // Generates -9 to 9
+      } while (Math.abs(num) <= 1);  // Excludes -1, 0, 1
+      return num;
+    }
+
 
     function generateExpression(type) {
       if (type === 'trig') return generateTrigExpr();
@@ -564,11 +573,28 @@
 
       expr += appendAnyExpr(expr1);
 
-      if (op1 != chain) {
+      if (op1 !== 'chain') {
         if (expr1.type === 'exp') {
           expr += `^x`;
         } else if (expr1.type === 'trig') {
           expr += `(x)`;
+        }
+      } else {
+        if (expr1.type === 'exp') {
+          expr += `^{`;
+        } else {
+          expr += `\\left(`;
+        }
+      }
+
+
+
+
+      if (op1 === 'chain') {
+        if (expr1.type === 'exp') {
+          expr += `3}`;
+        } else {
+          expr += `\\right)`;
         }
       }
     

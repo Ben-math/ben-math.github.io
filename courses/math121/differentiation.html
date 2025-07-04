@@ -571,6 +571,12 @@
         expr += "\\left(";
       }
 
+      if (op1 === 'product') {
+        expr += `\\left(`;
+      } else if (op1 === 'quotient') {
+        expr += `\\frac{`;
+      }
+
       expr += appendAnyExpr(expr1);
 
       if (op1 !== 'chain') {
@@ -587,9 +593,17 @@
         }
       }
 
+      if (op1 === 'product') {
+        expr += `\\right)\\left(`;
+      } else if (op1 === 'quotient') {
+        expr += `}{`;
+      }
 
 
 
+
+
+      // This is the end of the chain rule applied to expressions after expr1
       if (op1 === 'chain') {
         if (expr1.type === 'exp') {
           // Placeholder number here to avoid errors, will delete once the above is filled in
@@ -597,6 +611,10 @@
         } else {
           expr += `\\right)`;
         }
+      } else if (op1 === 'product') {
+        expr += `\\right)`;
+      } else if (op1 === 'quotient') {
+        expr += `}`;
       }
     
       if (op0 !== null) {

@@ -273,6 +273,33 @@
     }
 
 
+    function appendAnyExpr(exprObj) {
+      if (exprObj.type === 'poly') {
+        return appendPolyExpr(exprObj);
+      } else if (exprObj.type === 'exp') {
+        return appendExpExpr(exprObj);
+      } else if (exprObj.type === 'trig') {
+        return appendTrigExpr(exprObj);
+      } else {
+        throw new Error(`Unknown expression type: ${exprObj.type}`);
+      }
+    }
+
+    function appendTrigExpr(exprObj) {
+      const func = exprObj.func; // 'sin', 'cos', etc.
+      return `\\${func}`;
+    }
+
+    function appendExpExpr(exprObj) {
+      const base = exprObj.base;
+      if (base === 'e') {
+        return `e^`;
+      } else {
+        return `${base}^`;
+      }
+    }
+
+
     function appendPolyExpr(exprObj) {
       const { coeffs, exps } = exprObj;
       const [a, b, c] = coeffs;
@@ -535,7 +562,7 @@
         expr += "\\left(";
       }
 
-      expr += appendPolyExpr(expr1);
+      expr += appendAnyExpr(expr1);
     
       if (op0 !== null) {
         expr += `\\right)^{${op0}}`;

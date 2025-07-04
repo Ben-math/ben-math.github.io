@@ -495,21 +495,20 @@
       ];
       
       // Build string term-by-term
-      let expr = terms
-        .filter(term => term.coeff !== 0)
-        .map((term, index) => {
-          const { coeff, exp } = term;
-          const absCoeff = Math.abs(coeff);
-          const sign = coeff >= 0 ? (index === 0 ? '' : ' + ') : ' - ';
-          const coeffStr = (absCoeff === 1 && exp !== 0) ? '' : absCoeff;
-          const xStr = exp === 0 ? '' : (exp === 1 ? 'x' : `x^{${exp}}`);
-          return `${sign}${coeffStr}${xStr}`;
-        })
-        .join('');
+      let expr = "";
+      if (op0 !== null) {
+        expr += "\\left(";
+
+
+
+        expr += "\\right)^{${op0}}";
+      }
+
       
       const fxLatex = `\\[ \\text{Find the derivative of } \\hspace{5mm} f(x) = ${expr} \\]`;
-      
+
       fxDisplay.textContent = fxLatex;
+      // fxDisplay.textContent = fxLatex;
       MathJax.typeset([fxDisplay]);
 
 

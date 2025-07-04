@@ -579,8 +579,15 @@
 
       expr += appendAnyExpr(expr1);
 
-    
-      if (numExprs >= 2) {
+
+
+
+
+
+
+
+
+      if (numExprs === 2) {
         if (op1 !== 'chain') {
           if (expr1.type === 'exp') {
             expr += `^x`;
@@ -602,52 +609,106 @@
         }
         // We are now past expr1
   
-        if (numExprs === 3) {
-          if (op2 === 'product') {
-            expr += `\\left(`;
-          } else if (op2 === 'quotient') {
-            expr += `\\frac{`;
-          }
-          expr += appendAnyExpr(expr2);
-          if (op2 !== 'chain') {
-            if (expr2.type === 'exp') {
-              expr += `^x`;
-            } else if (expr2.type === 'trig') {
-              expr += `(x)`;
-            }
+        
+        expr += appendAnyExpr(expr2);
+        if (expr2.type === 'exp') {
+          expr += `^x`;
+        } else if (expr2.type === 'trig') {
+          expr += `(x)`;
+        }
+  
+  
+        // This is the end of the chain rule applied to expressions after expr1
+        if (op1 === 'chain') {
+          if (expr1.type === 'exp') {
+            expr += `}`;
           } else {
-            if (expr2.type === 'exp') {
-              expr += `^{`;
-            } else {
-              expr += `\\left(`;
-            }
+            expr += `\\right)`;
           }
+        } else if (op1 === 'product') {
+          expr += `\\right)`;
+        } else if (op1 === 'quotient') {
+          expr += `}`;
+        }
+      }
+
+
+
+
+
+
+
+
+
     
-          if (op2 === 'product') {
-            expr += `\\right)\\left(`;
-          } else if (op2 === 'quotient') {
-            expr += `}{`;
-          }
-          // We are now past expr2
+
     
-          expr += appendAnyExpr(expr3);
-          if (expr3.type === 'exp') {
+      if (numExprs === 3) {
+        if (op1 !== 'chain') {
+          if (expr1.type === 'exp') {
             expr += `^x`;
-          } else if (expr3.type === 'trig') {
+          } else if (expr1.type === 'trig') {
             expr += `(x)`;
           }
-    
-          if (op2 === 'chain') {
-            if (expr2.type === 'exp') {
-              expr += `}`;
-            } else {
-              expr += `\\right)`;
-            }
-          } else if (op2 === 'product') {
-            expr += `\\right)`;
-          } else if (op2 === 'quotient') {
-            expr += `}`;
+        } else {
+          if (expr1.type === 'exp') {
+            expr += `^{`;
+          } else {
+            expr += `\\left(`;
           }
+        }
+  
+        if (op1 === 'product') {
+          expr += `\\right)\\left(`;
+        } else if (op1 === 'quotient') {
+          expr += `}{`;
+        }
+        // We are now past expr1
+  
+        if (op2 === 'product') {
+          expr += `\\left(`;
+        } else if (op2 === 'quotient') {
+          expr += `\\frac{`;
+        }
+        expr += appendAnyExpr(expr2);
+        if (op2 !== 'chain') {
+          if (expr2.type === 'exp') {
+            expr += `^x`;
+          } else if (expr2.type === 'trig') {
+            expr += `(x)`;
+          }
+        } else {
+          if (expr2.type === 'exp') {
+            expr += `^{`;
+          } else {
+            expr += `\\left(`;
+          }
+        }
+  
+        if (op2 === 'product') {
+          expr += `\\right)\\left(`;
+        } else if (op2 === 'quotient') {
+          expr += `}{`;
+        }
+        // We are now past expr2
+  
+        expr += appendAnyExpr(expr3);
+        if (expr3.type === 'exp') {
+          expr += `^x`;
+        } else if (expr3.type === 'trig') {
+          expr += `(x)`;
+        }
+  
+        if (op2 === 'chain') {
+          if (expr2.type === 'exp') {
+            expr += `}`;
+          } else {
+            expr += `\\right)`;
+          }
+        } else if (op2 === 'product') {
+          expr += `\\right)`;
+        } else if (op2 === 'quotient') {
+          expr += `}`;
         }
   
   

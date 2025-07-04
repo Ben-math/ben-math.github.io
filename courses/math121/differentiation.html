@@ -498,8 +498,11 @@
       let expr = "";
       if (op0 !== null) {
         expr += "\\left(";
+      }
 
       
+    
+      if (op0 !== null) {
         expr += `\\right)^{${op0}}`;
       }
 

@@ -273,6 +273,41 @@
     }
 
 
+    function appendPolyExpr(exprObj) {
+      const { coeffs, exps } = exprObj;
+      const [a, b, c] = coeffs;
+      const [e1, e2] = exps;
+    
+      let result = "";
+    
+      // First term (degree e1)
+      result += formatPolyTerm(a, e1, true);
+    
+      // Second term (degree e2)
+      result += formatPolyTerm(b, e2, false);
+    
+      // Constant term
+      result += formatPolyTerm(c, 0, false);
+    
+      return result;
+    }
+
+
+    function formatPolyTerm(coef, exp, isFirst) {
+      if (coef === 0) return "";  // Skip zero terms
+    
+      const sign = coef > 0 ? (isFirst ? "" : " + ") : " - ";
+      const absCoef = Math.abs(coef);
+      const coeffStr = (absCoef === 1 && exp !== 0) ? "" : absCoef;
+      const xStr =
+        exp === 0 ? "" :
+        exp === 1 ? "x" :
+        `x^{${exp}}`;
+    
+      return `${sign}${coeffStr}${xStr}`;
+    }
+
+
 
     
   startBtn.addEventListener('click', () => {
@@ -500,7 +535,7 @@
         expr += "\\left(";
       }
 
-      
+      expr += appendPolyExpr(expr1);
     
       if (op0 !== null) {
         expr += `\\right)^{${op0}}`;

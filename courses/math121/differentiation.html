@@ -571,7 +571,7 @@
         expr += "\\left(";
       }
 
-      if (op1 === 'product') {
+      if (op1 === 'product' || op1 === 'sum' || op1 === 'difference') {
         expr += `\\left(`;
       } else if (op1 === 'quotient') {
         expr += `\\frac{`;
@@ -614,6 +614,10 @@
           expr += `\\right)\\left(`;
         } else if (op1 === 'quotient') {
           expr += `}{`;
+        } else if (op1 === 'sum') {
+          expr += `\\right)+\\left(`;
+        } else if (op1 === 'difference') {
+          expr += `\\right)-\\left(`;
         }
         // We are now past expr1
   
@@ -633,7 +637,7 @@
           } else {
             expr += `\\right)`;
           }
-        } else if (op1 === 'product') {
+        } else if (op1 === 'product' || op1 === 'sum' || op1 === 'difference') {
           expr += `\\right)`;
         } else if (op1 === 'quotient') {
           expr += `}`;
@@ -670,10 +674,14 @@
           expr += `\\right)\\left(`;
         } else if (op1 === 'quotient') {
           expr += `}{`;
+        } else if (op1 === 'sum') {
+          expr += `\\right)+\\left(`;
+        } else if (op1 === 'difference') {
+          expr += `\\right)-\\left(`;
         }
         // We are now past expr1
   
-        if (op2 === 'product') {
+        if (op2 === 'product' || op2 === 'sum' || op2 === 'difference') {
           expr += `\\left(`;
         } else if (op2 === 'quotient') {
           expr += `\\frac{`;
@@ -697,6 +705,10 @@
           expr += `\\right)\\left(`;
         } else if (op2 === 'quotient') {
           expr += `}{`;
+        } else if (op2 === 'sum') {
+          expr += `\\right)+\\left(`;
+        } else if (op2 === 'difference') {
+          expr += `\\right)-\\left(`;
         }
         // We are now past expr2
   
@@ -713,7 +725,7 @@
           } else {
             expr += `\\right)`;
           }
-        } else if (op2 === 'product') {
+        } else if (op2 === 'product' || op2 === 'sum' || op2 === 'difference') {
           expr += `\\right)`;
         } else if (op2 === 'quotient') {
           expr += `}`;
@@ -728,7 +740,7 @@
           } else {
             expr += `\\right)`;
           }
-        } else if (op1 === 'product') {
+        } else if (op1 === 'product' || op1 === 'sum' || op1 === 'difference') {
           expr += `\\right)`;
         } else if (op1 === 'quotient') {
           expr += `}`;

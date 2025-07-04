@@ -598,7 +598,49 @@
       } else if (op1 === 'quotient') {
         expr += `}{`;
       }
+      // We are now past expr1
 
+
+      if (op2 === 'product') {
+        expr += `\\left(`;
+      } else if (op2 === 'quotient') {
+        expr += `\\frac{`;
+      }
+      expr += appendAnyExpr(expr2);
+      if (op2 !== 'chain') {
+        if (expr2.type === 'exp') {
+          expr += `^x`;
+        } else if (expr2.type === 'trig') {
+          expr += `(x)`;
+        }
+      } else {
+        if (expr2.type === 'exp') {
+          expr += `^{`;
+        } else {
+          expr += `\\left(`;
+        }
+      }
+
+      if (op2 === 'product') {
+        expr += `\\right)\\left(`;
+      } else if (op2 === 'quotient') {
+        expr += `}{`;
+      }
+      // We are now past expr2
+
+      expr += appendAnyExpr(expr3);
+
+      if (op2 === 'chain') {
+        if (expr2.type === 'exp') {
+          expr += `}`;
+        } else {
+          expr += `\\right)`;
+        }
+      } else if (op2 === 'product') {
+        expr += `\\right)`;
+      } else if (op2 === 'quotient') {
+        expr += `}`;
+      }
 
 
 
@@ -606,8 +648,7 @@
       // This is the end of the chain rule applied to expressions after expr1
       if (op1 === 'chain') {
         if (expr1.type === 'exp') {
-          // Placeholder number here to avoid errors, will delete once the above is filled in
-          expr += `3}`;
+          expr += `}`;
         } else {
           expr += `\\right)`;
         }

@@ -383,7 +383,7 @@
       } else {
         // d/dx a^x is ln(a) * a^x, just store as the same type for now
         // You could later add a "coefficient" to this object if needed
-        return { type: 'exp', base: base };
+        return { type: 'lnexp', base: base };
       }
     }
 

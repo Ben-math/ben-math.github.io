@@ -413,7 +413,7 @@
       let newFunc;
     
       if (func === 'sin') newFunc = 'cos';
-      else if (func === 'cos') newFunc = '-sin';
+      else if (func === 'cos') newFunc = 'sin';
       else if (func === 'tan') newFunc = 'sec^{2}';
       else throw new Error(`Unknown trig function: ${func}`);
     
@@ -921,10 +921,11 @@
         } else if (expr1.type === 'trig') {
           expr4 = derivative(expr1);
           if (op0 === null) {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = \\${expr4.func}(x)\\]`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${expr4.func === 'sin' ? '-' : ''}\\${expr4.func}(x) \\]`;
             i++;
           } else {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = \\${expr4.func}(x), \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\${expr4.func}(x)\\]`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${expr4.func === 'sin' ? '-' : ''}\\${expr4.func}(x), 
+            \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} ${expr4.func === 'sin' ? '-' : ''}\\${expr4.func}(x)\\]`;
             i++;
           }
         } else {

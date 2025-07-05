@@ -915,7 +915,7 @@
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = \\ln(${expr1.base}) \\cdot ${expr1.base}^x\\]`;
             i++;
           } else {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: \\left(${expr}\\right)' = ${finalAnswer} \\ln(${expr1.base}) \\cdot ${expr1.base}^x\\]`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer} \\ln(${expr1.base}) \\cdot ${expr1.base}^x\\]`;
             i++;
           }
         } else if (expr1.type === 'trig') {

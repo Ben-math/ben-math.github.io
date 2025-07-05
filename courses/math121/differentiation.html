@@ -343,6 +343,67 @@
       return `${sign}${coeffStr}${xStr}`;
     }
 
+    function derivative(exprObj) {
+      if (exprObj.type === 'poly') {
+        return polyDerivative(exprObj);
+      } else if (exprObj.type === 'exp') {
+        return expDerivative(exprObj);
+      } else if (exprObj.type === 'trig') {
+        return trigDerivative(exprObj);
+      } else {
+        throw new Error(`Unknown expression type: ${exprObj.type}`);
+      }
+    }
+
+    function polyDerivative(exprObj) {
+      const { coeffs, exps } = exprObj;
+      const [a, b, c] = coeffs;
+      const [e1, e2] = exps;
+    
+      const newCoeffs = [
+        a * e1,
+        b * e2,
+        0 // Constant term disappears
+      ];
+      const newExps = [
+        e1 - 1,
+        e2 - 1
+      ];
+    
+      return { type: 'poly', coeffs: newCoeffs, exps: newExps };
+    }
+
+
+    function expDerivative(exprObj) {
+      const base = exprObj.base;
+    
+      if (base === 'e') {
+        // d/dx e^x is still e^x
+        return { type: 'exp', base: 'e' };
+      } else {
+        // d/dx a^x is ln(a) * a^x, just store as the same type for now
+        // You could later add a "coefficient" to this object if needed
+        return { type: 'exp', base: base };
+      }
+    }
+
+
+    function trigDerivative(exprObj) {
+      const func = exprObj.func;
+      let newFunc;
+    
+      if (func === 'sin') newFunc = 'cos';
+      else if (func === 'cos') newFunc = '-sin';
+      else if (func === 'tan') newFunc = 'sec^{2}';
+      else throw new Error(`Unknown trig function: ${func}`);
+    
+      return { type: 'trig', func: newFunc };
+    }
+
+
+
+
+
 
 
     

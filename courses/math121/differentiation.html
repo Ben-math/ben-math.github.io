@@ -863,9 +863,9 @@
         }
       }
       let innerExpr = expr;
-      expr = "";
     
       if (op0 !== null) {
+        expr = "";
         expr += `\\left(${innerExpr}\\right)^{${op0}}`;
       }
 

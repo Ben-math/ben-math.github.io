@@ -901,8 +901,13 @@
 
       if (numExprs === 1) {
         if (expr1.type === 'exp' && expr1.base === 'e') {
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = ${finalAnswer}\\cdot e^x \\]`;
-          i++;
+          if (op0 === null) {
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x\\]`;
+            i++;
+          } else {
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} e^x \\]`;
+            i++;
+          }
         } else if (expr1.type === 'exp') {
          
         } else if (expr1.type === 'trig') {

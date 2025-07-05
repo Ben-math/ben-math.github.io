@@ -919,7 +919,14 @@
             i++;
           }
         } else if (expr1.type === 'trig') {
-          
+          expr4 = derivative(expr1);
+          if (op0 === null) {
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } \\left(${expr}\\right)' = ${expr4}(x)\\]`;
+            i++;
+          } else {
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } \\left(${expr}\\right)' = ${expr4}(x), \\text{ so } \\left(${expr}\\right)' = ${finalAnswer}${expr4}(x)\\]`;
+            i++;
+          }
         } else {
 
         }

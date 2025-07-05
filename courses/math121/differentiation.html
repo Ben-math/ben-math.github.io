@@ -71,6 +71,13 @@
       <div id="feedbackText" class="center-feedback"></div>
     </div>
 
+    <div class="button-container">
+      <button id="hint-btn" class="rubber-button">Hint</button>
+    </div>
+    
+    <div id="hint-area" class="math" style="margin-top: 1em;"></div>
+
+
 
 
 
@@ -78,6 +85,13 @@
   </main>
 
   <script>
+
+    const hintBtn = document.getElementById('hint-btn');
+    const hintArea = document.getElementById('hint-area');
+    
+    // This array stores your LaTeX hints
+    let hintSteps = [];
+    let hintIndex = 0;
 
     let expr1 = {}, expr2 = {}, expr3 = {}, expr4 = {}, expr5 = {}, expr6 = {};
     let op0 = null, op1 = null, op2 = null;
@@ -865,6 +879,17 @@
       MathJax.typeset([fxDisplay]);
 
 
+      hintSteps = [
+        "\\[ \\text{Hint 1: Recall the Chain Rule: if } y = [f(x)]^n, \\text{ then } \\frac{dy}{dx} = n[f(x)]^{n-1} \\cdot f'(x) \\]",
+        "\\[ \\text{Step 1: Differentiate the outer power.} \\]",
+        "\\[ \\text{Hint 2: Now look at the inner part, linked by the Product Rule.} \\]",
+        "\\[ \\text{Step 2: Differentiate the product of the first two expressions.} \\]"
+      ];
+      hintIndex = 0;
+      hintArea.innerHTML = "";  // Clear previous hints
+
+
+
       
       // Clear the activity box
       activityBox.innerHTML = '';
@@ -982,6 +1007,18 @@
     [a1, a2, a3, e1, e2, e3] = [A1, A2, A3, E1, E2, E3];
   });
   
+  hintBtn.addEventListener('click', () => {
+    if (hintIndex < hintSteps.length) {
+      // Create a new paragraph for each hint
+      const hintPara = document.createElement('div');
+      hintPara.classList.add('hint-step');
+      hintPara.textContent = hintSteps[hintIndex];
+      hintArea.appendChild(hintPara);
+      
+      MathJax.typeset([hintPara]);
+      hintIndex++;
+    }
+  });
 
     
   </script>

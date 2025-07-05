@@ -774,7 +774,7 @@
         expr += appendAnyExpr(expr2);
         if (expr2.type === 'exp') {
           if (expr2.base < 0) {
-            expr+= `(`;
+            expr+= `)`;
           }
         }
         if (op2 !== 'chain') {

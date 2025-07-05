@@ -888,7 +888,8 @@
       let i = 0
     
       if (op0 !== null) {
-        hintSteps[0] = "\\[ \\text{Hint 1: Recall the Chain Rule: if } h(x) = f(g(x)), \\text{ then } h'(x) = f'(g(x)) \\cdot g'(x) \\] \\[ \\text{Here, we have } \\]";
+        hintSteps[0] = `\\[ \\text{Hint 1: Recall the Chain Rule: if } h(x) = f(g(x)), \\text{ then } h'(x) = f'(g(x)) \\cdot g'(x) \\]
+        \\[ \\text{Here, we have the exponent }  ${op0} \\text{ applied to the expression in the brackets.} \\]`;
       }
 
 

@@ -638,7 +638,17 @@
         expr += `\\frac{`;
       }
 
+      if (expr1.type === 'exp') {
+        if (expr1.base < 0) {
+          expr+= `(`;
+        }
+      }
       expr += appendAnyExpr(expr1);
+      if (expr1.type === 'exp') {
+        if (expr1.base < 0) {
+          expr+= `)`;
+        }
+      }
 
       if (numExprs === 1) {
         if (expr1.type === 'exp') {
@@ -682,8 +692,17 @@
         }
         // We are now past expr1
   
-        
+        if (expr2.type === 'exp') {
+          if (expr2.base < 0) {
+            expr+= `(`;
+          }
+        }
         expr += appendAnyExpr(expr2);
+        if (expr2.type === 'exp') {
+          if (expr2.base < 0) {
+            expr+= `)`;
+          }
+        }
         if (expr2.type === 'exp') {
           expr += `^x`;
         } else if (expr2.type === 'trig') {
@@ -747,7 +766,17 @@
         } else if (op2 === 'quotient') {
           expr += `\\frac{`;
         }
+        if (expr2.type === 'exp') {
+          if (expr2.base < 0) {
+            expr+= `(`;
+          }
+        }
         expr += appendAnyExpr(expr2);
+        if (expr2.type === 'exp') {
+          if (expr2.base < 0) {
+            expr+= `(`;
+          }
+        }
         if (op2 !== 'chain') {
           if (expr2.type === 'exp') {
             expr += `^x`;
@@ -772,8 +801,18 @@
           expr += `\\right)-\\left(`;
         }
         // We are now past expr2
-  
+
+        if (expr3.type === 'exp') {
+          if (expr3.base < 0) {
+            expr+= `(`;
+          }
+        }
         expr += appendAnyExpr(expr3);
+        if (expr3.type === 'exp') {
+          if (expr3.base < 0) {
+            expr+= `)`;
+          }
+        }
         if (expr3.type === 'exp') {
           expr += `^x`;
         } else if (expr3.type === 'trig') {

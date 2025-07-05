@@ -879,12 +879,21 @@
       MathJax.typeset([fxDisplay]);
 
 
-      hintSteps = [
-        "\\[ \\text{Hint 1: Recall the Chain Rule: if } y = [f(x)]^n, \\text{ then } \\frac{dy}{dx} = n[f(x)]^{n-1} \\cdot f'(x) \\]",
-        "\\[ \\text{Step 1: Differentiate the outer power.} \\]",
-        "\\[ \\text{Hint 2: Now look at the inner part, linked by the Product Rule.} \\]",
-        "\\[ \\text{Step 2: Differentiate the product of the first two expressions.} \\]"
-      ];
+
+
+
+
+
+      // Here we will compute the derivative, while storing steps and hints
+      let i = 0
+    
+      if (op0 !== null) {
+        hintSteps[0] = "\\[ \\text{Hint 1: Recall the Chain Rule: if } h(x) = f(g(x)), \\text{ then } h'(x) = f'(g(x)) \\cdot g'(x) \\] \\[ \\text{Here, we have } \\]";
+      }
+
+
+
+    
       hintIndex = 0;
       hintArea.innerHTML = "";  // Clear previous hints
 

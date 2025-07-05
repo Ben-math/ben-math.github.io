@@ -909,7 +909,15 @@
             i++;
           }
         } else if (expr1.type === 'exp') {
-         
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
+          i++;
+          if (op0 === null) {
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = \\ln(${expr1.base}) \\cdot ${expr1.base}^x\\]`;
+            i++;
+          } else {
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: \\left(${expr}\\right)' = ${finalAnswer} \\ln(${expr1.base}) \\cdot ${expr1.base}^x\\]`;
+            i++;
+          }
         } else if (expr1.type === 'trig') {
           
         } else {

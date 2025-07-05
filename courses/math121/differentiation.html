@@ -888,13 +888,26 @@
       let i = 0
     
       if (op0 !== null) {
-        hintSteps[i] = `\\[ \\text{Hint ${i}: Recall the Chain Rule: if } h(x) = f(g(x)), \\text{ then } h'(x) = f'(g(x)) \\cdot g'(x) \\]
+        hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Chain Rule: if } h(x) = f(g(x)), \\text{ then } h'(x) = f'(g(x)) \\cdot g'(x) \\]
         \\[ \\text{Here, we have the exponent }  ${op0} \\text{ applied to the expression in the brackets.} \\]
         \\[ \\text{So, take the expression in the brackets to be } g(x), \\text{ and take } f(x) = x^${op0}. \\]`;
         i++;
-        hintSteps[i] = `\\[ \\text{Hint ${i}: } \\left(${expr}\\right)' = ${op0}\\left(${innerExpr}\\right)^${op0-1}\\cdot\\left(${innerExpr}\\right)' \\]`;
+        hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${op0}\\left(${innerExpr}\\right)^${op0-1}\\cdot\\left(${innerExpr}\\right)' \\]`;
         finalAnswer += `${op0}\\left(${innerExpr}\\right)^${op0-1}\\cdot`;
         i++;
+      }
+
+      if (numExprs === 1) {
+        if (expr1.type === 'exp' && expr1.base === 'e') {
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = ${finalAnswer}\\cdot e^x \\]`;
+          i++;
+        } else if (expr1.type === 'exp') {
+         
+        } else if (expr1.type === 'trig') {
+          
+        } else {
+
+        }
       }
 
 

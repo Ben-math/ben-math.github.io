@@ -647,9 +647,6 @@
       
       // Build string term-by-term
       let expr = "";
-      if (op0 !== null) {
-        expr += "\\left(";
-      }
 
       if (op1 === 'product' || op1 === 'sum' || op1 === 'difference') {
         expr += `\\left(`;
@@ -865,9 +862,11 @@
           expr += `}`;
         }
       }
+      let innerExpr = expr;
+      expr = "";
     
       if (op0 !== null) {
-        expr += `\\right)^{${op0}}`;
+        expr += `\\left(${innerExpr}\\right)^{${op0}}`;
       }
 
 
@@ -888,9 +887,11 @@
       let i = 0
     
       if (op0 !== null) {
-        hintSteps[0] = `\\[ \\text{Hint 1: Recall the Chain Rule: if } h(x) = f(g(x)), \\text{ then } h'(x) = f'(g(x)) \\cdot g'(x) \\]
+        hintSteps[i] = `\\[ \\text{\\underline{Hint 1:} Recall the Chain Rule: if } h(x) = f(g(x)), \\text{ then } h'(x) = f'(g(x)) \\cdot g'(x) \\]
         \\[ \\text{Here, we have the exponent }  ${op0} \\text{ applied to the expression in the brackets.} \\]
         \\[ \\text{So, take the expression in the brackets to be } g(x), \\text{ and take } f(x) = x^${op0}. \\]`;
+        i++;
+        //hintSteps[i] = `
       }
 
 

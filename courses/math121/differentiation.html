@@ -92,6 +92,7 @@
     // This array stores your LaTeX hints
     let hintSteps = [];
     let hintIndex = 0;
+    let finalAnswer = "";
 
     let expr1 = {}, expr2 = {}, expr3 = {}, expr4 = {}, expr5 = {}, expr6 = {};
     let op0 = null, op1 = null, op2 = null;
@@ -887,11 +888,13 @@
       let i = 0
     
       if (op0 !== null) {
-        hintSteps[i] = `\\[ \\text{Hint 1: Recall the Chain Rule: if } h(x) = f(g(x)), \\text{ then } h'(x) = f'(g(x)) \\cdot g'(x) \\]
+        hintSteps[i] = `\\[ \\text{Hint ${i}: Recall the Chain Rule: if } h(x) = f(g(x)), \\text{ then } h'(x) = f'(g(x)) \\cdot g'(x) \\]
         \\[ \\text{Here, we have the exponent }  ${op0} \\text{ applied to the expression in the brackets.} \\]
         \\[ \\text{So, take the expression in the brackets to be } g(x), \\text{ and take } f(x) = x^${op0}. \\]`;
         i++;
-        hintSteps[i] = `\\[ \\text{Step 1: } \\left(${expr}\\right)' = ${op0}\\left(${innerExpr}\\right)^${op0-1} \\cdot \\left(${innerExpr}\\right)' \\]`;
+        hintSteps[i] = `\\[ \\text{Hint ${i}: } \\left(${expr}\\right)' = ${op0}\\left(${innerExpr}\\right)^${op0-1}\\cdot\\left(${innerExpr}\\right)' \\]`;
+        finalAnswer += `${op0}\\left(${innerExpr}\\right)^${op0-1}\\cdot`;
+        i++;
       }
 
 

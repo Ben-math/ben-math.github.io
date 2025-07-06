@@ -900,6 +900,7 @@
       }
 
       if (numExprs === 1) {
+        expr4 = derivative(expr1);
         if (expr1.type === 'exp' && expr1.base === 'e') {
           if (op0 === null) {
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x\\]`;
@@ -919,7 +920,6 @@
             i++;
           }
         } else if (expr1.type === 'trig') {
-          expr4 = derivative(expr1);
           if (op0 === null) {
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${expr4.func === 'sin' ? '-' : ''}\\${expr4.func}(x) \\]`;
             i++;
@@ -929,7 +929,16 @@
             i++;
           }
         } else {
-          
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
+          = f'(x) \\pm g(x)\\]
+          \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
+          i++;
+          if (op0 === null) {
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = \\]`;
+            i++;
+          } else {
+            
+          }
         }
       }
 

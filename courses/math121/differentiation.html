@@ -937,7 +937,7 @@
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${appendAnyExpr(expr4)} \\]`;
             i++;
           } else {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer} ${appendAnyExpr(expr4)} \\]`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer} \\left( ${appendAnyExpr(expr4)} \\right) \\]`;
             i++;
           }
         }

@@ -903,29 +903,33 @@
         expr4 = derivative(expr1);
         if (expr1.type === 'exp' && expr1.base === 'e') {
           if (op0 === null) {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x\\]`;
+            finalAnswer += `e^x`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = ${finalAnswer}\\]`;
             i++;
           } else {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} e^x \\]`;
+            finalAnswer += `e^x`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\]`;
             i++;
           }
         } else if (expr1.type === 'exp') {
           hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
           i++;
+          finalAnswer += `\\ln(${expr1.base}) \\cdot ${expr1.base}^x`;
           if (op0 === null) {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = \\ln(${expr1.base}) \\cdot ${expr1.base}^x\\]`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer} \\]`;
             i++;
           } else {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer} \\ln(${expr1.base}) \\cdot ${expr1.base}^x\\]`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer} \\]`;
             i++;
           }
         } else if (expr1.type === 'trig') {
+          finalAnswer += `${expr4.func === 'sin' ? '-' : ''}\\${expr4.func}(x)`;
           if (op0 === null) {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${expr4.func === 'sin' ? '-' : ''}\\${expr4.func}(x) \\]`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${finalAnswer} \\]`;
             i++;
           } else {
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${expr4.func === 'sin' ? '-' : ''}\\${expr4.func}(x), 
-            \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} ${expr4.func === 'sin' ? '-' : ''}\\${expr4.func}(x)\\]`;
+            \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\]`;
             i++;
           }
         } else {
@@ -934,10 +938,12 @@
           \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
           i++;
           if (op0 === null) {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${appendAnyExpr(expr4)} \\]`;
+            finalAnswer += `${appendAnyExpr(expr4)}`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer} \\]`;
             i++;
           } else {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer} \\left( ${appendAnyExpr(expr4)} \\right) \\]`;
+            finalAnswer += `\\left( ${appendAnyExpr(expr4)} \\right)`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer} \\]`;
             i++;
           }
         }
@@ -945,6 +951,14 @@
 
 
 
+
+
+
+      if (numExprs === 2) {
+        expr4 = derivative(expr1);
+        expr5 = derivative(expr2);
+        
+      }
     
       hintIndex = 0;
       hintArea.innerHTML = "";  // Clear previous hints

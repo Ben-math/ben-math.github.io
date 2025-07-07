@@ -302,31 +302,30 @@
     }
 
 
-    function appendAnyExpr(exprObj) {
+    function appendAnyExpr(exprObj, includeX = false) {
       if (exprObj.type === 'poly') {
         return appendPolyExpr(exprObj);
       } else if (exprObj.type === 'exp') {
-        return appendExpExpr(exprObj);
+        return appendExpExpr(exprObj, includeX);
       } else if (exprObj.type === 'trig') {
-        return appendTrigExpr(exprObj);
+        return appendTrigExpr(exprObj, includeX);
       } else {
         throw new Error(`Unknown expression type: ${exprObj.type}`);
       }
     }
 
-    function appendTrigExpr(exprObj) {
-      const func = exprObj.func; // 'sin', 'cos', etc.
-      return `\\${func}`;
+    function appendTrigExpr(exprObj, includeX = false) {
+      const func = exprObj.func;
+      return `\\${func}${includeX ? "(x)" : ""}`;
     }
 
-    function appendExpExpr(exprObj) {
+
+    function appendExpExpr(exprObj, includeX = false) {
       const base = exprObj.base;
-      if (base === 'e') {
-        return `e`;
-      } else {
-        return `${base}`;
-      }
+      let baseStr = (base === 'e') ? 'e' : `${base}`;
+      return includeX ? `${baseStr}^{x}` : `${baseStr}`;
     }
+
 
 
     function appendPolyExpr(exprObj) {
@@ -965,18 +964,19 @@
           if (expr1.type === 'exp' && expr1.base === 'e') {
             finalAnswer += `e^x`;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = 
-            ${finalAnswer} + \\left(${appendAnyExpr(expr2)}\\right)' \\right) \\]`;
+            ${finalAnswer} + \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
             i++;
           } else if (expr1.type === 'exp') {
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
             i++;
             finalAnswer += `\\ln(${expr1.base}) \\cdot ${expr1.base}^x`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer} + \\left(${appendAnyExpr(expr2)}\\right)' \\right) \\]`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer} + 
+            \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
             i++;
           } else if (expr1.type === 'trig') {
             finalAnswer += `${expr4.func === 'sin' ? '-' : ''}\\${expr4.func}(x)`;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${expr4.func === 'sin' ? '-' : ''}\\${expr4.func}(x), 
-            \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} + \\left(${appendAnyExpr(expr2)}\\right)' \\right) \\]`;
+            \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} + \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
             i++;
           } else {
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
@@ -984,7 +984,8 @@
             \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
             i++;
             finalAnswer += `${appendAnyExpr(expr4)}`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  + \\left(${appendAnyExpr(expr2)}\\right)' \\right) \\]`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  + 
+            \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
             i++;
           }
         }

@@ -1013,7 +1013,7 @@
             finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
            + `\\right)` + `+${appendAnyExpr(expr1, true)}` + `\\cdot`;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${appendAnyExpr(expr4, true)}, 
-            \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
+            \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' }{\\left(${appendAnyExpr(expr2, true)}\\right)^2} \\]`;
             i++;
           } else {
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
@@ -1023,7 +1023,7 @@
             finalAnswer += `\\left( ${appendAnyExpr(expr4)} \\right)` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
             + `\\right)` + `+\\left( ${appendAnyExpr(expr1, true)} \\right)` + `\\cdot`;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  
-            \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
+            \\left(${appendAnyExpr(expr2, true)}\\right)' }{\\left(${appendAnyExpr(expr2, true)}\\right)^2} \\]`;
             i++;
           }
         }
@@ -1062,7 +1062,14 @@
           }
         }
 
+        if (op1 === 'sum') {
+          finalAnswer += `+`;
+        }
 
+
+        if (op1 === 'difference') {
+          finalAnswer += `-`;
+        }
 
         if (expr2.type === 'exp' && expr2.base === 'e') {
           finalAnswer += `${appendAnyExpr(expr5, true)}`;
@@ -1081,7 +1088,7 @@
           = f'(x) \\pm g(x)\\]
           \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
           i++;
-          finalAnswer += `${appendAnyExpr(expr5)}`;
+          finalAnswer += `\\left(${appendAnyExpr(expr5)}\\right)`;
         }
 
         if (op1 === 'quotient') {

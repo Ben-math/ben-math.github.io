@@ -37,7 +37,7 @@
   <main>
 
     <p>This general differentiation activity is under construction.  Note that the solutions generated will not be simplified via algebra 
-    or trigonometric identitites - only differentiation rules will be used  For instance, if the question asks for the derivative of the product 
+    or trigonometric identitites - only differentiation rules will be used.  For instance, if the question asks for the derivative of the product 
       of two polynomials, the product rule will be used.  If it asks for the derivative of \( \frac{\sin(x)}{\cos(x)} \), it will not simplify 
       this to \( \tan(x) \) and then differentiate - it will use the quotient rule.</p>
 
@@ -940,7 +940,7 @@
             i++;
           } else if (expr1.type === 'trig') {
             finalAnswer += `${appendAnyExpr(expr4, true)}`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${expr4.func === 'sin' ? '-' : ''}\\${expr4.func}(x), 
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${appendAnyExpr(expr4, true)}, 
             \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} + \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
             i++;
           } else {
@@ -975,7 +975,7 @@
           } else if (expr1.type === 'trig') {
             finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
            + `\\right)` + `+${appendAnyExpr(expr1, true)}` + `\\cdot`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${expr4.func === 'sin' ? '-' : ''}\\${expr4.func}(x), 
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${appendAnyExpr(expr4, true)}, 
             \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
             i++;
           } else {
@@ -1012,7 +1012,7 @@
           } else if (expr1.type === 'trig') {
             finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
            + `\\right)` + `+${appendAnyExpr(expr1, true)}` + `\\cdot`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${expr4.func === 'sin' ? '-' : ''}\\${expr4.func}(x), 
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${appendAnyExpr(expr4, true)}, 
             \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
             i++;
           } else {
@@ -1046,10 +1046,9 @@
             ${finalAnswer} {${appendAnyExpr(expr2, true)}} \\cdot \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
             i++;
           } else if (expr1.type === 'trig') {
-            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
-           + `\\right)` + `+${appendAnyExpr(expr1, true)}` + `\\cdot`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${expr4.func === 'sin' ? '-' : ''}\\${expr4.func}(x), 
-            \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
+            finalAnswer += `${appendAnyExpr(expr4)} \\left(`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Note that } (\\${expr1.func}(g(x)))' = ${appendAnyExpr(expr4)}(g(x)) \\cdot g'(x), 
+            \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} ${appendAnyExpr(expr2, true)}\\right)' \\]`;
             i++;
           } else {
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'

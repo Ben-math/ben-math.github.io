@@ -1054,6 +1054,35 @@
         }
 
 
+        if (op1 === 'chain') {
+          if (expr1.type === 'exp') {
+            finalAnswer += `{`;
+          } else if (expr1.type === 'trig') {
+            finalAnswer += `\\left(`;
+          }
+        }
+
+
+
+        if (expr2.type === 'exp' && expr2.base === 'e') {
+          finalAnswer += `${appendAnyExpr(expr5, true)}`;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x`;
+          i++;
+        } else if (expr2.type === 'exp') {
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
+          i++;
+          finalAnswer += `${appendAnyExpr(expr5, true)}`;
+        } else if (expr2.type === 'trig') {
+          finalAnswer += `${appendAnyExpr(expr5, true)}`;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr2.func}(x))' = ${appendAnyExpr(expr5, true)}`;
+          i++;
+        } else {
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
+          = f'(x) \\pm g(x)\\]
+          \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
+          i++;
+          finalAnswer += `${appendAnyExpr(expr5)}`;
+        }
 
         if (op1 === 'quotient') {
           finalAnswer += `}{`;

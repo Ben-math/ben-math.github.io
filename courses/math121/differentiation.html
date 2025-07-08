@@ -1018,8 +1018,8 @@
             = f'(x) \\pm g(x)\\]
             \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
             i++;
-            finalAnswer += `${appendAnyExpr(expr4)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
-            + `\\right)` + `+${appendAnyExpr(expr1, true)}` + `\\cdot`;
+            finalAnswer += `\\left( ${appendAnyExpr(expr4)} \\right)` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
+            + `\\right)` + `+\\left( ${appendAnyExpr(expr1, true)} \\right)` + `\\cdot`;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  
             \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
             i++;

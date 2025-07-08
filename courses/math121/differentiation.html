@@ -1091,18 +1091,18 @@
           finalAnswer += `\\left(${appendAnyExpr(expr5)}\\right)`;
         }
 
-        if (op1 === 'quotient') {
-          finalAnswer += `}{`;
-        }
-
 
         
 
 
         if (op1 === 'product' || op1 === 'sum' || op1 === 'difference') {
           finalAnswer += `\\right)`;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = ${finalAnswer} \\]`;
+          i++;
         } else if (op1 === 'quotient') {
-          finalAnswer += `}`;
+          finalAnswer += `}{\\left(${appendAnyExpr(expr2, true)}\\right)^2} `;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = ${finalAnswer} \\]`;
+          i++;
         }
       }
     

@@ -857,18 +857,18 @@
         expr4 = derivative(expr1);
         if (expr1.type === 'exp' && expr1.base === 'e') {
           if (op0 === null) {
-            finalAnswer += `e^x`;
+            finalAnswer += `${appendAnyExpr(expr4, true)}`;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = ${finalAnswer}\\]`;
             i++;
           } else {
-            finalAnswer += `e^x`;
+            finalAnswer += `${appendAnyExpr(expr4, true)}`;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\]`;
             i++;
           }
         } else if (expr1.type === 'exp') {
           hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
           i++;
-          finalAnswer += `\\ln(${expr1.base}) \\cdot ${expr1.base}^x`;
+          finalAnswer += `${appendAnyExpr(expr4, true)}`;
           hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer} \\]`;
           i++;
         } else if (expr1.type === 'trig') {
@@ -917,14 +917,14 @@
           = f'(x) \\pm g'(x)\\]`;
           i++;
           if (expr1.type === 'exp' && expr1.base === 'e') {
-            finalAnswer += `e^x`;
+            finalAnswer += `${appendAnyExpr(expr4, true)}`;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = 
             ${finalAnswer} + \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
             i++;
           } else if (expr1.type === 'exp') {
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
             i++;
-            finalAnswer += `\\ln(${expr1.base}) \\cdot ${expr1.base}^x`;
+            finalAnswer += `${appendAnyExpr(expr4, true)}`;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer} + 
             \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
             i++;
@@ -950,7 +950,7 @@
           = f'(x) \\cdot g(x) + f(x) \\cdot g'(x)\\]`;
           i++;
           if (expr1.type === 'exp' && expr1.base === 'e') {
-            finalAnswer += `e^x` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` + `\\right)` + `+ ${appendAnyExpr(expr1, true)}` + `\\cdot`;
+            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` + `\\right)` + `+ ${appendAnyExpr(expr1, true)}` + `\\cdot`;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = 
             ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
             i++;
@@ -987,7 +987,7 @@
           = \\frac{f'(x)g(x)-f(x)g'(x)}{(g(x))^2}\\]`;
           i++;
           if (expr1.type === 'exp' && expr1.base === 'e') {
-            finalAnswer += `e^x` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` + `\\right)` + `- ${appendAnyExpr(expr1, true)}` + `\\cdot`;
+            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` + `\\right)` + `- ${appendAnyExpr(expr1, true)}` + `\\cdot`;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = 
             ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)'}{\\left(${appendAnyExpr(expr2, true)}\\right)^2} \\]`;
             i++;

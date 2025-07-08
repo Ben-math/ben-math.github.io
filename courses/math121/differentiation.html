@@ -1022,7 +1022,7 @@
             i++;
             finalAnswer += `\\ln(${expr1.base}) \\cdot ${expr1.base}^x` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}`
               + `\\right)` + `+ ${appendAnyExpr(expr1, true)}` + `\\cdot`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = 
+            hintSteps[i] = `\\[  \\left(${expr}\\right)' = 
             ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
             i++;
           } else if (expr1.type === 'trig') {
@@ -1059,7 +1059,7 @@
             i++;
             finalAnswer += `\\ln(${expr1.base}) \\cdot ${expr1.base}^x` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}`
               + `\\right)` + `- ${appendAnyExpr(expr1, true)}` + `\\cdot`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = 
+            hintSteps[i] = `\\[ \\left(${expr}\\right)' = 
             ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)'}{\\left(${appendAnyExpr(expr2, true)}\\right)^2} \\]`;
             i++;
           } else if (expr1.type === 'trig') {

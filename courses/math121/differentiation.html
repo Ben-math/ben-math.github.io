@@ -335,11 +335,11 @@
     
       let expPart = includeX ? `${baseStr}^{x}` : `${baseStr}`;
     
-      if (exprObj.type === 'lnexp') {
+      if (exprObj.isLn) {
         return `\\ln(${base}) \\cdot ${expPart}`;
-      } else {
-        return expPart;
       }
+      return expPart;
+
     }
 
 
@@ -415,14 +415,12 @@
       const base = exprObj.base;
     
       if (base === 'e') {
-        // d/dx e^x is still e^x
         return { type: 'exp', base: 'e' };
       } else {
-        // d/dx a^x is ln(a) * a^x, just store as the same type for now
-        // You could later add a "coefficient" to this object if needed
-        return { type: 'lnexp', base: base };
+        return { type: 'exp', base: base, isLn: true };  // <<<<<<<<<<
       }
     }
+
 
 
     function trigDerivative(exprObj) {

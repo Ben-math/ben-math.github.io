@@ -304,7 +304,6 @@
 
 
     function appendAnyExpr(exprObj, includeX = false) {
-      console.log("appendAnyExpr called with:", exprObj);
       if (exprObj.type === 'poly') {
         return appendPolyExpr(exprObj);
       } else if (exprObj.type === 'exp') {
@@ -323,7 +322,6 @@
 
 
     function appendExpExpr(exprObj, includeX = false) {
-      console.log("appendExpExpr called with:", exprObj, "includeX =", includeX);
       const base = exprObj.base;
       let baseStr;
     
@@ -336,14 +334,6 @@
       }
     
       let expPart = includeX ? `${baseStr}^{x}` : `${baseStr}`;
-
-      console.log("appendExpExpr generated:", includeX ? `${baseStr}^{x}` : baseStr, "isLn:", exprObj.isLn);
-
-      if (exprObj.isLn) {
-        console.log(`Returning with ln: \\ln(${base}) \\cdot ${expPart}`);
-      } else {
-        console.log(`Returning: ${expPart}`);
-      }
 
       if (exprObj.isLn) {
         return `\\ln(${base}) \\cdot ${expPart}`;
@@ -427,7 +417,6 @@
       if (base === 'e') {
         return { type: 'exp', base: 'e' };
       } else {
-        console.log(`expDerivative returning lnexp for base ${base}`);
         return { type: 'exp', base: base, isLn: true };  // <<<<<<<<<<
       }
     }

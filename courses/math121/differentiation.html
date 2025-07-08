@@ -333,8 +333,15 @@
         baseStr = `${base}`;
       }
     
-      return includeX ? `${baseStr}^{x}` : `${baseStr}`;
+      let expPart = includeX ? `${baseStr}^{x}` : `${baseStr}`;
+    
+      if (exprObj.type === 'lnexp') {
+        return `\\ln(${base}) \\cdot ${expPart}`;
+      } else {
+        return expPart;
+      }
     }
+
 
 
 

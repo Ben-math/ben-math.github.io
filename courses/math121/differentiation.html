@@ -1039,12 +1039,11 @@
             ${finalAnswer} {${appendAnyExpr(expr2, true)}} \\cdot \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
             i++;
           } else if (expr1.type === 'exp') {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Note that } (a^{g(x)})' = \\ln(a) \\cdot a^{g(x)} \\cdot g'(x)\\]`;
             i++;
-            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}`
-              + `\\right)` + `- ${appendAnyExpr(expr1, true)}` + `\\cdot`;
+            finalAnswer += `${appendAnyExpr(expr4)}^`;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = 
-            ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)'}{\\left(${appendAnyExpr(expr2, true)}\\right)^2} \\]`;
+            ${finalAnswer} {${appendAnyExpr(expr2, true)}} \\cdot \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
             i++;
           } else if (expr1.type === 'trig') {
             finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 

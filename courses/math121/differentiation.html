@@ -1318,7 +1318,7 @@
         }
 
 
-        if (op1 === 'difference') {
+        if (op1 === 'difference' || op1 === 'chain') {
           finalAnswer += `- \\left(`;
         }
 
@@ -1554,7 +1554,7 @@
         if (op1 === 'quotient') {
           finalAnswer += `}{\\left(${appendAnyExpr(expr3, true)}\\right)^2} `;
         }
-        if (op1 === 'difference') {
+        if (op1 === 'difference' || op1 === 'chain') {
           finalAnswer += `\\right)`;
         }
         hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = ${finalAnswer} \\]`;

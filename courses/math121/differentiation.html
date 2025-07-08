@@ -1292,21 +1292,21 @@
           hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Chain Rule: if } h(x) = f(g(x)), \\text{ then } h'(x) = f'(g(x)) \\cdot g'(x) \\]`;
           i++;
           if (expr1.type === 'exp' && expr1.base === 'e') {
-            finalAnswer += `${appendAnyExpr(expr4)}^{${appendAnyExpr(expr2, true)}} \\cdot `;
+            finalAnswer += `${appendAnyExpr(expr4)}^{${innermostExpr}} \\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Note that } (e^{g(x)})' = e^{g(x)} \\cdot g'(x), \\text{ so } \\left(${expr}\\right)' = 
-            ${finalAnswer} \\cdot \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
+            ${finalAnswer} \\cdot \\left(${innermostExpr}\\right)' \\]`;
             i++;
           } else if (expr1.type === 'exp') {
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Note that } (a^{g(x)})' = \\ln(a) \\cdot a^{g(x)} \\cdot g'(x)\\]`;
             i++;
-            finalAnswer += `${appendAnyExpr(expr4)}^{${appendAnyExpr(expr2, true)}} \\cdot `;
+            finalAnswer += `${appendAnyExpr(expr4)}^{${innermostExpr}} \\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = 
-            ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
+            ${finalAnswer} \\left(${innermostExpr}\\right)' \\]`;
             i++;
           } else if (expr1.type === 'trig') {
-            finalAnswer += `${appendAnyExpr(expr4)} \\left(${appendAnyExpr(expr2, true)}\\right) \\cdot `;
+            finalAnswer += `${appendAnyExpr(expr4)} \\left(${innermostExpr}\\right) \\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Note that } (\\${expr1.func}(g(x)))' = ${appendAnyExpr(expr4)}(g(x)) \\cdot g'(x), \\text{ so } 
-            \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)'\\]`;
+            \\left(${expr}\\right)' = ${finalAnswer} \\left(${innermostExpr}\\right)'\\]`;
             i++;
           }
         }
@@ -1319,27 +1319,253 @@
 
 
         if (op1 === 'difference') {
+          finalAnswer += `- \\left(`;
+        }
+
+
+        // HERE IS WHERE WE HAVE DEALT WITH EXPR1, NEXT CONSIDER OP2
+
+
+
+
+
+
+
+        if (op2 === 'quotient') {
+          finalAnswer += `\\frac{`;
+        }
+
+        if (op2 === 'sum') {
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Sum/Difference Rule, } (f(x) \\pm g(x))'
+          = f'(x) \\pm g'(x)\\]`;
+          i++;
+          if (expr2.type === 'exp' && expr2.base === 'e') {
+            finalAnswer += `${appendAnyExpr(expr5, true)}`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = 
+            ${finalAnswer} + \\left(${appendAnyExpr(expr3, true)}\\right)' \\]`;
+            i++;
+          } else if (expr1.type === 'exp') {
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
+            i++;
+            finalAnswer += `${appendAnyExpr(expr5, true)}`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer} + 
+            \\left(${appendAnyExpr(expr3, true)}\\right)' \\]`;
+            i++;
+          } else if (expr1.type === 'trig') {
+            finalAnswer += `${appendAnyExpr(expr5, true)}`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr2.func}(x))' = ${appendAnyExpr(expr5, true)}, 
+            \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} + \\left(${appendAnyExpr(expr3, true)}\\right)' \\]`;
+            i++;
+          } else {
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
+            = f'(x) \\pm g(x)\\]
+            \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
+            i++;
+            finalAnswer += `${appendAnyExpr(expr5)}`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  + 
+            \\left(${appendAnyExpr(expr3, true)}\\right)' \\]`;
+            i++;
+          }
+        }
+
+        if (op2 === 'difference') {
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Sum/Difference Rule, } (f(x) \\pm g(x))'
+          = f'(x) \\pm g'(x)\\]`;
+          i++;
+          if (expr2.type === 'exp' && expr2.base === 'e') {
+            finalAnswer += `${appendAnyExpr(expr5, true)}`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = 
+            ${finalAnswer} - \\left(${appendAnyExpr(expr3, true)}\\right)' \\]`;
+            i++;
+          } else if (expr1.type === 'exp') {
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
+            i++;
+            finalAnswer += `${appendAnyExpr(expr5, true)}`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer} - 
+            \\left(${appendAnyExpr(expr3, true)}\\right)' \\]`;
+            i++;
+          } else if (expr1.type === 'trig') {
+            finalAnswer += `${appendAnyExpr(expr5, true)}`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr2.func}(x))' = ${appendAnyExpr(expr5, true)}, 
+            \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} - \\left(${appendAnyExpr(expr3, true)}\\right)' \\]`;
+            i++;
+          } else {
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
+            = f'(x) \\pm g(x)\\]
+            \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
+            i++;
+            finalAnswer += `${appendAnyExpr(expr5)}`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  - 
+            \\left(${appendAnyExpr(expr3, true)}\\right)' \\]`;
+            i++;
+          }
+        }
+
+        if (op2 === 'product') {
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Product Rule, } (f(x) \\cdot g(x))'
+          = f'(x) \\cdot g(x) + f(x) \\cdot g'(x)\\]`;
+          i++;
+          if (expr2.type === 'exp' && expr2.base === 'e') {
+            finalAnswer += `${appendAnyExpr(expr5, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr3, true)}` + `\\right)` + `+ ${appendAnyExpr(expr2, true)}` + `\\cdot `;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = 
+            ${finalAnswer} \\left(${appendAnyExpr(expr3, true)}\\right)' \\]`;
+            i++;
+          } else if (expr1.type === 'exp') {
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
+            i++;
+            finalAnswer += `${appendAnyExpr(expr5, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr3, true)}`
+              + `\\right)` + `+ ${appendAnyExpr(expr2, true)}` + `\\cdot `;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = 
+            ${finalAnswer} \\left(${appendAnyExpr(expr3, true)}\\right)' \\]`;
+            i++;
+          } else if (expr1.type === 'trig') {
+            finalAnswer += `${appendAnyExpr(expr5, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr3, true)}` 
+           + `\\right)` + `+${appendAnyExpr(expr2, true)}` + `\\cdot `;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr2.func}(x))' = ${appendAnyExpr(expr5, true)}, 
+            \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr3, true)}\\right)' \\]`;
+            i++;
+          } else {
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
+            = f'(x) \\pm g(x)\\]
+            \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
+            i++;
+            finalAnswer += `\\left( ${appendAnyExpr(expr5)} \\right)` + `\\cdot \\left(` + `${appendAnyExpr(expr3, true)}` 
+            + `\\right)` + `+\\left( ${appendAnyExpr(expr2, true)} \\right)` + `\\cdot `;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  
+            \\left(${appendAnyExpr(expr3, true)}\\right)' \\]`;
+            i++;
+          }
+        }
+
+
+        if (op2 === 'quotient') {
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Quotient Rule, } \\left(\\frac{f(x)}{g(x)}\\right)'
+          = \\frac{f'(x)g(x)-f(x)g'(x)}{(g(x))^2}\\]`;
+          i++;
+          if (expr2.type === 'exp' && expr2.base === 'e') {
+            finalAnswer += `${appendAnyExpr(expr5, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr3, true)}` + `\\right)` + `- ${appendAnyExpr(expr2, true)}` + `\\cdot `;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = 
+            ${finalAnswer} \\left(${appendAnyExpr(expr3, true)}\\right)'}{\\left(${appendAnyExpr(expr3, true)}\\right)^2} \\]`;
+            i++;
+          } else if (expr1.type === 'exp') {
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
+            i++;
+            finalAnswer += `${appendAnyExpr(expr5, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr3, true)}`
+              + `\\right)` + `- ${appendAnyExpr(expr2, true)}` + `\\cdot `;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = 
+            ${finalAnswer} \\left(${appendAnyExpr(expr3, true)}\\right)'}{\\left(${appendAnyExpr(expr3, true)}\\right)^2} \\]`;
+            i++;
+          } else if (expr1.type === 'trig') {
+            finalAnswer += `${appendAnyExpr(expr5, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr3, true)}` 
+           + `\\right)` + `-${appendAnyExpr(expr2, true)}` + `\\cdot `;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr2.func}(x))' = ${appendAnyExpr(expr5, true)}, 
+            \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr3, true)}\\right)' }{\\left(${appendAnyExpr(expr3, true)}\\right)^2} \\]`;
+            i++;
+          } else {
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
+            = f'(x) \\pm g(x)\\]
+            \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
+            i++;
+            finalAnswer += `\\left( ${appendAnyExpr(expr5)} \\right)` + `\\cdot \\left(` + `${appendAnyExpr(expr3, true)}` 
+            + `\\right)` + `-\\left( ${appendAnyExpr(expr2, true)} \\right)` + `\\cdot `;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  
+            \\left(${appendAnyExpr(expr3, true)}\\right)' }{\\left(${appendAnyExpr(expr3, true)}\\right)^2} \\]`;
+            i++;
+          }
+        }
+
+
+
+        if (op2 === 'chain') {
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Chain Rule: if } h(x) = f(g(x)), \\text{ then } h'(x) = f'(g(x)) \\cdot g'(x) \\]`;
+          i++;
+          if (expr2.type === 'exp' && expr2.base === 'e') {
+            finalAnswer += `${appendAnyExpr(expr5)}^{${appendAnyExpr(expr3, true)}} \\cdot `;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Note that } (e^{g(x)})' = e^{g(x)} \\cdot g'(x), \\text{ so } \\left(${expr}\\right)' = 
+            ${finalAnswer} \\cdot \\left(${appendAnyExpr(expr3, true)}\\right)' \\]`;
+            i++;
+          } else if (expr1.type === 'exp') {
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Note that } (a^{g(x)})' = \\ln(a) \\cdot a^{g(x)} \\cdot g'(x)\\]`;
+            i++;
+            finalAnswer += `${appendAnyExpr(expr5)}^{${appendAnyExpr(expr3, true)}} \\cdot `;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = 
+            ${finalAnswer} \\left(${appendAnyExpr(expr3, true)}\\right)' \\]`;
+            i++;
+          } else if (expr1.type === 'trig') {
+            finalAnswer += `${appendAnyExpr(expr5)} \\left(${appendAnyExpr(expr3, true)}\\right) \\cdot `;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Note that } (\\${expr2.func}(g(x)))' = ${appendAnyExpr(expr5)}(g(x)) \\cdot g'(x), \\text{ so } 
+            \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr3, true)}\\right)'\\]`;
+            i++;
+          }
+        }
+
+
+
+        if (op2 === 'sum') {
+          finalAnswer += `+`;
+        }
+
+
+        if (op2 === 'difference') {
           finalAnswer += `-`;
         }
 
-        if (expr2.type === 'exp' && expr2.base === 'e') {
-          finalAnswer += `${appendAnyExpr(expr5, true)}`;
+        if (expr3.type === 'exp' && expr3.base === 'e') {
+          finalAnswer += `${appendAnyExpr(expr6, true)}`;
           hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x \\]`;
           i++;
-        } else if (expr2.type === 'exp') {
+        } else if (expr3.type === 'exp') {
           hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x \\]`;
           i++;
-          finalAnswer += `${appendAnyExpr(expr5, true)}`;
-        } else if (expr2.type === 'trig') {
-          finalAnswer += `${appendAnyExpr(expr5, true)}`;
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr2.func}(x))' = ${appendAnyExpr(expr5, true)} \\]`;
+          finalAnswer += `${appendAnyExpr(expr6, true)}`;
+        } else if (expr3.type === 'trig') {
+          finalAnswer += `${appendAnyExpr(expr6, true)}`;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr3.func}(x))' = ${appendAnyExpr(expr6, true)} \\]`;
           i++;
         } else {
           hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
           = f'(x) \\pm g(x)\\]
           \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
           i++;
-          finalAnswer += `\\left(${appendAnyExpr(expr5)}\\right)`;
+          finalAnswer += `\\left(${appendAnyExpr(expr6)}\\right)`;
+        }
+
+
+        
+
+
+        if (op2 === 'quotient') {
+          finalAnswer += `}{\\left(${appendAnyExpr(expr3, true)}\\right)^2} `;
+        }
+
+
+
+
+
+
+
+
+
+        // HERE IS THE END OF THE NESTED OP2 CODE
+
+        if (expr3.type === 'exp' && expr3.base === 'e') {
+          finalAnswer += `${appendAnyExpr(expr6, true)}`;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x \\]`;
+          i++;
+        } else if (expr3.type === 'exp') {
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x \\]`;
+          i++;
+          finalAnswer += `${appendAnyExpr(expr6, true)}`;
+        } else if (expr3.type === 'trig') {
+          finalAnswer += `${appendAnyExpr(expr6, true)}`;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr3.func}(x))' = ${appendAnyExpr(expr6, true)} \\]`;
+          i++;
+        } else {
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
+          = f'(x) \\pm g(x)\\]
+          \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
+          i++;
+          finalAnswer += `\\left(${appendAnyExpr(expr6)}\\right)`;
         }
 
 
@@ -1347,7 +1573,10 @@
 
 
         if (op1 === 'quotient') {
-          finalAnswer += `}{\\left(${appendAnyExpr(expr2, true)}\\right)^2} `;
+          finalAnswer += `}{\\left(${appendAnyExpr(expr3, true)}\\right)^2} `;
+        }
+        if (op1 === 'difference') {
+          finalAnswer += `\\right)`;
         }
         hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = ${finalAnswer} \\]`;
         i++;

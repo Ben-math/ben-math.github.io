@@ -1045,7 +1045,7 @@
             i++;
           } else if (expr1.type === 'trig') {
             finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
-           + `\\right)` + `+${appendAnyExpr(expr1, true)}` + `\\cdot `;
+           + `\\right)` + `-${appendAnyExpr(expr1, true)}` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${appendAnyExpr(expr4, true)}, 
             \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' }{\\left(${appendAnyExpr(expr2, true)}\\right)^2} \\]`;
             i++;
@@ -1055,7 +1055,7 @@
             \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
             i++;
             finalAnswer += `\\left( ${appendAnyExpr(expr4)} \\right)` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
-            + `\\right)` + `+\\left( ${appendAnyExpr(expr1, true)} \\right)` + `\\cdot `;
+            + `\\right)` + `-\\left( ${appendAnyExpr(expr1, true)} \\right)` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  
             \\left(${appendAnyExpr(expr2, true)}\\right)' }{\\left(${appendAnyExpr(expr2, true)}\\right)^2} \\]`;
             i++;
@@ -1269,7 +1269,7 @@
             i++;
           } else if (expr1.type === 'trig') {
             finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${innermostExpr}` 
-           + `\\right)` + `+${appendAnyExpr(expr1, true)}` + `\\cdot `;
+           + `\\right)` + `-${appendAnyExpr(expr1, true)}` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${appendAnyExpr(expr4, true)}, 
             \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\left(${innermostExpr}\\right)' }{\\left(${innermostExpr}\\right)^2} \\]`;
             i++;
@@ -1279,7 +1279,7 @@
             \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
             i++;
             finalAnswer += `\\left( ${appendAnyExpr(expr4)} \\right)` + `\\cdot \\left(` + `${innermostExpr}` 
-            + `\\right)` + `+\\left( ${appendAnyExpr(expr1, true)} \\right)` + `\\cdot `;
+            + `\\right)` + `-\\left( ${appendAnyExpr(expr1, true)} \\right)` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  
             \\left(${innermostExpr}\\right)' }{\\left(${innermostExpr}\\right)^2} \\]`;
             i++;

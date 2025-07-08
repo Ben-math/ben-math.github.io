@@ -1344,14 +1344,14 @@
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = 
             ${finalAnswer} + \\left(${appendAnyExpr(expr3, true)}\\right)' \\]`;
             i++;
-          } else if (expr1.type === 'exp') {
+          } else if (expr2.type === 'exp') {
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
             i++;
             finalAnswer += `${appendAnyExpr(expr5, true)}`;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer} + 
             \\left(${appendAnyExpr(expr3, true)}\\right)' \\]`;
             i++;
-          } else if (expr1.type === 'trig') {
+          } else if (expr2.type === 'trig') {
             finalAnswer += `${appendAnyExpr(expr5, true)}`;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr2.func}(x))' = ${appendAnyExpr(expr5, true)}, 
             \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} + \\left(${appendAnyExpr(expr3, true)}\\right)' \\]`;
@@ -1377,14 +1377,14 @@
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = 
             ${finalAnswer} - \\left(${appendAnyExpr(expr3, true)}\\right)' \\]`;
             i++;
-          } else if (expr1.type === 'exp') {
+          } else if (expr2.type === 'exp') {
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
             i++;
             finalAnswer += `${appendAnyExpr(expr5, true)}`;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer} - 
             \\left(${appendAnyExpr(expr3, true)}\\right)' \\]`;
             i++;
-          } else if (expr1.type === 'trig') {
+          } else if (expr2.type === 'trig') {
             finalAnswer += `${appendAnyExpr(expr5, true)}`;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr2.func}(x))' = ${appendAnyExpr(expr5, true)}, 
             \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} - \\left(${appendAnyExpr(expr3, true)}\\right)' \\]`;
@@ -1410,7 +1410,7 @@
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = 
             ${finalAnswer} \\left(${appendAnyExpr(expr3, true)}\\right)' \\]`;
             i++;
-          } else if (expr1.type === 'exp') {
+          } else if (expr2.type === 'exp') {
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
             i++;
             finalAnswer += `${appendAnyExpr(expr5, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr3, true)}`
@@ -1418,7 +1418,7 @@
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = 
             ${finalAnswer} \\left(${appendAnyExpr(expr3, true)}\\right)' \\]`;
             i++;
-          } else if (expr1.type === 'trig') {
+          } else if (expr2.type === 'trig') {
             finalAnswer += `${appendAnyExpr(expr5, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr3, true)}` 
            + `\\right)` + `+${appendAnyExpr(expr2, true)}` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr2.func}(x))' = ${appendAnyExpr(expr5, true)}, 
@@ -1447,7 +1447,7 @@
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = 
             ${finalAnswer} \\left(${appendAnyExpr(expr3, true)}\\right)'}{\\left(${appendAnyExpr(expr3, true)}\\right)^2} \\]`;
             i++;
-          } else if (expr1.type === 'exp') {
+          } else if (expr2.type === 'exp') {
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
             i++;
             finalAnswer += `${appendAnyExpr(expr5, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr3, true)}`
@@ -1455,7 +1455,7 @@
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = 
             ${finalAnswer} \\left(${appendAnyExpr(expr3, true)}\\right)'}{\\left(${appendAnyExpr(expr3, true)}\\right)^2} \\]`;
             i++;
-          } else if (expr1.type === 'trig') {
+          } else if (expr2.type === 'trig') {
             finalAnswer += `${appendAnyExpr(expr5, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr3, true)}` 
            + `\\right)` + `-${appendAnyExpr(expr2, true)}` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr2.func}(x))' = ${appendAnyExpr(expr5, true)}, 
@@ -1484,14 +1484,14 @@
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Note that } (e^{g(x)})' = e^{g(x)} \\cdot g'(x), \\text{ so } \\left(${expr}\\right)' = 
             ${finalAnswer} \\cdot \\left(${appendAnyExpr(expr3, true)}\\right)' \\]`;
             i++;
-          } else if (expr1.type === 'exp') {
+          } else if (expr2.type === 'exp') {
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Note that } (a^{g(x)})' = \\ln(a) \\cdot a^{g(x)} \\cdot g'(x)\\]`;
             i++;
             finalAnswer += `${appendAnyExpr(expr5)}^{${appendAnyExpr(expr3, true)}} \\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = 
             ${finalAnswer} \\left(${appendAnyExpr(expr3, true)}\\right)' \\]`;
             i++;
-          } else if (expr1.type === 'trig') {
+          } else if (expr2.type === 'trig') {
             finalAnswer += `${appendAnyExpr(expr5)} \\left(${appendAnyExpr(expr3, true)}\\right) \\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Note that } (\\${expr2.func}(g(x)))' = ${appendAnyExpr(expr5)}(g(x)) \\cdot g'(x), \\text{ so } 
             \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr3, true)}\\right)'\\]`;

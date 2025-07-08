@@ -1014,15 +1014,15 @@
             \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
             i++;
           } else {
-          //  hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
-          //  = f'(x) \\pm g(x)\\]
-          //  \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
-          //  i++;
-          //  finalAnswer += `${appendAnyExpr(expr4)}` + `\\cdot \\left(` + ${appendAnyExpr(expr2, true)} 
-          //  + `\\right)` + ${appendAnyExpr(expr1, true)} + `\\cdot`;
-          //  hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  + 
-          //  \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
-          //  i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
+            = f'(x) \\pm g(x)\\]
+            \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
+            i++;
+            finalAnswer += `${appendAnyExpr(expr4)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
+            + `\\right)` + `+${appendAnyExpr(expr1, true)}` + `\\cdot`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  
+            \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
+            i++;
           }
         }
 

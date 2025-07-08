@@ -1054,13 +1054,6 @@
         }
 
 
-        if (op1 === 'chain') {
-          if (expr1.type === 'exp') {
-            finalAnswer += `{`;
-          } else if (expr1.type === 'trig') {
-            finalAnswer += `\\left(`;
-          }
-        }
 
         if (op1 === 'sum') {
           finalAnswer += `+`;
@@ -1099,12 +1092,6 @@
           finalAnswer += `\\right)`;
         } else if (op1 === 'quotient') {
           finalAnswer += `}{\\left(${appendAnyExpr(expr2, true)}\\right)^2} `;
-        } else if (op1 === 'chain') {
-          if (expr1.type === 'exp') {
-            finalAnswer += `}`;
-          } else if (expr1.type === 'trig') {
-            finalAnswer += `\\right)`;
-          }
         }
         hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = ${finalAnswer} \\]`;
         i++;

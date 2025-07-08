@@ -1036,7 +1036,7 @@
           if (expr1.type === 'exp' && expr1.base === 'e') {
             finalAnswer += `${appendAnyExpr(expr4)}^`;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Note that } (e^{g(x)})' = e^{g(x)} \\cdot g'(x), \\text{ so } \\left(${expr}\\right)' = 
-            ${finalAnswer} {${appendAnyExpr(expr2, true)} \\cdot {\\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
+            ${finalAnswer} {${appendAnyExpr(expr2, true)}} \\cdot \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
             i++;
           } else if (expr1.type === 'exp') {
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;

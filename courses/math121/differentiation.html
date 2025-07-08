@@ -1218,33 +1218,33 @@
           = f'(x) \\cdot g(x) + f(x) \\cdot g'(x)\\]`;
           i++;
           if (expr1.type === 'exp' && expr1.base === 'e') {
-            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` + `\\right)` + `+ ${appendAnyExpr(expr1, true)}` + `\\cdot `;
+            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${innermostExpr}` + `\\right)` + `+ ${appendAnyExpr(expr1, true)}` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = 
-            ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
+            ${finalAnswer} \\left(${innermostExpr}\\right)' \\]`;
             i++;
           } else if (expr1.type === 'exp') {
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
             i++;
-            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}`
+            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${innermostExpr}`
               + `\\right)` + `+ ${appendAnyExpr(expr1, true)}` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = 
-            ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
+            ${finalAnswer} \\left(${innermostExpr}\\right)' \\]`;
             i++;
           } else if (expr1.type === 'trig') {
-            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
+            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${innermostExpr}` 
            + `\\right)` + `+${appendAnyExpr(expr1, true)}` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${appendAnyExpr(expr4, true)}, 
-            \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
+            \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\left(${innermostExpr}\\right)' \\]`;
             i++;
           } else {
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
             = f'(x) \\pm g(x)\\]
             \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
             i++;
-            finalAnswer += `\\left( ${appendAnyExpr(expr4)} \\right)` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
+            finalAnswer += `\\left( ${appendAnyExpr(expr4)} \\right)` + `\\cdot \\left(` + `${innermostExpr}` 
             + `\\right)` + `+\\left( ${appendAnyExpr(expr1, true)} \\right)` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  
-            \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
+            \\left(${innermostExpr}\\right)' \\]`;
             i++;
           }
         }
@@ -1255,33 +1255,33 @@
           = \\frac{f'(x)g(x)-f(x)g'(x)}{(g(x))^2}\\]`;
           i++;
           if (expr1.type === 'exp' && expr1.base === 'e') {
-            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` + `\\right)` + `- ${appendAnyExpr(expr1, true)}` + `\\cdot `;
+            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${innermostExpr}` + `\\right)` + `- ${appendAnyExpr(expr1, true)}` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = 
-            ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)'}{\\left(${appendAnyExpr(expr2, true)}\\right)^2} \\]`;
+            ${finalAnswer} \\left(${innermostExpr}\\right)'}{\\left(${innermostExpr}\\right)^2} \\]`;
             i++;
           } else if (expr1.type === 'exp') {
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
             i++;
-            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}`
+            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${innermostExpr}`
               + `\\right)` + `- ${appendAnyExpr(expr1, true)}` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = 
-            ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)'}{\\left(${appendAnyExpr(expr2, true)}\\right)^2} \\]`;
+            ${finalAnswer} \\left(${innermostExpr}\\right)'}{\\left(${innermostExpr}\\right)^2} \\]`;
             i++;
           } else if (expr1.type === 'trig') {
-            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
+            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${innermostExpr}` 
            + `\\right)` + `+${appendAnyExpr(expr1, true)}` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${appendAnyExpr(expr4, true)}, 
-            \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' }{\\left(${appendAnyExpr(expr2, true)}\\right)^2} \\]`;
+            \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\left(${innermostExpr}\\right)' }{\\left(${innermostExpr}\\right)^2} \\]`;
             i++;
           } else {
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
             = f'(x) \\pm g(x)\\]
             \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
             i++;
-            finalAnswer += `\\left( ${appendAnyExpr(expr4)} \\right)` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
+            finalAnswer += `\\left( ${appendAnyExpr(expr4)} \\right)` + `\\cdot \\left(` + `${innermostExpr}` 
             + `\\right)` + `+\\left( ${appendAnyExpr(expr1, true)} \\right)` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  
-            \\left(${appendAnyExpr(expr2, true)}\\right)' }{\\left(${appendAnyExpr(expr2, true)}\\right)^2} \\]`;
+            \\left(${innermostExpr}\\right)' }{\\left(${innermostExpr}\\right)^2} \\]`;
             i++;
           }
         }

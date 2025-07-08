@@ -322,9 +322,19 @@
 
     function appendExpExpr(exprObj, includeX = false) {
       const base = exprObj.base;
-      let baseStr = (base === 'e') ? 'e' : `${base}`;
+      let baseStr;
+    
+      if (base === 'e') {
+        baseStr = 'e';
+      } else if (base < 0) {
+        baseStr = `\\left(${base}\\right)`;
+      } else {
+        baseStr = `${base}`;
+      }
+    
       return includeX ? `${baseStr}^{x}` : `${baseStr}`;
     }
+
 
 
 

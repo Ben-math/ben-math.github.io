@@ -960,7 +960,7 @@
           if (expr1.type === 'exp' && expr1.base === 'e') {
             finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` + `\\right)` + `+ ${appendAnyExpr(expr1, true)}` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = 
-            ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
+            ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
             i++;
           } else if (expr1.type === 'exp') {
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
@@ -968,13 +968,13 @@
             finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}`
               + `\\right)` + `+ ${appendAnyExpr(expr1, true)}` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = 
-            ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
+            ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
             i++;
           } else if (expr1.type === 'trig') {
             finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
            + `\\right)` + `+${appendAnyExpr(expr1, true)}` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${appendAnyExpr(expr4, true)}, 
-            \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
+            \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
             i++;
           } else {
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
@@ -984,7 +984,7 @@
             finalAnswer += `\\left( ${appendAnyExpr(expr4)} \\right)` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
             + `\\right)` + `+\\left( ${appendAnyExpr(expr1, true)} \\right)` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  
-            \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
+            \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
             i++;
           }
         }
@@ -1150,7 +1150,7 @@
           if (expr1.type === 'exp' && expr1.base === 'e') {
             finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` + `\\right)` + `+ ${appendAnyExpr(expr1, true)}` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = 
-            ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
+            ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
             i++;
           } else if (expr1.type === 'exp') {
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
@@ -1158,13 +1158,13 @@
             finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}`
               + `\\right)` + `+ ${appendAnyExpr(expr1, true)}` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = 
-            ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
+            ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
             i++;
           } else if (expr1.type === 'trig') {
             finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
            + `\\right)` + `+${appendAnyExpr(expr1, true)}` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${appendAnyExpr(expr4, true)}, 
-            \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
+            \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
             i++;
           } else {
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
@@ -1174,7 +1174,7 @@
             finalAnswer += `\\left( ${appendAnyExpr(expr4)} \\right)` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
             + `\\right)` + `+\\left( ${appendAnyExpr(expr1, true)} \\right)` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  
-            \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
+            \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
             i++;
           }
         }

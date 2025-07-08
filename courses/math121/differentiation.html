@@ -984,9 +984,9 @@
             \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
             i++;
             finalAnswer += `\\left( ${appendAnyExpr(expr4)} \\right)` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
-            + `\\right)` + `+\\left( ${appendAnyExpr(expr1, true)} \\right)` + `\\cdot`;
+            + `\\right)` + `+\\left( ${appendAnyExpr(expr1, true)} \\right)` + `\\cdot \\left(`;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  
-            \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
+            ${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
             i++;
           }
         }

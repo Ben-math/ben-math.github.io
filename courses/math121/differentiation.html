@@ -707,13 +707,7 @@
         }
         // We are now past expr1
   
-        expr += appendAnyExpr(expr2);
-        
-        if (expr2.type === 'exp') {
-          expr += `^x`;
-        } else if (expr2.type === 'trig') {
-          expr += `(x)`;
-        }
+        expr += appendAnyExpr(expr2, true);
   
   
         // This is the end of the chain rule applied to expressions after expr1

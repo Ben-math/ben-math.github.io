@@ -995,9 +995,9 @@
           = f'(x) \\cdot g(x) + f(x) \\cdot g'(x)\\]`;
           i++;
           if (expr1.type === 'exp' && expr1.base === 'e') {
-            finalAnswer += `e^x` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` + `\\right)` + `${appendAnyExpr(expr1, true)}` + `\\cdot`;
+            finalAnswer += `e^x` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` + `\\right)` + `+ ${appendAnyExpr(expr1, true)}` + `\\cdot`;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = 
-            ${finalAnswer} + \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
+            ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
             i++;
           } else if (expr1.type === 'exp') {
           //  hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;

@@ -1028,13 +1028,13 @@
 
 
         if (op1 === 'quotient') {
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Product Rule, } (\\left(\\frac{f(x)}{g(x)}\\right)'
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Quotient Rule, } \\left(\\frac{f(x)}{g(x)}\\right)'
           = \\frac{f'(x)g(x)-f(x)g'(x)}{(g(x))^2}\\]`;
           i++;
           if (expr1.type === 'exp' && expr1.base === 'e') {
             finalAnswer += `e^x` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` + `\\right)` + `- ${appendAnyExpr(expr1, true)}` + `\\cdot`;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = 
-            ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)'}{\\left(${appendAnyExpr(expr2, true)}\\right)^2 \\right) \\]`;
+            ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)'}{\\left(${appendAnyExpr(expr2, true)}\\right)^2} \\right) \\]`;
             i++;
           } else if (expr1.type === 'exp') {
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;

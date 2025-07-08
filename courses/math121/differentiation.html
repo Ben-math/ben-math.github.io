@@ -767,50 +767,50 @@
         // We are now past expr1
   
         if (op2 === 'product' || op2 === 'sum' || op2 === 'difference') {
-          expr += `\\left(`;
+          innermostExpr += `\\left(`;
         } else if (op2 === 'quotient') {
-          expr += `\\frac{`;
+          innermostExpr += `\\frac{`;
         }
        
-        expr += appendAnyExpr(expr2);
+        innermostExpr += appendAnyExpr(expr2);
        
         if (op2 !== 'chain') {
           if (expr2.type === 'exp') {
-            expr += `^x`;
+            innermostExpr += `^x`;
           } else if (expr2.type === 'trig') {
-            expr += `(x)`;
+            innermostExpr += `(x)`;
           }
         } else {
           if (expr2.type === 'exp') {
-            expr += `^{`;
+            innermostExpr += `^{`;
           } else {
-            expr += `\\left(`;
+            innermostExpr += `\\left(`;
           }
         }
   
         if (op2 === 'product') {
-          expr += `\\right)\\left(`;
+          innermostExpr += `\\right)\\left(`;
         } else if (op2 === 'quotient') {
-          expr += `}{`;
+          innermostExpr += `}{`;
         } else if (op2 === 'sum') {
-          expr += `\\right)+\\left(`;
+          innermostExpr += `\\right)+\\left(`;
         } else if (op2 === 'difference') {
-          expr += `\\right)-\\left(`;
+          innermostExpr += `\\right)-\\left(`;
         }
         // We are now past expr2
 
-        expr += appendAnyExpr(expr3, true);
+        innermostExpr += appendAnyExpr(expr3, true);
   
         if (op2 === 'chain') {
           if (expr2.type === 'exp') {
-            expr += `}`;
+            innermostExpr += `}`;
           } else {
-            expr += `\\right)`;
+            innermostExpr += `\\right)`;
           }
         } else if (op2 === 'product' || op2 === 'sum' || op2 === 'difference') {
-          expr += `\\right)`;
+          innermostExpr += `\\right)`;
         } else if (op2 === 'quotient') {
-          expr += `}`;
+          innermostExpr += `}`;
         }
   
   
@@ -818,16 +818,17 @@
         // This is the end of the chain rule applied to expressions after expr1
         if (op1 === 'chain') {
           if (expr1.type === 'exp') {
-            expr += `}`;
+            innermostExpr += `}`;
           } else {
-            expr += `\\right)`;
+            innermostExpr += `\\right)`;
           }
         } else if (op1 === 'product' || op1 === 'sum' || op1 === 'difference') {
-          expr += `\\right)`;
+          innermostExpr += `\\right)`;
         } else if (op1 === 'quotient') {
-          expr += `}`;
+          innermostExpr += `}`;
         }
       }
+      expr += innermostExpr;
       let innerExpr = expr;
     
       if (op0 !== null) {

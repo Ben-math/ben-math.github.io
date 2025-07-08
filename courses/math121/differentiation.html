@@ -1003,8 +1003,8 @@
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
             i++;
             finalAnswer += `\\ln(${expr1.base}) \\cdot ${expr1.base}^x` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
-            + `\\right)` + ${appendAnyExpr(expr1, true)} + `\\cdot`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer} + 
+            + `\\right)` + `+${appendAnyExpr(expr1, true)}` + `\\cdot`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer} 
             \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
             i++;
           } else if (expr1.type === 'trig') {

@@ -859,7 +859,7 @@
         \\[ \\text{So, take the expression in the brackets to be } g(x), \\text{ and take } f(x) = x^${op0}. \\]`;
         i++;
         hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${op0}\\left(${innerExpr}\\right)^${op0-1}\\cdot\\left(${innerExpr}\\right)' \\]`;
-        finalAnswer += `${op0}\\left(${innerExpr}\\right)^${op0-1}\\cdot`;
+        finalAnswer += `${op0}\\left(${innerExpr}\\right)^${op0-1}\\cdot `;
         i++;
       }
 
@@ -960,7 +960,7 @@
           = f'(x) \\cdot g(x) + f(x) \\cdot g'(x)\\]`;
           i++;
           if (expr1.type === 'exp' && expr1.base === 'e') {
-            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` + `\\right)` + `+ ${appendAnyExpr(expr1, true)}` + `\\cdot`;
+            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` + `\\right)` + `+ ${appendAnyExpr(expr1, true)}` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = 
             ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
             i++;
@@ -968,13 +968,13 @@
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
             i++;
             finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}`
-              + `\\right)` + `+ ${appendAnyExpr(expr1, true)}` + `\\cdot`;
+              + `\\right)` + `+ ${appendAnyExpr(expr1, true)}` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = 
             ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
             i++;
           } else if (expr1.type === 'trig') {
             finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
-           + `\\right)` + `+${appendAnyExpr(expr1, true)}` + `\\cdot`;
+           + `\\right)` + `+${appendAnyExpr(expr1, true)}` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${appendAnyExpr(expr4, true)}, 
             \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
             i++;
@@ -984,7 +984,7 @@
             \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
             i++;
             finalAnswer += `\\left( ${appendAnyExpr(expr4)} \\right)` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
-            + `\\right)` + `+\\left( ${appendAnyExpr(expr1, true)} \\right)` + `\\cdot`;
+            + `\\right)` + `+\\left( ${appendAnyExpr(expr1, true)} \\right)` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  
             \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
             i++;
@@ -997,7 +997,7 @@
           = \\frac{f'(x)g(x)-f(x)g'(x)}{(g(x))^2}\\]`;
           i++;
           if (expr1.type === 'exp' && expr1.base === 'e') {
-            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` + `\\right)` + `- ${appendAnyExpr(expr1, true)}` + `\\cdot`;
+            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` + `\\right)` + `- ${appendAnyExpr(expr1, true)}` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = 
             ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)'}{\\left(${appendAnyExpr(expr2, true)}\\right)^2} \\]`;
             i++;
@@ -1005,13 +1005,13 @@
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
             i++;
             finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}`
-              + `\\right)` + `- ${appendAnyExpr(expr1, true)}` + `\\cdot`;
+              + `\\right)` + `- ${appendAnyExpr(expr1, true)}` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = 
             ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)'}{\\left(${appendAnyExpr(expr2, true)}\\right)^2} \\]`;
             i++;
           } else if (expr1.type === 'trig') {
             finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
-           + `\\right)` + `+${appendAnyExpr(expr1, true)}` + `\\cdot`;
+           + `\\right)` + `+${appendAnyExpr(expr1, true)}` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${appendAnyExpr(expr4, true)}, 
             \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' }{\\left(${appendAnyExpr(expr2, true)}\\right)^2} \\]`;
             i++;
@@ -1021,7 +1021,7 @@
             \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
             i++;
             finalAnswer += `\\left( ${appendAnyExpr(expr4)} \\right)` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
-            + `\\right)` + `+\\left( ${appendAnyExpr(expr1, true)} \\right)` + `\\cdot`;
+            + `\\right)` + `+\\left( ${appendAnyExpr(expr1, true)} \\right)` + `\\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  
             \\left(${appendAnyExpr(expr2, true)}\\right)' }{\\left(${appendAnyExpr(expr2, true)}\\right)^2} \\]`;
             i++;
@@ -1034,19 +1034,19 @@
           hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Chain Rule: if } h(x) = f(g(x)), \\text{ then } h'(x) = f'(g(x)) \\cdot g'(x) \\]`;
           i++;
           if (expr1.type === 'exp' && expr1.base === 'e') {
-            finalAnswer += `${appendAnyExpr(expr4)}^{${appendAnyExpr(expr2, true)}} \\cdot`;
+            finalAnswer += `${appendAnyExpr(expr4)}^{${appendAnyExpr(expr2, true)}} \\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Note that } (e^{g(x)})' = e^{g(x)} \\cdot g'(x), \\text{ so } \\left(${expr}\\right)' = 
             ${finalAnswer} \\cdot \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
             i++;
           } else if (expr1.type === 'exp') {
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Note that } (a^{g(x)})' = \\ln(a) \\cdot a^{g(x)} \\cdot g'(x)\\]`;
             i++;
-            finalAnswer += `${appendAnyExpr(expr4)}^{${appendAnyExpr(expr2, true)}} \\cdot`;
+            finalAnswer += `${appendAnyExpr(expr4)}^{${appendAnyExpr(expr2, true)}} \\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = 
             ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
             i++;
           } else if (expr1.type === 'trig') {
-            finalAnswer += `${appendAnyExpr(expr4)} \\left(${appendAnyExpr(expr2, true)}\\right) \\cdot`;
+            finalAnswer += `${appendAnyExpr(expr4)} \\left(${appendAnyExpr(expr2, true)}\\right) \\cdot `;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Note that } (\\${expr1.func}(g(x)))' = ${appendAnyExpr(expr4)}(g(x)) \\cdot g'(x), \\text{ so } 
             \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)'\\]`;
             i++;

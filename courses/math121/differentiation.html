@@ -673,6 +673,7 @@
       
       // Build string term-by-term
       let expr = "";
+      let innermostExpr = "";
 
       if (op1 === 'product' || op1 === 'sum' || op1 === 'difference') {
         expr += `\\left(`;

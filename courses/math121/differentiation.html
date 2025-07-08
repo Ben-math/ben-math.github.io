@@ -1097,13 +1097,17 @@
 
         if (op1 === 'product' || op1 === 'sum' || op1 === 'difference') {
           finalAnswer += `\\right)`;
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = ${finalAnswer} \\]`;
-          i++;
         } else if (op1 === 'quotient') {
           finalAnswer += `}{\\left(${appendAnyExpr(expr2, true)}\\right)^2} `;
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = ${finalAnswer} \\]`;
-          i++;
+        } else if (op1 === 'chain') {
+          if (expr1.type === 'exp') {
+            finalAnswer += `}`;
+          } else if (expr1.type === 'trig') {
+            finalAnswer += `\\right)`;
+          }
         }
+        hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = ${finalAnswer} \\]`;
+        i++;
       }
     
       hintIndex = 0;

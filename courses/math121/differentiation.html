@@ -1034,21 +1034,21 @@
           hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Chain Rule: if } h(x) = f(g(x)), \\text{ then } h'(x) = f'(g(x)) \\cdot g'(x) \\]`;
           i++;
           if (expr1.type === 'exp' && expr1.base === 'e') {
-            finalAnswer += `${appendAnyExpr(expr4)}^`;
+            finalAnswer += `${appendAnyExpr(expr4)}^{${appendAnyExpr(expr2, true)}} \\cdot`;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Note that } (e^{g(x)})' = e^{g(x)} \\cdot g'(x), \\text{ so } \\left(${expr}\\right)' = 
-            ${finalAnswer} {${appendAnyExpr(expr2, true)}} \\cdot \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
+            ${finalAnswer} \\cdot \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
             i++;
           } else if (expr1.type === 'exp') {
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Note that } (a^{g(x)})' = \\ln(a) \\cdot a^{g(x)} \\cdot g'(x)\\]`;
             i++;
-            finalAnswer += `${appendAnyExpr(expr4)}^`;
+            finalAnswer += `${appendAnyExpr(expr4)}^{${appendAnyExpr(expr2, true)}} \\cdot`;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = 
-            ${finalAnswer} {${appendAnyExpr(expr2, true)}} \\cdot \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
+            ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
             i++;
           } else if (expr1.type === 'trig') {
-            finalAnswer += `${appendAnyExpr(expr4)}`;
+            finalAnswer += `${appendAnyExpr(expr4)} \\left(${appendAnyExpr(expr2, true)}\\right) \\cdot`;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Note that } (\\${expr1.func}(g(x)))' = ${appendAnyExpr(expr4)}(g(x)) \\cdot g'(x), \\text{ so } 
-            \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right) \\cdot \\left(${appendAnyExpr(expr2, true)}\\right)'\\]`;
+            \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)'\\]`;
             i++;
           }
         }

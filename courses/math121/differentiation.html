@@ -788,13 +788,7 @@
         }
         // We are now past expr2
 
-        expr += appendAnyExpr(expr3);
-       
-        if (expr3.type === 'exp') {
-          expr += `^x`;
-        } else if (expr3.type === 'trig') {
-          expr += `(x)`;
-        }
+        expr += appendAnyExpr(expr3, true);
   
         if (op2 === 'chain') {
           if (expr2.type === 'exp') {

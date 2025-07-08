@@ -1318,8 +1318,12 @@
         }
 
 
-        if (op1 === 'difference' || op1 === 'chain') {
+        if (op1 === 'difference') {
           finalAnswer += `- \\left(`;
+        }
+
+        if (op1 === 'chain') {
+          finalAnswer += `\\left(`;
         }
 
 

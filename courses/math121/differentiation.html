@@ -317,8 +317,10 @@
 
     function appendTrigExpr(exprObj, includeX = false) {
       const func = exprObj.func;
-      return `\\${func}${includeX ? "(x)" : ""}`;
+      const sign = exprObj.isNegative ? '-' : '';
+      return `${sign}\\${func}${includeX ? "(x)" : ""}`;
     }
+
 
 
     function appendExpExpr(exprObj, includeX = false) {
@@ -426,14 +428,22 @@
     function trigDerivative(exprObj) {
       const func = exprObj.func;
       let newFunc;
+      let isNegative = false;
     
-      if (func === 'sin') newFunc = 'cos';
-      else if (func === 'cos') newFunc = 'sin';
-      else if (func === 'tan') newFunc = 'sec^{2}';
-      else throw new Error(`Unknown trig function: ${func}`);
+      if (func === 'sin') {
+        newFunc = 'cos';
+      } else if (func === 'cos') {
+        newFunc = 'sin';
+        isNegative = true;  // Cos derivative is negative sin
+      } else if (func === 'tan') {
+        newFunc = 'sec^{2}';
+      } else {
+        throw new Error(`Unknown trig function: ${func}`);
+      }
     
-      return { type: 'trig', func: newFunc };
+      return { type: 'trig', func: newFunc, isNegative: isNegative };
     }
+
 
 
 
@@ -872,7 +882,7 @@
           hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer} \\]`;
           i++;
         } else if (expr1.type === 'trig') {
-          finalAnswer += `${expr4.func === 'sin' ? '-' : ''}\\${expr4.func}(x)`;
+          finalAnswer += `${appendAnyExpr(expr4, true)}`;
           if (op0 === null) {
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${finalAnswer} \\]`;
             i++;
@@ -929,7 +939,7 @@
             \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
             i++;
           } else if (expr1.type === 'trig') {
-            finalAnswer += `${expr4.func === 'sin' ? '-' : ''}\\${expr4.func}(x)`;
+            finalAnswer += `${appendAnyExpr(expr4, true)}`;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${expr4.func === 'sin' ? '-' : ''}\\${expr4.func}(x), 
             \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} + \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
             i++;
@@ -963,7 +973,7 @@
             ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
             i++;
           } else if (expr1.type === 'trig') {
-            finalAnswer += `${expr4.func === 'sin' ? '-' : ''}\\${expr4.func}(x)` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
+            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
            + `\\right)` + `+${appendAnyExpr(expr1, true)}` + `\\cdot`;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${expr4.func === 'sin' ? '-' : ''}\\${expr4.func}(x), 
             \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
@@ -1000,7 +1010,7 @@
             ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)'}{\\left(${appendAnyExpr(expr2, true)}\\right)^2} \\]`;
             i++;
           } else if (expr1.type === 'trig') {
-            finalAnswer += `${expr4.func === 'sin' ? '-' : ''}\\${expr4.func}(x)` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
+            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
            + `\\right)` + `+${appendAnyExpr(expr1, true)}` + `\\cdot`;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${expr4.func === 'sin' ? '-' : ''}\\${expr4.func}(x), 
             \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;

@@ -670,14 +670,13 @@
         expr += `\\frac{`;
       }
 
-      expr += appendAnyExpr(expr1);
 
       if (numExprs === 1) {
-        if (expr1.type === 'exp') {
-          expr += `^x`;
-        } else if (expr1.type === 'trig') {
-          expr += `(x)`;
-        }
+        expr += appendAnyExpr(expr1, true);
+      } else if (op1 !== 'chain') {
+        expr += appendAnyExpr(expr1, true);
+      } else {
+        expr += appendAnyExpr(expr1);
       }
 
 
@@ -689,13 +688,7 @@
 
 
       if (numExprs === 2) {
-        if (op1 !== 'chain') {
-          if (expr1.type === 'exp') {
-            expr += `^x`;
-          } else if (expr1.type === 'trig') {
-            expr += `(x)`;
-          }
-        } else {
+        if (op1 === 'chain') {
           if (expr1.type === 'exp') {
             expr += `^{`;
           } else {
@@ -749,13 +742,7 @@
 
     
       if (numExprs === 3) {
-        if (op1 !== 'chain') {
-          if (expr1.type === 'exp') {
-            expr += `^x`;
-          } else if (expr1.type === 'trig') {
-            expr += `(x)`;
-          }
-        } else {
+        if (op1 === 'chain') {
           if (expr1.type === 'exp') {
             expr += `^{`;
           } else {

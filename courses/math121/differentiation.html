@@ -965,7 +965,7 @@
             i++;
             finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}`
               + `\\right)` + `+ ${appendAnyExpr(expr1, true)}` + `\\cdot`;
-            hintSteps[i] = `\\[  \\left(${expr}\\right)' = 
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = 
             ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
             i++;
           } else if (expr1.type === 'trig') {
@@ -1002,7 +1002,7 @@
             i++;
             finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}`
               + `\\right)` + `- ${appendAnyExpr(expr1, true)}` + `\\cdot`;
-            hintSteps[i] = `\\[ \\left(${expr}\\right)' = 
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = 
             ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)'}{\\left(${appendAnyExpr(expr2, true)}\\right)^2} \\]`;
             i++;
           } else if (expr1.type === 'trig') {

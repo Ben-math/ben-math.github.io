@@ -1548,27 +1548,6 @@
 
         // HERE IS THE END OF THE NESTED OP2 CODE
 
-        if (expr3.type === 'exp' && expr3.base === 'e') {
-          finalAnswer += `${appendAnyExpr(expr6, true)}`;
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x \\]`;
-          i++;
-        } else if (expr3.type === 'exp') {
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x \\]`;
-          i++;
-          finalAnswer += `${appendAnyExpr(expr6, true)}`;
-        } else if (expr3.type === 'trig') {
-          finalAnswer += `${appendAnyExpr(expr6, true)}`;
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr3.func}(x))' = ${appendAnyExpr(expr6, true)} \\]`;
-          i++;
-        } else {
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
-          = f'(x) \\pm g(x)\\]
-          \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
-          i++;
-          finalAnswer += `\\left(${appendAnyExpr(expr6)}\\right)`;
-        }
-
-
         
 
 

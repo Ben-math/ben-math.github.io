@@ -1008,11 +1008,11 @@
             \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
             i++;
           } else if (expr1.type === 'trig') {
-          //  finalAnswer += `${expr4.func === 'sin' ? '-' : ''}\\${expr4.func}(x)` + `\\cdot \\left(` + ${appendAnyExpr(expr2, true)} 
-          // + `\\right)` + ${appendAnyExpr(expr1, true)} + `\\cdot`;
-          //  hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${expr4.func === 'sin' ? '-' : ''}\\${expr4.func}(x), 
-          //  \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} + \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
-          //  i++;
+            finalAnswer += `${expr4.func === 'sin' ? '-' : ''}\\${expr4.func}(x)` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
+           + `\\right)` + `+${appendAnyExpr(expr1, true)}` + `\\cdot`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${expr4.func === 'sin' ? '-' : ''}\\${expr4.func}(x), 
+            \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\right) \\]`;
+            i++;
           } else {
           //  hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
           //  = f'(x) \\pm g(x)\\]

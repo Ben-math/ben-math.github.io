@@ -813,22 +813,22 @@
           innermostExpr += `}`;
         }
   
-  
+        expr += innermostExpr;
   
         // This is the end of the chain rule applied to expressions after expr1
         if (op1 === 'chain') {
           if (expr1.type === 'exp') {
-            innermostExpr += `}`;
+            expr += `}`;
           } else {
-            innermostExpr += `\\right)`;
+            expr += `\\right)`;
           }
         } else if (op1 === 'product' || op1 === 'sum' || op1 === 'difference') {
-          innermostExpr += `\\right)`;
+          expr += `\\right)`;
         } else if (op1 === 'quotient') {
-          innermostExpr += `}`;
+          expr += `}`;
         }
       }
-      expr += innermostExpr;
+      
       let innerExpr = expr;
     
       if (op0 !== null) {

@@ -626,51 +626,10 @@
     console.log({ numExprs, expr1, expr2, expr3, op0, op1, op2 });
 
 
-
-
-
-
-      let mode = Math.floor(Math.random() * 4) + 1;
-
-      a0 = Math.floor(Math.random() * 19) - 9;
-      while (a0 == 0) {
-        a0 = Math.floor(Math.random() * 19) - 9;
-      }
-      a1 = Math.floor(Math.random() * 19) - 9;
-      while (a1 == 0) {
-        a1 = Math.floor(Math.random() * 19) - 9;
-      }
-      a2 = Math.floor(Math.random() * 19) - 9;
-      while (a2 == 0) {
-        a2 = Math.floor(Math.random() * 19) - 9;
-      }
-      a3 = Math.floor(Math.random() * 19) - 9;
-      while (a3 == 0) {
-        a3 = Math.floor(Math.random() * 19) - 9;
-      }
-      e1 = Math.floor(Math.random() * 9) + 1;
-      e2 = Math.floor(Math.random() * 9) + 1;
-      while (e2 == e1) {
-        e2 = Math.floor(Math.random() * 9) + 1;
-      }
-      e3 = Math.floor(Math.random() * 9) + 1;
-      while (e3 == e1 || e3 == e2) {
-        e3 = Math.floor(Math.random() * 9) + 1;
-      }
-
-      let sorted = [e1, e2, e3].sort((x, y) => x - y);
-      [e1, e2, e3] = sorted;
       
   
       const fxDisplay = document.getElementById('fx-display');
 
-      // Example variables (replace with actual ones)
-      const terms = [
-        { coeff: a3, exp: e3 },
-        { coeff: a2, exp: e2 },
-        { coeff: a1, exp: e1 },
-        { coeff: a0, exp: 0 }
-      ];
       
       // Build string term-by-term
       let expr = "";
@@ -1594,58 +1553,20 @@
 
 
       
-      // Clear the activity box
-      activityBox.innerHTML = '';
-
-
-
-      addTextToActivityBox('x', 350, 200, 100);
-      const a3slot = createSlot(280, 260, 60, 35);
-      a3slot.id = 'a3-slot';
-      const e3slot = createSlot(410, 200, 60, 35);
-      e3slot.id = 'e3-slot';
-
-      addTextToActivityBox('+', 470, 200, 100);
+      // Clear the activity box first
+      activityBox.innerHTML = "";
       
-      addTextToActivityBox('x', 600, 200, 100);
-      const a2slot = createSlot(530, 260, 60, 35);
-      a2slot.id = 'a2-slot';
-      const e2slot = createSlot(660, 200, 60, 35);
-      e2slot.id = 'e2-slot';
-
-      addTextToActivityBox('+', 730, 200, 100);
-    
-      if (e1 != 1) {
-        addTextToActivityBox('x', 860, 200, 100);
-        const a1slot = createSlot(790, 260, 60, 35);
-        a1slot.id = 'a1-slot';
-        const e1slot = createSlot(920, 200, 60, 35);
-        e1slot.id = 'e1-slot';
-      } else {
-        const a1slot = createSlot(810, 260, 60, 35);
-        a1slot.id = 'a1-slot';
-      }
-
-
-
-
-
-      const options = new Set([a3*e3, a2*e2, a1*e1, e3-1, e2-1, e1-1]);
-      while (options.size < 10) {
-        options.add(Math.floor(Math.random() * 19) - 9);
-      }
-      while (options.size < 15) {
-        options.add(Math.floor(Math.random() * 191) - 95);
-      }
-      const optionArray = [...options].sort(() => Math.random() - 0.5);
-
-      for (let i = 0; i < 15; i++) {
-        createDraggableBox(optionArray[i], 60+(i*80), 520, 60, 40);
-      }
-
-
-
-
+      // Create a new div to hold the LaTeX answer
+      const answerDiv = document.createElement('div');
+      answerDiv.classList.add('math');
+      answerDiv.style.textAlign = 'center';
+      answerDiv.style.fontSize = '28px'; // Adjust as needed
+      
+      answerDiv.textContent = `\\[ ${finalAnswer} \\]`;
+      activityBox.appendChild(answerDiv);
+      
+      // Re-render MathJax
+      MathJax.typeset([answerDiv]);
 
 
     });

@@ -65,7 +65,7 @@
     </div>
 
     <div class="button-container">
-      <button id="check-btn" class="rubber-button">Check Answer</button>
+      <button id="check-btn" class="rubber-button">View Answer</button>
     </div>
     
     <div class="button-container">
@@ -444,21 +444,6 @@
       return { type: 'trig', func: newFunc, isNegative: isNegative };
     }
 
-
-
-    function replaceWithSlots(latexString) {
-      // Replace numbers (standalone integers, including negatives)
-      latexString = latexString.replace(/(?<![a-zA-Z])(-?\d+)(?![a-zA-Z])/g, (_, num) => {
-        return `\\htmlClass{slot}{${num}}`;
-      });
-    
-      // Replace full trig and ln expressions (function + argument)
-      latexString = latexString.replace(/\\(sin|cos|tan|ln)\(x\)/g, (match) => {
-        return `\\htmlClass{slot}{${match}}`;
-      });
-    
-      return latexString;
-    }
 
 
 

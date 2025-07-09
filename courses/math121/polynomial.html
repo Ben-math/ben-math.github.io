@@ -57,7 +57,7 @@
       <div id="fx-display" class="math"></div>
     </div>
 
-    <div class="activity-box" id="my-activity">
+    <div class="activity-box-med" id="my-activity">
 
     </div>
 
@@ -267,30 +267,30 @@
 
 
 
-      addTextToActivityBox('x', 350, 200, 100);
-      const a3slot = createSlot(280, 260, 60, 35);
+      addTextToActivityBox('x', 350, 50, 100);
+      const a3slot = createSlot(280, 110, 60, 35);
       a3slot.id = 'a3-slot';
-      const e3slot = createSlot(410, 200, 60, 35);
+      const e3slot = createSlot(410, 50, 60, 35);
       e3slot.id = 'e3-slot';
 
-      addTextToActivityBox('+', 470, 200, 100);
+      addTextToActivityBox('+', 470, 50, 100);
       
-      addTextToActivityBox('x', 600, 200, 100);
-      const a2slot = createSlot(530, 260, 60, 35);
+      addTextToActivityBox('x', 600, 50, 100);
+      const a2slot = createSlot(530, 110, 60, 35);
       a2slot.id = 'a2-slot';
-      const e2slot = createSlot(660, 200, 60, 35);
+      const e2slot = createSlot(660, 50, 60, 35);
       e2slot.id = 'e2-slot';
 
-      addTextToActivityBox('+', 730, 200, 100);
+      addTextToActivityBox('+', 730, 50, 100);
     
       if (e1 != 1) {
-        addTextToActivityBox('x', 860, 200, 100);
-        const a1slot = createSlot(790, 260, 60, 35);
+        addTextToActivityBox('x', 860, 50, 100);
+        const a1slot = createSlot(790, 110, 60, 35);
         a1slot.id = 'a1-slot';
-        const e1slot = createSlot(920, 200, 60, 35);
+        const e1slot = createSlot(920, 50, 60, 35);
         e1slot.id = 'e1-slot';
       } else {
-        const a1slot = createSlot(810, 260, 60, 35);
+        const a1slot = createSlot(810, 110, 60, 35);
         a1slot.id = 'a1-slot';
       }
 
@@ -308,7 +308,7 @@
       const optionArray = [...options].sort(() => Math.random() - 0.5);
 
       for (let i = 0; i < 15; i++) {
-        createDraggableBox(optionArray[i], 60+(i*80), 520, 60, 40);
+        createDraggableBox(optionArray[i], 60+(i*80), 250, 60, 40);
       }
 
 

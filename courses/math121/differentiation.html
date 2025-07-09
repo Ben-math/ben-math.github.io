@@ -1569,30 +1569,37 @@
     const checkBtn = document.getElementById('check-btn');
     const answerDisplay = document.getElementById('answer-display');
     
-    checkBtn.addEventListener('click', () => {
+    //checkBtn.addEventListener('click', () => {
+      // Create a new div to hold the LaTeX answer
+      //const answerDiv = document.createElement('div');
+      //answerDiv.classList.add('math');
+      //answerDiv.style.textAlign = 'center';
+      //answerDiv.style.fontSize = '24px'; // Adjust as needed
+      
+      //const slotVersion = replaceWithSlots(finalAnswer);
+      //answerDiv.textContent = `\\[ ${slotVersion} \\]`;
 
+      //answerDiv.textContent = `\\[ ${finalAnswer} \\]`;
+
+      //activityBox.appendChild(answerDiv);
+      
+      // Re-render MathJax
+      //MathJax.typeset([answerDiv]);
+    //});
+
+    checkBtn.addEventListener('click', () => {
       // Play sound when view button is clicked
       const sound = document.getElementById('click-sound');
       if (sound) {
         sound.currentTime = 0; // rewind to start in case it's still playing
         sound.play();
       }
-      // Create a new div to hold the LaTeX answer
-      const answerDiv = document.createElement('div');
-      answerDiv.classList.add('math');
-      answerDiv.style.textAlign = 'center';
-      answerDiv.style.fontSize = '24px'; // Adjust as needed
       
-      //const slotVersion = replaceWithSlots(finalAnswer);
-      //answerDiv.textContent = `\\[ ${slotVersion} \\]`;
-
-      answerDiv.textContent = `\\[ ${finalAnswer} \\]`;
-
-      activityBox.appendChild(answerDiv);
-      
-      // Re-render MathJax
-      MathJax.typeset([answerDiv]);
+      answerDisplay.textContent = '';  // Clear previous answer
+      answerDisplay.textContent = `\\[ ${finalAnswer} \\]`;
+      MathJax.typeset([answerDisplay]);
     });
+
 
   
   hintBtn.addEventListener('click', () => {

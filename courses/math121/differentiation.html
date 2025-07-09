@@ -1576,6 +1576,13 @@
         sound.currentTime = 0; // rewind to start in case it's still playing
         sound.play();
       }
+
+      // Remove any existing answer div
+      const existingAnswer = activityBox.querySelector('.math');
+      if (existingAnswer) {
+        activityBox.removeChild(existingAnswer);
+      }
+      
       // Create a new div to hold the LaTeX answer
       const answerDiv = document.createElement('div');
       answerDiv.classList.add('math');

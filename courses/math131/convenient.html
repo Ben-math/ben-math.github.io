@@ -109,7 +109,7 @@
 
       // This makes g1 either 100, 1000, or 10000, multiplied by an integer between 1 and 9
       let p1 = Math.floor(Math.random() * 3) + 2;
-      g1 = Math.pow(10, p1) * (Math.floor(Math.random() * 9) + 1);
+      g1 = (10 ** p1) * (Math.floor(Math.random() * 9) + 1);
 
       if (both) {
         g2 = 10^(Math.floor(Math.random() * 3) + 1) * (Math.floor(Math.random() * 9) + 1);

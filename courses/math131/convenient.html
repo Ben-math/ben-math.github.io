@@ -97,7 +97,16 @@
       // Choose the operation, 1 is addition, 2 is subtraction, 3 is multiplication
       let opC = Math.floor(Math.random() * 3) + 1;
 
+      // 33% chance that both integers in the operation are close to round numbers
       let both = Math.random() < 0.33;
+
+      // If n1 or n2 are true, then d1, d2 are subtracted from g1, g2 respectively (by default added)
+      let n1 = Math.random() < 5;
+      let n2 = Math.random() < 5;
+
+      // The amounts that are added or subtracted from g1, g2
+      let d1 = Math.floor(Math.random() * 9) + 1;
+      let d2 = Math.floor(Math.random() * 9) + 1;
 
       // This makes g1 either 100, 1000, or 10000, multiplied by an integer between 1 and 9
       let p1 = Math.floor(Math.random() * 3) + 2;
@@ -126,7 +135,7 @@
       }
 
 
-
+      
 
 
 

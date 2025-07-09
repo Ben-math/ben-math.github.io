@@ -378,4 +378,15 @@ main {
   border-color: #1a1a4b;
 }
 
+.slot {
+  display: inline-block;
+  padding: 4px 8px;
+  background-color: #ffde59;
+  border: 2px dashed #1a1a4b;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+
 /* No checkmark ::after element */

@@ -1560,6 +1560,15 @@
       // Clear the activity box first
       activityBox.innerHTML = "";
       
+
+
+    });
+
+
+    const checkBtn = document.getElementById('check-btn');
+    const answerDisplay = document.getElementById('answer-display');
+    
+    checkBtn.addEventListener('click', () => {
       // Create a new div to hold the LaTeX answer
       const answerDiv = document.createElement('div');
       answerDiv.classList.add('math');
@@ -1575,17 +1584,6 @@
       
       // Re-render MathJax
       MathJax.typeset([answerDiv]);
-
-
-    });
-
-
-    const checkBtn = document.getElementById('check-btn');
-    const answerDisplay = document.getElementById('answer-display');
-    
-    checkBtn.addEventListener('click', () => {
-      answerDisplay.textContent = `\\[ ${finalAnswer} \\]`;
-      MathJax.typeset([answerDisplay]);
     });
 
   

@@ -446,6 +446,25 @@
 
 
 
+    function replaceWithSlots(latexString) {
+      let slotCount = 0;
+    
+      // Replace numbers (standalone integers, including negatives)
+      latexString = latexString.replace(/(?<![a-zA-Z])(-?\d+)(?![a-zA-Z])/g, (_, num) => {
+        return `\\htmlClass{slot}{${num}}`;
+      });
+    
+      // Replace trig and ln functions
+      latexString = latexString.replace(/\\(sin|cos|tan|ln)/g, (_, func) => {
+        return `\\htmlClass{slot}{\\${func}}`;
+      });
+    
+      return latexString;
+    }
+
+
+
+
 
 
 
@@ -1562,7 +1581,9 @@
       answerDiv.style.textAlign = 'center';
       answerDiv.style.fontSize = '24px'; // Adjust as needed
       
-      answerDiv.textContent = `\\[ ${finalAnswer} \\]`;
+      const slotVersion = replaceWithSlots(finalAnswer);
+      answerDiv.textContent = `\\[ ${slotVersion} \\]`;
+
       activityBox.appendChild(answerDiv);
       
       // Re-render MathJax

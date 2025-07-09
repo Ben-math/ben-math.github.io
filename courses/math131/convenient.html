@@ -97,14 +97,6 @@
       // Choose the operation, 1 is addition, 2 is subtraction, 3 is multiplication
       let opC = Math.floor(Math.random() * 3) + 1;
 
-      if (opC === 1) {
-        op = `+`;
-      } else if (opC === 2) {
-        op = `-`;
-      } else {
-        op = ` \\cdot `;
-      }
-
       let both = Math.random() < 0.33;
 
       // This makes g1 either 100, 1000, or 10000, multiplied by an integer between 1 and 9
@@ -123,6 +115,22 @@
         }
       } else {
         g2 = Math.floor(Math.random() * 8) + 2;
+      }
+
+
+
+
+
+
+      if (opC === 1) {
+        op = `+`;
+        correctAnswer = g1 + g2;
+      } else if (opC === 2) {
+        op = `-`;
+        correctAnswer = g1 - g2;
+      } else {
+        op = ` \\cdot `;
+        correctAnswer = g1 * g2;
       }
       
       

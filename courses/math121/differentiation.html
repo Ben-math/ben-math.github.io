@@ -447,20 +447,19 @@
 
 
     function replaceWithSlots(latexString) {
-      let slotCount = 0;
-    
       // Replace numbers (standalone integers, including negatives)
       latexString = latexString.replace(/(?<![a-zA-Z])(-?\d+)(?![a-zA-Z])/g, (_, num) => {
         return `\\htmlClass{slot}{${num}}`;
       });
     
-      // Replace trig and ln functions
-      latexString = latexString.replace(/\\(sin|cos|tan|ln)/g, (_, func) => {
-        return `\\htmlClass{slot}{\\${func}}`;
+      // Replace full trig and ln expressions (function + argument)
+      latexString = latexString.replace(/\\(sin|cos|tan|ln)\(x\)/g, (match) => {
+        return `\\htmlClass{slot}{${match}}`;
       });
     
       return latexString;
     }
+
 
 
 

@@ -61,8 +61,9 @@
     </div>
 
     <div class="activity-box-short" id="my-activity">
-
+      <div id="answer-display" class="math" style="text-align: center;"></div>
     </div>
+
 
     <div class="button-container">
       <button id="check-btn" class="rubber-button">View Answer</button>
@@ -1580,63 +1581,13 @@
 
 
     const checkBtn = document.getElementById('check-btn');
-    const feedbackText = document.getElementById('feedbackText');
+    const answerDisplay = document.getElementById('answer-display');
     
     checkBtn.addEventListener('click', () => {
+      answerDisplay.textContent = `\\[ ${finalAnswer} \\]`;
+      MathJax.typeset([answerDisplay]);
+    });
 
-    // Play sound when an exponent is dropped
-    const sound = document.getElementById('click-sound');
-    if (sound) {
-      sound.currentTime = 0; // rewind to start in case it's still playing
-      sound.play();
-    }
-    const a1Box = document.getElementById('a1-slot');
-    const a2Box = document.getElementById('a2-slot');
-    const a3Box = document.getElementById('a3-slot');
-    const e1Box = document.getElementById('e1-slot');
-    const e2Box = document.getElementById('e2-slot');
-    const e3Box = document.getElementById('e3-slot');
-  
-    const a1Value = parseInt(a1Box.textContent);
-    const a2Value = parseInt(a2Box.textContent);
-    const a3Value = parseInt(a3Box.textContent);
-    const e2Value = parseInt(e2Box.textContent);
-    const e3Value = parseInt(e3Box.textContent);
-  
-    const [A1, A2, A3, E1, E2, E3] = [a1, a2, a3, e1, e2, e3];
-  
-    // Evaluate both sides
-    const a1Ans = a1*e1;
-    const a2Ans = a2*e2;
-    const a3Ans = a3*e3;
-    const e1Ans = e1-1;
-    const e2Ans = e2-1;
-    const e3Ans = e3-1;
-
-    let correct;
-    if (e1Box) {
-      const e1Value = parseInt(e1Box.textContent);
-      const e1Ans = e1 - 1;
-      correct = (a1Value == a1Ans) && (a2Value == a2Ans) && (a3Value == a3Ans) &&
-                (e1Value == e1Ans) && (e2Value == e2Ans) && (e3Value == e3Ans);
-    } else {
-      correct = (a1Value == a1Ans) && (a2Value == a2Ans) && (a3Value == a3Ans) &&
-                (e2Value == e2Ans) && (e3Value == e3Ans);
-    }
-  
-  
-    if (correct) {
-      document.getElementById("feedbackText").textContent = "Correct!";
-      document.getElementById("feedbackText").style.color = "green";
-    } else {
-      document.getElementById("feedbackText").textContent = "Incorrect.  Try again!";
-      document.getElementById("feedbackText").style.color = "red";
-    }
-
-  
-    // Restore global values (optional, if you need them again)
-    [a1, a2, a3, e1, e2, e3] = [A1, A2, A3, E1, E2, E3];
-  });
   
   hintBtn.addEventListener('click', () => {
     if (hintIndex < hintSteps.length) {

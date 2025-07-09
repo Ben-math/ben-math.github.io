@@ -1580,8 +1580,10 @@
       answerDiv.style.textAlign = 'center';
       answerDiv.style.fontSize = '24px'; // Adjust as needed
       
-      const slotVersion = replaceWithSlots(finalAnswer);
-      answerDiv.textContent = `\\[ ${slotVersion} \\]`;
+      //const slotVersion = replaceWithSlots(finalAnswer);
+      //answerDiv.textContent = `\\[ ${slotVersion} \\]`;
+
+      answerDiv.textContent = `\\[ ${finalAnswer} \\]`;
 
       activityBox.appendChild(answerDiv);
       

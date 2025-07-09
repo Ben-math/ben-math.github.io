@@ -35,9 +35,14 @@
   </header>
   <main>
 
-    <p>We need only two differentiation rules to differentiate any polynomial.  The Sum/Difference Rule, \[(f(x) \pm g(x))'
-            = f'(x) \pm g(x),\] lets us differentiate term-by-term, and keep the \(+/-\) signs between the terms as-is.  The Power Rule, 
-      \[(x^n)' = nx^{n-1},\] is what we use to differentiate each individual term.</p>
+    <p>We need only three differentiation rules to differentiate any polynomial.  The Sum/Difference Rule, \[(f(x) \pm g(x))'
+            = f'(x) \pm g(x),\] lets us differentiate term-by-term, and keep the \(+/-\) signs between the terms as-is.  The Constant Multiple Rule,
+      \[(c \cdot f(x))' = c \cdot f'(x),\] lets us keep the coefficients as-is.  Finally, The Power Rule, 
+      \[(x^n)' = nx^{n-1},\] is what we use to differentiate what remains of each term.  For example, to differentiate the polynomial function
+    \[f(x) = -8x^6 + 3x^5 - x^3 + 2x - 8,\] we start by applying the Sum/Difference Rule: \[f'(x) = (-8x^6)' + (3x^5)' - (x^3)' + (2x)' - (8)',\]
+    and then applying the Constant Multiple Rule to each term, \[f'(x) = -8 \cdot (x^6)' + 3 \cdot (x^5)' - (x^3)' + 2 \cdot (x)' - (8)',\]
+    and finally applying the Power Rule, we get \[f'(x) = -8 \cdot 6x^5 + 3 \cdot 5x^4 - 3x^2 + 2,\]
+    which simplifies to \[f'(x) = -48x^5 + 15x^5 - 3x^2 + 2.\]</p>
     
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

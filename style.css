@@ -154,6 +154,16 @@ main {
   overflow: hidden;
 }
 
+.activity-box-short {
+  width: 1350px;
+  height: 250px;
+  border: 3px solid #1a1a4b;
+  background-color: #fffbe0;
+  position: relative; /* This is key */
+  margin: 2em auto;
+  overflow: hidden;
+}
+
 
 #question-text {
   text-align: center;

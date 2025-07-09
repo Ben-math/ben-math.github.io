@@ -103,8 +103,8 @@
       let p1 = Math.floor(Math.random() * 3) + 2;
       g1 = (10 ** p1) * (Math.floor(Math.random() * 9) + 1);
 
-      if (both && opC !== 3) {
-        g2 = (10 ** (Math.floor(Math.random() * 3) + 1)) * (Math.floor(Math.random() * 9) + 1);
+      if (both) {
+        g2 = (10 ** (Math.floor(Math.random() * 3) + 2)) * (Math.floor(Math.random() * 9) + 1);
       } else if (opC !== 3) {
         if (p1 === 2) {
           g2 = Math.floor(Math.random() * 90) + 10;

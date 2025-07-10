@@ -92,7 +92,7 @@
   
     startBtn.addEventListener('click', () => {
 
-      let g1, g2, op;
+      let g1, g2, op, a1, a2;
 
       // Choose the operation, 1 is addition, 2 is subtraction, 3 is multiplication
       let opC = Math.floor(Math.random() * 3) + 1;
@@ -134,6 +134,21 @@
         g2 = Math.floor(Math.random() * 8) + 2;
       }
 
+      if (n1) {
+        a1 = g1 - d1;
+      } else {
+        a1 = g1 + d1;
+      }
+
+      if (both) {
+        if (n2) {
+          a2 = g2 - d2;
+        } else {
+          a2 = g2 + d2;
+        }
+      } else {
+        a2 = g2;
+      }
 
       
 
@@ -141,19 +156,19 @@
 
       if (opC === 1) {
         op = `+`;
-        correctAnswer = g1 + g2;
+        correctAnswer = a1 + a2;
       } else if (opC === 2) {
         op = `-`;
-        correctAnswer = g1 - g2;
+        correctAnswer = a1 - a2;
       } else {
         op = ` \\cdot `;
-        correctAnswer = g1 * g2;
+        correctAnswer = a1 * a2;
       }
       
       
   
       // Display the question
-      questionText.textContent = `\\[ \\text{Compute } \\hspace{2mm} ${g1}${op}${g2}\\]`;
+      questionText.textContent = `\\[ \\text{Compute } \\hspace{2mm} ${a1}${op}${a2}\\]`;
       MathJax.typeset([questionText]);
 
       

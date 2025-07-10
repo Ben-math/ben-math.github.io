@@ -162,6 +162,9 @@
       questionText.textContent = `\\[ \\text{Compute } \\hspace{2mm} ${a1}${op}${a2}\\]`;
       MathJax.typeset([questionText]);
 
+      hintIndex = 0;
+      hintArea.innerHTML = "";  // Clear previous hints
+
       
       
     });

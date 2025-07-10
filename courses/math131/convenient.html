@@ -203,7 +203,8 @@
         }
       } else {
         if (opC === 1) {
-          
+          let gdSum = g2 + (n1 ? -d1 : d1);
+          hintSteps[i] = `\\[ = ${g1} ${gdSum >= 0 ? '+' : ''} ${gdSum} \\]`
         } else {
           
         }

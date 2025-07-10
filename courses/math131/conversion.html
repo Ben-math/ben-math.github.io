@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta charset="UTF-8" />
+  <title>Conversion Activity</title>
+  <link rel="stylesheet" href="/style.css" />
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+</head>
+<body>
+  <header>
+    <h1>Conversion Activity</h1>
+    <div id="nav-placeholder"></div>
+      <script>
+        fetch("/nav.html")
+          .then(response => response.text())
+          .then(data => {
+            document.getElementById("nav-placeholder").innerHTML = data;
+        
+            const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+            const navLinks = document.querySelectorAll("#nav-placeholder a");
+        
+            navLinks.forEach(link => {
+              const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+              if (linkPath === currentPath) {
+                link.classList.add("active");
+              }
+            });
+          });
+      </script>
+  </header>
+  <main>
+
+    <p>The following activity is for practicing a particular strategy for arithmetic.  It involves transforming a given problem into one involving 
+    "round/convenient" numbers (a poorly-defined term: you may have a personal mnemonic which leads you to prefer doing arithmetic with certain 
+    numbers, different from others).  Here we will assume the preference is a number with only one non-zero place-value.  First, we illustrate 
+    the method with a problem that is already somewhat convenient: \[297 + 486 + 3\]  Since addition is commutative, we can re-order the addition, 
+    and group together two numbers which we know will make a round sum: \[= (297 + 3) + 486\]\[ = 300 + 486\]\[ = 786\]  But what if we don't have such 
+    a convenient pair of numbers in our problem?  Not to worry - we can create a round number, so long as our new expression is equal to the old 
+    one.  For instance, consider \[9998 + 1234\]  \(9998\) is very close to \(10000\).  In fact, it is 2 away.  That is, \(9998 = 10000 - 2\).  
+      So since they're equal, we can replace one with the other in the expression: \[ = (10000 - 2) + 1234\]  Now it is a simple matter 
+      of regrouping and solving: \[= 10000 + (1234 - 2)\]\[ = 10000 + 1232\]\[ = 11232\] </p>
+
+    <p>This strategy can be applied even in less obvious situations.  We will restrict ourselves to addition and multiplication problems (which 
+      are more likely to be convenient).  Even if <i>both</i> numbers in the problem are close to being round numbers, we can use this strategy:
+    \[97 \cdot 3002 = (100 - 3) \cdot (3000 + 2)\]  Then we could expand the product (using FOIL), regroup, and simplify: 
+      \[= 100 \cdot 3000 + 100 \cdot 2 - 3 \cdot 3000 - 3 \cdot 2\] \[= 300000 + 200 - 9000 - 6\] \[= (300000 - 9000) + (200 - 6)\]
+      \[= 291000 + 194\]\[ = 291194\]</p>
+
+    <div class="button-container">
+      <button id="start-btn" class="rubber-button">Start!</button>
+    </div>
+    
+    <p id="question-text"></p>
+
+    <div class="button-container">
+      <button id="hint-btn" class="rubber-button">Hint</button>
+    </div>
+    
+    <div id="hint-area" class="math" style="margin-top: 1em;"></div>
+
+
+    <div id="answer-section" style="margin-top: 20px; text-align: center;">
+      <label for="user-answer">Enter your answer:</label>
+      <input type="number" id="user-answer" />
+      <button id="check-answer-btn" class="rubber-button">Check Answer</button>
+      <p id="answer-feedback" style="font-weight: bold; margin-top: 10px;"></p>
+    </div>
+
+
+
+
+  </main>
+  <script>
+
+    const hintBtn = document.getElementById('hint-btn');
+    const hintArea = document.getElementById('hint-area');
+    
+    // This array stores your LaTeX hints
+    let hintSteps = [];
+    let hintIndex = 0;
+    
+    const startBtn = document.getElementById('start-btn');
+    const questionText = document.getElementById('question-text');
+
+    
+    let correctAnswer = null;
+  
+    startBtn.addEventListener('click', () => {
+
+      // Play sound when view button is clicked
+      const sound = document.getElementById('click-sound');
+      if (sound) {
+        sound.currentTime = 0; // rewind to start in case it's still playing
+        sound.play();
+      }
+
+      let g1, g2, op, a1, a2;
+
+      // Choose the operation, 1 is addition, 2 is multiplication
+      let opC = Math.floor(Math.random() * 2) + 1;
+
+      // 33% chance that both integers in the operation are close to round numbers
+      let both = Math.random() < 0.33;
+
+      // If n1 or n2 are true, then d1, d2 are subtracted from g1, g2 respectively (by default added)
+      let n1 = Math.random() < 0.5;
+      let n2 = Math.random() < 0.5;
+
+      // The amounts that are added or subtracted from g1, g2
+      let d1 = Math.floor(Math.random() * 9) + 1;
+      let d2 = Math.floor(Math.random() * 9) + 1;
+
+      // This makes g1 either 100, 1000, or 10000, multiplied by an integer between 1 and 9
+      let p1 = Math.floor(Math.random() * 3) + 2;
+      let p2 = 10;
+      g1 = (10 ** p1) * (Math.floor(Math.random() * 9) + 1);
+
+      if (both) {
+        p2 = Math.floor(Math.random() * 3) + 2;
+        g2 = (10 ** (p2)) * (Math.floor(Math.random() * 9) + 1);
+      } else if (opC === 1) {
+        if (p1 === 2) {
+          g2 = Math.floor(Math.random() * 90) + 10;
+        } else if (p1 === 3) {
+          g2 = Math.floor(Math.random() * 900) + 100;
+        } else {
+          g2 = Math.floor(Math.random() * 9000) + 1000;
+        }
+      } else {
+        g2 = Math.floor(Math.random() * 8) + 2;
+      }
+
+      if (n1) {
+        a1 = g1 - d1;
+      } else {
+        a1 = g1 + d1;
+      }
+
+      if (both) {
+        if (n2) {
+          a2 = g2 - d2;
+        } else {
+          a2 = g2 + d2;
+        }
+      } else {
+        a2 = g2;
+      }
+
+      
+
+
+
+      if (opC === 1) {
+        op = `+`;
+        correctAnswer = a1 + a2;
+      } else {
+        op = ` \\cdot `;
+        correctAnswer = a1 * a2;
+      }
+
+      hintSteps = [];
+      hintIndex = 0;
+
+      // Here we will generate and store hints
+      let i = 0
+
+
+      hintSteps[i] = `\\[ = \\left(${g1}${n1 ? '-' : '+'}${d1}\\right) ${op} `;
+
+      if (both) {
+        hintSteps[i] += ` \\left(${g2}${n2 ? '-' : '+'}${d2}\\right) \\]`;
+      } else {
+        hintSteps[i] += ` ${g2} \\]`;
+      }
+      i++;
+
+
+      if (both) {
+        if (opC === 1) {
+          hintSteps[i] = `\\[ = \\left( ${g1}+${g2} \\right) + \\left( ${n1 ? '-' : ''}${d1}${n2 ? '-' : '+'}${d2} \\right) \\]`
+        } else {
+          hintSteps[i] = `\\[ = ${g1} \\cdot ${g2} + ${g1} \\cdot ${n2 ? '\\left( -' : ''} ${d2} ${n2 ? '\\right)' : ''} ${n1 ? '-' : '+'}${d1} 
+          \\cdot ${g2} ${n1 ? '-' : '+'}${d1} \\cdot ${n2 ? '\\left( -' : ''} ${d2} ${n2 ? '\\right)' : ''}\\]`
+        }
+      } else {
+        if (opC === 1) {
+          hintSteps[i] = `\\[ = ${g1} + \\left( ${g2}${n1 ? '-' : '+'}${d1} \\right) \\]`
+        } else {
+          hintSteps[i] = `\\[ = ${g1} \\cdot ${g2} ${n1 ? '-' : '+'}${d1} \\cdot ${g2} \\]`
+        }
+      }
+      i++;
+
+      
+      if (both) {
+        if (opC === 1) {
+          let dSum = (n1 ? -d1 : d1) + (n2 ? -d2 : d2);
+          hintSteps[i] = `\\[ = ${g1+g2} ${dSum >= 0 ? '+' : ''} ${dSum} \\]`
+        } else {
+          let ggProd = g1 * g2;
+          let gdProd = g1 * (n2 ? -d2 : d2);
+          let dgProd = (n1 ? -d1 : d1) * g2;
+          let ddProd = (n1 ? -d1 : d1) * (n2 ? -d2 : d2);
+          hintSteps[i] = `\\[ = ${ggProd} ${gdProd >= 0 ? '+' : ''}${gdProd} ${dgProd >= 0 ? '+' : ''}${dgProd} ${ddProd >= 0 ? '+' : ''}${ddProd} \\]`;
+        }
+      } else {
+        if (opC === 1) {
+          let gdSum = g2 + (n1 ? -d1 : d1);
+          hintSteps[i] = `\\[ = ${g1} ${gdSum >= 0 ? '+' : ''} ${gdSum} \\]`
+        } else {
+          let ggProd = g1 * g2;
+          let dgProd = (n1 ? -d1 : d1) * g2;
+          hintSteps[i] = `\\[ = ${ggProd} ${dgProd >= 0 ? '+' : ''} ${dgProd} \\]`
+        }
+      }
+      i++;
+      
+      
+      
+  
+      // Display the question
+      questionText.textContent = `\\[ \\text{Compute } \\hspace{2mm} ${a1}${op}${a2}\\]`;
+      MathJax.typeset([questionText]);
+
+      hintIndex = 0;
+      hintArea.innerHTML = "";  // Clear previous hints
+
+      
+      
+    });
+
+
+    
+    document.getElementById('check-answer-btn').addEventListener('click', () => {
+      // Play sound when view button is clicked
+      const sound = document.getElementById('click-sound');
+      if (sound) {
+        sound.currentTime = 0; // rewind to start in case it's still playing
+        sound.play();
+      }
+      const userInput = parseInt(document.getElementById('user-answer').value);
+      const feedback = document.getElementById('answer-feedback');
+    
+      if (isNaN(userInput)) {
+        feedback.textContent = 'Please enter a number.';
+        feedback.style.color = 'black';
+      } else if (userInput === correctAnswer) {
+        feedback.textContent = 'Correct!';
+        feedback.style.color = 'green';
+      } else {
+        feedback.textContent = 'Incorrect. Try again!';
+        feedback.style.color = 'red';
+      }
+    });
+
+
+
+    hintBtn.addEventListener('click', () => {
+      // Play sound when view button is clicked
+      const sound = document.getElementById('click-sound');
+      if (sound) {
+        sound.currentTime = 0; // rewind to start in case it's still playing
+        sound.play();
+      }
+      if (hintIndex < hintSteps.length) {
+        // Create a new paragraph for each hint
+        const hintPara = document.createElement('div');
+        hintPara.classList.add('hint-step');
+        hintPara.textContent = hintSteps[hintIndex];
+        hintArea.appendChild(hintPara);
+        
+        MathJax.typeset([hintPara]);
+        hintIndex++;
+      }
+    });
+
+
+
+
+    
+  </script>
+
+  <audio id="click-sound" src="button.mp3" preload="auto"></audio>
+  <audio id="set-sound" src="set2.mp3" preload="auto"></audio>
+
+</body>
+</html>

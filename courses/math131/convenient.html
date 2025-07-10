@@ -92,6 +92,13 @@
   
     startBtn.addEventListener('click', () => {
 
+      // Play sound when view button is clicked
+      const sound = document.getElementById('click-sound');
+      if (sound) {
+        sound.currentTime = 0; // rewind to start in case it's still playing
+        sound.play();
+      }
+
       let g1, g2, op, a1, a2;
 
       // Choose the operation, 1 is addition, 2 is multiplication
@@ -230,6 +237,12 @@
 
     
     document.getElementById('check-answer-btn').addEventListener('click', () => {
+      // Play sound when view button is clicked
+      const sound = document.getElementById('click-sound');
+      if (sound) {
+        sound.currentTime = 0; // rewind to start in case it's still playing
+        sound.play();
+      }
       const userInput = parseInt(document.getElementById('user-answer').value);
       const feedback = document.getElementById('answer-feedback');
     

@@ -163,7 +163,26 @@
       let i = 0
 
 
+      //hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\]\\[ \\left(${expr}\\right)' = 
+      //${finalAnswer} + \\left(${innermostExpr}\\right)' \\]`;
+      //i++;
 
+      if (n1) {
+        hintSteps[i] = `\\[ = \\left(${g1}-${d1}\\right) ${op} \\]`;
+      } else {
+        hintSteps[i] = `\\[ = \\left(${g1}+${d1}\\right) ${op} \\]`;
+      }
+
+      if (both) {
+        if (n2) {
+          hintSteps[i] += `\\[ \\left(${g2}-${d2}\\right) \\]`;
+        } else {
+          hintSteps[i] += `\\[ \\left(${g2}+${d2}\\right) \\]`;
+        }
+      } else {
+        hintSteps[i] += `\\[ ${g2} \\]`;
+      }
+      i++;
       
       
       

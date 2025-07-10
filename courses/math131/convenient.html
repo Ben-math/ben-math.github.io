@@ -199,7 +199,7 @@
           let gdProd = g1 * (n2 ? -d2 : d2);
           let dgProd = (n1 ? -d1 : d1) * g2;
           let ddProd = (n1 ? -d1 : d1) * (n2 ? -d2 : d2);
-          hintSteps[i] = `\\[ = ${ggProd} ${gdProd >= 0 ? '+' : '-'}${gdProd} ${dgProd >= 0 ? '+' : '-'}${dgProd} ${ddProd >= 0 ? '+' : '-'}${ddProd} \\]`;
+          hintSteps[i] = `\\[ = ${ggProd} ${gdProd >= 0 ? '+' : ''}${gdProd} ${dgProd >= 0 ? '+' : ''}${dgProd} ${ddProd >= 0 ? '+' : ''}${ddProd} \\]`;
         }
       } else {
         if (opC === 1) {

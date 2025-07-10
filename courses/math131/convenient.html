@@ -206,7 +206,9 @@
           let gdSum = g2 + (n1 ? -d1 : d1);
           hintSteps[i] = `\\[ = ${g1} ${gdSum >= 0 ? '+' : ''} ${gdSum} \\]`
         } else {
-          
+          let ggProd = g1 * g2;
+          let dgProd = (n1 ? -d1 : d1) * g2;
+          hintSteps[i] = `\\[ = ${ggProd} ${dgProd >= 0 ? '+' : ''} ${dgProd} \\]`
         }
       }
       i++;

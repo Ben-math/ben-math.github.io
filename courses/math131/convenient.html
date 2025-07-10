@@ -192,7 +192,8 @@
       
       if (both) {
         if (opC === 1) {
-          hintSteps[i] = `\\[ = \\left( ${g1+g2} \\right) \\]`
+          let dSum = (n1 ? -d1 : d1) + (n2 ? -d2 : d2);
+          hintSteps[i] = `\\[ = ${g1+g2} ${dSum >= 0 ? '+' : ''} ${dSum} \\]`
         } else {
           
         }

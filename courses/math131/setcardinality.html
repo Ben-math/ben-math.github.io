@@ -56,6 +56,10 @@
       the equation's truth: \[|A \cup B \cup C| = |A| + |B| + |C| - |A \cap B| - |A \cap C| - |B \cap C| + |A \cap B \cap C|\]  (If you're curious about 
       how it generalizes, it's an <i>alternating sum</i> (alternately \(+\) or \(-\)), where at each step we take all possible intersections of 1, 2, 3, 
       4, etc... many of the sets)</p>
+
+    <p>Finally, consider how we might combine the two preceding properties in a more complex case.  With 3 sets A, B, and C, we can decompose A into 
+    its intersecting and non-intersecting areas.  But to avoid double-counting, we have to apply inclusion-exclusion to the intersecting area:
+    \[|A| = |A \ (B \cup C)| + |A \cap B| + |A \cap C| - |A \cap B \cap C|\]</p>
     
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

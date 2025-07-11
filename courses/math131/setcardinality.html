@@ -45,10 +45,10 @@
     
     <p>What this means is that to count how many elements lie in A <i>or</i> B, we sum the number of elements 
     in A and B, and then subtract the number which they have in common (to avoid double-counting these).  This principle can be extended to an 
-    arbitrary number of intersecting sets.  It gets long pretty quickly, so we'll stop at the case of 3 sets: 
-    \[|A \cup B \cup C| = |A| + |B| + |C| - |A \cap B| - |A \cap C| - |B \cap C| + |A \cap B \cap C|\]  (If you're curious about how it generalizes, 
-    it's an <i>alternating sum</i> (alternately \(+\) or \(-\)), where at each step we take all possible intersections of 1, 2, 3, 4, etc... many 
-    of the sets)</p>
+    arbitrary number of intersecting sets.  It gets long pretty quickly, so we'll stop at the case of 3 sets (try drawing a picture to convince yourself 
+      the equation's truth: \[|A \cup B \cup C| = |A| + |B| + |C| - |A \cap B| - |A \cap C| - |B \cap C| + |A \cap B \cap C|\]  (If you're curious about 
+      how it generalizes, it's an <i>alternating sum</i> (alternately \(+\) or \(-\)), where at each step we take all possible intersections of 1, 2, 3, 
+      4, etc... many of the sets)</p>
     
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

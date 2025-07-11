@@ -35,7 +35,14 @@
   </header>
   <main>
 
-    <p>This activity is meep morp.</p>
+    <p>When sets intersect (or don't) in complicated ways, it can be tricky to determine how many elements lie in each part of a Venn Diagram.  
+    There is one major theorem from combinatorics we will use to aid us in our counting, the <i>inclusion-exclusion principle</i>: 
+    \[|A \cup B| = |A| + |B| - |A \cap B|\]  What this means is that to count how many elements lie in A <i>or</i> B, we sum the number of elements 
+    in A and B, and then subtract the number which they have in common (to avoid double-counting these).  This principle can be extended to an 
+    arbitrary number of intersecting sets.  It gets long pretty quickly, so we'll stop at the case of 3 sets: 
+    \[|A \cup B \cup C| = |A| + |B| + |C| - |A \cap B| - |A \cap C| - |B \cap C| + |A \cap B \cap C|\]  (If you're curious about how it generalizes, 
+    it's an <i>alternating sum</i> (alternately \(+\) or \(-\)), where at each stage we take all possible intersections of 1, 2, 3, 4,... many 
+    of the sets)</p>
     
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

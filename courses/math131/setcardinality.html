@@ -35,8 +35,15 @@
   </header>
   <main>
 
-    <p>When sets intersect (or don't) in complicated ways, it can be tricky to determine how many elements lie in each part of a Venn Diagram.  
-    There is one major theorem from combinatorics we will use to aid us in our counting, the <i>inclusion-exclusion principle</i>: 
+    <p>When sets intersect (or don't) in complicated ways, it can be tricky to determine how many elements lie in each part of a Venn Diagram.  The 
+      simplest (and most useful) equality we will use is one which breaks down a set into its intersecting and non-intersecting areas: 
+      \[|A| = |A \setminus B| + |A \cap B|\]</p>
+
+    <figure>
+        <img src="fig2.png" alt="Cardinality on 2 sets">
+      </figure>
+      
+      <p>There is a major theorem from combinatorics we will use to aid us in our counting, the <i>inclusion-exclusion principle</i>: 
     \[|A \cup B| = |A| + |B| - |A \cap B|\]</p>
     
     <figure>

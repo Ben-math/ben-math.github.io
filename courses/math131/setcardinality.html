@@ -214,23 +214,17 @@
       AcapC = 0;
       BcapC = 0;
       AcapBcapC = 0;
+      U = 0;
 
 
-      for (let i = 0; i < U; i++) {
+      for (let i = 0; i < 120; i++) {
         // Randomly assign membership
         const inA = Math.random() < 0.3;
         const inB = Math.random() < 0.3;
         const inC = Math.random() < 0.3;
       
-        // Classify based on which sets the element belongs to
-        const count = (inA ? 1 : 0) + (inB ? 1 : 0) + (inC ? 1 : 0);
-      
-        if (count === 0) {
-          // The element is outside of A, B, and C — do nothing
-          continue;
-        }
-      
-        if (inA && !inB && !inC) A++;
+        if (!inA && !inB && !inC) U++;
+        else if (inA && !inB && !inC) A++;
         else if (!inA && inB && !inC) B++;
         else if (!inA && !inB && inC) C++;
         else if (inA && inB && !inC) AcapB++;
@@ -240,6 +234,7 @@
       }
       
       // Example output
+      console.log(`U only: ${U}`);
       console.log(`A only: ${A}`);
       console.log(`B only: ${B}`);
       console.log(`C only: ${C}`);

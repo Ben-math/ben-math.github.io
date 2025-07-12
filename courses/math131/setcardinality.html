@@ -282,12 +282,15 @@
         if (m2 === 1) {
           A1 = 1;
           BcapC1 = 1;
+          hints += `\\[|B \\cap C| = ${BcapC + AcapBcapC}\\]`;
         } else if (m2 === 2) {
           B1 = 1;
           AcapC1 = 1;
+          hints += `\\[|A \\cap C| = ${AcapC + AcapBcapC}\\]`;
         } else {
           C1 = 1;
           AcapB1 = 1;
+          hints += `\\[|A \\cap B| = ${AcapB + AcapBcapC}\\]`;
         }
       }
 

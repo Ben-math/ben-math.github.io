@@ -252,17 +252,17 @@
           A1 = 1;
           BcapC1 = 1;
           U1 = 1;
-          hints += `\\[|A| = ${A} \\text{ and } |B \\cap C| = ${BcapC + AcapBcapC}\\]`;
+          hints += `\\[|A| = ${A + AcapB + AcapC + AcapBcapC} \\text{ and } |B \\cap C| = ${BcapC + AcapBcapC}\\]`;
         } else if (m2 === 2) {
           B1 = 1;
           AcapC1 = 1;
           U1 = 1;
-          hints += `\\[|B| = ${B} \\text{ and } |A \\cap C| = ${AcapC + AcapBcapC}\\]`;
+          hints += `\\[|B| = ${B + AcapB + BcapC + AcapBcapC} \\text{ and } |A \\cap C| = ${AcapC + AcapBcapC}\\]`;
         } else {
           C1 = 1;
           AcapB1 = 1;
           U1 = 1;
-          hints += `\\[|C| = ${C} \\text{ and } |A \\cap B| = ${AcapB + AcapBcapC}\\]`;
+          hints += `\\[|C| = ${C + AcapC + BcapC + AcapBcapC} \\text{ and } |A \\cap B| = ${AcapB + AcapBcapC}\\]`;
         }
       } else if (m1 === 2) {
         if (m2 === 1) {

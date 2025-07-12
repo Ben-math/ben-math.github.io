@@ -476,7 +476,7 @@
             U1 = 1;
             hints += `\\[|U| = 120, |A| = ${A + AcapB + AcapC + AcapBcapC}, |A \\cap B| = ${AcapB + AcapBcapC} \\text{ and } 
             |A \\cap C| = ${AcapC + AcapBcapC}\\]`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A| = |A \\setminus (B \\cup C)| + |A \\cap B| + |A \\cap C| - 
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use inclusion-exclusion: } |A| = |A \\setminus (B \\cup C)| + |A \\cap B| + |A \\cap C| - 
             |A \\cap B \\cap C|\\]`;
             i++;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${A + AcapB + AcapC + AcapBcapC} = ${A} + ${AcapB + AcapBcapC} + ${AcapC + AcapBcapC} - 
@@ -508,7 +508,7 @@
             U1 = 1;
             hints += `\\[|U| = 120, |B| = ${B + AcapB + BcapC + AcapBcapC}, |A \\cap B| = ${AcapB + AcapBcapC} \\text{ and } 
             |B \\cap C| = ${BcapC + AcapBcapC}\\]`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |B| = |B \\setminus (A \\cup C)| + |A \\cap B| + |B \\cap C| - 
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use inclusion-exclusion: } |B| = |B \\setminus (A \\cup C)| + |A \\cap B| + |B \\cap C| - 
             |A \\cap B \\cap C|\\]`;
             i++;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${B + AcapB + BcapC + AcapBcapC} = ${B} + ${AcapB + AcapBcapC} + ${BcapC + AcapBcapC} - 
@@ -540,7 +540,7 @@
             U1 = 1;
             hints += `\\[|U| = 120, |C| = ${C + AcapC + BcapC + AcapBcapC}, |A \\cap C| = ${AcapC + AcapBcapC} \\text{ and } 
             |B \\cap C| = ${BcapC + AcapBcapC}\\]`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |C| = |C \\setminus (A \\cup B)| + |A \\cap C| + |B \\cap C| - 
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use inclusion-exclusion: } |C| = |C \\setminus (A \\cup B)| + |A \\cap C| + |B \\cap C| - 
             |A \\cap B \\cap C|\\]`;
             i++;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${C + AcapC + BcapC + AcapBcapC} = ${C} + ${AcapC + AcapBcapC} + ${BcapC + AcapBcapC} - 
@@ -571,14 +571,50 @@
             A1 = 1;
             BcapC1 = 1;
             hints += `\\[|U| = 120 \\text{ and } |B \\cap C| = ${BcapC + AcapBcapC}\\]`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |B \\cap C| = |(B \\cap C) \\setminus (A \\cap B \\cap C)| + 
+            |A \\cap B \\cap C)|\\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${BcapC + AcapBcapC} = |(B \\cap C) \\setminus (A \\cap B \\cap C)| + ${AcapBcapC}, \\text{ so } 
+            |(B \\cap C) \\setminus (A \\cap B \\cap C)| = ${BcapC + AcapBcapC} - ${AcapBcapC} = ${BcapC} \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |U| = |U \\setminus (A \\cup B \\cup C)| + |A \\cup B \\cup C| \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } 120 = ${U} + ${B} + ${C} + ${AcapB} + ${AcapC} + ${BcapC} + 
+            ${AcapBcapC} + |A \\setminus (B \\cup C)|, \\text{ so } |A \\setminus (B \\cup C)| = 120 - (${U} + ${B} + ${C} + ${AcapB} + ${AcapC} + 
+            ${BcapC} + ${AcapBcapC}) = ${A} \\]`;
+            i++;
           } else if (m2 === 2) {
             B1 = 1;
             AcapC1 = 1;
             hints += `\\[|U| = 120 \\text{ and } |A \\cap C| = ${AcapC + AcapBcapC}\\]`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A \\cap C| = |(A \\cap C) \\setminus (A \\cap B \\cap C)| + 
+            |A \\cap B \\cap C)|\\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${AcapC + AcapBcapC} = |(A \\cap C) \\setminus (A \\cap B \\cap C)| + ${AcapBcapC}, \\text{ so } 
+            |(A \\cap C) \\setminus (A \\cap B \\cap C)| = ${AcapC + AcapBcapC} - ${AcapBcapC} = ${AcapC} \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |U| = |U \\setminus (A \\cup B \\cup C)| + |A \\cup B \\cup C| \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } 120 = ${U} + ${A} + ${C} + ${AcapB} + ${AcapC} + ${BcapC} + 
+            ${AcapBcapC} + |B \\setminus (A \\cup C)|, \\text{ so } |B \\setminus (A \\cup C)| = 120 - (${U} + ${A} + ${C} + ${AcapB} + ${AcapC} + 
+            ${BcapC} + ${AcapBcapC}) = ${B} \\]`;
+            i++;
           } else {
             C1 = 1;
             AcapB1 = 1;
             hints += `\\[|U| = 120 \\text{ and } |A \\cap B| = ${AcapB + AcapBcapC}\\]`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A \\cap B| = |(A \\cap B) \\setminus (A \\cap B \\cap C)| + 
+            |A \\cap B \\cap C)|\\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${AcapB + AcapBcapC} = |(A \\cap B) \\setminus (A \\cap B \\cap C)| + ${AcapBcapC}, \\text{ so } 
+            |(A \\cap B) \\setminus (A \\cap B \\cap C)| = ${AcapB + AcapBcapC} - ${AcapBcapC} = ${AcapB} \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |U| = |U \\setminus (A \\cup B \\cup C)| + |A \\cup B \\cup C| \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } 120 = ${U} + ${A} + ${B} + ${AcapB} + ${AcapC} + ${BcapC} + 
+            ${AcapBcapC} + |C \\setminus (A \\cup B)|, \\text{ so } |C \\setminus (A \\cup B)| = 120 - (${U} + ${A} + ${B} + ${AcapB} + ${AcapC} + 
+            ${BcapC} + ${AcapBcapC}) = ${C} \\]`;
+            i++;
           }
         } else {
           AcapB1 = 1;

@@ -349,12 +349,13 @@
       addTextToActivityBox('C', 755, 415, 80);
       addTextToActivityBox('U', 1110, 20, 80);
 
-
+      const options = new Set([]);
 
       if (U1 === 1) {
         const slot1 = createExponentSlot(1000, 50, 60, 40);
         slot1.setAttribute('meep', 'U1');
         slot1.id = 'U1';
+        options.add(U);
       } else {
         createFixedExponentBox(U, 1000, 50, 60, 40);
       }
@@ -363,6 +364,7 @@
         const slot2 = createExponentSlot(457, 128, 60, 40);
         slot2.setAttribute('meep', 'A1');
         slot2.id = 'A1';
+        options.add(A);
       } else {
         createFixedExponentBox(A, 457, 128, 60, 40);
       }
@@ -371,6 +373,7 @@
         const slot3 = createExponentSlot(777, 128, 60, 40);
         slot3.setAttribute('meep', 'B1');
         slot3.id = 'B1';
+        options.add(B);
       } else {
         createFixedExponentBox(B, 777, 128, 60, 40);
       }
@@ -379,6 +382,7 @@
         const slot4 = createExponentSlot(617, 368, 60, 40);
         slot4.setAttribute('meep', 'C1');
         slot4.id = 'C1';
+        options.add(C);
       } else {
         createFixedExponentBox(C, 617, 368, 60, 40);
       }
@@ -387,6 +391,7 @@
         const slot5 = createExponentSlot(617, 128, 60, 40);
         slot5.setAttribute('meep', 'AcapB1');
         slot5.id = 'AcapB1';
+        options.add(AcapB);
       } else {
         createFixedExponentBox(AcapB, 617, 128, 60, 40);
       }
@@ -395,6 +400,7 @@
         const slot6 = createExponentSlot(537, 258, 60, 40);
         slot6.setAttribute('meep', 'AcapC1');
         slot6.id = 'AcapC1';
+        options.add(AcapC);
       } else {
         createFixedExponentBox(AcapC, 537, 258, 60, 40);
       }
@@ -403,6 +409,7 @@
         const slot7 = createExponentSlot(697, 258, 60, 40);
         slot7.setAttribute('meep', 'BcapC1');
         slot7.id = 'BcapC1';
+        options.add(BcapC);
       } else {
         createFixedExponentBox(BcapC, 697, 258, 60, 40);
       }
@@ -411,6 +418,7 @@
         const slot8 = createExponentSlot(617, 208, 60, 40);
         slot8.setAttribute('meep', 'AcapBcapC1');
         slot8.id = 'AcapBcapC1';
+        options.add(AcapBcapC);
       } else {
         createFixedExponentBox(AcapBcapC, 617, 208, 60, 40);
       }

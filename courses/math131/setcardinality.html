@@ -493,8 +493,8 @@
           createFixedExponentBox(AAcapBB, 618, 235, 60, 40);
         }
 
-        //minVal = Math.min(UU, AA, BB, AAcapBB);
-        //maxVal = Math.max(UU, AA, BB, AAcapBB);
+        minVal = Math.min(UU, AA, BB, AAcapBB);
+        maxVal = Math.max(UU, AA, BB, AAcapBB);
       } else {
         if (U1 === 1) {
           const slot1 = createExponentSlot(1000, 50, 60, 40);
@@ -572,6 +572,11 @@
         maxVal = Math.max(U, A, B, C, AcapB, BcapC, AcapC, AcapBcapC);
       }
 
+
+      if (maxVal - minVal < 17) {
+        maxVal += 7;
+        minVal -= 7;
+      }
 
       while (options.size < 15) {
         options.add(Math.floor(Math.random() * (maxVal - minVal + 1)) + minVal);

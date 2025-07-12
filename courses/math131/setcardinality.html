@@ -455,13 +455,39 @@
     const feedbackText = document.getElementById('feedbackText');
     
     checkBtn.addEventListener('click', () => {
+      const sound = document.getElementById('click-sound');
+      if (sound) {
+        sound.currentTime = 0;
+        sound.play();
+      }
+    
+      let correct = true;
+    
+      function checkSlot(id, answer) {
+        const slot = document.getElementById(id);
+        if (!slot) return true; // If no slot, it's not an unknown
+        const guess = parseInt(slot.textContent);
+        return guess === answer;
+      }
+    
+      correct &= checkSlot('U1', U);
+      correct &= checkSlot('A1', A);
+      correct &= checkSlot('B1', B);
+      correct &= checkSlot('C1', C);
+      correct &= checkSlot('AcapB1', AcapB);
+      correct &= checkSlot('AcapC1', AcapC);
+      correct &= checkSlot('BcapC1', BcapC);
+      correct &= checkSlot('AcapBcapC1', AcapBcapC);
+    
+      if (correct) {
+        feedbackText.textContent = "Correct!";
+        feedbackText.style.color = "green";
+      } else {
+        feedbackText.textContent = "Incorrect. Try again!";
+        feedbackText.style.color = "red";
+      }
+    });
 
-    // Play sound when button is clicked
-    const sound = document.getElementById('click-sound');
-    if (sound) {
-      sound.currentTime = 0; // rewind to start in case it's still playing
-      sound.play();
-    }
   
     
   });

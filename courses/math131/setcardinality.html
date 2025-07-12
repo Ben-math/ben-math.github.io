@@ -476,6 +476,13 @@
             U1 = 1;
             hints += `\\[|U| = 120, |A| = ${A + AcapB + AcapC + AcapBcapC}, |A \\cap B| = ${AcapB + AcapBcapC} \\text{ and } 
             |A \\cap C| = ${AcapC + AcapBcapC}\\]`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A| = |A \\setminus (B \\cup C)| + |A \\cap B| + |A \\cap C| - 
+            |A \\cap B \\cap C|\\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${A + AcapB + AcapC + AcapBcapC} = ${A} + ${AcapB + AcapBcapC} + ${AcapC + AcapBcapC} - 
+            |A \\cap B \\cap C|, \\text{ so } 
+            |A \\cap B \\cap C| = ${A} + ${AcapB + AcapBcapC} + ${AcapC + AcapBcapC} - ${A + AcapB + AcapC + AcapBcapC} = ${AcapBcapC} \\]`;
+            i++;
           } else if (m2 === 2) {
             AcapBcapC1 = 1;
             AcapB1 = 1;
@@ -483,6 +490,13 @@
             U1 = 1;
             hints += `\\[|U| = 120, |B| = ${B + AcapB + BcapC + AcapBcapC}, |A \\cap B| = ${AcapB + AcapBcapC} \\text{ and } 
             |B \\cap C| = ${BcapC + AcapBcapC}\\]`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |B| = |B \\setminus (A \\cup C)| + |A \\cap B| + |B \\cap C| - 
+            |A \\cap B \\cap C|\\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${B + AcapB + BcapC + AcapBcapC} = ${B} + ${AcapB + AcapBcapC} + ${BcapC + AcapBcapC} - 
+            |A \\cap B \\cap C|, \\text{ so } 
+            |A \\cap B \\cap C| = ${B} + ${AcapB + AcapBcapC} + ${BcapC + AcapBcapC} - ${B + AcapB + BcapC + AcapBcapC} = ${AcapBcapC} \\]`;
+            i++;
           } else {
             AcapBcapC1 = 1;
             AcapC1 = 1;
@@ -490,6 +504,13 @@
             U1 = 1;
             hints += `\\[|U| = 120, |C| = ${C + AcapC + BcapC + AcapBcapC}, |A \\cap C| = ${AcapC + AcapBcapC} \\text{ and } 
             |B \\cap C| = ${BcapC + AcapBcapC}\\]`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |C| = |C \\setminus (A \\cup B)| + |A \\cap C| + |B \\cap C| - 
+            |A \\cap B \\cap C|\\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${C + AcapC + BcapC + AcapBcapC} = ${C} + ${AcapC + AcapBcapC} + ${BcapC + AcapBcapC} - 
+            |A \\cap B \\cap C|, \\text{ so } 
+            |A \\cap B \\cap C| = ${C} + ${AcapC + AcapBcapC} + ${BcapC + AcapBcapC} - ${C + AcapC + BcapC + AcapBcapC} = ${AcapBcapC} \\]`;
+            i++;
           }
         } else if (m1 === 3) {
           if (m2 === 1) {

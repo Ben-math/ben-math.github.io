@@ -624,6 +624,10 @@
           hints += `\\[|U| = 120, |A| = ${A + AcapB + AcapC + AcapBcapC}, |B| = ${B + AcapB + BcapC + AcapBcapC}, 
           |C| = ${C + AcapC + BcapC + AcapBcapC}, \\text{ and } |A \\cap B| = ${AcapB + AcapBcapC}, |A \\cap C| = ${AcapC + AcapBcapC}, 
           \\text{ and } |B \\cap C| = ${BcapC + AcapBcapC}\\]`;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |U| = |U \\setminus (A \\cup B \\cup C)| + |A \\cup B \\cup C| \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } 120 = ${U} + |A \\cup B \\cup C|, \\text{ so } |A \\cup B \\cup C| = 120 - ${U} = ${AcapBcapC} \\]`;
+          i++;
         }
   
         console.log(`A1=${A1}, B1=${B1}, C1=${C1}, AcapB1=${AcapB1}, AcapC1=${AcapC1}, BcapC1=${BcapC1}, AcapBcapC1=${AcapBcapC1}, U1=${U1}`);

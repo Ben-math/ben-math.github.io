@@ -483,6 +483,24 @@
             |A \\cap B \\cap C|, \\text{ so } 
             |A \\cap B \\cap C| = ${A} + ${AcapB + AcapBcapC} + ${AcapC + AcapBcapC} - ${A + AcapB + AcapC + AcapBcapC} = ${AcapBcapC} \\]`;
             i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A \\cap B| = |(A \\cap B) \\setminus (A \\cap B \\cap C)| + 
+            |A \\cap B \\cap C)|\\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${AcapB + AcapBcapC} = |(A \\cap B) \\setminus (A \\cap B \\cap C)| + ${AcapBcapC}, \\text{ so } 
+            |(A \\cap B) \\setminus (A \\cap B \\cap C)| = ${AcapB + AcapBcapC} - ${AcapBcapC} = ${AcapB} \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A \\cap C| = |(A \\cap C) \\setminus (A \\cap B \\cap C)| + 
+            |A \\cap B \\cap C)|\\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${AcapC + AcapBcapC} = |(A \\cap C) \\setminus (A \\cap B \\cap C)| + ${AcapBcapC}, \\text{ so } 
+            |(A \\cap C) \\setminus (A \\cap B \\cap C)| = ${AcapC + AcapBcapC} - ${AcapBcapC} = ${AcapC} \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |U| = |U \\setminus (A \\cup B \\cup C)| + |A \\cup B \\cup C| \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } 120 = |U \\setminus (A \\cup B \\cup C)| + (${A} + ${B} + ${C} + ${AcapB} + ${AcapC} + ${BcapC} + 
+            ${AcapBcapC}), \\text{ so } |U \\setminus (A \\cup B \\cup C)| = 120 - (${A} + ${B} + ${C} + ${AcapB} + ${AcapC} + ${BcapC} + 
+            ${AcapBcapC}) = ${U} \\]`;
+            i++;
           } else if (m2 === 2) {
             AcapBcapC1 = 1;
             AcapB1 = 1;
@@ -497,6 +515,24 @@
             |A \\cap B \\cap C|, \\text{ so } 
             |A \\cap B \\cap C| = ${B} + ${AcapB + AcapBcapC} + ${BcapC + AcapBcapC} - ${B + AcapB + BcapC + AcapBcapC} = ${AcapBcapC} \\]`;
             i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A \\cap B| = |(A \\cap B) \\setminus (A \\cap B \\cap C)| + 
+            |A \\cap B \\cap C)|\\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${AcapB + AcapBcapC} = |(A \\cap B) \\setminus (A \\cap B \\cap C)| + ${AcapBcapC}, \\text{ so } 
+            |(A \\cap B) \\setminus (A \\cap B \\cap C)| = ${AcapB + AcapBcapC} - ${AcapBcapC} = ${AcapB} \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |B \\cap C| = |(B \\cap C) \\setminus (A \\cap B \\cap C)| + 
+            |A \\cap B \\cap C)|\\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${BcapC + AcapBcapC} = |(B \\cap C) \\setminus (A \\cap B \\cap C)| + ${AcapBcapC}, \\text{ so } 
+            |(B \\cap C) \\setminus (A \\cap B \\cap C)| = ${BcapC + AcapBcapC} - ${AcapBcapC} = ${BcapC} \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |U| = |U \\setminus (A \\cup B \\cup C)| + |A \\cup B \\cup C| \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } 120 = |U \\setminus (A \\cup B \\cup C)| + (${A} + ${B} + ${C} + ${AcapB} + ${AcapC} + ${BcapC} + 
+            ${AcapBcapC}), \\text{ so } |U \\setminus (A \\cup B \\cup C)| = 120 - (${A} + ${B} + ${C} + ${AcapB} + ${AcapC} + ${BcapC} + 
+            ${AcapBcapC}) = ${U} \\]`;
+            i++;
           } else {
             AcapBcapC1 = 1;
             AcapC1 = 1;
@@ -510,6 +546,24 @@
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${C + AcapC + BcapC + AcapBcapC} = ${C} + ${AcapC + AcapBcapC} + ${BcapC + AcapBcapC} - 
             |A \\cap B \\cap C|, \\text{ so } 
             |A \\cap B \\cap C| = ${C} + ${AcapC + AcapBcapC} + ${BcapC + AcapBcapC} - ${C + AcapC + BcapC + AcapBcapC} = ${AcapBcapC} \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A \\cap C| = |(A \\cap C) \\setminus (A \\cap B \\cap C)| + 
+            |A \\cap B \\cap C)|\\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${AcapC + AcapBcapC} = |(A \\cap C) \\setminus (A \\cap B \\cap C)| + ${AcapBcapC}, \\text{ so } 
+            |(A \\cap C) \\setminus (A \\cap B \\cap C)| = ${AcapC + AcapBcapC} - ${AcapBcapC} = ${AcapC} \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |B \\cap C| = |(B \\cap C) \\setminus (A \\cap B \\cap C)| + 
+            |A \\cap B \\cap C)|\\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${BcapC + AcapBcapC} = |(B \\cap C) \\setminus (A \\cap B \\cap C)| + ${AcapBcapC}, \\text{ so } 
+            |(B \\cap C) \\setminus (A \\cap B \\cap C)| = ${BcapC + AcapBcapC} - ${AcapBcapC} = ${BcapC} \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |U| = |U \\setminus (A \\cup B \\cup C)| + |A \\cup B \\cup C| \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } 120 = |U \\setminus (A \\cup B \\cup C)| + (${A} + ${B} + ${C} + ${AcapB} + ${AcapC} + ${BcapC} + 
+            ${AcapBcapC}), \\text{ so } |U \\setminus (A \\cup B \\cup C)| = 120 - (${A} + ${B} + ${C} + ${AcapB} + ${AcapC} + ${BcapC} + 
+            ${AcapBcapC}) = ${U} \\]`;
             i++;
           }
         } else if (m1 === 3) {

@@ -435,7 +435,7 @@
             AcapB1 = 1;
             U1 = 1;
             hints += `\\[|U| = 120 \\text{ and } |C| = ${C + AcapC + BcapC + AcapBcapC} \\text{ and } |A \\cap B| = ${AcapB + AcapBcapC}\\]`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A| = |A \\setminus (B \\cup C)| + |A \\cap (B \\cup C)| \\]`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |C| = |C \\setminus (A \\cup B)| + |C \\cap (A \\cup B)| \\]`;
             i++;
             hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${C + AcapC + BcapC + AcapBcapC} = |C \\setminus (A \\cup B)| + (${AcapC} + ${BcapC} + 
             ${AcapBcapC}), \\text{ so } 

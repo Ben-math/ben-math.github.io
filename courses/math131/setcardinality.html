@@ -401,16 +401,34 @@
             BcapC1 = 1;
             U1 = 1;
             hints += `\\[|U| = 120 \\text{ and } |A| = ${A + AcapB + AcapC + AcapBcapC} \\text{ and } |B \\cap C| = ${BcapC + AcapBcapC}\\]`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A| = |A \\setminus (B \\cup C)| + |A \\cap (B \\cup C)| \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${A + AcapB + AcapC + AcapBcapC} = |A \\setminus (B \\cup C)| + (${AcapB} + ${AcapC} + 
+            ${AcapBcapC}), \\text{ so } 
+            |A \\setminus (B \\cup C)| = ${A + AcapB + AcapC + AcapBcapC} - (${AcapB} + ${AcapC} + ${AcapBcapC}) = ${A} \\]`;
+            i++;
           } else if (m2 === 2) {
             B1 = 1;
             AcapC1 = 1;
             U1 = 1;
             hints += `\\[|U| = 120 \\text{ and } |B| = ${B + AcapB + BcapC + AcapBcapC} \\text{ and } |A \\cap C| = ${AcapC + AcapBcapC}\\]`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |B| = |B \\setminus (A \\cup C)| + |B \\cap (A \\cup C)| \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${B + AcapB + BcapC + AcapBcapC} = |B \\setminus (A \\cup C)| + (${AcapB} + ${BcapC} + 
+            ${AcapBcapC}), \\text{ so } 
+            |B \\setminus (A \\cup C)| = ${B + AcapB + BcapC + AcapBcapC} - (${AcapB} + ${BcapC} + ${AcapBcapC}) = ${B} \\]`;
+            i++;
           } else {
             C1 = 1;
             AcapB1 = 1;
             U1 = 1;
             hints += `\\[|U| = 120 \\text{ and } |C| = ${C + AcapC + BcapC + AcapBcapC} \\text{ and } |A \\cap B| = ${AcapB + AcapBcapC}\\]`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A| = |A \\setminus (B \\cup C)| + |A \\cap (B \\cup C)| \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${C + AcapC + BcapC + AcapBcapC} = |C \\setminus (A \\cup B)| + (${AcapC} + ${BcapC} + 
+            ${AcapBcapC}), \\text{ so } 
+            |C \\setminus (A \\cup B)| = ${C + AcapC + BcapC + AcapBcapC} - (${AcapC} + ${BcapC} + ${AcapBcapC}) = ${C} \\]`;
+            i++;
           }
         } else if (m1 === 2) {
           if (m2 === 1) {

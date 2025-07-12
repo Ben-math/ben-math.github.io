@@ -428,7 +428,7 @@
         ctx.stroke();
   
         addTextToActivityBox('A', 350, 40, 80);
-        addTextToActivityBox('B', 890, 40, 80);
+        addTextToActivityBox('B', 900, 40, 80);
         addTextToActivityBox('C', 755, 415, 80);
         addTextToActivityBox('U', 1110, 20, 80);
       }
@@ -440,7 +440,41 @@
       options.add(1);
 
       if (m0 < 0.34) {
+        if (UU1 === 1) {
+          const slot1 = createExponentSlot(1000, 50, 60, 40);
+          slot1.setAttribute('meep', 'UU1');
+          slot1.id = 'UU1';
+          options.add(UU);
+        } else {
+          createFixedExponentBox(UU, 1000, 50, 60, 40);
+        }
+        
+        if (AA1 === 1) {
+          const slot2 = createExponentSlot(400, 170, 60, 40);
+          slot2.setAttribute('meep', 'AA1');
+          slot2.id = 'AA1';
+          options.add(AA);
+        } else {
+          createFixedExponentBox(AA, 400, 170, 60, 40);
+        }
+  
+        if (BB1 === 1) {
+          const slot3 = createExponentSlot(900, 170, 60, 40);
+          slot3.setAttribute('meep', 'BB1');
+          slot3.id = 'BB1';
+          options.add(BB);
+        } else {
+          createFixedExponentBox(BB, 900, 170, 60, 40);
+        }
 
+        if (AAcapBB1 === 1) {
+          const slot3 = createExponentSlot(650, 170, 60, 40);
+          slot3.setAttribute('meep', 'AAcapBB1');
+          slot4.id = 'AAcapBB1';
+          options.add(AAcapBB);
+        } else {
+          createFixedExponentBox(AAcapBB, 650, 170, 60, 40);
+        }
       } else {
         if (U1 === 1) {
           const slot1 = createExponentSlot(1000, 50, 60, 40);

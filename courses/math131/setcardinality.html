@@ -349,7 +349,7 @@
           i++;
           hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |B| = |B \\setminus (A \\cap B)| + |A \\cap B| \\]`;
           i++;
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${AA + AAcapBB} = ${BB + AAcapBB} = |B \\setminus (A \\cap B)| + ${AAcapBB}, \\text{ so }
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${BB + AAcapBB} = |B \\setminus (A \\cap B)| + ${AAcapBB}, \\text{ so } 
           |B \\setminus (A \\cap B)| = ${BB + AAcapBB} - ${AAcapBB} = ${BB} \\]`;
           i++;
         } else if (m2 === 2) {
@@ -357,11 +357,21 @@
           AA1 = 1;
           AAcapBB1 = 1;
           hints += `\\[|U| = 120 \\text{ and } |A| = ${AA + AAcapBB} \\text{ and } |B| = ${BB + AAcapBB}\\]`;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |B| = |B \\setminus (A \\cap B)| + |A \\cap B| \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${BB + AAcapBB} = ${BB} + |A \\cap B|, \\text{ so } 
+          |A \\cap B| = ${BB + AAcapBB} - ${BB} = ${AAcapBB} \\]`;
+          i++;
         } else {
           UU1 = 1;
-          AA1 = 1;
+          BB1 = 1;
           AAcapBB1 = 1;
           hints += `\\[|U| = 120 \\text{ and } |A| = ${AA + AAcapBB} \\text{ and } |B| = ${BB + AAcapBB}\\]`;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A| = |A \\setminus (A \\cap B)| + |A \\cap B| \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${AA + AAcapBB} = ${AA} + |A \\cap B|, \\text{ so } 
+          |A \\cap B| = ${AA + AAcapBB} - ${AA} = ${AAcapBB} \\]`;
+          i++;
         }
         console.log(`AA1=${AA1}, BB1=${BB1}, AAcapBB1=${AAcapBB1} UU1=${UU1}`);
       } else {

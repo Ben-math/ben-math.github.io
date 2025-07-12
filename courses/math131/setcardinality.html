@@ -362,6 +362,16 @@
           hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${BB + AAcapBB} = ${BB} + |A \\cap B|, \\text{ so } 
           |A \\cap B| = ${BB + AAcapBB} - ${BB} = ${AAcapBB} \\]`;
           i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A| = |A \\setminus (A \\cap B)| + |A \\cap B| \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${AA + AAcapBB} = |A \\setminus (A \\cap B)| + ${AAcapBB}, \\text{ so } 
+          |A \\setminus (A \\cap B)| = ${AA + AAcapBB} - ${AAcapBB} = ${AA} \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |U| = |U \\setminus (A \\cup B)| + |A \\cup B| \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } 120 = |U| + ${AA} + ${BB} + ${AAcapBB}, \\text{ so } |U| = 120 - ${AA} - ${BB} - ${AAcapBB} 
+          = ${UU} \\]`;
+          i++;
         } else {
           UU1 = 1;
           BB1 = 1;
@@ -371,6 +381,16 @@
           i++;
           hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${AA + AAcapBB} = ${AA} + |A \\cap B|, \\text{ so } 
           |A \\cap B| = ${AA + AAcapBB} - ${AA} = ${AAcapBB} \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |B| = |B \\setminus (A \\cap B)| + |A \\cap B| \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${BB + AAcapBB} = |B \\setminus (A \\cap B)| + ${AAcapBB}, \\text{ so } 
+          |B \\setminus (A \\cap B)| = ${BB + AAcapBB} - ${AAcapBB} = ${BB} \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |U| = |U \\setminus (A \\cup B)| + |A \\cup B| \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } 120 = |U| + ${AA} + ${BB} + ${AAcapBB}, \\text{ so } |U| = 120 - ${AA} - ${BB} - ${AAcapBB} 
+          = ${UU} \\]`;
           i++;
         }
         console.log(`AA1=${AA1}, BB1=${BB1}, AAcapBB1=${AAcapBB1} UU1=${UU1}`);

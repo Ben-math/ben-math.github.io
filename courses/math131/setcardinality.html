@@ -456,16 +456,46 @@
     const feedbackText = document.getElementById('feedbackText');
     
     checkBtn.addEventListener('click', () => {
-
-    // Play sound when button is clicked
-    const sound = document.getElementById('click-sound');
-    if (sound) {
-      sound.currentTime = 0; // rewind to start in case it's still playing
-      sound.play();
-    }
-  
+      // Play click sound
+      const sound = document.getElementById('click-sound');
+      if (sound) {
+        sound.currentTime = 0;
+        sound.play();
+      }
     
-  });
+      let correct = true;
+    
+      // Helper to check a region
+      function checkRegion(variableName, correctValue) {
+        const slot = document.getElementById(variableName);
+        if (slot) {
+          const guess = parseInt(slot.textContent);
+          if (guess !== correctValue) {
+            correct = false;
+          }
+        }
+      }
+    
+      // Check each region (only those where a slot was placed)
+      checkRegion('A1', A);
+      checkRegion('B1', B);
+      checkRegion('C1', C);
+      checkRegion('AcapB1', AcapB);
+      checkRegion('AcapC1', AcapC);
+      checkRegion('BcapC1', BcapC);
+      checkRegion('AcapBcapC1', AcapBcapC);
+      checkRegion('U1', U);
+    
+      // Give feedback
+      if (correct) {
+        feedbackText.textContent = "Correct!";
+        feedbackText.style.color = "green";
+      } else {
+        feedbackText.textContent = "Incorrect. Try again!";
+        feedbackText.style.color = "red";
+      }
+    });
+
   
 
     

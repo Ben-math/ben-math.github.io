@@ -342,6 +342,13 @@
           hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${120 - UU} = ${AA + AAcapBB} + ${BB + AAcapBB} - |A \\cap B|, \\text{ so } 
           |A \\cap B| = ${120 - UU} - ${AA + AAcapBB} - ${BB + AAcapBB} = ${AAcapBB} \\]`;
           i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A| = |A \\setminus (A \\cap B)| + |A \\cap B| \\text{ and } 
+          |B| = |B \\setminus (A \\cap B)| + |A \\cap B| \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${AA + AAcapBB} = |A \\setminus (A \\cap B)| + ${AAcapBB} \\text{ and } 
+          ${BB + AAcapBB} = |B \\setminus (A \\cap B)| + ${AAcapBB}, \\text{ so } |A \\setminus (A \\cap B)| = ${AA + AAcapBB} - ${AAcapBB} = ${AA} 
+          \\text{ and } |B \\setminus (A \\cap B)| = ${BB + AAcapBB} - ${AAcapBB} = ${BB} \\]`;
+          i++;
         } else if (m2 === 2) {
           UU1 = 1;
           AA1 = 1;

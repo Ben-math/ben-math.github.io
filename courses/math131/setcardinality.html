@@ -113,6 +113,13 @@
 
     let A1, B1, C1, AcapB1, AcapC1, BcapC1, AcapBcapC1, U1 = 0;
 
+
+    let AA = 0, BB = 0;
+    let AAcapBB = 0;
+    let UU = 0;
+
+    let AA1, BB1, AAcapBB1, UU1 = 0;
+
     let m0 = 0;
 
 
@@ -239,7 +246,16 @@
 
       m0 = 0;
 
-
+      for (let i = 0; i < 120; i++) {
+        // Randomly assign membership
+        const inA = Math.random() < 0.5;
+        const inB = Math.random() < 0.5;
+      
+        if (!inA && !inB) UU++;
+        else if (inA && !inB) AA++;
+        else if (!inA && inB) BB++;
+        else if (inA && inB) AAcapBB++;
+      }
 
       for (let i = 0; i < 120; i++) {
         // Randomly assign membership
@@ -275,7 +291,22 @@
       let m2 = Math.floor(Math.random() *3) + 1;
 
       if (m0 < 0.34) {
-
+        if (m2 === 1) {
+          AA1 = 1;
+          BB1 = 1;
+          AAcapBB1 = 1;
+          hints += `\\[|U| = 120 \\text{ and } |A| = ${AA + AAcapBB} \\text{ and } |B| = ${BB + AAcapBB}\\]`;
+        } else if (m2 === 2) {
+          UU1 = 1;
+          AA1 = 1;
+          AAcapBB1 = 1;
+          hints += `\\[|U| = 120 \\text{ and } |A| = ${AA + AAcapBB} \\text{ and } |B| = ${BB + AAcapBB}\\]`;
+        } else {
+          UU1 = 1;
+          AA1 = 1;
+          AAcapBB1 = 1;
+          hints += `\\[|U| = 120 \\text{ and } |A| = ${AA + AAcapBB} \\text{ and } |B| = ${BB + AAcapBB}\\]`;
+        }
       } else {
         if (m1 === 1) {
           if (m2 === 1) {

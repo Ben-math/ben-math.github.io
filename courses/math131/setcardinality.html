@@ -337,6 +337,11 @@
           i++;
           hintSteps[i] = `\\[ \\text{Hint ${i+1}: } 120 = ${UU} + |A \\cup B|, \\text{ so } |A \\cup B| = 120 - ${UU} = ${120 - UU} \\]`;
           i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use inclusion-exclusion: } |A \\cup B| = |A| + |B| - |A \\cap B| \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${120 - UU} = ${AA + AAcapBB} + ${BB + AAcapBB} - |A \\cap B|, \\text{ so } 
+          |A \\cap B| = ${120 - UU} - ${AA + AAcapBB} - ${BB + AAcapBB} = ${AAcapBB} \\]`;
+          i++;
         } else if (m2 === 2) {
           UU1 = 1;
           AA1 = 1;

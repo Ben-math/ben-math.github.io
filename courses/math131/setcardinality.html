@@ -113,6 +113,8 @@
 
     let A1, B1, C1, AcapB1, AcapC1, BcapC1, AcapBcapC1, U1 = 0;
 
+    let m0 = 0;
+
 
 
     const startBtn = document.getElementById('start-btn');
@@ -235,6 +237,8 @@
       AcapBcapC1 = 0;
       U1 = 0;
 
+      m0 = 0;
+
 
 
       for (let i = 0; i < 120; i++) {
@@ -266,75 +270,79 @@
       let hints = `Drag and drop cardinalities given the following information:`;
     
       // Randomly determine unknown quantities.  Variables have a corresponding boolean
+      m0 = Math.floor(Math.random()*2) + 1;
       let m1 = Math.floor(Math.random() *4) + 1;
       let m2 = Math.floor(Math.random() *3) + 1;
 
-      if (m1 === 1) {
-        if (m2 === 1) {
-          A1 = 1;
-          BcapC1 = 1;
-          U1 = 1;
-          hints += `\\[|U| = 120 \\text{ and } |A| = ${A + AcapB + AcapC + AcapBcapC} \\text{ and } |B \\cap C| = ${BcapC + AcapBcapC}\\]`;
-        } else if (m2 === 2) {
-          B1 = 1;
-          AcapC1 = 1;
-          U1 = 1;
-          hints += `\\[|U| = 120 \\text{ and } |B| = ${B + AcapB + BcapC + AcapBcapC} \\text{ and } |A \\cap C| = ${AcapC + AcapBcapC}\\]`;
-        } else {
-          C1 = 1;
-          AcapB1 = 1;
-          U1 = 1;
-          hints += `\\[|U| = 120 \\text{ and } |C| = ${C + AcapC + BcapC + AcapBcapC} \\text{ and } |A \\cap B| = ${AcapB + AcapBcapC}\\]`;
-        }
-      } else if (m1 === 2) {
-        if (m2 === 1) {
-          AcapBcapC1 = 1;
-          AcapB1 = 1;
-          AcapC1 = 1;
-          U1 = 1;
-          hints += `\\[|U| = 120, |A| = ${A + AcapB + AcapC + AcapBcapC}, |A \\cap B| = ${AcapB + AcapBcapC} \\text{ and } 
-          |A \\cap C| = ${AcapC + AcapBcapC}\\]`;
-        } else if (m2 === 2) {
-          AcapBcapC1 = 1;
-          AcapB1 = 1;
-          BcapC1 = 1;
-          U1 = 1;
-          hints += `\\[|U| = 120, |B| = ${B + AcapB + BcapC + AcapBcapC}, |A \\cap B| = ${AcapB + AcapBcapC} \\text{ and } 
-          |B \\cap C| = ${BcapC + AcapBcapC}\\]`;
-        } else {
-          AcapBcapC1 = 1;
-          AcapC1 = 1;
-          BcapC1 = 1;
-          U1 = 1;
-          hints += `\\[|U| = 120, |C| = ${C + AcapC + BcapC + AcapBcapC}, |A \\cap C| = ${AcapC + AcapBcapC} \\text{ and } 
-          |B \\cap C| = ${BcapC + AcapBcapC}\\]`;
-        }
-      } else if (m1 === 3) {
-        if (m2 === 1) {
-          A1 = 1;
-          BcapC1 = 1;
-          hints += `\\[|U| = 120 \\text{ and } |B \\cap C| = ${BcapC + AcapBcapC}\\]`;
-        } else if (m2 === 2) {
-          B1 = 1;
-          AcapC1 = 1;
-          hints += `\\[|U| = 120 \\text{ and } |A \\cap C| = ${AcapC + AcapBcapC}\\]`;
-        } else {
-          C1 = 1;
-          AcapB1 = 1;
-          hints += `\\[|U| = 120 \\text{ and } |A \\cap B| = ${AcapB + AcapBcapC}\\]`;
-        }
+      if (m0 === 1) {
+
       } else {
-        AcapB1 = 1;
-        AcapC1 = 1;
-        BcapC1 = 1;
-        AcapBcapC1 = 1;
-        hints += `\\[|U| = 120, |A| = ${A + AcapB + AcapC + AcapBcapC}, |B| = ${B + AcapB + BcapC + AcapBcapC}, 
-        |C| = ${C + AcapC + BcapC + AcapBcapC}, \\text{ and } |A \\cap B| = ${AcapB + AcapBcapC}, |A \\cap C| = ${AcapC + AcapBcapC}, 
-        \\text{ and } |B \\cap C| = ${BcapC + AcapBcapC}\\]`;
+        if (m1 === 1) {
+          if (m2 === 1) {
+            A1 = 1;
+            BcapC1 = 1;
+            U1 = 1;
+            hints += `\\[|U| = 120 \\text{ and } |A| = ${A + AcapB + AcapC + AcapBcapC} \\text{ and } |B \\cap C| = ${BcapC + AcapBcapC}\\]`;
+          } else if (m2 === 2) {
+            B1 = 1;
+            AcapC1 = 1;
+            U1 = 1;
+            hints += `\\[|U| = 120 \\text{ and } |B| = ${B + AcapB + BcapC + AcapBcapC} \\text{ and } |A \\cap C| = ${AcapC + AcapBcapC}\\]`;
+          } else {
+            C1 = 1;
+            AcapB1 = 1;
+            U1 = 1;
+            hints += `\\[|U| = 120 \\text{ and } |C| = ${C + AcapC + BcapC + AcapBcapC} \\text{ and } |A \\cap B| = ${AcapB + AcapBcapC}\\]`;
+          }
+        } else if (m1 === 2) {
+          if (m2 === 1) {
+            AcapBcapC1 = 1;
+            AcapB1 = 1;
+            AcapC1 = 1;
+            U1 = 1;
+            hints += `\\[|U| = 120, |A| = ${A + AcapB + AcapC + AcapBcapC}, |A \\cap B| = ${AcapB + AcapBcapC} \\text{ and } 
+            |A \\cap C| = ${AcapC + AcapBcapC}\\]`;
+          } else if (m2 === 2) {
+            AcapBcapC1 = 1;
+            AcapB1 = 1;
+            BcapC1 = 1;
+            U1 = 1;
+            hints += `\\[|U| = 120, |B| = ${B + AcapB + BcapC + AcapBcapC}, |A \\cap B| = ${AcapB + AcapBcapC} \\text{ and } 
+            |B \\cap C| = ${BcapC + AcapBcapC}\\]`;
+          } else {
+            AcapBcapC1 = 1;
+            AcapC1 = 1;
+            BcapC1 = 1;
+            U1 = 1;
+            hints += `\\[|U| = 120, |C| = ${C + AcapC + BcapC + AcapBcapC}, |A \\cap C| = ${AcapC + AcapBcapC} \\text{ and } 
+            |B \\cap C| = ${BcapC + AcapBcapC}\\]`;
+          }
+        } else if (m1 === 3) {
+          if (m2 === 1) {
+            A1 = 1;
+            BcapC1 = 1;
+            hints += `\\[|U| = 120 \\text{ and } |B \\cap C| = ${BcapC + AcapBcapC}\\]`;
+          } else if (m2 === 2) {
+            B1 = 1;
+            AcapC1 = 1;
+            hints += `\\[|U| = 120 \\text{ and } |A \\cap C| = ${AcapC + AcapBcapC}\\]`;
+          } else {
+            C1 = 1;
+            AcapB1 = 1;
+            hints += `\\[|U| = 120 \\text{ and } |A \\cap B| = ${AcapB + AcapBcapC}\\]`;
+          }
+        } else {
+          AcapB1 = 1;
+          AcapC1 = 1;
+          BcapC1 = 1;
+          AcapBcapC1 = 1;
+          hints += `\\[|U| = 120, |A| = ${A + AcapB + AcapC + AcapBcapC}, |B| = ${B + AcapB + BcapC + AcapBcapC}, 
+          |C| = ${C + AcapC + BcapC + AcapBcapC}, \\text{ and } |A \\cap B| = ${AcapB + AcapBcapC}, |A \\cap C| = ${AcapC + AcapBcapC}, 
+          \\text{ and } |B \\cap C| = ${BcapC + AcapBcapC}\\]`;
+        }
+  
+        console.log(`A1=${A1}, B1=${B1}, C1=${C1}, AcapB1=${AcapB1}, AcapC1=${AcapC1}, BcapC1=${BcapC1}, AcapBcapC1=${AcapBcapC1}, U1=${U1}`);
       }
-
-      console.log(`A1=${A1}, B1=${B1}, C1=${C1}, AcapB1=${AcapB1}, AcapC1=${AcapC1}, BcapC1=${BcapC1}, AcapBcapC1=${AcapBcapC1}, U1=${U1}`);
-
   
       // Display the question
       questionText.textContent = hints;
@@ -357,113 +365,113 @@
       ctx.strokeStyle = 'black';
       ctx.lineWidth = 4;
       ctx.strokeRect(200, 30, 900, 500);
-      
-      // Draw circle A
-      ctx.beginPath();
-      ctx.arc(550, 200, 150, 0, 2 * Math.PI);
-      ctx.stroke();
-      
-      // Draw circle B
-      ctx.beginPath();
-      ctx.arc(750, 200, 150, 0, 2 * Math.PI);
-      ctx.stroke();
-      
-      // Draw circle C
-      ctx.beginPath();
-      ctx.arc(650, 350, 150, 0, 2 * Math.PI);
-      ctx.stroke();
 
-      addTextToActivityBox('A', 350, 40, 80);
-      addTextToActivityBox('B', 890, 40, 80);
-      addTextToActivityBox('C', 755, 415, 80);
-      addTextToActivityBox('U', 1110, 20, 80);
+      if (m0 === 1) {
+
+      } else {
+        // Draw circle A
+        ctx.beginPath();
+        ctx.arc(550, 200, 150, 0, 2 * Math.PI);
+        ctx.stroke();
+        
+        // Draw circle B
+        ctx.beginPath();
+        ctx.arc(750, 200, 150, 0, 2 * Math.PI);
+        ctx.stroke();
+        
+        // Draw circle C
+        ctx.beginPath();
+        ctx.arc(650, 350, 150, 0, 2 * Math.PI);
+        ctx.stroke();
+  
+        addTextToActivityBox('A', 350, 40, 80);
+        addTextToActivityBox('B', 890, 40, 80);
+        addTextToActivityBox('C', 755, 415, 80);
+        addTextToActivityBox('U', 1110, 20, 80);
+      }
 
       const options = new Set([]);
 
-      if (U1 === 1) {
-        const slot1 = createExponentSlot(1000, 50, 60, 40);
-        slot1.setAttribute('meep', 'U1');
-        slot1.id = 'U1';
-        options.add(U);
+      let minVal, maxVal = 0;
+
+      if (m0 === 1) {
+
       } else {
-        createFixedExponentBox(U, 1000, 50, 60, 40);
+        if (U1 === 1) {
+          const slot1 = createExponentSlot(1000, 50, 60, 40);
+          slot1.setAttribute('meep', 'U1');
+          slot1.id = 'U1';
+          options.add(U);
+        } else {
+          createFixedExponentBox(U, 1000, 50, 60, 40);
+        }
+  
+        if (A1 === 1) {
+          const slot2 = createExponentSlot(457, 128, 60, 40);
+          slot2.setAttribute('meep', 'A1');
+          slot2.id = 'A1';
+          options.add(A);
+        } else {
+          createFixedExponentBox(A, 457, 128, 60, 40);
+        }
+  
+        if (B1 === 1) {
+          const slot3 = createExponentSlot(777, 128, 60, 40);
+          slot3.setAttribute('meep', 'B1');
+          slot3.id = 'B1';
+          options.add(B);
+        } else {
+          createFixedExponentBox(B, 777, 128, 60, 40);
+        }
+  
+        if (C1 === 1) {
+          const slot4 = createExponentSlot(617, 368, 60, 40);
+          slot4.setAttribute('meep', 'C1');
+          slot4.id = 'C1';
+          options.add(C);
+        } else {
+          createFixedExponentBox(C, 617, 368, 60, 40);
+        }
+  
+        if (AcapB1 === 1) {
+          const slot5 = createExponentSlot(617, 128, 60, 40);
+          slot5.setAttribute('meep', 'AcapB1');
+          slot5.id = 'AcapB1';
+          options.add(AcapB);
+        } else {
+          createFixedExponentBox(AcapB, 617, 128, 60, 40);
+        }
+  
+        if (AcapC1 === 1) {
+          const slot6 = createExponentSlot(537, 258, 60, 40);
+          slot6.setAttribute('meep', 'AcapC1');
+          slot6.id = 'AcapC1';
+          options.add(AcapC);
+        } else {
+          createFixedExponentBox(AcapC, 537, 258, 60, 40);
+        }
+  
+        if (BcapC1 === 1) {
+          const slot7 = createExponentSlot(697, 258, 60, 40);
+          slot7.setAttribute('meep', 'BcapC1');
+          slot7.id = 'BcapC1';
+          options.add(BcapC);
+        } else {
+          createFixedExponentBox(BcapC, 697, 258, 60, 40);
+        }
+  
+        if (AcapBcapC1 === 1) {
+          const slot8 = createExponentSlot(617, 208, 60, 40);
+          slot8.setAttribute('meep', 'AcapBcapC1');
+          slot8.id = 'AcapBcapC1';
+          options.add(AcapBcapC);
+        } else {
+          createFixedExponentBox(AcapBcapC, 617, 208, 60, 40);
+        }
+  
+        minVal = Math.min(U, A, B, C, AcapB, BcapC, AcapC, AcapBcapC);
+        maxVal = Math.max(U, A, B, C, AcapB, BcapC, AcapC, AcapBcapC);
       }
-
-      if (A1 === 1) {
-        const slot2 = createExponentSlot(457, 128, 60, 40);
-        slot2.setAttribute('meep', 'A1');
-        slot2.id = 'A1';
-        options.add(A);
-      } else {
-        createFixedExponentBox(A, 457, 128, 60, 40);
-      }
-
-      if (B1 === 1) {
-        const slot3 = createExponentSlot(777, 128, 60, 40);
-        slot3.setAttribute('meep', 'B1');
-        slot3.id = 'B1';
-        options.add(B);
-      } else {
-        createFixedExponentBox(B, 777, 128, 60, 40);
-      }
-
-      if (C1 === 1) {
-        const slot4 = createExponentSlot(617, 368, 60, 40);
-        slot4.setAttribute('meep', 'C1');
-        slot4.id = 'C1';
-        options.add(C);
-      } else {
-        createFixedExponentBox(C, 617, 368, 60, 40);
-      }
-
-      if (AcapB1 === 1) {
-        const slot5 = createExponentSlot(617, 128, 60, 40);
-        slot5.setAttribute('meep', 'AcapB1');
-        slot5.id = 'AcapB1';
-        options.add(AcapB);
-      } else {
-        createFixedExponentBox(AcapB, 617, 128, 60, 40);
-      }
-
-      if (AcapC1 === 1) {
-        const slot6 = createExponentSlot(537, 258, 60, 40);
-        slot6.setAttribute('meep', 'AcapC1');
-        slot6.id = 'AcapC1';
-        options.add(AcapC);
-      } else {
-        createFixedExponentBox(AcapC, 537, 258, 60, 40);
-      }
-
-      if (BcapC1 === 1) {
-        const slot7 = createExponentSlot(697, 258, 60, 40);
-        slot7.setAttribute('meep', 'BcapC1');
-        slot7.id = 'BcapC1';
-        options.add(BcapC);
-      } else {
-        createFixedExponentBox(BcapC, 697, 258, 60, 40);
-      }
-
-      if (AcapBcapC1 === 1) {
-        const slot8 = createExponentSlot(617, 208, 60, 40);
-        slot8.setAttribute('meep', 'AcapBcapC1');
-        slot8.id = 'AcapBcapC1';
-        options.add(AcapBcapC);
-      } else {
-        createFixedExponentBox(AcapBcapC, 617, 208, 60, 40);
-      }
-
-
-      //createFixedExponentBox(U, 1000, 50, 60, 40);          // U only
-      //createFixedExponentBox(A, 457, 128, 60, 40);          // A only
-      //createFixedExponentBox(B, 777, 128, 60, 40);          // B only
-      //createFixedExponentBox(C, 617, 368, 60, 40);          // C only
-      //createFixedExponentBox(AcapB, 617, 128, 60, 40);      // A ∩ B only
-      //createFixedExponentBox(AcapC, 537, 258, 60, 40);      // A ∩ C only
-      //createFixedExponentBox(BcapC, 697, 258, 60, 40);      // B ∩ C only
-      //createFixedExponentBox(AcapBcapC, 617, 208, 60, 40);  // A ∩ B ∩ C
-
-      let minVal = Math.min(U, A, B, C, AcapB, BcapC, AcapC, AcapBcapC);
-      let maxVal = Math.max(U, A, B, C, AcapB, BcapC, AcapC, AcapBcapC);
 
 
       while (options.size < 15) {
@@ -503,16 +511,20 @@
           }
         }
       }
-    
-      // Check each region (only those where a slot was placed)
-      checkRegion('A1', A);
-      checkRegion('B1', B);
-      checkRegion('C1', C);
-      checkRegion('AcapB1', AcapB);
-      checkRegion('AcapC1', AcapC);
-      checkRegion('BcapC1', BcapC);
-      checkRegion('AcapBcapC1', AcapBcapC);
-      checkRegion('U1', U);
+
+      if (m0 === 1) {
+
+      } else {
+        // Check each region (only those where a slot was placed)
+        checkRegion('A1', A);
+        checkRegion('B1', B);
+        checkRegion('C1', C);
+        checkRegion('AcapB1', AcapB);
+        checkRegion('AcapC1', AcapC);
+        checkRegion('BcapC1', BcapC);
+        checkRegion('AcapBcapC1', AcapBcapC);
+        checkRegion('U1', U);
+      }
     
       // Give feedback
       if (correct) {

@@ -99,8 +99,8 @@
     let AcapBcapC = 0;
     let U = 0;
 
-    let a1, a2, a3, b1, b2, b3, c1, c2, c3, d1, d2;
-    let lhsMissingIndex, rhsMissing;
+    let A1, B1, C1, AcapB1, AcapC1, BcapC1, AcapBcapC1, U1 = 0;
+
 
 
     const startBtn = document.getElementById('start-btn');
@@ -241,34 +241,47 @@
       console.log(`B ∩ C only: ${BcapC}`);
       console.log(`A ∩ B ∩ C: ${AcapBcapC}`);
 
-
+      let hints = `Drag and drop cardinalities given the following information:`;
+    
       // Randomly determine unknown quantities.  Variables have a corresponding boolean
       let m1 = Math.floor(Math.random() *3) + 1;
       let m2 = Math.floor(Math.random() *3) + 1;
 
       if (m1 === 1) {
         if (m2 === 1) {
-
+          A1 = 1;
+          BcapC1 = 1;
+          U1 = 1;
         } else if (m2 === 2) {
-
+          B1 = 1;
+          AcapC1 = 1;
+          U1 = 1;
         } else {
-
+          C1 = 1;
+          AcapB1 = 1;
+          U1 = 1;
         }
       } else if (m1 === 2) {
         if (m2 === 1) {
-
+          AcapBcapC = 1;
+          BcapC = 1;
         } else if (m2 === 2) {
-
+          AcapBcapC = 1;
+          AcapC = 1;
         } else {
-
+          AcapBcapC = 1;
+          AcapB = 1;
         }
       } else {
         if (m2 === 1) {
-
+          A1 = 1;
+          BcapC1 = 1;
         } else if (m2 === 2) {
-
+          B1 = 1;
+          AcapC1 = 1;
         } else {
-
+          C1 = 1;
+          AcapB1 = 1;
         }
       }
 

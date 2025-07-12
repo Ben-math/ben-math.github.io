@@ -255,7 +255,7 @@
       let hints = `Drag and drop cardinalities given the following information:`;
     
       // Randomly determine unknown quantities.  Variables have a corresponding boolean
-      let m1 = Math.floor(Math.random() *3) + 1;
+      let m1 = Math.floor(Math.random() *4) + 1;
       let m2 = Math.floor(Math.random() *3) + 1;
 
       if (m1 === 1) {
@@ -289,7 +289,7 @@
           AcapB1 = 1;
           hints += `\\[|U| = 120 \\text{ and } |A \\cap C| = ${AcapC + AcapBcapC}\\]`;
         }
-      } else {
+      } else if (m1 === 3) {
         if (m2 === 1) {
           A1 = 1;
           BcapC1 = 1;
@@ -303,6 +303,14 @@
           AcapB1 = 1;
           hints += `\\[|U| = 120 \\text{ and } |A \\cap B| = ${AcapB + AcapBcapC}\\]`;
         }
+      } else {
+        AcapB1 = 1;
+        AcapC1 = 1;
+        BcapC1 = 1;
+        AcapBcapC1 = 1;
+        hints += `\\[|U| = 120, |A| = ${A + AcapB + AcapC + AcapBcapC}, |B| = ${B + AcapB + BcapC + AcapBcapC}, 
+        |C| = ${C + AcapC + BcapC + AcapBcapC}, \\text{ and } |A \\cap B| = ${AcapB + AcapBcapC}, |A \\cap C| = ${AcapC + AcapBcapC}, 
+        \\text{ and } |B \\cap C| = ${BcapC + AcapBcapC}\\]`;
       }
 
       console.log(`A1=${A1}, B1=${B1}, C1=${C1}, AcapB1=${AcapB1}, AcapC1=${AcapC1}, BcapC1=${BcapC1}, AcapBcapC1=${AcapBcapC1}, U1=${U1}`);

@@ -294,6 +294,11 @@
       console.log(`B ∩ C only: ${BcapC}`);
       console.log(`A ∩ B ∩ C: ${AcapBcapC}`);
 
+      console.log(`U only: ${UU}`);
+      console.log(`A only: ${AA}`);
+      console.log(`B only: ${BB}`);
+      console.log(`A ∩ B only: ${AAcapBB}`);
+
       let hints = `Drag and drop cardinalities given the following information:`;
     
       // Randomly determine unknown quantities.  Variables have a corresponding boolean
@@ -318,6 +323,7 @@
           AAcapBB1 = 1;
           hints += `\\[|U| = 120 \\text{ and } |A| = ${AA + AAcapBB} \\text{ and } |B| = ${BB + AAcapBB}\\]`;
         }
+        console.log(`AA1=${AA1}, BB1=${BB1}, AAcapBB1=${AAcapBB1} UU1=${UU1}`);
       } else {
         if (m1 === 1) {
           if (m2 === 1) {

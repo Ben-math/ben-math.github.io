@@ -278,16 +278,25 @@
       } else if (m1 === 2) {
         if (m2 === 1) {
           AcapBcapC1 = 1;
-          BcapC1 = 1;
-          hints += `\\[|U| = 120 \\text{ and } |A \\cap B| = ${AcapB + AcapBcapC}\\]`;
+          AcapB1 = 1;
+          AcapC1 = 1;
+          U1 = 1;
+          hints += `\\[|U| = 120, |A| = ${A + AcapB + AcapC + AcapBcapC}, |A \\cap B| = ${AcapB + AcapBcapC} \\text{ and } 
+          |A \\cap C| = ${AcapC + AcapBcapC}\\]`;
         } else if (m2 === 2) {
           AcapBcapC1 = 1;
-          AcapC1 = 1;
-          hints += `\\[|U| = 120 \\text{ and } |B \\cap C| = ${BcapC + AcapBcapC}\\]`;
+          AcapB1 = 1;
+          BcapC1 = 1;
+          U1 = 1;
+          hints += `\\[|U| = 120, |B| = ${B + AcapB + BcapC + AcapBcapC}, |A \\cap B| = ${AcapB + AcapBcapC} \\text{ and } 
+          |B \\cap C| = ${BcapC + AcapBcapC}\\]`;
         } else {
           AcapBcapC1 = 1;
-          AcapB1 = 1;
-          hints += `\\[|U| = 120 \\text{ and } |A \\cap C| = ${AcapC + AcapBcapC}\\]`;
+          AcapC1 = 1;
+          BcapC1 = 1;
+          U1 = 1;
+          hints += `\\[|U| = 120, |C| = ${C + AcapC + BcapC + AcapBcapC}, |A \\cap C| = ${AcapC + AcapBcapC} \\text{ and } 
+          |B \\cap C| = ${BcapC + AcapBcapC}\\]`;
         }
       } else if (m1 === 3) {
         if (m2 === 1) {

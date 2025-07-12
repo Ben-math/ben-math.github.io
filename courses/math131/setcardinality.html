@@ -279,6 +279,15 @@
       ctx.arc(650, 350, 150, 0, 2 * Math.PI);
       ctx.stroke();
 
+      createFixedExponentBox(A, 440, 150, 60, 40);          // A only
+      createFixedExponentBox(B, 760, 150, 60, 40);          // B only
+      createFixedExponentBox(C, 600, 390, 60, 40);          // C only
+      createFixedExponentBox(AcapB, 600, 150, 60, 40);      // A ∩ B only
+      createFixedExponentBox(AcapC, 520, 280, 60, 40);      // A ∩ C only
+      createFixedExponentBox(BcapC, 680, 280, 60, 40);      // B ∩ C only
+      createFixedExponentBox(AcapBcapC, 600, 260, 60, 40);  // A ∩ B ∩ C
+
+
 
     });
 

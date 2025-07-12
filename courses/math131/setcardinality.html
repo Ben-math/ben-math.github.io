@@ -398,7 +398,19 @@
       ctx.strokeRect(200, 30, 900, 500);
 
       if (m0 < 0.34) {
+        // Draw circle A
+        ctx.beginPath();
+        ctx.arc(500, 250, 200, 0, 2 * Math.PI);
+        ctx.stroke();
+        
+        // Draw circle B
+        ctx.beginPath();
+        ctx.arc(800, 250, 200, 0, 2 * Math.PI);
+        ctx.stroke();
 
+        addTextToActivityBox('A', 400, 220, 80);
+        addTextToActivityBox('B', 900, 220, 80);
+        addTextToActivityBox('U', 1110, 20, 80);
       } else {
         // Draw circle A
         ctx.beginPath();

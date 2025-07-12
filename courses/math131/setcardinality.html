@@ -617,7 +617,11 @@
       }
 
       if (m0 < 0.34) {
-
+        // Check each region (only those where a slot was placed)
+        checkRegion('AA1', AA);
+        checkRegion('BB1', BB);
+        checkRegion('AAcapBB1', AAcapBB);
+        checkRegion('UU1', UU);
       } else {
         // Check each region (only those where a slot was placed)
         checkRegion('A1', A);

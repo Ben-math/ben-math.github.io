@@ -270,11 +270,11 @@
       let hints = `Drag and drop cardinalities given the following information:`;
     
       // Randomly determine unknown quantities.  Variables have a corresponding boolean
-      m0 = Math.floor(Math.random()*2) + 1;
+      m0 = Math.random();
       let m1 = Math.floor(Math.random() *4) + 1;
       let m2 = Math.floor(Math.random() *3) + 1;
 
-      if (m0 === 1) {
+      if (m0 < 0.34) {
 
       } else {
         if (m1 === 1) {
@@ -366,7 +366,7 @@
       ctx.lineWidth = 4;
       ctx.strokeRect(200, 30, 900, 500);
 
-      if (m0 === 1) {
+      if (m0 < 0.34) {
 
       } else {
         // Draw circle A
@@ -396,7 +396,7 @@
       let maxVal = 20;
       options.add(1);
 
-      if (m0 === 1) {
+      if (m0 < 0.34) {
 
       } else {
         if (U1 === 1) {
@@ -514,7 +514,7 @@
         }
       }
 
-      if (m0 === 1) {
+      if (m0 < 0.34) {
 
       } else {
         // Check each region (only those where a slot was placed)

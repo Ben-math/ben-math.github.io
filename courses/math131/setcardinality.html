@@ -93,6 +93,14 @@
 
   <script>
 
+    // Global counts
+    let A = 0, B = 0, C = 0;
+    let AcapB = 0, AcapC = 0, BcapC = 0;
+    let AcapBcapC = 0;
+    
+    // Total number of elements in the universal set
+    const U = 120;
+
     let a1, a2, a3, b1, b2, b3, c1, c2, c3, d1, d2;
     let lhsMissingIndex, rhsMissing;
 
@@ -198,6 +206,38 @@
 
     
   startBtn.addEventListener('click', () => {
+
+      for (let i = 0; i < U; i++) {
+        // Randomly assign membership
+        const inA = Math.random() < 0.3;
+        const inB = Math.random() < 0.3;
+        const inC = Math.random() < 0.3;
+      
+        // Classify based on which sets the element belongs to
+        const count = (inA ? 1 : 0) + (inB ? 1 : 0) + (inC ? 1 : 0);
+      
+        if (count === 0) {
+          // The element is outside of A, B, and C — do nothing
+          continue;
+        }
+      
+        if (inA && !inB && !inC) A++;
+        else if (!inA && inB && !inC) B++;
+        else if (!inA && !inB && inC) C++;
+        else if (inA && inB && !inC) AcapB++;
+        else if (inA && !inB && inC) AcapC++;
+        else if (!inA && inB && inC) BcapC++;
+        else if (inA && inB && inC) AcapBcapC++;
+      }
+      
+      // Example output
+      console.log(`A only: ${A}`);
+      console.log(`B only: ${B}`);
+      console.log(`C only: ${C}`);
+      console.log(`A ∩ B only: ${AcapB}`);
+      console.log(`A ∩ C only: ${AcapC}`);
+      console.log(`B ∩ C only: ${BcapC}`);
+      console.log(`A ∩ B ∩ C: ${AcapBcapC}`);
 
       a1 = Math.floor(Math.random() * 13) - 6;
       a2 = Math.floor(Math.random() * 13) - 6;

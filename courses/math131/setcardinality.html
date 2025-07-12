@@ -631,9 +631,9 @@
           hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use inclusion-exclusion: } |A \\cup B \\cup C| = |A| + |B| + |C| - |A \\cap B| - |A \\cap C| - 
           |B \\cap C| + |A \\cap B \\cap C|\\]`;
           i++;
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${120 - U} = ${A} + ${B} + ${C} + ${AcapB + AcapBcapC} + ${AcapC + AcapBcapC} + ${BcapC + AcapBcapC} - 
-          |A \\cap B \\cap C|, \\text{ so } |A \\cap B \\cap C| = ${120 - U} - (${A} + ${B} + ${C} + ${AcapB + AcapBcapC} + ${AcapC + AcapBcapC} + 
-          ${BcapC + AcapBcapC}) = ${AcapBcapC} \\]`;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${120 - U} = ${A} + ${B} + ${C} - ${AcapB + AcapBcapC} - ${AcapC + AcapBcapC} - ${BcapC + AcapBcapC} + 
+          |A \\cap B \\cap C|, \\text{ so } |A \\cap B \\cap C| = ${120 - U} - ${A} - ${B} - ${C} + ${AcapB + AcapBcapC} + ${AcapC + AcapBcapC} + 
+          ${BcapC + AcapBcapC} = ${AcapBcapC} \\]`;
           i++;
         }
   

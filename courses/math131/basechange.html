@@ -100,8 +100,10 @@
 
       if (m === 1 || m === 3) {
         // Convert x into binary, store in y
+        y = decimal.toString(2);
       } else {
         // Convert x into quinary, store in y
+        y = decimal.toString(5);
       }
 
       
@@ -116,10 +118,19 @@
       //hintSteps[i] = `\\[ = \\left(${g1}${n1 ? '-' : '+'}${d1}\\right) ${op} `;
       //i++;
 
-      
+      let question = "";
+      if (m === 1) {
+        question = `\\[ \\text{Convert } ${y} \\text{ from binary to decimal.} \\]`;
+      } else if (m === 2) {
+        question = `\\[ \\text{Convert } ${y} \\text{ from quinary to decimal.} \\]`;
+      } else if (m === 3) {
+        question = `\\[ \\text{Convert } ${x} \\text{ from decimal to binary.} \\]`;
+      } else {
+        question = `\\[ \\text{Convert } ${x} \\text{ from decimal to quinary.} \\]`;
+      }
   
       // Display the question
-      questionText.textContent = `\\[ \\text{Convert } \\]`;
+      questionText.textContent = question;
       MathJax.typeset([questionText]);
 
       hintIndex = 0;

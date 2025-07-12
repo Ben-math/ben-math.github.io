@@ -319,12 +319,24 @@
       let m1 = Math.floor(Math.random() *4) + 1;
       let m2 = Math.floor(Math.random() *3) + 1;
 
+
+
+      hintSteps = [];
+      hintIndex = 0;
+      let i = 0
+
+    
+
       if (m0 < 0.34) {
         if (m2 === 1) {
           AA1 = 1;
           BB1 = 1;
           AAcapBB1 = 1;
           hints += `\\[|U| = 120 \\text{ and } |A| = ${AA + AAcapBB} \\text{ and } |B| = ${BB + AAcapBB}\\]`;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |U| = |U \\setminus (A \\cup B)| + |A \\cup B| \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } 120 = ${UU} + |A \\cup B|, \\text{ so } |A \\cup B| = 120 - ${UU} = ${120 - UU} \\]`;
+          i++;
         } else if (m2 === 2) {
           UU1 = 1;
           AA1 = 1;

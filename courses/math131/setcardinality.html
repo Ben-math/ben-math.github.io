@@ -657,7 +657,25 @@
       }
     });
 
-  
+
+    hintBtn.addEventListener('click', () => {
+      // Play sound when view button is clicked
+      const sound = document.getElementById('click-sound');
+      if (sound) {
+        sound.currentTime = 0; // rewind to start in case it's still playing
+        sound.play();
+      }
+      if (hintIndex < hintSteps.length) {
+        // Create a new paragraph for each hint
+        const hintPara = document.createElement('div');
+        hintPara.classList.add('hint-step');
+        hintPara.textContent = hintSteps[hintIndex];
+        hintArea.appendChild(hintPara);
+        
+        MathJax.typeset([hintPara]);
+        hintIndex++;
+      }
+    });
 
     
   </script>

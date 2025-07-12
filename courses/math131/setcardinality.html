@@ -111,6 +111,13 @@
 
   <script>
 
+    const hintBtn = document.getElementById('hint-btn');
+    const hintArea = document.getElementById('hint-area');
+    
+    // This array stores your LaTeX hints
+    let hintSteps = [];
+    let hintIndex = 0;
+    
     // Global counts
     let A = 0, B = 0, C = 0;
     let AcapB = 0, AcapC = 0, BcapC = 0;

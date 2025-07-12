@@ -635,6 +635,24 @@
           |A \\cap B \\cap C|, \\text{ so } |A \\cap B \\cap C| = ${120 - U} - ${A} - ${B} - ${C} + ${AcapB + AcapBcapC} + ${AcapC + AcapBcapC} + 
           ${BcapC + AcapBcapC} = ${AcapBcapC} \\]`;
           i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A \\cap B| = |(A \\cap B) \\setminus (A \\cap B \\cap C)| + 
+          |A \\cap B \\cap C)|\\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${AcapB + AcapBcapC} = |(A \\cap B) \\setminus (A \\cap B \\cap C)| + ${AcapBcapC}, \\text{ so } 
+          |(A \\cap B) \\setminus (A \\cap B \\cap C)| = ${AcapB + AcapBcapC} - ${AcapBcapC} = ${AcapB} \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A \\cap C| = |(A \\cap C) \\setminus (A \\cap B \\cap C)| + 
+          |A \\cap B \\cap C)|\\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${AcapC + AcapBcapC} = |(A \\cap C) \\setminus (A \\cap B \\cap C)| + ${AcapBcapC}, \\text{ so } 
+          |(A \\cap C) \\setminus (A \\cap B \\cap C)| = ${AcapC + AcapBcapC} - ${AcapBcapC} = ${AcapC} \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |B \\cap C| = |(B \\cap C) \\setminus (A \\cap B \\cap C)| + 
+          |A \\cap B \\cap C)|\\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${BcapC + AcapBcapC} = |(B \\cap C) \\setminus (A \\cap B \\cap C)| + ${AcapBcapC}, \\text{ so } 
+          |(B \\cap C) \\setminus (A \\cap B \\cap C)| = ${BcapC + AcapBcapC} - ${AcapBcapC} = ${BcapC} \\]`;
+          i++;
         }
   
         console.log(`A1=${A1}, B1=${B1}, C1=${C1}, AcapB1=${AcapB1}, AcapC1=${AcapC1}, BcapC1=${BcapC1}, AcapBcapC1=${AcapBcapC1}, U1=${U1}`);

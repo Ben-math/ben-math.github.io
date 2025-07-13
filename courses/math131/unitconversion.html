@@ -118,36 +118,51 @@
         sound.play();
       }
 
+      // m1 determines metric/imperial direction, m2 determines weight/distance, m3 determines scale up/down
       m1 = Math.floor(Math.random() *2) + 1;
       m2 = Math.floor(Math.random() *2) + 1;
       m3 = Math.floor(Math.random() *2) + 1;
 
-
+      
       if (m1 === 1) {
+        // Here we go metric to imperial
         if (m2 === 1) {
+          // Here we go grams to oz
           if (m3 === 1) {
+            // Here we scale up
 
           } else {
+            // Here we scale down
 
           }
         } else {
+          // Here we go metres to yards
           if (m3 === 1) {
+            // Here we scale up
 
           } else {
+            // Here we scale down
 
           }
         }
       } else {
+        // Here we go imperial to metric
         if (m2 === 1) {
+          // Here we go oz to grams
           if (m3 === 1) {
+            // Here we scale up
 
           } else {
+            // Here we scale down
 
           }
         } else {
+          // Here we go yards to metres
           if (m3 === 1) {
+            // Here we scale up
 
           } else {
+            // Here we scale down
 
           }
         }

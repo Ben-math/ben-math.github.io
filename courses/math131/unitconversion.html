@@ -326,7 +326,15 @@
       const baseAmount = amount * fromFactor;
       const converted = baseAmount / toFactor;
     
-      resultDisplay.textContent = `${amount} ${from} = ${converted.toFixed(4)} ${to}`;
+      function formatSignificant(num, digits = 4) {
+        if (num === 0) return '0';
+        const exp = Math.floor(Math.log10(Math.abs(num)));
+        const precision = Math.max(digits - exp - 1, 0);
+        return Number(num.toFixed(precision)).toString();
+      }
+      
+      resultDisplay.textContent = `${amount} ${from} = ${formatSignificant(converted)} ${to}`;
+
       resultDisplay.style.color = 'black';
     
       // Build LaTeX-style conversion equation, simplified when base units are involved
@@ -343,7 +351,7 @@
         equation += ` \\cdot \\frac{1\\ \\text{${to}}}{${toFactor.toFixed(4)}\\ \\text{${baseUnit}}}`;
       }
       
-      equation += ` = ${converted.toFixed(4)}\\ \\text{${to}} \\]`;
+      equation += ` = ${formatSignificant(converted)}\\ \\text{${to}} \\]`;
 
     
       equationDisplay.textContent = equation;

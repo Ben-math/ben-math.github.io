@@ -160,7 +160,7 @@
         question = `\\[ \\text{Convert } ${x} \\text{ from decimal to binary.} \\]`;
         correctAnswer = y;
         intPart = x;
-        while (intPart > 1) {
+        while (intPart > 0) {
           let remainder = intPart % 2;
           let temp = Math.floor(intPart / 2);
           hintSteps[i] = `\\[ ${intPart} \\div 2 = ${temp}R${remainder} \\]`;

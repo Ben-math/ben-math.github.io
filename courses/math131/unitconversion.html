@@ -36,30 +36,36 @@
   <main>
 
     <h2>Quick Unit Converter</h2>
-    <div id="converter" style="margin-bottom: 1em; border: 1px solid #ccc; padding: 1em;">
-      <label for="unit-category">Category:</label>
-      <select id="unit-category">
-        <option value="distance">Distance</option>
-        <option value="weight">Weight</option>
-        <option value="volume">Volume</option>
-      </select>
-    
-      <br><br>
-      <label for="from-unit">From:</label>
-      <select id="from-unit"></select>
-    
-      <label for="to-unit" style="margin-left: 1em;">To:</label>
-      <select id="to-unit"></select>
-    
-      <br><br>
-      <label for="amount">Amount:</label>
-      <input type="number" id="amount" />
-    
-      <button id="convert-btn" class="rubber-button" style="margin-left: 1em;">Convert</button>
-    
-      <p id="convert-result" style="font-weight: bold; margin-top: 10px;"></p>
-    </div>
+    <div id="converter-container" style="display: flex; align-items: flex-start; gap: 2em; margin-bottom: 1em;">
+      <div id="converter" style="border: 1px solid #ccc; padding: 1em;">
+        <label for="unit-category">Category:</label>
+        <select id="unit-category">
+          <option value="distance">Distance</option>
+          <option value="weight">Weight</option>
+          <option value="volume">Volume</option>
+        </select>
+      
+        <br><br>
+        <label for="from-unit">From:</label>
+        <select id="from-unit"></select>
+      
+        <label for="to-unit" style="margin-left: 1em;">To:</label>
+        <select id="to-unit"></select>
+      
+        <br><br>
+        <label for="amount">Amount:</label>
+        <input type="number" id="amount" />
+      
+        <button id="convert-btn" class="rubber-button" style="margin-left: 1em;">Convert</button>
+      
+        <p id="convert-result" style="font-weight: bold; margin-top: 10px;"></p>
+      </div>
 
+      <div id="conversion-output" style="max-width: 300px;">
+        <p id="convert-result" style="font-weight: bold;"></p>
+        <p id="convert-equation" class="math" style="margin-top: 10px;"></p>
+      </div>
+    </div>
 
     <p>We will start with a topic that superficially might seem obvious: what does the word "unit" mean?  We talk about the importance of stating 
     "what are the units?", but why do we call them such?  "Unit" means "One", and when we say "One", one rightly might ask "One what?"... so by adding 
@@ -183,18 +189,29 @@
       const to = toUnit.value;
       const amount = parseFloat(amountInput.value);
     
+      const resultDisplay = document.getElementById('convert-result');
+      const equationDisplay = document.getElementById('convert-equation');
+    
       if (isNaN(amount)) {
-        convertResult.textContent = 'Please enter a valid number.';
-        convertResult.style.color = 'black';
+        resultDisplay.textContent = 'Please enter a valid number.';
+        resultDisplay.style.color = 'black';
+        equationDisplay.textContent = '';
         return;
       }
     
-      const baseAmount = amount * unitOptions[category][from];
-      const converted = baseAmount / unitOptions[category][to];
+      const fromFactor = unitOptions[category][from];
+      const toFactor = unitOptions[category][to];
+      const baseAmount = amount * fromFactor;
+      const converted = baseAmount / toFactor;
     
-      convertResult.textContent = `${amount} ${from} = ${converted.toFixed(4)} ${to}`;
-      convertResult.style.color = 'black';
+      resultDisplay.textContent = `${amount} ${from} = ${converted.toFixed(4)} ${to}`;
+    
+      // Build a LaTeX-style unit conversion equation
+      equationDisplay.textContent = `\\[ ${amount} \\ \\frac{${from}}{1} \\times \\frac{${fromFactor.toFixed(4)}\\ \\text{base}}{1\\ ${from}} \\times \\frac{1\\ ${to}}{${toFactor.toFixed(4)}\\ \\text{base}} = ${converted.toFixed(4)}\\ ${to} \\]`;
+    
+      MathJax.typeset([equationDisplay]);
     });
+
     
     // Initial population
     populateUnits(unitCategory.value);

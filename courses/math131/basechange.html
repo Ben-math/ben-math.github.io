@@ -115,9 +115,6 @@
       let i = 0
 
 
-      hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${correctAnswer} `;
-      i++;
-
       let question = "";
       if (m === 1) {
         question = `\\[ \\text{Convert } ${y} \\text{ from binary to decimal.} \\]`;
@@ -132,6 +129,9 @@
         question = `\\[ \\text{Convert } ${x} \\text{ from decimal to quinary.} \\]`;
         correctAnswer = y;
       }
+
+      hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${correctAnswer} `;
+      i++;
   
       // Display the question
       questionText.textContent = question;

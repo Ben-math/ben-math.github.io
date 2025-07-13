@@ -330,17 +330,21 @@
       resultDisplay.style.color = 'black';
     
       // Build LaTeX-style conversion equation, simplified when base units are involved
-      let equation = `\\[ ${amount} \\ ${from}`;
-    
+      // Determine base unit for the selected category
+      const baseUnit = Object.entries(unitOptions[category]).find(([_, factor]) => factor === 1)[0];
+      
+      let equation = `\\[ ${amount} \\ \\text{${from}}`;
+      
       if (fromFactor !== 1) {
-        equation += ` \\cdot \\frac{${fromFactor.toFixed(4)}\\ \\text{base}}{1\\ ${from}}`;
+        equation += ` \\cdot \\frac{${fromFactor.toFixed(4)}\\ \\text{${baseUnit}}}{1\\ \\text{${from}}}`;
       }
-    
+      
       if (toFactor !== 1) {
-        equation += ` \\cdot \\frac{1\\ ${to}}{${toFactor.toFixed(4)}\\ \\text{base}}`;
+        equation += ` \\cdot \\frac{1\\ \\text{${to}}}{${toFactor.toFixed(4)}\\ \\text{${baseUnit}}}`;
       }
-    
-      equation += ` = ${converted.toFixed(4)}\\ ${to} \\]`;
+      
+      equation += ` = ${converted.toFixed(4)}\\ \\text{${to}} \\]`;
+
     
       equationDisplay.textContent = equation;
       MathJax.typeset([equationDisplay]);

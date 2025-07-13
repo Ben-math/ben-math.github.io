@@ -141,6 +141,8 @@
         hintSteps[i] += ` \\]`;
          
         i++;
+        hintSteps[i] = `\\[ = ${correctAnswer} \\]`;
+        i++;
       } else if (m === 2) {
         question = `\\[ \\text{Convert } ${y} \\text{ from quinary to decimal.} \\]`;
         correctAnswer = x;
@@ -161,6 +163,8 @@
         hintSteps[i] += ` \\]`;
          
         i++;
+        hintSteps[i] = `\\[ = ${correctAnswer} \\]`;
+        i++;
       } else if (m === 3) {
         question = `\\[ \\text{Convert } ${x} \\text{ from decimal to binary.} \\]`;
         correctAnswer = y;
@@ -172,6 +176,8 @@
           i++;
           intPart = temp;
         }
+        hintSteps[i] = `\\[ \\text{Arrange the remainders, in the order we got them, from right-to-left to build the binary representation.} \\]`;
+        i++;
       } else {
         question = `\\[ \\text{Convert } ${x} \\text{ from decimal to quinary.} \\]`;
         correctAnswer = y;
@@ -183,10 +189,10 @@
           i++;
           intPart = temp;
         }
+        hintSteps[i] = `\\[ \\text{Arrange the remainders, in the order we got them, from right-to-left to build the quinary representation.} \\]`;
+        i++;
       }
 
-      hintSteps[i] = `\\[ = ${correctAnswer} \\]`;
-      i++;
   
       // Display the question
       questionText.textContent = question;

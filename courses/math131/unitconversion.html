@@ -35,6 +35,31 @@
   </header>
   <main>
 
+    <h2>Quick Unit Converter</h2>
+    <div id="converter" style="margin-bottom: 1em; border: 1px solid #ccc; padding: 1em;">
+      <label for="unit-category">Category:</label>
+      <select id="unit-category">
+        <option value="distance">Distance</option>
+        <option value="weight">Weight</option>
+      </select>
+    
+      <br><br>
+      <label for="from-unit">From:</label>
+      <select id="from-unit"></select>
+    
+      <label for="to-unit" style="margin-left: 1em;">To:</label>
+      <select id="to-unit"></select>
+    
+      <br><br>
+      <label for="amount">Amount:</label>
+      <input type="number" id="amount" />
+    
+      <button id="convert-btn" class="rubber-button" style="margin-left: 1em;">Convert</button>
+    
+      <p id="convert-result" style="font-weight: bold; margin-top: 10px;"></p>
+    </div>
+
+
     <p>We will start with a topic that superficially might seem obvious: what does the word "unit" mean?  We talk about the importance of stating 
     "what are the units?", but why do we call them such?  "Unit" means "One", and when we say "One", one rightly might ask "One what?"... so by adding 
     a suffix to the number (km, mL), we are specifying what "One" we are talking about.</p>
@@ -93,6 +118,70 @@
 
   </main>
   <script>
+
+    const unitCategory = document.getElementById('unit-category');
+    const fromUnit = document.getElementById('from-unit');
+    const toUnit = document.getElementById('to-unit');
+    const amountInput = document.getElementById('amount');
+    const convertBtn = document.getElementById('convert-btn');
+    const convertResult = document.getElementById('convert-result');
+    
+    const unitOptions = {
+      distance: {
+        "meters": 1,
+        "kilometers": 1000,
+        "miles": 1609.34,
+        "yards": 0.9144,
+        "feet": 0.3048,
+        "inches": 0.0254
+      },
+      weight: {
+        "grams": 1,
+        "kilograms": 1000,
+        "pounds": 453.592,
+        "ounces": 28.3495
+      }
+    };
+    
+    function populateUnits(category) {
+      fromUnit.innerHTML = '';
+      toUnit.innerHTML = '';
+      for (let unit in unitOptions[category]) {
+        const option1 = document.createElement('option');
+        option1.value = unit;
+        option1.textContent = unit;
+        const option2 = option1.cloneNode(true);
+        fromUnit.appendChild(option1);
+        toUnit.appendChild(option2);
+      }
+    }
+    
+    unitCategory.addEventListener('change', () => {
+      populateUnits(unitCategory.value);
+    });
+    
+    convertBtn.addEventListener('click', () => {
+      const category = unitCategory.value;
+      const from = fromUnit.value;
+      const to = toUnit.value;
+      const amount = parseFloat(amountInput.value);
+    
+      if (isNaN(amount)) {
+        convertResult.textContent = 'Please enter a valid number.';
+        convertResult.style.color = 'black';
+        return;
+      }
+    
+      const baseAmount = amount * unitOptions[category][from];
+      const converted = baseAmount / unitOptions[category][to];
+    
+      convertResult.textContent = `${amount} ${from} = ${converted.toFixed(4)} ${to}`;
+      convertResult.style.color = 'black';
+    });
+    
+    // Initial population
+    populateUnits(unitCategory.value);
+
 
     let m1, m2, m3 = 0;
     

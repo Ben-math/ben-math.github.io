@@ -159,6 +159,14 @@
       } else if (m === 3) {
         question = `\\[ \\text{Convert } ${x} \\text{ from decimal to binary.} \\]`;
         correctAnswer = y;
+        intPart = x;
+        while (intPart > 1) {
+          let remainder = intPart % 2;
+          let temp = Math.floor(intPart / 2);
+          hintSteps[i] = `\\[ ${intPart} \\div 2 = ${temp}R${remainder} \\]`;
+          i++;
+          intPart = temp;
+        }
       } else {
         question = `\\[ \\text{Convert } ${x} \\text{ from decimal to quinary.} \\]`;
         correctAnswer = y;

@@ -128,20 +128,36 @@
     
     const unitOptions = {
       distance: {
+        "millimeters": 0.001,
+        "centimeters": 0.01,
         "meters": 1,
         "kilometers": 1000,
-        "miles": 1609.34,
-        "yards": 0.9144,
+        "inches": 0.0254,
         "feet": 0.3048,
-        "inches": 0.0254
+        "yards": 0.9144,
+        "miles": 1609.34,
       },
       weight: {
+        "milligrams": 0.001,
         "grams": 1,
         "kilograms": 1000,
+        "metric tons": 1_000_000,
+        "ounces": 28.3495,
         "pounds": 453.592,
-        "ounces": 28.3495
+      },
+      volume: {
+        "milliliters": 1,
+        "liters": 1_000,
+        "teaspoons": 4.92892,
+        "tablespoons": 14.7868,
+        "fluid ounces": 29.5735,
+        "cups": 236.588,
+        "pints": 473.176,
+        "quarts": 946.353,
+        "gallons": 3_785.41
       }
     };
+
     
     function populateUnits(category) {
       fromUnit.innerHTML = '';

@@ -95,8 +95,6 @@
   <script>
 
     let m1, m2, m3 = 0;
-    let x = 0;
-    let y = 0;
     
     const hintBtn = document.getElementById('hint-btn');
     const hintArea = document.getElementById('hint-area');
@@ -120,11 +118,9 @@
         sound.play();
       }
 
-      m1 = 0;
-      m2 = 0;
-      m3 = 0;
-      x = 0;
-      y = 0;
+      m1 = Math.floor(Math.random() *2) + 1;
+      m2 = Math.floor(Math.random() *2) + 1;
+      m3 = Math.floor(Math.random() *2) + 1;
 
       
 

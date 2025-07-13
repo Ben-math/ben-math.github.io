@@ -314,18 +314,38 @@
         return;
       }
     
+      if (from === to) {
+        resultDisplay.textContent = `That's the same unit! ${amount} ${from} = ${amount} ${to}`;
+        resultDisplay.style.color = 'black';
+        equationDisplay.textContent = '';
+        return;
+      }
+    
       const fromFactor = unitOptions[category][from];
       const toFactor = unitOptions[category][to];
       const baseAmount = amount * fromFactor;
       const converted = baseAmount / toFactor;
     
       resultDisplay.textContent = `${amount} ${from} = ${converted.toFixed(4)} ${to}`;
+      resultDisplay.style.color = 'black';
     
-      // Build a LaTeX-style unit conversion equation
-      equationDisplay.textContent = `\\[ ${amount} \\ \\frac{${from}}{1} \\times \\frac{${fromFactor.toFixed(4)}\\ \\text{base}}{1\\ ${from}} \\times \\frac{1\\ ${to}}{${toFactor.toFixed(4)}\\ \\text{base}} = ${converted.toFixed(4)}\\ ${to} \\]`;
+      // Build LaTeX-style conversion equation, simplified when base units are involved
+      let equation = `\\[ ${amount} \\ ${from}`;
     
+      if (fromFactor !== 1) {
+        equation += ` \\cdot \\frac{${fromFactor.toFixed(4)}\\ \\text{base}}{1\\ ${from}}`;
+      }
+    
+      if (toFactor !== 1) {
+        equation += ` \\cdot \\frac{1\\ ${to}}{${toFactor.toFixed(4)}\\ \\text{base}}`;
+      }
+    
+      equation += ` = ${converted.toFixed(4)}\\ ${to} \\]`;
+    
+      equationDisplay.textContent = equation;
       MathJax.typeset([equationDisplay]);
     });
+
 
     
     // Initial population

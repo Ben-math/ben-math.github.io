@@ -126,9 +126,9 @@
           temp = Math.floor(temp / 10);
         }
         
-        hintSteps[i] = `\\[ ${y} = `;
+        hintSteps[i] = `\\[ ${y}_2 = `;
         for (let j = 0; j < digits.length; j++) {
-          hintSteps[i] += `${digits[j]}^{${j}}`;
+          hintSteps[i] += `${digits[j]} \\cdot 2^{${j}}`;
           if (j !== digits.length - 1) {
             hintSteps[i] += ` + `;
           }

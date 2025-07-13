@@ -170,6 +170,14 @@
       } else {
         question = `\\[ \\text{Convert } ${x} \\text{ from decimal to quinary.} \\]`;
         correctAnswer = y;
+        intPart = x;
+        while (intPart > 0) {
+          let remainder = intPart % 5;
+          let temp = Math.floor(intPart / 5);
+          hintSteps[i] = `\\[ ${intPart} \\div 5 = ${temp}R${remainder} \\]`;
+          i++;
+          intPart = temp;
+        }
       }
 
       hintSteps[i] = `\\[ = ${correctAnswer} \\]`;

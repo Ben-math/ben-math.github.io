@@ -103,7 +103,7 @@
         y = x.toString(2);
       } else {
         // Convert x into quinary, store in y
-        y = x.toString(5);
+        y = parseInt(x.toString(5), 10);
       }
 
       
@@ -121,12 +121,16 @@
       let question = "";
       if (m === 1) {
         question = `\\[ \\text{Convert } ${y} \\text{ from binary to decimal.} \\]`;
+        correctAnswer = x;
       } else if (m === 2) {
         question = `\\[ \\text{Convert } ${y} \\text{ from quinary to decimal.} \\]`;
+        correctAnswer = x;
       } else if (m === 3) {
         question = `\\[ \\text{Convert } ${x} \\text{ from decimal to binary.} \\]`;
+        correctAnswer = y;
       } else {
         question = `\\[ \\text{Convert } ${x} \\text{ from decimal to quinary.} \\]`;
+        correctAnswer = y;
       }
   
       // Display the question

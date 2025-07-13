@@ -44,11 +44,12 @@
 
     <p>For a concrete example, consider the conversion of the decimal (base-10) number 7398 into quinary (base-5): \[7398 \div 5 = 1479R3\] 
     \[1479 \div 5 = 295R4\] \[295 \div 5 = 59R0\] \[59 \div 5 = 11R4\] \[11 \div 5 = 2R1\] \[2 \div 5 = 0R2\] 
-    \[ \text{So we have transformed } 7398 \text{ into } 214043, \text{ a number in base }5. \]</p>
+    \[ \text{So we have transformed } 7398 \text{ into } 214043_5, \text{ a number in base }5. \]</p>
       
     <p>When converting from a smaller base to a larger base, the process is largely inverted: we take a sum of the digits multiplied by their 
     respective place value.  For instance, to convert from ternary (base-3) to decimal: \[ 2210201100_3 = 0 \cdot 3^0 + 0 \cdot 3^1 + 1 \cdot 3^2 + 
-      1 \cdot 3^3 + 0 \cdot 3^4 + 2 \cdot 3^5 + 0 \cdot 3^6 + 1 \cdot 3^7 + 2 \cdot 3^8 + 2 \cdot 3^9 = 55197 \]</p>
+      1 \cdot 3^3 + 0 \cdot 3^4 + 2 \cdot 3^5 + 0 \cdot 3^6 + 1 \cdot 3^7 + 2 \cdot 3^8 + 2 \cdot 3^9 = 55197 \] Note that we omit the base when 
+    talking about a decimal number, since that is our default.</p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

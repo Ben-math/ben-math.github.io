@@ -38,7 +38,9 @@
     <p>Change of base (not to be confused with Ace of Base), when moving from a larger base to a smaller base, involves repeated divison by the target 
       base (for convenience: technically, both of the strategies discussed could be used regardless of the relative sizes of the bases, but would 
       require unnecessarily messy multiplication/division tables).  The remainders, in the order we obtain them, form the new representation from 
-      right-to-left, and we repeat division on the integer part of the division until it equals zero:</p>
+      right-to-left, and we repeat division on the integer part of the division until it equals zero: \[x = q_0 = q_1 \cdot b + r_0\] 
+    \[q_1 = q_2 \cdot b + r_1\] \[q_2 = q_3 \cdot b + r_2\] \[q_3 = q_4 \cdot b + r_3\] \[ \vdots \] \[q_n = 0 \cdot b + r_n\] 
+    \[ x = r_nr_{n-1}\hdotsr_2r_1r_0 \]</p>
       
     <p>When converting from a smaller base to a larger base, the process is largely inverted: we take a sum of the places multiplied by their 
     respective place value:</p>

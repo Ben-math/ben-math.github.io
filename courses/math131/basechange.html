@@ -35,13 +35,13 @@
   </header>
   <main>
 
-    <p>Change of base (not to be confused with Ace of Base) involves repeated divison by the target base.  The remainders, in the order we obtain 
-    them, form the new representation from right-to-left, and we repeat division on the integer part of the division until it equals zero.</p>
+    <p>Change of base (not to be confused with Ace of Base), when moving from a larger base to a smaller base, involves repeated divison by the target 
+      base (for convenience: technically, both of the strategies discussed could be used regardless of the relative sizes of the bases, but would 
+      require unnecessarily messy multiplication/division tables).  The remainders, in the order we obtain them, form the new representation from 
+      right-to-left, and we repeat division on the integer part of the division until it equals zero:</p>
       
-    <p>Although this would technically work 
-    when converting from a smaller base to a larger base, it is messy.  Since we'll be focusing on conversions between decimal 
-    (base-10) and binary (base-2) or quinary (base-5), we will simply adopt a simpler strategy when converting to decimal that makes use of our 
-    existing familiarity with the decimal system.</p>
+    <p>When convertion from a smaller base to a larger base, the process is largely inverted: we take a sum of the places multiplied by their 
+    respective place value:</p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

@@ -119,6 +119,23 @@
       if (m === 1) {
         question = `\\[ \\text{Convert } ${y} \\text{ from binary to decimal.} \\]`;
         correctAnswer = x;
+        let digits = [];
+        let temp = y; // preserve original y
+        while (temp > 0) {
+          digits.push(temp % 10);
+          temp = Math.floor(temp / 10);
+        }
+        
+        hintSteps[i] = `\\[ ${y} = `;
+        for (let j = 0; j < digits.length; j++) {
+          hintSteps[i] += `${digits[j]}^{${j}}`;
+          if (j !== digits.length - 1) {
+            hintSteps[i] += ` + `;
+          }
+        }
+        hintSteps[i] += ` \\]`;
+         
+        i++;
       } else if (m === 2) {
         question = `\\[ \\text{Convert } ${y} \\text{ from quinary to decimal.} \\]`;
         correctAnswer = x;

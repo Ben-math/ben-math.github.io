@@ -191,10 +191,10 @@
         \[
         \begin{array}{|c|c|}
         \hline
-        \textbf{Weight} & \textbf{Kilograms} \\
+        \textbf{Weight} & \textbf{Pounds} \\
         \hline
-        \text{Kilogram} & 1 \\
-        \text{Pound} & 2.2 \\
+        \text{Kilogram} & 2.2 \\
+        \text{Pound} & 1 \\
         \hline
         \end{array}
         \]
@@ -373,7 +373,7 @@
     populateUnits(unitCategory.value);
 
 
-    let m1, m2, m3 = 0;
+    let m1, s1, s2 = 0;
     
     const hintBtn = document.getElementById('hint-btn');
     const hintArea = document.getElementById('hint-area');
@@ -397,54 +397,25 @@
         sound.play();
       }
 
-      // m1 determines metric/imperial direction, m2 determines weight/distance, m3 determines scale up/down
-      m1 = Math.floor(Math.random() *2) + 1;
-      m2 = Math.floor(Math.random() *2) + 1;
-      m3 = Math.floor(Math.random() *2) + 1;
+      // m1 determines distance/weight/volume
+      m1 = Math.floor(Math.random() *3) + 1;
 
+      // scaling factors (s1 target, s2 original), between 2 and 80
+      s1 = Math.floor(Math.random() *79) + 2;
+      s2 = Math.floor(Math.random() *79) + 2;
       
+
+
+      // Distance
       if (m1 === 1) {
-        // Here we go metric to imperial
-        if (m2 === 1) {
-          // Here we go grams to oz
-          if (m3 === 1) {
-            // Here we scale up
+        // Select random start unit
+        
+      // Weight
+      } else if (m1 === 2) {
 
-          } else {
-            // Here we scale down
-
-          }
-        } else {
-          // Here we go metres to yards
-          if (m3 === 1) {
-            // Here we scale up
-
-          } else {
-            // Here we scale down
-
-          }
-        }
+      // Volume
       } else {
-        // Here we go imperial to metric
-        if (m2 === 1) {
-          // Here we go oz to grams
-          if (m3 === 1) {
-            // Here we scale up
 
-          } else {
-            // Here we scale down
-
-          }
-        } else {
-          // Here we go yards to metres
-          if (m3 === 1) {
-            // Here we scale up
-
-          } else {
-            // Here we scale down
-
-          }
-        }
       }
 
       

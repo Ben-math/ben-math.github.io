@@ -307,20 +307,10 @@
     }
 
     function isCloseEnough(userVal, correctVal) {
-      const absDiff = Math.abs(userVal - correctVal);
-      const tolerance = Math.pow(10, -2); // allow two digits of precision
+      if (correctVal === 0) return userVal === 0;
     
-      // Reject if the input is too far from the correct value
-      if (absDiff >= tolerance) return false;
-    
-      // Convert to string and get the digits after the decimal
-      const afterDecimal = userVal.toString().split(".")[1] || "";
-      
-      // Count non-zero digits after the decimal point
-      const nonTrivial = [...afterDecimal].filter(d => d !== "0").length;
-    
-      // Accept only if there are at least 2 non-zero digits after the decimal
-      return nonTrivial >= 2;
+      const percentError = Math.abs(userVal - correctVal) / correctVal;
+      return percentError <= 0.001; // Accept within 0.1%
     }
 
 

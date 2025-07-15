@@ -305,6 +305,13 @@
         toUnit.appendChild(option2);
       }
     }
+
+    function isCloseEnough(userVal, correctVal) {
+      const absDiff = Math.abs(userVal - correctVal);
+      const tolerance = Math.pow(10, -2); // Require at least 2 nontrivial decimal digits to match
+      return absDiff < tolerance;
+    }
+
     
     unitCategory.addEventListener('change', () => {
       populateUnits(unitCategory.value);
@@ -514,13 +521,13 @@
         sound.currentTime = 0; // rewind to start in case it's still playing
         sound.play();
       }
-      const userInput = parseInt(document.getElementById('user-answer').value);
+      const userInput = parseFloat(document.getElementById('user-answer').value);
       const feedback = document.getElementById('answer-feedback');
     
       if (isNaN(userInput)) {
         feedback.textContent = 'Please enter a number.';
         feedback.style.color = 'black';
-      } else if (userInput === correctAnswer) {
+      } else if (isCloseEnough(userInput, parseFloat(correctAnswer))) {
         feedback.textContent = 'Correct!';
         feedback.style.color = 'green';
       } else {

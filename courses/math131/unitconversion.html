@@ -406,17 +406,67 @@
       
 
 
+      // Helper to choose distinct units from a category
+      function chooseTwoDistinctUnits(units) {
+        const keys = Object.keys(units);
+        const fromIndex = Math.floor(Math.random() * keys.length);
+        let toIndex;
+        do {
+          toIndex = Math.floor(Math.random() * keys.length);
+        } while (toIndex === fromIndex);
+        return [keys[fromIndex], keys[toIndex]];
+      }
+      
+      let category, units, from, to, amount;
+      let recipeOriginal = s2;
+      let recipeTarget = s1;
+      
       // Distance
       if (m1 === 1) {
-        // Select random start unit
-        
+        category = "distance";
+        units = unitOptions[category];
+        [from, to] = chooseTwoDistinctUnits(units);
+      
       // Weight
       } else if (m1 === 2) {
-
+        category = "weight";
+        units = unitOptions[category];
+        [from, to] = chooseTwoDistinctUnits(units);
+      
       // Volume
       } else {
-
+        category = "volume";
+        units = unitOptions[category];
+        [from, to] = chooseTwoDistinctUnits(units);
       }
+      
+      amount = Math.floor(Math.random() * 141) + 40; // Random integer from 40 to 180
+
+      // Conversion factors and calculation
+      const fromFactor = units[from];
+      const toFactor = units[to];
+      
+      // Compute base converted value
+      const baseConverted = amount * (fromFactor / toFactor);
+      
+      // Adjust for recipe scaling
+      const scaledConverted = baseConverted * (recipeTarget / recipeOriginal);
+      
+      // Round to 4 significant digits (nontrivial trailing digits shown)
+      function formatAnswer(num) {
+        const str = num.toPrecision(4);
+        // Remove unnecessary trailing zeroes
+        return parseFloat(str).toString();
+      }
+      
+      correctAnswer = formatAnswer(scaledConverted);
+      
+      // Display the question
+      let question = `You are using a recipe that yields <strong>${recipeOriginal}</strong> servings and calls for 
+      <strong>${amount} ${from}</strong>. How many <strong>${to}</strong> will you need 
+      if you want to make <strong>${recipeTarget}</strong> servings instead?`;
+
+      
 
       
 
@@ -426,8 +476,6 @@
       // Here we will generate and store hints
       let i = 0
 
-
-      let question = "";
       
 
   

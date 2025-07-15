@@ -528,23 +528,37 @@
 
 
     hintBtn.addEventListener('click', () => {
-      // Play sound when view button is clicked
       const sound = document.getElementById('click-sound');
       if (sound) {
-        sound.currentTime = 0; // rewind to start in case it's still playing
+        sound.currentTime = 0;
         sound.play();
       }
-      if (hintIndex < hintSteps.length) {
-        // Create a new paragraph for each hint
-        const hintPara = document.createElement('div');
-        hintPara.classList.add('hint-step');
-        hintPara.textContent = hintSteps[hintIndex];
-        hintArea.appendChild(hintPara);
-        
-        MathJax.typeset([hintPara]);
-        hintIndex++;
+    
+      // Generate the LaTeX solution
+      if (correctAnswer !== null) {
+        const baseUnit = Object.entries(unitOptions[category]).find(([_, factor]) => factor === 1)[0];
+    
+        let solutionLatex = `\\[ ${amount} \\ \\text{${from}}`;
+    
+        if (from !== baseUnit) {
+          solutionLatex += ` \\cdot \\frac{${unitOptions[category][from].toFixed(4)}\\ \\text{${baseUnit}}}{1\\ \\text{${from}}}`;
+        }
+    
+        if (to !== baseUnit) {
+          solutionLatex += ` \\cdot \\frac{1\\ \\text{${to}}}{${unitOptions[category][to].toFixed(4)}\\ \\text{${baseUnit}}}`;
+        }
+    
+        if (recipeTarget !== recipeOriginal) {
+          solutionLatex += ` \\cdot \\frac{${recipeTarget}}{${recipeOriginal}}`;
+        }
+    
+        solutionLatex += ` = ${correctAnswer}\\ \\text{${to}} \\]`;
+    
+        hintArea.innerHTML = solutionLatex;
+        MathJax.typeset([hintArea]);
       }
     });
+
 
 
 

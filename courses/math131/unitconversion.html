@@ -460,11 +460,23 @@
       }
       
       correctAnswer = formatAnswer(scaledConverted);
-      
-      // Display the question
-      let question = `You are using a recipe that yields ${recipeOriginal} servings and calls for 
-      ${amount} ${from}. How many ${to} will you need 
-      if you want to make ${recipeTarget} servings instead?`;
+
+      let question = "":
+      if (m1 === 1) {
+        // Display the question
+        question = `You need ${amount} ${from} of copper wire to build ${recipeOriginal} houses.   How many ${to} of copper wire will you need 
+        if you want to build ${recipeTarget} houses instead?`;
+      } else if (m1 === 2) {
+        // Display the question
+        question = `You are using a recipe that makes ${recipeOriginal} cakes and calls for 
+        ${amount} ${from} of sugar. How many ${to} of sugar will you need 
+        if you want to make ${recipeTarget} cakes instead?`;
+      } else {
+        // Display the question
+        question = `You are using a recipe that makes ${recipeOriginal} cookies and calls for 
+        ${amount} ${from} of milk. How many ${to} of milk will you need 
+        if you want to make ${recipeTarget} cookies instead?`;
+      }
 
       
 

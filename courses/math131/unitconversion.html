@@ -528,36 +528,62 @@
 
 
     hintBtn.addEventListener('click', () => {
+      console.log("Reveal Solution button clicked");
+    
       const sound = document.getElementById('click-sound');
       if (sound) {
         sound.currentTime = 0;
         sound.play();
+        console.log("Click sound played");
+      } else {
+        console.log("Click sound not found");
       }
     
-      // Generate the LaTeX solution
       if (correctAnswer !== null) {
-        const baseUnit = Object.entries(unitOptions[category]).find(([_, factor]) => factor === 1)[0];
+        console.log("Correct answer exists:", correctAnswer);
+    
+        const baseEntry = Object.entries(unitOptions[category]).find(([_, factor]) => factor === 1);
+        const baseUnit = baseEntry ? baseEntry[0] : null;
+    
+        console.log("Category:", category);
+        console.log("Base unit:", baseUnit);
+        console.log("From unit:", from);
+        console.log("To unit:", to);
+        console.log("Amount:", amount);
+        console.log("Recipe Original:", recipeOriginal);
+        console.log("Recipe Target:", recipeTarget);
     
         let solutionLatex = `\\[ ${amount} \\ \\text{${from}}`;
     
         if (from !== baseUnit) {
-          solutionLatex += ` \\cdot \\frac{${unitOptions[category][from].toFixed(4)}\\ \\text{${baseUnit}}}{1\\ \\text{${from}}}`;
+          const fromFactor = unitOptions[category][from];
+          solutionLatex += ` \\cdot \\frac{${fromFactor.toFixed(4)}\\ \\text{${baseUnit}}}{1\\ \\text{${from}}}`;
+          console.log(`Added conversion from ${from} to base`);
         }
     
         if (to !== baseUnit) {
-          solutionLatex += ` \\cdot \\frac{1\\ \\text{${to}}}{${unitOptions[category][to].toFixed(4)}\\ \\text{${baseUnit}}}`;
+          const toFactor = unitOptions[category][to];
+          solutionLatex += ` \\cdot \\frac{1\\ \\text{${to}}}{${toFactor.toFixed(4)}\\ \\text{${baseUnit}}}`;
+          console.log(`Added conversion from base to ${to}`);
         }
     
         if (recipeTarget !== recipeOriginal) {
           solutionLatex += ` \\cdot \\frac{${recipeTarget}}{${recipeOriginal}}`;
+          console.log(`Added recipe scaling from ${recipeOriginal} to ${recipeTarget}`);
         }
     
         solutionLatex += ` = ${correctAnswer}\\ \\text{${to}} \\]`;
     
         hintArea.innerHTML = solutionLatex;
+        console.log("Injected LaTeX into hintArea:", solutionLatex);
+    
         MathJax.typeset([hintArea]);
+        console.log("Requested MathJax re-typesetting");
+      } else {
+        console.log("Correct answer is null — nothing to display.");
       }
     });
+
 
 
 

@@ -255,6 +255,10 @@
     const amountInput = document.getElementById('amount');
     const convertBtn = document.getElementById('convert-btn');
     const convertResult = document.getElementById('convert-result');
+
+    let category, from, to, amount;
+    let recipeOriginal, recipeTarget;
+
     
     const unitOptions = {
       distance: {
@@ -416,9 +420,9 @@
         return [keys[fromIndex], keys[toIndex]];
       }
       
-      let category, units, from, to, amount;
-      let recipeOriginal = s2;
-      let recipeTarget = s1;
+      let units;
+      recipeOriginal = s2;
+      recipeTarget = s1;
       
       // Distance
       if (m1 === 1) {

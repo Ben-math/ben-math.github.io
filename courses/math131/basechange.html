@@ -44,8 +44,8 @@
       we use back substitution:</p>
 
     <p>\[\begin{aligned} q_0 & = q_1 \cdot b + r_0 \\ & = (q_2 \cdot b + r_1) \cdot b + r_0 \\ & = ((q_3 \cdot b + r_2) \cdot b + r_1) \cdot b + r_0 \\ 
-      & \hspace{3mm} \vdots \\ & = 0 \cdot b^n + r_n \cdot b^n + r_{n-1} \cdot b^{n-1} + \ldots + r_2 \cdot b^2 + r_1 \cdot b + r_0 \\ & = 
-     r_nr_{n-1}\ldots r_2r_1r_0 \text{ (in base }b) \end{aligned}\]</p>
+      & \hspace{3mm} \vdots \\ & = (((\ldots(0 \cdot b + r_n) \cdot b + r_{n-1}) \cdots b + r_1) \cdot b + r_0\\ & = 0 \cdot b^n + r_n \cdot b^n + r_{n-1} 
+      \cdot b^{n-1} + \ldots + r_2 \cdot b^2 + r_1 \cdot b + r_0 \\ & = r_nr_{n-1}\ldots r_2r_1r_0 \text{ (in base }b) \end{aligned}\]</p>
 
     <p>For a concrete example, consider the conversion of the decimal (base-10) number 7398 into quinary (base-5): \[7398 \div 5 = 1479R3\] 
     \[1479 \div 5 = 295R4\] \[295 \div 5 = 59R0\] \[59 \div 5 = 11R4\] \[11 \div 5 = 2R1\] \[2 \div 5 = 0R2\] 

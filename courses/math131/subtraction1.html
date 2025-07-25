@@ -56,6 +56,24 @@
 
   </main>
   <script>
+
+    const ruleCheckboxes = {
+      baseten: document.getElementById('baseten'),
+      basefive: document.getElementById('basefive'),
+    };
+    
+    Object.values(ruleCheckboxes).forEach(box => {
+      box.addEventListener('change', () => {
+        // Mutual exclusion for base-ten and base-five
+        if (box.id === 'baseten' && box.checked) {
+          ruleCheckboxes.basefive.checked = false;
+        }
+        if (box.id === 'basefive' && box.checked) {
+          ruleCheckboxes.baseten.checked = false;
+        }
+      });
+    });
+    
     const startBtn = document.getElementById('start-btn');
     const questionText = document.getElementById('question-text');
     const activityBox = document.getElementById('my-activity');

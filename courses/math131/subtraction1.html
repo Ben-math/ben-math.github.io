@@ -630,121 +630,239 @@
   
     startBtn.addEventListener('click', () => {
 
-      let a,b;
-      // Generate two numbers between 1 and 199
-      while (true) {
-        a = Math.floor(Math.random() * 400) + 1;
-        b = Math.floor(Math.random() * 400) + 1;
-        if (b > a) [a, b] = [b, a]; // ensure a ≥ b
-      
-        const aones = (a % 10);
-        const bones = (b % 10);
-        const atens = (Math.floor(a / 10) % 10);
-        const btens = (Math.floor(b / 10) % 10)
-      
-        if (btens > atens && bones > aones) break;
-      }
-      
-      correctAnswer = a - b;
+      if (ruleCheckboxes.baseten.checked) {
+
+        let a,b;
+        // Generate two numbers between 1 and 199
+        while (true) {
+          a = Math.floor(Math.random() * 400) + 1;
+          b = Math.floor(Math.random() * 400) + 1;
+          if (b > a) [a, b] = [b, a]; // ensure a ≥ b
+        
+          const aones = (a % 10);
+          const bones = (b % 10);
+          const atens = (Math.floor(a / 10) % 10);
+          const btens = (Math.floor(b / 10) % 10)
+        
+          if (btens > atens && bones > aones) break;
+        }
+        
+        correctAnswer = a - b;
+    
+        // Display the question
+        questionText.textContent = `What is ${a} − ${b}?  Drag blocks from the difference to the subtrahend section, regrouping as needed.  Remember each place value column should contain a single digit at the end!`;
   
-      // Display the question
-      questionText.textContent = `What is ${a} − ${b}?  Drag blocks from the difference to the subtrahend section, regrouping as needed.  Remember each place value column should contain a single digit at the end!`;
+        
+        // Clear the activity box
+        activityBox.innerHTML = '';
+  
+        addTextToActivityBox("Starting Amount (Minuend)", 105, 10);
+  
+        const minuendHundredsColumn = createColumn({
+          label: "Hundreds",
+          idPrefix: "minuend-hundreds",
+          left: 25,
+          top: 50,
+          hasRegroup: false
+        });
+  
+        const minuendTensColumn = createColumn({
+          label: "Tens",
+          idPrefix: "minuend-tens",
+          left: 155,
+          top: 50,
+          hasRegroup: false
+        });
+  
+        const minuendOnesColumn = createColumn({
+          label: "Ones",
+          idPrefix: "minuend-ones",
+          left: 285,
+          top: 50,
+          hasRegroup: false
+        });
+  
+        addTextToActivityBox("Take Away/Minus (Subtrahend)", 510, 10);
+        addLargeTextToActivityBox("-", 425, 320);
+  
+        const subtrahendHundredsColumn = createColumn({
+          label: "Hundreds",
+          idPrefix: "subtrahend-hundreds",
+          left: 450,
+          top: 50,
+          hasRegroup: false
+        });
+  
+        const subtrahendTensColumn = createColumn({
+          label: "Tens",
+          idPrefix: "subtrahend-tens",
+          left: 580,
+          top: 50,
+        });
+  
+        const subtrahendOnesColumn = createColumn({
+          label: "Ones",
+          idPrefix: "subtrahend-ones",
+          left: 710,
+          top: 50,
+        });
+  
+        addTextToActivityBox("Result/Answer (Difference)", 955, 10);
+        addLargeTextToActivityBox("=", 850, 320);
+  
+        const differenceHundredsColumn = createColumn({
+          label: "Hundreds",
+          idPrefix: "difference-hundreds",
+          left: 875,
+          top: 50,
+          hasRegroup: false
+        });
+  
+        const differenceTensColumn = createColumn({
+          label: "Tens",
+          idPrefix: "difference-tens",
+          left: 1005,
+          top: 50,
+        });
+  
+        const differenceOnesColumn = createColumn({
+          label: "Ones",
+          idPrefix: "difference-ones",
+          left: 1135,
+          top: 50,
+        });
+  
+        activityBox.appendChild(minuendHundredsColumn);
+        activityBox.appendChild(minuendTensColumn);
+        activityBox.appendChild(minuendOnesColumn);
+        activityBox.appendChild(subtrahendHundredsColumn);
+        activityBox.appendChild(subtrahendTensColumn);
+        activityBox.appendChild(subtrahendOnesColumn);
+        activityBox.appendChild(differenceHundredsColumn);
+        activityBox.appendChild(differenceTensColumn);
+        activityBox.appendChild(differenceOnesColumn);
+  
+  
+        populateColumnBlocks(a, 'minuend', false);     // Non-draggable blocks for starting amount
+        populateColumnBlocks(a, 'difference', true);   // Draggable blocks for working area
+  
+      } else if (ruleCheckboxes.basefive.checked) {
 
-      
-      // Clear the activity box
-      activityBox.innerHTML = '';
+        let a,b;
+        // Generate two numbers between 1 and 199
+        while (true) {
+          a = Math.floor(Math.random() * 100) + 1;
+          b = Math.floor(Math.random() * 100) + 1;
+          if (b > a) [a, b] = [b, a]; // ensure a ≥ b
+        
+          const aones = (a % 5);
+          const bones = (b % 5);
+          const atens = (Math.floor(a / 5) % 5);
+          const btens = (Math.floor(b / 5) % 5)
+        
+          if (btens > atens && bones > aones) break;
+        }
+        
+        correctAnswer = a - b;
+    
+        // Display the question
+        questionText.textContent = `What is ${a} − ${b}?  Drag blocks from the difference to the subtrahend section, regrouping as needed.  Remember each place value column should contain a single digit at the end!`;
+  
+        
+        // Clear the activity box
+        activityBox.innerHTML = '';
+  
+        addTextToActivityBox("Starting Amount (Minuend)", 105, 10);
+  
+        const minuendHundredsColumn = createColumn({
+          label: "Hundreds",
+          idPrefix: "minuend-hundreds",
+          left: 25,
+          top: 50,
+          hasRegroup: false
+        });
+  
+        const minuendTensColumn = createColumn({
+          label: "Tens",
+          idPrefix: "minuend-tens",
+          left: 155,
+          top: 50,
+          hasRegroup: false
+        });
+  
+        const minuendOnesColumn = createColumn({
+          label: "Ones",
+          idPrefix: "minuend-ones",
+          left: 285,
+          top: 50,
+          hasRegroup: false
+        });
+  
+        addTextToActivityBox("Take Away/Minus (Subtrahend)", 510, 10);
+        addLargeTextToActivityBox("-", 425, 320);
+  
+        const subtrahendHundredsColumn = createColumn({
+          label: "Hundreds",
+          idPrefix: "subtrahend-hundreds",
+          left: 450,
+          top: 50,
+          hasRegroup: false
+        });
+  
+        const subtrahendTensColumn = createColumn({
+          label: "Tens",
+          idPrefix: "subtrahend-tens",
+          left: 580,
+          top: 50,
+        });
+  
+        const subtrahendOnesColumn = createColumn({
+          label: "Ones",
+          idPrefix: "subtrahend-ones",
+          left: 710,
+          top: 50,
+        });
+  
+        addTextToActivityBox("Result/Answer (Difference)", 955, 10);
+        addLargeTextToActivityBox("=", 850, 320);
+  
+        const differenceHundredsColumn = createColumn({
+          label: "Hundreds",
+          idPrefix: "difference-hundreds",
+          left: 875,
+          top: 50,
+          hasRegroup: false
+        });
+  
+        const differenceTensColumn = createColumn({
+          label: "Tens",
+          idPrefix: "difference-tens",
+          left: 1005,
+          top: 50,
+        });
+  
+        const differenceOnesColumn = createColumn({
+          label: "Ones",
+          idPrefix: "difference-ones",
+          left: 1135,
+          top: 50,
+        });
+  
+        activityBox.appendChild(minuendHundredsColumn);
+        activityBox.appendChild(minuendTensColumn);
+        activityBox.appendChild(minuendOnesColumn);
+        activityBox.appendChild(subtrahendHundredsColumn);
+        activityBox.appendChild(subtrahendTensColumn);
+        activityBox.appendChild(subtrahendOnesColumn);
+        activityBox.appendChild(differenceHundredsColumn);
+        activityBox.appendChild(differenceTensColumn);
+        activityBox.appendChild(differenceOnesColumn);
+  
+  
+        populateColumnBlocks(a, 'minuend', false);     // Non-draggable blocks for starting amount
+        populateColumnBlocks(a, 'difference', true);   // Draggable blocks for working area
 
-      addTextToActivityBox("Starting Amount (Minuend)", 105, 10);
-
-      const minuendHundredsColumn = createColumn({
-        label: "Hundreds",
-        idPrefix: "minuend-hundreds",
-        left: 25,
-        top: 50,
-        hasRegroup: false
-      });
-
-      const minuendTensColumn = createColumn({
-        label: "Tens",
-        idPrefix: "minuend-tens",
-        left: 155,
-        top: 50,
-        hasRegroup: false
-      });
-
-      const minuendOnesColumn = createColumn({
-        label: "Ones",
-        idPrefix: "minuend-ones",
-        left: 285,
-        top: 50,
-        hasRegroup: false
-      });
-
-      addTextToActivityBox("Take Away/Minus (Subtrahend)", 510, 10);
-      addLargeTextToActivityBox("-", 425, 320);
-
-      const subtrahendHundredsColumn = createColumn({
-        label: "Hundreds",
-        idPrefix: "subtrahend-hundreds",
-        left: 450,
-        top: 50,
-        hasRegroup: false
-      });
-
-      const subtrahendTensColumn = createColumn({
-        label: "Tens",
-        idPrefix: "subtrahend-tens",
-        left: 580,
-        top: 50,
-      });
-
-      const subtrahendOnesColumn = createColumn({
-        label: "Ones",
-        idPrefix: "subtrahend-ones",
-        left: 710,
-        top: 50,
-      });
-
-      addTextToActivityBox("Result/Answer (Difference)", 955, 10);
-      addLargeTextToActivityBox("=", 850, 320);
-
-      const differenceHundredsColumn = createColumn({
-        label: "Hundreds",
-        idPrefix: "difference-hundreds",
-        left: 875,
-        top: 50,
-        hasRegroup: false
-      });
-
-      const differenceTensColumn = createColumn({
-        label: "Tens",
-        idPrefix: "difference-tens",
-        left: 1005,
-        top: 50,
-      });
-
-      const differenceOnesColumn = createColumn({
-        label: "Ones",
-        idPrefix: "difference-ones",
-        left: 1135,
-        top: 50,
-      });
-
-      activityBox.appendChild(minuendHundredsColumn);
-      activityBox.appendChild(minuendTensColumn);
-      activityBox.appendChild(minuendOnesColumn);
-      activityBox.appendChild(subtrahendHundredsColumn);
-      activityBox.appendChild(subtrahendTensColumn);
-      activityBox.appendChild(subtrahendOnesColumn);
-      activityBox.appendChild(differenceHundredsColumn);
-      activityBox.appendChild(differenceTensColumn);
-      activityBox.appendChild(differenceOnesColumn);
-
-
-      populateColumnBlocks(a, 'minuend', false);     // Non-draggable blocks for starting amount
-      populateColumnBlocks(a, 'difference', true);   // Draggable blocks for working area
-
-
+      }
 
     });
 

@@ -931,6 +931,9 @@
 
 
     document.getElementById('my-activity').addEventListener('click', (e) => {
+
+      const base = ruleCheckboxes.baseten.checked ? 10 : 5;
+      
       if (!e.target.classList.contains('merge-break-btn')) return;
     
       console.log('Merge/Break button clicked');
@@ -956,7 +959,7 @@
       console.log('Block Count:', count, 'Block Type:', zoneBlockType);
     
       // --- MERGE ---
-      if (count === 10 && zoneBlockType === zoneType) {
+      if (count === base && zoneBlockType === zoneType) {
         const newType = zoneType === 'ones' ? 'tens' :
                         zoneType === 'tens' ? 'hundreds' : null;
     
@@ -972,7 +975,7 @@
     
         console.log('Blocks to remove (MERGE):', blocks.length);
     
-        blocks.slice(0, 10).forEach(b => {
+        blocks.slice(0, base).forEach(b => {
           unregisterBlock(zone, zoneType, b);
           b.remove();
         });

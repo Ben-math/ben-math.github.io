@@ -1015,7 +1015,7 @@
         const baseX = zoneRect.left - boxRect.left + 4;
         const baseY = zoneRect.bottom - boxRect.top - 30;
     
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < base; i++) {
           const x = newType === 'ones' ? baseX + i * 12 : baseX;
           const y = newType === 'ones' ? baseY : baseY - i * 24;
           const block = createBlock(x, y, newType, true);

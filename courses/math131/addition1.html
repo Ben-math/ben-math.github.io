@@ -506,9 +506,9 @@
       }
     
       const valueLabel = column.querySelector('.block-count');
-      //if (base === 5) {
-      //  valueLabel = toQuinary(valueLabel);
-      //}
+      if (base === 5) {
+        valueLabel.textContent = toQuinary(columnValue);
+      }
 
       
       if (valueLabel) {

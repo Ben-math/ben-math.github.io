@@ -506,13 +506,14 @@
       }
     
       const valueLabel = column.querySelector('.block-count');
-      if (base === 5) {
-        valueLabel.textContent = toQuinary(columnValue);
-      }
 
       
       if (valueLabel) {
-        valueLabel.textContent = columnValue;
+        if (base === 5) {
+          valueLabel.textContent = toQuinary(columnValue);
+        } else {
+          valueLabel.textContent = columnValue;
+        }
       }
     
       //  Show Merge/Break button when regroup zone is full

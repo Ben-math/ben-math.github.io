@@ -459,6 +459,9 @@
 
 
     function updateZoneLabel(zone) {
+
+      const base = ruleCheckboxes.baseten.checked ? 10 : 5;
+      
       if (!zone.querySelector('.zone-count')) {
         const countLabel = document.createElement('div');
         countLabel.classList.add('zone-count');
@@ -497,7 +500,7 @@
         if (regroupType === expectedType) {
           columnValue += regroupCount;
         } else {
-          columnValue += 10 * regroupCount;
+          columnValue += base * regroupCount;
         }
       }
     
@@ -519,7 +522,7 @@
         let shouldShow = false;
         let isMerge = false;
     
-        if (regroupCount === 10 && regroupType === expectedType) {
+        if (regroupCount === base && regroupType === expectedType) {
           shouldShow = true;
           isMerge = true;
         } else if (regroupCount === 1 && regroupType !== expectedType && expectedType !== '') {

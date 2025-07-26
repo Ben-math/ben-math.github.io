@@ -339,6 +339,9 @@
     }
 
     function canAcceptBlock(zone, blockType) {
+
+      const base = ruleCheckboxes.baseten.checked ? 10 : 5;
+      
       const count = parseInt(zone.dataset.blockCount || '0');
       const currentType = zone.dataset.blockType || '';
       const classList = zone.classList;
@@ -354,7 +357,7 @@
             return (currentType === '' || currentType === 'tens') && count < 1;
           }
           if (blockType === 'ones') {
-            return (currentType === '' || currentType === 'ones') && count < 10;
+            return (currentType === '' || currentType === 'ones') && count < base;
           }
           return false;
         }
@@ -365,7 +368,7 @@
             return (currentType === '' || currentType === 'hundreds') && count < 1;
           }
           if (blockType === 'tens') {
-            return (currentType === '' || currentType === 'tens') && count < 10;
+            return (currentType === '' || currentType === 'tens') && count < base;
           }
           return false;
         }

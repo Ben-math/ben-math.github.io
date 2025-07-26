@@ -338,6 +338,9 @@
     }
 
     function canAcceptBlock(zone, blockType) {
+
+      const base = ruleCheckboxes.baseten.checked ? 10 : 5;
+      
       const count = parseInt(zone.dataset.blockCount || '0');
       const currentType = zone.dataset.blockType || '';
       const classList = zone.classList;
@@ -353,7 +356,7 @@
             return (currentType === '' || currentType === 'tens') && count < 1;
           }
           if (blockType === 'ones') {
-            return (currentType === '' || currentType === 'ones') && count < 10;
+            return (currentType === '' || currentType === 'ones') && count < base;
           }
           return false;
         }
@@ -364,7 +367,7 @@
             return (currentType === '' || currentType === 'hundreds') && count < 1;
           }
           if (blockType === 'tens') {
-            return (currentType === '' || currentType === 'tens') && count < 10;
+            return (currentType === '' || currentType === 'tens') && count < base;
           }
           return false;
         }
@@ -928,6 +931,9 @@
 
 
     document.getElementById('my-activity').addEventListener('click', (e) => {
+
+      const base = ruleCheckboxes.baseten.checked ? 10 : 5;
+      
       if (!e.target.classList.contains('merge-break-btn')) return;
     
       console.log('Merge/Break button clicked');
@@ -953,7 +959,7 @@
       console.log('Block Count:', count, 'Block Type:', zoneBlockType);
     
       // --- MERGE ---
-      if (count === 10 && zoneBlockType === zoneType) {
+      if (count === base && zoneBlockType === zoneType) {
         const newType = zoneType === 'ones' ? 'tens' :
                         zoneType === 'tens' ? 'hundreds' : null;
     
@@ -969,7 +975,7 @@
     
         console.log('Blocks to remove (MERGE):', blocks.length);
     
-        blocks.slice(0, 10).forEach(b => {
+        blocks.slice(0, base).forEach(b => {
           unregisterBlock(zone, zoneType, b);
           b.remove();
         });
@@ -1009,7 +1015,7 @@
         const baseX = zoneRect.left - boxRect.left + 4;
         const baseY = zoneRect.bottom - boxRect.top - 30;
     
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < base; i++) {
           const x = newType === 'ones' ? baseX + i * 12 : baseX;
           const y = newType === 'ones' ? baseY : baseY - i * 24;
           const block = createBlock(x, y, newType, true);

@@ -625,6 +625,45 @@
 
 
 
+    function populateColumnBlocksFive(value, idPrefix, draggable) {
+      const hundreds = Math.floor(value / 25);
+      const tens = Math.floor((value % 25) / 5);
+      const ones = value % 5;
+    
+      const baseX = {
+        'minuend': 40,
+        'difference': 890
+      }[idPrefix.split('-')[0]] || 0;
+    
+      const baseY = 80;
+      const spacing = 24;
+    
+      for (let i = 0; i < hundreds; i++) {
+        const block = createBlock(baseX, baseY + i * spacing, 'hundreds', draggable);
+        const zone = document.getElementById(`${idPrefix}-hundreds-stack`);
+        registerBlock(zone, 'hundreds');
+        block.currentZone = zone;
+        restackZone(zone);
+      }
+    
+      for (let i = 0; i < tens; i++) {
+        const block = createBlock(baseX + 130, baseY + i * spacing, 'tens', draggable);
+        const zone = document.getElementById(`${idPrefix}-tens-stack`);
+        registerBlock(zone, 'tens');
+        block.currentZone = zone;
+        restackZone(zone);
+      }
+    
+      for (let i = 0; i < ones; i++) {
+        const block = createBlock(baseX + 260, baseY + i * spacing, 'ones', draggable);
+        const zone = document.getElementById(`${idPrefix}-ones-stack`);
+        registerBlock(zone, 'ones');
+        block.currentZone = zone;
+        restackZone(zone);
+      }
+    }
+
+
 
     let correctAnswer = null;
   
@@ -859,8 +898,8 @@
         activityBox.appendChild(differenceOnesColumn);
   
   
-        populateColumnBlocks(a, 'minuend', false);     // Non-draggable blocks for starting amount
-        populateColumnBlocks(a, 'difference', true);   // Draggable blocks for working area
+        populateColumnBlocksFive(a, 'minuend', false);     // Non-draggable blocks for starting amount
+        populateColumnBlocksFive(a, 'difference', true);   // Draggable blocks for working area
 
       }
 

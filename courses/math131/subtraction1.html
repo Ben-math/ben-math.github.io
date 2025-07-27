@@ -594,6 +594,11 @@
     function createBlock(x, y, type = 'ones', draggable = true) {
       const block = document.createElement('div');
       block.classList.add('draggable-block', `block-${type}`);
+    
+      if (ruleCheckboxes.basefive.checked && (type === 'tens' || type === 'hundreds')) {
+        block.classList.add('basefive');
+      }
+    
       if (!draggable) block.classList.add('non-draggable');
       block.style.left = `${x}px`;
       block.style.top = `${y}px`;
@@ -607,6 +612,7 @@
     
       return block;
     }
+
 
 
     function populateColumnBlocks(value, idPrefix, draggable) {

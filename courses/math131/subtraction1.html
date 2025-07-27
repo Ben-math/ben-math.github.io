@@ -826,7 +826,7 @@
           if (btens > atens && bones > aones) break;
         }
         
-        correctAnswer = toQuinary(a - b);
+        correctAnswer = parseInt(toQuinary(a - b));
     
         // Display the question
         questionText.textContent = `What is ${toQuinary(a)} − ${toQuinary(b)}?  Drag blocks from the difference to the subtrahend section, regrouping 

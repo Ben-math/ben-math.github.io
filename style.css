@@ -294,6 +294,19 @@ main {
   background-color: #4dd0e1;
 }
 
+.basefive .block-tens {
+  width: 50px;
+  height: 10px;
+  background-color: #f5a623;
+}
+
+.basefive .block-hundreds {
+  width: 50px;
+  height: 50px;
+  background-color: #4dd0e1;
+}
+
+
 .valid-hover {
   background-color: rgba(144, 238, 144, 0.4); /* light green overlay */
 }

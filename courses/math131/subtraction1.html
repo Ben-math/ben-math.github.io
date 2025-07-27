@@ -1039,7 +1039,7 @@
     document.getElementById('check-answer-btn').addEventListener('click', () => {
       const userInput = parseInt(document.getElementById('user-answer').value);
       const feedback = document.getElementById('answer-feedback');
-    
+
       if (isNaN(userInput)) {
         feedback.textContent = 'Please enter a number.';
         feedback.style.color = 'black';
@@ -1050,6 +1050,7 @@
         feedback.textContent = 'Incorrect. Try again!';
         feedback.style.color = 'red';
       }
+
     });
 
 

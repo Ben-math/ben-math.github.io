@@ -294,17 +294,18 @@ main {
   background-color: #4dd0e1;
 }
 
-.basefive .block-tens {
+.block-tens.basefive {
   width: 50px;
   height: 10px;
   background-color: #f5a623;
 }
 
-.basefive .block-hundreds {
+.block-hundreds.basefive {
   width: 50px;
   height: 50px;
   background-color: #4dd0e1;
 }
+
 
 
 .valid-hover {

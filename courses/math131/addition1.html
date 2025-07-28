@@ -274,24 +274,46 @@
           let targetX = 0;
           let targetY = 0;
 
-          if (!isRegroup) {
-            // Position from bottom up
-            const spacing = 4; // optional space between blocks
-            targetX = zoneRect.left - zoneBox.left + 2;
-            targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight + spacing) - 10;
-          } else if (isTensRegroup) {
-            if (blockHeight < 50) {
-              // Position from bottom up, with less space
+          if (ruleCheckboxes.baseten.checked) {
+            if (!isRegroup) {
+              // Position from bottom up
+              const spacing = 4; // optional space between blocks
               targetX = zoneRect.left - zoneBox.left + 2;
-              targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight - 3) - 10;
-            } else {
-              // Position from bottom up, with less space
-              targetX = zoneRect.left - zoneBox.left + 2;
-              targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight - 3) - 15;
+              targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight + spacing) - 10;
+            } else if (isTensRegroup) {
+              if (blockHeight < 50) {
+                // Position from bottom up, with less space
+                targetX = zoneRect.left - zoneBox.left + 2;
+                targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight - 3) - 10;
+              } else {
+                // Position from bottom up, with less space
+                targetX = zoneRect.left - zoneBox.left + 2;
+                targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight - 3) - 15;
+              }
+            } else if (isOnesRegroup) {
+              targetX = zoneRect.left - zoneBox.left + (blockCount) * (10);
+              targetY = zoneRect.bottom - zoneBox.top - blockHeight - 10;
             }
-          } else if (isOnesRegroup) {
-            targetX = zoneRect.left - zoneBox.left + (blockCount) * (10);
-            targetY = zoneRect.bottom - zoneBox.top - blockHeight - 10;
+          } else if (ruleCheckboxes.basefive.checked) {
+            if (!isRegroup) {
+              // Position from bottom up
+              const spacing = 4; // optional space between blocks
+              targetX = zoneRect.left - zoneBox.left + 2;
+              targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight + spacing) - 10;
+            } else if (isTensRegroup) {
+              if (blockHeight < 40) {
+                // Position from bottom up, with less space
+                targetX = zoneRect.left - zoneBox.left + 27;
+                targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight - 3) - 10;
+              } else {
+                // Position from bottom up, with less space
+                targetX = zoneRect.left - zoneBox.left + 27;
+                targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight - 3) + 35;
+              }
+            } else if (isOnesRegroup) {
+              targetX = zoneRect.left - zoneBox.left + (blockCount) * (10) + 25;
+              targetY = zoneRect.bottom - zoneBox.top - blockHeight - 10;
+            }
           }
           
           element.style.left = `${targetX}px`;

@@ -300,7 +300,7 @@
               // Position from bottom up
               const spacing = 4; // optional space between blocks
               if (blockWidth < 30) {
-                targetX = zoneRect.left - zoneBox.left + 47;
+                targetX = zoneRect.left - zoneBox.left + 27;
               } else {
                 targetX = zoneRect.left - zoneBox.left + 27;
               }
@@ -468,10 +468,7 @@
             y = baseY - (blockHeight - 3) * (index + 1) - 40;
           }
       
-          const blockWidth = block.offsetWidth;
-          const offset = blockWidth < 30 ? 47 : 27;
-          block.style.left = `${zoneRect.left - zoneBox.left + offset}px`;
-
+          block.style.left = `${x}px`;
           block.style.top = `${y}px`;
         });
         

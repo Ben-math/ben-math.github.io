@@ -468,7 +468,10 @@
             y = baseY - (blockHeight - 3) * (index + 1) - 40;
           }
       
-          block.style.left = `${x}px`;
+          const blockWidth = block.offsetWidth;
+          const offset = blockWidth < 30 ? 47 : 27;
+          block.style.left = `${zoneRect.left - zoneBox.left + offset}px`;
+
           block.style.top = `${y}px`;
         });
         

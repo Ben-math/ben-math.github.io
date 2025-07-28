@@ -298,7 +298,7 @@
             if (!isRegroup) {
               // Position from bottom up
               const spacing = 4; // optional space between blocks
-              targetX = zoneRect.left - zoneBox.left + 2;
+              targetX = zoneRect.left - zoneBox.left + 27;
               targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight + spacing) - 10;
             } else if (isTensRegroup) {
               if (blockHeight < 40) {
@@ -311,7 +311,7 @@
                 targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight - 3) - 40;
               }
             } else if (isOnesRegroup) {
-              targetX = zoneRect.left - zoneBox.left + (blockCount) * (10) + 25;
+              targetX = zoneRect.left - zoneBox.left + (blockCount) * (10) + 27;
               targetY = zoneRect.bottom - zoneBox.top - blockHeight - 10;
             }
           }

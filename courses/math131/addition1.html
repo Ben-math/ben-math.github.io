@@ -1038,7 +1038,7 @@
     
         const zoneRect = zone.getBoundingClientRect();
         const boxRect = document.getElementById('my-activity').getBoundingClientRect();
-        const x = zoneRect.left - boxRect.left + 4;
+        const x = ruleCheckboxes.baseten.checked ? (zoneRect.left - boxRect.left + 4) : (zoneRect.left - boxRect.left + 29);
         const y = ruleCheckboxes.baseten.checked ? (zoneRect.bottom - boxRect.top - 30) : (zoneRect.bottom - boxRect.top - 55);
     
         const newBlock = createBlock(x, y, newType, true);
@@ -1068,7 +1068,7 @@
         const newType = zoneType;
         const zoneRect = zone.getBoundingClientRect();
         const boxRect = document.getElementById('my-activity').getBoundingClientRect();
-        const baseX = zoneRect.left - boxRect.left + 4;
+        const baseX = ruleCheckboxes.baseten.checked ? (zoneRect.left - boxRect.left + 4) : (zoneRect.left - boxRect.left + 29);
         const baseY = ruleCheckboxes.baseten.checked ? (zoneRect.bottom - boxRect.top - 30) : (zoneRect.bottom - boxRect.top - 55);
     
         for (let i = 0; i < base; i++) {

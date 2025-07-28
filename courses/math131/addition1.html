@@ -261,6 +261,7 @@
           const zoneBox = activityBox.getBoundingClientRect();
           const zoneRect = bestZone.getBoundingClientRect();
           const blockHeight = element.offsetHeight;
+          const blockWidth = element.offsetWidth;
           const blockCount = parseInt(bestZone.dataset.blockCount || '0');
 
           const classList = bestZone.classList;
@@ -298,7 +299,11 @@
             if (!isRegroup) {
               // Position from bottom up
               const spacing = 4; // optional space between blocks
-              targetX = zoneRect.left - zoneBox.left + 27;
+              if (blockWidth < 30) {
+                targetX = zoneRect.left - zoneBox.left + 47;
+              } else {
+                targetX = zoneRect.left - zoneBox.left + 27;
+              }
               targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight + spacing) - 10;
             } else if (isTensRegroup) {
               if (blockHeight < 40) {

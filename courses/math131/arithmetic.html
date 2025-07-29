@@ -167,9 +167,6 @@
 
       // This overrides the above if the operation is subtraction
       if (opC === 3) {
-        let tempg1 = g1;
-        g1 = g2;
-        g2 = tempg1;
         a1 = g1;
         a2 = g2 - d2;
       }
@@ -195,57 +192,61 @@
       // Here we will generate and store hints
       let i = 0
 
+      if (opC === 1 || opC === 2) {
+        hintSteps[i] = `\\[ = \\left(${g1}${n1 ? '-' : '+'}${d1}\\right) ${op} `;
+  
+        if (both) {
+          hintSteps[i] += ` \\left(${g2}${n2 ? '-' : '+'}${d2}\\right) \\]`;
+        } else {
+          hintSteps[i] += ` ${g2} \\]`;
+        }
+        i++;
+  
+  
+        if (both) {
+          if (opC === 1) {
+            hintSteps[i] = `\\[ = \\left( ${g1}+${g2} \\right) + \\left( ${n1 ? '-' : ''}${d1}${n2 ? '-' : '+'}${d2} \\right) \\]`
+          } else {
+            hintSteps[i] = `\\[ = ${g1} \\cdot ${g2} + ${g1} \\cdot ${n2 ? '\\left( -' : ''} ${d2} ${n2 ? '\\right)' : ''} ${n1 ? '-' : '+'}${d1} 
+            \\cdot ${g2} ${n1 ? '-' : '+'}${d1} \\cdot ${n2 ? '\\left( -' : ''} ${d2} ${n2 ? '\\right)' : ''}\\]`
+          }
+        } else {
+          if (opC === 1) {
+            hintSteps[i] = `\\[ = ${g1} + \\left( ${g2}${n1 ? '-' : '+'}${d1} \\right) \\]`
+          } else {
+            hintSteps[i] = `\\[ = ${g1} \\cdot ${g2} ${n1 ? '-' : '+'}${d1} \\cdot ${g2} \\]`
+          }
+        }
+        i++;
+  
+        
+        if (both) {
+          if (opC === 1) {
+            let dSum = (n1 ? -d1 : d1) + (n2 ? -d2 : d2);
+            hintSteps[i] = `\\[ = ${g1+g2} ${dSum >= 0 ? '+' : ''} ${dSum} \\]`
+          } else {
+            let ggProd = g1 * g2;
+            let gdProd = g1 * (n2 ? -d2 : d2);
+            let dgProd = (n1 ? -d1 : d1) * g2;
+            let ddProd = (n1 ? -d1 : d1) * (n2 ? -d2 : d2);
+            hintSteps[i] = `\\[ = ${ggProd} ${gdProd >= 0 ? '+' : ''}${gdProd} ${dgProd >= 0 ? '+' : ''}${dgProd} ${ddProd >= 0 ? '+' : ''}${ddProd} \\]`;
+          }
+        } else {
+          if (opC === 1) {
+            let gdSum = g2 + (n1 ? -d1 : d1);
+            hintSteps[i] = `\\[ = ${g1} ${gdSum >= 0 ? '+' : ''} ${gdSum} \\]`
+          } else {
+            let ggProd = g1 * g2;
+            let dgProd = (n1 ? -d1 : d1) * g2;
+            hintSteps[i] = `\\[ = ${ggProd} ${dgProd >= 0 ? '+' : ''} ${dgProd} \\]`
+          }
+        }
+        i++;
+      } else if (opC === 3) {
+        // Put stuff here!
 
-      hintSteps[i] = `\\[ = \\left(${g1}${n1 ? '-' : '+'}${d1}\\right) ${op} `;
-
-      if (both) {
-        hintSteps[i] += ` \\left(${g2}${n2 ? '-' : '+'}${d2}\\right) \\]`;
-      } else {
-        hintSteps[i] += ` ${g2} \\]`;
+        
       }
-      i++;
-
-
-      if (both) {
-        if (opC === 1) {
-          hintSteps[i] = `\\[ = \\left( ${g1}+${g2} \\right) + \\left( ${n1 ? '-' : ''}${d1}${n2 ? '-' : '+'}${d2} \\right) \\]`
-        } else {
-          hintSteps[i] = `\\[ = ${g1} \\cdot ${g2} + ${g1} \\cdot ${n2 ? '\\left( -' : ''} ${d2} ${n2 ? '\\right)' : ''} ${n1 ? '-' : '+'}${d1} 
-          \\cdot ${g2} ${n1 ? '-' : '+'}${d1} \\cdot ${n2 ? '\\left( -' : ''} ${d2} ${n2 ? '\\right)' : ''}\\]`
-        }
-      } else {
-        if (opC === 1) {
-          hintSteps[i] = `\\[ = ${g1} + \\left( ${g2}${n1 ? '-' : '+'}${d1} \\right) \\]`
-        } else {
-          hintSteps[i] = `\\[ = ${g1} \\cdot ${g2} ${n1 ? '-' : '+'}${d1} \\cdot ${g2} \\]`
-        }
-      }
-      i++;
-
-      
-      if (both) {
-        if (opC === 1) {
-          let dSum = (n1 ? -d1 : d1) + (n2 ? -d2 : d2);
-          hintSteps[i] = `\\[ = ${g1+g2} ${dSum >= 0 ? '+' : ''} ${dSum} \\]`
-        } else {
-          let ggProd = g1 * g2;
-          let gdProd = g1 * (n2 ? -d2 : d2);
-          let dgProd = (n1 ? -d1 : d1) * g2;
-          let ddProd = (n1 ? -d1 : d1) * (n2 ? -d2 : d2);
-          hintSteps[i] = `\\[ = ${ggProd} ${gdProd >= 0 ? '+' : ''}${gdProd} ${dgProd >= 0 ? '+' : ''}${dgProd} ${ddProd >= 0 ? '+' : ''}${ddProd} \\]`;
-        }
-      } else {
-        if (opC === 1) {
-          let gdSum = g2 + (n1 ? -d1 : d1);
-          hintSteps[i] = `\\[ = ${g1} ${gdSum >= 0 ? '+' : ''} ${gdSum} \\]`
-        } else {
-          let ggProd = g1 * g2;
-          let dgProd = (n1 ? -d1 : d1) * g2;
-          hintSteps[i] = `\\[ = ${ggProd} ${dgProd >= 0 ? '+' : ''} ${dgProd} \\]`
-        }
-      }
-      i++;
-      
       
       
   

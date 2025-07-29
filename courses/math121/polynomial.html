@@ -193,6 +193,9 @@
     
   startBtn.addEventListener('click', () => {
 
+      const feedback = document.getElementById('feedbackText');
+      feedback.textContent = '';
+
       // Play sound when view button is clicked
       const sound = document.getElementById('click-sound');
       if (sound) {

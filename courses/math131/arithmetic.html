@@ -167,8 +167,11 @@
 
       // This overrides the above if the operation is subtraction
       if (opC === 3) {
-        a1 = g2;
-        a2 = g1 - d1;
+        let tempg1 = g1;
+        g1 = g2;
+        g2 = tempg1;
+        a1 = g1;
+        a2 = g2 - d2;
       }
 
       

@@ -753,10 +753,10 @@
       if (ruleCheckboxes.baseten.checked) {
 
         let a,b;
-        // Generate two numbers between 1 and 199
+        // Generate two numbers between 1 and 499
         while (true) {
-          a = Math.floor(Math.random() * 400) + 1;
-          b = Math.floor(Math.random() * 400) + 1;
+          a = Math.floor(Math.random() * 499) + 1;
+          b = Math.floor(Math.random() * 499) + 1;
           if (b > a) [a, b] = [b, a]; // ensure a ≥ b
         
           const aones = (a % 10);
@@ -869,10 +869,10 @@
       } else if (ruleCheckboxes.basefive.checked) {
 
         let a,b;
-        // Generate two numbers between 1 and 199
+        // Generate two numbers between 1 and 124
         while (true) {
-          a = Math.floor(Math.random() * 100) + 1;
-          b = Math.floor(Math.random() * 100) + 1;
+          a = Math.floor(Math.random() * 124) + 1;
+          b = Math.floor(Math.random() * 124) + 1;
           if (b > a) [a, b] = [b, a]; // ensure a ≥ b
         
           const aones = (a % 5);

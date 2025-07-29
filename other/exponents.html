@@ -175,6 +175,9 @@
     
   startBtn.addEventListener('click', () => {
 
+      const feedback = document.getElementById('feedbackText');
+      feedback.textContent = '';
+
       a1 = Math.floor(Math.random() * 13) - 6;
       a2 = Math.floor(Math.random() * 13) - 6;
       a3 = Math.floor(Math.random() * 7) - 3;

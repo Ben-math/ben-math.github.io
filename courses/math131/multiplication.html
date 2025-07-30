@@ -58,12 +58,10 @@
       <img src="fig7.png" alt="(A + B + C)(D + E + F) = AD + AE + AF + BD + BE + BF + CD + CE + CF" style="display: inline-block;">
     </figure>
     
-    <p>What this means is that to count how many elements lie in A <i>or</i> B, we sum the number of elements 
-    in A and B, and then subtract the number which they have in common (to avoid double-counting these).  This principle can be extended to an 
-    arbitrary number of intersecting sets.  It gets long pretty quickly, so we'll stop at the case of 3 sets (try drawing a picture to convince yourself 
-    of the equation's truth: \[|A \cup B \cup C| = |A| + |B| + |C| - |A \cap B| - |A \cap C| - |B \cap C| + |A \cap B \cap C|\]  (If you're curious about 
-      how it generalizes, it's an <i>alternating sum</i> (alternately \(+\) or \(-\)), where at each step we take all possible intersections of 1, 2, 3, 
-      4, etc... many of the sets)</p>
+    <p>Consider the implications of this property for breaking down a difficult multiplication problem: we can break the two multiplicand decimal numbers 
+      down into sums of their respective place values, and then use the distributive law to instead compute a sum of simpler products.  This is called 
+    the <i>partial product</i> method, and has the same natural interpretation in terms of areas.  For instance, consider the problem
+    \[249 \cdot 63 = (200 + 40 + 9) \cdot (60 + 3) = 200 \cdot 60 + 200 \cdot 3 + 40 \cdot 60 + 40 \cdot 3 + 9 \cdot 60 + 9 \cdot 3\]</p>
 
     <p>Finally, consider how we might combine the two preceding properties in a more complex case.  With 3 sets A, B, and C, we can decompose A into 
     its intersecting and non-intersecting areas.  But to avoid double-counting, we have to apply inclusion-exclusion to the intersecting area:

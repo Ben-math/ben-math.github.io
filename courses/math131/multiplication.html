@@ -82,6 +82,8 @@
     
     <p id="question-text"></p>
 
+    <div id="decomposition-inputs" style="text-align: center; margin-bottom: 1em;"></div>
+
     <div class="button-container">
       <button id="hint-btn" class="rubber-button">Next</button>
     </div>
@@ -164,6 +166,36 @@
       
       // Clear the activity box
       activityBox.innerHTML = '';
+
+      const decompositionContainer = document.getElementById('decomposition-inputs');
+      decompositionContainer.innerHTML = ''; // Clear previous inputs
+      
+      const aDigits = a.toString().split('').map(Number);
+      const bDigits = b.toString().split('').map(Number);
+      
+      const aParts = [];
+      const bParts = [];
+      
+      for (let i = 0; i < aDigits.length; i++) {
+        const place = Math.pow(10, aDigits.length - 1 - i);
+        aParts.push(aDigits[i] * place);
+      }
+      for (let i = 0; i < bDigits.length; i++) {
+        const place = Math.pow(10, bDigits.length - 1 - i);
+        bParts.push(bDigits[i] * place);
+      }
+      
+      const inputBox = (index, total, name) => `<input type="text" data-expected="${name[index]}" class="decomp-input" style="width: 50px; text-align: center;" />`;
+      
+      // Generate the HTML for the input boxes
+      let html = '(';
+      html += aParts.map((_, i) => inputBox(i, aParts.length, aParts)).join(' + ');
+      html += ') × (';
+      html += bParts.map((_, i) => inputBox(i, bParts.length, bParts)).join(' + ');
+      html += ')';
+      
+      decompositionContainer.innerHTML = html;
+
       
       // Create a canvas
       const canvas = document.createElement('canvas');

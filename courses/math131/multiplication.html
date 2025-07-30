@@ -197,17 +197,6 @@
     
       let correct = true;
     
-      // Helper to check a region
-      function checkRegion(variableName, correctValue) {
-        const slot = document.getElementById(variableName);
-        if (slot) {
-          const guess = parseInt(slot.textContent);
-          if (guess !== correctValue) {
-            correct = false;
-          }
-        }
-      }
-    
       // Give feedback
       if (correct) {
         feedbackText.textContent = "Correct!";

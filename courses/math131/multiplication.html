@@ -196,6 +196,22 @@
       
       decompositionContainer.innerHTML = html;
 
+      // Attach event listeners to validate input values and color them
+      const inputElements = decompositionContainer.querySelectorAll('.decomp-input');
+      inputElements.forEach(input => {
+        input.addEventListener('input', () => {
+          const expected = parseInt(input.dataset.expected);
+          const value = parseInt(input.value);
+          
+          if (!isNaN(value) && value === expected) {
+            input.style.backgroundColor = '#c8f7c5';  // light green
+          } else {
+            input.style.backgroundColor = '#f8d7da';  // light red
+          }
+        });
+      });
+
+
       
       // Create a canvas
       const canvas = document.createElement('canvas');

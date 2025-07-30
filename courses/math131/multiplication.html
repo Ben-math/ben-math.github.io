@@ -120,13 +120,6 @@
     const questionText = document.getElementById('question-text');
     const activityBox = document.getElementById('my-activity');
 
-    function drawLabelsOnCanvas(ctx, mode, inputElements) {
-      // Clear the canvas first
-      ctx.clearRect(0, 0, 1300, 650);
-    
-      // Redraw the fixed blocks depending on mode
-      startBtn.click(); // We simulate a redraw by reusing your existing canvas code
-    }
 
     function drawCanvas(mode, inputElements) {
       activityBox.innerHTML = ''; // clear
@@ -209,23 +202,40 @@
       ctx.fillStyle = "black";
     
       inputElements.forEach((input, index) => {
-        const val = input.value;
-        if (!isNaN(val) && val.trim() !== "") {
-          let x, y;
-          // Calculate label position based on mode and index
-          if (mode === 2) {
-            if (index < 3) {
-              x = 460 + index * 100;
-              y = 70;
-            } else {
-              x = 870;
-              y = 470 + (index - 3) * 50;
-            }
+      const val = input.value;
+      if (!isNaN(val) && val.trim() !== "") {
+        let x = 0, y = 0;
+    
+        if (mode === 1) {
+          if (index < 2) {
+            x = 400 + index * 400;
+            y = 70;
+          } else {
+            x = 930;
+            y = 520 + (index - 2) * 100;
           }
-          // Add other mode positions here
-          ctx.fillText(val, x, y);
+        } else if (mode === 2) {
+          if (index < 3) {
+            x = 460 + index * 100;
+            y = 70;
+          } else {
+            x = 870;
+            y = 470 + (index - 3) * 50;
+          }
+        } else if (mode === 3) {
+          if (index < 3) {
+            x = 400 + index * 200;
+            y = 70;
+          } else {
+            x = 950;
+            y = 470 + (index - 3) * 50;
+          }
         }
-      });
+    
+        ctx.fillText(val, x, y);
+      }
+    });
+
     }
 
 
@@ -320,7 +330,6 @@
         }
     
         // Redraw the canvas labels
-        drawLabelsOnCanvas(ctx, mode, inputElements);
         drawCanvas(mode, inputElements);
       });
     });

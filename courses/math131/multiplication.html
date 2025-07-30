@@ -8,20 +8,10 @@
   <title>Multiplication Activity</title>
   <link rel="stylesheet" href="/style.css" />
 
-  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6">
-  window.onerror = function(message, source, lineno, colno, error) {
-    console.error("Unhandled error:", message, "at", source + ":" + lineno + ":" + colno);
-    if (error) console.error(error.stack);
-  };
-</script>
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
   <script id="MathJax-script" async
     src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-  
-  window.onerror = function(message, source, lineno, colno, error) {
-    console.error("Unhandled error:", message, "at", source + ":" + lineno + ":" + colno);
-    if (error) console.error(error.stack);
-  };
-</script>
+  </script>
 </head>
 <body>
   <header>
@@ -43,12 +33,7 @@
               }
             });
           });
-      
-  window.onerror = function(message, source, lineno, colno, error) {
-    console.error("Unhandled error:", message, "at", source + ":" + lineno + ":" + colno);
-    if (error) console.error(error.stack);
-  };
-</script>
+      </script>
   </header>
   <main>
 
@@ -125,26 +110,6 @@
 
     let a, b;
 
-    let inputBoxes = [];  // To track decomposition inputs
-
-    const style = document.createElement('style');
-    style.innerHTML = `
-      .decomp-box {
-        width: 60px;
-        font-size: 16px;
-        text-align: center;
-        margin: 2px;
-      }
-      .correct {
-        background-color: #ccffcc;
-      }
-      .incorrect {
-        background-color: #ffcccc;
-      }
-    `;
-    document.head.appendChild(style);
-
-
     const hintBtn = document.getElementById('hint-btn');
     const hintArea = document.getElementById('hint-area');
     
@@ -152,34 +117,6 @@
     const startBtn = document.getElementById('start-btn');
     const questionText = document.getElementById('question-text');
     const activityBox = document.getElementById('my-activity');
-
-
-    function updateNextButtonState() {
-      const allCorrect = inputBoxes.every((box, i) => +box.value === allCorrectValues[i]);
-      hintBtn.disabled = !allCorrect;
-    }
-    
-    function updateBorderLabels() {
-      const canvas = activityBox.querySelector('canvas');
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      // Re-draw the diagram here if needed
-      
-      ctx.font = '20px Arial';
-      ctx.fillStyle = 'black';
-    
-      aParts.forEach((_, i) => {
-        const val = document.getElementById(`a${i}`).value;
-        ctx.fillText(val, 400 + i * 100, 70);
-      });
-    
-      bParts.forEach((_, i) => {
-        const val = document.getElementById(`b${i}`).value;
-        ctx.fillText(val, 350, 120 + i * 150);
-      });
-    }
-
 
 
 
@@ -201,7 +138,6 @@
 
       // Choose the mode, 1 is 2-digit*2-digit, 2 is 3-digit*2-digit, 3 is 3-digit*3-digit
       let mode = Math.floor(Math.random() * 3) + 1;
-    console.log("Chosen mode:", mode);
 
       if (mode === 1) {
         a = Math.floor(Math.random() * 90) + 10;
@@ -213,63 +149,6 @@
         a = Math.floor(Math.random() * 900) + 100;
         b = Math.floor(Math.random() * 900) + 100;
       }
-
-
-      // Reset prior inputs
-      inputBoxes = [];
-      const oldDecomp = document.getElementById('decomposed-inputs');
-      if (oldDecomp) oldDecomp.remove();
-      
-      // Create input container
-      const decomposedBox = document.createElement('div');
-      decomposedBox.id = 'decomposed-inputs';
-      decomposedBox.style.textAlign = 'center';
-      decomposedBox.style.marginTop = '20px';
-      
-      // Decompose numbers
-      const aStr = a.toString().padStart((mode >= 2 ? 3 : 2), '0');
-      const bStr = b.toString().padStart((mode === 3 ? 3 : 2), '0');
-      
-      const aParts = [], bParts = [];
-      for (let i = 0; i < aStr.length; i++) {
-        aParts.push(+aStr[i] * Math.pow(10, aStr.length - 1 - i));
-      }
-      for (let i = 0; i < bStr.length; i++) {
-        bParts.push(+bStr[i] * Math.pow(10, bStr.length - 1 - i));
-      }
-      
-      const allCorrectValues = [...aParts, ...bParts];
-      
-      // Construct HTML for the equation
-      const equation = document.createElement('p');
-      equation.style.fontSize = '18px';
-      equation.innerHTML = `(${aParts.map((_, i) => \`<input type='number' id='a\${i}' class='decomp-box'>\`).join(' + ')}) * ` +
-                           `(${bParts.map((_, i) => \`<input type='number' id='b\${i}' class='decomp-box'>\`).join(' + ')})`;
-                                          
-      decomposedBox.appendChild(equation);
-                                          
-      activityBox.appendChild(decomposedBox);
-      
-      // Register input boxes
-      allCorrectValues.forEach((val, idx) => {
-        const id = (idx < aParts.length ? 'a' : 'b') + (idx < aParts.length ? idx : idx - aParts.length);
-        const box = document.getElementById(id);
-        inputBoxes.push(box);
-      
-        box.addEventListener('input', () => {
-          const isCorrect = +box.value === val;
-          box.classList.toggle('correct', isCorrect);
-          box.classList.toggle('incorrect', !isCorrect);
-          updateNextButtonState();
-          updateBorderLabels();
-        });
-      });
-      
-      // Disable Next until all are correct
-      hintBtn.disabled = true;
-
-
-
 
     
       hintSteps = [];
@@ -291,7 +170,6 @@
       canvas.width = 1300;
       canvas.height = 650;
       activityBox.appendChild(canvas);
-    console.log("Canvas created and appended");
       
       const ctx = canvas.getContext('2d');
       
@@ -417,12 +295,7 @@
     });
 
     
-  
-  window.onerror = function(message, source, lineno, colno, error) {
-    console.error("Unhandled error:", message, "at", source + ":" + lineno + ":" + colno);
-    if (error) console.error(error.stack);
-  };
-</script>
+  </script>
 
   <audio id="click-sound" src="button.mp3" preload="auto"></audio>
   <audio id="set-sound" src="set2.mp3" preload="auto"></audio>

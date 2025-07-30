@@ -61,19 +61,9 @@
     <p>Consider the implications of this property for breaking down a difficult multiplication problem: we can break the two multiplicand decimal numbers 
       down into sums of their respective place values, and then use the distributive law to instead compute a sum of simpler products.  This is called 
     the <i>partial product</i> method, and has the same natural interpretation in terms of areas.  For instance, consider the problem
-    \[249 \cdot 63 = (200 + 40 + 9) \cdot (60 + 3) = 200 \cdot 60 + 200 \cdot 3 + 40 \cdot 60 + 40 \cdot 3 + 9 \cdot 60 + 9 \cdot 3\]</p>
+    \[249 \cdot 63 = (200 + 40 + 9) \cdot (60 + 3) = {\color{red}200 \cdot 60} + {\color{orange}200 \cdot 3} + {\color{yellow}40 \cdot 60} + 
+      {\color{green}40 \cdot 3} + {\color{blue}9 \cdot 60} + {\color{purple}9 \cdot 3}\]</p>
 
-    <p>Finally, consider how we might combine the two preceding properties in a more complex case.  With 3 sets A, B, and C, we can decompose A into 
-    its intersecting and non-intersecting areas.  But to avoid double-counting, we have to apply inclusion-exclusion to the intersecting area:
-    \[|A| = |A \setminus (B \cup C)| + |A \cap B| + |A \cap C| - |A \cap B \cap C|\]</p>
-
-    <figure style="text-align: center;">
-      <img src="fig3.png" alt="A 3-set example" style="display: inline-block;">
-    </figure>
-
-    <p>There are a variety of equalities which can be deduced from the elementary properties of sets: counting requires practice!  In the following 
-    activity, you may find it helpful to make things concrete in your mind: think of \(U\) as the set of all students enrolled in a particular 
-    university, and think of \(A\), \(B\), and \(C\) as the sets of students enrolled in Anthropology, Biology, and Chemistry respectively.</p>
     
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

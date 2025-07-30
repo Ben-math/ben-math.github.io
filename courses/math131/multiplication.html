@@ -188,7 +188,7 @@
       const inputBox = (index, total, name) => `<input type="text" data-expected="${name[index]}" class="decomp-input" style="width: 50px; text-align: center;" />`;
       
       // Generate the HTML for the input boxes
-      let html = '(';
+      let html = '${a} × ${b} = (';
       html += aParts.map((_, i) => inputBox(i, aParts.length, aParts)).join(' + ');
       html += ') × (';
       html += bParts.map((_, i) => inputBox(i, bParts.length, bParts)).join(' + ');

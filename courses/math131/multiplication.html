@@ -120,6 +120,116 @@
     const questionText = document.getElementById('question-text');
     const activityBox = document.getElementById('my-activity');
 
+    function drawLabelsOnCanvas(ctx, mode, inputElements) {
+      // Clear the canvas first
+      ctx.clearRect(0, 0, 1300, 650);
+    
+      // Redraw the fixed blocks depending on mode
+      startBtn.click(); // We simulate a redraw by reusing your existing canvas code
+    }
+
+    function drawCanvas(mode, inputElements) {
+      activityBox.innerHTML = ''; // clear
+      const canvas = document.createElement('canvas');
+      canvas.width = 1300;
+      canvas.height = 650;
+      activityBox.appendChild(canvas);
+      const ctx = canvas.getContext('2d');
+      
+      ctx.strokeStyle = 'black';
+      ctx.lineWidth = 4;
+
+      if (mode === 1) {
+        ctx.strokeRect(375, 80, 550, 550);
+        ctx.fillStyle = 'red';
+        ctx.fillRect(375, 80, 440, 440);
+        ctx.fillStyle = 'skyblue';
+        ctx.fillRect(815, 80, 110, 440);
+        ctx.fillStyle = 'orange';
+        ctx.fillRect(375, 520, 440, 110);
+        ctx.fillStyle = 'lime';
+        ctx.fillRect(815, 520, 110, 110);
+        ctx.strokeRect(375, 80, 440, 440);
+        ctx.strokeRect(815, 80, 110, 440);
+        ctx.strokeRect(375, 520, 440, 110);
+        ctx.strokeRect(815, 520, 110, 110);
+      } else if (mode === 2) {
+        ctx.fillStyle = 'red';
+        ctx.fillRect(450, 80, 320, 390);
+        ctx.fillStyle = 'orange';
+        ctx.fillRect(770, 80, 80, 390);
+        ctx.fillStyle = 'yellow';
+        ctx.fillRect(450, 470, 320, 110);
+        ctx.fillStyle = 'lime';
+        ctx.fillRect(770, 470, 80, 110);
+        ctx.fillStyle = 'skyblue';
+        ctx.fillRect(450, 580, 320, 50);
+        ctx.fillStyle = 'violet';
+        ctx.fillRect(770, 580, 80, 50);
+        ctx.strokeRect(450, 80, 400, 550);
+        ctx.strokeRect(450, 80, 320, 390);
+        ctx.strokeRect(770, 80, 80, 390);
+        ctx.strokeRect(450, 470, 320, 110);
+        ctx.strokeRect(770, 470, 80, 110);
+        ctx.strokeRect(450, 580, 320, 50);
+        ctx.strokeRect(770, 580, 80, 50);
+      } else if (mode === 3) {
+        ctx.fillStyle = 'red';
+        ctx.fillRect(375, 80, 390, 390);
+        ctx.fillStyle = 'orange';
+        ctx.fillRect(765, 80, 110, 390);
+        ctx.fillStyle = 'yellow';
+        ctx.fillRect(875, 80, 50, 390);
+        ctx.fillStyle = 'skyblue';
+        ctx.fillRect(375, 470, 390, 110);
+        ctx.fillStyle = 'lime';
+        ctx.fillRect(765, 470, 110, 110);
+        ctx.fillStyle = 'violet';
+        ctx.fillRect(875, 470, 50, 110);
+        ctx.fillStyle = 'pink';
+        ctx.fillRect(375, 580, 390, 50);
+        ctx.fillStyle = 'rgba(163,114,65,0.8)';
+        ctx.fillRect(765, 580, 110, 50);
+        ctx.fillStyle = 'lightgray';
+        ctx.fillRect(875, 580, 50, 50);
+        ctx.strokeRect(375, 80, 550, 550);
+        ctx.strokeRect(375, 80, 390, 390);
+        ctx.strokeRect(765, 80, 110, 390);
+        ctx.strokeRect(875, 80, 50, 390);
+        ctx.strokeRect(375, 470, 390, 110);
+        ctx.strokeRect(765, 470, 110, 110);
+        ctx.strokeRect(875, 470, 50, 110);
+        ctx.strokeRect(375, 580, 390, 50);
+        ctx.strokeRect(765, 580, 110, 50);
+        ctx.strokeRect(875, 580, 50, 50);
+      }
+    
+      // Now draw the label values
+      ctx.font = "20px Arial";
+      ctx.fillStyle = "black";
+    
+      inputElements.forEach((input, index) => {
+        const val = input.value;
+        if (!isNaN(val) && val.trim() !== "") {
+          let x, y;
+          // Calculate label position based on mode and index
+          if (mode === 2) {
+            if (index < 3) {
+              x = 460 + index * 100;
+              y = 70;
+            } else {
+              x = 870;
+              y = 470 + (index - 3) * 50;
+            }
+          }
+          // Add other mode positions here
+          ctx.fillText(val, x, y);
+        }
+      });
+    }
+
+
+
 
 
 
@@ -199,100 +309,31 @@
       // Attach event listeners to validate input values and color them
       const inputElements = decompositionContainer.querySelectorAll('.decomp-input');
       inputElements.forEach(input => {
-        input.addEventListener('input', () => {
-          const expected = parseInt(input.dataset.expected);
-          const value = parseInt(input.value);
-          
-          if (!isNaN(value) && value === expected) {
-            input.style.backgroundColor = '#c8f7c5';  // light green
-          } else {
-            input.style.backgroundColor = '#f8d7da';  // light red
-          }
-        });
+      input.addEventListener('input', () => {
+        const expected = parseInt(input.dataset.expected);
+        const value = parseInt(input.value);
+    
+        if (!isNaN(value) && value === expected) {
+          input.style.backgroundColor = '#c8f7c5';  // light green
+        } else {
+          input.style.backgroundColor = '#f8d7da';  // light red
+        }
+    
+        // Redraw the canvas labels
+        drawLabelsOnCanvas(ctx, mode, inputElements);
+        drawCanvas(mode, inputElements);
       });
+    });
+
 
 
       
-      // Create a canvas
-      const canvas = document.createElement('canvas');
-      canvas.width = 1300;
-      canvas.height = 650;
-      activityBox.appendChild(canvas);
-      
-      const ctx = canvas.getContext('2d');
-      
-      // Draw the universal set rectangle
-      ctx.strokeStyle = 'black';
-      ctx.lineWidth = 4;
-
-      if (mode === 1) {
-        ctx.strokeRect(375, 80, 550, 550);
-        ctx.fillStyle = 'red';
-        ctx.fillRect(375, 80, 440, 440);
-        ctx.fillStyle = 'skyblue';
-        ctx.fillRect(815, 80, 110, 440);
-        ctx.fillStyle = 'orange';
-        ctx.fillRect(375, 520, 440, 110);
-        ctx.fillStyle = 'lime';
-        ctx.fillRect(815, 520, 110, 110);
-        ctx.strokeRect(375, 80, 440, 440);
-        ctx.strokeRect(815, 80, 110, 440);
-        ctx.strokeRect(375, 520, 440, 110);
-        ctx.strokeRect(815, 520, 110, 110);
-      } else if (mode === 2) {
-        ctx.fillStyle = 'red';
-        ctx.fillRect(450, 80, 320, 390);
-        ctx.fillStyle = 'orange';
-        ctx.fillRect(770, 80, 80, 390);
-        ctx.fillStyle = 'yellow';
-        ctx.fillRect(450, 470, 320, 110);
-        ctx.fillStyle = 'lime';
-        ctx.fillRect(770, 470, 80, 110);
-        ctx.fillStyle = 'skyblue';
-        ctx.fillRect(450, 580, 320, 50);
-        ctx.fillStyle = 'violet';
-        ctx.fillRect(770, 580, 80, 50);
-        ctx.strokeRect(450, 80, 400, 550);
-        ctx.strokeRect(450, 80, 320, 390);
-        ctx.strokeRect(770, 80, 80, 390);
-        ctx.strokeRect(450, 470, 320, 110);
-        ctx.strokeRect(770, 470, 80, 110);
-        ctx.strokeRect(450, 580, 320, 50);
-        ctx.strokeRect(770, 580, 80, 50);
-      } else if (mode === 3) {
-        ctx.fillStyle = 'red';
-        ctx.fillRect(375, 80, 390, 390);
-        ctx.fillStyle = 'orange';
-        ctx.fillRect(765, 80, 110, 390);
-        ctx.fillStyle = 'yellow';
-        ctx.fillRect(875, 80, 50, 390);
-        ctx.fillStyle = 'skyblue';
-        ctx.fillRect(375, 470, 390, 110);
-        ctx.fillStyle = 'lime';
-        ctx.fillRect(765, 470, 110, 110);
-        ctx.fillStyle = 'violet';
-        ctx.fillRect(875, 470, 50, 110);
-        ctx.fillStyle = 'pink';
-        ctx.fillRect(375, 580, 390, 50);
-        ctx.fillStyle = 'rgba(163,114,65,0.8)';
-        ctx.fillRect(765, 580, 110, 50);
-        ctx.fillStyle = 'lightgray';
-        ctx.fillRect(875, 580, 50, 50);
-        ctx.strokeRect(375, 80, 550, 550);
-        ctx.strokeRect(375, 80, 390, 390);
-        ctx.strokeRect(765, 80, 110, 390);
-        ctx.strokeRect(875, 80, 50, 390);
-        ctx.strokeRect(375, 470, 390, 110);
-        ctx.strokeRect(765, 470, 110, 110);
-        ctx.strokeRect(875, 470, 50, 110);
-        ctx.strokeRect(375, 580, 390, 50);
-        ctx.strokeRect(765, 580, 110, 50);
-        ctx.strokeRect(875, 580, 50, 50);
-      }
 
 
       hintIndex = 0;
       hintArea.innerHTML = "";  // Clear previous hints
+
+      drawCanvas(mode, inputElements);
 
 
 

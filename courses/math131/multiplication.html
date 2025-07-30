@@ -175,7 +175,14 @@
       // Draw the universal set rectangle
       ctx.strokeStyle = 'black';
       ctx.lineWidth = 4;
-      ctx.strokeRect(200, 30, 900, 500);
+
+      if (mode === 1) {
+        ctx.strokeRect(400, 80, 500, 500);
+      } else if (mode === 2) {
+        ctx.strokeRect(450, 80, 400, 500);
+      } else if (mode === 3) {
+        ctx.strokeRect(400, 80, 500, 500);
+      }
 
 
       hintIndex = 0;

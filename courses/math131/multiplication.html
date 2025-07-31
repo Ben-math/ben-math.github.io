@@ -496,7 +496,7 @@
       partialProductsContainer.style.marginTop = '1em';
       decompositionContainer.insertAdjacentElement('afterend', partialProductsContainer);
     }
-    partialProductsContainer.innerHTML = '';
+    partialProductsContainer.innerHTML = '= ';
     
     let html = partialProducts.map((value, index) => {
       return `<input type="text" data-expected="${value}" class="partial-input" style="width: 70px; text-align: center;" />`;

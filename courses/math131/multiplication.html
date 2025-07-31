@@ -345,6 +345,9 @@
       activityBox.innerHTML = '';
 
       decompositionContainer.innerHTML = ''; // Clear previous inputs
+      const oldPartialProducts = document.getElementById('partial-products-inputs');
+      if (oldPartialProducts) oldPartialProducts.remove();
+
       
       aDigits = a.toString().split('').map(Number);
       bDigits = b.toString().split('').map(Number);
@@ -496,11 +499,12 @@
       partialProductsContainer.style.marginTop = '1em';
       decompositionContainer.insertAdjacentElement('afterend', partialProductsContainer);
     }
-    partialProductsContainer.innerHTML = '= ';
+    partialProductsContainer.innerHTML = '';
     
-    let html = partialProducts.map((value, index) => {
+    let html = '= ' + partialProducts.map((value, index) => {
       return `<input type="text" data-expected="${value}" class="partial-input" style="width: 70px; text-align: center;" />`;
     }).join(' + ');
+
     
     partialProductsContainer.innerHTML = html;
     

@@ -114,6 +114,10 @@
     let bParts = [];
     let aDigits = [];
     let bDigits = [];
+
+    let inputElements = [];
+    let mode;
+
     const decompositionContainer = document.getElementById('decomposition-inputs');
 
 
@@ -330,7 +334,7 @@
       }
 
       // Choose the mode, 1 is 2-digit*2-digit, 2 is 3-digit*2-digit, 3 is 3-digit*3-digit
-      let mode = Math.floor(Math.random() * 3) + 1;
+      mode = Math.floor(Math.random() * 3) + 1;
 
       if (mode === 1) {
         a = Math.floor(Math.random() * 90) + 10;
@@ -390,7 +394,7 @@
       decompositionContainer.innerHTML = html;
 
       // Attach event listeners to validate input values and color them
-      const inputElements = decompositionContainer.querySelectorAll('.decomp-input');
+      inputElements = decompositionContainer.querySelectorAll('.decomp-input');
       function validateInputsAndMaybeEnableNext() {
       let allCorrect = true;
     
@@ -544,6 +548,7 @@
       hintBtn.disabled = !allCorrect;
     
       // Optionally: updateCanvas again here if you want to draw products
+      drawCanvas(mode, inputElements, partialInputs);
     }
 
     

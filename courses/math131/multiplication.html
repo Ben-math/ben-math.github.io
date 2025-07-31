@@ -510,9 +510,11 @@
     
     function validatePartialInputsAndEnableNext() {
       let allCorrect = true;
-      partialInputs.forEach(input => {
+      partialInputs.forEach((input, index) => {
         const expected = parseInt(input.dataset.expected);
         const value = parseInt(input.value);
+        console.log(`Partial input ${index}: value=${value}, expected=${expected}`);
+    
         if (!isNaN(value) && value === expected) {
           input.style.backgroundColor = '#c8f7c5';
         } else {
@@ -521,10 +523,12 @@
         }
       });
     
+      console.log("All partial inputs correct?", allCorrect);
       hintBtn.disabled = !allCorrect;
     
       // Optionally: updateCanvas again here if you want to draw products
     }
+
     
     partialInputs.forEach(input => {
       input.addEventListener('input', validatePartialInputsAndEnableNext);

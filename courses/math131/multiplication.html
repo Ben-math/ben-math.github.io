@@ -200,6 +200,9 @@
       // Now draw the label values
       ctx.font = "20px Arial";
       ctx.fillStyle = "black";
+
+      ctx.textAlign = "center"; // default for top labels
+
     
       inputElements.forEach((input, index) => {
       const val = input.value;
@@ -208,25 +211,31 @@
     
         if (mode === 1) {
           if (index < 2) {
+            ctx.textAlign = "right"
             x = 400 + index * 400;
             y = 70;
           } else {
+            ctx.textAlign = "center"
             x = 930;
             y = 520 + (index - 2) * 100;
           }
         } else if (mode === 2) {
           if (index < 3) {
+            ctx.textAlign = "right"
             x = 460 + index * 100;
             y = 70;
           } else {
+            ctx.textAlign = "center"
             x = 870;
             y = 470 + (index - 3) * 50;
           }
         } else if (mode === 3) {
           if (index < 3) {
+            ctx.textAlign = "right"
             x = 400 + index * 200;
             y = 70;
           } else {
+            ctx.textAlign = "center"
             x = 950;
             y = 470 + (index - 3) * 50;
           }

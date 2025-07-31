@@ -112,6 +112,12 @@
 
     let a, b;
 
+    let aParts = [];
+    let bParts = [];
+    let aDigits = [];
+    let bDigits = [];
+
+
     const hintBtn = document.getElementById('hint-btn');
     const hintArea = document.getElementById('hint-area');
     
@@ -339,11 +345,11 @@
       const decompositionContainer = document.getElementById('decomposition-inputs');
       decompositionContainer.innerHTML = ''; // Clear previous inputs
       
-      const aDigits = a.toString().split('').map(Number);
-      const bDigits = b.toString().split('').map(Number);
+      aDigits = a.toString().split('').map(Number);
+      bDigits = b.toString().split('').map(Number);
       
-      const aParts = [];
-      const bParts = [];
+      aParts = [];
+      bParts = [];
       
       for (let i = 0; i < aDigits.length; i++) {
         const place = Math.pow(10, aDigits.length - 1 - i);

@@ -127,7 +127,7 @@
     const activityBox = document.getElementById('my-activity');
 
 
-    function drawCanvas(mode, inputElements) {
+    function drawCanvas(mode, inputElements, partialInputElements = []) {
       activityBox.innerHTML = ''; // clear
       const canvas = document.createElement('canvas');
       canvas.width = 1300;
@@ -287,6 +287,22 @@
       }
     });
 
+      // Draw partial product values on canvas
+      partialInputElements.forEach((input, index) => {
+        const val = input.value;
+        if (!isNaN(val) && val.trim() !== "") {
+          ctx.font = "bold 36px Arial";
+          ctx.fillStyle = "black";
+          ctx.textAlign = "center";
+      
+          // Placeholder positions — adjust manually
+          let x = 600 + 80 * (index % mode);  // spread horizontally
+          let y = 200 + 80 * Math.floor(index / mode);  // stack vertically
+          ctx.fillText(val, x, y);
+        }
+      });
+
+
     }
 
 
@@ -390,7 +406,7 @@
         }
       });
     
-      drawCanvas(mode, inputElements);
+      drawCanvas(mode, inputElements, []);
     
       nextBtn.disabled = !allCorrect;
     }
@@ -408,7 +424,8 @@
       hintIndex = 0;
       hintArea.innerHTML = "";  // Clear previous hints
 
-      drawCanvas(mode, inputElements);
+      drawCanvas(mode, inputElements, partialInputs);
+
 
 
 

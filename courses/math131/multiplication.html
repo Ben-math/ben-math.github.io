@@ -450,6 +450,68 @@
   
     // Placeholder for the next step (partial products) — to be implemented next.
     console.log("Proceeding to next step!");
+
+    // Get the original values used for decomposition
+    const aParts = [];
+    const bParts = [];
+    allInputs.forEach((input, index) => {
+      const expected = parseInt(input.dataset.expected);
+      if (index < allInputs.length - bDigits.length) {
+        aParts.push(expected);
+      } else {
+        bParts.push(expected);
+      }
+    });
+    
+    // Compute partial products
+    const partialProducts = [];
+    for (let i = 0; i < aParts.length; i++) {
+      for (let j = 0; j < bParts.length; j++) {
+        partialProducts.push(aParts[i] * bParts[j]);
+      }
+    }
+    
+    // Create the container if not already present
+    let partialProductsContainer = document.getElementById('partial-products-inputs');
+    if (!partialProductsContainer) {
+      partialProductsContainer = document.createElement('div');
+      partialProductsContainer.id = 'partial-products-inputs';
+      partialProductsContainer.style.textAlign = 'center';
+      partialProductsContainer.style.marginTop = '1em';
+      decompositionContainer.insertAdjacentElement('afterend', partialProductsContainer);
+    }
+    partialProductsContainer.innerHTML = '';
+    
+    let html = partialProducts.map((value, index) => {
+      return `<input type="text" data-expected="${value}" class="partial-input" style="width: 70px; text-align: center;" />`;
+    }).join(' + ');
+    
+    partialProductsContainer.innerHTML = html;
+    
+    const partialInputs = partialProductsContainer.querySelectorAll('.partial-input');
+    
+    function validatePartialInputsAndEnableNext() {
+      let allCorrect = true;
+      partialInputs.forEach(input => {
+        const expected = parseInt(input.dataset.expected);
+        const value = parseInt(input.value);
+        if (!isNaN(value) && value === expected) {
+          input.style.backgroundColor = '#c8f7c5';
+        } else {
+          input.style.backgroundColor = '#f8d7da';
+          allCorrect = false;
+        }
+      });
+    
+      hintBtn.disabled = !allCorrect;
+    
+      // Optionally: updateCanvas again here if you want to draw products
+    }
+    
+    partialInputs.forEach(input => {
+      input.addEventListener('input', validatePartialInputsAndEnableNext);
+    });
+
   });
   
 

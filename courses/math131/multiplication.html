@@ -116,6 +116,8 @@
     let bParts = [];
     let aDigits = [];
     let bDigits = [];
+    const decompositionContainer = document.getElementById('decomposition-inputs');
+
 
 
     const hintBtn = document.getElementById('hint-btn');
@@ -342,7 +344,6 @@
       // Clear the activity box
       activityBox.innerHTML = '';
 
-      const decompositionContainer = document.getElementById('decomposition-inputs');
       decompositionContainer.innerHTML = ''; // Clear previous inputs
       
       aDigits = a.toString().split('').map(Number);
@@ -450,6 +451,13 @@
     });
   
     if (!allCorrect) return;
+
+    console.log("Hint button clicked");
+    console.log("All decomposition inputs correct:", allCorrect);
+    console.log("aParts:", aParts);
+    console.log("bParts:", bParts);
+    console.log("Number of expected partial products:", aParts.length * bParts.length);
+
   
     // Freeze the inputs
     allInputs.forEach(input => input.disabled = true);
@@ -458,8 +466,8 @@
     console.log("Proceeding to next step!");
 
     // Get the original values used for decomposition
-    const aParts = [];
-    const bParts = [];
+    aParts = [];
+    bParts = [];
     allInputs.forEach((input, index) => {
       const expected = parseInt(input.dataset.expected);
       if (index < allInputs.length - bDigits.length) {
@@ -476,6 +484,8 @@
         partialProducts.push(aParts[i] * bParts[j]);
       }
     }
+
+    console.log("Partial products:", partialProducts);
     
     // Create the container if not already present
     let partialProductsContainer = document.getElementById('partial-products-inputs');

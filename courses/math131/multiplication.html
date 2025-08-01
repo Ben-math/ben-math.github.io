@@ -570,13 +570,21 @@
       }
     });
 
+    let partialStepCompleted = false;
 
     hintBtn.addEventListener('click', () => {
-    const sound = document.getElementById('click-sound');
-    if (sound) {
-      sound.currentTime = 0;
-      sound.play();
-    }
+      const sound = document.getElementById('click-sound');
+      if (sound) {
+        sound.currentTime = 0;
+        sound.play();
+      }
+    
+      if (partialStepCompleted) {
+        console.log("Hint clicked after partial products completed — next stage should start.");
+        // TODO: Add logic for final stage here
+        return;
+      }
+
   
     const allInputs = document.querySelectorAll('.decomp-input');
     const allCorrect = Array.from(allInputs).every(input => {
@@ -657,6 +665,12 @@
     
       console.log("All partial inputs correct?", allCorrect);
       hintBtn.disabled = !allCorrect;
+      if (allCorrect) {
+        partialStepCompleted = true;
+      } else {
+        partialStepCompleted = false;
+      }
+
     
       // Optionally: updateCanvas again here if you want to draw products
       drawCanvas(mode, inputElements, partialInputs);

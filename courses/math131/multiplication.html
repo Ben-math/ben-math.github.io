@@ -657,6 +657,7 @@
     
       console.log("All partial inputs correct?", allCorrect);
       hintBtn.disabled = !allCorrect;
+      console.log("Next button disabled?", hintBtn.disabled);
     
       // Optionally: updateCanvas again here if you want to draw products
       drawCanvas(mode, inputElements, partialInputs);
@@ -666,6 +667,8 @@
     partialInputs.forEach(input => {
       input.addEventListener('input', validatePartialInputsAndEnableNext);
     });
+
+    validatePartialInputsAndEnableNext();  // force initial check
 
   });
   

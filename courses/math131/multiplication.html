@@ -581,9 +581,17 @@
     
       if (partialStepCompleted) {
         console.log("Hint clicked after partial products completed — next stage should start.");
-        // TODO: Add logic for final stage here
+      
+        // Disable partial product inputs
+        const partialInputs = document.querySelectorAll('.partial-input');
+        partialInputs.forEach(input => input.disabled = true);
+      
+        console.log("Partial product inputs disabled.");
+      
+        // Next step (final input box) will be added here in the next phase
         return;
       }
+
 
   
     const allInputs = document.querySelectorAll('.decomp-input');

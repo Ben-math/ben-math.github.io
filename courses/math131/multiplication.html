@@ -578,6 +578,8 @@
         sound.currentTime = 0;
         sound.play();
       }
+      
+      let partialProducts = [];
     
       if (partialStepCompleted) {
         console.log("Creating final answer input box.");
@@ -666,7 +668,7 @@
     });
     
     // Compute partial products
-    const partialProducts = [];
+    partialProducts = [];
     for (let i = 0; i < aParts.length; i++) {
       for (let j = 0; j < bParts.length; j++) {
         partialProducts.push(aParts[i] * bParts[j]);

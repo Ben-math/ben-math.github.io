@@ -588,8 +588,38 @@
       
         console.log("Partial product inputs disabled.");
       
-        // Next step (final input box) will be added here in the next phase
-        return;
+        // Compute total sum
+        const finalAnswer = partialProducts.reduce((a, b) => a + b, 0);
+        console.log("Final answer should be:", finalAnswer);
+        
+        // Create final answer input
+        const finalAnswerContainer = document.createElement('div');
+        finalAnswerContainer.id = 'final-answer-input';
+        finalAnswerContainer.style.textAlign = 'center';
+        finalAnswerContainer.style.marginTop = '1em';
+        
+        finalAnswerContainer.innerHTML = `
+          = <input type="text" id="final-input" style="width: 100px; text-align: center;" />
+        `;
+        
+        const checkBtn = document.getElementById('check-btn');
+        checkBtn.disabled = true;
+        
+        partialProductsContainer.insertAdjacentElement('afterend', finalAnswerContainer);
+        
+        // Validate input
+        const finalInput = document.getElementById('final-input');
+        finalInput.addEventListener('input', () => {
+          const value = parseInt(finalInput.value);
+          if (!isNaN(value) && value === finalAnswer) {
+            finalInput.style.backgroundColor = '#c8f7c5';
+            checkBtn.disabled = false;
+          } else {
+            finalInput.style.backgroundColor = '#f8d7da';
+            checkBtn.disabled = true;
+          }
+        });
+
       }
 
 

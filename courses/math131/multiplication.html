@@ -579,7 +579,8 @@
         sound.play();
       }
       
-      let partialProducts = [];
+      const partialInputs = document.querySelectorAll('.partial-input');
+      let partialProducts = Array.from(partialInputs).map(input => parseInt(input.dataset.expected));
     
       if (partialStepCompleted) {
         console.log("Creating final answer input box.");
@@ -594,6 +595,11 @@
         // Compute total sum
         const finalAnswer = partialProducts.reduce((a, b) => a + b, 0);
         console.log("Final answer should be:", finalAnswer);
+
+        if (document.getElementById('final-answer-input')) {
+          console.log("Final answer input already exists. Skipping creation.");
+          return;
+        }
         
         // Create final answer input
         console.log("Attempting to append finalAnswerContainer.");

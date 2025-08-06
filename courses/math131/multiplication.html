@@ -465,6 +465,8 @@
       hintIndex = 0;
       let i = 0
 
+      partialStepCompleted = false;
+
   
       // Display the question
       questionText.textContent = `What is \\(${a} \\cdot ${b}\\)?`;
@@ -543,7 +545,7 @@
       hintIndex = 0;
       hintArea.innerHTML = "";  // Clear previous hints
 
-      drawCanvas(mode, inputElements, partialInputs);
+      drawCanvas(mode, inputElements, []);
 
 
 

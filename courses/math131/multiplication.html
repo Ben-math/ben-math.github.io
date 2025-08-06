@@ -539,7 +539,7 @@
       hintIndex = 0;
       hintArea.innerHTML = "";  // Clear previous hints
 
-      drawCanvas(mode, inputElements, partialInputs);
+      drawCanvas(mode, inputElements, []);
 
 
 
@@ -578,6 +578,9 @@
         sound.currentTime = 0;
         sound.play();
       }
+
+      if (document.getElementById('final-answer-input')) return;
+      if (partialStepCompleted) return;
       
       const partialInputs = document.querySelectorAll('.partial-input');
       let partialProducts = Array.from(partialInputs).map(input => parseInt(input.dataset.expected));
@@ -595,11 +598,6 @@
         // Compute total sum
         const finalAnswer = partialProducts.reduce((a, b) => a + b, 0);
         console.log("Final answer should be:", finalAnswer);
-
-        if (document.getElementById('final-answer-input')) {
-          console.log("Final answer input already exists. Skipping creation.");
-          return;
-        }
         
         // Create final answer input
         console.log("Attempting to append finalAnswerContainer.");
@@ -728,7 +726,7 @@
 
     
       // Optionally: updateCanvas again here if you want to draw products
-      drawCanvas(mode, inputElements, partialInputs);
+      drawCanvas(mode, inputElements, []);
     }
 
     

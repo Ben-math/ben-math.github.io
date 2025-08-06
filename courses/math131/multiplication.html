@@ -82,6 +82,8 @@
 
     <div id="decomposition-inputs" style="text-align: center; margin-bottom: 1em;"></div>
 
+    <div id="final-answer-input" style="text-align: center; margin-top: 1em;"></div>
+
     <div class="button-container">
       <button id="hint-btn" class="rubber-button">Next</button>
     </div>
@@ -582,15 +584,42 @@
       if (partialStepCompleted) {
         console.log("Hint clicked after partial products completed — next stage should start.");
       
-        // Disable partial product inputs
         const partialInputs = document.querySelectorAll('.partial-input');
         partialInputs.forEach(input => input.disabled = true);
       
         console.log("Partial product inputs disabled.");
       
-        // Next step (final input box) will be added here in the next phase
+        // Avoid duplicating the final input
+        const finalAnswerDiv = document.getElementById('final-answer-input');
+        if (!finalAnswerDiv.querySelector('input')) {
+          console.log("Creating final answer input box.");
+          
+          const finalAnswer = a * b;
+      
+          finalAnswerDiv.innerHTML = `= <input type="text" id="final-input" data-expected="${finalAnswer}" style="width: 100px; text-align: center;" />`;
+      
+          const finalInput = document.getElementById('final-input');
+          finalInput.addEventListener('input', () => {
+            const value = parseInt(finalInput.value);
+            const expected = parseInt(finalInput.dataset.expected);
+      
+            if (!isNaN(value) && value === expected) {
+              finalInput.style.backgroundColor = '#c8f7c5';
+              hintBtn.disabled = true;  // or hide it, if desired
+              feedbackText.textContent = "Correct!";
+              feedbackText.style.color = "green";
+            } else {
+              finalInput.style.backgroundColor = '#f8d7da';
+              feedbackText.textContent = "";
+            }
+          });
+        } else {
+          console.log("Final input box already exists.");
+        }
+      
         return;
       }
+
 
 
   

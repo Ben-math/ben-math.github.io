@@ -580,7 +580,8 @@
       }
     
       if (partialStepCompleted) {
-        console.log("Hint clicked after partial products completed — next stage should start.");
+        console.log("Creating final answer input box.");
+
       
         // Disable partial product inputs
         const partialInputs = document.querySelectorAll('.partial-input');
@@ -593,6 +594,7 @@
         console.log("Final answer should be:", finalAnswer);
         
         // Create final answer input
+        console.log("Attempting to append finalAnswerContainer.");
         const finalAnswerContainer = document.createElement('div');
         finalAnswerContainer.id = 'final-answer-input';
         finalAnswerContainer.style.textAlign = 'center';
@@ -601,11 +603,16 @@
         finalAnswerContainer.innerHTML = `
           = <input type="text" id="final-input" style="width: 100px; text-align: center;" />
         `;
+
+        console.log("decompositionContainer exists?", decompositionContainer !== null);
         
         const checkBtn = document.getElementById('check-btn');
         checkBtn.disabled = true;
         
         decompositionContainer.insertAdjacentElement('afterend', finalAnswerContainer);
+
+        console.log("Final input box inserted after decompositionContainer.");
+
         
         // Validate input
         const finalInput = document.getElementById('final-input');
@@ -619,6 +626,8 @@
             checkBtn.disabled = true;
           }
         });
+
+        console.log("Final answer value:", finalAnswer);
 
       }
 

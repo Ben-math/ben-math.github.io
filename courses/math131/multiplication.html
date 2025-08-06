@@ -95,7 +95,7 @@
     </div>
 
     <div class="button-container">
-      <button id="check-btn" class="rubber-button">Check Answer</button>
+      <button id="check-btn" class="rubber-button" style="display: none;">Check Answer</button>
     </div>
     
     <div class="button-container">
@@ -476,6 +476,8 @@
       activityBox.innerHTML = '';
 
       decompositionContainer.innerHTML = ''; // Clear previous inputs
+      document.getElementById('final-answer-input').innerHTML = '';
+
       const oldPartialProducts = document.getElementById('partial-products-inputs');
       if (oldPartialProducts) oldPartialProducts.remove();
 

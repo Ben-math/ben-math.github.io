@@ -539,7 +539,7 @@
       hintIndex = 0;
       hintArea.innerHTML = "";  // Clear previous hints
 
-      drawCanvas(mode, inputElements, []);
+      drawCanvas(mode, inputElements, partialInputs);
 
 
 
@@ -578,16 +578,9 @@
         sound.currentTime = 0;
         sound.play();
       }
-
-      if (document.getElementById('final-answer-input')) return;
-      if (partialStepCompleted) return;
-      
-      const partialInputs = document.querySelectorAll('.partial-input');
-      let partialProducts = Array.from(partialInputs).map(input => parseInt(input.dataset.expected));
     
       if (partialStepCompleted) {
-        console.log("Creating final answer input box.");
-
+        console.log("Hint clicked after partial products completed — next stage should start.");
       
         // Disable partial product inputs
         const partialInputs = document.querySelectorAll('.partial-input');
@@ -595,46 +588,8 @@
       
         console.log("Partial product inputs disabled.");
       
-        // Compute total sum
-        const finalAnswer = partialProducts.reduce((a, b) => a + b, 0);
-        console.log("Final answer should be:", finalAnswer);
-        
-        // Create final answer input
-        console.log("Attempting to append finalAnswerContainer.");
-        const finalAnswerContainer = document.createElement('div');
-        finalAnswerContainer.id = 'final-answer-input';
-        finalAnswerContainer.style.textAlign = 'center';
-        finalAnswerContainer.style.marginTop = '1em';
-        
-        finalAnswerContainer.innerHTML = `
-          = <input type="text" id="final-input" style="width: 100px; text-align: center;" />
-        `;
-
-        console.log("decompositionContainer exists?", decompositionContainer !== null);
-        
-        const checkBtn = document.getElementById('check-btn');
-        checkBtn.disabled = true;
-        
-        decompositionContainer.insertAdjacentElement('afterend', finalAnswerContainer);
-
-        console.log("Final input box inserted after decompositionContainer.");
-
-        
-        // Validate input
-        const finalInput = document.getElementById('final-input');
-        finalInput.addEventListener('input', () => {
-          const value = parseInt(finalInput.value);
-          if (!isNaN(value) && value === finalAnswer) {
-            finalInput.style.backgroundColor = '#c8f7c5';
-            checkBtn.disabled = false;
-          } else {
-            finalInput.style.backgroundColor = '#f8d7da';
-            checkBtn.disabled = true;
-          }
-        });
-
-        console.log("Final answer value:", finalAnswer);
-
+        // Next step (final input box) will be added here in the next phase
+        return;
       }
 
 
@@ -672,7 +627,7 @@
     });
     
     // Compute partial products
-    partialProducts = [];
+    const partialProducts = [];
     for (let i = 0; i < aParts.length; i++) {
       for (let j = 0; j < bParts.length; j++) {
         partialProducts.push(aParts[i] * bParts[j]);
@@ -726,7 +681,7 @@
 
     
       // Optionally: updateCanvas again here if you want to draw products
-      drawCanvas(mode, inputElements, []);
+      drawCanvas(mode, inputElements, partialInputs);
     }
 
     

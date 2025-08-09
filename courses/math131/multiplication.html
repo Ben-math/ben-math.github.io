@@ -114,6 +114,23 @@
 
   <script>
 
+    const ruleCheckboxes = {
+      baseten: document.getElementById('baseten'),
+      basefive: document.getElementById('basefive'),
+    };
+    
+    Object.values(ruleCheckboxes).forEach(box => {
+      box.addEventListener('change', () => {
+        // Mutual exclusion for base-ten and base-five
+        if (box.id === 'baseten' && box.checked) {
+          ruleCheckboxes.basefive.checked = false;
+        }
+        if (box.id === 'basefive' && box.checked) {
+          ruleCheckboxes.baseten.checked = false;
+        }
+      });
+    });
+
     let a, b;
 
     let aParts = [];

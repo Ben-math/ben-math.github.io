@@ -490,7 +490,7 @@
 
   
       // Display the question
-      questionText.textContent = `What is \\(${a} \\cdot ${b}\\)?`;
+      questionText.textContent = `What is \\(${base5Checked ? a.toString(5) : a.toString(10)} \\cdot ${base5Checked ? b.toString(5) : b.toString(10)}\\)?`;
 
       MathJax.typeset([questionText]);
 

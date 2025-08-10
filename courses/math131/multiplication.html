@@ -524,14 +524,26 @@
       
       aParts = [];
       bParts = [];
+
       
-      for (let i = 0; i < aDigits.length; i++) {
-        const place = Math.pow(10, aDigits.length - 1 - i);
-        aParts.push(aDigits[i] * place);
-      }
-      for (let i = 0; i < bDigits.length; i++) {
-        const place = Math.pow(10, bDigits.length - 1 - i);
-        bParts.push(bDigits[i] * place);
+      if (ruleCheckboxes.basefive.checked) {
+        for (let i = 0; i < aDigits.length; i++) {
+          const place = Math.pow(5, aDigits.length - 1 - i);
+          aParts.push(aDigits[i] * place);
+        }
+        for (let i = 0; i < bDigits.length; i++) {
+          const place = Math.pow(5, bDigits.length - 1 - i);
+          bParts.push(bDigits[i] * place);
+        }
+      } else {
+        for (let i = 0; i < aDigits.length; i++) {
+          const place = Math.pow(10, aDigits.length - 1 - i);
+          aParts.push(aDigits[i] * place);
+        }
+        for (let i = 0; i < bDigits.length; i++) {
+          const place = Math.pow(10, bDigits.length - 1 - i);
+          bParts.push(bDigits[i] * place);
+        }
       }
       
       const inputBox = (index, total, name) => `<input type="text" data-expected="${name[index]}" class="decomp-input" style="width: 50px; text-align: center;" />`;

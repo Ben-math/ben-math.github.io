@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
@@ -518,9 +518,13 @@
       const oldPartialProducts = document.getElementById('partial-products-inputs');
       if (oldPartialProducts) oldPartialProducts.remove();
 
-      
-      aDigits = a.toString().split('').map(Number);
-      bDigits = b.toString().split('').map(Number);
+      if (ruleCheckboxes.basefive.checked) {
+        aDigits = a.toString(5).split('').map(Number);
+        bDigits = b.toString(5).split('').map(Number);
+      } else {
+        aDigits = a.toString().split('').map(Number);
+        bDigits = b.toString().split('').map(Number);
+      }
       
       aParts = [];
       bParts = [];

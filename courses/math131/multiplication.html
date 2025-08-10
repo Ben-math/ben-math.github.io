@@ -564,7 +564,9 @@
     
       inputElements.forEach(input => {
         const expected = parseInt(input.dataset.expected, ruleCheckboxes.basefive.checked ? 5 : 10);
+        console.log(`Expected=${expected}`);
         const value = parseInt(input.value, ruleCheckboxes.basefive.checked ? 5 : 10);
+        console.log(`Input=${value}`);
     
         if (!isNaN(value) && value === expected) {
           input.style.backgroundColor = '#c8f7c5';  // light green

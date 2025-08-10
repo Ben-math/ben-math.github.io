@@ -537,8 +537,8 @@
       let allCorrect = true;
     
       inputElements.forEach(input => {
-        const expected = parseInt(input.dataset.expected, base5Checked ? 5 : 10);
-        const value = parseInt(input.value, base5Checked ? 5 : 10);
+        const expected = parseInt(input.dataset.expected, ruleCheckboxes.basefive.checked ? 5 : 10);
+        const value = parseInt(input.value, ruleCheckboxes.basefive.checked ? 5 : 10);
     
         if (!isNaN(value) && value === expected) {
           input.style.backgroundColor = '#c8f7c5';  // light green
@@ -625,8 +625,8 @@
       
           const finalInput = document.getElementById('final-input');
           finalInput.addEventListener('input', () => {
-            const value = parseInt(finalInput.value, base5Checked ? 5 : 10);
-            const expected = parseInt(finalInput.dataset.expected, base5Checked ? 5 : 10);
+            const value = parseInt(finalInput.value, ruleCheckboxes.basefive.checked ? 5 : 10);
+            const expected = parseInt(finalInput.dataset.expected, ruleCheckboxes.basefive.checked ? 5 : 10);
       
             if (!isNaN(value) && value === expected) {
               finalInput.style.backgroundColor = '#c8f7c5';
@@ -650,7 +650,7 @@
   
     const allInputs = document.querySelectorAll('.decomp-input');
     const allCorrect = Array.from(allInputs).every(input => {
-      return parseInt(input.value, base5Checked ? 5 : 10) === parseInt(input.dataset.expected, base5Checked ? 5 : 10);
+      return parseInt(input.value, ruleCheckboxes.basefive.checked ? 5 : 10) === parseInt(input.dataset.expected, ruleCheckboxes.basefive.checked ? 5 : 10);
     });
   
     if (!allCorrect) return;
@@ -672,7 +672,7 @@
     aParts = [];
     bParts = [];
     allInputs.forEach((input, index) => {
-      const expected = parseInt(input.dataset.expected, base5Checked ? 5 : 10);
+      const expected = parseInt(input.dataset.expected, ruleCheckboxes.basefive.checked ? 5 : 10);
       if (index < allInputs.length - bDigits.length) {
         aParts.push(expected);
       } else {
@@ -713,8 +713,8 @@
     function validatePartialInputsAndEnableNext() {
       let allCorrect = true;
       partialInputs.forEach((input, index) => {
-        const expected = parseInt(input.dataset.expected, base5Checked ? 5 : 10);
-        const value = parseInt(input.value, base5Checked ? 5 : 10);
+        const expected = parseInt(input.dataset.expected, ruleCheckboxes.basefive.checked ? 5 : 10);
+        const value = parseInt(input.value, ruleCheckboxes.basefive.checked ? 5 : 10);
         console.log(`Partial input ${index}: value=${value}, expected=${expected}`);
     
         if (!isNaN(value) && value === expected) {

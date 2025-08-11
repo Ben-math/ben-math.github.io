@@ -47,15 +47,10 @@
    rather learn the <i>flexible scaffold</i> method of division - a strategy to slowly chunk away at a division problem.</p>
 
     <p>\[
-    \renewcommand{\arraystretch}{1.2}
-    \begin{array}{r@{}r}
-    \begin{array}{r}20\\7\\2\end{array} & \!\!\begin{array}{l}
-    \overline{\smash{\phantom{00}7)}}\,191 \\
-    140 \\
-    \underline{\phantom{1}51} \\
-    49 \\
-    \underline{\phantom{1}2}
-    \end{array}
+    \require{enclose}
+    \begin{array}{r@{}l}
+          & \begin{array}[t]{l}20\\7\\2\end{array} \\
+    \enclose{longdiv}{191} & 7 \\
     \end{array}
     \]
     </p>

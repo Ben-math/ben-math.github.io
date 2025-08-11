@@ -199,9 +199,7 @@
       });
     });
 
-    let a, b;
-
-    let mode;
+    let a, b, c;
    
     const hintBtn = document.getElementById('hint-btn');
     const hintArea = document.getElementById('hint-area');
@@ -525,37 +523,30 @@
         sound.play();
       }
 
-      // Choose the mode, 1 is 2-digit*2-digit, 2 is 3-digit*2-digit, 3 is 3-digit*3-digit
-      mode = Math.floor(Math.random() * 3) + 1;
-
       if (ruleCheckboxes.basefive.checked) {
-        if (mode === 1) {
-          a = Math.floor(Math.random() * 20) + 5;
-          b = Math.floor(Math.random() * 20) + 5;
-        } else if (mode === 2) {
-          a = Math.floor(Math.random() * 100) + 25;
-          b = Math.floor(Math.random() * 20) + 5;
-        } else {
-          a = Math.floor(Math.random() * 100) + 25;
-          b = Math.floor(Math.random() * 100) + 25;
-        }
+       a = Math.floor(Math.random() * 3) + 2;
       } else {
-        if (mode === 1) {
-          a = Math.floor(Math.random() * 90) + 10;
-          b = Math.floor(Math.random() * 90) + 10;
-        } else if (mode === 2) {
-          a = Math.floor(Math.random() * 900) + 100;
-          b = Math.floor(Math.random() * 90) + 10;
-        } else {
-          a = Math.floor(Math.random() * 900) + 100;
-          b = Math.floor(Math.random() * 900) + 100;
-        }
+       // Generate a single digit number between 2 and 9
+       a = Math.floor(Math.random() * 8) + 2;
       }
+
+      // Ensure that the product of a and b has 4 digits
+      if (ruleCheckboxes.basefive.checked) {
+       while (a * b < 125) {
+          b = Math.floor(Math.random() * 100) + 25;
+       }
+      } else {
+        while (a * b < 1000) {
+          b = Math.floor(Math.random() * 900) + 100;
+       }
+      }
+
+      c = a * b;
 
 
       // Display the question
-      questionText.textContent = `What is \\(${ruleCheckboxes.basefive.checked ? a.toString(5) : a.toString(10)} \\cdot 
-      ${ruleCheckboxes.basefive.checked ? b.toString(5) : b.toString(10)}\\)?`;
+      questionText.textContent = `What is \\(${ruleCheckboxes.basefive.checked ? c.toString(5) : c.toString(10)} \\div 
+      ${ruleCheckboxes.basefive.checked ? a.toString(5) : a.toString(10)}\\)?`;
 
       MathJax.typeset([questionText]);
 

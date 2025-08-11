@@ -184,6 +184,8 @@
 
     // Variable count will keep track of the number of partial quotients successfully input
     let count = 0;
+    let partialQuotients = [];
+
 
     const ruleCheckboxes = {
       baseten: document.getElementById('baseten'),
@@ -606,7 +608,30 @@
         sound.currentTime = 0;
         sound.play();
       }
-    
+
+      const pqInput = document.getElementById('partial-quotient-input');
+      const pqValue = parseInt(pqInput.value);
+  
+      if (!isNaN(pqValue)) {
+          const product = pqValue * a;
+  
+          console.log(`Next clicked: pq=${pqValue}, product=${product}, d(before)=${d}`);
+  
+          if (product <= d) {
+              d -= product;
+              partialQuotients.push(pqValue);
+              count++;
+  
+              console.log(`Accepted: d(after)=${d}, partialQuotients=${partialQuotients}, count=${count}`);
+  
+              pqInput.value = ""; // Clear the box
+              pqInput.focus();
+          } else {
+              console.log(`Rejected: product ${product} > d(${d})`);
+          }
+      } else {
+          console.log("Invalid input (not a number)");
+      }
 
   });
   

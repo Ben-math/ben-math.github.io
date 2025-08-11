@@ -562,14 +562,7 @@
         }
       }
 
-    
-      hintSteps = [];
-      hintIndex = 0;
-      let i = 0
 
-      partialStepCompleted = false;
-
-  
       // Display the question
       questionText.textContent = `What is \\(${ruleCheckboxes.basefive.checked ? a.toString(5) : a.toString(10)} \\cdot 
       ${ruleCheckboxes.basefive.checked ? b.toString(5) : b.toString(10)}\\)?`;
@@ -580,95 +573,9 @@
       // Clear the activity box
       activityBox.innerHTML = '';
 
-      decompositionContainer.innerHTML = ''; // Clear previous inputs
-      document.getElementById('final-answer-input').innerHTML = '';
-
-      const oldPartialProducts = document.getElementById('partial-products-inputs');
-      if (oldPartialProducts) oldPartialProducts.remove();
-
-      if (ruleCheckboxes.basefive.checked) {
-        aDigits = a.toString(5).split('').map(Number);
-        bDigits = b.toString(5).split('').map(Number);
-      } else {
-        aDigits = a.toString().split('').map(Number);
-        bDigits = b.toString().split('').map(Number);
-      }
-      
-      aParts = [];
-      bParts = [];
-
-      
-      if (ruleCheckboxes.basefive.checked) {
-        for (let i = 0; i < aDigits.length; i++) {
-          const place = Math.pow(5, aDigits.length - 1 - i);
-          aParts.push(aDigits[i] * place);
-        }
-        for (let i = 0; i < bDigits.length; i++) {
-          const place = Math.pow(5, bDigits.length - 1 - i);
-          bParts.push(bDigits[i] * place);
-        }
-      } else {
-        for (let i = 0; i < aDigits.length; i++) {
-          const place = Math.pow(10, aDigits.length - 1 - i);
-          aParts.push(aDigits[i] * place);
-        }
-        for (let i = 0; i < bDigits.length; i++) {
-          const place = Math.pow(10, bDigits.length - 1 - i);
-          bParts.push(bDigits[i] * place);
-        }
-      }
-      
-      const inputBox = (index, total, name) => `<input type="text" data-expected="${name[index]}" class="decomp-input" style="width: 50px; text-align: center;" />`;
-      
-      // Generate the HTML for the input boxes
-      let html = '= (';
-      html += aParts.map((_, i) => inputBox(i, aParts.length, aParts)).join(' + ');
-      html += ') × (';
-      html += bParts.map((_, i) => inputBox(i, bParts.length, bParts)).join(' + ');
-      html += ')';
-
-      console.log(`${html}`);
-      
-      decompositionContainer.innerHTML = html;
-
-      // Attach event listeners to validate input values and color them
-      inputElements = decompositionContainer.querySelectorAll('.decomp-input');
-      function validateInputsAndMaybeEnableNext() {
-      let allCorrect = true;
     
-      inputElements.forEach(input => {
-        const expected = parseInt(input.dataset.expected);
-        console.log(`Expected=${expected}`);
-        const value = parseInt(input.value, ruleCheckboxes.basefive.checked ? 5 : 10);
-        console.log(`Input=${value}`);
-    
-        if (!isNaN(value) && value === expected) {
-          input.style.backgroundColor = '#c8f7c5';  // light green
-        } else {
-          input.style.backgroundColor = '#f8d7da';  // light red
-          allCorrect = false;
-        }
-      });
-    
-      drawCanvas(mode, inputElements, []);
-    
-      nextBtn.disabled = !allCorrect;
-    }
-    
-    inputElements.forEach(input => {
-      input.addEventListener('input', validateInputsAndMaybeEnableNext);
-    });
 
-
-
-
-      
-
-
-      hintIndex = 0;
-      hintArea.innerHTML = "";  // Clear previous hints
-
-      drawCanvas(mode, inputElements, []);
+      //drawCanvas(mode, inputElements, []);
 
 
 

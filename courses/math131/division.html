@@ -191,6 +191,8 @@
     let count = 0;
     let partialQuotients = [];
 
+    const feedback = document.getElementById("feedback");
+
 
     const ruleCheckboxes = {
       baseten: document.getElementById('baseten'),
@@ -527,8 +529,10 @@
       pqContainer.style.display = "block"; // show container (and input inside)
       pqInput.focus();
 
-      const feedback = document.getElementById('feedbackText');
-      feedback.textContent = '';
+      feedback.style.display = "none"; // hide by default
+
+      const feedback2 = document.getElementById('feedbackText');
+      feedback2.textContent = '';
 
       // Play sound when view button is clicked
       const sound = document.getElementById('click-sound');
@@ -612,7 +616,6 @@
         sound.play();
       }
 
-      const feedback = document.getElementById("feedback");
       feedback.style.display = "none"; // hide by default
   
       const inputVal = document.getElementById("partial-quotient-input").value.trim();

@@ -1,0 +1,836 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta charset="UTF-8" />
+  <title>Division Activity</title>
+  <link rel="stylesheet" href="/style.css" />
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+</head>
+<body>
+  <header>
+    <h1>Division Activity</h1>
+    <div id="nav-placeholder"></div>
+      <script>
+        fetch("/nav.html")
+          .then(response => response.text())
+          .then(data => {
+            document.getElementById("nav-placeholder").innerHTML = data;
+        
+            const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+            const navLinks = document.querySelectorAll("#nav-placeholder a");
+        
+            navLinks.forEach(link => {
+              const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+              if (linkPath === currentPath) {
+                link.classList.add("active");
+              }
+            });
+          });
+      </script>
+  </header>
+  <main>
+
+    <p><i>A division activity will be here shortly, using a copy of multiplication as a template placeholder!</i></p>
+
+    <p>The distributive property of multiplication over addition, \[A \cdot (B + C) = 
+      {\color{green}AB} + {\color{orange}AC}\] has a natural interpretation as a sum 
+      of areas:</p>
+
+    <figure style="text-align: center;">
+      <img src="fig5.png" alt="A(B + C) = AB + AC" style="display: inline-block;">
+    </figure>
+
+    <p>This property and its geometric interpretation generalize to arbitrarily large products.  For instance, we have the well-known FOIL (first, 
+    inside, outside, last) product, \[(A + B) \cdot (C + D) = {\color{red}AC} + {\color{blue}AD} + {\color{orange}BC} + {\color{green}BD}\]</p>
+
+    <figure style="text-align: center;">
+      <img src="fig6.png" alt="(A + B)(C + D) = AC + AD + BC + BD" style="display: inline-block;">
+    </figure>
+      
+      <p>For an even larger example, consider \[(A + B + C) \cdot (D + E + F) = {\color{red}AD} + {\color{orange}AE} + {\color{yellow}AF} + 
+        {\color{blue}BD} + {\color{green}BE} + {\color{purple}BF} + {\color{pink}CD} + {\color{brown}CE} + {\color{grey}CF}\]</p>
+    
+    <figure style="text-align: center;">
+      <img src="fig7.png" alt="(A + B + C)(D + E + F) = AD + AE + AF + BD + BE + BF + CD + CE + CF" style="display: inline-block;">
+    </figure>
+    
+    <p>Consider the implications of this property for breaking down a difficult multiplication problem: we can break the two multiplicand decimal numbers 
+      down into sums of their respective place values, and then use the distributive law to instead compute a sum of simpler products.  This is called 
+    the <i>partial product</i> method, and has the same natural interpretation in terms of areas.  For instance, consider the problem</p>
+
+    <div style="text-align: center;">
+    <p>\(\begin{aligned}249 \cdot 63 = (200 + 40 + 9) \cdot (60 + 3) & = {\color{red}200 \cdot 60} + {\color{orange}200 \cdot 3} + 
+      {\color{yellow}40 \cdot 60} + {\color{green}40 \cdot 3} + {\color{blue}9 \cdot 60} + {\color{purple}9 \cdot 3}\\ & = {\color{red}12000} + 
+      {\color{orange}600} + {\color{yellow}2400} + {\color{green}120} + {\color{blue}540} + {\color{purple}27}\\ & = 15687 \end{aligned}\)</p>
+    </div>
+
+    <figure style="text-align: center;">
+      <img src="fig8.png" alt="(200 + 40 + 9)(60 + 3) = 200(60) + 200(3) + 40(60) + 40(3) + 9(60) + 9(3)" style="display: inline-block;">
+    </figure>
+
+   <p>Observe that this method of computing a product reduces it to products where all we need are the single-digit multiplication table for the 
+   given base, and to count the number of zeroes in each multiplicand (leading one to wonder why in grade school we ever bother to learn multiplication 
+   tables beyond ten).  See below the multiplication tables for base-ten and base-five.</p>
+
+   <div style="display: flex; justify-content: space-between; gap: 20px; text-align: center;">
+      <div style="flex: 1;">
+        Base-ten multiplication table
+        \[
+        \begin{array}{|c|cccccccccc|}
+        \hline
+        \times & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 \\
+        \hline
+        0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+        1 & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 \\
+        2 & 0 & 2 & 4 & 6 & 8 & 10 & 12 & 14 & 16 & 18 \\
+        3 & 0 & 3 & 6 & 9 & 12 & 15 & 18 & 21 & 24 & 27 \\
+        4 & 0 & 4 & 8 & 12 & 16 & 20 & 24 & 28 & 32 & 36 \\
+        5 & 0 & 5 & 10 & 15 & 20 & 25 & 30 & 35 & 40 & 45 \\
+        6 & 0 & 6 & 12 & 18 & 24 & 30 & 36 & 42 & 48 & 54 \\
+        7 & 0 & 7 & 14 & 21 & 28 & 35 & 42 & 49 & 56 & 63 \\
+        8 & 0 & 8 & 16 & 24 & 32 & 40 & 48 & 56 & 64 & 72 \\
+        9 & 0 & 9 & 18 & 27 & 36 & 45 & 54 & 63 & 72 & 81 \\
+        \hline
+        \end{array}
+        \]
+      </div>
+    
+      <div style="flex: 1;">
+        Base-five multiplication table
+        \[
+        \begin{array}{|c|ccccc|}
+        \hline
+        \times & 0 & 1 & 2 & 3 & 4 \\
+        \hline
+        0 & 0 & 0 & 0 & 0 & 0 \\
+        1 & 0 & 1 & 2 & 3 & 4 \\
+        2 & 0 & 2 & 4 & 11 & 13 \\
+        3 & 0 & 3 & 11 & 14 & 22 \\
+        4 & 0 & 4 & 13 & 22 & 31 \\
+        \hline
+        \end{array}
+        \]
+      </div>
+    </div>
+
+    <div id="rule-select" class="styled-checkbox-group">
+      <label><input type="checkbox" class="styled-checkbox" id="baseten"> Base-Ten</label>
+      <label><input type="checkbox" class="styled-checkbox" id="basefive"> Base-Five</label>
+    </div>
+    
+    <div class="button-container">
+      <button id="start-btn" class="rubber-button">Start!</button>
+    </div>
+    
+    <p id="question-text"></p>
+
+    <div id="decomposition-inputs" style="text-align: center; margin-bottom: 1em;"></div>
+
+    <div id="final-answer-input" style="text-align: center; margin-top: 1em;"></div>
+
+    <div class="button-container">
+      <button id="hint-btn" class="rubber-button">Next</button>
+    </div>
+    
+    <div id="hint-area" class="math" style="margin-top: 1em;"></div>
+
+    <div class="activity-box" id="my-activity">
+
+    </div>
+
+    <div class="button-container">
+      <button id="check-btn" class="rubber-button" style="display: none;">Check Answer</button>
+    </div>
+    
+    <div class="button-container">
+      <div id="feedbackText" class="center-feedback"></div>
+    </div>
+
+
+
+
+
+  </main>
+
+  <script>
+
+    const ruleCheckboxes = {
+      baseten: document.getElementById('baseten'),
+      basefive: document.getElementById('basefive'),
+    };
+    
+    Object.values(ruleCheckboxes).forEach(box => {
+      box.addEventListener('change', () => {
+        // Mutual exclusion for base-ten and base-five
+        if (box.id === 'baseten' && box.checked) {
+          ruleCheckboxes.basefive.checked = false;
+        }
+        if (box.id === 'basefive' && box.checked) {
+          ruleCheckboxes.baseten.checked = false;
+        }
+      });
+    });
+
+    let a, b;
+
+    let aParts = [];
+    let bParts = [];
+    let aDigits = [];
+    let bDigits = [];
+
+    let inputElements = [];
+    let mode;
+
+    const decompositionContainer = document.getElementById('decomposition-inputs');
+
+
+
+    const hintBtn = document.getElementById('hint-btn');
+    const hintArea = document.getElementById('hint-area');
+    
+
+    const startBtn = document.getElementById('start-btn');
+    const questionText = document.getElementById('question-text');
+    const activityBox = document.getElementById('my-activity');
+
+
+    function drawCanvas(mode, inputElements, partialInputElements = []) {
+      activityBox.innerHTML = ''; // clear
+      const canvas = document.createElement('canvas');
+      canvas.width = 1300;
+      canvas.height = 650;
+      activityBox.appendChild(canvas);
+      const ctx = canvas.getContext('2d');
+      
+      ctx.strokeStyle = 'black';
+      ctx.lineWidth = 4;
+
+      if (mode === 1) {
+        ctx.strokeRect(375, 80, 550, 550);
+        ctx.fillStyle = 'red';
+        ctx.fillRect(375, 80, 440, 440);
+        ctx.fillStyle = 'skyblue';
+        ctx.fillRect(815, 80, 110, 440);
+        ctx.fillStyle = 'orange';
+        ctx.fillRect(375, 520, 440, 110);
+        ctx.fillStyle = 'lime';
+        ctx.fillRect(815, 520, 110, 110);
+        ctx.strokeRect(375, 80, 440, 440);
+        ctx.strokeRect(815, 80, 110, 440);
+        ctx.strokeRect(375, 520, 440, 110);
+        ctx.strokeRect(815, 520, 110, 110);
+      } else if (mode === 2) {
+        ctx.fillStyle = 'red';
+        ctx.fillRect(450, 80, 320, 390);
+        ctx.fillStyle = 'orange';
+        ctx.fillRect(770, 80, 80, 390);
+        ctx.fillStyle = 'yellow';
+        ctx.fillRect(450, 470, 320, 110);
+        ctx.fillStyle = 'lime';
+        ctx.fillRect(770, 470, 80, 110);
+        ctx.fillStyle = 'skyblue';
+        ctx.fillRect(450, 580, 320, 50);
+        ctx.fillStyle = 'violet';
+        ctx.fillRect(770, 580, 80, 50);
+        ctx.strokeRect(450, 80, 400, 550);
+        ctx.strokeRect(450, 80, 320, 390);
+        ctx.strokeRect(770, 80, 80, 390);
+        ctx.strokeRect(450, 470, 320, 110);
+        ctx.strokeRect(770, 470, 80, 110);
+        ctx.strokeRect(450, 580, 320, 50);
+        ctx.strokeRect(770, 580, 80, 50);
+      } else if (mode === 3) {
+        ctx.fillStyle = 'red';
+        ctx.fillRect(375, 80, 390, 390);
+        ctx.fillStyle = 'orange';
+        ctx.fillRect(765, 80, 110, 390);
+        ctx.fillStyle = 'yellow';
+        ctx.fillRect(875, 80, 50, 390);
+        ctx.fillStyle = 'skyblue';
+        ctx.fillRect(375, 470, 390, 110);
+        ctx.fillStyle = 'lime';
+        ctx.fillRect(765, 470, 110, 110);
+        ctx.fillStyle = 'violet';
+        ctx.fillRect(875, 470, 50, 110);
+        ctx.fillStyle = 'pink';
+        ctx.fillRect(375, 580, 390, 50);
+        ctx.fillStyle = 'rgba(163,114,65,0.8)';
+        ctx.fillRect(765, 580, 110, 50);
+        ctx.fillStyle = 'lightgray';
+        ctx.fillRect(875, 580, 50, 50);
+        ctx.strokeRect(375, 80, 550, 550);
+        ctx.strokeRect(375, 80, 390, 390);
+        ctx.strokeRect(765, 80, 110, 390);
+        ctx.strokeRect(875, 80, 50, 390);
+        ctx.strokeRect(375, 470, 390, 110);
+        ctx.strokeRect(765, 470, 110, 110);
+        ctx.strokeRect(875, 470, 50, 110);
+        ctx.strokeRect(375, 580, 390, 50);
+        ctx.strokeRect(765, 580, 110, 50);
+        ctx.strokeRect(875, 580, 50, 50);
+      }
+    
+      // Now draw the label values
+      ctx.font = "bold 48px Arial";
+      ctx.fillStyle = "black";
+
+      ctx.textAlign = "center"; // default for top labels
+
+    
+      inputElements.forEach((input, index) => {
+      const val = input.value;
+      if (!isNaN(val) && val.trim() !== "") {
+        let x = 0, y = 0;
+    
+        if (mode === 1) {
+          if (index === 0) {
+            ctx.textAlign = "right"
+            x = 370;
+            y = 330;
+          } else if (index === 1) {
+            ctx.textAlign = "right"
+            x = 370;
+            y = 590;
+          } else if (index === 2) {
+            ctx.textAlign = "center"
+            x = 595;
+            y = 70;
+          } else if (index === 3) {
+            ctx.textAlign = "center"
+            x = 870;
+            y = 70;
+          }
+        } else if (mode === 2) {
+          if (index === 0) {
+            ctx.textAlign = "right"
+            x = 440;
+            y = 300;
+          } else if (index === 1) {
+            ctx.textAlign = "right"
+            x = 440;
+            y = 546;
+          } else if (index === 2) {
+            ctx.textAlign = "right"
+            x = 440;
+            y = 623;
+          } else if (index === 3) {
+            ctx.textAlign = "center"
+            x = 613;
+            y = 70;
+          } else if (index === 4) {
+            ctx.textAlign = "center"
+            x = 813;
+            y = 70;
+          }
+        } else if (mode === 3) {
+          if (index === 0) {
+            ctx.textAlign = "right"
+            x = 370;
+            y = 300;
+          } else if (index === 1) {
+            ctx.textAlign = "right"
+            x = 370;
+            y = 546;
+          } else if (index === 2) {
+            ctx.textAlign = "right"
+            x = 370;
+            y = 623;
+          } else if (index === 3) {
+            ctx.textAlign = "center"
+            x = 570;
+            y = 70;
+          } else if (index === 4) {
+            ctx.textAlign = "center"
+            x = 820;
+            y = 70;
+          } else if (index === 5) {
+            ctx.textAlign = "center"
+            x = 900;
+            y = 70;
+          }
+        }
+    
+        ctx.fillText(val, x, y);
+      }
+    });
+
+      // Draw partial product values on canvas
+      partialInputElements.forEach((input, index) => {
+        const val = input.value;
+        if (!isNaN(val) && val.trim() !== "") {
+          ctx.font = "bold 36px Arial";
+          ctx.fillStyle = "black";
+          ctx.textAlign = "center";
+      
+          let x, y;
+
+          if (mode === 1) {
+            if (index === 0) {
+              ctx.textAlign = "center"
+              x = 595;
+              y = 320;
+              ctx.fillText(val, x, y);
+            } else if (index === 1) {
+              ctx.textAlign = "center"
+              x = 870;
+              y = 320;
+              ctx.fillText(val, x, y);
+            } else if (index === 2) {
+              ctx.textAlign = "center"
+              x = 595;
+              y = 590;
+              ctx.fillText(val, x, y);
+            } else if (index === 3) {
+              ctx.textAlign = "center"
+              x = 870;
+              y = 590;
+              ctx.fillText(val, x, y);
+            }
+          } else if (mode === 2) {
+            if (index === 0) {
+              ctx.textAlign = "center"
+              x = 613;
+              y = 290;
+              ctx.fillText(val, x, y);
+            } else if (index === 1) {
+              ctx.textAlign = "center"
+              ctx.save();
+              ctx.translate(825, 280); 
+              ctx.rotate(-Math.PI / 2); 
+              ctx.fillText(val, 0, 0);
+              ctx.restore();
+            } else if (index === 2) {
+              ctx.textAlign = "center"
+              x = 613;
+              y = 536;
+              ctx.fillText(val, x, y);
+            } else if (index === 3) {
+              ctx.textAlign = "center"
+              ctx.save();
+              ctx.translate(825, 526); 
+              ctx.rotate(-Math.PI / 2); 
+              ctx.fillText(val, 0, 0);
+              ctx.restore();
+            } else if (index === 4) {
+              ctx.textAlign = "center"
+              x = 613;
+              y = 618;
+              ctx.fillText(val, x, y);
+            } else if (index === 5) {
+              ctx.textAlign = "center"
+              ctx.save();
+              ctx.translate(810, 618); 
+              ctx.fillText(val, 0, 0);
+              ctx.restore();
+            }
+          } else if (mode === 3) {
+            if (index === 0) {
+              ctx.textAlign = "center"
+              x = 570;
+              y = 290;
+              ctx.fillText(val, x, y);
+            } else if (index === 1) {
+              ctx.textAlign = "center"
+              x = 820;
+              y = 290;
+              ctx.fillText(val, x, y);
+            } else if (index === 2) {
+              ctx.textAlign = "center"
+              ctx.save();
+              ctx.translate(915, 280); 
+              ctx.rotate(-Math.PI / 2); 
+              ctx.fillText(val, 0, 0);
+              ctx.restore();
+            } else if (index === 3) {
+              ctx.textAlign = "center"
+              x = 570;
+              y = 536;
+              ctx.fillText(val, x, y);
+            } else if (index === 4) {
+              ctx.textAlign = "center"
+              x = 820;
+              y = 536;
+              ctx.fillText(val, x, y);
+            } else if (index === 5) {
+              ctx.textAlign = "center"
+              ctx.save();
+              ctx.translate(915, 526); 
+              ctx.rotate(-Math.PI / 2); 
+              ctx.fillText(val, 0, 0);
+              ctx.restore();
+            } else if (index === 6) {
+              ctx.textAlign = "center"
+              x = 570;
+              y = 618;
+              ctx.fillText(val, x, y);
+            } else if (index === 7) {
+              ctx.textAlign = "center"
+              x = 820;
+              y = 618;
+              ctx.fillText(val, x, y);
+            } else if (index === 8) {
+              ctx.textAlign = "center"
+              ctx.save();
+              ctx.translate(900, 618); 
+              ctx.fillText(val, 0, 0);
+              ctx.restore();
+            }
+          }
+          
+        }
+      });
+
+
+    }
+
+
+
+
+
+
+
+
+    
+  startBtn.addEventListener('click', () => {
+
+      const nextBtn = document.getElementById('hint-btn');
+      nextBtn.disabled = true;
+
+
+      const feedback = document.getElementById('feedbackText');
+      feedback.textContent = '';
+
+      // Play sound when view button is clicked
+      const sound = document.getElementById('click-sound');
+      if (sound) {
+        sound.currentTime = 0; // rewind to start in case it's still playing
+        sound.play();
+      }
+
+      // Choose the mode, 1 is 2-digit*2-digit, 2 is 3-digit*2-digit, 3 is 3-digit*3-digit
+      mode = Math.floor(Math.random() * 3) + 1;
+
+      if (ruleCheckboxes.basefive.checked) {
+        if (mode === 1) {
+          a = Math.floor(Math.random() * 20) + 5;
+          b = Math.floor(Math.random() * 20) + 5;
+        } else if (mode === 2) {
+          a = Math.floor(Math.random() * 100) + 25;
+          b = Math.floor(Math.random() * 20) + 5;
+        } else {
+          a = Math.floor(Math.random() * 100) + 25;
+          b = Math.floor(Math.random() * 100) + 25;
+        }
+      } else {
+        if (mode === 1) {
+          a = Math.floor(Math.random() * 90) + 10;
+          b = Math.floor(Math.random() * 90) + 10;
+        } else if (mode === 2) {
+          a = Math.floor(Math.random() * 900) + 100;
+          b = Math.floor(Math.random() * 90) + 10;
+        } else {
+          a = Math.floor(Math.random() * 900) + 100;
+          b = Math.floor(Math.random() * 900) + 100;
+        }
+      }
+
+    
+      hintSteps = [];
+      hintIndex = 0;
+      let i = 0
+
+      partialStepCompleted = false;
+
+  
+      // Display the question
+      questionText.textContent = `What is \\(${ruleCheckboxes.basefive.checked ? a.toString(5) : a.toString(10)} \\cdot 
+      ${ruleCheckboxes.basefive.checked ? b.toString(5) : b.toString(10)}\\)?`;
+
+      MathJax.typeset([questionText]);
+
+      
+      // Clear the activity box
+      activityBox.innerHTML = '';
+
+      decompositionContainer.innerHTML = ''; // Clear previous inputs
+      document.getElementById('final-answer-input').innerHTML = '';
+
+      const oldPartialProducts = document.getElementById('partial-products-inputs');
+      if (oldPartialProducts) oldPartialProducts.remove();
+
+      if (ruleCheckboxes.basefive.checked) {
+        aDigits = a.toString(5).split('').map(Number);
+        bDigits = b.toString(5).split('').map(Number);
+      } else {
+        aDigits = a.toString().split('').map(Number);
+        bDigits = b.toString().split('').map(Number);
+      }
+      
+      aParts = [];
+      bParts = [];
+
+      
+      if (ruleCheckboxes.basefive.checked) {
+        for (let i = 0; i < aDigits.length; i++) {
+          const place = Math.pow(5, aDigits.length - 1 - i);
+          aParts.push(aDigits[i] * place);
+        }
+        for (let i = 0; i < bDigits.length; i++) {
+          const place = Math.pow(5, bDigits.length - 1 - i);
+          bParts.push(bDigits[i] * place);
+        }
+      } else {
+        for (let i = 0; i < aDigits.length; i++) {
+          const place = Math.pow(10, aDigits.length - 1 - i);
+          aParts.push(aDigits[i] * place);
+        }
+        for (let i = 0; i < bDigits.length; i++) {
+          const place = Math.pow(10, bDigits.length - 1 - i);
+          bParts.push(bDigits[i] * place);
+        }
+      }
+      
+      const inputBox = (index, total, name) => `<input type="text" data-expected="${name[index]}" class="decomp-input" style="width: 50px; text-align: center;" />`;
+      
+      // Generate the HTML for the input boxes
+      let html = '= (';
+      html += aParts.map((_, i) => inputBox(i, aParts.length, aParts)).join(' + ');
+      html += ') × (';
+      html += bParts.map((_, i) => inputBox(i, bParts.length, bParts)).join(' + ');
+      html += ')';
+
+      console.log(`${html}`);
+      
+      decompositionContainer.innerHTML = html;
+
+      // Attach event listeners to validate input values and color them
+      inputElements = decompositionContainer.querySelectorAll('.decomp-input');
+      function validateInputsAndMaybeEnableNext() {
+      let allCorrect = true;
+    
+      inputElements.forEach(input => {
+        const expected = parseInt(input.dataset.expected);
+        console.log(`Expected=${expected}`);
+        const value = parseInt(input.value, ruleCheckboxes.basefive.checked ? 5 : 10);
+        console.log(`Input=${value}`);
+    
+        if (!isNaN(value) && value === expected) {
+          input.style.backgroundColor = '#c8f7c5';  // light green
+        } else {
+          input.style.backgroundColor = '#f8d7da';  // light red
+          allCorrect = false;
+        }
+      });
+    
+      drawCanvas(mode, inputElements, []);
+    
+      nextBtn.disabled = !allCorrect;
+    }
+    
+    inputElements.forEach(input => {
+      input.addEventListener('input', validateInputsAndMaybeEnableNext);
+    });
+
+
+
+
+      
+
+
+      hintIndex = 0;
+      hintArea.innerHTML = "";  // Clear previous hints
+
+      drawCanvas(mode, inputElements, []);
+
+
+
+
+    });
+
+
+    const checkBtn = document.getElementById('check-btn');
+    const feedbackText = document.getElementById('feedbackText');
+    
+    checkBtn.addEventListener('click', () => {
+      // Play click sound
+      const sound = document.getElementById('click-sound');
+      if (sound) {
+        sound.currentTime = 0;
+        sound.play();
+      }
+    
+      let correct = true;
+    
+      // Give feedback
+      if (correct) {
+        feedbackText.textContent = "Correct!";
+        feedbackText.style.color = "green";
+      } else {
+        feedbackText.textContent = "Incorrect. Try again!";
+        feedbackText.style.color = "red";
+      }
+    });
+
+    let partialStepCompleted = false;
+
+    hintBtn.addEventListener('click', () => {
+      const sound = document.getElementById('click-sound');
+      if (sound) {
+        sound.currentTime = 0;
+        sound.play();
+      }
+    
+      if (partialStepCompleted) {
+        console.log("Hint clicked after partial products completed — next stage should start.");
+      
+        const partialInputs = document.querySelectorAll('.partial-input');
+        partialInputs.forEach(input => input.disabled = true);
+      
+        console.log("Partial product inputs disabled.");
+      
+        // Avoid duplicating the final input
+        const finalAnswerDiv = document.getElementById('final-answer-input');
+        if (!finalAnswerDiv.querySelector('input')) {
+          console.log("Creating final answer input box.");
+          
+          const finalAnswer = a * b;
+      
+          finalAnswerDiv.innerHTML = `= <input type="text" id="final-input" data-expected="${finalAnswer}" style="width: 100px; text-align: center;" />`;
+      
+          const finalInput = document.getElementById('final-input');
+          finalInput.addEventListener('input', () => {
+            const value = parseInt(finalInput.value, ruleCheckboxes.basefive.checked ? 5 : 10);
+            const expected = parseInt(finalInput.dataset.expected);
+      
+            if (!isNaN(value) && value === expected) {
+              finalInput.style.backgroundColor = '#c8f7c5';
+              hintBtn.disabled = true;  // or hide it, if desired
+              feedbackText.textContent = "Correct!";
+              feedbackText.style.color = "green";
+            } else {
+              finalInput.style.backgroundColor = '#f8d7da';
+              feedbackText.textContent = "";
+            }
+          });
+        } else {
+          console.log("Final input box already exists.");
+        }
+      
+        return;
+      }
+
+
+
+  
+    const allInputs = document.querySelectorAll('.decomp-input');
+    const allCorrect = Array.from(allInputs).every(input => {
+      return parseInt(input.value, ruleCheckboxes.basefive.checked ? 5 : 10) === parseInt(input.dataset.expected);
+    });
+  
+    if (!allCorrect) return;
+
+    console.log("Hint button clicked");
+    console.log("All decomposition inputs correct:", allCorrect);
+    console.log("aParts:", aParts);
+    console.log("bParts:", bParts);
+    console.log("Number of expected partial products:", aParts.length * bParts.length);
+
+  
+    // Freeze the inputs
+    allInputs.forEach(input => input.disabled = true);
+  
+    // Placeholder for the next step (partial products) — to be implemented next.
+    console.log("Proceeding to next step!");
+
+    // Get the original values used for decomposition
+    aParts = [];
+    bParts = [];
+    allInputs.forEach((input, index) => {
+      const expected = parseInt(input.dataset.expected);
+      if (index < allInputs.length - bDigits.length) {
+        aParts.push(expected);
+      } else {
+        bParts.push(expected);
+      }
+    });
+    
+    // Compute partial products
+    const partialProducts = [];
+    for (let i = 0; i < aParts.length; i++) {
+      for (let j = 0; j < bParts.length; j++) {
+        partialProducts.push(aParts[i] * bParts[j]);
+      }
+    }
+
+    console.log("Partial products:", partialProducts);
+    
+    // Create the container if not already present
+    let partialProductsContainer = document.getElementById('partial-products-inputs');
+    if (!partialProductsContainer) {
+      partialProductsContainer = document.createElement('div');
+      partialProductsContainer.id = 'partial-products-inputs';
+      partialProductsContainer.style.textAlign = 'center';
+      partialProductsContainer.style.marginTop = '1em';
+      decompositionContainer.insertAdjacentElement('afterend', partialProductsContainer);
+    }
+    partialProductsContainer.innerHTML = '';
+    
+    let html = '= ' + partialProducts.map((value, index) => {
+      return `<input type="text" data-expected="${value}" class="partial-input" style="width: 70px; text-align: center;" />`;
+    }).join(' + ');
+
+    
+    partialProductsContainer.innerHTML = html;
+    
+    const partialInputs = partialProductsContainer.querySelectorAll('.partial-input');
+    
+    function validatePartialInputsAndEnableNext() {
+      let allCorrect = true;
+      partialInputs.forEach((input, index) => {
+        const expected = parseInt(input.dataset.expected);
+        const value = parseInt(input.value, ruleCheckboxes.basefive.checked ? 5 : 10);
+        console.log(`Partial input ${index}: value=${value}, expected=${expected}`);
+    
+        if (!isNaN(value) && value === expected) {
+          input.style.backgroundColor = '#c8f7c5';
+        } else {
+          input.style.backgroundColor = '#f8d7da';
+          allCorrect = false;
+        }
+      });
+    
+      console.log("All partial inputs correct?", allCorrect);
+      hintBtn.disabled = !allCorrect;
+      if (allCorrect) {
+        partialStepCompleted = true;
+      } else {
+        partialStepCompleted = false;
+      }
+
+    
+      // Optionally: updateCanvas again here if you want to draw products
+      drawCanvas(mode, inputElements, partialInputs);
+    }
+
+    
+    partialInputs.forEach(input => {
+      input.addEventListener('input', validatePartialInputsAndEnableNext);
+    });
+
+
+  });
+  
+
+    
+  </script>
+
+  <audio id="click-sound" src="button.mp3" preload="auto"></audio>
+  <audio id="set-sound" src="set2.mp3" preload="auto"></audio>
+  
+</body>
+</html>

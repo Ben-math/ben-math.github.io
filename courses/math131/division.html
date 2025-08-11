@@ -159,6 +159,11 @@
     <div class="button-container">
       <button id="next-btn" class="rubber-button">Next</button>
     </div>
+
+   <div style="text-align: center; margin-top: 10px;">
+       <p id="feedback" style="display: none; margin: 0;"></p>
+   </div>
+
     
     <div class="activity-box" id="my-activity">
 
@@ -517,6 +522,9 @@
 
       const pqContainer = document.getElementById("partial-quotient-container");
       const pqInput = document.getElementById("partial-quotient-input");
+
+      const feedback = document.getElementById("feedback");
+      feedback.style.display = "none"; // hide by default
       
       pqInput.value = ""; // clear old value
       pqContainer.style.display = "block"; // show container (and input inside)
@@ -607,30 +615,38 @@
         sound.play();
       }
 
-      const pqInput = document.getElementById('partial-quotient-input');
-      const pqValue = parseInt(pqInput.value);
+      const feedback = document.getElementById("feedback");
+      feedback.style.display = "none"; // hide by default
   
-      if (!isNaN(pqValue)) {
-          const product = pqValue * a;
+      const inputVal = document.getElementById("partial-quotient-input").value.trim();
+      const partialQuotient = parseInt(inputVal, 10);
   
-          console.log(`Next clicked: pq=${pqValue}, product=${product}, d(before)=${d}`);
-  
-          if (product <= d) {
-              d -= product;
-              partialQuotients.push(pqValue);
-              count++;
-  
-              console.log(`Accepted: d(after)=${d}, partialQuotients=${partialQuotients}, count=${count}`);
-  
-              pqInput.value = ""; // Clear the box
-              pqInput.focus();
-          } else {
-              console.log(`Rejected: product ${product} > d(${d})`);
-          }
-      } else {
-          console.log("Invalid input (not a number)");
+      // Check for positive integer
+      if (!Number.isInteger(partialQuotient) || partialQuotient <= 0) {
+          feedback.textContent = "Enter a positive integer.";
+          feedback.style.color = "black";
+          feedback.style.display = "block";
+          return;
       }
-
+  
+      // Check if overshot
+      if (partialQuotient * a > d) {
+          feedback.textContent = "Overshot: enter a smaller number.";
+          feedback.style.color = "red";
+          feedback.style.display = "block";
+          return;
+      }
+  
+      // If valid, process
+      d -= partialQuotient * a;
+      partialQuotients.push(partialQuotient);
+      count++;
+  
+      console.log(`Partial quotient accepted: ${partialQuotient}`);
+      console.log(`New remainder (d): ${d}`);
+  
+      // Clear the input
+      document.getElementById("partial-quotient-input").value = "";
   });
   
 

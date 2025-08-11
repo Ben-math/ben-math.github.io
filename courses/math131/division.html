@@ -152,9 +152,9 @@
     
     <p id="question-text"></p>
 
-    <div style="display: flex; justify-content: space-between; gap: 20px; text-align: center;">
-     <input id="partial-quotient-input" type="number" style="display: none;" />
-    </div>
+    <div id="partial-quotient-container" style="display: none; text-align: center; margin-top: 10px;">
+       <input id="partial-quotient-input" type="number" />
+   </div>
 
     <div class="button-container">
       <button id="hint-btn" class="rubber-button">Next</button>
@@ -512,12 +512,12 @@
       const nextBtn = document.getElementById('hint-btn');
       nextBtn.disabled = true;
 
+      const pqContainer = document.getElementById("partial-quotient-container");
       const pqInput = document.getElementById("partial-quotient-input");
-      pqInput.value = ""; // clear any old value
-      pqInput.style.display = "inline-block"; // make it visible
-      pqInput.focus(); // auto-focus so user can type immediately
-
-
+      
+      pqInput.value = ""; // clear old value
+      pqContainer.style.display = "block"; // show container (and input inside)
+      pqInput.focus();
 
       const feedback = document.getElementById('feedbackText');
       feedback.textContent = '';

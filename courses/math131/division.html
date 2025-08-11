@@ -46,25 +46,45 @@
    principles we use in integer division apply to the division of polynomials by one another!  We won't tackle that monstrosity in this class, but 
    rather learn the <i>flexible scaffold</i> method of division - a strategy to slowly chunk away at a division problem.</p>
 
-    <p>\[
-    \require{enclose}
-    \begin{array}{rr}
-    & 3 \\
-    & 5 \\
-    & 10 \\
-    & 10 \\
-    8 & \enclose{longdiv}{224} \\
-    & \underline{- 80} \\
-    & 144 \\
-    & \underline{- 80} \\
-    & 64 \\
-    & \underline{- 40} \\
-    & 24 \\
-    & \underline{- 24} \\
-    & 0
-    \end{array}
-    \]
-    </p>
+   <div style="display: flex; justify-content: space-between; gap: 20px; text-align: center;">
+      <div style="flex: 1;">
+        Flexible scaffold
+        \[
+       \require{enclose}
+       \begin{array}{rr}
+       & 3 \\
+       & 5 \\
+       & 10 \\
+       & 10 \\
+       8 & \enclose{longdiv}{224} \\
+       & \underline{- 80} \\
+       & 144 \\
+       & \underline{- 80} \\
+       & 64 \\
+       & \underline{- 40} \\
+       & 24 \\
+       & \underline{- 24} \\
+       & 0
+       \end{array}
+       \]
+      </div>
+    
+      <div style="flex: 1;">
+        Standard algorithm
+        \[
+        \require{enclose}
+        \begin{array}{rr}
+        & 28 \\
+        8 & \enclose{longdiv}{224} \\
+        & \underline{- 160} \\
+        & 64 \\
+        & \underline{- 64} \\
+        & 0
+        \end{array}
+        \]
+      </div>
+    </div>
+
 
     <figure style="text-align: center;">
       <img src="fig6.png" alt="(A + B)(C + D) = AC + AD + BC + BD" style="display: inline-block;">

@@ -201,17 +201,6 @@
 
     let a, b;
 
-    let aParts = [];
-    let bParts = [];
-    let aDigits = [];
-    let bDigits = [];
-
-    let inputElements = [];
-    let mode;
-
-    const decompositionContainer = document.getElementById('decomposition-inputs');
-
-
 
     const hintBtn = document.getElementById('hint-btn');
     const hintArea = document.getElementById('hint-area');
@@ -535,9 +524,6 @@
         sound.play();
       }
 
-      // Choose the mode, 1 is 2-digit*2-digit, 2 is 3-digit*2-digit, 3 is 3-digit*3-digit
-      mode = Math.floor(Math.random() * 3) + 1;
-
       if (ruleCheckboxes.basefive.checked) {
         if (mode === 1) {
           a = Math.floor(Math.random() * 20) + 5;
@@ -567,8 +553,6 @@
       hintIndex = 0;
       let i = 0
 
-      partialStepCompleted = false;
-
   
       // Display the question
       questionText.textContent = `What is \\(${ruleCheckboxes.basefive.checked ? a.toString(5) : a.toString(10)} \\cdot 
@@ -579,101 +563,11 @@
       
       // Clear the activity box
       activityBox.innerHTML = '';
-
-      decompositionContainer.innerHTML = ''; // Clear previous inputs
-      document.getElementById('final-answer-input').innerHTML = '';
-
-      const oldPartialProducts = document.getElementById('partial-products-inputs');
-      if (oldPartialProducts) oldPartialProducts.remove();
-
-      if (ruleCheckboxes.basefive.checked) {
-        aDigits = a.toString(5).split('').map(Number);
-        bDigits = b.toString(5).split('').map(Number);
-      } else {
-        aDigits = a.toString().split('').map(Number);
-        bDigits = b.toString().split('').map(Number);
-      }
-      
-      aParts = [];
-      bParts = [];
-
-      
-      if (ruleCheckboxes.basefive.checked) {
-        for (let i = 0; i < aDigits.length; i++) {
-          const place = Math.pow(5, aDigits.length - 1 - i);
-          aParts.push(aDigits[i] * place);
-        }
-        for (let i = 0; i < bDigits.length; i++) {
-          const place = Math.pow(5, bDigits.length - 1 - i);
-          bParts.push(bDigits[i] * place);
-        }
-      } else {
-        for (let i = 0; i < aDigits.length; i++) {
-          const place = Math.pow(10, aDigits.length - 1 - i);
-          aParts.push(aDigits[i] * place);
-        }
-        for (let i = 0; i < bDigits.length; i++) {
-          const place = Math.pow(10, bDigits.length - 1 - i);
-          bParts.push(bDigits[i] * place);
-        }
-      }
-      
-      const inputBox = (index, total, name) => `<input type="text" data-expected="${name[index]}" class="decomp-input" style="width: 50px; text-align: center;" />`;
-      
-      // Generate the HTML for the input boxes
-      let html = '= (';
-      html += aParts.map((_, i) => inputBox(i, aParts.length, aParts)).join(' + ');
-      html += ') × (';
-      html += bParts.map((_, i) => inputBox(i, bParts.length, bParts)).join(' + ');
-      html += ')';
-
-      console.log(`${html}`);
-      
-      decompositionContainer.innerHTML = html;
-
-      // Attach event listeners to validate input values and color them
-      inputElements = decompositionContainer.querySelectorAll('.decomp-input');
-      function validateInputsAndMaybeEnableNext() {
-      let allCorrect = true;
     
-      inputElements.forEach(input => {
-        const expected = parseInt(input.dataset.expected);
-        console.log(`Expected=${expected}`);
-        const value = parseInt(input.value, ruleCheckboxes.basefive.checked ? 5 : 10);
-        console.log(`Input=${value}`);
+      //drawCanvas(mode, inputElements, []);
     
-        if (!isNaN(value) && value === expected) {
-          input.style.backgroundColor = '#c8f7c5';  // light green
-        } else {
-          input.style.backgroundColor = '#f8d7da';  // light red
-          allCorrect = false;
-        }
-      });
-    
-      drawCanvas(mode, inputElements, []);
-    
-      nextBtn.disabled = !allCorrect;
     }
     
-    inputElements.forEach(input => {
-      input.addEventListener('input', validateInputsAndMaybeEnableNext);
-    });
-
-
-
-
-      
-
-
-      hintIndex = 0;
-      hintArea.innerHTML = "";  // Clear previous hints
-
-      drawCanvas(mode, inputElements, []);
-
-
-
-
-    });
 
 
     const checkBtn = document.getElementById('check-btn');
@@ -699,154 +593,19 @@
       }
     });
 
-    let partialStepCompleted = false;
-
     hintBtn.addEventListener('click', () => {
       const sound = document.getElementById('click-sound');
       if (sound) {
         sound.currentTime = 0;
         sound.play();
       }
-    
-      if (partialStepCompleted) {
-        console.log("Hint clicked after partial products completed — next stage should start.");
-      
-        const partialInputs = document.querySelectorAll('.partial-input');
-        partialInputs.forEach(input => input.disabled = true);
-      
-        console.log("Partial product inputs disabled.");
-      
-        // Avoid duplicating the final input
-        const finalAnswerDiv = document.getElementById('final-answer-input');
-        if (!finalAnswerDiv.querySelector('input')) {
-          console.log("Creating final answer input box.");
-          
-          const finalAnswer = a * b;
-      
-          finalAnswerDiv.innerHTML = `= <input type="text" id="final-input" data-expected="${finalAnswer}" style="width: 100px; text-align: center;" />`;
-      
-          const finalInput = document.getElementById('final-input');
-          finalInput.addEventListener('input', () => {
-            const value = parseInt(finalInput.value, ruleCheckboxes.basefive.checked ? 5 : 10);
-            const expected = parseInt(finalInput.dataset.expected);
-      
-            if (!isNaN(value) && value === expected) {
-              finalInput.style.backgroundColor = '#c8f7c5';
-              hintBtn.disabled = true;  // or hide it, if desired
-              feedbackText.textContent = "Correct!";
-              feedbackText.style.color = "green";
-            } else {
-              finalInput.style.backgroundColor = '#f8d7da';
-              feedbackText.textContent = "";
-            }
-          });
-        } else {
-          console.log("Final input box already exists.");
-        }
-      
-        return;
-      }
-
-
-
-  
-    const allInputs = document.querySelectorAll('.decomp-input');
-    const allCorrect = Array.from(allInputs).every(input => {
-      return parseInt(input.value, ruleCheckboxes.basefive.checked ? 5 : 10) === parseInt(input.dataset.expected);
-    });
-  
-    if (!allCorrect) return;
-
-    console.log("Hint button clicked");
-    console.log("All decomposition inputs correct:", allCorrect);
-    console.log("aParts:", aParts);
-    console.log("bParts:", bParts);
-    console.log("Number of expected partial products:", aParts.length * bParts.length);
-
-  
-    // Freeze the inputs
-    allInputs.forEach(input => input.disabled = true);
-  
-    // Placeholder for the next step (partial products) — to be implemented next.
-    console.log("Proceeding to next step!");
-
-    // Get the original values used for decomposition
-    aParts = [];
-    bParts = [];
-    allInputs.forEach((input, index) => {
-      const expected = parseInt(input.dataset.expected);
-      if (index < allInputs.length - bDigits.length) {
-        aParts.push(expected);
-      } else {
-        bParts.push(expected);
-      }
-    });
-    
-    // Compute partial products
-    const partialProducts = [];
-    for (let i = 0; i < aParts.length; i++) {
-      for (let j = 0; j < bParts.length; j++) {
-        partialProducts.push(aParts[i] * bParts[j]);
-      }
-    }
-
-    console.log("Partial products:", partialProducts);
-    
-    // Create the container if not already present
-    let partialProductsContainer = document.getElementById('partial-products-inputs');
-    if (!partialProductsContainer) {
-      partialProductsContainer = document.createElement('div');
-      partialProductsContainer.id = 'partial-products-inputs';
-      partialProductsContainer.style.textAlign = 'center';
-      partialProductsContainer.style.marginTop = '1em';
-      decompositionContainer.insertAdjacentElement('afterend', partialProductsContainer);
-    }
-    partialProductsContainer.innerHTML = '';
-    
-    let html = '= ' + partialProducts.map((value, index) => {
-      return `<input type="text" data-expected="${value}" class="partial-input" style="width: 70px; text-align: center;" />`;
-    }).join(' + ');
-
-    
-    partialProductsContainer.innerHTML = html;
-    
-    const partialInputs = partialProductsContainer.querySelectorAll('.partial-input');
-    
-    function validatePartialInputsAndEnableNext() {
-      let allCorrect = true;
-      partialInputs.forEach((input, index) => {
-        const expected = parseInt(input.dataset.expected);
-        const value = parseInt(input.value, ruleCheckboxes.basefive.checked ? 5 : 10);
-        console.log(`Partial input ${index}: value=${value}, expected=${expected}`);
-    
-        if (!isNaN(value) && value === expected) {
-          input.style.backgroundColor = '#c8f7c5';
-        } else {
-          input.style.backgroundColor = '#f8d7da';
-          allCorrect = false;
-        }
-      });
-    
-      console.log("All partial inputs correct?", allCorrect);
-      hintBtn.disabled = !allCorrect;
-      if (allCorrect) {
-        partialStepCompleted = true;
-      } else {
-        partialStepCompleted = false;
-      }
 
     
       // Optionally: updateCanvas again here if you want to draw products
-      drawCanvas(mode, inputElements, partialInputs);
+      //drawCanvas(mode, inputElements, partialInputs);
     }
 
     
-    partialInputs.forEach(input => {
-      input.addEventListener('input', validatePartialInputsAndEnableNext);
-    });
-
-
-  });
   
 
     

@@ -157,7 +157,7 @@
    </div>
 
     <div class="button-container">
-      <button id="hint-btn" class="rubber-button">Next</button>
+      <button id="next-btn" class="rubber-button">Next</button>
     </div>
     
     <div class="activity-box" id="my-activity">
@@ -207,7 +207,7 @@
     // a and b are the multiplicands (b is the final answer), c is what we are dividing into, and d is the running total (as we subtract from c)
     let a, b, c, d;
    
-    const hintBtn = document.getElementById('hint-btn');
+    const nextBtn = document.getElementById('next-btn');
     const hintArea = document.getElementById('hint-area');
     
 
@@ -602,7 +602,7 @@
     });
 
 
-    hintBtn.addEventListener('click', () => {
+    nextBtn.addEventListener('click', () => {
       console.log(`Next clicked`);
       const sound = document.getElementById('click-sound');
       if (sound) {

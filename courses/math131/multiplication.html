@@ -558,6 +558,8 @@
       html += ') × (';
       html += bParts.map((_, i) => inputBox(i, bParts.length, bParts)).join(' + ');
       html += ')';
+
+      console.log(`${html}`);
       
       decompositionContainer.innerHTML = html;
 

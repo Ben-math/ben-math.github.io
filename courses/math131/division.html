@@ -10,7 +10,6 @@
   <script id="MathJax-script" async
     src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
   </script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
   <header>
@@ -235,39 +234,6 @@
       
       ctx.strokeStyle = 'black';
       ctx.lineWidth = 4;
-
-      const latex = `
-           \\\[
-           \\require{enclose}
-           \\begin{array}{rr}
-           & 3 \\\\ 
-           & 5 \\\\
-           & 10 \\\\
-           & 10 \\\\
-           8 & \\enclose{longdiv}{224} \\\\
-           & \\underline{- {\\color{ForestGreen}80}} \\\\
-           & 144 \\\\
-           & \\underline{- {\\color{blue}80}} \\\\
-           & 64 \\\\
-           & \\underline{- {\\color{purple}40}} \\\\
-           & 24 \\\\
-           & \\underline{- {\\color{orange}24}} \\\\
-           & 0
-           \\end{array}
-           \\\]
-       `;
-   
-       // Put LaTeX into hidden container
-       const latexContainer = document.getElementById('latex-container');
-       latexContainer.innerHTML = latex;
-   
-       // Ask MathJax to typeset it
-       MathJax.typesetPromise([latexContainer]).then(() => {
-           // Render the HTML to an image and draw on canvas
-           html2canvas(latexContainer).then(renderedCanvas => {
-               ctx.drawImage(renderedCanvas, 20, 50); // Adjust position
-           });
-       });
 
     }
 

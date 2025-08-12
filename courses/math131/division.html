@@ -275,6 +275,11 @@
    
        ctx.textAlign = "right"; 
        for (let i = 0; i < partialDifferences.length; i++) {
+           if (ruleCheckboxes.basefive.checked) {
+            ctx.fillText((parseInt(partialQuotients[i].toString(), 5) * a).toString(5), startX, startY + i * lineHeight2 - 35);
+           } else {
+            ctx.fillText(partialDifferences[i] * a, startX, startY + i * lineHeight2 - 35);
+           }
            ctx.beginPath();
            ctx.moveTo(205, startY + i * lineHeight2 - 30);
            ctx.lineTo(285, startY + i * lineHeight2 - 30);

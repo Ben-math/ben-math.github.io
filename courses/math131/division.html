@@ -225,7 +225,7 @@
     const activityBox = document.getElementById('my-activity');
 
 
-    function drawCanvas(mode, inputElements, partialInputElements = []) {
+    function drawCanvas() {
       activityBox.innerHTML = ''; // clear
       const canvas = document.createElement('canvas');
       canvas.width = 1300;
@@ -413,6 +413,7 @@
   
       // Clear the input
       document.getElementById("partial-quotient-input").value = "";
+      drawCanvas();
   });
   
 

@@ -10,6 +10,7 @@
   <script id="MathJax-script" async
     src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
   </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
   <header>
@@ -164,6 +165,7 @@
        <p id="feedback" style="display: none; margin: 0;"></p>
    </div>
 
+   <div id="latex-container" style="display: none;"></div>
     
     <div class="activity-box" id="my-activity">
 
@@ -234,153 +236,38 @@
       ctx.strokeStyle = 'black';
       ctx.lineWidth = 4;
 
-      if (mode === 1) {
-        ctx.strokeRect(375, 80, 550, 550);
-        ctx.fillStyle = 'red';
-        ctx.fillRect(375, 80, 440, 440);
-        ctx.fillStyle = 'skyblue';
-        ctx.fillRect(815, 80, 110, 440);
-        ctx.fillStyle = 'orange';
-        ctx.fillRect(375, 520, 440, 110);
-        ctx.fillStyle = 'lime';
-        ctx.fillRect(815, 520, 110, 110);
-        ctx.strokeRect(375, 80, 440, 440);
-        ctx.strokeRect(815, 80, 110, 440);
-        ctx.strokeRect(375, 520, 440, 110);
-        ctx.strokeRect(815, 520, 110, 110);
-      } else if (mode === 2) {
-        ctx.fillStyle = 'red';
-        ctx.fillRect(450, 80, 320, 390);
-        ctx.fillStyle = 'orange';
-        ctx.fillRect(770, 80, 80, 390);
-        ctx.fillStyle = 'yellow';
-        ctx.fillRect(450, 470, 320, 110);
-        ctx.fillStyle = 'lime';
-        ctx.fillRect(770, 470, 80, 110);
-        ctx.fillStyle = 'skyblue';
-        ctx.fillRect(450, 580, 320, 50);
-        ctx.fillStyle = 'violet';
-        ctx.fillRect(770, 580, 80, 50);
-        ctx.strokeRect(450, 80, 400, 550);
-        ctx.strokeRect(450, 80, 320, 390);
-        ctx.strokeRect(770, 80, 80, 390);
-        ctx.strokeRect(450, 470, 320, 110);
-        ctx.strokeRect(770, 470, 80, 110);
-        ctx.strokeRect(450, 580, 320, 50);
-        ctx.strokeRect(770, 580, 80, 50);
-      } else if (mode === 3) {
-        ctx.fillStyle = 'red';
-        ctx.fillRect(375, 80, 390, 390);
-        ctx.fillStyle = 'orange';
-        ctx.fillRect(765, 80, 110, 390);
-        ctx.fillStyle = 'yellow';
-        ctx.fillRect(875, 80, 50, 390);
-        ctx.fillStyle = 'skyblue';
-        ctx.fillRect(375, 470, 390, 110);
-        ctx.fillStyle = 'lime';
-        ctx.fillRect(765, 470, 110, 110);
-        ctx.fillStyle = 'violet';
-        ctx.fillRect(875, 470, 50, 110);
-        ctx.fillStyle = 'pink';
-        ctx.fillRect(375, 580, 390, 50);
-        ctx.fillStyle = 'rgba(163,114,65,0.8)';
-        ctx.fillRect(765, 580, 110, 50);
-        ctx.fillStyle = 'lightgray';
-        ctx.fillRect(875, 580, 50, 50);
-        ctx.strokeRect(375, 80, 550, 550);
-        ctx.strokeRect(375, 80, 390, 390);
-        ctx.strokeRect(765, 80, 110, 390);
-        ctx.strokeRect(875, 80, 50, 390);
-        ctx.strokeRect(375, 470, 390, 110);
-        ctx.strokeRect(765, 470, 110, 110);
-        ctx.strokeRect(875, 470, 50, 110);
-        ctx.strokeRect(375, 580, 390, 50);
-        ctx.strokeRect(765, 580, 110, 50);
-        ctx.strokeRect(875, 580, 50, 50);
-      }
-    
-      // Now draw the label values
-      ctx.font = "bold 48px Arial";
-      ctx.fillStyle = "black";
-
-      ctx.textAlign = "center"; // default for top labels
-
-    
-      inputElements.forEach((input, index) => {
-      const val = input.value;
-      if (!isNaN(val) && val.trim() !== "") {
-        let x = 0, y = 0;
-    
-        if (mode === 1) {
-          if (index === 0) {
-            ctx.textAlign = "right"
-            x = 370;
-            y = 330;
-          } else if (index === 1) {
-            ctx.textAlign = "right"
-            x = 370;
-            y = 590;
-          } else if (index === 2) {
-            ctx.textAlign = "center"
-            x = 595;
-            y = 70;
-          } else if (index === 3) {
-            ctx.textAlign = "center"
-            x = 870;
-            y = 70;
-          }
-        } else if (mode === 2) {
-          if (index === 0) {
-            ctx.textAlign = "right"
-            x = 440;
-            y = 300;
-          } else if (index === 1) {
-            ctx.textAlign = "right"
-            x = 440;
-            y = 546;
-          } else if (index === 2) {
-            ctx.textAlign = "right"
-            x = 440;
-            y = 623;
-          } else if (index === 3) {
-            ctx.textAlign = "center"
-            x = 613;
-            y = 70;
-          } else if (index === 4) {
-            ctx.textAlign = "center"
-            x = 813;
-            y = 70;
-          }
-        } else if (mode === 3) {
-          if (index === 0) {
-            ctx.textAlign = "right"
-            x = 370;
-            y = 300;
-          } else if (index === 1) {
-            ctx.textAlign = "right"
-            x = 370;
-            y = 546;
-          } else if (index === 2) {
-            ctx.textAlign = "right"
-            x = 370;
-            y = 623;
-          } else if (index === 3) {
-            ctx.textAlign = "center"
-            x = 570;
-            y = 70;
-          } else if (index === 4) {
-            ctx.textAlign = "center"
-            x = 820;
-            y = 70;
-          } else if (index === 5) {
-            ctx.textAlign = "center"
-            x = 900;
-            y = 70;
-          }
-        }
-    
-        ctx.fillText(val, x, y);
-      }
+      const latex = `
+           \\\[
+           \\require{enclose}
+           \\begin{array}{rr}
+           & 3 \\\\ 
+           & 5 \\\\
+           & 10 \\\\
+           & 10 \\\\
+           8 & \\enclose{longdiv}{224} \\\\
+           & \\underline{- {\\color{ForestGreen}80}} \\\\
+           & 144 \\\\
+           & \\underline{- {\\color{blue}80}} \\\\
+           & 64 \\\\
+           & \\underline{- {\\color{purple}40}} \\\\
+           & 24 \\\\
+           & \\underline{- {\\color{orange}24}} \\\\
+           & 0
+           \\end{array}
+           \\\]
+       `;
+   
+       // Put LaTeX into hidden container
+       const latexContainer = document.getElementById('latex-container');
+       latexContainer.innerHTML = latex;
+   
+       // Ask MathJax to typeset it
+       MathJax.typesetPromise([latexContainer]).then(() => {
+           // Render the HTML to an image and draw on canvas
+           html2canvas(latexContainer).then(renderedCanvas => {
+               ctx.drawImage(renderedCanvas, 20, 50); // Adjust position
+           });
+       });
     });
 
       // Draw partial product values on canvas

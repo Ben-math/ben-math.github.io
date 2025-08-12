@@ -239,29 +239,29 @@
       ctx.strokeStyle = 'black';
       ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.moveTo(205, 370);
-      ctx.lineTo(285, 370);
+      ctx.moveTo(205, 390);
+      ctx.lineTo(285, 390);
       ctx.stroke();
       ctx.beginPath();
-      ctx.moveTo(205, 370);
-      ctx.lineTo(205, 405);
+      ctx.moveTo(205, 390);
+      ctx.lineTo(205, 425);
       ctx.stroke();
 
       // Now draw the label values
       ctx.font = "bold 30px Arial";
       ctx.fillStyle = "black";
       ctx.textAlign = "right"; 
-      ctx.fillText(a, 200, 400);
+      ctx.fillText(a, 200, 420);
       if (ruleCheckboxes.basefive.checked) {
-       ctx.fillText(c.toString(5), 280, 400);
+       ctx.fillText(c.toString(5), 280, 420);
       } else {
-       ctx.fillText(c, 280, 400);
+       ctx.fillText(c, 280, 420);
       }
 
 
       // Stack partial quotients upward
       const startX = 280;  // align with c
-      let startY = 360;    // just above c
+      let startY = 380;    // just above c
       const lineHeight = 35;
   
       ctx.textAlign = "right"; 
@@ -270,8 +270,8 @@
       }
 
 
-       startY = 470;    // just below c
-       const lineHeight2 = 68;
+       startY = 490;    // just below c
+       const lineHeight2 = 67;
    
        ctx.textAlign = "right"; 
        for (let i = 0; i < partialDifferences.length; i++) {

@@ -269,27 +269,42 @@
           ctx.fillText(partialQuotients[i], startX, startY - i * lineHeight);
       }
 
+      // Find the maximum distance from c so we can scale colors
+      const maxDiff = Math.max(...partialDifferences.map(val => Math.abs(c - val)), 1);
+      
+      startY = 505;    
+      const lineHeight2 = 67;
+      
+      ctx.textAlign = "right"; 
+      for (let i = 0; i < partialDifferences.length; i++) {
+          // RGB interpolation from dark to light green
+          const distance = Math.abs(c - partialDifferences[i]);
+          const ratio = distance / maxDiff; // 0 → dark, 1 → light
+          const r = Math.round(0 + ratio * (144 - 0));
+          const g = Math.round(100 + ratio * (238 - 100));
+          const b = Math.round(0 + ratio * (144 - 0));
+          ctx.fillStyle = `rgb(${r},${g},${b})`;
+      
+          if (ruleCheckboxes.basefive.checked) {
+              ctx.fillText((parseInt(partialQuotients[i].toString(), 5) * a).toString(5) * -1, startX, startY + i * lineHeight2 - 35);
+          } else {
+              ctx.fillText(partialQuotients[i] * a * -1, startX, startY + i * lineHeight2 - 35);
+          }
+      
+          ctx.beginPath();
+          ctx.moveTo(205, startY + i * lineHeight2 - 30);
+          ctx.lineTo(285, startY + i * lineHeight2 - 30);
+          ctx.stroke();
+      
+          // Set same fillStyle before writing remainder
+          ctx.fillStyle = `rgb(${r},${g},${b})`;
+          if (ruleCheckboxes.basefive.checked) {
+              ctx.fillText(partialDifferences[i].toString(5), startX, startY + i * lineHeight2);
+          } else {
+              ctx.fillText(partialDifferences[i], startX, startY + i * lineHeight2);
+          }
+      }
 
-       startY = 505;    // just below c
-       const lineHeight2 = 67;
-   
-       ctx.textAlign = "right"; 
-       for (let i = 0; i < partialDifferences.length; i++) {
-           if (ruleCheckboxes.basefive.checked) {
-            ctx.fillText((parseInt(partialQuotients[i].toString(), 5) * a).toString(5) * -1, startX, startY + i * lineHeight2 - 35);
-           } else {
-            ctx.fillText(partialQuotients[i] * a * -1, startX, startY + i * lineHeight2 - 35);
-           }
-           ctx.beginPath();
-           ctx.moveTo(205, startY + i * lineHeight2 - 30);
-           ctx.lineTo(285, startY + i * lineHeight2 - 30);
-           ctx.stroke();
-           if (ruleCheckboxes.basefive.checked) {
-            ctx.fillText(partialDifferences[i].toString(5), startX, startY + i * lineHeight2);
-           } else {
-            ctx.fillText(partialDifferences[i], startX, startY + i * lineHeight2);
-           }
-       }
 
     }
 

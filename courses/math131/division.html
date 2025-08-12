@@ -276,9 +276,9 @@
        ctx.textAlign = "right"; 
        for (let i = 0; i < partialDifferences.length; i++) {
            if (ruleCheckboxes.basefive.checked) {
-            ctx.fillText((parseInt(partialQuotients[i].toString(), 5) * b).toString(5), startX, startY + i * lineHeight2 - 35);
+            ctx.fillText((parseInt(partialQuotients[i].toString(), 5) * b * -1).toString(5), startX, startY + i * lineHeight2 - 35);
            } else {
-            ctx.fillText(partialDifferences[i] * b, startX, startY + i * lineHeight2 - 35);
+            ctx.fillText(partialDifferences[i] * b * -1, startX, startY + i * lineHeight2 - 35);
            }
            ctx.beginPath();
            ctx.moveTo(205, startY + i * lineHeight2 - 30);

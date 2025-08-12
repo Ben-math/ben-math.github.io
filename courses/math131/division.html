@@ -269,14 +269,12 @@
       }
 
 
-      // Stack partial differences downwards
-       const startX = 280;  // align with c
-       let startY = 440;    // just below c
-       const lineHeight = 35;
+       startY = 440;    // just below c
+       const lineHeight2 = 35;
    
        ctx.textAlign = "right"; 
        for (let i = 0; i < partialDifferences.length; i++) {
-           ctx.fillText(partialDifferences[i], startX, startY + i * lineHeight);
+           ctx.fillText(partialDifferences[i], startX, startY + i * lineHeight2);
        }
 
     }

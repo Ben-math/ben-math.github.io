@@ -279,7 +279,11 @@
            ctx.moveTo(205, startY + i * lineHeight2 - 30);
            ctx.lineTo(285, startY + i * lineHeight2 - 30);
            ctx.stroke();
-           ctx.fillText(partialDifferences[i], startX, startY + i * lineHeight2);
+           if (ruleCheckboxes.basefive.checked) {
+            ctx.fillText(partialDifferences[i].toString(5), startX, startY + i * lineHeight2);
+           } else {
+            ctx.fillText(partialDifferences[i], startX, startY + i * lineHeight2);
+           }
        }
 
     }

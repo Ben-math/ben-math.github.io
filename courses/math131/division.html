@@ -296,8 +296,8 @@
           ctx.lineTo(285, startY + i * lineHeight2 - 30);
           ctx.stroke();
       
-          // Set same fillStyle before writing remainder
-          ctx.fillStyle = `rgb(${r},${g},${b})`;
+          // Black for remainder
+          ctx.fillStyle = "black";
           if (ruleCheckboxes.basefive.checked) {
               ctx.fillText(partialDifferences[i].toString(5), startX, startY + i * lineHeight2);
           } else {

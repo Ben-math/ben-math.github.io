@@ -279,6 +279,11 @@
           const g = Math.round(100 + ratio * (238 - 100));
           const b = Math.round(0 + ratio * (144 - 0));
 
+          const r2 = Math.round(139 + (255 - 139) * ratio);
+          const g2 = Math.round(0 + (200 - 0) * ratio);
+          const b2 = Math.round(0 + (200 - 0) * ratio);
+          ctx.fillStyle = `rgb(${r2},${g2},${b2})`;
+
           ctx.fillText(partialQuotients[i], startX, startY2 - i * lineHeight);
        
           ctx.fillStyle = `rgb(${r},${g},${b})`;

@@ -253,6 +253,17 @@
       ctx.fillText(a, 200, 400);
       ctx.fillText(c, 280, 400);
 
+
+      // Stack partial quotients upward
+      const startX = 280;  // align with c
+      let startY = 360;    // just above c
+      const lineHeight = 35;
+  
+      ctx.textAlign = "center"; 
+      for (let i = 0; i < partialQuotients.length; i++) {
+          ctx.fillText(partialQuotients[i], startX, startY - i * lineHeight);
+      }
+
     }
 
 

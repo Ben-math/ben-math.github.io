@@ -278,7 +278,7 @@
            if (ruleCheckboxes.basefive.checked) {
             ctx.fillText((parseInt(partialQuotients[i].toString(), 5) * a).toString(5) * -1, startX, startY + i * lineHeight2 - 35);
            } else {
-            ctx.fillText(partialDifferences[i] * a * -1, startX, startY + i * lineHeight2 - 35);
+            ctx.fillText(partialQuotients[i] * a * -1, startX, startY + i * lineHeight2 - 35);
            }
            ctx.beginPath();
            ctx.moveTo(205, startY + i * lineHeight2 - 30);

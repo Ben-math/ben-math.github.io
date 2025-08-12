@@ -620,9 +620,13 @@
   
       const inputVal = document.getElementById("partial-quotient-input").value.trim();
       const partialQuotient = parseInt(inputVal, 10);
+      let internalQuotient = partialQuotient;
+      if (ruleCheckboxes.basefive.checked) {
+       internalQuotient = parseInt(partialQuotient, 5);
+      }
   
       // Check for positive integer
-      if (!Number.isInteger(partialQuotient) || partialQuotient <= 0) {
+      if (!Number.isInteger(internalQuotient) || internalQuotient <= 0) {
           feedback.textContent = "Enter a positive integer.";
           feedback.style.color = "black";
           feedback.style.display = "block";
@@ -630,7 +634,7 @@
       }
   
       // Check if overshot
-      if (partialQuotient * a > d) {
+      if (internalQuotient * a > d) {
           feedback.textContent = "Overshot: enter a smaller number.";
           feedback.style.color = "red";
           feedback.style.display = "block";
@@ -638,7 +642,7 @@
       }
   
       // If valid, process
-      d -= partialQuotient * a;
+      d -= internalQuotient * a;
       partialQuotients.push(partialQuotient);
       count++;
   

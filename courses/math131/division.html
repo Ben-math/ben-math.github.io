@@ -269,11 +269,15 @@
       }
 
 
-       startY = 440;    // just below c
-       const lineHeight2 = 35;
+       startY = 435;    // just below c
+       const lineHeight2 = 75;
    
        ctx.textAlign = "right"; 
        for (let i = 0; i < partialDifferences.length; i++) {
+           ctx.beginPath();
+           ctx.moveTo(205, startY + i * lineHeight2 - 30);
+           ctx.lineTo(285, startY + i * lineHeight2 - 30);
+           ctx.stroke();
            ctx.fillText(partialDifferences[i], startX, startY + i * lineHeight2);
        }
 

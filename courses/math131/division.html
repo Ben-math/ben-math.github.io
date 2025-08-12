@@ -191,6 +191,7 @@
     // Variable count will keep track of the number of partial quotients successfully input
     let count = 0;
     let partialQuotients = [];
+    let partialDifferences = [];
 
     const feedback = document.getElementById("feedback");
 
@@ -342,19 +343,19 @@
       }
 
       feedback.style.display = "none"; // hide by default
-  
+
       const inputVal = document.getElementById("partial-quotient-input").value.trim();
       const partialQuotient = parseInt(inputVal, 10);
       let internalQuotient = partialQuotient;
       if (ruleCheckboxes.basefive.checked) {
-       internalQuotient = parseInt(partialQuotient, 5);
+          internalQuotient = parseInt(partialQuotient, 5);
       }
   
       // Check for positive integer
       if (!Number.isInteger(internalQuotient) || internalQuotient <= 0) {
           feedback.textContent = "Enter a positive integer.";
           if (ruleCheckboxes.basefive.checked) {
-           feedback.textContent = "Enter a valid base-five positive integer.";
+              feedback.textContent = "Enter a valid base-five positive integer.";
           }
           feedback.style.color = "black";
           feedback.style.display = "block";
@@ -372,10 +373,13 @@
       // If valid, process
       d -= internalQuotient * a;
       partialQuotients.push(partialQuotient);
+      partialDifferences.push(d); // store new running difference
       count++;
   
       console.log(`Partial quotient accepted: ${partialQuotient}`);
       console.log(`New remainder (d): ${d}`);
+      console.log(`Partial quotients: ${partialQuotients}`);
+      console.log(`Partial differences: ${partialDifferences}`);
   
       // Clear the input
       document.getElementById("partial-quotient-input").value = "";

@@ -628,6 +628,9 @@
       // Check for positive integer
       if (!Number.isInteger(internalQuotient) || internalQuotient <= 0) {
           feedback.textContent = "Enter a positive integer.";
+          if (ruleCheckboxes.basefive.checked) {
+           feedback.textContent = "Enter a valid base-five positive integer.";
+          }
           feedback.style.color = "black";
           feedback.style.display = "block";
           return;

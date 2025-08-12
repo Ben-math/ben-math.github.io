@@ -424,6 +424,12 @@
       const partialQuotient = parseInt(inputVal, 10);
       let internalQuotient = partialQuotient;
       if (ruleCheckboxes.basefive.checked) {
+          if (!/^[0-4]+$/.test(internalQuotient.toString())) {
+            feedback.textContent = "Enter a valid base-five positive integer.";
+            feedback.style.color = "black";
+            feedback.style.display = "block";
+            return;
+          }
           internalQuotient = parseInt(partialQuotient, 5);
       }
   

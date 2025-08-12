@@ -261,18 +261,13 @@
 
       // Stack partial quotients upward
       const startX = 280;  // align with c
-      let startY = 395;    // just above c
+      let startY2 = 395;    // just above c
       const lineHeight = 35;
   
-      ctx.textAlign = "right"; 
-      for (let i = 0; i < partialQuotients.length; i++) {
-          ctx.fillText(partialQuotients[i], startX, startY - i * lineHeight);
-      }
-
       // Find the maximum distance from c so we can scale colors
       const maxDiff = Math.max(...partialDifferences.map(val => Math.abs(c - val)), 1);
       
-      startY = 505;    
+      let startY = 505;    
       const lineHeight2 = 67;
       
       ctx.textAlign = "right"; 
@@ -283,6 +278,9 @@
           const r = Math.round(0 + ratio * (144 - 0));
           const g = Math.round(100 + ratio * (238 - 100));
           const b = Math.round(0 + ratio * (144 - 0));
+
+          ctx.fillText(partialQuotients[i], startX, startY2 - i * lineHeight);
+       
           ctx.fillStyle = `rgb(${r},${g},${b})`;
       
           if (ruleCheckboxes.basefive.checked) {

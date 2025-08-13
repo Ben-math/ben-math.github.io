@@ -479,6 +479,13 @@
       partialQuotients.push(partialQuotient);
       partialDifferences.push(d); // store new running difference
       count++;
+
+      // Check if the most recent partial difference is zero
+      if (partialDifferences[partialDifferences.length - 1] === 0) {
+          document.getElementById("next-btn").style.display = "none";
+          document.getElementById("final-answer-input").style.display = "block";
+          document.getElementById("check-answer-btn").style.display = "block";
+      }
   
       console.log(`Partial quotient accepted: ${partialQuotient}`);
       console.log(`New remainder (d): ${d}`);

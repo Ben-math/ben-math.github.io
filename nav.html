@@ -45,19 +45,12 @@
 </nav>
 
 <!-- Mascot overlay (hidden by default) -->
-<div id="mascot" hidden style="
-  position: fixed; right: 16px; bottom: 16px; z-index: 10000;
-  display: flex; align-items: flex-end; gap: 10px; font-family: system-ui, sans-serif;">
-  <img id="mascot-img" alt="Help mascot" style="width:180px; height:auto; pointer-events:none;">
-  <div id="mascot-bubble" style="
-    max-width: 280px; padding: 10px 12px; border-radius: 12px;
-    background:#fff; border:2px solid #111; box-shadow:0 6px 24px rgba(0,0,0,.15);">
-    Need a hand?
-  </div>
-  <button id="mascot-close" aria-label="Close" style="
-    position:absolute; top:-8px; right:-8px; width:28px; height:28px;
-    border-radius:50%; border:2px solid #111; background:#fff; cursor:pointer;">×</button>
+<div id="mascot" hidden>
+  <img id="mascot-img" alt="Help mascot">
+  <div id="mascot-bubble" class="mascot-bubble">Need a hand?</div>
+  <button id="mascot-close" aria-label="Close">×</button>
 </div>
+
 
 
 

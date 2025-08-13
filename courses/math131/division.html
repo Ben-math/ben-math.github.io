@@ -176,11 +176,12 @@
 
     </div>
 
-    <div id="final-answer-input" style="text-align: center; margin-top: 1em;"></div>
-
+    <div id="final-answer-container" style="text-align: center; margin-top: 10px;">
+       <input id="final-answer-input" type="number" />
+   </div>
 
     <div id="check-btn-container" style="text-align: center; margin-top: 10px;">
-       <button id="check-btn" class="rubber-button">Next</button>
+       <button id="check-btn" class="rubber-button">Check Answer</button>
    </div>
     
     <div class="button-container">
@@ -350,7 +351,7 @@
       const pqContainer = document.getElementById("partial-quotient-container");
       const pqInput = document.getElementById("partial-quotient-input");
 
-     document.getElementById("final-answer-input").style.display = "none";
+     document.getElementById("final-answer-container").style.display = "none";
      document.getElementById("check-btn-container").style.display = "none";
      document.getElementById("next-btn-container").style.display = "block";
      document.getElementById("partial-quotient-container").style.display = "block";
@@ -502,7 +503,7 @@
       // Check if the most recent partial difference is zero
       if (partialDifferences[partialDifferences.length - 1] === 0) {
           document.getElementById("next-btn-container").style.display = "none";
-          document.getElementById("final-answer-input").style.display = "block";
+          document.getElementById("final-answer-container").style.display = "block";
           document.getElementById("check-btn-container").style.display = "block";
           document.getElementById("partial-quotient-container").style.display = "none";
           questionText.textContent = `What is \\(${ruleCheckboxes.basefive.checked ? c.toString(5) : c.toString(10)} \\div 

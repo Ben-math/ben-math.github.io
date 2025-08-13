@@ -294,7 +294,7 @@
           if (i === 0) {
            ctx.fillRect(400, 260, ratio * 800, 300);
           } else {
-           ctx.fillRect(400 + ((Math.abs(partialDifferences[i-1] - c) / c) * 800), 260, ratio * 800, 300);
+           ctx.fillRect(400 + ((Math.abs(partialDifferences[i-1] - c) / c) * 800), 260, (Math.abs(partialDifferences[i] - partialDifferences[i-1]) / c) * 800, 300);
           }
       
           ctx.beginPath();

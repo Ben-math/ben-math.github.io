@@ -499,6 +499,7 @@
           document.getElementById("partial-quotient-input").style.display = "none";
           questionText.textContent = `What is \\(${ruleCheckboxes.basefive.checked ? c.toString(5) : c.toString(10)} \\div 
           ${ruleCheckboxes.basefive.checked ? a.toString(5) : a.toString(10)}\\)?  Sum your partial quotients and input final answer below!`;
+          MathJax.typeset([questionText]);
       }
   });
   

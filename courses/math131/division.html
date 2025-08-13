@@ -302,7 +302,7 @@
            ctx.fillStyle = `rgb(${r2},${g2},${b2})`;
            ctx.font = "bold 20px Arial";
            ctx.textAlign = "center"; 
-           ctx.fillText(partialQuotients[i], ((400 + ((Math.abs(partialDifferences[i-1] - c) / c) * 800)) + ((Math.abs(partialDifferences[i] - partialDifferences[i-1]) / c) * 800))/2, 250);
+           ctx.fillText(partialQuotients[i], (400 + ((Math.abs(partialDifferences[i-1] - c) / c) * 800)) + ((Math.abs(partialDifferences[i] - partialDifferences[i-1]) / c) * 800)/2, 250);
           }
 
           ctx.font = "bold 30px Arial";

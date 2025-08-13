@@ -442,8 +442,13 @@
         feedbackText.textContent = "Correct!";
         feedbackText.style.color = "green";
       } else {
-        feedbackText.textContent = "Incorrect. Try again!";
-        feedbackText.style.color = "red";
+        if (ruleCheckboxes.basefive.checked) {
+         feedbackText.textContent = "Incorrect. Try adding your partial quotients again (note we are in base-five here)!";
+         feedbackText.style.color = "red";
+        } else {
+         feedbackText.textContent = "Incorrect. Try adding your partial quotients again!";
+         feedbackText.style.color = "red";
+        }
       }
     });
 

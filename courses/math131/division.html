@@ -258,6 +258,11 @@
        ctx.fillText(c, 280, 435);
       }
 
+      ctx.strokeStyle = 'black';
+      ctx.lineWidth = 4;
+   
+      ctx.strokeRect(400, 300, 800, 300);
+
 
       // Stack partial quotients upward
       const startX = 280;  // align with c
@@ -280,9 +285,12 @@
           const b2 = Math.round(0 + (200 - 0) * ratio);
           ctx.fillStyle = `rgb(${r2},${g2},${b2})`;
 
+          //ctx.fillRect(375, 80, 440, 440);
+
           ctx.fillText(partialQuotients[i], startX, startY2 - i * lineHeight);
        
           ctx.fillStyle = `rgb(${r},${g},${b})`;
+
       
           if (ruleCheckboxes.basefive.checked) {
               ctx.fillText((parseInt(partialQuotients[i].toString(), 5) * a).toString(5) * -1, startX, startY + i * lineHeight2 - 35);

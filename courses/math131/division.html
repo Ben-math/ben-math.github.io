@@ -429,10 +429,16 @@
         sound.play();
       }
     
-      let correct = true;
+      let answer = document.getElementById("final-answer-input").value.trim();
+      let answer2;
+      if (ruleCheckboxes.basefive.checked) {
+       answer2 = parseInt(answer,5);
+      } else {
+       answer2 = parseInt(answer,10);
+      }
     
       // Give feedback
-      if (correct) {
+      if (answer2 === b) {
         feedbackText.textContent = "Correct!";
         feedbackText.style.color = "green";
       } else {

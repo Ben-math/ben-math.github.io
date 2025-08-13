@@ -352,6 +352,7 @@
      document.getElementById("final-answer-input").style.display = "none";
      document.getElementById("check-btn").style.display = "none";
      document.getElementById("next-btn-container").style.display = "block";
+     document.getElementById("partial-quotient-container").style.display = "block";
 
       partialQuotients = [];
       partialDifferences = [];
@@ -502,7 +503,7 @@
           document.getElementById("next-btn-container").style.display = "none";
           document.getElementById("final-answer-input").style.display = "block";
           document.getElementById("check-btn").style.display = "block";
-          document.getElementById("partial-quotient-input").style.display = "none";
+          document.getElementById("partial-quotient-container").style.display = "none";
           questionText.textContent = `What is \\(${ruleCheckboxes.basefive.checked ? c.toString(5) : c.toString(10)} \\div 
           ${ruleCheckboxes.basefive.checked ? a.toString(5) : a.toString(10)}\\)?  Sum your partial quotients and input final answer below!`;
           MathJax.typeset([questionText]);

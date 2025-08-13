@@ -295,15 +295,18 @@
            ctx.fillRect(400, 260, ratio * 800, 300);
            ctx.fillStyle = `rgb(${r2},${g2},${b2})`;
            ctx.font = "bold 20px Arial";
-           ctx.fillText(partialQuotients[i], 400 + (ratio * 800)/2, 240);
+           ctx.textAlign = "center"; 
+           ctx.fillText(partialQuotients[i], 400 + (ratio * 800)/2, 250);
           } else {
            ctx.fillRect(400 + ((Math.abs(partialDifferences[i-1] - c) / c) * 800), 260, (Math.abs(partialDifferences[i] - partialDifferences[i-1]) / c) * 800, 300);
            ctx.fillStyle = `rgb(${r2},${g2},${b2})`;
            ctx.font = "bold 20px Arial";
-           ctx.fillText(partialQuotients[i], ((400 + ((Math.abs(partialDifferences[i-1] - c) / c) * 800)) + ((Math.abs(partialDifferences[i] - partialDifferences[i-1]) / c) * 800))/2, 240);
+           ctx.textAlign = "center"; 
+           ctx.fillText(partialQuotients[i], ((400 + ((Math.abs(partialDifferences[i-1] - c) / c) * 800)) + ((Math.abs(partialDifferences[i] - partialDifferences[i-1]) / c) * 800))/2, 250);
           }
 
           ctx.font = "bold 30px Arial";
+          ctx.textAlign = "right"; 
       
           ctx.beginPath();
           ctx.moveTo(205, startY + i * lineHeight2 - 30);

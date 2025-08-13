@@ -1,3 +1,4 @@
+
  <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -173,16 +174,14 @@
 
     </div>
 
-    <div id="final-answer-container" style="display: none; text-align: center; margin-top: 10px;">
-        <input type="text" id="final-answer-input" placeholder="Enter final answer">
+    <div id="final-answer-input" style="text-align: center; margin-top: 1em;"></div>
+
+    <div class="button-container">
+      <button id="check-btn" class="rubber-button" style="display: none;">Check Answer</button>
     </div>
-
-
-    <div id="answer-section" style="margin-top: 20px; text-align: center; display: none">
-      <label for="user-answer">Enter your answer:</label>
-      <input type="number" id="user-answer" />
-      <button id="check-answer-btn" class="rubber-button">Check Answer</button>
-      <p id="answer-feedback" style="font-weight: bold; margin-top: 10px;"></p>
+    
+    <div class="button-container">
+      <div id="feedbackText" class="center-feedback"></div>
     </div>
 
 
@@ -495,8 +494,8 @@
       // Check if the most recent partial difference is zero
       if (partialDifferences[partialDifferences.length - 1] === 0) {
           document.getElementById("next-btn").style.display = "none";
-          document.getElementById("final-answer-container").style.display = "block";
-          document.getElementById("answer-section").style.display = "block";
+          document.getElementById("final-answer-input").style.display = "block";
+          document.getElementById("check-btn").style.display = "block";
       }
   });
   

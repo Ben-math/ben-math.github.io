@@ -160,9 +160,10 @@
        <input id="partial-quotient-input" type="number" />
    </div>
 
-    <div class="button-container">
-      <button id="next-btn" class="rubber-button">Next</button>
-    </div>
+    <div id="next-btn-container" style="text-align:center; margin-top: 10px;">
+       <button id="next-btn">Next</button>
+   </div>
+
 
    <div style="text-align: center; margin-top: 10px;">
        <p id="feedback" style="display: none; margin: 0;"></p>
@@ -349,6 +350,7 @@
 
      document.getElementById("final-answer-input").style.display = "none";
      document.getElementById("check-btn").style.display = "none";
+     document.getElementById("next-btn-container").style.display = "block";
 
       partialQuotients = [];
       partialDifferences = [];
@@ -496,7 +498,7 @@
 
       // Check if the most recent partial difference is zero
       if (partialDifferences[partialDifferences.length - 1] === 0) {
-          document.getElementById("next-btn").style.display = "none";
+          document.getElementById("next-btn-container").style.display = "none";
           document.getElementById("final-answer-input").style.display = "block";
           document.getElementById("check-btn").style.display = "block";
           document.getElementById("partial-quotient-input").style.display = "none";

@@ -450,3 +450,8 @@ main {
   cursor: pointer;
 }
 
+#help-link.active {
+  background-color: #ffde59 !important;
+  border-color: #1a1a4b !important;
+}
+

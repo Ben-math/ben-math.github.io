@@ -4,31 +4,37 @@
           const MASCOT_IMG_ID = 'mascot-img';
           const MASCOT_CLOSE_ID = 'mascot-close';
     
-          // You said you renamed the file to protracty.png and it’s in the site root:
           const MASCOT_SRC = '/protracty.png';
     
           let mascotReady = false;
           let processedURL = null;
     
-          async function loadAndKeyWhite(src) {
+          async function loadAndKeyGreen(src) {
             const img = new Image();
-            img.src = src;               // same-origin (GitHub Pages)
+            img.src = src; // same-origin (GitHub Pages)
             await img.decode();
-    
+          
             const c = document.createElement('canvas');
-            c.width = img.width; c.height = img.height;
+            c.width = img.width; 
+            c.height = img.height;
             const ctx = c.getContext('2d');
             ctx.drawImage(img, 0, 0);
-    
+          
             const data = ctx.getImageData(0, 0, c.width, c.height);
             const d = data.data;
+          
             for (let i = 0; i < d.length; i += 4) {
               const r = d[i], g = d[i+1], b = d[i+2];
-              if (r > 245 && g > 245 && b > 245) d[i+3] = 0; // key out near-white
+          
+              // Adjust tolerance as needed — this matches near-pure green
+              if (g > 200 && r < 100 && b < 100) {
+                d[i+3] = 0; // make transparent
+              }
             }
             ctx.putImageData(data, 0, 0);
             return c.toDataURL('image/png');
           }
+
     
           async function showMascot() {
             const wrap = document.getElementById(MASCOT_ID);
@@ -36,7 +42,7 @@
     
             if (!mascotReady) {
               try {
-                processedURL = await loadAndKeyWhite(MASCOT_SRC);
+                processedURL = await loadAndKeyGreen(MASCOT_SRC);
                 imgEl.src = processedURL;
                 mascotReady = true;
               } catch (e) {

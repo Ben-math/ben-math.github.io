@@ -11,29 +11,33 @@
     
           async function loadAndKeyGreen(src) {
             const img = new Image();
-            img.src = src; // same-origin (GitHub Pages)
+            img.src = src;            // same-origin
             await img.decode();
           
             const c = document.createElement('canvas');
-            c.width = img.width; 
+            c.width = img.width;
             c.height = img.height;
             const ctx = c.getContext('2d');
             ctx.drawImage(img, 0, 0);
+          
+            const KEY = { r: 34, g: 177, b: 76 }; // the green in your PNG
+            const THRESH = 60; // distance tolerance; bump up a bit if you ever see compression artifacts
           
             const data = ctx.getImageData(0, 0, c.width, c.height);
             const d = data.data;
           
             for (let i = 0; i < d.length; i += 4) {
               const r = d[i], g = d[i+1], b = d[i+2];
-          
-              // Adjust tolerance as needed — this matches near-pure green
-              if (g > 200 && r < 100 && b < 100) {
-                d[i+3] = 0; // make transparent
+              const dr = r - KEY.r, dg = g - KEY.g, db = b - KEY.b;
+              if ((dr*dr + dg*dg + db*db) <= THRESH*THRESH) {
+                d[i+3] = 0; // make green transparent
               }
             }
+          
             ctx.putImageData(data, 0, 0);
             return c.toDataURL('image/png');
           }
+          
 
     
           async function showMascot() {

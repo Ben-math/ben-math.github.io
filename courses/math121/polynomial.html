@@ -19,10 +19,8 @@
 fetch("/nav.html")
   .then(response => response.text())
   .then(html => {
-    // 1) Inject nav
     document.getElementById("nav-placeholder").innerHTML = html;
 
-    // 2) Mark active link
     const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
     const navLinks = document.querySelectorAll("#nav-placeholder a");
     navLinks.forEach(link => {
@@ -31,12 +29,11 @@ fetch("/nav.html")
         link.classList.add("active");
       }
     });
-
-    // 3) Load mascot logic after nav exists
+    
     const s = document.createElement("script");
     s.src = "/mascot.js";
     s.defer = true;
-    document.body.appendChild(s); // safe insertion point
+    document.body.appendChild(s); 
   })
   .catch(err => {
     console.error("Failed to load nav:", err);
@@ -248,7 +245,6 @@ fetch("/nav.html")
   
       const fxDisplay = document.getElementById('fx-display');
 
-      // Example variables (replace with actual ones)
       const terms = [
         { coeff: a3, exp: e3 },
         { coeff: a2, exp: e2 },
@@ -387,8 +383,7 @@ fetch("/nav.html")
       document.getElementById("feedbackText").style.color = "red";
     }
 
-  
-    // Restore global values (optional, if you need them again)
+      
     [a1, a2, a3, e1, e2, e3] = [A1, A2, A3, E1, E2, E3];
   });
   

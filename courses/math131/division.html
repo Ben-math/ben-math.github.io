@@ -20,10 +20,8 @@
 fetch("/nav.html")
   .then(response => response.text())
   .then(html => {
-    // 1) Inject nav
     document.getElementById("nav-placeholder").innerHTML = html;
 
-    // 2) Mark active link
     const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
     const navLinks = document.querySelectorAll("#nav-placeholder a");
     navLinks.forEach(link => {
@@ -33,11 +31,10 @@ fetch("/nav.html")
       }
     });
 
-    // 3) Load mascot logic after nav exists
     const s = document.createElement("script");
     s.src = "/mascot.js";
     s.defer = true;
-    document.body.appendChild(s); // safe insertion point
+    document.body.appendChild(s); 
   })
   .catch(err => {
     console.error("Failed to load nav:", err);
@@ -244,7 +241,7 @@ fetch("/nav.html")
 
 
     function drawCanvas() {
-      activityBox.innerHTML = ''; // clear
+      activityBox.innerHTML = '';
       const canvas = document.createElement('canvas');
       canvas.width = 1300;
       canvas.height = 1200;
@@ -285,7 +282,7 @@ fetch("/nav.html")
       ctx.textAlign = "right"; 
       for (let i = 0; i < partialDifferences.length; i++) {
           // RGB interpolation from dark to light green
-          const ratio = Math.abs(partialDifferences[i] - c) / c; // 0 → dark, 1 → light
+          const ratio = Math.abs(partialDifferences[i] - c) / c; // 0 = dark, 1 = light
           const r = Math.round(0 + ratio * (144 - 0));
           const g = Math.round(100 + ratio * (238 - 100));
           const b = Math.round(0 + ratio * (144 - 0));

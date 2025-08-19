@@ -14,10 +14,8 @@
 fetch("/nav.html")
   .then(response => response.text())
   .then(html => {
-    // 1) Inject nav
     document.getElementById("nav-placeholder").innerHTML = html;
 
-    // 2) Mark active link
     const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
     const navLinks = document.querySelectorAll("#nav-placeholder a");
     navLinks.forEach(link => {
@@ -27,11 +25,10 @@ fetch("/nav.html")
       }
     });
 
-    // 3) Load mascot logic after nav exists
     const s = document.createElement("script");
     s.src = "/mascot.js";
     s.defer = true;
-    document.body.appendChild(s); // safe insertion point
+    document.body.appendChild(s); 
   })
   .catch(err => {
     console.error("Failed to load nav:", err);
@@ -142,7 +139,7 @@ fetch("/nav.html")
       column.appendChild(stack);
       stack.classList.add('drop-zone');
       stack.classList.add(`drop-${place}`); // 'ones', 'tens', 'hundreds'
-      stack.dataset.blockType = ''; // optional, in case you later want to restrict
+      stack.dataset.blockType = ''; 
       stack.dataset.blockCount = '0';
 
     
@@ -188,7 +185,6 @@ fetch("/nav.html")
         element.style.cursor = 'grabbing';
         element.originalZone = element.currentZone;
       
-        // ❗ Unregister from previous zone if it exists
         if (element.currentZone) {
           unregisterBlock(element.currentZone, type, element);
           element.currentZone = null;
@@ -286,7 +282,7 @@ fetch("/nav.html")
           if (ruleCheckboxes.baseten.checked) {
             if (!isRegroup) {
               // Position from bottom up
-              const spacing = 4; // optional space between blocks
+              const spacing = 4; 
               targetX = zoneRect.left - zoneBox.left + 2;
               targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight + spacing) - 10;
             } else if (isTensRegroup) {
@@ -306,7 +302,7 @@ fetch("/nav.html")
           } else if (ruleCheckboxes.basefive.checked) {
             if (!isRegroup) {
               // Position from bottom up
-              const spacing = 4; // optional space between blocks
+              const spacing = 4; 
               targetX = zoneRect.left - zoneBox.left + 27;
               targetY = zoneRect.bottom - zoneBox.top - (blockCount + 1) * (blockHeight + spacing) - 10;
             } else if (isTensRegroup) {
@@ -479,22 +475,6 @@ fetch("/nav.html")
       }
     }
 
-
-    //function restackZone(zone, excludedBlock = null) {
-      //const blockHeight = 13;
-      //const spacing = 4;
-    
-      //const blocks = Array.from(document.querySelectorAll('.draggable-block'))
-        //.filter(block => block.currentZone === zone && block !== excludedBlock);
-    
-      //blocks.forEach((block, index) => {
-        //const baseX = parseFloat(zone.getBoundingClientRect().left) - activityBox.getBoundingClientRect().left + 2;
-        //const baseY = parseFloat(zone.getBoundingClientRect().bottom) - activityBox.getBoundingClientRect().top - 10;
-    
-        //block.style.left = `${baseX}px`;
-        //block.style.top = `${baseY - (blockHeight + spacing) * (index + 1)}px`;
-      //});
-    //}
 
 
 
@@ -770,7 +750,7 @@ fetch("/nav.html")
         while (true) {
           a = Math.floor(Math.random() * 499) + 1;
           b = Math.floor(Math.random() * 499) + 1;
-          if (b > a) [a, b] = [b, a]; // ensure a ≥ b
+          if (b > a) [a, b] = [b, a]; // ensure a >= b
         
           const aones = (a % 10);
           const bones = (b % 10);
@@ -886,7 +866,7 @@ fetch("/nav.html")
         while (true) {
           a = Math.floor(Math.random() * 124) + 1;
           b = Math.floor(Math.random() * 124) + 1;
-          if (b > a) [a, b] = [b, a]; // ensure a ≥ b
+          if (b > a) [a, b] = [b, a]; // ensure a >= b
         
           const aones = (a % 5);
           const bones = (b % 5);
@@ -1012,7 +992,7 @@ fetch("/nav.html")
     
       const zone = e.target.closest('.regroup-zone');
       if (!zone) {
-        console.log('❌ No regroup zone found');
+        console.log(' No regroup zone found');
         return;
       }
     
@@ -1034,10 +1014,10 @@ fetch("/nav.html")
         const newType = zoneType === 'ones' ? 'tens' :
                         zoneType === 'tens' ? 'hundreds' : null;
     
-        console.log('🟢 Attempting MERGE to:', newType);
+        console.log(' Attempting MERGE to:', newType);
     
         if (!newType) {
-          console.log('❌ Invalid merge target type');
+          console.log(' Invalid merge target type');
           return;
         }
     
@@ -1067,13 +1047,13 @@ fetch("/nav.html")
     
       // --- BREAK ---
       } else if (count === 1 && zoneBlockType !== zoneType && zoneType !== null) {
-        console.log('🟠 Attempting BREAK');
+        console.log(' Attempting BREAK');
     
         const oldBlock = Array.from(document.querySelectorAll('.draggable-block'))
           .find(block => block.currentZone === zone);
     
         if (!oldBlock) {
-          console.log('❌ No block found for breaking');
+          console.log(' No block found for breaking');
           return;
         }
     
@@ -1099,7 +1079,7 @@ fetch("/nav.html")
     
         restackZone(zone);
       } else {
-        console.log('⚪ Condition not met for Merge or Break');
+        console.log(' Condition not met for Merge or Break');
       }
     
       updateZoneLabel(zone);

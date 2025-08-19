@@ -19,10 +19,8 @@
 fetch("/nav.html")
   .then(response => response.text())
   .then(html => {
-    // 1) Inject nav
     document.getElementById("nav-placeholder").innerHTML = html;
 
-    // 2) Mark active link
     const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
     const navLinks = document.querySelectorAll("#nav-placeholder a");
     navLinks.forEach(link => {
@@ -32,11 +30,10 @@ fetch("/nav.html")
       }
     });
 
-    // 3) Load mascot logic after nav exists
     const s = document.createElement("script");
     s.src = "/mascot.js";
     s.defer = true;
-    document.body.appendChild(s); // safe insertion point
+    document.body.appendChild(s); 
   })
   .catch(err => {
     console.error("Failed to load nav:", err);
@@ -210,7 +207,7 @@ fetch("/nav.html")
 
 
     function drawCanvas(mode, inputElements, partialInputElements = []) {
-      activityBox.innerHTML = ''; // clear
+      activityBox.innerHTML = ''; 
       const canvas = document.createElement('canvas');
       canvas.width = 1300;
       canvas.height = 650;
@@ -719,7 +716,7 @@ fetch("/nav.html")
       
             if (!isNaN(value) && value === expected) {
               finalInput.style.backgroundColor = '#c8f7c5';
-              hintBtn.disabled = true;  // or hide it, if desired
+              hintBtn.disabled = true;  
               feedbackText.textContent = "Correct!";
               feedbackText.style.color = "green";
             } else {
@@ -754,8 +751,6 @@ fetch("/nav.html")
     // Freeze the inputs
     allInputs.forEach(input => input.disabled = true);
   
-    // Placeholder for the next step (partial products) — to be implemented next.
-    console.log("Proceeding to next step!");
 
     // Get the original values used for decomposition
     aParts = [];
@@ -823,7 +818,6 @@ fetch("/nav.html")
       }
 
     
-      // Optionally: updateCanvas again here if you want to draw products
       drawCanvas(mode, inputElements, partialInputs);
     }
 

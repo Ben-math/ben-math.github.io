@@ -1,4 +1,3 @@
-/* Global fun styling */
 body {
   font-family: 'Comic Sans MS', 'Arial Rounded MT Bold', cursive, sans-serif;
   background-color: #c2e7ff;
@@ -8,7 +7,6 @@ body {
   line-height: 1.6;
 }
 
-/* Links */
 a {
   color: #1a1a4b;
   text-decoration: none;
@@ -22,7 +20,6 @@ a:hover {
   background-color: #ffe97a;
 }
 
-/* Header */
 header {
   background-color: #ffffff;
   padding: 1.5em;
@@ -33,7 +30,6 @@ header {
   box-shadow: 4px 4px 0 #ffde59;
 }
 
-/* Main content */
 main {
   background: #ffffff;
   padding: 2em;
@@ -42,7 +38,6 @@ main {
   box-shadow: 4px 4px 0 #ffde59;
 }
 
-/* Navigation menu */
 .nav-menu {
   list-style-type: none;
   padding: 0;
@@ -56,7 +51,6 @@ main {
   position: relative;
 }
 
-/* Navbar links */
 .navbar a {
   display: inline-block;
   padding: 0.5em 1em;
@@ -78,7 +72,6 @@ main {
   border-color: #e08000;
 }
 
-/* Dropdown menus */
 .dropdown-content,
 .dropdown-content-sub {
   display: none;
@@ -149,7 +142,7 @@ main {
   height: 650px;
   border: 3px solid #1a1a4b;
   background-color: #fffbe0;
-  position: relative; /* This is key */
+  position: relative; 
   margin: 2em auto;
   overflow: hidden;
 }
@@ -159,7 +152,7 @@ main {
   height: 1200px;
   border: 3px solid #1a1a4b;
   background-color: #fffbe0;
-  position: relative; /* This is key */
+  position: relative; 
   margin: 2em auto;
   overflow: hidden;
 }
@@ -169,7 +162,7 @@ main {
   height: 300px;
   border: 3px solid #1a1a4b;
   background-color: #fffbe0;
-  position: relative; /* This is key */
+  position: relative;
   margin: 2em auto;
   overflow: hidden;
 }
@@ -179,7 +172,7 @@ main {
   height: 150px;
   border: 3px solid #1a1a4b;
   background-color: #fffbe0;
-  position: relative; /* This is key */
+  position: relative; 
   margin: 2em auto;
   overflow: hidden;
 }
@@ -229,12 +222,10 @@ main {
   justify-content: center;
 }
 
-/* Specific height for tens regroup zone */
 .regroup-tens {
   height: 120px;
 }
 
-/* Specific height for ones regroup zone */
 .regroup-ones {
   height: 30px;
 }
@@ -285,7 +276,6 @@ main {
   cursor: grab;
 }
 
-/* Block sizes and shapes */
 .block-ones {
   width: 10px;
   height: 10px;
@@ -319,11 +309,11 @@ main {
 
 
 .valid-hover {
-  background-color: rgba(144, 238, 144, 0.4); /* light green overlay */
+  background-color: rgba(144, 238, 144, 0.4); 
 }
 
 .invalid-hover {
-  background-color: rgba(255, 99, 71, 0.4); /* light red overlay */
+  background-color: rgba(255, 99, 71, 0.4); 
 }
 
 .zone-count {
@@ -345,7 +335,6 @@ main {
 }
 
 
-/* Base square box */
 .exponent-box {
   width: 80px;
   height: 80px;
@@ -362,19 +351,17 @@ main {
   box-shadow: 2px 2px 0 #1a1a4b;
 }
 
-/* Draggable exponent */
 .draggable-exponent {
   cursor: grab;
 }
 
-/* Drop zone */
 .exponent-slot {
   background-color: #fff;
   border-style: dashed;
 }
 
 .exponent-slot.valid-hover {
-  background-color: rgba(144, 238, 144, 0.4); /* light green when valid */
+  background-color: rgba(144, 238, 144, 0.4); 
 }
 
 .center-feedback {
@@ -384,7 +371,6 @@ main {
   margin-top: 20px;
 }
 
-/* Checkbox group layout */
 .styled-checkbox-group {
   display: flex;
   flex-wrap: wrap;
@@ -394,7 +380,6 @@ main {
   font-size: 18px;
 }
 
-/* Customize checkbox appearance */
 .styled-checkbox {
   appearance: none;
   width: 1.1em;
@@ -425,7 +410,7 @@ main {
 #mascot[hidden] { display: none; }
 
 #mascot-img {
-  width: 180px; /* tweak as you like */
+  width: 180px; 
   height: auto;
   pointer-events: none;
 }

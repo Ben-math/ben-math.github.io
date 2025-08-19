@@ -21,10 +21,8 @@
 fetch("/nav.html")
   .then(response => response.text())
   .then(html => {
-    // 1) Inject nav
     document.getElementById("nav-placeholder").innerHTML = html;
 
-    // 2) Mark active link
     const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
     const navLinks = document.querySelectorAll("#nav-placeholder a");
     navLinks.forEach(link => {
@@ -34,11 +32,10 @@ fetch("/nav.html")
       }
     });
 
-    // 3) Load mascot logic after nav exists
     const s = document.createElement("script");
     s.src = "/mascot.js";
     s.defer = true;
-    document.body.appendChild(s); // safe insertion point
+    document.body.appendChild(s); 
   })
   .catch(err => {
     console.error("Failed to load nav:", err);
@@ -325,7 +322,7 @@ fetch("/nav.html")
       
         // Check that we have stored fxData with both a and epsilon
         if (!window.fxData || typeof window.fxData.a === 'undefined' || typeof window.fxData.epsilon === 'undefined') {
-          console.log('❌ Missing a or epsilon in global data');
+          console.log(' Missing a or epsilon in global data');
           feedback.textContent = 'Internal error: missing data.';
           feedback.style.color = 'red';
           return;
@@ -334,8 +331,8 @@ fetch("/nav.html")
         const { a, epsilon } = window.fxData;
         const correctDelta = window.fxData.epsilon / Math.abs(a); // Correct bound
       
-        console.log(`🔍 delta entered: ${deltaInput}`);
-        console.log(`✔️  correct delta: ${correctDelta} (epsilon = ${epsilon}, a = ${a})`);
+        console.log(` delta entered: ${deltaInput}`);
+        console.log(`  correct delta: ${correctDelta} (epsilon = ${epsilon}, a = ${a})`);
       
         if (isNaN(deltaInput) || deltaInput <= 0) {
           feedback.textContent = 'Please enter a positive number (in either decimal or fractional form).';
@@ -385,7 +382,7 @@ fetch("/nav.html")
       
         // Check that we have stored fxData with both a and epsilon
         if (!window.fxData || typeof window.fxData.a === 'undefined' || typeof window.fxData.epsilon === 'undefined') {
-          console.log('❌ Missing a or epsilon in global data');
+          console.log(' Missing a or epsilon in global data');
           feedback.textContent = 'Internal error: missing data.';
           feedback.style.color = 'red';
           return;
@@ -394,8 +391,8 @@ fetch("/nav.html")
         const { a, epsilon } = window.fxData;
         const finalcorrectDelta = Math.abs(a); // Correct bound
       
-        console.log(`🔍 delta entered: ${finaldeltaInput}`);
-        console.log(`✔️  correct delta: ${finalcorrectDelta} (epsilon = ${epsilon}, a = ${a})`);
+        console.log(` delta entered: ${finaldeltaInput}`);
+        console.log(`  correct delta: ${finalcorrectDelta} (epsilon = ${epsilon}, a = ${a})`);
       
         if (isNaN(finaldeltaInput) || finaldeltaInput <= 0) {
           finalfeedback.textContent = 'Please enter a positive number (in either decimal or fractional form).';

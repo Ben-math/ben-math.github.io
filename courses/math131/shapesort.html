@@ -51,18 +51,9 @@ fetch("/nav.html")
     
     <p id="question-text"></p>
 
-    <div class="button-container">
-      <button id="hint-btn" class="rubber-button">Hint</button>
-    </div>
-    
-    <div id="hint-area" class="math" style="margin-top: 1em;"></div>
 
     <div class="activity-box" id="my-activity">
 
-    </div>
-
-    <div class="button-container">
-      <button id="check-btn" class="rubber-button">Check Answer</button>
     </div>
     
     <div class="button-container">
@@ -77,11 +68,6 @@ fetch("/nav.html")
 
   <script>
 
-    const hintBtn = document.getElementById('hint-btn');
-    const hintArea = document.getElementById('hint-area');
-    
-    let hintSteps = [];
-    let hintIndex = 0;
     
     // Global counts
     let A = 0, B = 0, C = 0;
@@ -831,77 +817,9 @@ fetch("/nav.html")
     });
 
 
-    const checkBtn = document.getElementById('check-btn');
     const feedbackText = document.getElementById('feedbackText');
     
-    checkBtn.addEventListener('click', () => {
-      // Play click sound
-      const sound = document.getElementById('click-sound');
-      if (sound) {
-        sound.currentTime = 0;
-        sound.play();
-      }
-    
-      let correct = true;
-    
-      // Helper to check a region
-      function checkRegion(variableName, correctValue) {
-        const slot = document.getElementById(variableName);
-        if (slot) {
-          const guess = parseInt(slot.textContent);
-          if (guess !== correctValue) {
-            correct = false;
-          }
-        }
-      }
 
-      if (m0 < 0.34) {
-        // Check each region (only those where a slot was placed)
-        checkRegion('AA1', AA);
-        checkRegion('BB1', BB);
-        checkRegion('AAcapBB1', AAcapBB);
-        checkRegion('UU1', UU);
-      } else {
-        // Check each region (only those where a slot was placed)
-        checkRegion('A1', A);
-        checkRegion('B1', B);
-        checkRegion('C1', C);
-        checkRegion('AcapB1', AcapB);
-        checkRegion('AcapC1', AcapC);
-        checkRegion('BcapC1', BcapC);
-        checkRegion('AcapBcapC1', AcapBcapC);
-        checkRegion('U1', U);
-      }
-    
-      // Give feedback
-      if (correct) {
-        feedbackText.textContent = "Correct!";
-        feedbackText.style.color = "green";
-      } else {
-        feedbackText.textContent = "Incorrect. Try again!";
-        feedbackText.style.color = "red";
-      }
-    });
-
-
-    hintBtn.addEventListener('click', () => {
-      // Play sound when view button is clicked
-      const sound = document.getElementById('click-sound');
-      if (sound) {
-        sound.currentTime = 0; // rewind to start in case it's still playing
-        sound.play();
-      }
-      if (hintIndex < hintSteps.length) {
-        // Create a new paragraph for each hint
-        const hintPara = document.createElement('div');
-        hintPara.classList.add('hint-step');
-        hintPara.textContent = hintSteps[hintIndex];
-        hintArea.appendChild(hintPara);
-        
-        MathJax.typeset([hintPara]);
-        hintIndex++;
-      }
-    });
 
     
   </script>

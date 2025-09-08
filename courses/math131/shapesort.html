@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta charset="UTF-8" />
+  <title>Shape Sort Activity</title>
+  <link rel="stylesheet" href="/style.css" />
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+</head>
+<body>
+  <header>
+    <h1>Shape Sort Activity</h1>
+    <div id="nav-placeholder"></div>
+      <script>
+fetch("/nav.html")
+  .then(response => response.text())
+  .then(html => {
+    document.getElementById("nav-placeholder").innerHTML = html;
+
+    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+    const navLinks = document.querySelectorAll("#nav-placeholder a");
+    navLinks.forEach(link => {
+      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+      if (linkPath === currentPath) {
+        link.classList.add("active");
+      }
+    });
+    
+    const s = document.createElement("script");
+    s.src = "/mascot.js";
+    s.defer = true;
+    document.body.appendChild(s); 
+  })
+  .catch(err => {
+    console.error("Failed to load nav:", err);
+  });
+</script>
+  </header>
+  <main>
+
+    <p>This is a placeholder activity for a shape sorting activity.  Hopefully I'm a sick enough programmer to have it ready in time
+    for tomorrow!</p>
+    
+    <div class="button-container">
+      <button id="start-btn" class="rubber-button">Start!</button>
+    </div>
+    
+    <div id="question-area">
+      <div id="question" class="math"></div>
+      <div id="fx-display" class="math"></div>
+    </div>
+
+    <div class="activity-box-med" id="my-activity">
+
+    </div>
+
+    <div class="button-container">
+      <button id="check-btn" class="rubber-button">Check Answer</button>
+    </div>
+    
+    <div class="button-container">
+      <div id="feedbackText" class="center-feedback"></div>
+    </div>
+
+
+
+
+
+  </main>
+
+  <script>
+
+    let a0, a1, a2, a3, e1, e2, e3;
+
+
+    const startBtn = document.getElementById('start-btn');
+    const questionText = document.getElementById('question-text');
+    const activityBox = document.getElementById('my-activity');
+
+
+        function addTextToActivityBox(text, x, y, fontSize = 28) {
+      const txt = document.createElement('div');
+      txt.classList.add('activity-text');
+      txt.textContent = text;
+      txt.style.left = `${x}px`;
+      txt.style.top = `${y}px`;
+      txt.style.fontSize = `${fontSize}px`;
+      activityBox.appendChild(txt);
+    }
+
+
+    function createFixedBox(text, x, y, boxSize = 80, fontSize = 28) {
+      const box = document.createElement('div');
+      box.classList.add('exponent-box');
+      box.style.left = `${x}px`;
+      box.style.top = `${y}px`;
+      box.style.width = `${boxSize}px`;
+      box.style.height = `${boxSize}px`;
+      box.style.fontSize = `${fontSize}px`;
+      box.textContent = text;
+      activityBox.appendChild(box);
+      return box;
+    }
+    
+    function createDraggableBox(text, x, y, boxSize = 80, fontSize = 28) {
+      const box = document.createElement('div');
+      box.classList.add('exponent-box', 'draggable-exponent');
+      box.style.left = `${x}px`;
+      box.style.top = `${y}px`;
+      box.style.width = `${boxSize}px`;
+      box.style.height = `${boxSize}px`;
+      box.style.fontSize = `${fontSize}px`;
+      box.textContent = text;
+      activityBox.appendChild(box);
+      makeExponentDraggable(box);
+      return box;
+    }
+    
+    function createSlot(x, y, boxSize = 80, fontSize = 28) {
+      const slot = document.createElement('div');
+      slot.classList.add('exponent-box', 'exponent-slot');
+      slot.style.left = `${x}px`;
+      slot.style.top = `${y}px`;
+      slot.style.width = `${boxSize}px`;
+      slot.style.height = `${boxSize}px`;
+      slot.style.fontSize = `${fontSize}px`;
+      activityBox.appendChild(slot);
+      setupDropTarget(slot);
+      return slot;
+    }
+
+
+
+    function makeExponentDraggable(elem) {
+      elem.draggable = true;
+    
+      elem.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('text/plain', elem.textContent);
+        setTimeout(() => elem.style.visibility = 'hidden', 0);
+      });
+    
+      elem.addEventListener('dragend', () => {
+        elem.style.visibility = 'visible';
+      });
+    }
+    
+    function setupDropTarget(slot) {
+      slot.addEventListener('dragover', e => {
+        e.preventDefault();
+        slot.classList.add('valid-hover');
+      });
+    
+      slot.addEventListener('dragleave', () => {
+        slot.classList.remove('valid-hover');
+      });
+    
+      slot.addEventListener('drop', e => {
+        e.preventDefault();
+        slot.classList.remove('valid-hover');
+        const droppedText = e.dataTransfer.getData('text/plain');
+        slot.textContent = droppedText;
+    
+        // Play sound when an exponent is dropped
+        const sound = document.getElementById('set-sound');
+        if (sound) {
+          sound.currentTime = 0; // rewind to start in case it's still playing
+          sound.play();
+        }
+      });
+    }
+
+
+    function formatTerm(coef, exp, isFirst) {
+      const sign = coef < 0 ? '−' : (isFirst ? '' : '+');
+      const absCoef = Math.abs(coef);
+    
+      if (exp === 0) return `${sign} ${absCoef}`;
+      if (exp === 1) return `${sign} ${absCoef === 1 ? 'x' : `${absCoef}x`}`;
+      return `${sign} ${absCoef === 1 ? `x^{${exp}}` : `${absCoef}x^{${exp}`}`;
+    }
+
+
+
+
+    
+  startBtn.addEventListener('click', () => {
+
+      const feedback = document.getElementById('feedbackText');
+      feedback.textContent = '';
+
+      // Play sound when view button is clicked
+      const sound = document.getElementById('click-sound');
+      if (sound) {
+        sound.currentTime = 0; // rewind to start in case it's still playing
+        sound.play();
+      }
+
+
+      let mode = Math.floor(Math.random() * 4) + 1;
+
+      a0 = Math.floor(Math.random() * 19) - 9;
+      while (a0 == 0) {
+        a0 = Math.floor(Math.random() * 19) - 9;
+      }
+      a1 = Math.floor(Math.random() * 19) - 9;
+      while (a1 == 0) {
+        a1 = Math.floor(Math.random() * 19) - 9;
+      }
+      a2 = Math.floor(Math.random() * 19) - 9;
+      while (a2 == 0) {
+        a2 = Math.floor(Math.random() * 19) - 9;
+      }
+      a3 = Math.floor(Math.random() * 19) - 9;
+      while (a3 == 0) {
+        a3 = Math.floor(Math.random() * 19) - 9;
+      }
+      e1 = Math.floor(Math.random() * 9) + 1;
+      e2 = Math.floor(Math.random() * 9) + 1;
+      while (e2 == e1) {
+        e2 = Math.floor(Math.random() * 9) + 1;
+      }
+      e3 = Math.floor(Math.random() * 9) + 1;
+      while (e3 == e1 || e3 == e2) {
+        e3 = Math.floor(Math.random() * 9) + 1;
+      }
+
+      let sorted = [e1, e2, e3].sort((x, y) => x - y);
+      [e1, e2, e3] = sorted;
+      
+  
+      const fxDisplay = document.getElementById('fx-display');
+
+      const terms = [
+        { coeff: a3, exp: e3 },
+        { coeff: a2, exp: e2 },
+        { coeff: a1, exp: e1 },
+        { coeff: a0, exp: 0 }
+      ];
+      
+      // Build string term-by-term
+      let expr = terms
+        .filter(term => term.coeff !== 0)
+        .map((term, index) => {
+          const { coeff, exp } = term;
+          const absCoeff = Math.abs(coeff);
+          const sign = coeff >= 0 ? (index === 0 ? '' : ' + ') : ' - ';
+          const coeffStr = (absCoeff === 1 && exp !== 0) ? '' : absCoeff;
+          const xStr = exp === 0 ? '' : (exp === 1 ? 'x' : `x^{${exp}}`);
+          return `${sign}${coeffStr}${xStr}`;
+        })
+        .join('');
+      
+      const fxLatex = `\\[ \\text{Find the derivative of } \\hspace{5mm} f(x) = ${expr} \\]`;
+      
+      fxDisplay.textContent = fxLatex;
+      MathJax.typeset([fxDisplay]);
+
+
+      
+      // Clear the activity box
+      activityBox.innerHTML = '';
+
+
+
+      addTextToActivityBox('x', 350, 30, 100);
+      const a3slot = createSlot(280, 90, 60, 35);
+      a3slot.id = 'a3-slot';
+      const e3slot = createSlot(410, 30, 60, 35);
+      e3slot.id = 'e3-slot';
+
+      addTextToActivityBox('+', 470, 30, 100);
+      
+      addTextToActivityBox('x', 600, 30, 100);
+      const a2slot = createSlot(530, 90, 60, 35);
+      a2slot.id = 'a2-slot';
+      const e2slot = createSlot(660, 30, 60, 35);
+      e2slot.id = 'e2-slot';
+
+      addTextToActivityBox('+', 730, 30, 100);
+    
+      if (e1 != 1) {
+        addTextToActivityBox('x', 860, 30, 100);
+        const a1slot = createSlot(790, 90, 60, 35);
+        a1slot.id = 'a1-slot';
+        const e1slot = createSlot(920, 30, 60, 35);
+        e1slot.id = 'e1-slot';
+      } else {
+        const a1slot = createSlot(810, 90, 60, 35);
+        a1slot.id = 'a1-slot';
+      }
+
+
+
+
+
+      const options = new Set([a3*e3, a2*e2, a1*e1, e3-1, e2-1, e1-1]);
+      while (options.size < 10) {
+        options.add(Math.floor(Math.random() * 19) - 9);
+      }
+      while (options.size < 15) {
+        options.add(Math.floor(Math.random() * 191) - 95);
+      }
+      const optionArray = [...options].sort(() => Math.random() - 0.5);
+
+      for (let i = 0; i < 15; i++) {
+        createDraggableBox(optionArray[i], 60+(i*80), 200, 60, 40);
+      }
+
+
+
+
+
+
+    });
+
+
+    const checkBtn = document.getElementById('check-btn');
+    const feedbackText = document.getElementById('feedbackText');
+    
+    checkBtn.addEventListener('click', () => {
+
+    // Play sound when check button is clicked
+    const sound = document.getElementById('click-sound');
+    if (sound) {
+      sound.currentTime = 0; // rewind to start in case it's still playing
+      sound.play();
+    }
+    const a1Box = document.getElementById('a1-slot');
+    const a2Box = document.getElementById('a2-slot');
+    const a3Box = document.getElementById('a3-slot');
+    const e1Box = document.getElementById('e1-slot');
+    const e2Box = document.getElementById('e2-slot');
+    const e3Box = document.getElementById('e3-slot');
+  
+    const a1Value = parseInt(a1Box.textContent);
+    const a2Value = parseInt(a2Box.textContent);
+    const a3Value = parseInt(a3Box.textContent);
+    const e2Value = parseInt(e2Box.textContent);
+    const e3Value = parseInt(e3Box.textContent);
+  
+    const [A1, A2, A3, E1, E2, E3] = [a1, a2, a3, e1, e2, e3];
+  
+    // Evaluate both sides
+    const a1Ans = a1*e1;
+    const a2Ans = a2*e2;
+    const a3Ans = a3*e3;
+    const e1Ans = e1-1;
+    const e2Ans = e2-1;
+    const e3Ans = e3-1;
+
+    let correct;
+    if (e1Box) {
+      const e1Value = parseInt(e1Box.textContent);
+      const e1Ans = e1 - 1;
+      correct = (a1Value == a1Ans) && (a2Value == a2Ans) && (a3Value == a3Ans) &&
+                (e1Value == e1Ans) && (e2Value == e2Ans) && (e3Value == e3Ans);
+    } else {
+      correct = (a1Value == a1Ans) && (a2Value == a2Ans) && (a3Value == a3Ans) &&
+                (e2Value == e2Ans) && (e3Value == e3Ans);
+    }
+  
+  
+    if (correct) {
+      document.getElementById("feedbackText").textContent = "Correct!";
+      document.getElementById("feedbackText").style.color = "green";
+    } else {
+      document.getElementById("feedbackText").textContent = "Incorrect.  Try again!";
+      document.getElementById("feedbackText").style.color = "red";
+    }
+
+      
+    [a1, a2, a3, e1, e2, e3] = [A1, A2, A3, E1, E2, E3];
+  });
+  
+
+    
+  </script>
+
+  <audio id="click-sound" src="button.mp3" preload="auto"></audio>
+  <audio id="set-sound" src="set2.mp3" preload="auto"></audio>
+  
+</body>
+</html>

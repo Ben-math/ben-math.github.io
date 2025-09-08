@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -352,6 +353,141 @@ fetch("/nav.html")
           drawBase2();
         });
       }
+else {
+  // —— NEW: Hover-highlighting for 3‑set Venn ——
+  const geom3 = {
+    U: { x: 200, y: 30, w: 900, h: 500 },
+    A: { x: 550, y: 200, r: 150 },
+    B: { x: 750, y: 200, r: 150 },
+    C: { x: 650, y: 350, r: 150 }
+  };
+
+  function drawBase3() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(geom3.U.x, geom3.U.y, geom3.U.w, geom3.U.h);
+    ctx.beginPath(); ctx.arc(geom3.A.x, geom3.A.y, geom3.A.r, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(geom3.B.x, geom3.B.y, geom3.B.r, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(geom3.C.x, geom3.C.y, geom3.C.r, 0, Math.PI * 2); ctx.stroke();
+  }
+
+  function drawURectPath3() {
+    ctx.beginPath();
+    ctx.rect(geom3.U.x, geom3.U.y, geom3.U.w, geom3.U.h);
+  }
+  function drawCirclePath3(c) {
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+  }
+
+  function getRegion3(x, y) {
+    const inRect = (x >= geom3.U.x && x <= geom3.U.x + geom3.U.w && y >= geom3.U.y && y <= geom3.U.y + geom3.U.h);
+    if (!inRect) return null;
+    const inA = Math.hypot(x - geom3.A.x, y - geom3.A.y) <= geom3.A.r;
+    const inB = Math.hypot(x - geom3.B.x, y - geom3.B.y) <= geom3.B.r;
+    const inC = Math.hypot(x - geom3.C.x, y - geom3.C.y) <= geom3.C.r;
+
+    if (!inA && !inB && !inC) return 'Uminus';
+    if (inA && !inB && !inC) return 'Aonly';
+    if (!inA && inB && !inC) return 'Bonly';
+    if (!inA && !inB && inC) return 'Conly';
+    if (inA && inB && !inC) return 'AcapBonly';
+    if (inA && inC && !inB) return 'AcapConly';
+    if (inB && inC && !inA) return 'BcapConly';
+    if (inA && inB && inC) return 'AcapBcapC';
+    return null;
+  }
+
+  function highlightRegion3(region) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = 'rgba(0, 200, 0, 0.25)';
+    switch (region) {
+      case 'Uminus':
+        drawURectPath3(); ctx.fill();
+        ctx.globalCompositeOperation = 'destination-out';
+        drawCirclePath3(geom3.A); ctx.fill();
+        drawCirclePath3(geom3.B); ctx.fill();
+        drawCirclePath3(geom3.C); ctx.fill();
+        break;
+      case 'Aonly':
+        drawCirclePath3(geom3.A); ctx.fill();
+        ctx.globalCompositeOperation = 'destination-out';
+        drawCirclePath3(geom3.B); ctx.fill();
+        drawCirclePath3(geom3.C); ctx.fill();
+        break;
+      case 'Bonly':
+        drawCirclePath3(geom3.B); ctx.fill();
+        ctx.globalCompositeOperation = 'destination-out';
+        drawCirclePath3(geom3.A); ctx.fill();
+        drawCirclePath3(geom3.C); ctx.fill();
+        break;
+      case 'Conly':
+        drawCirclePath3(geom3.C); ctx.fill();
+        ctx.globalCompositeOperation = 'destination-out';
+        drawCirclePath3(geom3.A); ctx.fill();
+        drawCirclePath3(geom3.B); ctx.fill();
+        break;
+      case 'AcapBonly':
+        drawCirclePath3(geom3.A); ctx.fill();
+        ctx.globalCompositeOperation = 'destination-in';
+        drawCirclePath3(geom3.B); ctx.fill();
+        ctx.globalCompositeOperation = 'destination-out';
+        drawCirclePath3(geom3.C); ctx.fill();
+        break;
+      case 'AcapConly':
+        drawCirclePath3(geom3.A); ctx.fill();
+        ctx.globalCompositeOperation = 'destination-in';
+        drawCirclePath3(geom3.C); ctx.fill();
+        ctx.globalCompositeOperation = 'destination-out';
+        drawCirclePath3(geom3.B); ctx.fill();
+        break;
+      case 'BcapConly':
+        drawCirclePath3(geom3.B); ctx.fill();
+        ctx.globalCompositeOperation = 'destination-in';
+        drawCirclePath3(geom3.C); ctx.fill();
+        ctx.globalCompositeOperation = 'destination-out';
+        drawCirclePath3(geom3.A); ctx.fill();
+        break;
+      case 'AcapBcapC':
+        drawCirclePath3(geom3.A); ctx.fill();
+        ctx.globalCompositeOperation = 'destination-in';
+        drawCirclePath3(geom3.B); ctx.fill();
+        drawCirclePath3(geom3.C); ctx.fill();
+        break;
+    }
+    ctx.restore();
+  }
+
+  let draggingExponent3 = false;
+  document.addEventListener('dragstart', (e) => {
+    if (e.target && e.target.classList && e.target.classList.contains('draggable-exponent')) {
+      draggingExponent3 = true;
+    }
+  });
+  document.addEventListener('dragend', () => {
+    draggingExponent3 = false;
+    drawBase3();
+  });
+
+  canvas.addEventListener('dragover', (e) => {
+    if (!draggingExponent3) return;
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    drawBase3();
+    const region = getRegion3(x, y);
+    if (region) highlightRegion3(region);
+  });
+
+  canvas.addEventListener('dragleave', () => {
+    if (!draggingExponent3) return;
+    drawBase3();
+  });
+}
+
 
 
       // —— Guard missing hintArea (keeps placeholder from erroring) ——

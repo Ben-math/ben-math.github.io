@@ -337,8 +337,10 @@ fetch("/nav.html")
       const isTwoSet = (m0 < 0.34);
       const COLORS   = ['green', 'red'];
       const SHAPES   = ['square', 'triangle'];
+
+      const numShapes = m0 < 0.34 ? 10 : 15;
       
-      for (let i = 0; i < 15; i++) {
+      for (let i = 0; i < numShapes; i++) {
         const shape = randomChoice(SHAPES);
         const color = randomChoice(COLORS);
       

@@ -440,3 +440,31 @@ main {
   border-color: #1a1a4b !important;
 }
 
+/* Draggable token wrapper */
+.shape-token {
+  position: absolute;
+  width: 60px; height: 60px;         /* default size (2-set) */
+  display: flex; align-items: center; justify-content: center;
+  cursor: grab; user-select: none;
+}
+.shape-token:active { cursor: grabbing; }
+/* Size variants for 3-set mode */
+.shape-token.small { width: 48px; height: 48px; }
+.shape-token.large { width: 74px; height: 74px; }
+
+/* The visible shape body */
+.shape-body { width: 100%; height: 100%; position: relative; }
+.shape-body.square { border-radius: 10px; }
+.shape-body.triangle { clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
+
+/* Centered black number label */
+.shape-label {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  color: #000; font-weight: 700; font-size: 14px; line-height: 1;
+  pointer-events: none;
+}
+.shape-token.small .shape-label { font-size: 12px; }
+.shape-token.large .shape-label { font-size: 15px; }
+
+

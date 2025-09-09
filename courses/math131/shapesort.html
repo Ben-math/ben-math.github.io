@@ -70,6 +70,8 @@ fetch("/nav.html")
 
     
     let m0 = 0;
+    let currentDragged = null;
+
 
 
 
@@ -99,6 +101,11 @@ fetch("/nav.html")
       token.style.left = `${x}px`;
       token.style.top  = `${y}px`;
     
+      // store attributes for set-membership checks
+      token.dataset.shape = shape;                 // 'triangle' | 'square'
+      token.dataset.color = color;                 // 'green' | 'red'
+      token.dataset.size  = sizeClass || 'default';// 'large' | 'small' | 'default' (2-set)
+    
       const body = document.createElement('div');
       body.className = `shape-body ${shape}`;
       body.style.background = color;
@@ -110,9 +117,25 @@ fetch("/nav.html")
       body.appendChild(label);
     
       activityBox.appendChild(token);
-      makeExponentDraggable(token);  
+      makeExponentDraggable(token);
       return token;
     }
+    
+    function makeExponentDraggable(elem) {
+      elem.draggable = true;
+    
+      elem.addEventListener('dragstart', e => {
+        currentDragged = elem;                            // remember which one
+        e.dataTransfer.setData('text/plain', elem.textContent);
+        setTimeout(() => elem.style.visibility = 'hidden', 0);
+      });
+    
+      elem.addEventListener('dragend', () => {
+        elem.style.visibility = 'visible';
+        currentDragged = null;
+      });
+    }
+
 
 
 
@@ -156,20 +179,6 @@ fetch("/nav.html")
       return slot;
     }
 
-
-
-    function makeExponentDraggable(elem) {
-      elem.draggable = true;
-    
-      elem.addEventListener('dragstart', e => {
-        e.dataTransfer.setData('text/plain', elem.textContent);
-        setTimeout(() => elem.style.visibility = 'hidden', 0);
-      });
-    
-      elem.addEventListener('dragend', () => {
-        elem.style.visibility = 'visible';
-      });
-    }
     
     function setupDropTarget(slot) {
       slot.addEventListener('dragover', e => {
@@ -392,6 +401,41 @@ fetch("/nav.html")
         }
 
 
+        function isValid2(token, region) {
+          const isGreen    = token.dataset.color === 'green';
+          const isTriangle = token.dataset.shape === 'triangle';
+          switch (region) {
+            case 'Uminus': return !isGreen && !isTriangle;           // neither G nor T
+            case 'Aonly':  return  isGreen && !isTriangle;           // G \ T
+            case 'Bonly':  return !isGreen &&  isTriangle;           // T \ G
+            case 'AcapB':  return  isGreen &&  isTriangle;           // G ∩ T
+            default: return false;
+          }
+        }
+        
+        // drop onto canvas where the cursor is (center token under cursor)
+        canvas.addEventListener('drop', (e) => {
+          if (!draggingExponent) return;
+          e.preventDefault();
+        
+          const canvasRect = canvas.getBoundingClientRect();
+          const x = e.clientX - canvasRect.left;
+          const y = e.clientY - canvasRect.top;
+        
+          const region = getRegion2(x, y);
+          drawBase2(); // clear highlight
+        
+          if (region && currentDragged && isValid2(currentDragged, region)) {
+            const abRect = activityBox.getBoundingClientRect();
+            const left = e.clientX - abRect.left - currentDragged.offsetWidth  / 2;
+            const top  = e.clientY - abRect.top  - currentDragged.offsetHeight / 2;
+            currentDragged.style.left = `${left}px`;
+            currentDragged.style.top  = `${top}px`;
+          }
+        });
+
+
+
 
         let draggingExponent = false;
         document.addEventListener('dragstart', (e) => {
@@ -557,6 +601,46 @@ else {
     ctx.beginPath(); ctx.arc(geom3.C.x, geom3.C.y, geom3.C.r, 0, Math.PI * 2); ctx.stroke();
     ctx.restore();
   }
+
+
+  function isValid3(token, region) {
+    const isGreen    = token.dataset.color === 'green';     // A: G
+    const isTriangle = token.dataset.shape === 'triangle';  // B: T
+    const isLarge    = token.dataset.size  === 'large';     // C: L
+  
+    switch (region) {
+      case 'Uminus':      return !isGreen && !isTriangle && !isLarge;
+      case 'Aonly':       return  isGreen && !isTriangle && !isLarge;
+      case 'Bonly':       return !isGreen &&  isTriangle && !isLarge;
+      case 'Conly':       return !isGreen && !isTriangle &&  isLarge;
+      case 'AcapBonly':   return  isGreen &&  isTriangle && !isLarge;
+      case 'AcapConly':   return  isGreen && !isTriangle &&  isLarge;
+      case 'BcapConly':   return !isGreen &&  isTriangle &&  isLarge;
+      case 'AcapBcapC':   return  isGreen &&  isTriangle &&  isLarge;
+      default: return false;
+    }
+  }
+  
+  canvas.addEventListener('drop', (e) => {
+    if (!draggingExponent3) return;
+    e.preventDefault();
+  
+    const canvasRect = canvas.getBoundingClientRect();
+    const x = e.clientX - canvasRect.left;
+    const y = e.clientY - canvasRect.top;
+  
+    const region = getRegion3(x, y);
+    drawBase3(); // clear highlight
+  
+    if (region && currentDragged && isValid3(currentDragged, region)) {
+      const abRect = activityBox.getBoundingClientRect();
+      const left = e.clientX - abRect.left - currentDragged.offsetWidth  / 2;
+      const top  = e.clientY - abRect.top  - currentDragged.offsetHeight / 2;
+      currentDragged.style.left = `${left}px`;
+      currentDragged.style.top  = `${top}px`;
+    }
+  });
+
 
 
 

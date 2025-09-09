@@ -88,6 +88,33 @@ fetch("/nav.html")
       activityBox.appendChild(txt);
     }
 
+    function randomChoice(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+    
+    function createDraggableShapeToken(num, x, y, { shape, color, sizeClass = "" }) {
+      const token = document.createElement('div');
+      token.className = 'shape-token draggable-exponent';
+      if (sizeClass) token.classList.add(sizeClass);
+      token.style.left = `${x}px`;
+      token.style.top  = `${y}px`;
+    
+      const body = document.createElement('div');
+      body.className = `shape-body ${shape}`;
+      body.style.background = color;
+      token.appendChild(body);
+    
+      const label = document.createElement('span');
+      label.className = 'shape-label';
+      label.textContent = String(num);
+      body.appendChild(label);
+    
+      activityBox.appendChild(token);
+      makeExponentDraggable(token);  
+      return token;
+    }
+
+
 
     function createFixedExponentBox(text, x, y, boxSize = 80, fontSize = 28) {
       const box = document.createElement('div');
@@ -242,20 +269,25 @@ fetch("/nav.html")
         addTextToActivityBox('U', 1110, 20, 80);
       }
 
-      const options = new Set([]);
-
-      let minVal = 1;
-      let maxVal = 20;
-
-
-      while (options.size < 15) {
-        options.add(Math.floor(Math.random() * (maxVal - minVal + 1)) + minVal);
-      }
-      const optionArray = [...options].sort(() => Math.random() - 0.5);
-
+      // Build 15 draggable shape tokens
+      const isTwoSet = (m0 < 0.34);
+      const COLORS   = ['green', 'red'];
+      const SHAPES   = ['square', 'triangle'];
+      
       for (let i = 0; i < 15; i++) {
-        createDraggableExponentBox(optionArray[i], 60+(i*80), 560, 60, 40);
+        const shape = randomChoice(SHAPES);
+        const color = randomChoice(COLORS);
+      
+        // 3-set adds size variety; 2-set uses the default size
+        const sizeClass = isTwoSet ? "" : randomChoice(['small','large']);
+      
+        // Lay them out along the bottom row (like before)
+        const x = 40 + (i * 80);
+        const y = 560;
+      
+        createDraggableShapeToken(i + 1, x, y, { shape, color, sizeClass });
       }
+
 
 
       // —— NEW: Hover-highlighting for 2‑set Venn ——

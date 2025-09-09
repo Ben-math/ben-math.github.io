@@ -204,6 +204,58 @@ fetch("/nav.html")
     }
 
 
+    // Create or reuse a single popup element in the activity box
+    function ensureHintPopup() {
+      let el = activityBox.querySelector('.hint-popup');
+      if (!el) {
+        el = document.createElement('div');
+        el.className = 'hint-popup hidden';
+        el.innerHTML = `
+          <div class="hint-close" aria-label="Close">&times;</div>
+          <div class="hint-title"></div>
+          <div class="hint-desc"></div>
+        `;
+        activityBox.appendChild(el);
+        el.querySelector('.hint-close').addEventListener('click', () => hideHintPopup());
+      }
+      return el;
+    }
+    
+    function hideHintPopup() {
+      const el = activityBox.querySelector('.hint-popup');
+      if (el) el.classList.add('hidden');
+    }
+    
+    function showHintAt(latex, desc, clientX, clientY) {
+      const el = ensureHintPopup();
+      // Fill content
+      el.querySelector('.hint-title').textContent = '';  // clear before MathJax
+      el.querySelector('.hint-desc').textContent  = desc;
+      el.classList.remove('hidden');
+    
+      // Render LaTeX into the title area
+      el.querySelector('.hint-title').innerHTML = `\\(${latex}\\)`;
+      if (window.MathJax && MathJax.typesetPromise) {
+        MathJax.typesetPromise([el]);
+      }
+    
+      // Position near the click, but keep inside the activity box
+      const box = activityBox.getBoundingClientRect();
+      let left = clientX - box.left + 12;
+      let top  = clientY - box.top  + 12;
+      el.style.left = `${left}px`;
+      el.style.top  = `${top}px`;
+    
+      // After it’s in the layout, clamp if it overflows
+      const w = el.offsetWidth, h = el.offsetHeight;
+      const maxLeft = box.width  - w - 8;
+      const maxTop  = box.height - h - 8;
+      if (left > maxLeft) el.style.left = `${Math.max(8, maxLeft)}px`;
+      if (top  > maxTop ) el.style.top  = `${Math.max(8, maxTop)}px`;
+    }
+
+
+
 
 
     
@@ -338,6 +390,26 @@ fetch("/nav.html")
           if (inA && inB) return 'AcapB';
           return null;
         }
+
+        const regionInfo2 = {
+          Uminus: { latex: 'U \\setminus (G\\cup T)', desc: 'Shapes which are neither green nor triangles.' },
+          Aonly:  { latex: 'G \\setminus T',         desc: 'Shapes which are green but are not triangles.' },
+          Bonly:  { latex: 'T \\setminus G',         desc: 'Shapes which are triangles but are not green.' },
+          AcapB:  { latex: 'G \\cap T',              desc: 'Shapes which are green triangles.' }
+        };
+        
+        // Show hint when user clicks a region (ignore during drag)
+        canvas.addEventListener('click', (e) => {
+          if (draggingExponent) return;
+          const rect = canvas.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          const r = getRegion2(x, y);
+          if (!r || !regionInfo2[r]) { hideHintPopup(); return; }
+          const { latex, desc } = regionInfo2[r];
+          showHintAt(latex, desc, e.clientX, e.clientY);
+        });
+
 
         function highlightRegion2(region) {
           // Offscreen layer (create once per canvas if you prefer)
@@ -505,6 +577,29 @@ else {
     if (inA && inB && inC) return 'AcapBcapC';
     return null;
   }
+
+  const regionInfo3 = {
+    Uminus:     { latex: 'U \\setminus (G\\cup T\\cup L)', desc: 'Shapes which are not green, not triangles, and not large.' },
+    Aonly:      { latex: 'G \\setminus (T\\cup L)',        desc: 'Shapes which are green but are neither triangles nor large.' },
+    Bonly:      { latex: 'T \\setminus (G\\cup L)',        desc: 'Shapes which are triangles but are neither green nor large.' },
+    Conly:      { latex: 'L \\setminus (G\\cup T)',        desc: 'Shapes which are large but are neither green nor triangles.' },
+    AcapBonly:  { latex: '(G \\cap T) \\setminus L',       desc: 'Shapes which are green triangles that are not large.' },
+    AcapConly:  { latex: '(G \\cap L) \\setminus T',       desc: 'Shapes which are green and large but are not triangles.' },
+    BcapConly:  { latex: '(T \\cap L) \\setminus G',       desc: 'Shapes which are triangles and large but are not green.' },
+    AcapBcapC:  { latex: 'G \\cap T \\cap L',              desc: 'Shapes which are green triangles that are large.' }
+  };
+  
+  canvas.addEventListener('click', (e) => {
+    if (draggingExponent3) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const r = getRegion3(x, y);
+    if (!r || !regionInfo3[r]) { hideHintPopup(); return; }
+    const { latex, desc } = regionInfo3[r];
+    showHintAt(latex, desc, e.clientX, e.clientY);
+  });
+
 
   function highlightRegion3(region) {
     const layer = document.createElement('canvas');
@@ -683,6 +778,10 @@ else {
     const feedbackText = document.getElementById('feedbackText');
     
 
+  activityBox.addEventListener('click', (e) => {
+    const inPopup = e.target.closest && e.target.closest('.hint-popup');
+    if (!inPopup && e.target !== canvas) hideHintPopup();
+  });
 
     
   </script>

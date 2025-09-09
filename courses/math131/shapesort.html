@@ -212,10 +212,14 @@ fetch("/nav.html")
       // Randomly determine unknown quantities.  Variables have a corresponding boolean
       m0 = Math.random();
       
-  
-      // Display the question
-      questionText.textContent = `Sort the shapes!  Let U be the universal set, G the set of green shapes, T the set of triangles, and
-      L the set of large shapes.`;
+      if (m0 < 0.34) {
+        // Display the question
+        questionText.textContent = `Sort the shapes!  Let U be the universal set, G the set of green shapes, and T the set of triangles.`;
+      } else {
+        // Display the question
+        questionText.textContent = `Sort the shapes!  Let U be the universal set, G the set of green shapes, T the set of triangles, and
+        L the set of large shapes.`;
+      }
 
       
       // Clear the activity box

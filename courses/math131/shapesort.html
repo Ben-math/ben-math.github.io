@@ -298,33 +298,39 @@ fetch("/nav.html")
 
         function highlightRegion2(region) {
           ctx.save();
+          const HIGHLIGHT = 'rgba(0, 200, 0, 0.25)'; // only for visible paint
+          const MASK = '#000';                        // fully opaque for masking
+        
           ctx.globalCompositeOperation = 'source-over';
-          ctx.fillStyle = 'rgba(0, 200, 0, 0.25)';
           switch (region) {
             case 'Uminus':
-              drawURectPath(); ctx.fill();
+              drawURectPath(); ctx.fillStyle = HIGHLIGHT; ctx.fill();
               ctx.globalCompositeOperation = 'destination-out';
-              drawCirclePath(geom2.A); ctx.fill();
-              drawCirclePath(geom2.B); ctx.fill();
+              ctx.fillStyle = MASK; drawCirclePath(geom2.A); ctx.fill();
+              ctx.fillStyle = MASK; drawCirclePath(geom2.B); ctx.fill();
               break;
+        
             case 'Aonly':
-              drawCirclePath(geom2.A); ctx.fill();
+              drawCirclePath(geom2.A); ctx.fillStyle = HIGHLIGHT; ctx.fill();
               ctx.globalCompositeOperation = 'destination-out';
-              drawCirclePath(geom2.B); ctx.fill();
+              ctx.fillStyle = MASK; drawCirclePath(geom2.B); ctx.fill();
               break;
+        
             case 'Bonly':
-              drawCirclePath(geom2.B); ctx.fill();
+              drawCirclePath(geom2.B); ctx.fillStyle = HIGHLIGHT; ctx.fill();
               ctx.globalCompositeOperation = 'destination-out';
-              drawCirclePath(geom2.A); ctx.fill();
+              ctx.fillStyle = MASK; drawCirclePath(geom2.A); ctx.fill();
               break;
+        
             case 'AcapB':
-              drawCirclePath(geom2.A); ctx.fill();
+              drawCirclePath(geom2.A); ctx.fillStyle = HIGHLIGHT; ctx.fill();
               ctx.globalCompositeOperation = 'destination-in';
-              drawCirclePath(geom2.B); ctx.fill();
+              ctx.fillStyle = MASK; drawCirclePath(geom2.B); ctx.fill();
               break;
           }
           ctx.restore();
         }
+
 
         let draggingExponent = false;
         document.addEventListener('dragstart', (e) => {
@@ -401,64 +407,75 @@ else {
 
   function highlightRegion3(region) {
     ctx.save();
+    const HIGHLIGHT = 'rgba(0, 200, 0, 0.25)';
+    const MASK = '#000';
+  
     ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = 'rgba(0, 200, 0, 0.25)';
     switch (region) {
       case 'Uminus':
-        drawURectPath3(); ctx.fill();
+        drawURectPath3(); ctx.fillStyle = HIGHLIGHT; ctx.fill();
         ctx.globalCompositeOperation = 'destination-out';
-        drawCirclePath3(geom3.A); ctx.fill();
-        drawCirclePath3(geom3.B); ctx.fill();
-        drawCirclePath3(geom3.C); ctx.fill();
+        ctx.fillStyle = MASK; drawCirclePath3(geom3.A); ctx.fill();
+        ctx.fillStyle = MASK; drawCirclePath3(geom3.B); ctx.fill();
+        ctx.fillStyle = MASK; drawCirclePath3(geom3.C); ctx.fill();
         break;
+  
       case 'Aonly':
-        drawCirclePath3(geom3.A); ctx.fill();
+        drawCirclePath3(geom3.A); ctx.fillStyle = HIGHLIGHT; ctx.fill();
         ctx.globalCompositeOperation = 'destination-out';
-        drawCirclePath3(geom3.B); ctx.fill();
-        drawCirclePath3(geom3.C); ctx.fill();
+        ctx.fillStyle = MASK; drawCirclePath3(geom3.B); ctx.fill();
+        ctx.fillStyle = MASK; drawCirclePath3(geom3.C); ctx.fill();
         break;
+  
       case 'Bonly':
-        drawCirclePath3(geom3.B); ctx.fill();
+        drawCirclePath3(geom3.B); ctx.fillStyle = HIGHLIGHT; ctx.fill();
         ctx.globalCompositeOperation = 'destination-out';
-        drawCirclePath3(geom3.A); ctx.fill();
-        drawCirclePath3(geom3.C); ctx.fill();
+        ctx.fillStyle = MASK; drawCirclePath3(geom3.A); ctx.fill();
+        ctx.fillStyle = MASK; drawCirclePath3(geom3.C); ctx.fill();
         break;
+  
       case 'Conly':
-        drawCirclePath3(geom3.C); ctx.fill();
+        drawCirclePath3(geom3.C); ctx.fillStyle = HIGHLIGHT; ctx.fill();
         ctx.globalCompositeOperation = 'destination-out';
-        drawCirclePath3(geom3.A); ctx.fill();
-        drawCirclePath3(geom3.B); ctx.fill();
+        ctx.fillStyle = MASK; drawCirclePath3(geom3.A); ctx.fill();
+        ctx.fillStyle = MASK; drawCirclePath3(geom3.B); ctx.fill();
         break;
+  
       case 'AcapBonly':
-        drawCirclePath3(geom3.A); ctx.fill();
+        drawCirclePath3(geom3.A); ctx.fillStyle = HIGHLIGHT; ctx.fill();
         ctx.globalCompositeOperation = 'destination-in';
-        drawCirclePath3(geom3.B); ctx.fill();
+        ctx.fillStyle = MASK; drawCirclePath3(geom3.B); ctx.fill();
         ctx.globalCompositeOperation = 'destination-out';
-        drawCirclePath3(geom3.C); ctx.fill();
+        ctx.fillStyle = MASK; drawCirclePath3(geom3.C); ctx.fill();
         break;
+  
       case 'AcapConly':
-        drawCirclePath3(geom3.A); ctx.fill();
+        drawCirclePath3(geom3.A); ctx.fillStyle = HIGHLIGHT; ctx.fill();
         ctx.globalCompositeOperation = 'destination-in';
-        drawCirclePath3(geom3.C); ctx.fill();
+        ctx.fillStyle = MASK; drawCirclePath3(geom3.C); ctx.fill();
         ctx.globalCompositeOperation = 'destination-out';
-        drawCirclePath3(geom3.B); ctx.fill();
+        ctx.fillStyle = MASK; drawCirclePath3(geom3.B); ctx.fill();
         break;
+  
       case 'BcapConly':
-        drawCirclePath3(geom3.B); ctx.fill();
+        drawCirclePath3(geom3.B); ctx.fillStyle = HIGHLIGHT; ctx.fill();
         ctx.globalCompositeOperation = 'destination-in';
-        drawCirclePath3(geom3.C); ctx.fill();
+        ctx.fillStyle = MASK; drawCirclePath3(geom3.C); ctx.fill();
         ctx.globalCompositeOperation = 'destination-out';
-        drawCirclePath3(geom3.A); ctx.fill();
+        ctx.fillStyle = MASK; drawCirclePath3(geom3.A); ctx.fill();
         break;
+  
       case 'AcapBcapC':
-        drawCirclePath3(geom3.A); ctx.fill();
+        drawCirclePath3(geom3.A); ctx.fillStyle = HIGHLIGHT; ctx.fill();
         ctx.globalCompositeOperation = 'destination-in';
-        drawCirclePath3(geom3.B); ctx.fill();
-        drawCirclePath3(geom3.C); ctx.fill();
+        ctx.fillStyle = MASK; drawCirclePath3(geom3.B); ctx.fill();
+        ctx.globalCompositeOperation = 'destination-in';
+        ctx.fillStyle = MASK; drawCirclePath3(geom3.C); ctx.fill();
         break;
     }
     ctx.restore();
   }
+
 
   let draggingExponent3 = false;
   document.addEventListener('dragstart', (e) => {

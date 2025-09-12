@@ -348,12 +348,12 @@ fetch("/nav.html")
       if (ruleCheckboxes.baseten.checked) {
         const {a,b} = randomProblemBase10();
         correctAnswer = a - b;
-        questionText.textContent = `What is ${a} − ${b}? (No helpful sections this time. Use the regroup zone if you must.)`;
+        questionText.textContent = `What is ${a} − ${b}?`;
         populateBlocksFromValue(a);
       } else {
         const {a,b} = randomProblemBase5();
         correctAnswer = a - b; // keep as base-10 for checking
-        questionText.textContent = `What is ${toQuinary(a)} − ${toQuinary(b)} in base-five? (One regroup zone. Good luck.)`;
+        questionText.textContent = `What is ${toQuinary(a)} − ${toQuinary(b)} in base-five?`;
         populateBlocksFromValue(a);
       }
     });

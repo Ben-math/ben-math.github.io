@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Subtraction Activity — "Bad" Version</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Subtraction Activity — "Bad" Version</h1>
+    <p style="text-align:center; max-width: 900px; margin: 0 auto;">
+      This intentionally unhelpful version dumps all <em>minuend</em> blocks into one big sandbox.
+      There are no separate sections. Drag blocks anywhere. Use the single regroup zone to
+      merge/break as needed, then type the final difference below.
+    </p>
+  </header>
+
+  <main>
+    <div id="rule-select" class="styled-checkbox-group" style="justify-content:center">
+      <label><input type="checkbox" class="styled-checkbox" id="baseten" checked> Base-Ten</label>
+      <label><input type="checkbox" class="styled-checkbox" id="basefive"> Base-Five</label>
+    </div>
+
+    <div class="button-container">
+      <button id="start-btn" class="rubber-button">Start!</button>
+    </div>
+
+    <p id="question-text" style="text-align:center; min-height: 28px;"></p>
+
+    <div id="activity" class="activity-box" style="position: relative;">
+      <!-- Single regroup zone (top-middle) -->
+      <div id="regroup" class="regroup-zone drop-zone" style="position:absolute; left:50%; transform: translateX(-50%); top:12px;"
+           data-block-type="" data-block-count="0">⇆
+        <button id="action-btn" class="rubber-button merge-break-btn" style="display:none; position:absolute; top:-22px; right:0;"></button>
+        <div class="zone-count" style="position:absolute; bottom:2px; right:6px; font-size:12px;"></div>
+      </div>
+    </div>
+
+    <div id="answer-section" style="margin-top: 20px; text-align: center;">
+      <label for="user-answer">Enter your answer:</label>
+      <input type="number" id="user-answer" />
+      <button id="check-answer-btn" class="rubber-button">Check Answer</button>
+      <p id="answer-feedback" style="font-weight: bold; margin-top: 10px;"></p>
+    </div>
+  </main>
+
+  <audio id="click-sound" src="button.mp3" preload="auto"></audio>
+  <audio id="set-sound" src="set2.mp3" preload="auto"></audio>
+
+  <script>
+    // ===== Utilities =====
+    const ruleCheckboxes = {
+      baseten: document.getElementById('baseten'),
+      basefive: document.getElementById('basefive'),
+    };
+    Object.values(ruleCheckboxes).forEach(box => {
+      box.addEventListener('change', () => {
+        if (box.id === 'baseten' && box.checked) ruleCheckboxes.basefive.checked = false;
+        if (box.id === 'basefive' && box.checked) ruleCheckboxes.baseten.checked = false;
+      });
+    });
+
+    const activityBox = document.getElementById('activity');
+    const regroupZone = document.getElementById('regroup');
+    const actionBtn = document.getElementById('action-btn');
+    const startBtn = document.getElementById('start-btn');
+    const questionText = document.getElementById('question-text');
+
+    let correctAnswer = null; // base-10 value; for base-5 UI we compare using displayed (quinary) digits
+
+    function base() { return ruleCheckboxes.baseten.checked ? 10 : 5; }
+
+    function toQuinary(n) {
+      if (n === 0) return '0';
+      let out = '';
+      while (n > 0) { out = (n % 5) + out; n = Math.floor(n / 5); }
+      return out;
+    }
+
+    function randomProblemBase10() {
+      let a,b;
+      while (true) {
+        a = Math.floor(Math.random() * 499) + 1;
+        b = Math.floor(Math.random() * 499) + 1;
+        if (b > a) [a,b] = [a,b]; // we'll swap after the constraint check
+        // ensure regrouping is actually needed somewhere (same heuristic as good version)
+        const aOnes = a % 10, bOnes = b % 10;
+        const aTens = Math.floor(a / 10) % 10, bTens = Math.floor(b / 10) % 10;
+        if (bTens > aTens && bOnes > aOnes) { if (a < b) [a,b] = [b,a]; return {a,b}; }
+      }
+    }
+
+    function randomProblemBase5() {
+      let a,b;
+      while (true) {
+        a = Math.floor(Math.random() * 124) + 1; // up to 4*25 + 4*5 + 4
+        b = Math.floor(Math.random() * 124) + 1;
+        if (b > a) [a,b] = [a,b];
+        const aOnes = a % 5, bOnes = b % 5;
+        const aTens = Math.floor(a / 5) % 5, bTens = Math.floor(b / 5) % 5;
+        if (bTens > aTens && bOnes > aOnes) { if (a < b) [a,b] = [b,a]; return {a,b}; }
+      }
+    }
+
+    // ===== Block creation & dragging =====
+    function createBlock(x, y, type = 'ones', draggable = true) {
+      const el = document.createElement('div');
+      el.classList.add('draggable-block', `block-${type}`);
+      if (ruleCheckboxes.basefive.checked && (type === 'tens' || type === 'hundreds')) {
+        el.classList.add('basefive');
+      }
+      el.style.left = x + 'px';
+      el.style.top = y + 'px';
+      el.style.position = 'absolute';
+      el.style.cursor = 'grab';
+      el.dataset.blockType = type;
+      el.currentZone = null; // only used for regroup zone membership
+      activityBox.appendChild(el);
+      if (draggable) makeDraggable(el);
+      return el;
+    }
+
+    function makeDraggable(el) {
+      let drag = false, offX = 0, offY = 0, origX = 0, origY = 0, lastHover = null;
+      el.addEventListener('mousedown', (e) => {
+        drag = true;
+        el.style.zIndex = 1000;
+        el.style.cursor = 'grabbing';
+        const r = el.getBoundingClientRect();
+        offX = e.clientX - r.left; offY = e.clientY - r.top;
+        origX = parseFloat(el.style.left); origY = parseFloat(el.style.top);
+        if (el.currentZone) { unregisterFromRegroup(el.currentZone, el); el.currentZone = null; }
+      });
+      document.addEventListener('mousemove', (e) => {
+        if (!drag) return;
+        const box = activityBox.getBoundingClientRect();
+        let nx = e.clientX - box.left - offX;
+        let ny = e.clientY - box.top - offY;
+        // keep inside box
+        nx = Math.max(0, Math.min(nx, activityBox.clientWidth - el.offsetWidth));
+        ny = Math.max(0, Math.min(ny, activityBox.clientHeight - el.offsetHeight));
+        el.style.left = nx + 'px';
+        el.style.top = ny + 'px';
+        // hover highlight for regroup zone only
+        const b = el.getBoundingClientRect();
+        const rz = regroupZone.getBoundingClientRect();
+        const overlap = overlapArea(b, rz);
+        const can = canAcceptInRegroup(el.dataset.blockType);
+        regroupZone.classList.toggle('valid-hover', overlap > 10 && can);
+        regroupZone.classList.toggle('invalid-hover', overlap > 10 && !can);
+        lastHover = overlap > 10 ? regroupZone : null;
+      });
+      document.addEventListener('mouseup', () => {
+        if (!drag) return;
+        drag = false; el.style.cursor = 'grab';
+        regroupZone.classList.remove('valid-hover','invalid-hover');
+        const b = el.getBoundingClientRect();
+        const rz = regroupZone.getBoundingClientRect();
+        if (overlapArea(b, rz) > 10 && canAcceptInRegroup(el.dataset.blockType)) {
+          snapIntoRegroup(el);
+          document.getElementById('set-sound').play();
+        }
+      });
+    }
+
+    function overlapArea(r1, r2) {
+      const xo = Math.max(0, Math.min(r1.right, r2.right) - Math.max(r1.left, r2.left));
+      const yo = Math.max(0, Math.min(r1.bottom, r2.bottom) - Math.max(r1.top, r2.top));
+      return xo * yo;
+    }
+
+    // ===== Regroup-zone logic =====
+    function canAcceptInRegroup(blockType) {
+      const count = +regroupZone.dataset.blockCount || 0;
+      const current = regroupZone.dataset.blockType || '';
+      const baseVal = base();
+      if (current === '' || current === blockType) {
+        if (blockType === 'ones') return count < baseVal;     // up to 10/5 ones
+        if (blockType === 'tens') return count < baseVal;     // up to 10/5 tens
+        if (blockType === 'hundreds') return count < 1;       // at most one hundreds
+      }
+      return false;
+    }
+
+    function snapIntoRegroup(block) {
+      // register
+      const type = block.dataset.blockType;
+      const count = (+regroupZone.dataset.blockCount || 0) + 1;
+      regroupZone.dataset.blockCount = String(count);
+      regroupZone.dataset.blockType = type;
+      block.currentZone = regroupZone;
+      // stack layout inside regroup: ones horizontal, tens vertical tight, hundreds centered
+      const rz = regroupZone.getBoundingClientRect();
+      const box = activityBox.getBoundingClientRect();
+      let x = rz.left - box.left + 4;
+      let y = rz.bottom - box.top - 30;
+      if (type === 'ones') {
+        x = rz.left - box.left + (count - 1) * 10 + 4;
+      } else if (type === 'tens') {
+        y = rz.bottom - box.top - (count) * 20 - 8;
+      }
+      block.style.left = x + 'px';
+      block.style.top = y + 'px';
+      updateRegroupUI();
+    }
+
+    function unregisterFromRegroup(zone, blockEl) {
+      const count = Math.max(0, (+zone.dataset.blockCount || 0) - 1);
+      zone.dataset.blockCount = String(count);
+      if (count === 0) zone.dataset.blockType = '';
+      // restack remaining blocks in zone
+      restackRegroup();
+      updateRegroupUI();
+    }
+
+    function restackRegroup() {
+      const blocks = Array.from(activityBox.querySelectorAll('.draggable-block'))
+        .filter(b => b.currentZone === regroupZone);
+      const type = regroupZone.dataset.blockType || '';
+      const rz = regroupZone.getBoundingClientRect();
+      const box = activityBox.getBoundingClientRect();
+      blocks.forEach((b, i) => {
+        let x = rz.left - box.left + 4;
+        let y = rz.bottom - box.top - 30;
+        if (type === 'ones') x = rz.left - box.left + i * 10 + 4;
+        if (type === 'tens') y = rz.bottom - box.top - (i + 1) * 20 - 8;
+        b.style.left = x + 'px';
+        b.style.top = y + 'px';
+      });
+    }
+
+    function updateRegroupUI() {
+      const count = +regroupZone.dataset.blockCount || 0;
+      const type = regroupZone.dataset.blockType || '';
+      const baseVal = base();
+      // label
+      regroupZone.querySelector('.zone-count').textContent = count ? String(count) : '';
+      // button visibility and text
+      let show = false, merge = false;
+      if (type === 'ones' && count === baseVal) { show = true; merge = true; }
+      else if (type === 'tens' && count === baseVal) { show = true; merge = true; }
+      else if (type === 'tens' && count === 1) { show = true; merge = false; }
+      else if (type === 'hundreds' && count === 1) { show = true; merge = false; }
+      actionBtn.style.display = show ? 'block' : 'none';
+      actionBtn.textContent = merge ? 'Merge' : 'Break';
+    }
+
+    actionBtn.addEventListener('click', () => {
+      document.getElementById('click-sound').play();
+      const count = +regroupZone.dataset.blockCount || 0;
+      const type = regroupZone.dataset.blockType || '';
+      const baseVal = base();
+      if (!count || !type) return;
+      // Get current zone blocks
+      const zoneBlocks = Array.from(activityBox.querySelectorAll('.draggable-block'))
+        .filter(b => b.currentZone === regroupZone);
+
+      // MERGE: base ones -> one tens; base tens -> one hundreds
+      if ((type === 'ones' && count === baseVal) || (type === 'tens' && count === baseVal)) {
+        // remove old
+        zoneBlocks.forEach((b, i) => { if (i < baseVal) b.remove(); });
+        regroupZone.dataset.blockCount = '1';
+        const newType = (type === 'ones') ? 'tens' : 'hundreds';
+        regroupZone.dataset.blockType = newType;
+        const rz = regroupZone.getBoundingClientRect();
+        const box = activityBox.getBoundingClientRect();
+        const nb = createBlock(rz.left - box.left + 4, rz.bottom - box.top - 30, newType, true);
+        nb.currentZone = regroupZone;
+        restackRegroup();
+        updateRegroupUI();
+        return;
+      }
+
+      // BREAK: 1 hundreds -> base tens; 1 tens -> base ones
+      if ((type === 'hundreds' && count === 1) || (type === 'tens' && count === 1)) {
+        // remove the single big block
+        if (zoneBlocks[0]) zoneBlocks[0].remove();
+        const newType = (type === 'hundreds') ? 'tens' : 'ones';
+        regroupZone.dataset.blockType = newType;
+        regroupZone.dataset.blockCount = String(baseVal);
+        const rz = regroupZone.getBoundingClientRect();
+        const box = activityBox.getBoundingClientRect();
+        for (let i = 0; i < baseVal; i++) {
+          const x = newType === 'ones' ? (rz.left - box.left + 4 + i * 10) : (rz.left - box.left + 4);
+          const y = newType === 'ones' ? (rz.bottom - box.top - 30) : (rz.bottom - box.top - (i + 1) * 20 - 8);
+          const b = createBlock(x, y, newType, true);
+          b.currentZone = regroupZone;
+        }
+        restackRegroup();
+        updateRegroupUI();
+        return;
+      }
+    });
+
+    // ===== Populate starting blocks =====
+    function populateBlocksFromValue(value) {
+      // value is base-10 count of ones; convert into hundreds/tens/ones by current base
+      let H, T, O;
+      if (ruleCheckboxes.baseten.checked) {
+        H = Math.floor(value / 100);
+        T = Math.floor((value % 100) / 10);
+        O = value % 10;
+      } else { // base-5: ones, fives, twenty-fives
+        H = Math.floor(value / 25);
+        T = Math.floor((value % 25) / 5);
+        O = value % 5;
+      }
+      // lay them out in a rough grid on the left half so nothing overlaps the regroup zone
+      const pad = 16, startX = 24, startY = 64, colW = 130, rowH = 26;
+      let r = 0;
+      for (let i=0;i<H;i++) createBlock(startX + 0*colW, startY + (r++)*rowH, 'hundreds', true);
+      r = 0;
+      for (let i=0;i<T;i++) createBlock(startX + 1*colW, startY + (r++)*rowH, 'tens', true);
+      r = 0;
+      for (let i=0;i<O;i++) createBlock(startX + 2*colW, startY + (r++)*rowH, 'ones', true);
+    }
+
+    // ===== Start / Check =====
+    startBtn.addEventListener('click', () => {
+      document.getElementById('answer-feedback').textContent = '';
+      // clear all blocks except regroup zone
+      Array.from(activityBox.querySelectorAll('.draggable-block')).forEach(b => b.remove());
+      regroupZone.dataset.blockType = '';
+      regroupZone.dataset.blockCount = '0';
+      updateRegroupUI();
+
+      if (ruleCheckboxes.baseten.checked) {
+        const {a,b} = randomProblemBase10();
+        correctAnswer = a - b;
+        questionText.textContent = `What is ${a} − ${b}? (No helpful sections this time. Use the regroup zone if you must.)`;
+        populateBlocksFromValue(a);
+      } else {
+        const {a,b} = randomProblemBase5();
+        correctAnswer = a - b; // keep as base-10 for checking
+        questionText.textContent = `What is ${toQuinary(a)} − ${toQuinary(b)} in base-five? (One regroup zone. Good luck.)`;
+        populateBlocksFromValue(a);
+      }
+    });
+
+    document.getElementById('check-answer-btn').addEventListener('click', () => {
+      const input = document.getElementById('user-answer');
+      const feedback = document.getElementById('answer-feedback');
+      if (ruleCheckboxes.basefive.checked) {
+        // interpret entered number as base-5 digits
+        const s = input.value.trim();
+        if (!/^\d+$/.test(s)) { feedback.textContent = 'Please enter digits (0–4) for base-five.'; feedback.style.color='black'; return; }
+        if ([...s].some(ch => ch > '4')) { feedback.textContent = 'Digits must be 0–4 in base-five.'; feedback.style.color='black'; return; }
+        // convert to base-10
+        let val = 0; for (const ch of s) val = val*5 + (+ch);
+        if (val === correctAnswer) { feedback.textContent = 'Correct!'; feedback.style.color='green'; }
+        else { feedback.textContent = 'Incorrect. Try again!'; feedback.style.color='red'; }
+      } else {
+        const n = parseInt(input.value);
+        if (isNaN(n)) { feedback.textContent = 'Please enter a number.'; feedback.style.color='black'; return; }
+        if (n === correctAnswer) { feedback.textContent = 'Correct!'; feedback.style.color='green'; }
+        else { feedback.textContent = 'Incorrect. Try again!'; feedback.style.color='red'; }
+      }
+    });
+  </script>
+</body>
+</html>

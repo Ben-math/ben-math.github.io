@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta name="description" content="Personal website with math education activities: place-value with gears.">
   <meta charset="UTF-8" />
-  <title>Place Value Demo</title>
+  <title>Place Value — Gears</title>
   <link rel="stylesheet" href="/style.css" />
 
   <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
@@ -13,84 +13,252 @@
 </head>
 <body>
   <header>
-    <h1>Place Value Demo</h1>
+    <h1>Place Value — Gears</h1>
     <div id="nav-placeholder"></div>
-      <script>
-fetch("/nav.html")
-  .then(response => response.text())
-  .then(html => {
-    document.getElementById("nav-placeholder").innerHTML = html;
-
-    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
-    const navLinks = document.querySelectorAll("#nav-placeholder a");
-    navLinks.forEach(link => {
-      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
-      if (linkPath === currentPath) {
-        link.classList.add("active");
-      }
-    });
-
-    const s = document.createElement("script");
-    s.src = "/mascot.js";
-    s.defer = true;
-    document.body.appendChild(s); 
-  })
-  .catch(err => {
-    console.error("Failed to load nav:", err);
-  });
-</script>
+    <script>
+      fetch("/nav.html")
+        .then(r => r.text())
+        .then(html => {
+          document.getElementById("nav-placeholder").innerHTML = html;
+          const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+          document.querySelectorAll("#nav-placeholder a").forEach(link => {
+            const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+            if (linkPath === currentPath) link.classList.add("active");
+          });
+          const s = document.createElement("script");
+          s.src = "/mascot.js"; s.defer = true; document.body.appendChild(s);
+        })
+        .catch(err => console.error("Failed to load nav:", err));
+    </script>
   </header>
+
   <main>
+    <p>Set a base between 5 and 10, then step the number up/down. Each click rotates every gear by one tooth; the digit under the pointer shows the place-value digits.</p>
 
-    <p>If I can make it quick enough, this will contain a place value demonstration!</p>
-
-    <div class="button-container">
-      <button id="start-btn" class="rubber-button">Start!</button>
+    <div class="button-container" style="gap: 0.5rem; align-items:center; justify-content:center; display:flex; flex-wrap:wrap;">
+      <label for="base-input" style="font-weight:600;">Base (5–10):</label>
+      <input id="base-input" type="number" inputmode="numeric" min="5" max="10" step="1" style="width:6rem;" aria-label="Base between 5 and 10">
+      <button id="start-btn" class="rubber-button" disabled>Start</button>
+      <button id="down-btn" class="rubber-button" disabled title="Decrement">&#8595;</button>
+      <button id="up-btn" class="rubber-button" disabled title="Increment">&#8593;</button>
+      <span id="readout" style="margin-left:0.75rem; font-weight:700;"></span>
     </div>
-    
-    <div class="activity-box" id="my-activity">
 
-    </div>
-
+    <div class="activity-box" id="activity" aria-label="Place value gears activity" role="application"></div>
   </main>
-
-  <script>
-
-    const startBtn = document.getElementById('start-btn');
-    const activityBox = document.getElementById('my-activity');
-
-        function addTextToActivityBox(text, x, y, fontSize = 28) {
-      const txt = document.createElement('div');
-      txt.classList.add('activity-text');
-      txt.textContent = text;
-      txt.style.left = `${x}px`;
-      txt.style.top = `${y}px`;
-      txt.style.fontSize = `${fontSize}px`;
-      activityBox.appendChild(txt);
-    }
-
-    
-  startBtn.addEventListener('click', () => {
-      
-      // Clear the activity box
-      activityBox.innerHTML = '';
-      
-      // Create a canvas
-      const canvas = document.createElement('canvas');
-      canvas.width = 1300;
-      canvas.height = 650;
-      activityBox.appendChild(canvas);
-      
-      const ctx = canvas.getContext('2d');
-      
-
-    });
-
-    
-  </script>
 
   <audio id="click-sound" src="button.mp3" preload="auto"></audio>
   <audio id="set-sound" src="set2.mp3" preload="auto"></audio>
-  
+
+  <script>
+    // ===== DOM =====
+    const baseInput = document.getElementById('base-input');
+    const startBtn = document.getElementById('start-btn');
+    const upBtn = document.getElementById('up-btn');
+    const downBtn = document.getElementById('down-btn');
+    const activity = document.getElementById('activity');
+    const readout = document.getElementById('readout');
+
+    // ===== State =====
+    let B = 10;            // base (5..10)
+    let T = 0;             // total tooth steps from 0..B^3-1
+    let canvas, ctx;
+
+    // ===== Helpers =====
+    const clamp = (v,min,max) => Math.max(min, Math.min(max, v));
+    function validateBaseValue() {
+      const v = parseInt(baseInput.value, 10);
+      const ok = Number.isInteger(v) && v >= 5 && v <= 10;
+      startBtn.disabled = !ok;
+      return ok ? v : null;
+    }
+
+    function setupCanvas() {
+      activity.innerHTML = '';
+      canvas = document.createElement('canvas');
+      canvas.width = 1300;  // match .activity-box
+      canvas.height = 650;
+      canvas.style.width = '100%';
+      canvas.style.height = '100%';
+      activity.appendChild(canvas);
+      ctx = canvas.getContext('2d');
+    }
+
+    function digitsFromT(T, B) {
+      const d0 = T % B;             // ones (right)
+      const d1 = Math.floor(T / B) % B; // middle
+      const d2 = Math.floor(T / (B*B)) % B; // left
+      return [d2, d1, d0];
+    }
+
+    function updateButtons() {
+      const maxT = B**3 - 1;
+      downBtn.disabled = (T <= 0);
+      upBtn.disabled = (T >= maxT);
+      const [D2,D1,D0] = digitsFromT(T, B);
+      readout.textContent = `Digits: ${D2}-${D1}-${D0} (base ${B})`;
+    }
+
+    // ===== Rendering =====
+    function drawPointer(cx, cy, r) {
+      ctx.save();
+      ctx.fillStyle = '#1a1a4b';
+      const tipX = cx, tipY = cy - r - 10;
+      ctx.beginPath();
+      ctx.moveTo(tipX, tipY);
+      ctx.lineTo(tipX - 10, tipY + 18);
+      ctx.lineTo(tipX + 10, tipY + 18);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawGear(cx, cy, r, teethCount, B, groupSize, rotationTeeth) {
+      const rot = (rotationTeeth % teethCount) * (2*Math.PI / teethCount);
+      const ringInner = r*0.42;     // sector fill inner radius
+      const ringOuter = r*0.98;     // sector fill outer radius
+      const hubR = r*0.28;
+
+      ctx.save();
+
+      // Gear sectors (b colored sectors, each groupSize teeth)
+      for (let k=0; k<B; k++) {
+        const a0 = rot + 2*Math.PI * (k*groupSize) / teethCount - Math.PI/2; // align 0 at top
+        const a1 = rot + 2*Math.PI * ((k+1)*groupSize) / teethCount - Math.PI/2;
+        ctx.beginPath();
+        // outer arc
+        ctx.arc(cx, cy, ringOuter, a0, a1, false);
+        // inner arc (reverse)
+        ctx.arc(cx, cy, ringInner, a1, a0, true);
+        ctx.closePath();
+        // rainbow-ish palette
+        ctx.fillStyle = `hsl(${(k*360/B)|0} 70% 80% / 0.9)`;
+        ctx.fill();
+      }
+
+      // Teeth ticks
+      ctx.strokeStyle = '#1a1a4b';
+      ctx.lineWidth = 1;
+      for (let i=0; i<teethCount; i++) {
+        const ang = rot + 2*Math.PI * (i/teethCount) - Math.PI/2;
+        const isBoundary = (i % groupSize) === 0;
+        const inner = isBoundary ? r*0.78 : r*0.9;
+        const outer = r*0.98;
+        const x0 = cx + inner * Math.cos(ang);
+        const y0 = cy + inner * Math.sin(ang);
+        const x1 = cx + outer * Math.cos(ang);
+        const y1 = cy + outer * Math.sin(ang);
+        ctx.beginPath();
+        ctx.moveTo(x0,y0);
+        ctx.lineTo(x1,y1);
+        ctx.stroke();
+      }
+
+      // Digit labels (center of each sector)
+      ctx.fillStyle = '#1a1a4b';
+      ctx.font = `${Math.max(12, Math.floor(r*0.16))}px ui-sans-serif, system-ui, Segoe UI, Roboto`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (let k=0; k<B; k++) {
+        const mid = rot + 2*Math.PI * ((k + 0.5)*groupSize) / teethCount - Math.PI/2;
+        const rr = (ringInner + hubR) / 2;
+        const x = cx + rr * Math.cos(mid);
+        const y = cy + rr * Math.sin(mid);
+        // keep text upright
+        ctx.save();
+        ctx.translate(x,y);
+        ctx.rotate(0);
+        ctx.fillText(String(k), 0, 0);
+        ctx.restore();
+      }
+
+      // Hub + outline
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#1a1a4b';
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, 2*Math.PI);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx, cy, hubR, 0, 2*Math.PI);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.restore();
+
+      // Fixed pointer at top
+      drawPointer(cx, cy, r);
+    }
+
+    function render() {
+      const W = canvas.width, H = canvas.height;
+      ctx.clearRect(0,0,W,H);
+
+      // Layout: increasing size from right-to-left
+      const r0 = 90;   // rightmost (ones)
+      const r1 = 150;  // middle (base)
+      const r2 = 220;  // leftmost (base^2)
+      const cy = H*0.58;
+      const x0 = W*0.78;      // right
+      const x1 = W*0.52;      // middle
+      const x2 = W*0.24;      // left
+
+      // Teeth counts and group sizes
+      const teeth0 = B;          // ones gear
+      const teeth1 = B*B;        // middle
+      const teeth2 = B*B*B;      // left
+      const g0 = 1;              // each sector is 1 tooth
+      const g1 = B;              // sector = B teeth
+      const g2 = B*B;            // sector = B^2 teeth
+
+      // Draw gears (all rotate by T teeth)
+      drawGear(x0, cy, r0, teeth0, B, g0, T);
+      drawGear(x1, cy, r1, teeth1, B, g1, T);
+      drawGear(x2, cy, r2, teeth2, B, g2, T);
+
+      // Caption
+      const [D2,D1,D0] = digitsFromT(T, B);
+      ctx.fillStyle = '#1a1a4b';
+      ctx.font = '22px ui-sans-serif, system-ui, Segoe UI, Roboto';
+      ctx.textAlign = 'center';
+      ctx.fillText(`Value = ${D2}${D1}${D0}ₙ (base ${B})`, W/2, 48);
+      ctx.font = '16px ui-sans-serif, system-ui, Segoe UI, Roboto';
+      ctx.fillText('Pointer at top shows the current digit of each place.', W/2, 72);
+    }
+
+    // ===== Events =====
+    baseInput.addEventListener('input', () => {
+      validateBaseValue();
+    });
+
+    startBtn.addEventListener('click', () => {
+      const v = validateBaseValue();
+      if (!v) return;
+      B = v;
+      T = 0; // start at 0-0-0
+      setupCanvas();
+      render();
+      document.getElementById('click-sound')?.play?.();
+      upBtn.disabled = false; // 000 -> can go up
+      downBtn.disabled = true; // already at min
+    });
+
+    upBtn.addEventListener('click', () => {
+      const maxT = B**3 - 1;
+      if (T >= maxT) return;
+      T = clamp(T + 1, 0, maxT);
+      render();
+      document.getElementById('click-sound')?.play?.();
+      updateButtons();
+    });
+
+    downBtn.addEventListener('click', () => {
+      if (T <= 0) return;
+      T = clamp(T - 1, 0, B**3 - 1);
+      render();
+      document.getElementById('click-sound')?.play?.();
+      updateButtons();
+    });
+  </script>
 </body>
 </html>

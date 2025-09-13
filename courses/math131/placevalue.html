@@ -66,7 +66,7 @@
       const v = parseInt(baseInput.value, 10);
       const ok = Number.isInteger(v) && v >= 5 && v <= 16;
       startBtn.disabled = !ok;
-      return ok ? v : null;
+      /* return removed: start handler reads value directly */
     }
 
     baseInput.addEventListener('input', validateBase);
@@ -346,6 +346,32 @@ window.addEventListener('error', (e) => {
 window.addEventListener('unhandledrejection', (e) => {
   console.error('[unhandledrejection]', e.reason);
 });
+</script>
+<script>
+// Patch: robust Start handler that reads base directly (independent of validateBase return)
+(function(){
+  const btn = document.getElementById('start-btn');
+  if (!btn) return;
+  btn.addEventListener('click', function patchedStartHandler2(){
+    try {
+      const input = document.getElementById('base-input');
+      const v = parseInt(input && input.value, 10);
+      const ok = Number.isInteger(v) && v >= 5 && v <= 16;
+      console.log('[patched start] v=', v, 'ok=', ok);
+      if (!ok) return;
+      B = v; T = 0;
+      if (!window.canvas || !window.ctx) setupCanvas();
+      render();
+      const up = document.getElementById('up-btn');
+      const down = document.getElementById('down-btn');
+      if (down) down.disabled = true;
+      if (up) up.disabled = false;
+      updateButtons();
+    } catch (e) {
+      console.error('[patched start] error', e);
+    }
+  }, { once: false });
+})();
 </script>
 </body>
 </html>

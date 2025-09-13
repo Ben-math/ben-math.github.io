@@ -61,7 +61,7 @@
 
     const DIGITS = '0123456789ABCDEF';
 
-    $1
+    function validateBase() {
       console.log('[validateBase] input=', baseInput.value);
       const v = parseInt(baseInput.value, 10);
       const ok = Number.isInteger(v) && v >= 5 && v <= 16;
@@ -71,7 +71,7 @@
 
     baseInput.addEventListener('input', validateBase);
 
-    $1
+    function setupCanvas() {
       console.log('[setupCanvas] init');
       activity.innerHTML = '';
       canvas = document.createElement('canvas');
@@ -188,7 +188,7 @@
       return {r, positions: {hund:[xHund,yBottom], tens:[xTens,yBottom], ones:[xOnes,yBottom], accL:[xAccL,yTop], accR:[xAccR,yTop]}};
     }
 
-    $1
+    function render() {
       console.log('[render] B=', B, 'T=', T);
       const W = canvas.width, H = canvas.height;
       ctx.clearRect(0,0,W,H);
@@ -219,7 +219,7 @@
     }
 
     // ===== Events =====
-    $1
+    startBtn.addEventListener('click', () => {
       console.log('[start] clicked');
       const v = validateBase(); if (!v) return;
       B = v; T = 0; // start at 0-0-0
@@ -232,7 +232,7 @@
       updateButtons();
     });
 
-    $1
+    upBtn.addEventListener('click', () => {
       console.log('[up] clicked; T before=', T);
       const maxT = B*B*B - 1; if (T >= maxT) return;
       T += 1;
@@ -241,7 +241,7 @@
       updateButtons();
     });
 
-    $1
+    downBtn.addEventListener('click', () => {
       console.log('[down] clicked; T before=', T);
       if (T <= 0) return;
       T -= 1;

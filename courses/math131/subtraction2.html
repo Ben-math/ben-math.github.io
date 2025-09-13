@@ -224,20 +224,27 @@ fetch("/nav.html")
       regroupZone.dataset.blockCount = String(count);
       regroupZone.dataset.blockType = type;
       block.currentZone = regroupZone;
-      // stack layout inside regroup: ones horizontal, tens vertical tight, hundreds centered
+    
+      // stack layout inside regroup: ones horizontal, tens vertical tight, hundreds bottom-aligned
       const rz = regroupZone.getBoundingClientRect();
       const box = activityBox.getBoundingClientRect();
       let x = rz.left - box.left + 4;
-      let y = rz.bottom - box.top - 30;
+      let y = rz.bottom - box.top - 30; // default baseline
+    
       if (type === 'ones') {
         x = rz.left - box.left + (count - 1) * 10 + 4;
       } else if (type === 'tens') {
         y = rz.bottom - box.top - (count) * 20 - 8;
+      } else if (type === 'hundreds') {
+        // NEW: keep the entire (taller) block inside the zone
+        y = rz.bottom - box.top - block.offsetHeight - 8;
       }
+    
       block.style.left = x + 'px';
       block.style.top = y + 'px';
       updateRegroupUI();
     }
+
 
     function unregisterFromRegroup(zone, blockEl) {
       const count = Math.max(0, (+zone.dataset.blockCount || 0) - 1);
@@ -254,15 +261,27 @@ fetch("/nav.html")
       const type = regroupZone.dataset.blockType || '';
       const rz = regroupZone.getBoundingClientRect();
       const box = activityBox.getBoundingClientRect();
+    
       blocks.forEach((b, i) => {
         let x = rz.left - box.left + 4;
         let y = rz.bottom - box.top - 30;
-        if (type === 'ones') x = rz.left - box.left + i * 10 + 4;
-        if (type === 'tens') y = rz.bottom - box.top - (i + 1) * 20 - 8;
+    
+        if (type === 'ones') {
+          x = rz.left - box.left + i * 10 + 4;
+        }
+        if (type === 'tens') {
+          y = rz.bottom - box.top - (i + 1) * 20 - 8;
+        }
+        if (type === 'hundreds') {
+          // NEW: ensure the taller block sits fully inside the zone
+          y = rz.bottom - box.top - b.offsetHeight - 8;
+        }
+    
         b.style.left = x + 'px';
         b.style.top = y + 'px';
       });
     }
+
 
     function updateRegroupUI() {
       const count = +regroupZone.dataset.blockCount || 0;

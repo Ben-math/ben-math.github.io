@@ -254,8 +254,7 @@
     // Override layout to position accumulator gears at a true meshing distance from their neighbors.
     (function(){
       const oldLayout = layout;
-      $1
-        console.log('[layout override] B=', B, 'canvas?', !!window.canvas);
+      window.layout = function(B){
         const W = canvas.width, H = canvas.height;
         const r = 95; // common outer (tip) radius for all gears
         const yBottom = H*0.68;
@@ -285,9 +284,7 @@
     (function(){
       const DIGITS_LOCAL = DIGITS;
       const FILL_FRAC = 0.80; // fraction of pitch assigned to tooth face (leaves a gap for meshing)
-      $1
-        console.count('[drawGear]');
-        try { console.log('[drawGear args]', {cx, cy, r, B, rotationTeeth}); } catch(_) {}
+      window.drawGear = function(cx, cy, r, B, rotationTeeth, {showDigits=false, specialToothIdx=-1} = {}){
         const step = 2*Math.PI / B;                    // pitch angle per tooth
         const rotIdx = ((rotationTeeth % B)+B)%B;      // ensure 0..B-1
         const tipR = r;                                 // tooth tip radius (outer)
@@ -342,7 +339,6 @@
       };
     })();
   </script>
-</script>
 <script>
 window.addEventListener('error', (e) => {
   console.error('[window.error]', e.message, 'at', e.filename+':'+e.lineno+':'+e.colno, e.error);

@@ -39,7 +39,7 @@
       <span id="readout" style="margin-left:.75rem; font-weight:700;"></span>
     </div>
 
-    <div class="activity-box" id="activity" aria-label="Place value gears activity" role="application"></div>
+    <div class="activity-box-med" id="activity" aria-label="Place value gears activity" role="application"></div>
   </main>
 
   <audio id="click-sound" src="button.mp3" preload="auto"></audio>
@@ -75,8 +75,8 @@
       console.log('[setupCanvas] init');
       activity.innerHTML = '';
       canvas = document.createElement('canvas');
-      canvas.width = 1300; // match .activity-box
-      canvas.height = 650;
+      canvas.width = 1300; // match .activity-box-med
+      canvas.height = 300;
       canvas.style.width = '100%';
       canvas.style.height = '100%';
       activity.appendChild(canvas);

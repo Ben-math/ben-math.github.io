@@ -204,8 +204,8 @@
       drawGear(...positions.ones, r, B, ONES, {showDigits:true, showPointer:true, pointerOffset:20});
       drawGear(...positions.tens, r, B, TENS, {showDigits:true, showPointer:true, pointerOffset:20});
       drawGear(...positions.hund, r, B, HUND, {showDigits:true, showPointer:true, pointerOffset:20});
-      drawGear(...positions.accR, r, B, accR, {showDigits:false, specialToothIdx:1, showPointer:false});
-      drawGear(...positions.accL, r, B, accL, {showDigits:false, specialToothIdx:1, showPointer:false});
+      drawGear(...positions.accR, r, B, accR, {showDigits:false, specialToothIdx:(B >= 11 ? 1 : 0), showPointer:false});
+      drawGear(...positions.accL, r, B, accL, {showDigits:false, specialToothIdx:(B >= 11 ? 1 : 0), showPointer:false});
     }
 
     // ===== Events =====
@@ -272,7 +272,7 @@
     (function(){
       const DIGITS_LOCAL = DIGITS;
       const FILL_FRAC = 0.80; // fraction of pitch assigned to tooth face (leaves a gap for meshing)
-      window.drawGear = function(cx, cy, r, B, rotationTeeth, {showDigits=false, specialToothIdx=-1} = {}){
+      window.drawGear = function(cx, cy, r, B, rotationTeeth, {showDigits=false, specialToothIdx=-1, showPointer=true, pointerOffset=10} = {}){
         const step = 2*Math.PI / B;                    // pitch angle per tooth
         const rotIdx = ((rotationTeeth % B)+B)%B;      // ensure 0..B-1
         const tipR = r;                                 // tooth tip radius (outer)
@@ -323,7 +323,7 @@
         ctx.beginPath(); ctx.arc(cx, cy, hubR, 0, 2*Math.PI); ctx.fill(); ctx.stroke();
 
         // reading pointer at bottom
-        drawBottomPointer(cx, cy, r);
+        if (showPointer) drawBottomPointer(cx, cy, r, pointerOffset);
       };
     })();
   </script>

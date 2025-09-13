@@ -100,10 +100,10 @@
     }
 
     // ===== Drawing Helpers =====
-    function drawBottomPointer(cx, cy, r) {
+    function drawBottomPointer(cx, cy, r, offset = 10) {
       ctx.save();
       ctx.fillStyle = '#1a1a4b';
-      const tipX = cx, tipY = cy + r + 10; // bottom pointer
+      const tipX = cx, tipY = cy + r + offset; // bottom pointer with adjustable offset
       ctx.beginPath();
       ctx.moveTo(tipX, tipY);
       ctx.lineTo(tipX - 10, tipY - 18);
@@ -116,7 +116,7 @@
     // Draw a gear with B teeth. If showDigits is true, draw digit labels 0..B-1.
     // rotationTeeth: integer number of tooth steps clockwise.
     // specialToothIdx: highlight this tooth (for accumulator carry), else -1.
-    function drawGear(cx, cy, r, B, rotationTeeth, {showDigits=false, specialToothIdx=-1} = {}) {
+    function drawGear(cx, cy, r, B, rotationTeeth, {showDigits=false, specialToothIdx=-1, showPointer=true, pointerOffset=10} = {}) {
       // Canvas angles: use +x as 0, increase clockwise due to canvas y-down; aligns well with gear clicks.
       const step = 2*Math.PI / B;
       const rot = (rotationTeeth % B) * step; // clockwise
@@ -169,7 +169,7 @@
       }
 
       // Read pointer at bottom for reading digits
-      drawBottomPointer(cx, cy, r);
+      if (showPointer) drawBottomPointer(cx, cy, r, pointerOffset);
     }
 
     // ===== Layout =====
@@ -201,21 +201,11 @@
       const accL = (Math.floor(T / B) % B); // 0..B-1
 
       // Draw gears
-      drawGear(...positions.ones, r, B, ONES, {showDigits:true});
-      drawGear(...positions.tens, r, B, TENS, {showDigits:true});
-      drawGear(...positions.hund, r, B, HUND, {showDigits:true});
-      drawGear(...positions.accR, r, B, accR, {showDigits:false, specialToothIdx:0});
-      drawGear(...positions.accL, r, B, accL, {showDigits:false, specialToothIdx:0});
-
-      // Captions
-      ctx.fillStyle = '#1a1a4b';
-      ctx.textAlign = 'center';
-      ctx.font = '18px ui-sans-serif, system-ui, Segoe UI, Roboto';
-      ctx.fillText('Hundreds', positions.hund[0], positions.hund[1] - r - 24);
-      ctx.fillText('Tens', positions.tens[0], positions.tens[1] - r - 24);
-      ctx.fillText('Ones', positions.ones[0], positions.ones[1] - r - 24);
-      ctx.fillText('Accumulator', positions.accL[0], positions.accL[1] - r - 24);
-      ctx.fillText('Accumulator', positions.accR[0], positions.accR[1] - r - 24);
+      drawGear(...positions.ones, r, B, ONES, {showDigits:true, showPointer:true, pointerOffset:20});
+      drawGear(...positions.tens, r, B, TENS, {showDigits:true, showPointer:true, pointerOffset:20});
+      drawGear(...positions.hund, r, B, HUND, {showDigits:true, showPointer:true, pointerOffset:20});
+      drawGear(...positions.accR, r, B, accR, {showDigits:false, specialToothIdx:1, showPointer:false});
+      drawGear(...positions.accL, r, B, accL, {showDigits:false, specialToothIdx:1, showPointer:false});
     }
 
     // ===== Events =====
@@ -249,6 +239,8 @@
       document.getElementById('click-sound')?.play?.();
       updateButtons();
     });
+    <!-- === Meshing overrides: layout + gear drawing === -->
+  <script>
     // Override layout to position accumulator gears at a true meshing distance from their neighbors.
     (function(){
       const oldLayout = layout;

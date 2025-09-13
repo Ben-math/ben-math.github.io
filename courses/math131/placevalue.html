@@ -61,7 +61,8 @@
 
     const DIGITS = '0123456789ABCDEF';
 
-    function validateBase() {
+    $1
+      console.log('[validateBase] input=', baseInput.value);
       const v = parseInt(baseInput.value, 10);
       const ok = Number.isInteger(v) && v >= 5 && v <= 16;
       startBtn.disabled = !ok;
@@ -70,7 +71,8 @@
 
     baseInput.addEventListener('input', validateBase);
 
-    function setupCanvas() {
+    $1
+      console.log('[setupCanvas] init');
       activity.innerHTML = '';
       canvas = document.createElement('canvas');
       canvas.width = 1300; // match .activity-box
@@ -79,6 +81,7 @@
       canvas.style.height = '100%';
       activity.appendChild(canvas);
       ctx = canvas.getContext('2d');
+      console.log('[setupCanvas] canvas size', canvas.width, canvas.height, 'ctx?', !!ctx);
     }
 
     function digitsFromT(T, B) {
@@ -185,7 +188,8 @@
       return {r, positions: {hund:[xHund,yBottom], tens:[xTens,yBottom], ones:[xOnes,yBottom], accL:[xAccL,yTop], accR:[xAccR,yTop]}};
     }
 
-    function render() {
+    $1
+      console.log('[render] B=', B, 'T=', T);
       const W = canvas.width, H = canvas.height;
       ctx.clearRect(0,0,W,H);
 
@@ -215,7 +219,8 @@
     }
 
     // ===== Events =====
-    startBtn.addEventListener('click', () => {
+    $1
+      console.log('[start] clicked');
       const v = validateBase(); if (!v) return;
       B = v; T = 0; // start at 0-0-0
       setupCanvas();
@@ -227,7 +232,8 @@
       updateButtons();
     });
 
-    upBtn.addEventListener('click', () => {
+    $1
+      console.log('[up] clicked; T before=', T);
       const maxT = B*B*B - 1; if (T >= maxT) return;
       T += 1;
       render();
@@ -235,7 +241,8 @@
       updateButtons();
     });
 
-    downBtn.addEventListener('click', () => {
+    $1
+      console.log('[down] clicked; T before=', T);
       if (T <= 0) return;
       T -= 1;
       render();
@@ -247,7 +254,8 @@
     // Override layout to position accumulator gears at a true meshing distance from their neighbors.
     (function(){
       const oldLayout = layout;
-      window.layout = function(B){
+      $1
+        console.log('[layout override] B=', B, 'canvas?', !!window.canvas);
         const W = canvas.width, H = canvas.height;
         const r = 95; // common outer (tip) radius for all gears
         const yBottom = H*0.68;
@@ -277,7 +285,9 @@
     (function(){
       const DIGITS_LOCAL = DIGITS;
       const FILL_FRAC = 0.80; // fraction of pitch assigned to tooth face (leaves a gap for meshing)
-      window.drawGear = function(cx, cy, r, B, rotationTeeth, {showDigits=false, specialToothIdx=-1} = {}){
+      $1
+        console.count('[drawGear]');
+        try { console.log('[drawGear args]', {cx, cy, r, B, rotationTeeth}); } catch(_) {}
         const step = 2*Math.PI / B;                    // pitch angle per tooth
         const rotIdx = ((rotationTeeth % B)+B)%B;      // ensure 0..B-1
         const tipR = r;                                 // tooth tip radius (outer)
@@ -332,6 +342,14 @@
       };
     })();
   </script>
+</script>
+<script>
+window.addEventListener('error', (e) => {
+  console.error('[window.error]', e.message, 'at', e.filename+':'+e.lineno+':'+e.colno, e.error);
+});
+window.addEventListener('unhandledrejection', (e) => {
+  console.error('[unhandledrejection]', e.reason);
+});
 </script>
 </body>
 </html>

@@ -51,9 +51,9 @@ fetch("/nav.html")
     <div id="activity" class="activity-box" style="position: relative;">
       <!-- Single regroup zone (top-middle) -->
       <div id="regroup" class="regroup-zone drop-zone"
-     style="position:absolute; left:50%; transform: translateX(-50%); top:2px; height:210px; width:10%;"
+     style="position:absolute; left:50%; transform: translateX(-50%); top:2px; height:110px; width:10%;"
      data-block-type="" data-block-count="0">⇆
-        <button id="action-btn" class="rubber-button merge-break-btn" style="display:none; position:absolute; top:+100px; right:0;"></button>
+        <button id="action-btn" class="rubber-button merge-break-btn" style="display:none; position:absolute; top:+100px; right:100px;"></button>
         <div class="zone-count" style="position:absolute; bottom:2px; right:6px; font-size:0px;"></div>
       </div>
     </div>
@@ -234,7 +234,7 @@ fetch("/nav.html")
       if (type === 'ones') {
         x = rz.left - box.left + (count - 1) * 10 + 4;
       } else if (type === 'tens') {
-        y = rz.bottom - box.top - (count) * 20 - 8;
+        y = rz.bottom - box.top - (count) * 10 - 8;
       } else if (type === 'hundreds') {
         // NEW: keep the entire (taller) block inside the zone
         y = rz.bottom - box.top - block.offsetHeight - 8;
@@ -270,7 +270,7 @@ fetch("/nav.html")
           x = rz.left - box.left + i * 10 + 4;
         }
         if (type === 'tens') {
-          y = rz.bottom - box.top - (i + 1) * 20 - 8;
+          y = rz.bottom - box.top - (i + 1) * 10 - 8;
         }
         if (type === 'hundreds') {
           // NEW: ensure the taller block sits fully inside the zone

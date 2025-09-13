@@ -1,96 +1,247 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta name="description" content="Place value with gear carries (user-selectable base 5–16).">
   <meta charset="UTF-8" />
-  <title>Place Value Demo</title>
+  <title>Place Value — Gears</title>
   <link rel="stylesheet" href="/style.css" />
-
-  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-  <script id="MathJax-script" async
-    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-  </script>
 </head>
 <body>
   <header>
-    <h1>Place Value Demo</h1>
+    <h1>Place Value — Gears</h1>
     <div id="nav-placeholder"></div>
-      <script>
-fetch("/nav.html")
-  .then(response => response.text())
-  .then(html => {
-    document.getElementById("nav-placeholder").innerHTML = html;
-
-    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
-    const navLinks = document.querySelectorAll("#nav-placeholder a");
-    navLinks.forEach(link => {
-      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
-      if (linkPath === currentPath) {
-        link.classList.add("active");
-      }
-    });
-
-    const s = document.createElement("script");
-    s.src = "/mascot.js";
-    s.defer = true;
-    document.body.appendChild(s); 
-  })
-  .catch(err => {
-    console.error("Failed to load nav:", err);
-  });
-</script>
+    <script>
+      fetch("/nav.html")
+        .then(r => r.text())
+        .then(html => {
+          document.getElementById("nav-placeholder").innerHTML = html;
+          const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+          document.querySelectorAll("#nav-placeholder a").forEach(link => {
+            const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+            if (linkPath === currentPath) link.classList.add("active");
+          });
+          const s = document.createElement("script");
+          s.src = "/mascot.js"; s.defer = true; document.body.appendChild(s);
+        })
+        .catch(err => console.error("Failed to load nav:", err));
+    </script>
   </header>
+
   <main>
+    <p>Choose a base (5–16). The three bottom gears are ones (right), tens (middle), hundreds (left). The tooth pointing <em>down</em> on each shows its digit. Two small accumulator gears above handle carries between places.</p>
 
-    <p>If I can make it quick enough, this will contain a place value demonstration!</p>
-
-    <div class="button-container">
-      <button id="start-btn" class="rubber-button">Start!</button>
+    <div class="button-container" style="gap: .5rem; display:flex; align-items:center; justify-content:center; flex-wrap:wrap;">
+      <label for="base-input" style="font-weight:600;">Base:</label>
+      <input id="base-input" type="number" min="5" max="16" step="1" style="width:6rem" aria-label="Base between 5 and 16">
+      <button id="start-btn" class="rubber-button" disabled>Start</button>
+      <button id="down-btn" class="rubber-button" disabled title="Decrement">&#8595;</button>
+      <button id="up-btn" class="rubber-button" disabled title="Increment">&#8593;</button>
+      <span id="readout" style="margin-left:.75rem; font-weight:700;"></span>
     </div>
-    
-    <div class="activity-box" id="my-activity">
 
-    </div>
-
+    <div class="activity-box" id="activity" aria-label="Place value gears activity" role="application"></div>
   </main>
-
-  <script>
-
-    const startBtn = document.getElementById('start-btn');
-    const activityBox = document.getElementById('my-activity');
-
-        function addTextToActivityBox(text, x, y, fontSize = 28) {
-      const txt = document.createElement('div');
-      txt.classList.add('activity-text');
-      txt.textContent = text;
-      txt.style.left = `${x}px`;
-      txt.style.top = `${y}px`;
-      txt.style.fontSize = `${fontSize}px`;
-      activityBox.appendChild(txt);
-    }
-
-    
-  startBtn.addEventListener('click', () => {
-      
-      // Clear the activity box
-      activityBox.innerHTML = '';
-      
-      // Create a canvas
-      const canvas = document.createElement('canvas');
-      canvas.width = 1300;
-      canvas.height = 650;
-      activityBox.appendChild(canvas);
-      
-      const ctx = canvas.getContext('2d');
-      
-
-    });
-
-    
-  </script>
 
   <audio id="click-sound" src="button.mp3" preload="auto"></audio>
   <audio id="set-sound" src="set2.mp3" preload="auto"></audio>
-  
+
+  <script>
+    // ===== DOM =====
+    const baseInput = document.getElementById('base-input');
+    const startBtn = document.getElementById('start-btn');
+    const upBtn = document.getElementById('up-btn');
+    const downBtn = document.getElementById('down-btn');
+    const activity = document.getElementById('activity');
+    const readout = document.getElementById('readout');
+
+    // ===== State =====
+    let B = 10;  // base (5..16)
+    let T = 0;   // total steps (0..B^3-1)
+    let canvas, ctx;
+
+    const DIGITS = '0123456789ABCDEF';
+
+    function validateBase() {
+      const v = parseInt(baseInput.value, 10);
+      const ok = Number.isInteger(v) && v >= 5 && v <= 16;
+      startBtn.disabled = !ok;
+      return ok ? v : null;
+    }
+
+    baseInput.addEventListener('input', validateBase);
+
+    function setupCanvas() {
+      activity.innerHTML = '';
+      canvas = document.createElement('canvas');
+      canvas.width = 1300; // match .activity-box
+      canvas.height = 650;
+      canvas.style.width = '100%';
+      canvas.style.height = '100%';
+      activity.appendChild(canvas);
+      ctx = canvas.getContext('2d');
+    }
+
+    function digitsFromT(T, B) {
+      const ones = T % B;                   // rightmost
+      const tens = Math.floor(T / B) % B;   // middle
+      const hund = Math.floor(T / (B*B)) % B; // left
+      return [hund, tens, ones];
+    }
+
+    function updateButtons() {
+      const maxT = B*B*B - 1;
+      downBtn.disabled = (T <= 0);
+      upBtn.disabled = (T >= maxT);
+      const [H,Te,O] = digitsFromT(T, B);
+      readout.textContent = `Digits: ${DIGITS[H]}-${DIGITS[Te]}-${DIGITS[O]} (base ${B})`;
+    }
+
+    // ===== Drawing Helpers =====
+    function drawBottomPointer(cx, cy, r) {
+      ctx.save();
+      ctx.fillStyle = '#1a1a4b';
+      const tipX = cx, tipY = cy + r + 10; // bottom pointer
+      ctx.beginPath();
+      ctx.moveTo(tipX, tipY);
+      ctx.lineTo(tipX - 10, tipY - 18);
+      ctx.lineTo(tipX + 10, tipY - 18);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Draw a gear with B teeth. If showDigits is true, draw digit labels 0..B-1.
+    // rotationTeeth: integer number of tooth steps clockwise.
+    // specialToothIdx: highlight this tooth (for accumulator carry), else -1.
+    function drawGear(cx, cy, r, B, rotationTeeth, {showDigits=false, specialToothIdx=-1} = {}) {
+      // Canvas angles: use +x as 0, increase clockwise due to canvas y-down; aligns well with gear clicks.
+      const step = 2*Math.PI / B;
+      const rot = (rotationTeeth % B) * step; // clockwise
+      const ringInner = r*0.52; // digit ring
+      const ringOuter = r*0.98;
+      const hubR = r*0.30;
+
+      // Teeth wedges & boundaries
+      for (let i=0;i<B;i++) {
+        const a0 = Math.PI/2 + i*step + rot;          // start at bottom (π/2) so tooth 0 is at bottom at T=0
+        const a1 = Math.PI/2 + (i+1)*step + rot;
+        // Fill sector
+        if (i === specialToothIdx) {
+          ctx.fillStyle = 'hsl(6 80% 70% / 0.9)';
+          ctx.beginPath();
+          ctx.arc(cx, cy, ringOuter, a0, a1);
+          ctx.arc(cx, cy, ringInner, a1, a0, true);
+          ctx.closePath();
+          ctx.fill();
+        }
+        // boundary tick
+        ctx.strokeStyle = '#1a1a4b';
+        ctx.lineWidth = (i % 1 === 0) ? 1 : 1; // uniform
+        const x0 = cx + ringInner * Math.cos(a0);
+        const y0 = cy + ringInner * Math.sin(a0);
+        const x1 = cx + ringOuter * Math.cos(a0);
+        const y1 = cy + ringOuter * Math.sin(a0);
+        ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.stroke();
+      }
+
+      // Outer circle + hub
+      ctx.lineWidth = 2; ctx.strokeStyle = '#1a1a4b';
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, 2*Math.PI); ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.arc(cx, cy, hubR, 0, 2*Math.PI); ctx.fill(); ctx.stroke();
+
+      // Digit labels
+      if (showDigits) {
+        ctx.fillStyle = '#1a1a4b';
+        ctx.font = `${Math.max(12, Math.floor(r*0.22))}px ui-sans-serif, system-ui, Segoe UI, Roboto`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        for (let k=0;k<B;k++) {
+          const mid = Math.PI/2 + (k+0.5)*step + rot; // center of tooth k
+          const rr = (ringInner + hubR) / 2;
+          const x = cx + rr * Math.cos(mid);
+          const y = cy + rr * Math.sin(mid);
+          ctx.fillText(DIGITS[k], x, y);
+        }
+      }
+
+      // Read pointer at bottom for reading digits
+      drawBottomPointer(cx, cy, r);
+    }
+
+    // ===== Layout =====
+    function layout(B) {
+      // Equal-size gears, arranged: hundreds (left), tens (mid), ones (right) on bottom row.
+      // Two accumulator gears above between them.
+      const W = canvas.width, H = canvas.height;
+      const r = 95; // common radius
+      const yBottom = H*0.64;
+      const xHund = W*0.24;
+      const xTens = W*0.50;
+      const xOnes = W*0.76;
+      const yTop = H*0.28;
+      const xAccL = (xHund + xTens)/2; // above between hundreds & tens
+      const xAccR = (xTens + xOnes)/2; // above between tens & ones
+      return {r, positions: {hund:[xHund,yBottom], tens:[xTens,yBottom], ones:[xOnes,yBottom], accL:[xAccL,yTop], accR:[xAccR,yTop]}};
+    }
+
+    function render() {
+      const W = canvas.width, H = canvas.height;
+      ctx.clearRect(0,0,W,H);
+
+      const {r, positions} = layout(B);
+      const [HUND, TENS, ONES] = digitsFromT(T, B);
+
+      // Accumulator rotations: right accumulator steps with ones; left accumulator steps with tens.
+      const accR = (T % B);                 // 0..B-1
+      const accL = (Math.floor(T / B) % B); // 0..B-1
+
+      // Draw gears
+      drawGear(...positions.ones, r, B, ONES, {showDigits:true});
+      drawGear(...positions.tens, r, B, TENS, {showDigits:true});
+      drawGear(...positions.hund, r, B, HUND, {showDigits:true});
+      drawGear(...positions.accR, r, B, accR, {showDigits:false, specialToothIdx:0});
+      drawGear(...positions.accL, r, B, accL, {showDigits:false, specialToothIdx:0});
+
+      // Captions
+      ctx.fillStyle = '#1a1a4b';
+      ctx.textAlign = 'center';
+      ctx.font = '18px ui-sans-serif, system-ui, Segoe UI, Roboto';
+      ctx.fillText('Hundreds', positions.hund[0], positions.hund[1] - r - 24);
+      ctx.fillText('Tens', positions.tens[0], positions.tens[1] - r - 24);
+      ctx.fillText('Ones', positions.ones[0], positions.ones[1] - r - 24);
+      ctx.fillText('Accumulator', positions.accL[0], positions.accL[1] - r - 24);
+      ctx.fillText('Accumulator', positions.accR[0], positions.accR[1] - r - 24);
+    }
+
+    // ===== Events =====
+    startBtn.addEventListener('click', () => {
+      const v = validateBase(); if (!v) return;
+      B = v; T = 0; // start at 0-0-0
+      setupCanvas();
+      render();
+      document.getElementById('click-sound')?.play?.();
+      // Enable step buttons
+      downBtn.disabled = true;
+      upBtn.disabled = false;
+      updateButtons();
+    });
+
+    upBtn.addEventListener('click', () => {
+      const maxT = B*B*B - 1; if (T >= maxT) return;
+      T += 1;
+      render();
+      document.getElementById('click-sound')?.play?.();
+      updateButtons();
+    });
+
+    downBtn.addEventListener('click', () => {
+      if (T <= 0) return;
+      T -= 1;
+      render();
+      document.getElementById('click-sound')?.play?.();
+      updateButtons();
+    });
+  </script>
 </body>
 </html>

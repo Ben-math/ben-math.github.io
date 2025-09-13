@@ -3,12 +3,12 @@
 <head>
   <meta name="description" content="Place value with gear carries (user-selectable base 5–16).">
   <meta charset="UTF-8" />
-  <title>Place Value — Gears</title>
+  <title>Place Value Demo</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
   <header>
-    <h1>Place Value — Gears</h1>
+    <h1>Place Value Demo</h1>
     <div id="nav-placeholder"></div>
     <script>
       fetch("/nav.html")
@@ -28,7 +28,8 @@
   </header>
 
   <main>
-    <p>Choose a base (5–16). The three bottom gears are ones (right), tens (middle), hundreds (left). The tooth pointing <em>down</em> on each shows its digit. Two small accumulator gears above handle carries between places.</p>
+    <p>Choose a base (5–16). The three bottom gears give increasing place-value from right-to-left. 
+      The tooth pointing <em>down</em> on each shows its digit.</p>
 
     <div class="button-container" style="gap: .5rem; display:flex; align-items:center; justify-content:center; flex-wrap:wrap;">
       <label for="base-input" style="font-weight:600;">Base:</label>
@@ -96,7 +97,7 @@
       downBtn.disabled = (T <= 0);
       upBtn.disabled = (T >= maxT);
       const [H,Te,O] = digitsFromT(T, B);
-      readout.textContent = `Digits: ${DIGITS[H]}-${DIGITS[Te]}-${DIGITS[O]} (base ${B})`;
+      readout.textContent = `Number: ${DIGITS[H]}${DIGITS[Te]}${DIGITS[O]} (base ${B})`;
     }
 
     // ===== Drawing Helpers =====

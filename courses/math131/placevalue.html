@@ -47,29 +47,17 @@ fetch("/nav.html")
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>
-
     
     <div class="activity-box" id="my-activity">
 
     </div>
-    
-
-
 
   </main>
 
   <script>
 
-    
-    let m0 = 0;
-    let currentDragged = null;
-
-
-
-
     const startBtn = document.getElementById('start-btn');
     const activityBox = document.getElementById('my-activity');
-
 
         function addTextToActivityBox(text, x, y, fontSize = 28) {
       const txt = document.createElement('div');
@@ -82,11 +70,7 @@ fetch("/nav.html")
     }
 
     
-
-    
   startBtn.addEventListener('click', () => {
-
-      
       
       // Clear the activity box
       activityBox.innerHTML = '';
@@ -101,7 +85,6 @@ fetch("/nav.html")
       
 
     });
-
 
     
   </script>

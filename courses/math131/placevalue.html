@@ -188,6 +188,24 @@
       return {r, positions: {hund:[xHund,yBottom], tens:[xTens,yBottom], ones:[xOnes,yBottom], accL:[xAccL,yTop], accR:[xAccR,yTop]}};
     }
 
+    function accAngleDegForBase(B){
+      switch (B) {
+        case 16: return 5;  // 5° clockwise
+        case 15: return 2;  // 2° clockwise
+        case 14: return 15; // 15° clockwise
+        case 13: return 20; // 20° clockwise
+        case 12: return -10; // 10° counterclockwise
+        case 11: return 0;  // no change
+        case 10: return 15; // 15° clockwise
+        case 9:  return 25; // 25° clockwise
+        case 8:  return 30; // 30° clockwise
+        case 7:  return -15; // 15° counterclockwise
+        case 6:  return 20; // 20° clockwise
+        case 5:  return 35; // 35° clockwise
+        default: return 0;
+      }
+    }
+
     function render() {
       console.log('[render] B=', B, 'T=', T);
       const W = canvas.width, H = canvas.height;
@@ -204,8 +222,8 @@
       drawGear(...positions.ones, r, B, ONES, {showDigits:true, showPointer:true, pointerOffset:20});
       drawGear(...positions.tens, r, B, TENS, {showDigits:true, showPointer:true, pointerOffset:20});
       drawGear(...positions.hund, r, B, HUND, {showDigits:true, showPointer:true, pointerOffset:20});
-      drawGear(...positions.accR, r, B, accR, {showDigits:false, specialToothIdx:(B >= 11 ? 1 : 0), showPointer:false});
-      drawGear(...positions.accL, r, B, accL, {showDigits:false, specialToothIdx:(B >= 11 ? 1 : 0), showPointer:false});
+      drawGear(...positions.accR, r, B, accR, {showDigits:false, specialToothIdx:(B >= 10 ? 1 : 0), showPointer:false, angleOffsetDeg: accAngleDegForBase(B)});
+      drawGear(...positions.accL, r, B, accL, {showDigits:false, specialToothIdx:(B >= 10 ? 1 : 0), showPointer:false, angleOffsetDeg: accAngleDegForBase(B)});
     }
 
     // ===== Events =====
@@ -272,18 +290,19 @@
     (function(){
       const DIGITS_LOCAL = DIGITS;
       const FILL_FRAC = 0.80; // fraction of pitch assigned to tooth face (leaves a gap for meshing)
-      window.drawGear = function(cx, cy, r, B, rotationTeeth, {showDigits=false, specialToothIdx=-1, showPointer=true, pointerOffset=10} = {}){
+      window.drawGear = function(cx, cy, r, B, rotationTeeth, {showDigits=false, specialToothIdx=-1, showPointer=true, pointerOffset=10, angleOffsetDeg=0} = {}){
         const step = 2*Math.PI / B;                    // pitch angle per tooth
         const rotIdx = ((rotationTeeth % B)+B)%B;      // ensure 0..B-1
         const tipR = r;                                 // tooth tip radius (outer)
         const rootR = r - Math.max(12, r*0.22);        // tooth root radius (inner body)
         const hubR = r*0.32;                            // central hub
         const halfFace = (step * FILL_FRAC) / 2;
+        const extra = (angleOffsetDeg) * Math.PI / 180;
 
         // Draw teeth
         for (let i=0; i<B; i++){
           // Center this tooth so that i==rotIdx sits at the bottom pointer (angle = +π/2)
-          const center = Math.PI/2 + (i - rotIdx) * step;
+          const center = Math.PI/2 + (i - rotIdx) * step + extra;
           const aL = center - halfFace;
           const aR = center + halfFace;
 

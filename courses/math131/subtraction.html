@@ -93,7 +93,7 @@ fetch("/nav.html")
     
       const labelDiv = document.createElement('div');
       labelDiv.classList.add('column-label');
-      lif (ruleCheckboxes.baseten.checked) {
+      if (ruleCheckboxes.baseten.checked) {
         labelDiv.textContent = label;
       } else if (label.toLowerCase() === 'hundreds') {
         labelDiv.textContent = 'Twenty-fives';

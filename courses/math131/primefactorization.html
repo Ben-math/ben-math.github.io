@@ -107,7 +107,7 @@ fetch("/nav.html")
 
     let question = `Do some math:`;
 
-    
+    let primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67];
   
     // Randomly determine prime powers
     while (a2 + a3 + a5 + a7 + a11 + an > 10) {
@@ -131,7 +131,7 @@ fetch("/nav.html")
 
 
     // Display the question
-    questionText.textContent = question;
+    questionText.textContent = question + `primes[5]`;
 
     MathJax.typeset([questionText]);
 

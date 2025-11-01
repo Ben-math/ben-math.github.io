@@ -1,0 +1,954 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta charset="UTF-8" />
+  <title>Set Cardinality Activity</title>
+  <link rel="stylesheet" href="/style.css" />
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+</head>
+<body>
+  <header>
+    <h1>Set Cardinality Activity</h1>
+    <div id="nav-placeholder"></div>
+      <script>
+fetch("/nav.html")
+  .then(response => response.text())
+  .then(html => {
+    document.getElementById("nav-placeholder").innerHTML = html;
+
+    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+    const navLinks = document.querySelectorAll("#nav-placeholder a");
+    navLinks.forEach(link => {
+      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+      if (linkPath === currentPath) {
+        link.classList.add("active");
+      }
+    });
+
+    const s = document.createElement("script");
+    s.src = "/mascot.js";
+    s.defer = true;
+    document.body.appendChild(s); 
+  })
+  .catch(err => {
+    console.error("Failed to load nav:", err);
+  });
+</script>
+  </header>
+  <main>
+
+    <p>When sets intersect (or don't) in complicated ways, it can be tricky to determine how many elements lie in each part of a Venn Diagram.  The 
+      simplest (and most useful) equality we will use is one which breaks down a set into its intersecting and non-intersecting areas: 
+      \[|A| = |A \setminus B| + |A \cap B|\]</p>
+
+    <figure style="text-align: center;">
+      <img src="fig2.png" alt="Cardinality on 2 sets" style="display: inline-block;">
+    </figure>
+
+    <p>Note that the above is actually a specific case of a more general useful property: any area can be broken into two pieces: one of 
+    which is the complement of the other with respect to the full area (in the above, we could have written \(|A| = |A \setminus B| + 
+    |A \setminus (A \setminus B)|\)).  For an easier example, observe that \[|U| = |A \cup B| + |\overline{A \cup B}| = |A \cup B| + 
+      |U \setminus (A \cup B)|\]</p>
+
+    <figure style="text-align: center;">
+      <img src="fig4.png" alt="Complement of union of 2 sets" style="display: inline-block;">
+    </figure>
+      
+      <p>There is a major theorem from combinatorics we will use to aid us in our counting, the <i>inclusion-exclusion principle</i>: 
+    \[|A \cup B| = |A| + |B| - |A \cap B|\]</p>
+    
+    <figure style="text-align: center;">
+      <img src="fig1.png" alt="Inclusion-exclusion on 2 sets" style="display: inline-block;">
+    </figure>
+    
+    <p>What this means is that to count how many elements lie in A <i>or</i> B, we sum the number of elements 
+    in A and B, and then subtract the number which they have in common (to avoid double-counting these).  This principle can be extended to an 
+    arbitrary number of intersecting sets.  It gets long pretty quickly, so we'll stop at the case of 3 sets (try drawing a picture to convince yourself 
+    of the equation's truth: \[|A \cup B \cup C| = |A| + |B| + |C| - |A \cap B| - |A \cap C| - |B \cap C| + |A \cap B \cap C|\]  (If you're curious about 
+      how it generalizes, it's an <i>alternating sum</i> (alternately \(+\) or \(-\)), where at each step we take all possible intersections of 1, 2, 3, 
+      4, etc... many of the sets)</p>
+
+    <p>Finally, consider how we might combine the two preceding properties in a more complex case.  With 3 sets A, B, and C, we can decompose A into 
+    its intersecting and non-intersecting areas.  But to avoid double-counting, we have to apply inclusion-exclusion to the intersecting area:
+    \[|A| = |A \setminus (B \cup C)| + |A \cap B| + |A \cap C| - |A \cap B \cap C|\]</p>
+
+    <figure style="text-align: center;">
+      <img src="fig3.png" alt="A 3-set example" style="display: inline-block;">
+    </figure>
+
+    <p>There are a variety of equalities which can be deduced from the elementary properties of sets: counting requires practice!  In the following 
+    activity, you may find it helpful to make things concrete in your mind: think of \(U\) as the set of all students enrolled in a particular 
+    university, and think of \(A\), \(B\), and \(C\) as the sets of students enrolled in Anthropology, Biology, and Chemistry respectively.</p>
+    
+    <div class="button-container">
+      <button id="start-btn" class="rubber-button">Start!</button>
+    </div>
+    
+    <p id="question-text"></p>
+
+    <div class="button-container">
+      <button id="hint-btn" class="rubber-button">Hint</button>
+    </div>
+    
+    <div id="hint-area" class="math" style="margin-top: 1em;"></div>
+
+    <div class="activity-box" id="my-activity">
+
+    </div>
+
+    <div class="button-container">
+      <button id="check-btn" class="rubber-button">Check Answer</button>
+    </div>
+    
+    <div class="button-container">
+      <div id="feedbackText" class="center-feedback"></div>
+    </div>
+
+
+
+
+
+  </main>
+
+  <script>
+
+    const hintBtn = document.getElementById('hint-btn');
+    const hintArea = document.getElementById('hint-area');
+    
+    let hintSteps = [];
+    let hintIndex = 0;
+    
+    // Global counts
+    let A = 0, B = 0, C = 0;
+    let AcapB = 0, AcapC = 0, BcapC = 0;
+    let AcapBcapC = 0;
+    let U = 0;
+
+    let A1, B1, C1, AcapB1, AcapC1, BcapC1, AcapBcapC1, U1 = 0;
+
+
+    let AA = 0, BB = 0;
+    let AAcapBB = 0;
+    let UU = 0;
+
+    let AA1, BB1, AAcapBB1, UU1 = 0;
+
+    let m0 = 0;
+
+
+
+    const startBtn = document.getElementById('start-btn');
+    const questionText = document.getElementById('question-text');
+    const activityBox = document.getElementById('my-activity');
+
+
+        function addTextToActivityBox(text, x, y, fontSize = 28) {
+      const txt = document.createElement('div');
+      txt.classList.add('activity-text');
+      txt.textContent = text;
+      txt.style.left = `${x}px`;
+      txt.style.top = `${y}px`;
+      txt.style.fontSize = `${fontSize}px`;
+      activityBox.appendChild(txt);
+    }
+
+
+    function createFixedExponentBox(text, x, y, boxSize = 80, fontSize = 28) {
+      const box = document.createElement('div');
+      box.classList.add('exponent-box');
+      box.style.left = `${x}px`;
+      box.style.top = `${y}px`;
+      box.style.width = `${boxSize}px`;
+      box.style.height = `${boxSize}px`;
+      box.style.fontSize = `${fontSize}px`;
+      box.textContent = text;
+      activityBox.appendChild(box);
+      return box;
+    }
+    
+    function createDraggableExponentBox(text, x, y, boxSize = 80, fontSize = 28) {
+      const box = document.createElement('div');
+      box.classList.add('exponent-box', 'draggable-exponent');
+      box.style.left = `${x}px`;
+      box.style.top = `${y}px`;
+      box.style.width = `${boxSize}px`;
+      box.style.height = `${boxSize}px`;
+      box.style.fontSize = `${fontSize}px`;
+      box.textContent = text;
+      activityBox.appendChild(box);
+      makeExponentDraggable(box);
+      return box;
+    }
+    
+    function createExponentSlot(x, y, boxSize = 80, fontSize = 28) {
+      const slot = document.createElement('div');
+      slot.classList.add('exponent-box', 'exponent-slot');
+      slot.style.left = `${x}px`;
+      slot.style.top = `${y}px`;
+      slot.style.width = `${boxSize}px`;
+      slot.style.height = `${boxSize}px`;
+      slot.style.fontSize = `${fontSize}px`;
+      activityBox.appendChild(slot);
+      setupDropTarget(slot);
+      return slot;
+    }
+
+
+
+    function makeExponentDraggable(elem) {
+      elem.draggable = true;
+    
+      elem.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('text/plain', elem.textContent);
+        setTimeout(() => elem.style.visibility = 'hidden', 0);
+      });
+    
+      elem.addEventListener('dragend', () => {
+        elem.style.visibility = 'visible';
+      });
+    }
+    
+    function setupDropTarget(slot) {
+      slot.addEventListener('dragover', e => {
+        e.preventDefault();
+        slot.classList.add('valid-hover');
+      });
+    
+      slot.addEventListener('dragleave', () => {
+        slot.classList.remove('valid-hover');
+      });
+    
+      slot.addEventListener('drop', e => {
+        e.preventDefault();
+        slot.classList.remove('valid-hover');
+        const droppedText = e.dataTransfer.getData('text/plain');
+        slot.textContent = droppedText;
+    
+        // Play sound when an exponent is dropped
+        const sound = document.getElementById('set-sound');
+        if (sound) {
+          sound.currentTime = 0; // rewind to start in case it's still playing
+          sound.play();
+        }
+      });
+    }
+
+
+
+
+    
+  startBtn.addEventListener('click', () => {
+
+      const feedback = document.getElementById('feedbackText');
+      feedback.textContent = '';
+
+      A = 0;
+      B = 0;
+      C = 0;
+      AcapB = 0;
+      AcapC = 0;
+      BcapC = 0;
+      AcapBcapC = 0;
+      U = 0;
+
+      hintSteps = [];
+
+      A1 = 0;
+      B1 = 0;
+      C1 = 0;
+      AcapB1 = 0;
+      AcapC1 = 0;
+      BcapC1 = 0;
+      AcapBcapC1 = 0;
+      U1 = 0;
+
+
+      AA = 0;
+      BB = 0;
+      AAcapBB = 0;
+      UU = 0;
+
+      AA1 = 0;
+      BB1 = 0;
+      AAcapBB1 = 0;
+      UU1 = 0;
+
+      m0 = 0;
+
+      for (let i = 0; i < 120; i++) {
+        // Randomly assign membership
+        const inA = Math.random() < 0.5;
+        const inB = Math.random() < 0.5;
+      
+        if (!inA && !inB) UU++;
+        else if (inA && !inB) AA++;
+        else if (!inA && inB) BB++;
+        else if (inA && inB) AAcapBB++;
+      }
+
+      for (let i = 0; i < 120; i++) {
+        // Randomly assign membership
+        const inA = Math.random() < 0.3;
+        const inB = Math.random() < 0.3;
+        const inC = Math.random() < 0.3;
+      
+        if (!inA && !inB && !inC) U++;
+        else if (inA && !inB && !inC) A++;
+        else if (!inA && inB && !inC) B++;
+        else if (!inA && !inB && inC) C++;
+        else if (inA && inB && !inC) AcapB++;
+        else if (inA && !inB && inC) AcapC++;
+        else if (!inA && inB && inC) BcapC++;
+        else if (inA && inB && inC) AcapBcapC++;
+      }
+      
+      // Example output
+      console.log(`U only: ${U}`);
+      console.log(`A only: ${A}`);
+      console.log(`B only: ${B}`);
+      console.log(`C only: ${C}`);
+      console.log(`A ∩ B only: ${AcapB}`);
+      console.log(`A ∩ C only: ${AcapC}`);
+      console.log(`B ∩ C only: ${BcapC}`);
+      console.log(`A ∩ B ∩ C: ${AcapBcapC}`);
+
+      console.log(`U only: ${UU}`);
+      console.log(`A only: ${AA}`);
+      console.log(`B only: ${BB}`);
+      console.log(`A ∩ B only: ${AAcapBB}`);
+
+      let hints = `Drag and drop cardinalities given the following information:`;
+    
+      // Randomly determine unknown quantities.  Variables have a corresponding boolean
+      m0 = Math.random();
+      let m1 = Math.floor(Math.random() *4) + 1;
+      let m2 = Math.floor(Math.random() *3) + 1;
+
+
+
+      hintSteps = [];
+      hintIndex = 0;
+      let i = 0
+
+    
+
+      if (m0 < 0.34) {
+        if (m2 === 1) {
+          AA1 = 1;
+          BB1 = 1;
+          AAcapBB1 = 1;
+          hints += `\\[|U| = 120 \\text{ and } |A| = ${AA + AAcapBB} \\text{ and } |B| = ${BB + AAcapBB}\\]`;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |U| = |U \\setminus (A \\cup B)| + |A \\cup B| \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } 120 = ${UU} + |A \\cup B|, \\text{ so } |A \\cup B| = 120 - ${UU} = ${120 - UU} \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use inclusion-exclusion: } |A \\cup B| = |A| + |B| - |A \\cap B| \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${120 - UU} = ${AA + AAcapBB} + ${BB + AAcapBB} - |A \\cap B|, \\text{ so } 
+          |A \\cap B| = ${120 - UU} - ${AA + AAcapBB} - ${BB + AAcapBB} = ${AAcapBB} \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A| = |A \\setminus (A \\cap B)| + |A \\cap B| \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${AA + AAcapBB} = |A \\setminus (A \\cap B)| + ${AAcapBB}, \\text{ so } 
+          |A \\setminus (A \\cap B)| = ${AA + AAcapBB} - ${AAcapBB} = ${AA} \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |B| = |B \\setminus (A \\cap B)| + |A \\cap B| \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${BB + AAcapBB} = |B \\setminus (A \\cap B)| + ${AAcapBB}, \\text{ so } 
+          |B \\setminus (A \\cap B)| = ${BB + AAcapBB} - ${AAcapBB} = ${BB} \\]`;
+          i++;
+        } else if (m2 === 2) {
+          UU1 = 1;
+          AA1 = 1;
+          AAcapBB1 = 1;
+          hints += `\\[|U| = 120 \\text{ and } |A| = ${AA + AAcapBB} \\text{ and } |B| = ${BB + AAcapBB}\\]`;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |B| = |B \\setminus (A \\cap B)| + |A \\cap B| \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${BB + AAcapBB} = ${BB} + |A \\cap B|, \\text{ so } 
+          |A \\cap B| = ${BB + AAcapBB} - ${BB} = ${AAcapBB} \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A| = |A \\setminus (A \\cap B)| + |A \\cap B| \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${AA + AAcapBB} = |A \\setminus (A \\cap B)| + ${AAcapBB}, \\text{ so } 
+          |A \\setminus (A \\cap B)| = ${AA + AAcapBB} - ${AAcapBB} = ${AA} \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |U| = |U \\setminus (A \\cup B)| + |A \\cup B| \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } 120 = |U \\setminus (A \\cup B)| + ${AA} + ${BB} + ${AAcapBB}, \\text{ so } 
+          |U \\setminus (A \\cup B)| = 120 - ${AA} - ${BB} - ${AAcapBB} = ${UU} \\]`;
+          i++;
+        } else {
+          UU1 = 1;
+          BB1 = 1;
+          AAcapBB1 = 1;
+          hints += `\\[|U| = 120 \\text{ and } |A| = ${AA + AAcapBB} \\text{ and } |B| = ${BB + AAcapBB}\\]`;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A| = |A \\setminus (A \\cap B)| + |A \\cap B| \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${AA + AAcapBB} = ${AA} + |A \\cap B|, \\text{ so } 
+          |A \\cap B| = ${AA + AAcapBB} - ${AA} = ${AAcapBB} \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |B| = |B \\setminus (A \\cap B)| + |A \\cap B| \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${BB + AAcapBB} = |B \\setminus (A \\cap B)| + ${AAcapBB}, \\text{ so } 
+          |B \\setminus (A \\cap B)| = ${BB + AAcapBB} - ${AAcapBB} = ${BB} \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |U| = |U \\setminus (A \\cup B)| + |A \\cup B| \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } 120 = |U \\setminus (A \\cup B)| + ${AA} + ${BB} + ${AAcapBB}, \\text{ so } 
+          |U \\setminus (A \\cup B)| = 120 - ${AA} - ${BB} - ${AAcapBB} = ${UU} \\]`;
+          i++;
+        }
+        console.log(`AA1=${AA1}, BB1=${BB1}, AAcapBB1=${AAcapBB1} UU1=${UU1}`);
+      } else {
+        if (m1 === 1) {
+          if (m2 === 1) {
+            A1 = 1;
+            BcapC1 = 1;
+            U1 = 1;
+            hints += `\\[|U| = 120 \\text{ and } |A| = ${A + AcapB + AcapC + AcapBcapC} \\text{ and } |B \\cap C| = ${BcapC + AcapBcapC}\\]`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A| = |A \\setminus (B \\cup C)| + |A \\cap (B \\cup C)| \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${A + AcapB + AcapC + AcapBcapC} = |A \\setminus (B \\cup C)| + (${AcapB} + ${AcapC} + 
+            ${AcapBcapC}), \\text{ so } 
+            |A \\setminus (B \\cup C)| = ${A + AcapB + AcapC + AcapBcapC} - (${AcapB} + ${AcapC} + ${AcapBcapC}) = ${A} \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |B \\cap C| = |(B \\cap C) \\setminus (A \\cap B \\cap C)| + 
+            |A \\cap B \\cap C)|\\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${BcapC + AcapBcapC} = |(B \\cap C) \\setminus (A \\cap B \\cap C)| + ${AcapBcapC}, \\text{ so } 
+            |(B \\cap C) \\setminus (A \\cap B \\cap C)| = ${BcapC + AcapBcapC} - ${AcapBcapC} = ${BcapC} \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |U| = |U \\setminus (A \\cup B \\cup C)| + |A \\cup B \\cup C| \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } 120 = |U \\setminus (A \\cup B \\cup C)| + (${A} + ${B} + ${C} + ${AcapB} + ${AcapC} + ${BcapC} + 
+            ${AcapBcapC}), \\text{ so } |U \\setminus (A \\cup B \\cup C)| = 120 - (${A} + ${B} + ${C} + ${AcapB} + ${AcapC} + ${BcapC} + 
+            ${AcapBcapC}) = ${U} \\]`;
+            i++;
+          } else if (m2 === 2) {
+            B1 = 1;
+            AcapC1 = 1;
+            U1 = 1;
+            hints += `\\[|U| = 120 \\text{ and } |B| = ${B + AcapB + BcapC + AcapBcapC} \\text{ and } |A \\cap C| = ${AcapC + AcapBcapC}\\]`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |B| = |B \\setminus (A \\cup C)| + |B \\cap (A \\cup C)| \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${B + AcapB + BcapC + AcapBcapC} = |B \\setminus (A \\cup C)| + (${AcapB} + ${BcapC} + 
+            ${AcapBcapC}), \\text{ so } 
+            |B \\setminus (A \\cup C)| = ${B + AcapB + BcapC + AcapBcapC} - (${AcapB} + ${BcapC} + ${AcapBcapC}) = ${B} \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A \\cap C| = |(A \\cap C) \\setminus (A \\cap B \\cap C)| + 
+            |A \\cap B \\cap C)|\\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${AcapC + AcapBcapC} = |(A \\cap C) \\setminus (A \\cap B \\cap C)| + ${AcapBcapC}, \\text{ so } 
+            |(A \\cap C) \\setminus (A \\cap B \\cap C)| = ${AcapC + AcapBcapC} - ${AcapBcapC} = ${AcapC} \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |U| = |U \\setminus (A \\cup B \\cup C)| + |A \\cup B \\cup C| \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } 120 = |U \\setminus (A \\cup B \\cup C)| + (${A} + ${B} + ${C} + ${AcapB} + ${AcapC} + ${BcapC} + 
+            ${AcapBcapC}), \\text{ so } |U \\setminus (A \\cup B \\cup C)| = 120 - (${A} + ${B} + ${C} + ${AcapB} + ${AcapC} + ${BcapC} + 
+            ${AcapBcapC}) = ${U} \\]`;
+            i++;
+          } else {
+            C1 = 1;
+            AcapB1 = 1;
+            U1 = 1;
+            hints += `\\[|U| = 120 \\text{ and } |C| = ${C + AcapC + BcapC + AcapBcapC} \\text{ and } |A \\cap B| = ${AcapB + AcapBcapC}\\]`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |C| = |C \\setminus (A \\cup B)| + |C \\cap (A \\cup B)| \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${C + AcapC + BcapC + AcapBcapC} = |C \\setminus (A \\cup B)| + (${AcapC} + ${BcapC} + 
+            ${AcapBcapC}), \\text{ so } 
+            |C \\setminus (A \\cup B)| = ${C + AcapC + BcapC + AcapBcapC} - (${AcapC} + ${BcapC} + ${AcapBcapC}) = ${C} \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A \\cap B| = |(A \\cap B) \\setminus (A \\cap B \\cap C)| + 
+            |A \\cap B \\cap C)|\\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${AcapB + AcapBcapC} = |(A \\cap B) \\setminus (A \\cap B \\cap C)| + ${AcapBcapC}, \\text{ so } 
+            |(A \\cap B) \\setminus (A \\cap B \\cap C)| = ${AcapB + AcapBcapC} - ${AcapBcapC} = ${AcapB} \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |U| = |U \\setminus (A \\cup B \\cup C)| + |A \\cup B \\cup C| \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } 120 = |U \\setminus (A \\cup B \\cup C)| + (${A} + ${B} + ${C} + ${AcapB} + ${AcapC} + ${BcapC} + 
+            ${AcapBcapC}), \\text{ so } |U \\setminus (A \\cup B \\cup C)| = 120 - (${A} + ${B} + ${C} + ${AcapB} + ${AcapC} + ${BcapC} + 
+            ${AcapBcapC}) = ${U} \\]`;
+            i++;
+          }
+        } else if (m1 === 2) {
+          if (m2 === 1) {
+            AcapBcapC1 = 1;
+            AcapB1 = 1;
+            AcapC1 = 1;
+            U1 = 1;
+            hints += `\\[|U| = 120, |A| = ${A + AcapB + AcapC + AcapBcapC}, |A \\cap B| = ${AcapB + AcapBcapC} \\text{ and } 
+            |A \\cap C| = ${AcapC + AcapBcapC}\\]`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use inclusion-exclusion: } |A| = |A \\setminus (B \\cup C)| + |A \\cap B| + |A \\cap C| - 
+            |A \\cap B \\cap C|\\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${A + AcapB + AcapC + AcapBcapC} = ${A} + ${AcapB + AcapBcapC} + ${AcapC + AcapBcapC} - 
+            |A \\cap B \\cap C|, \\text{ so } 
+            |A \\cap B \\cap C| = ${A} + ${AcapB + AcapBcapC} + ${AcapC + AcapBcapC} - ${A + AcapB + AcapC + AcapBcapC} = ${AcapBcapC} \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A \\cap B| = |(A \\cap B) \\setminus (A \\cap B \\cap C)| + 
+            |A \\cap B \\cap C)|\\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${AcapB + AcapBcapC} = |(A \\cap B) \\setminus (A \\cap B \\cap C)| + ${AcapBcapC}, \\text{ so } 
+            |(A \\cap B) \\setminus (A \\cap B \\cap C)| = ${AcapB + AcapBcapC} - ${AcapBcapC} = ${AcapB} \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A \\cap C| = |(A \\cap C) \\setminus (A \\cap B \\cap C)| + 
+            |A \\cap B \\cap C)|\\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${AcapC + AcapBcapC} = |(A \\cap C) \\setminus (A \\cap B \\cap C)| + ${AcapBcapC}, \\text{ so } 
+            |(A \\cap C) \\setminus (A \\cap B \\cap C)| = ${AcapC + AcapBcapC} - ${AcapBcapC} = ${AcapC} \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |U| = |U \\setminus (A \\cup B \\cup C)| + |A \\cup B \\cup C| \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } 120 = |U \\setminus (A \\cup B \\cup C)| + (${A} + ${B} + ${C} + ${AcapB} + ${AcapC} + ${BcapC} + 
+            ${AcapBcapC}), \\text{ so } |U \\setminus (A \\cup B \\cup C)| = 120 - (${A} + ${B} + ${C} + ${AcapB} + ${AcapC} + ${BcapC} + 
+            ${AcapBcapC}) = ${U} \\]`;
+            i++;
+          } else if (m2 === 2) {
+            AcapBcapC1 = 1;
+            AcapB1 = 1;
+            BcapC1 = 1;
+            U1 = 1;
+            hints += `\\[|U| = 120, |B| = ${B + AcapB + BcapC + AcapBcapC}, |A \\cap B| = ${AcapB + AcapBcapC} \\text{ and } 
+            |B \\cap C| = ${BcapC + AcapBcapC}\\]`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use inclusion-exclusion: } |B| = |B \\setminus (A \\cup C)| + |A \\cap B| + |B \\cap C| - 
+            |A \\cap B \\cap C|\\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${B + AcapB + BcapC + AcapBcapC} = ${B} + ${AcapB + AcapBcapC} + ${BcapC + AcapBcapC} - 
+            |A \\cap B \\cap C|, \\text{ so } 
+            |A \\cap B \\cap C| = ${B} + ${AcapB + AcapBcapC} + ${BcapC + AcapBcapC} - ${B + AcapB + BcapC + AcapBcapC} = ${AcapBcapC} \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A \\cap B| = |(A \\cap B) \\setminus (A \\cap B \\cap C)| + 
+            |A \\cap B \\cap C)|\\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${AcapB + AcapBcapC} = |(A \\cap B) \\setminus (A \\cap B \\cap C)| + ${AcapBcapC}, \\text{ so } 
+            |(A \\cap B) \\setminus (A \\cap B \\cap C)| = ${AcapB + AcapBcapC} - ${AcapBcapC} = ${AcapB} \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |B \\cap C| = |(B \\cap C) \\setminus (A \\cap B \\cap C)| + 
+            |A \\cap B \\cap C)|\\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${BcapC + AcapBcapC} = |(B \\cap C) \\setminus (A \\cap B \\cap C)| + ${AcapBcapC}, \\text{ so } 
+            |(B \\cap C) \\setminus (A \\cap B \\cap C)| = ${BcapC + AcapBcapC} - ${AcapBcapC} = ${BcapC} \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |U| = |U \\setminus (A \\cup B \\cup C)| + |A \\cup B \\cup C| \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } 120 = |U \\setminus (A \\cup B \\cup C)| + (${A} + ${B} + ${C} + ${AcapB} + ${AcapC} + ${BcapC} + 
+            ${AcapBcapC}), \\text{ so } |U \\setminus (A \\cup B \\cup C)| = 120 - (${A} + ${B} + ${C} + ${AcapB} + ${AcapC} + ${BcapC} + 
+            ${AcapBcapC}) = ${U} \\]`;
+            i++;
+          } else {
+            AcapBcapC1 = 1;
+            AcapC1 = 1;
+            BcapC1 = 1;
+            U1 = 1;
+            hints += `\\[|U| = 120, |C| = ${C + AcapC + BcapC + AcapBcapC}, |A \\cap C| = ${AcapC + AcapBcapC} \\text{ and } 
+            |B \\cap C| = ${BcapC + AcapBcapC}\\]`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use inclusion-exclusion: } |C| = |C \\setminus (A \\cup B)| + |A \\cap C| + |B \\cap C| - 
+            |A \\cap B \\cap C|\\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${C + AcapC + BcapC + AcapBcapC} = ${C} + ${AcapC + AcapBcapC} + ${BcapC + AcapBcapC} - 
+            |A \\cap B \\cap C|, \\text{ so } 
+            |A \\cap B \\cap C| = ${C} + ${AcapC + AcapBcapC} + ${BcapC + AcapBcapC} - ${C + AcapC + BcapC + AcapBcapC} = ${AcapBcapC} \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A \\cap C| = |(A \\cap C) \\setminus (A \\cap B \\cap C)| + 
+            |A \\cap B \\cap C)|\\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${AcapC + AcapBcapC} = |(A \\cap C) \\setminus (A \\cap B \\cap C)| + ${AcapBcapC}, \\text{ so } 
+            |(A \\cap C) \\setminus (A \\cap B \\cap C)| = ${AcapC + AcapBcapC} - ${AcapBcapC} = ${AcapC} \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |B \\cap C| = |(B \\cap C) \\setminus (A \\cap B \\cap C)| + 
+            |A \\cap B \\cap C)|\\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${BcapC + AcapBcapC} = |(B \\cap C) \\setminus (A \\cap B \\cap C)| + ${AcapBcapC}, \\text{ so } 
+            |(B \\cap C) \\setminus (A \\cap B \\cap C)| = ${BcapC + AcapBcapC} - ${AcapBcapC} = ${BcapC} \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |U| = |U \\setminus (A \\cup B \\cup C)| + |A \\cup B \\cup C| \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } 120 = |U \\setminus (A \\cup B \\cup C)| + (${A} + ${B} + ${C} + ${AcapB} + ${AcapC} + ${BcapC} + 
+            ${AcapBcapC}), \\text{ so } |U \\setminus (A \\cup B \\cup C)| = 120 - (${A} + ${B} + ${C} + ${AcapB} + ${AcapC} + ${BcapC} + 
+            ${AcapBcapC}) = ${U} \\]`;
+            i++;
+          }
+        } else if (m1 === 3) {
+          if (m2 === 1) {
+            A1 = 1;
+            BcapC1 = 1;
+            hints += `\\[|U| = 120 \\text{ and } |B \\cap C| = ${BcapC + AcapBcapC}\\]`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |B \\cap C| = |(B \\cap C) \\setminus (A \\cap B \\cap C)| + 
+            |A \\cap B \\cap C)|\\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${BcapC + AcapBcapC} = |(B \\cap C) \\setminus (A \\cap B \\cap C)| + ${AcapBcapC}, \\text{ so } 
+            |(B \\cap C) \\setminus (A \\cap B \\cap C)| = ${BcapC + AcapBcapC} - ${AcapBcapC} = ${BcapC} \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |U| = |U \\setminus (A \\cup B \\cup C)| + |A \\cup B \\cup C| \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } 120 = ${U} + ${B} + ${C} + ${AcapB} + ${AcapC} + ${BcapC} + 
+            ${AcapBcapC} + |A \\setminus (B \\cup C)|, \\text{ so } |A \\setminus (B \\cup C)| = 120 - (${U} + ${B} + ${C} + ${AcapB} + ${AcapC} + 
+            ${BcapC} + ${AcapBcapC}) = ${A} \\]`;
+            i++;
+          } else if (m2 === 2) {
+            B1 = 1;
+            AcapC1 = 1;
+            hints += `\\[|U| = 120 \\text{ and } |A \\cap C| = ${AcapC + AcapBcapC}\\]`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A \\cap C| = |(A \\cap C) \\setminus (A \\cap B \\cap C)| + 
+            |A \\cap B \\cap C)|\\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${AcapC + AcapBcapC} = |(A \\cap C) \\setminus (A \\cap B \\cap C)| + ${AcapBcapC}, \\text{ so } 
+            |(A \\cap C) \\setminus (A \\cap B \\cap C)| = ${AcapC + AcapBcapC} - ${AcapBcapC} = ${AcapC} \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |U| = |U \\setminus (A \\cup B \\cup C)| + |A \\cup B \\cup C| \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } 120 = ${U} + ${A} + ${C} + ${AcapB} + ${AcapC} + ${BcapC} + 
+            ${AcapBcapC} + |B \\setminus (A \\cup C)|, \\text{ so } |B \\setminus (A \\cup C)| = 120 - (${U} + ${A} + ${C} + ${AcapB} + ${AcapC} + 
+            ${BcapC} + ${AcapBcapC}) = ${B} \\]`;
+            i++;
+          } else {
+            C1 = 1;
+            AcapB1 = 1;
+            hints += `\\[|U| = 120 \\text{ and } |A \\cap B| = ${AcapB + AcapBcapC}\\]`;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A \\cap B| = |(A \\cap B) \\setminus (A \\cap B \\cap C)| + 
+            |A \\cap B \\cap C)|\\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${AcapB + AcapBcapC} = |(A \\cap B) \\setminus (A \\cap B \\cap C)| + ${AcapBcapC}, \\text{ so } 
+            |(A \\cap B) \\setminus (A \\cap B \\cap C)| = ${AcapB + AcapBcapC} - ${AcapBcapC} = ${AcapB} \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |U| = |U \\setminus (A \\cup B \\cup C)| + |A \\cup B \\cup C| \\]`;
+            i++;
+            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } 120 = ${U} + ${A} + ${B} + ${AcapB} + ${AcapC} + ${BcapC} + 
+            ${AcapBcapC} + |C \\setminus (A \\cup B)|, \\text{ so } |C \\setminus (A \\cup B)| = 120 - (${U} + ${A} + ${B} + ${AcapB} + ${AcapC} + 
+            ${BcapC} + ${AcapBcapC}) = ${C} \\]`;
+            i++;
+          }
+        } else {
+          AcapB1 = 1;
+          AcapC1 = 1;
+          BcapC1 = 1;
+          AcapBcapC1 = 1;
+          hints += `\\[|U| = 120, |A| = ${A + AcapB + AcapC + AcapBcapC}, |B| = ${B + AcapB + BcapC + AcapBcapC}, 
+          |C| = ${C + AcapC + BcapC + AcapBcapC}, \\text{ and } |A \\cap B| = ${AcapB + AcapBcapC}, |A \\cap C| = ${AcapC + AcapBcapC}, 
+          \\text{ and } |B \\cap C| = ${BcapC + AcapBcapC}\\]`;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |U| = |U \\setminus (A \\cup B \\cup C)| + |A \\cup B \\cup C| \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } 120 = ${U} + |A \\cup B \\cup C|, \\text{ so } |A \\cup B \\cup C| = 120 - ${U} = ${120 - U} \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use inclusion-exclusion: } |A \\cup B \\cup C| = |A| + |B| + |C| - |A \\cap B| - |A \\cap C| - 
+          |B \\cap C| + |A \\cap B \\cap C|\\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${120 - U} = ${A + AcapB + AcapC + AcapBcapC} + ${B + AcapB + BcapC + AcapBcapC} + 
+          ${C + AcapC + BcapC + AcapBcapC} - ${AcapB + AcapBcapC} - ${AcapC + AcapBcapC} - ${BcapC + AcapBcapC} + 
+          |A \\cap B \\cap C|, \\text{ so } |A \\cap B \\cap C| = ${120 - U} - ${A + AcapB + AcapC + AcapBcapC} - ${B + AcapB + BcapC + AcapBcapC} - 
+          ${C + AcapC + BcapC + AcapBcapC} + ${AcapB + AcapBcapC} + ${AcapC + AcapBcapC} + ${BcapC + AcapBcapC} = ${AcapBcapC} \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A \\cap B| = |(A \\cap B) \\setminus (A \\cap B \\cap C)| + 
+          |A \\cap B \\cap C)|\\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${AcapB + AcapBcapC} = |(A \\cap B) \\setminus (A \\cap B \\cap C)| + ${AcapBcapC}, \\text{ so } 
+          |(A \\cap B) \\setminus (A \\cap B \\cap C)| = ${AcapB + AcapBcapC} - ${AcapBcapC} = ${AcapB} \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |A \\cap C| = |(A \\cap C) \\setminus (A \\cap B \\cap C)| + 
+          |A \\cap B \\cap C)|\\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${AcapC + AcapBcapC} = |(A \\cap C) \\setminus (A \\cap B \\cap C)| + ${AcapBcapC}, \\text{ so } 
+          |(A \\cap C) \\setminus (A \\cap B \\cap C)| = ${AcapC + AcapBcapC} - ${AcapBcapC} = ${AcapC} \\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Use the fact that } |B \\cap C| = |(B \\cap C) \\setminus (A \\cap B \\cap C)| + 
+          |A \\cap B \\cap C)|\\]`;
+          i++;
+          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } ${BcapC + AcapBcapC} = |(B \\cap C) \\setminus (A \\cap B \\cap C)| + ${AcapBcapC}, \\text{ so } 
+          |(B \\cap C) \\setminus (A \\cap B \\cap C)| = ${BcapC + AcapBcapC} - ${AcapBcapC} = ${BcapC} \\]`;
+          i++;
+        }
+  
+        console.log(`A1=${A1}, B1=${B1}, C1=${C1}, AcapB1=${AcapB1}, AcapC1=${AcapC1}, BcapC1=${BcapC1}, AcapBcapC1=${AcapBcapC1}, U1=${U1}`);
+      }
+  
+      // Display the question
+      questionText.textContent = hints;
+
+      MathJax.typeset([questionText]);
+
+      
+      // Clear the activity box
+      activityBox.innerHTML = '';
+      
+      // Create a canvas
+      const canvas = document.createElement('canvas');
+      canvas.width = 1300;
+      canvas.height = 650;
+      activityBox.appendChild(canvas);
+      
+      const ctx = canvas.getContext('2d');
+      
+      // Draw the universal set rectangle
+      ctx.strokeStyle = 'black';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(200, 30, 900, 500);
+
+      if (m0 < 0.34) {
+        // Draw circle A
+        ctx.beginPath();
+        ctx.arc(525, 275, 180, 0, 2 * Math.PI);
+        ctx.stroke();
+        
+        // Draw circle B
+        ctx.beginPath();
+        ctx.arc(775, 275, 180, 0, 2 * Math.PI);
+        ctx.stroke();
+
+        addTextToActivityBox('A', 335, 370, 80);
+        addTextToActivityBox('B', 915, 370, 80);
+        addTextToActivityBox('U', 1110, 20, 80);
+      } else {
+        // Draw circle A
+        ctx.beginPath();
+        ctx.arc(550, 200, 150, 0, 2 * Math.PI);
+        ctx.stroke();
+        
+        // Draw circle B
+        ctx.beginPath();
+        ctx.arc(750, 200, 150, 0, 2 * Math.PI);
+        ctx.stroke();
+        
+        // Draw circle C
+        ctx.beginPath();
+        ctx.arc(650, 350, 150, 0, 2 * Math.PI);
+        ctx.stroke();
+  
+        addTextToActivityBox('A', 350, 40, 80);
+        addTextToActivityBox('B', 900, 40, 80);
+        addTextToActivityBox('C', 755, 415, 80);
+        addTextToActivityBox('U', 1110, 20, 80);
+      }
+
+      const options = new Set([]);
+
+      let minVal = 1;
+      let maxVal = 20;
+      //options.add(1);
+
+      if (m0 < 0.34) {
+        if (UU1 === 1) {
+          const slot1 = createExponentSlot(1000, 50, 60, 40);
+          slot1.setAttribute('meep', 'UU1');
+          slot1.id = 'UU1';
+          options.add(UU);
+        } else {
+          createFixedExponentBox(UU, 1000, 50, 60, 40);
+        }
+        
+        if (AA1 === 1) {
+          const slot2 = createExponentSlot(425, 235, 60, 40);
+          slot2.setAttribute('meep', 'AA1');
+          slot2.id = 'AA1';
+          options.add(AA);
+        } else {
+          createFixedExponentBox(AA, 425, 235, 60, 40);
+        }
+  
+        if (BB1 === 1) {
+          const slot3 = createExponentSlot(815, 235, 60, 40);
+          slot3.setAttribute('meep', 'BB1');
+          slot3.id = 'BB1';
+          options.add(BB);
+        } else {
+          createFixedExponentBox(BB, 815, 235, 60, 40);
+        }
+
+        if (AAcapBB1 === 1) {
+          const slot4 = createExponentSlot(618, 235, 60, 40);
+          slot4.setAttribute('meep', 'AAcapBB1');
+          slot4.id = 'AAcapBB1';
+          options.add(AAcapBB);
+        } else {
+          createFixedExponentBox(AAcapBB, 618, 235, 60, 40);
+        }
+
+        minVal = Math.min(UU, AA, BB, AAcapBB);
+        maxVal = Math.max(UU, AA, BB, AAcapBB);
+      } else {
+        if (U1 === 1) {
+          const slot1 = createExponentSlot(1000, 50, 60, 40);
+          slot1.setAttribute('meep', 'U1');
+          slot1.id = 'U1';
+          options.add(U);
+        } else {
+          createFixedExponentBox(U, 1000, 50, 60, 40);
+        }
+  
+        if (A1 === 1) {
+          const slot2 = createExponentSlot(457, 128, 60, 40);
+          slot2.setAttribute('meep', 'A1');
+          slot2.id = 'A1';
+          options.add(A);
+        } else {
+          createFixedExponentBox(A, 457, 128, 60, 40);
+        }
+  
+        if (B1 === 1) {
+          const slot3 = createExponentSlot(777, 128, 60, 40);
+          slot3.setAttribute('meep', 'B1');
+          slot3.id = 'B1';
+          options.add(B);
+        } else {
+          createFixedExponentBox(B, 777, 128, 60, 40);
+        }
+  
+        if (C1 === 1) {
+          const slot4 = createExponentSlot(617, 368, 60, 40);
+          slot4.setAttribute('meep', 'C1');
+          slot4.id = 'C1';
+          options.add(C);
+        } else {
+          createFixedExponentBox(C, 617, 368, 60, 40);
+        }
+  
+        if (AcapB1 === 1) {
+          const slot5 = createExponentSlot(617, 128, 60, 40);
+          slot5.setAttribute('meep', 'AcapB1');
+          slot5.id = 'AcapB1';
+          options.add(AcapB);
+        } else {
+          createFixedExponentBox(AcapB, 617, 128, 60, 40);
+        }
+  
+        if (AcapC1 === 1) {
+          const slot6 = createExponentSlot(537, 258, 60, 40);
+          slot6.setAttribute('meep', 'AcapC1');
+          slot6.id = 'AcapC1';
+          options.add(AcapC);
+        } else {
+          createFixedExponentBox(AcapC, 537, 258, 60, 40);
+        }
+  
+        if (BcapC1 === 1) {
+          const slot7 = createExponentSlot(697, 258, 60, 40);
+          slot7.setAttribute('meep', 'BcapC1');
+          slot7.id = 'BcapC1';
+          options.add(BcapC);
+        } else {
+          createFixedExponentBox(BcapC, 697, 258, 60, 40);
+        }
+  
+        if (AcapBcapC1 === 1) {
+          const slot8 = createExponentSlot(617, 208, 60, 40);
+          slot8.setAttribute('meep', 'AcapBcapC1');
+          slot8.id = 'AcapBcapC1';
+          options.add(AcapBcapC);
+        } else {
+          createFixedExponentBox(AcapBcapC, 617, 208, 60, 40);
+        }
+  
+        minVal = Math.min(U, A, B, C, AcapB, BcapC, AcapC, AcapBcapC);
+        maxVal = Math.max(U, A, B, C, AcapB, BcapC, AcapC, AcapBcapC);
+      }
+
+
+      if (maxVal - minVal < 17) {
+        maxVal += 7;
+        minVal -= 7;
+      }
+
+      while (options.size < 15) {
+        options.add(Math.floor(Math.random() * (maxVal - minVal + 1)) + minVal);
+      }
+      const optionArray = [...options].sort(() => Math.random() - 0.5);
+
+      for (let i = 0; i < 15; i++) {
+        createDraggableExponentBox(optionArray[i], 60+(i*80), 560, 60, 40);
+      }
+
+
+      hintIndex = 0;
+      hintArea.innerHTML = "";  // Clear previous hints
+
+
+
+    });
+
+
+    const checkBtn = document.getElementById('check-btn');
+    const feedbackText = document.getElementById('feedbackText');
+    
+    checkBtn.addEventListener('click', () => {
+      // Play click sound
+      const sound = document.getElementById('click-sound');
+      if (sound) {
+        sound.currentTime = 0;
+        sound.play();
+      }
+    
+      let correct = true;
+    
+      // Helper to check a region
+      function checkRegion(variableName, correctValue) {
+        const slot = document.getElementById(variableName);
+        if (slot) {
+          const guess = parseInt(slot.textContent);
+          if (guess !== correctValue) {
+            correct = false;
+          }
+        }
+      }
+
+      if (m0 < 0.34) {
+        // Check each region (only those where a slot was placed)
+        checkRegion('AA1', AA);
+        checkRegion('BB1', BB);
+        checkRegion('AAcapBB1', AAcapBB);
+        checkRegion('UU1', UU);
+      } else {
+        // Check each region (only those where a slot was placed)
+        checkRegion('A1', A);
+        checkRegion('B1', B);
+        checkRegion('C1', C);
+        checkRegion('AcapB1', AcapB);
+        checkRegion('AcapC1', AcapC);
+        checkRegion('BcapC1', BcapC);
+        checkRegion('AcapBcapC1', AcapBcapC);
+        checkRegion('U1', U);
+      }
+    
+      // Give feedback
+      if (correct) {
+        feedbackText.textContent = "Correct!";
+        feedbackText.style.color = "green";
+      } else {
+        feedbackText.textContent = "Incorrect. Try again!";
+        feedbackText.style.color = "red";
+      }
+    });
+
+
+    hintBtn.addEventListener('click', () => {
+      // Play sound when view button is clicked
+      const sound = document.getElementById('click-sound');
+      if (sound) {
+        sound.currentTime = 0; // rewind to start in case it's still playing
+        sound.play();
+      }
+      if (hintIndex < hintSteps.length) {
+        // Create a new paragraph for each hint
+        const hintPara = document.createElement('div');
+        hintPara.classList.add('hint-step');
+        hintPara.textContent = hintSteps[hintIndex];
+        hintArea.appendChild(hintPara);
+        
+        MathJax.typeset([hintPara]);
+        hintIndex++;
+      }
+    });
+
+    
+  </script>
+
+  <audio id="click-sound" src="button.mp3" preload="auto"></audio>
+  <audio id="set-sound" src="set2.mp3" preload="auto"></audio>
+  
+</body>
+</html>

@@ -107,7 +107,7 @@ fetch("/nav.html")
 
     let question = `Do some math:`;
 
-    let primes = [13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67];
+    let primes = [13, 17, 19, 23, 29, 31, 37, 41, 43, 47];
     a2 = 20;
     b2 = 20;
   
@@ -121,7 +121,7 @@ fetch("/nav.html")
       an = Math.floor(Math.random() * 2);
     }
 
-    antype = primes[Math.floor(Math.random() * 14)];
+    antype = primes[Math.floor(Math.random() * 10)];
 
     a = 2**a2 * 3**a3 * 5**a5 * 7**a7 * 11**a11 * antype**an;
     
@@ -134,7 +134,7 @@ fetch("/nav.html")
       bn = Math.floor(Math.random() * 1.5);
     }
 
-    bntype = primes[Math.floor(Math.random() * 14)];
+    bntype = primes[Math.floor(Math.random() * 10)];
 
     b = 2**b2 * 3**b3 * 5**b5 * 7**b7 * 11**b11 * bntype**bn;
   

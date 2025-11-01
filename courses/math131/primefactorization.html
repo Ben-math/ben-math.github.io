@@ -108,10 +108,13 @@ fetch("/nav.html")
     let question = `Do some math:`;
 
     let primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67];
+    console.log(`First: ${a2}`);
   
     // Randomly determine prime powers
     while (a2 + a3 + a5 + a7 + a11 + an > 10) {
+      console.log(`While loop running`);
       a2 = Math.floor(Math.random() * 6);
+      console.log(`Second: ${a2}`);
       a3 = Math.floor(Math.random() * 5);
       a5 = Math.floor(Math.random() * 4);
       a7 = Math.floor(Math.random() * 3);

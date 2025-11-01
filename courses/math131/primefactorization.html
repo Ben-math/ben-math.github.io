@@ -64,8 +64,8 @@ fetch("/nav.html")
   <script>
 
 
-    let a2 = 0, a3 = 0, a5 = 0, a7 = 0, a11 = 0, an = 0;
-    let b2 = 0, b3 = 0, b5 = 0, b7 = 0, b11 = 0, bn = 0;
+    let a = 0, a2 = 0, a3 = 0, a5 = 0, a7 = 0, a11 = 0, an = 0;
+    let b = 0, b2 = 0, b3 = 0, b5 = 0, b7 = 0, b11 = 0, bn = 0;
 
 
     const startBtn = document.getElementById('start-btn');
@@ -120,6 +120,8 @@ fetch("/nav.html")
     }
 
     antype = primes[Math.floor(Math.random() * 19)];
+
+    a = 2^a2 * 3^a3 * 5^a5 * 7^a7 * 11^a11 * antype^an;
     
     while (b2 + b3 + b5 + b7 + b11 + bn > 10) {
       b2 = Math.floor(Math.random() * 6);
@@ -131,11 +133,13 @@ fetch("/nav.html")
     }
 
     bntype = primes[Math.floor(Math.random() * 19)];
+
+    b = 2^b2 * 3^b3 * 5^b5 * 7^b7 * 11^b11 * bntype^bn;
   
 
 
     // Display the question
-    questionText.textContent = question;
+    questionText.textContent = question + ` with the numbers ${a} and ${b}.`;
 
     MathJax.typeset([questionText]);
 

@@ -101,40 +101,57 @@ fetch("/nav.html")
     
   startBtn.addEventListener('click', () => {
 
-      const feedback = document.getElementById('feedbackText');
-      feedback.textContent = '';
+    const feedback = document.getElementById('feedbackText');
+    feedback.textContent = '';
 
 
-      let question = `Do some math:`;
+    let question = `Do some math:`;
+
     
-      // Randomly determine unknown quantities.  Variables have a corresponding boolean
-      let m0 = Math.random();
-      let m1 = Math.floor(Math.random() *4) + 1;
-      let m2 = Math.floor(Math.random() *3) + 1;
-
   
-      // Display the question
-      questionText.textContent = question;
+    // Randomly determine prime powers
+    while (a2 + a3 + a5 + a7 + a11 + an > 10) {
+      a2 = Math.floor(Math.random() * 6);
+      a3 = Math.floor(Math.random() * 5);
+      a5 = Math.floor(Math.random() * 4);
+      a7 = Math.floor(Math.random() * 3);
+      a11 = Math.floor(Math.random() * 2);
+      an = Math.floor(Math.random() * 2);
+    }
+    
+    while (b2 + b3 + b5 + b7 + b11 + bn > 10) {
+      b2 = Math.floor(Math.random() * 6);
+      b3 = Math.floor(Math.random() * 5);
+      b5 = Math.floor(Math.random() * 4);
+      b7 = Math.floor(Math.random() * 3);
+      b11 = Math.floor(Math.random() * 2);
+      bn = Math.floor(Math.random() * 2);
+    }
+  
 
-      MathJax.typeset([questionText]);
 
-      
-      // Clear the activity box
-      activityBox.innerHTML = '';
-      
-      // Create a canvas
-      const canvas = document.createElement('canvas');
-      canvas.width = 1300;
-      canvas.height = 650;
-      activityBox.appendChild(canvas);
-      
-      const ctx = canvas.getContext('2d');
-      
-      // Draw the universal set rectangle
-      ctx.strokeStyle = 'black';
-      ctx.lineWidth = 4;
+    // Display the question
+    questionText.textContent = question;
 
-    });
+    MathJax.typeset([questionText]);
+
+    
+    // Clear the activity box
+    activityBox.innerHTML = '';
+    
+    // Create a canvas
+    const canvas = document.createElement('canvas');
+    canvas.width = 1300;
+    canvas.height = 650;
+    activityBox.appendChild(canvas);
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Draw the universal set rectangle
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 4;
+
+  });
 
     const feedbackText = document.getElementById('feedbackText');
     

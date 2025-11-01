@@ -118,6 +118,8 @@ fetch("/nav.html")
       a11 = Math.floor(Math.random() * 2);
       an = Math.floor(Math.random() * 2);
     }
+
+    antype = primes[Math.floor(Math.random() * 19)];
     
     while (b2 + b3 + b5 + b7 + b11 + bn > 10) {
       b2 = Math.floor(Math.random() * 6);
@@ -127,11 +129,13 @@ fetch("/nav.html")
       b11 = Math.floor(Math.random() * 2);
       bn = Math.floor(Math.random() * 2);
     }
+
+    bntype = primes[Math.floor(Math.random() * 19)];
   
 
 
     // Display the question
-    questionText.textContent = question + `${primes[5]}`;
+    questionText.textContent = question;
 
     MathJax.typeset([questionText]);
 

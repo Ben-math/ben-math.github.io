@@ -52,8 +52,6 @@ fetch("/nav.html")
     
     <p id="question-text"></p>
 
-    
-    <div id="hint-area" class="math" style="margin-top: 1em;"></div>
 
     <div class="activity-box" id="my-activity">
 
@@ -71,9 +69,6 @@ fetch("/nav.html")
 
   <script>
 
-    const hintArea = document.getElementById('hint-area');
-    
-   
 
     const startBtn = document.getElementById('start-btn');
     const questionText = document.getElementById('question-text');
@@ -115,7 +110,7 @@ fetch("/nav.html")
       
       
 
-      let hints = `Drag and drop cardinalities given the following information:`;
+      let question = `Do some math:`;
     
       // Randomly determine unknown quantities.  Variables have a corresponding boolean
       let m0 = Math.random();
@@ -124,15 +119,12 @@ fetch("/nav.html")
 
 
 
-      hintSteps = [];
-      hintIndex = 0;
-      let i = 0
 
     
 
   
       // Display the question
-      questionText.textContent = hints;
+      questionText.textContent = question;
 
       MathJax.typeset([questionText]);
 
@@ -151,20 +143,6 @@ fetch("/nav.html")
       // Draw the universal set rectangle
       ctx.strokeStyle = 'black';
       ctx.lineWidth = 4;
-      ctx.strokeRect(200, 30, 900, 500);
-
-      
-
-      const options = new Set([]);
-
-      let minVal = 1;
-      let maxVal = 20;
-      //options.add(1);
-
-
-
-      hintIndex = 0;
-      hintArea.innerHTML = "";  // Clear previous hints
 
 
 

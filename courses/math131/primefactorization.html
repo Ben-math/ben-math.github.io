@@ -44,14 +44,12 @@ fetch("/nav.html")
   <main>
 
     <p>This is a placeholder for what will be a prime factorization activity.  Work in progress.</p>
-
     
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>
     
     <p id="question-text"></p>
-
 
     <div class="activity-box" id="my-activity">
 
@@ -60,10 +58,6 @@ fetch("/nav.html")
     <div class="button-container">
       <div id="feedbackText" class="center-feedback"></div>
     </div>
-
-
-
-
 
   </main>
 
@@ -106,9 +100,6 @@ fetch("/nav.html")
       const feedback = document.getElementById('feedbackText');
       feedback.textContent = '';
 
-      
-      
-      
 
       let question = `Do some math:`;
     
@@ -116,11 +107,6 @@ fetch("/nav.html")
       let m0 = Math.random();
       let m1 = Math.floor(Math.random() *4) + 1;
       let m2 = Math.floor(Math.random() *3) + 1;
-
-
-
-
-    
 
   
       // Display the question
@@ -144,15 +130,9 @@ fetch("/nav.html")
       ctx.strokeStyle = 'black';
       ctx.lineWidth = 4;
 
-
-
     });
 
-
     const feedbackText = document.getElementById('feedbackText');
-    
-
-
     
   </script>
 

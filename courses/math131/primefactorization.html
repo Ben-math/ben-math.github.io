@@ -107,7 +107,7 @@ fetch("/nav.html")
 
     let question = `Do some math:`;
 
-    let primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67];
+    let primes = [13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67];
     a2 = 20;
     b2 = 20;
   
@@ -121,20 +121,20 @@ fetch("/nav.html")
       an = Math.floor(Math.random() * 2);
     }
 
-    antype = primes[Math.floor(Math.random() * 19)];
+    antype = primes[Math.floor(Math.random() * 14)];
 
     a = 2**a2 * 3**a3 * 5**a5 * 7**a7 * 11**a11 * antype**an;
     
     while (b2 + b3 + b5 + b7 + b11 + bn > 10) {
-      b2 = Math.floor(Math.random() * 5);
-      b3 = Math.floor(Math.random() * 4);
-      b5 = Math.floor(Math.random() * 3);
-      b7 = Math.floor(Math.random() * 2);
-      b11 = Math.floor(Math.random() * 2);
-      bn = Math.floor(Math.random() * 2);
+      b2 = Math.floor(Math.random() * 4.75);
+      b3 = Math.floor(Math.random() * 3.75);
+      b5 = Math.floor(Math.random() * 2.75);
+      b7 = Math.floor(Math.random() * 1.75);
+      b11 = Math.floor(Math.random() * 1.5);
+      bn = Math.floor(Math.random() * 1.5);
     }
 
-    bntype = primes[Math.floor(Math.random() * 19)];
+    bntype = primes[Math.floor(Math.random() * 14)];
 
     b = 2**b2 * 3**b3 * 5**b5 * 7**b7 * 11**b11 * bntype**bn;
   

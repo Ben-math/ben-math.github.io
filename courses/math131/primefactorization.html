@@ -64,8 +64,8 @@ fetch("/nav.html")
   <script>
 
 
-    let a = 0, a2 = 20, a3 = 0, a5 = 0, a7 = 0, a11 = 0, an = 0;
-    let b = 0, b2 = 20, b3 = 0, b5 = 0, b7 = 0, b11 = 0, bn = 0;
+    let a = 0, a2 = 0, a3 = 0, a5 = 0, a7 = 0, a11 = 0, an = 0;
+    let b = 0, b2 = 0, b3 = 0, b5 = 0, b7 = 0, b11 = 0, bn = 0;
 
 
     const startBtn = document.getElementById('start-btn');
@@ -108,7 +108,8 @@ fetch("/nav.html")
     let question = `Do some math:`;
 
     let primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67];
-    console.log(`First: ${a2}`);
+    a2 = 20;
+    b2 = 20;
   
     // Randomly determine prime powers
     while (a2 + a3 + a5 + a7 + a11 + an > 10) {

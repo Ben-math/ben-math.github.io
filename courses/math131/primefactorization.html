@@ -145,9 +145,11 @@ fetch("/nav.html")
     }
 
 
-    // Create a prime/composite box + (if composite) input controls
     function createNumberLeaf({
-      value, centerX, topY, totalAnum, segmentLeft, segmentRight, ctx
+      value, centerX, topY, totalAnum,
+      segmentLeft, segmentRight, ctx,
+      totalWidth = 1300,  // NEW default
+      boxHeight = 80      // NEW default
     }) {
       const isP = isPrime(value);
       const box = document.createElement('div');
@@ -156,13 +158,11 @@ fetch("/nav.html")
       activityBox.appendChild(box);
       placeCentered(box, centerX, topY);
     
-      // If prime, no controls — return the box only.
       if (isP) return { box, value, leaf: true };
     
-      // Otherwise, add controls to try a divisor.
       const controls = document.createElement('div');
       controls.className = 'leaf-controls';
-      placeCentered(controls, centerX, topY + 88); // 8px below the 80px box
+      placeCentered(controls, centerX, topY + boxHeight + 8); // was +88; now uses boxHeight
       const input = document.createElement('input');
       input.type = 'number';
       input.placeholder = 'Enter divisor';
@@ -177,31 +177,26 @@ fetch("/nav.html")
       controls.appendChild(tryBtn);
       activityBox.appendChild(controls);
     
-      // Click handler for factor attempt on THIS leaf only.
       tryBtn.addEventListener('click', () => {
         const c = parseInt(input.value, 10);
         if (!c || c < 2) return;
-        if (value % c !== 0) return; // do nothing if not a divisor
+        if (value % c !== 0) return;
     
         const d = value / c;
-        // Compute factor counts
+    
         const cnum = primeFactorCount(c);
         const dnum = primeFactorCount(d);
     
-        // Reserve horizontal widths based on the ORIGINAL anum
-        const totalWidth = 1300;
+        // totalWidth is now passed in (650 for each side)
         const leftWidth = totalWidth * (cnum / totalAnum);
         const rightWidth = totalWidth * (dnum / totalAnum);
     
-        // Determine child centers inside their respective segments
         const leftCenter = (segmentLeft ?? 0) + leftWidth / 2;
         const rightCenter = (segmentRight ?? totalWidth) - rightWidth / 2;
     
-        // Remove this node’s controls
         controls.remove();
     
-        // Create left (c) and right (d) children 80px lower
-        const childTop = topY + 80;
+        const childTop = topY + boxHeight; // was +80; now uses boxHeight
     
         const leftChild = createNumberLeaf({
           value: c,
@@ -210,7 +205,9 @@ fetch("/nav.html")
           totalAnum,
           segmentLeft: (segmentLeft ?? 0),
           segmentRight: (segmentLeft ?? 0) + leftWidth,
-          ctx
+          ctx,
+          totalWidth,             // pass through 650
+          boxHeight               // pass through 64
         });
     
         const rightChild = createNumberLeaf({
@@ -220,16 +217,18 @@ fetch("/nav.html")
           totalAnum,
           segmentLeft: (segmentRight ?? totalWidth) - rightWidth,
           segmentRight: (segmentRight ?? totalWidth),
-          ctx
+          ctx,
+          totalWidth,             // pass through 650
+          boxHeight               // pass through 64
         });
     
-        // Draw connectors
         connectBoxes(ctx, box, leftChild.box);
         connectBoxes(ctx, box, rightChild.box);
       });
     
       return { box, value, leaf: false };
     }
+
 
 
     
@@ -288,6 +287,9 @@ fetch("/nav.html")
     // Clear the activity box
     activityBox.innerHTML = '';
     
+    // Enable compact mode for side-by-side
+    activityBox.classList.add('compact');
+    
     // Create a canvas
     const canvas = document.createElement('canvas');
     canvas.width = 1300;
@@ -295,27 +297,43 @@ fetch("/nav.html")
     activityBox.appendChild(canvas);
     
     const ctx = canvas.getContext('2d');
-    
     ctx.strokeStyle = 'black';
     ctx.lineWidth = 4;
-
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // 1) Place 'a' at the top center in a composite box (it will be prime-colored if a happens to be prime)
-    const topCenterX = 650; // 1300 / 2
-    const topY = 20;
+    // Layout constants for side-by-side trees
+    const halfWidth = 650;
+    const boxH = 64;         // compact box height
+    const topY = 12;         // a bit tighter top padding
     
-    // total prime factor count of ORIGINAL 'a' (already computed in your code as 'anum')
-    const root = createNumberLeaf({
+    // --- LEFT: a ---
+    const aCenterX = 325;    // center of left 0..650
+    createNumberLeaf({
       value: a,
-      centerX: topCenterX,
-      topY: topY,
+      centerX: aCenterX,
+      topY,
       totalAnum: anum,
-      // Root owns the full 0..1300 segment
       segmentLeft: 0,
-      segmentRight: 1300,
-      ctx
+      segmentRight: halfWidth,
+      ctx,
+      totalWidth: halfWidth,
+      boxHeight: boxH
     });
+    
+    // --- RIGHT: b ---
+    const bCenterX = 650 + 325; // 975, center of right 650..1300
+    createNumberLeaf({
+      value: b,
+      centerX: bCenterX,
+      topY,
+      totalAnum: bnum,
+      segmentLeft: halfWidth,
+      segmentRight: 1300,
+      ctx,
+      totalWidth: halfWidth,
+      boxHeight: boxH
+    });
+
 
 
   });

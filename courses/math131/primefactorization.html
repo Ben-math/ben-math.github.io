@@ -227,7 +227,7 @@ fetch("/nav.html")
     feedback.textContent = '';
 
 
-    let question = `Do some math:`;
+    let question = `Find the prime factorizations of `;
 
     let primes = [13, 17, 19, 23, 29, 31, 37, 41, 43, 47];
     a2 = 20;
@@ -266,7 +266,7 @@ fetch("/nav.html")
     console.log(`b powers: ${b2}, ${b3}, ${b5}, ${b7}, ${b11}, ${bn} and b mystery prime: ${bntype}`);
 
     // Display the question
-    questionText.textContent = question + ` with the numbers ${a} and ${b}.`;
+    questionText.textContent = question + `the numbers ${a} and ${b}.  Input divisors of each number to break them down into primes.`;
 
     MathJax.typeset([questionText]);
 

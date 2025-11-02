@@ -218,127 +218,190 @@ fetch("/nav.html")
     }
 
 
-
-    // Return a Map<number, number> of prime -> exponent
+    
+    // Return Map<prime, exponent>
     function factorMap(n) {
       const map = new Map();
       let m = n;
       for (let p = 2; p * p <= m; p += (p === 2 ? 1 : 2)) {
-        while (m % p === 0) {
-          map.set(p, (map.get(p) || 0) + 1);
-          m = Math.trunc(m / p);
-        }
+        while (m % p === 0) { map.set(p, (map.get(p) || 0) + 1); m = Math.trunc(m / p); }
       }
       if (m > 1) map.set(m, (map.get(m) || 0) + 1);
       return map;
     }
     
-    // Called after each successful split; if both trees are fully prime, render stage 2
+    // Build a “result product” row (for gcd / lcm) with empty superscripts to fill later
+    function buildResultRow(label, primesUnion) {
+      const wrap = document.createElement('div');
+      wrap.className = 'exp-result';
+    
+      const lbl = document.createElement('span');
+      lbl.style.fontWeight = '700';
+      lbl.textContent = `${label} =`;
+      wrap.appendChild(lbl);
+    
+      primesUnion.forEach((p, idx) => {
+        if (idx > 0) {
+          const times = document.createElement('span');
+          times.className = 'exp-times';
+          times.textContent = '×';
+          wrap.appendChild(times);
+        }
+        const term = document.createElement('span');
+        term.className = 'exp-term';
+    
+        const baseSpan = document.createElement('span');
+        baseSpan.textContent = p.toString();
+        term.appendChild(baseSpan);
+    
+        // empty superscript container; we’ll fill it later
+        const sup = document.createElement('span');
+        sup.className = 'exp-sup';
+        sup.dataset.prime = String(p);
+        term.appendChild(sup);
+    
+        wrap.appendChild(term);
+      });
+    
+      return wrap;
+    }
+    
+    // Called when both trees are fully factored; renders inputs + gcd/lcm shells
     function maybeRenderExponentStage(aVal, bVal) {
-      // No active divisor inputs left?
       if (activityBox.querySelectorAll('.leaf-controls').length > 0) return;
     
-      // Build exponent maps & union of primes
       const fa = factorMap(aVal);
       const fb = factorMap(bVal);
-      const primesUnion = Array.from(new Set([...fa.keys(), ...fb.keys()])).sort((x,y) => x - y);
+      const primesUnion = Array.from(new Set([...fa.keys(), ...fb.keys()])).sort((x, y) => x - y);
     
-      // Insert question text below the first activity
+      // Insert prompt
       const q2 = document.createElement('p');
       q2.textContent = 'Fill in the exponents in the prime factorizations:';
       activityBox.parentElement.appendChild(q2);
     
-      // Build the second activity box
+      // SECOND activity: short box, two lines (a with gcd on right; b with lcm on right)
       const box2 = document.createElement('div');
-      box2.className = 'activity-box-medish';
+      box2.className = 'activity-box-short';
       box2.id = 'exponent-activity';
       box2.style.marginTop = '10px';
       activityBox.parentElement.appendChild(box2);
     
-      // Two rows: one for a, one for b
-      const rowA = document.createElement('div');
-      rowA.className = 'exp-row';
-      const rowB = document.createElement('div');
-      rowB.className = 'exp-row';
+      // state: track correct entries per base for a and b
+      const filledA = new Map(); // prime -> exponent (once correct)
+      const filledB = new Map();
     
-      // Helper to build one row (label + product of primes with inputs)
-      function buildRow(label, fmSelf, fmOther) {
+      // ---------- left interactive row builders ----------
+      const makeInteractiveRow = (label, fmSelf, fmOther, onFilled) => {
         const row = document.createElement('div');
         row.className = 'exp-row';
-    
-        // Optional label like "a =" or "b ="
         const lbl = document.createElement('span');
         lbl.style.fontWeight = '700';
         lbl.textContent = `${label} =`;
         row.appendChild(lbl);
     
         primesUnion.forEach((p, idx) => {
-          const base = document.createElement('span');
-          base.className = 'exp-term';
-    
-          // "×" between factors (not before the first)
           if (idx > 0) {
             const times = document.createElement('span');
+            times.className = 'exp-times';
             times.textContent = '×';
-            times.style.margin = '0 4px';
             row.appendChild(times);
           }
     
-          // base p
+          const term = document.createElement('span');
+          term.className = 'exp-term';
+    
           const baseSpan = document.createElement('span');
           baseSpan.textContent = p.toString();
-          base.appendChild(baseSpan);
+          term.appendChild(baseSpan);
     
-          // superscript area
           const sup = document.createElement('span');
           sup.className = 'exp-sup';
     
           const correct = fmSelf.get(p) || 0;
-          const other = fmOther.get(p) || 0;
     
           const input = document.createElement('input');
           input.type = 'number';
           input.className = 'exp-input';
-          input.min = '0';
-          input.step = '1';
-          input.placeholder = '…';
+          input.min = '0'; input.step = '1'; input.placeholder = '…';
     
           input.addEventListener('change', () => {
             const val = Number(input.value);
             if (!Number.isInteger(val) || val < 0) return;
             if (val !== correct) return;
     
-            // Replace input with colored box
+            // replace with colored box (min/max/equal relative to the OTHER number)
+            const other = fmOther.get(p) || 0;
             const box = document.createElement('span');
             box.className = 'expo-box';
-            // color logic
-            if (correct === other) {
-              box.classList.add('equal');
-            } else if (correct < other) {
-              box.classList.add('min');
-            } else {
-              box.classList.add('max');
-            }
-            box.textContent = correct.toString();
+            if (correct === other) box.classList.add('equal');
+            else if (correct < other) box.classList.add('min');
+            else box.classList.add('max');
+            box.textContent = String(correct);
             sup.replaceChild(box, input);
+    
+            // record filled and notify
+            onFilled(p, correct);
           });
     
           sup.appendChild(input);
-          base.appendChild(sup);
-    
-          row.appendChild(base);
+          term.appendChild(sup);
+          row.appendChild(term);
         });
     
         return row;
-      }
+      };
     
-      // Build and append both rows
-      const rA = buildRow('a', fa, fb);
-      const rB = buildRow('b', fb, fa); // note: fmSelf = fb for second row; color is computed per-row
+      // ---------- right result rows ----------
+      // Per your request (note: this intentionally follows your spec, even though it
+      // swaps the usual gcd/lcm exponent rules):
+      // - gcd row shows the GREEN MAX when both exponents entered
+      // - lcm row shows the RED MIN when both exponents entered
+      const gcdRow = buildResultRow('gcd(a, b)', primesUnion);
+      const lcmRow = buildResultRow('lcm(a, b)', primesUnion);
     
-      box2.appendChild(rA);
-      box2.appendChild(rB);
+      // two lines: each line has left interactive + right result
+      const lineA = document.createElement('div'); lineA.className = 'exp-line';
+      const lineB = document.createElement('div'); lineB.className = 'exp-line';
+    
+      // notify helpers: when a prime is filled on both sides, populate result
+      const tryPopulateForPrime = (p) => {
+        if (!filledA.has(p) || !filledB.has(p)) return;
+        const aExp = filledA.get(p), bExp = filledB.get(p);
+    
+        // gcd side (right of a): show green MAX
+        const gSup = gcdRow.querySelector(`.exp-sup[data-prime="${p}"]`);
+        if (gSup && !gSup.firstChild) {
+          const gBox = document.createElement('span');
+          gBox.className = 'expo-box max';
+          gBox.textContent = String(Math.max(aExp, bExp));
+          gSup.appendChild(gBox);
+        }
+    
+        // lcm side (right of b): show red MIN
+        const lSup = lcmRow.querySelector(`.exp-sup[data-prime="${p}"]`);
+        if (lSup && !lSup.firstChild) {
+          const lBox = document.createElement('span');
+          lBox.className = 'expo-box min';
+          lBox.textContent = String(Math.min(aExp, bExp));
+          lSup.appendChild(lBox);
+        }
+      };
+    
+      const rowA = makeInteractiveRow('a', fa, fb, (p, e) => { filledA.set(p, e); tryPopulateForPrime(p); });
+      const rowB = makeInteractiveRow('b', fb, fa, (p, e) => { filledB.set(p, e); tryPopulateForPrime(p); });
+    
+      // assemble lines: left (interactive) | right (result)
+      lineA.appendChild(rowA);
+      lineA.appendChild(gcdRow);
+    
+      lineB.appendChild(rowB);
+      lineB.appendChild(lcmRow);
+    
+      // add to box
+      box2.appendChild(lineA);
+      box2.appendChild(lineB);
     }
+
 
 
     

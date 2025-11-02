@@ -362,43 +362,38 @@ fetch("/nav.html")
       const gcdRow = buildResultRow('gcd(a, b)', primesUnion);
       const lcmRow = buildResultRow('lcm(a, b)', primesUnion);
     
-      // two lines: each line has left interactive + right result
-      const lineA = document.createElement('div'); lineA.className = 'exp-line';
-      const lineB = document.createElement('div'); lineB.className = 'exp-line';
-    
-      // notify helpers: when a prime is filled on both sides, populate result
-      const tryPopulateForPrime = (p) => {
-        if (!filledA.has(p) || !filledB.has(p)) return;
-        const aExp = filledA.get(p), bExp = filledB.get(p);
-    
-        // gcd side (right of a): show green MAX
-        const gSup = gcdRow.querySelector(`.exp-sup[data-prime="${p}"]`);
-        if (gSup && !gSup.firstChild) {
-          const gBox = document.createElement('span');
-          gBox.className = 'expo-box max';
-          gBox.textContent = String(Math.max(aExp, bExp));
-          gSup.appendChild(gBox);
-        }
-    
-        // lcm side (right of b): show red MIN
-        const lSup = lcmRow.querySelector(`.exp-sup[data-prime="${p}"]`);
-        if (lSup && !lSup.firstChild) {
-          const lBox = document.createElement('span');
-          lBox.className = 'expo-box min';
-          lBox.textContent = String(Math.min(aExp, bExp));
-          lSup.appendChild(lBox);
-        }
-      };
-    
-      const rowA = makeInteractiveRow('a', fa, fb, (p, e) => { filledA.set(p, e); tryPopulateForPrime(p); });
-      const rowB = makeInteractiveRow('b', fb, fa, (p, e) => { filledB.set(p, e); tryPopulateForPrime(p); });
-    
-      // assemble lines: left (interactive) | right (result)
-      lineA.appendChild(rowA);
-      lineA.appendChild(gcdRow);
-    
-      lineB.appendChild(rowB);
-      lineB.appendChild(lcmRow);
+      // Create a 2×2 grid layout: (a | b) on top, (gcd | lcm) below
+      const grid = document.createElement('div');
+      grid.style.display = 'grid';
+      grid.style.gridTemplateColumns = '1fr 1fr';
+      grid.style.rowGap = '20px';
+      grid.style.columnGap = '40px';
+      grid.style.justifyItems = 'center';
+      grid.style.alignItems = 'start';
+      grid.style.marginTop = '20px';
+      
+      // Row 1: a and b
+      const topLeft = document.createElement('div');
+      topLeft.appendChild(rowA);
+      
+      const topRight = document.createElement('div');
+      topRight.appendChild(rowB);
+      
+      // Row 2: gcd and lcm
+      const bottomLeft = document.createElement('div');
+      bottomLeft.appendChild(gcdRow);
+      
+      const bottomRight = document.createElement('div');
+      bottomRight.appendChild(lcmRow);
+      
+      // Add all to grid
+      grid.appendChild(topLeft);
+      grid.appendChild(topRight);
+      grid.appendChild(bottomLeft);
+      grid.appendChild(bottomRight);
+      
+      box2.appendChild(grid);
+
     
       // add to box
       box2.appendChild(lineA);

@@ -526,4 +526,22 @@ main {
 }
 
 
+/* Small helper for the input+button row under a box */
+.leaf-controls {
+  position: absolute;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  transform: translateX(-50%);
+}
+
+.leaf-controls input[type="number"] {
+  width: 120px;
+  height: 38px;
+  padding: 4px 8px;
+  font-size: 18px;
+  border: 2px solid #1a1a4b;
+  border-radius: 0.4em;
+}
+
 

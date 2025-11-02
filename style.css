@@ -553,22 +553,21 @@ main {
 
 .activity-box.compact .prime-box,
 .activity-box.compact .composite-box {
-  height: 64px;             /* down from 80 */
-  min-width: 64px;          /* keep small numbers tidy */
-  padding: 0 10px;          /* a bit narrower */
-  font-size: 22px;          /* down from 28 */
+  height: 60px;        /* ↓ from 64 */
+  min-width: 60px;     /* ↓ from 64 */
+  padding: 0 8px;
+  font-size: 20px;     /* ↓ from 22 */
 }
 
 .activity-box.compact .leaf-controls input[type="number"] {
-  width: 100px;             /* down from 120 */
-  height: 32px;             /* down from 38 */
-  font-size: 16px;          /* down from 18 */
-  padding: 2px 6px;
+  width: 100px;
+  height: 30px;        /* ↓ from 32 */
+  font-size: 14px;     /* ↓ from 16 */
 }
 
-/* You likely already have .rubber-button; this just scales it a touch when compact */
 .activity-box.compact .rubber-button {
-  font-size: 16px;
-  padding: 6px 10px;
+  font-size: 14px;     /* ↓ from 16 */
+  padding: 6px 8px;
 }
+
 

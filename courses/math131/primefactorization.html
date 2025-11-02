@@ -280,9 +280,8 @@ fetch("/nav.html")
       activityBox.parentElement.appendChild(q2);
       q2.style.textAlign = 'center';
       q2.style.fontWeight = 'bold';
-
     
-      // SECOND activity: short box, two lines (a with gcd on right; b with lcm on right)
+      // SECOND activity: short box, two rows
       const box2 = document.createElement('div');
       box2.className = 'activity-box-short';
       box2.id = 'exponent-activity';
@@ -355,23 +354,18 @@ fetch("/nav.html")
       };
     
       // ---------- right result rows ----------
-      // Per your request (note: this intentionally follows your spec, even though it
-      // swaps the usual gcd/lcm exponent rules):
+      // Per your earlier spec (note this intentionally swaps the usual math convention):
       // - gcd row shows the GREEN MAX when both exponents entered
       // - lcm row shows the RED MIN when both exponents entered
       const gcdRow = buildResultRow('gcd(a, b)', primesUnion);
       const lcmRow = buildResultRow('lcm(a, b)', primesUnion);
-    
-      // two lines: each line has left interactive + right result
-      const lineA = document.createElement('div'); lineA.className = 'exp-line';
-      const lineB = document.createElement('div'); lineB.className = 'exp-line';
     
       // notify helpers: when a prime is filled on both sides, populate result
       const tryPopulateForPrime = (p) => {
         if (!filledA.has(p) || !filledB.has(p)) return;
         const aExp = filledA.get(p), bExp = filledB.get(p);
     
-        // gcd side (right of a): show green MAX
+        // gcd side: green MAX
         const gSup = gcdRow.querySelector(`.exp-sup[data-prime="${p}"]`);
         if (gSup && !gSup.firstChild) {
           const gBox = document.createElement('span');
@@ -380,7 +374,7 @@ fetch("/nav.html")
           gSup.appendChild(gBox);
         }
     
-        // lcm side (right of b): show red MIN
+        // lcm side: red MIN
         const lSup = lcmRow.querySelector(`.exp-sup[data-prime="${p}"]`);
         if (lSup && !lSup.firstChild) {
           const lBox = document.createElement('span');
@@ -393,20 +387,25 @@ fetch("/nav.html")
       const rowA = makeInteractiveRow('a', fa, fb, (p, e) => { filledA.set(p, e); tryPopulateForPrime(p); });
       const rowB = makeInteractiveRow('b', fb, fa, (p, e) => { filledB.set(p, e); tryPopulateForPrime(p); });
     
-      // assemble lines: left (interactive) | right (result)
-      lineA.appendChild(rowA);
-      lineA.appendChild(gcdRow);
+      // --- New arrangement ---
+      // Row 1: a (left) | b (right)
+      const lineTop = document.createElement('div');   lineTop.className = 'exp-line';
+      lineTop.appendChild(rowA);
+      lineTop.appendChild(rowB);
     
-      lineB.appendChild(rowB);
-      lineB.appendChild(lcmRow);
+      // Row 2: gcd (left) | lcm (right)
+      const lineBottom = document.createElement('div'); lineBottom.className = 'exp-line';
+      lineBottom.appendChild(gcdRow);
+      lineBottom.appendChild(lcmRow);
     
       // add to box
-      box2.appendChild(lineA);
-      box2.appendChild(lineB);
-      // shift the b/lcm row down slightly
-      lineB.style.marginTop = '40px';
-
+      box2.appendChild(lineTop);
+      box2.appendChild(lineBottom);
+    
+      // keep the second row a bit lower
+      lineBottom.style.marginTop = '40px';
     }
+
 
 
 

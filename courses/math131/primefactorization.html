@@ -96,6 +96,142 @@ fetch("/nav.html")
       activityBox.appendChild(box);
       return box;
     }
+
+    // --- Utilities ---
+    function isPrime(n) {
+      if (n < 2) return false;
+      if (n % 2 === 0) return n === 2;
+      const r = Math.floor(Math.sqrt(n));
+      for (let d = 3; d <= r; d += 2) if (n % d === 0) return false;
+      return true;
+    }
+    
+    function primeFactorCount(n) {
+      // counts with multiplicity, e.g., 12 = 2^2 * 3 => 3
+      let count = 0, m = n;
+      for (let p = 2; p * p <= m; p += (p === 2 ? 1 : 2)) {
+        while (m % p === 0) { count++; m = Math.trunc(m / p); }
+      }
+      if (m > 1) count++;
+      return count;
+    }
+    
+    // Center a flexible-width box at an x center and y top
+    function placeCentered(el, centerX, topY) {
+      el.style.left = `${centerX}px`;
+      el.style.top = `${topY}px`;
+      el.style.position = 'absolute';
+      el.style.transform = 'translateX(-50%)';
+    }
+    
+    // Draw a line on the canvas between two DOM elements (box centers, bottom-to-top)
+    function connectBoxes(ctx, parentEl, childEl) {
+      const p = parentEl.getBoundingClientRect();
+      const c = childEl.getBoundingClientRect();
+      const canvasRect = ctx.canvas.getBoundingClientRect();
+    
+      const parentCenterX = p.left + p.width / 2 - canvasRect.left;
+      const parentBottomY = p.top + p.height - canvasRect.top;
+    
+      const childCenterX = c.left + c.width / 2 - canvasRect.left;
+      const childTopY = c.top - canvasRect.top;
+    
+      ctx.strokeStyle = 'black';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(parentCenterX, parentBottomY);
+      ctx.lineTo(childCenterX, childTopY);
+      ctx.stroke();
+    }
+
+
+    // Create a prime/composite box + (if composite) input controls
+    function createNumberLeaf({
+      value, centerX, topY, totalAnum, segmentLeft, segmentRight, ctx
+    }) {
+      const isP = isPrime(value);
+      const box = document.createElement('div');
+      box.className = isP ? 'prime-box' : 'composite-box';
+      box.textContent = value.toString();
+      activityBox.appendChild(box);
+      placeCentered(box, centerX, topY);
+    
+      // If prime, no controls — return the box only.
+      if (isP) return { box, value, leaf: true };
+    
+      // Otherwise, add controls to try a divisor.
+      const controls = document.createElement('div');
+      controls.className = 'leaf-controls';
+      placeCentered(controls, centerX, topY + 88); // 8px below the 80px box
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.placeholder = 'Enter divisor';
+      input.min = '2';
+      input.step = '1';
+    
+      const tryBtn = document.createElement('button');
+      tryBtn.className = 'rubber-button';
+      tryBtn.textContent = 'Try Divisor';
+    
+      controls.appendChild(input);
+      controls.appendChild(tryBtn);
+      activityBox.appendChild(controls);
+    
+      // Click handler for factor attempt on THIS leaf only.
+      tryBtn.addEventListener('click', () => {
+        const c = parseInt(input.value, 10);
+        if (!c || c < 2) return;
+        if (value % c !== 0) return; // do nothing if not a divisor
+    
+        const d = value / c;
+        // Compute factor counts
+        const cnum = primeFactorCount(c);
+        const dnum = primeFactorCount(d);
+    
+        // Reserve horizontal widths based on the ORIGINAL anum
+        const totalWidth = 1300;
+        const leftWidth = totalWidth * (cnum / totalAnum);
+        const rightWidth = totalWidth * (dnum / totalAnum);
+    
+        // Determine child centers inside their respective segments
+        const leftCenter = (segmentLeft ?? 0) + leftWidth / 2;
+        const rightCenter = (segmentRight ?? totalWidth) - rightWidth / 2;
+    
+        // Remove this node’s controls
+        controls.remove();
+    
+        // Create left (c) and right (d) children 80px lower
+        const childTop = topY + 80;
+    
+        const leftChild = createNumberLeaf({
+          value: c,
+          centerX: leftCenter,
+          topY: childTop,
+          totalAnum,
+          segmentLeft: (segmentLeft ?? 0),
+          segmentRight: (segmentLeft ?? 0) + leftWidth,
+          ctx
+        });
+    
+        const rightChild = createNumberLeaf({
+          value: d,
+          centerX: rightCenter,
+          topY: childTop,
+          totalAnum,
+          segmentLeft: (segmentRight ?? totalWidth) - rightWidth,
+          segmentRight: (segmentRight ?? totalWidth),
+          ctx
+        });
+    
+        // Draw connectors
+        connectBoxes(ctx, box, leftChild.box);
+        connectBoxes(ctx, box, rightChild.box);
+      });
+    
+      return { box, value, leaf: false };
+    }
+
+
     
 
     
@@ -160,9 +296,27 @@ fetch("/nav.html")
     
     const ctx = canvas.getContext('2d');
     
-    // Draw the universal set rectangle
     ctx.strokeStyle = 'black';
     ctx.lineWidth = 4;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // 1) Place 'a' at the top center in a composite box (it will be prime-colored if a happens to be prime)
+    const topCenterX = 650; // 1300 / 2
+    const topY = 20;
+    
+    // total prime factor count of ORIGINAL 'a' (already computed in your code as 'anum')
+    const root = createNumberLeaf({
+      value: a,
+      centerX: topCenterX,
+      topY: topY,
+      totalAnum: anum,
+      // Root owns the full 0..1300 segment
+      segmentLeft: 0,
+      segmentRight: 1300,
+      ctx
+    });
+
 
   });
 

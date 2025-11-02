@@ -577,66 +577,73 @@ main {
 }
 
 
-/* --- Exponent stage (second activity) --- */
-.activity-box-medish {
-  position: relative; /* ensure local positioning */
+/* second activity container */
+.activity-box-short {
+  position: relative;
+  height: 150px;
+  padding-top: 20px;             /* shift rows down 20px */
 }
 
-/* Horizontal rows of terms (top = a, bottom = b) */
+/* one whole line (left = interactive, right = result) */
+.exp-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 6px 12px;
+}
+
+/* interactive rows on the left */
 .exp-row {
   display: flex;
-  gap: 18px;
+  gap: 12px;                     /* ↓ slightly tighter */
   align-items: baseline;
-  padding: 10px 16px;
   font-size: 20px;
 }
 
-/* One "p^?" term */
+/* “p^?” term */
 .exp-term {
   display: inline-flex;
   align-items: baseline;
-  gap: 4px;
+  gap: 2px;                      /* ↓ slightly tighter */
   font-family: 'Comic Sans MS', cursive, sans-serif;
 }
 
-/* small superscript input */
-.exp-sup {
-  position: relative;
-  top: -0.6em;
+/* the small '×' between factors */
+.exp-times {
+  margin: 0 2px;                 /* ↓ slightly tighter */
 }
 
+/* superscripts */
+.exp-sup { position: relative; top: -0.6em; }
+
+/* input */
 .exp-input {
-  width: 36px;
+  width: 34px;                   /* short input */
   height: 26px;
   font-size: 16px;
   text-align: center;
   border: 2px solid #1a1a4b;
   border-radius: 6px;
-  padding: 0 4px;
+  padding: 0 2px;
 }
 
-/* Little result box that replaces the input when correct */
+/* little colored box that replaces input on correct answer */
 .expo-box {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 30px;
-  height: 26px;
-  padding: 0 6px;
-  font-size: 16px;
-  font-weight: 700;
-  border: 2px solid #1a1a4b;
-  border-radius: 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 28px; height: 26px; padding: 0 6px;
+  font-size: 16px; font-weight: 700;
+  border: 2px solid #1a1a4b; border-radius: 6px;
   box-shadow: 1px 1px 0 #1a1a4b;
-  position: relative;
-  top: -0.6em; /* keep superscript alignment */
+  position: relative; top: -0.6em;
 }
+.expo-box.min { background: #ff6b6b; }                    /* red (min) */
+.expo-box.max { background: #7fe77f; }                    /* green (max) */
+.expo-box.equal { background: linear-gradient(90deg, #ff6b6b 50%, #7fe77f 50%); }
 
-/* Colors for min/max/equal */
-.expo-box.min { background: #ff6b6b; }    /* red */
-.expo-box.max { background: #7fe77f; }    /* green */
-.expo-box.equal {
-  background: linear-gradient(90deg, #ff6b6b 50%, #7fe77f 50%);
+/* right-hand result rows (gcd / lcm) */
+.exp-result {
+  display: flex;
+  gap: 12px;                     /* match left */
+  align-items: baseline;
+  font-size: 20px;
 }
-
-

@@ -276,7 +276,7 @@ fetch("/nav.html")
     
       // Insert prompt
       const q2 = document.createElement('p');
-      q2.textContent = 'Fill in the exponents in the prime factorizations.  Observe the gcd takes the maximums of the exponents, and the lcm takes the minimums.';
+      q2.textContent = 'Fill in the exponents in the prime factorizations.  Observe the gcd takes the minimums of the exponents, and the lcm takes the maximums.';
       activityBox.parentElement.appendChild(q2);
       q2.style.textAlign = 'center';
       q2.style.fontWeight = 'bold';
@@ -364,25 +364,26 @@ fetch("/nav.html")
       const tryPopulateForPrime = (p) => {
         if (!filledA.has(p) || !filledB.has(p)) return;
         const aExp = filledA.get(p), bExp = filledB.get(p);
-    
-        // gcd side: green MAX
+      
+        // gcd side: RED MIN
         const gSup = gcdRow.querySelector(`.exp-sup[data-prime="${p}"]`);
         if (gSup && !gSup.firstChild) {
           const gBox = document.createElement('span');
-          gBox.className = 'expo-box max';
-          gBox.textContent = String(Math.max(aExp, bExp));
+          gBox.className = 'expo-box min';
+          gBox.textContent = String(Math.min(aExp, bExp));
           gSup.appendChild(gBox);
         }
-    
-        // lcm side: red MIN
+      
+        // lcm side: GREEN MAX
         const lSup = lcmRow.querySelector(`.exp-sup[data-prime="${p}"]`);
         if (lSup && !lSup.firstChild) {
           const lBox = document.createElement('span');
-          lBox.className = 'expo-box min';
-          lBox.textContent = String(Math.min(aExp, bExp));
+          lBox.className = 'expo-box max';
+          lBox.textContent = String(Math.max(aExp, bExp));
           lSup.appendChild(lBox);
         }
       };
+
     
       const rowA = makeInteractiveRow('a', fa, fb, (p, e) => { filledA.set(p, e); tryPopulateForPrime(p); });
       const rowB = makeInteractiveRow('b', fb, fa, (p, e) => { filledB.set(p, e); tryPopulateForPrime(p); });

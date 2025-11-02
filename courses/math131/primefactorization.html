@@ -84,19 +84,6 @@ fetch("/nav.html")
     }
 
 
-    function createFixedExponentBox(text, x, y, boxSize = 80, fontSize = 28) {
-      const box = document.createElement('div');
-      box.classList.add('exponent-box');
-      box.style.left = `${x}px`;
-      box.style.top = `${y}px`;
-      box.style.width = `${boxSize}px`;
-      box.style.height = `${boxSize}px`;
-      box.style.fontSize = `${fontSize}px`;
-      box.textContent = text;
-      activityBox.appendChild(box);
-      return box;
-    }
-
     // --- Utilities ---
     function isPrime(n) {
       if (n < 2) return false;

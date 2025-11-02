@@ -183,7 +183,7 @@ fetch("/nav.html")
     
         controls.remove();
     
-        const childTop = topY + boxHeight; // was +80; now uses boxHeight
+        const childTop = topY + 110; // increased vertical spacing between generations
     
         const leftChild = createNumberLeaf({
           value: c,
@@ -290,7 +290,7 @@ fetch("/nav.html")
     
     // Layout constants for side-by-side trees
     const halfWidth = 650;
-    const boxH = 64;         // compact box height
+    const boxH = 60;         // compact box height
     const topY = 12;         // a bit tighter top padding
     
     // --- LEFT: a ---

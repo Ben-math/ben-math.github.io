@@ -551,6 +551,12 @@ main {
   position: relative; /* already recommended earlier */
 }
 
+/* Give extra vertical space only for compact (prime factorization) version */
+.activity-box.compact {
+  height: 750px; /* increased from 650px */
+}
+
+
 .activity-box.compact .prime-box,
 .activity-box.compact .composite-box {
   height: 60px;        /* ↓ from 64 */

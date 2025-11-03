@@ -690,7 +690,7 @@ main {
 
 /* make the left and right regular fractions (a/b = … = a'/b') bigger */
 .reduce-wrap > span {
-  font-size: 200%;      /* increases font size */
+  font-size: 180%;      /* increases font size */
   line-height: 1.1;
 }
 

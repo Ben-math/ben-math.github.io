@@ -595,7 +595,7 @@ main {
 /* interactive rows on the left */
 .exp-row {
   display: flex;
-  gap: 12px;                     /* ↓ slightly tighter */
+  gap: 4px;                     /* ↓ slightly tighter */
   align-items: baseline;
   font-size: 20px;
 }

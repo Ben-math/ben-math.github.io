@@ -680,3 +680,17 @@ main {
 /* reuse stage-2 input sizing */
 .reduce-times { margin: 0 2px; } /* tighter × spacing */
 
+
+/* --- Adjustments for reduction fraction layout --- */
+
+/* shift denominator down slightly so exponents don't intersect the bar */
+.reduce-den {
+  transform: translateY(20px);
+}
+
+/* make the left and right regular fractions (a/b = … = a'/b') bigger */
+.reduce-wrap > span {
+  font-size: 180%;      /* increases font size */
+  line-height: 1.1;
+}
+

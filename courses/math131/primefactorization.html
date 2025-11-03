@@ -729,12 +729,12 @@ fetch("/nav.html")
       const e = Math.floor(Math.random() * 10) + 1;
     
       // Row 1: d/a (shift down 40px)
-      const r1 = buildRow(d, fa, `\\(\\dfrac{${d}}{${aVal}}\\)`, 40, (num) => {
+      const r1 = buildRow(d, fa, `\\(\\dfrac{${d}}{${aVal}}\\)`, 30, (num) => {
         row1FinalNum = num;
         tryShowSum();
       });
       // Row 2: e/b (shift down 100px)
-      const r2 = buildRow(e, fb, `\\(\\dfrac{${e}}{${bVal}}\\)`, 100, (num) => {
+      const r2 = buildRow(e, fb, `\\(\\dfrac{${e}}{${bVal}}\\)`, 50, (num) => {
         row2FinalNum = num;
         tryShowSum();
       });

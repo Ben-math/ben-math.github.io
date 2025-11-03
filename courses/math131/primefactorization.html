@@ -675,7 +675,11 @@ fetch("/nav.html")
       b5 = Math.floor(Math.random() * 2.75);
       b7 = Math.floor(Math.random() * 1.75);
       b11 = Math.floor(Math.random() * 1.5);
-      bn = Math.floor(Math.random() * 1.5);
+      if (an == 1) {
+        bn = 0;
+      } else {
+        bn = Math.floor(Math.random() * 1.5);
+      }
     }
 
     bntype = primes[Math.floor(Math.random() * 10)];

@@ -506,7 +506,7 @@ fetch("/nav.html")
       }
       const lcmValue = valueFromMap(lcmExp);
     
-      // Simple factor map for tiny integers (1..10) used in numerators d and e
+      // factor map for small numerators (1..10)
       function factorMapSmall(n) {
         const m = new Map();
         let x = n;
@@ -517,27 +517,48 @@ fetch("/nav.html")
         return m;
       }
     
-      // UI: question text
+      // Question text
       const q4 = document.createElement('p');
       q4.textContent = 'Add the following 2 fractions, by giving them a common denominator.  To do this, turn the denominator into the lcm, by adding the same number to both the top and bottom exponents.';
       q4.style.textAlign = 'center';
       q4.style.fontWeight = 'bold';
       activityBox.parentElement.appendChild(q4);
     
-      // Container (use activity-box-med)
+      // Container (activity-box-med)
       const box4 = document.createElement('div');
       box4.className = 'activity-box-med';
       box4.id = 'common-denominator-activity';
       box4.style.marginTop = '10px';
       activityBox.parentElement.appendChild(box4);
     
-      // Build one row like Stage 3: left MathJax = mid locked = right interactive (= final numeric after correct)
-      function buildRow(numerVal, denMap, rowLabelLatex, rowOffsetPx) {
+      // Track final numeric fractions after each row is solved
+      let row1FinalNum = null;
+      let row2FinalNum = null;
+    
+      function tryShowSum() {
+        if (row1FinalNum == null || row2FinalNum == null) return;
+    
+        // Show the final sum below box4
+        const sumP = document.createElement('p');
+        sumP.style.textAlign = 'center';
+        sumP.style.fontWeight = 'bold';
+    
+        // \dfrac{N1}{L} + \dfrac{N2}{L} = \dfrac{N1+N2}{L}
+        const totalNum = row1FinalNum + row2FinalNum;
+        sumP.textContent = `\\(\\dfrac{${row1FinalNum}}{${lcmValue}} + \\dfrac{${row2FinalNum}}{${lcmValue}} = \\dfrac{${totalNum}}{${lcmValue}}\\)`;
+        box4.parentElement.appendChild(sumP);
+    
+        if (window.MathJax?.typeset) MathJax.typeset([sumP]);
+      }
+    
+      // Build one row (left MathJax = mid locked = right interactive = numeric with LCM)
+      function buildRow(numerVal, denMap, rowLabelLatex, rowOffsetPx, onSolvedNumeric) {
         const wrap = document.createElement('div');
         wrap.className = 'reduce-wrap';
-        wrap.style.marginTop = `${rowOffsetPx}px`;   // vertical offset per row
+        wrap.style.marginTop = `${rowOffsetPx}px`;
     
-        const leftFrac = document.createElement('span');  // larger via CSS already
+        // Left: small fraction (e.g., d/a or e/b)
+        const leftFrac = document.createElement('span');
         leftFrac.textContent = rowLabelLatex;
     
         const eq1 = document.createElement('span');
@@ -578,9 +599,7 @@ fetch("/nav.html")
         eq2.className = 'reduce-equals';
         eq2.textContent = '=';
     
-        // Interactive right side targets:
-        // denominator -> lcmExp
-        // numerator -> (numerMap + (lcmExp - denMap)) per prime
+        // Interactive right side targets: denominator -> LCM; numerator -> numerMap + (LCM - denMap)
         const targetDen = new Map();
         const targetNum = new Map();
         primesUnion.forEach(p => {
@@ -596,7 +615,7 @@ fetch("/nav.html")
         const interTop = document.createElement('div'); interTop.className = 'reduce-num';
         const interBot = document.createElement('div'); interBot.className = 'reduce-den';
     
-        // Build interactive rows with inputs
+        // Inputs with correctness tracking
         const correctNum = new Map();
         const correctDen = new Map();
         let finalShown = false;
@@ -609,6 +628,7 @@ fetch("/nav.html")
           }
           // All good on this row -> append "= numericFractionWithLCM"
           finalShown = true;
+    
           const eq3 = document.createElement('span');
           eq3.className = 'reduce-equals';
           eq3.textContent = '=';
@@ -629,6 +649,9 @@ fetch("/nav.html")
           wrap.appendChild(eq3);
           wrap.appendChild(rightFrac);
           if (window.MathJax?.typeset) MathJax.typeset([wrap]);
+    
+          // notify outer to maybe show the sum
+          onSolvedNumeric(finalNum);
         }
     
         function addPrimeWithInput(rowEl, p, target, setCorrectMap) {
@@ -694,17 +717,29 @@ fetch("/nav.html")
         box4.appendChild(wrap);
     
         if (window.MathJax?.typeset) MathJax.typeset([wrap]);
+    
+        // Return a way to capture the numeric result when solved
+        return {
+          reportSolved: (n) => onSolvedNumeric(n)
+        };
       }
     
-      // Random small numerators d/e
+      // Random numerators d/e
       const d = Math.floor(Math.random() * 10) + 1;
       const e = Math.floor(Math.random() * 10) + 1;
     
       // Row 1: d/a (shift down 40px)
-      buildRow(d, fa, `\\(\\dfrac{${d}}{${aVal}}\\)`, 30);
+      const r1 = buildRow(d, fa, `\\(\\dfrac{${d}}{${aVal}}\\)`, 40, (num) => {
+        row1FinalNum = num;
+        tryShowSum();
+      });
       // Row 2: e/b (shift down 100px)
-      buildRow(e, fb, `\\(\\dfrac{${e}}{${bVal}}\\)`, 50);
+      const r2 = buildRow(e, fb, `\\(\\dfrac{${e}}{${bVal}}\\)`, 100, (num) => {
+        row2FinalNum = num;
+        tryShowSum();
+      });
     }
+
 
 
 

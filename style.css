@@ -712,3 +712,12 @@ main {
   font-size: 90%;
 }
 
+/* Scope to the second activity only */
+#exponent-activity .exp-result { 
+  gap: 4px;              /* tighten wrapper spacing */
+}
+
+/* Slightly reduce the space after the "gcd(a,b) =" / "lcm(a,b) =" label */
+#exponent-activity .exp-result > span:first-child {
+  margin-right: 4px;
+}

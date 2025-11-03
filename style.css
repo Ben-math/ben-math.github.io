@@ -696,7 +696,7 @@ main {
 
 
 /* 1) Tighter spacing between primes and × across the activity */
-.exp-row { gap: 6px; }          /* was 12px */
+.exp-row { gap: 4px; }          /* was 12px */
 .exp-term { gap: 1px; }         /* was 2px */
 .exp-times { margin: 0 1px; }   /* was 0 2px */
 

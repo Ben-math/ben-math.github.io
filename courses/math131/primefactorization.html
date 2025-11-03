@@ -267,7 +267,7 @@ fetch("/nav.html")
     }
 
 
-    // Stage 3: after all stage-2 exponents are filled, render reduction activity
+    /// Stage 3: after all stage-2 exponents are filled, render reduction activity
     function maybeRenderReductionStage(aVal, bVal, fa, fb, primesUnion) {
       // Compute gcd exponents (mins)
       const gcdExp = new Map();
@@ -287,7 +287,7 @@ fetch("/nav.html")
     
       // Question paragraph
       const q3 = document.createElement('p');
-      q3.textContent = 'Reduce the following fraction to lowest form, by dividing the numerator and denominator by the gcd.  That is, subtract the gcd exponent from the exponents on a and b.';
+      q3.textContent = 'Reduce the following fraction to lowest form, by dividing the numerator and denominator by the gcd.';
       q3.style.textAlign = 'center';
       q3.style.fontWeight = 'bold';
       activityBox.parentElement.appendChild(q3);
@@ -299,16 +299,69 @@ fetch("/nav.html")
       box3.style.marginTop = '10px';
       activityBox.parentElement.appendChild(box3);
     
-      // Left: MathJax fraction a/b
+      // Left: MathJax fraction a/b (large via CSS)
       const leftFrac = document.createElement('span');
       leftFrac.textContent = `\\(\\dfrac{${aVal}}{${bVal}}\\)`;
     
-      // Middle: "="
+      // "="
       const eq1 = document.createElement('span');
       eq1.className = 'reduce-equals';
       eq1.textContent = '=';
     
-      // Interactive prime-factor fraction with inputs
+      // ---------- Non-interactive prime-decomposition fraction ----------
+      const midFrac = document.createElement('div');
+      midFrac.className = 'reduce-frac';
+    
+      const midNumRow = document.createElement('div'); midNumRow.className = 'reduce-num';
+      const midDenRow = document.createElement('div'); midDenRow.className = 'reduce-den';
+    
+      function addLockedPrime(rowEl, p, exp) {
+        if (rowEl.children.length > 0) {
+          const times = document.createElement('span');
+          times.className = 'reduce-times';
+          times.textContent = '×';
+          rowEl.appendChild(times);
+        }
+        const term = document.createElement('span');
+        term.className = 'exp-term';
+    
+        const baseSpan = document.createElement('span');
+        baseSpan.textContent = String(p);
+        term.appendChild(baseSpan);
+    
+        const sup = document.createElement('span');
+        sup.className = 'exp-sup';
+    
+        const box = document.createElement('span');
+        box.className = 'expo-box';
+        box.textContent = String(exp);
+        sup.appendChild(box);
+    
+        term.appendChild(sup);
+        rowEl.appendChild(term);
+      }
+    
+      // Build non-interactive numerator/denominator from original exponents
+      primesUnion.forEach(p => addLockedPrime(midNumRow, p, fa.get(p) || 0));
+      primesUnion.forEach(p => addLockedPrime(midDenRow, p, fb.get(p) || 0));
+    
+      // bar for mid fraction
+      const midBar = document.createElement('div');
+      midBar.style.height = '2px';
+      midBar.style.width = '100%';
+      midBar.style.background = '#1a1a4b';
+      midBar.style.margin = '2px 0';
+    
+      midFrac.appendChild(midNumRow);
+      midFrac.appendChild(midBar);
+      midFrac.appendChild(midDenRow);
+    
+      // "=" between mid and interactive
+      const eqMid = document.createElement('span');
+      eqMid.className = 'reduce-equals';
+      eqMid.textContent = '=';
+    
+      // ---------- Interactive prime-factor fraction with inputs ----------
       const fracBlock = document.createElement('div');
       fracBlock.className = 'reduce-frac';
     
@@ -346,7 +399,7 @@ fetch("/nav.html")
         if (window.MathJax?.typeset) MathJax.typeset([wrap]);
       }
     
-      // Build a row like Stage 2 (product of primes with exponent inputs)
+      // Build interactive rows like Stage 2 (targets a-g, b-g)
       function addPrimeWithInput(rowEl, p, targetMap, setCorrectMap) {
         if (rowEl.children.length > 0) {
           const times = document.createElement('span');
@@ -377,9 +430,8 @@ fetch("/nav.html")
           if (!Number.isInteger(val) || val < 0) return;
           if (val !== target) return;
     
-          // lock in with a neutral little box (no color request for stage 3)
           const box = document.createElement('span');
-          box.className = 'expo-box'; // uncolored
+          box.className = 'expo-box'; // neutral color for stage 3
           box.textContent = String(target);
           sup.replaceChild(box, input);
     
@@ -395,27 +447,30 @@ fetch("/nav.html")
       primesUnion.forEach(p => addPrimeWithInput(numRow, p, targetNum, (q, ok) => correctNum.set(q, ok)));
       primesUnion.forEach(p => addPrimeWithInput(denRow, p, targetDen, (q, ok) => correctDen.set(q, ok)));
     
-      // Assemble the middle interactive block
-      fracBlock.appendChild(numRow);
-      // a small horizontal rule feel using a thin div (optional)
+      // bar for interactive fraction
       const bar = document.createElement('div');
       bar.style.height = '2px';
       bar.style.width = '100%';
       bar.style.background = '#1a1a4b';
       bar.style.margin = '2px 0';
+    
+      fracBlock.appendChild(numRow);
       fracBlock.appendChild(bar);
       fracBlock.appendChild(denRow);
     
-      // Wrap the whole line:  a/b  =  [interactive reduced fraction]
+      // Wrap the whole line:  a/b  =  [mid fraction]  =  [interactive fraction]  (= final)
       const wrap = document.createElement('div');
       wrap.className = 'reduce-wrap';
       wrap.appendChild(leftFrac);
       wrap.appendChild(eq1);
+      wrap.appendChild(midFrac);
+      wrap.appendChild(eqMid);
       wrap.appendChild(fracBlock);
       box3.appendChild(wrap);
     
       if (window.MathJax?.typeset) MathJax.typeset([wrap]);
     }
+
     
     // helper to compute gcd(a,b) from factor maps
     function computeGCDFromMaps(fa, fb) {

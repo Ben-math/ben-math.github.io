@@ -647,3 +647,36 @@ main {
   align-items: baseline;
   font-size: 20px;
 }
+
+
+/* --- Stage 3: reduction fraction --- */
+.reduce-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 12px;
+  justify-content: center;
+}
+
+/* simple stacked fraction block with inputs like stage 2 */
+.reduce-frac {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.reduce-num, .reduce-den {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.reduce-equals {
+  font-weight: 700;
+  margin: 0 8px;
+}
+
+/* reuse stage-2 input sizing */
+.reduce-times { margin: 0 2px; } /* tighter × spacing */
+

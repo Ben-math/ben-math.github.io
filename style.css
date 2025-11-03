@@ -696,7 +696,7 @@ main {
 
 
 /* 1) Tighter spacing between primes and × across the activity */
-.exp-row { gap: 8px; }          /* was 12px */
+.exp-row { gap: 6px; }          /* was 12px */
 .exp-term { gap: 1px; }         /* was 2px */
 .exp-times { margin: 0 1px; }   /* was 0 2px */
 
@@ -705,7 +705,7 @@ main {
 .reduce-times { margin: 0 1px; }         /* was 0 2px */
 
 /* 2) Stage 3: reduce distance between fractions and equals signs */
-.reduce-wrap { gap: 8px; }      /* was 16px */
+.reduce-wrap { gap: 6px; }      /* was 16px */
 .reduce-equals { margin: 0 4px; }  /* was 0 8px in effect */
 
 #exponent-activity {

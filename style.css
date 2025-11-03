@@ -708,3 +708,7 @@ main {
 .reduce-wrap { gap: 8px; }      /* was 16px */
 .reduce-equals { margin: 0 4px; }  /* was 0 8px in effect */
 
+#exponent-activity {
+  font-size: 90%;
+}
+

@@ -265,6 +265,170 @@ fetch("/nav.html")
     
       return wrap;
     }
+
+
+    // Stage 3: after all stage-2 exponents are filled, render reduction activity
+    function maybeRenderReductionStage(aVal, bVal, fa, fb, primesUnion) {
+      // Compute gcd exponents (mins)
+      const gcdExp = new Map();
+      primesUnion.forEach(p => {
+        const ea = fa.get(p) || 0, eb = fb.get(p) || 0;
+        gcdExp.set(p, Math.min(ea, eb));
+      });
+    
+      // Target exponents after dividing by gcd:
+      const targetNum = new Map();  // a - gcd
+      const targetDen = new Map();  // b - gcd
+      primesUnion.forEach(p => {
+        const ea = fa.get(p) || 0, eb = fb.get(p) || 0, g = gcdExp.get(p) || 0;
+        targetNum.set(p, ea - g);
+        targetDen.set(p, eb - g);
+      });
+    
+      // Question paragraph
+      const q3 = document.createElement('p');
+      q3.textContent = 'Reduce the following fraction to lowest form, by dividing the numerator and denominator by the gcd.';
+      q3.style.textAlign = 'center';
+      q3.style.fontWeight = 'bold';
+      activityBox.parentElement.appendChild(q3);
+    
+      // Box
+      const box3 = document.createElement('div');
+      box3.className = 'activity-box-short';
+      box3.id = 'reduction-activity';
+      box3.style.marginTop = '10px';
+      activityBox.parentElement.appendChild(box3);
+    
+      // Left: MathJax fraction a/b
+      const leftFrac = document.createElement('span');
+      leftFrac.textContent = `\\(\\dfrac{${aVal}}{${bVal}}\\)`;
+    
+      // Middle: "="
+      const eq1 = document.createElement('span');
+      eq1.className = 'reduce-equals';
+      eq1.textContent = '=';
+    
+      // Interactive prime-factor fraction with inputs
+      const fracBlock = document.createElement('div');
+      fracBlock.className = 'reduce-frac';
+    
+      const numRow = document.createElement('div'); numRow.className = 'reduce-num';
+      const denRow = document.createElement('div'); denRow.className = 'reduce-den';
+    
+      // Track correctness
+      const correctNum = new Map();
+      const correctDen = new Map();
+      let finalShown = false;
+    
+      function maybeShowFinal() {
+        if (finalShown) return;
+        // Check all primes satisfied in both rows
+        for (const p of primesUnion) {
+          if (correctNum.get(p) !== true) return;
+          if (correctDen.get(p) !== true) return;
+        }
+        // All good -> show "= reduced"
+        finalShown = true;
+        const g = computeGCDFromMaps(fa, fb); // helper below
+        const aReduced = Math.trunc(aVal / g);
+        const bReduced = Math.trunc(bVal / g);
+    
+        const eq2 = document.createElement('span');
+        eq2.className = 'reduce-equals';
+        eq2.textContent = '=';
+    
+        const rightFrac = document.createElement('span');
+        rightFrac.textContent = `\\(\\dfrac{${aReduced}}{${bReduced}}\\)`;
+    
+        wrap.appendChild(eq2);
+        wrap.appendChild(rightFrac);
+    
+        if (window.MathJax?.typeset) MathJax.typeset([wrap]);
+      }
+    
+      // Build a row like Stage 2 (product of primes with exponent inputs)
+      function addPrimeWithInput(rowEl, p, targetMap, setCorrectMap) {
+        if (rowEl.children.length > 0) {
+          const times = document.createElement('span');
+          times.className = 'reduce-times';
+          times.textContent = '×';
+          rowEl.appendChild(times);
+        }
+    
+        const term = document.createElement('span');
+        term.className = 'exp-term';
+    
+        const baseSpan = document.createElement('span');
+        baseSpan.textContent = String(p);
+        term.appendChild(baseSpan);
+    
+        const sup = document.createElement('span');
+        sup.className = 'exp-sup';
+    
+        const target = targetMap.get(p) || 0;
+    
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.className = 'exp-input';
+        input.min = '0'; input.step = '1'; input.placeholder = '…';
+    
+        input.addEventListener('change', () => {
+          const val = Number(input.value);
+          if (!Number.isInteger(val) || val < 0) return;
+          if (val !== target) return;
+    
+          // lock in with a neutral little box (no color request for stage 3)
+          const box = document.createElement('span');
+          box.className = 'expo-box'; // uncolored
+          box.textContent = String(target);
+          sup.replaceChild(box, input);
+    
+          setCorrectMap(p, true);
+          maybeShowFinal();
+        });
+    
+        sup.appendChild(input);
+        term.appendChild(sup);
+        rowEl.appendChild(term);
+      }
+    
+      primesUnion.forEach(p => addPrimeWithInput(numRow, p, targetNum, (q, ok) => correctNum.set(q, ok)));
+      primesUnion.forEach(p => addPrimeWithInput(denRow, p, targetDen, (q, ok) => correctDen.set(q, ok)));
+    
+      // Assemble the middle interactive block
+      fracBlock.appendChild(numRow);
+      // a small horizontal rule feel using a thin div (optional)
+      const bar = document.createElement('div');
+      bar.style.height = '2px';
+      bar.style.width = '100%';
+      bar.style.background = '#1a1a4b';
+      bar.style.margin = '2px 0';
+      fracBlock.appendChild(bar);
+      fracBlock.appendChild(denRow);
+    
+      // Wrap the whole line:  a/b  =  [interactive reduced fraction]
+      const wrap = document.createElement('div');
+      wrap.className = 'reduce-wrap';
+      wrap.appendChild(leftFrac);
+      wrap.appendChild(eq1);
+      wrap.appendChild(fracBlock);
+      box3.appendChild(wrap);
+    
+      if (window.MathJax?.typeset) MathJax.typeset([wrap]);
+    }
+    
+    // helper to compute gcd(a,b) from factor maps
+    function computeGCDFromMaps(fa, fb) {
+      let g = 1;
+      const keys = new Set([...fa.keys(), ...fb.keys()]);
+      keys.forEach(p => {
+        const ea = fa.get(p) || 0, eb = fb.get(p) || 0;
+        const e = Math.min(ea, eb);
+        if (e > 0) g *= p ** e;
+      });
+      return g;
+    }
+
     
     // Called when both trees are fully factored; renders inputs + gcd/lcm shells
     function maybeRenderExponentStage(aVal, bVal) {
@@ -273,6 +437,7 @@ fetch("/nav.html")
       const fa = factorMap(aVal);
       const fb = factorMap(bVal);
       const primesUnion = Array.from(new Set([...fa.keys(), ...fb.keys()])).sort((x, y) => x - y);
+      let stage3Started = false; // ensure we only render stage 3 once
     
       // Insert prompt
       const q2 = document.createElement('p');
@@ -382,6 +547,15 @@ fetch("/nav.html")
           lBox.textContent = String(Math.max(aExp, bExp));
           lSup.appendChild(lBox);
         }
+
+        // If both rows have all primes filled, start stage 3 once
+        if (!stage3Started &&
+            filledA.size === primesUnion.length &&
+            filledB.size === primesUnion.length) {
+          stage3Started = true;
+          maybeRenderReductionStage(aVal, bVal, fa, fb, primesUnion);
+        }
+
       };
 
     

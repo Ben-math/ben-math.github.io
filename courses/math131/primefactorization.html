@@ -269,6 +269,8 @@ fetch("/nav.html")
 
     /// Stage 3: after all stage-2 exponents are filled, render reduction activity
     function maybeRenderReductionStage(aVal, bVal, fa, fb, primesUnion) {
+
+      let stage4Started = false;
       // Compute gcd exponents (mins)
       const gcdExp = new Map();
       primesUnion.forEach(p => {
@@ -397,6 +399,10 @@ fetch("/nav.html")
         wrap.appendChild(rightFrac);
     
         if (window.MathJax?.typeset) MathJax.typeset([wrap]);
+        if (!stage4Started) {
+          stage4Started = true;
+          maybeRenderCommonDenominatorStage(aVal, bVal, fa, fb, primesUnion);
+        }
       }
     
       // Build interactive rows like Stage 2 (targets a-g, b-g)
@@ -483,6 +489,246 @@ fetch("/nav.html")
       });
       return g;
     }
+
+
+    function maybeRenderCommonDenominatorStage(aVal, bVal, fa, fb, primesUnion) {
+      // Build LCM exponents (max per prime)
+      const lcmExp = new Map();
+      primesUnion.forEach(p => {
+        lcmExp.set(p, Math.max(fa.get(p) || 0, fb.get(p) || 0));
+      });
+    
+      // Simple factor map for tiny integers (1..10) used in numerators d and e
+      function factorMapSmall(n) {
+        const m = new Map();
+        let x = n;
+        for (let p = 2; p * p <= x; p++) {
+          while (x % p === 0) { m.set(p, (m.get(p) || 0) + 1); x = Math.trunc(x / p); }
+        }
+        if (x > 1) m.set(x, (m.get(x) || 0) + 1);
+        return m;
+      }
+    
+      // UI: question text
+      const q4 = document.createElement('p');
+      q4.textContent = 'Add the following 2 fractions, by giving them a common denominator.  To do this, turn the denominator into the lcm, by adding the same number to both the top and bottom exponents.';
+      q4.style.textAlign = 'center';
+      q4.style.fontWeight = 'bold';
+      activityBox.parentElement.appendChild(q4);
+    
+      // Container
+      const box4 = document.createElement('div');
+      box4.className = 'activity-box-medish';
+      box4.id = 'common-denominator-activity';
+      box4.style.marginTop = '10px';
+      activityBox.parentElement.appendChild(box4);
+    
+      // Helpers reused from Stage 3 styles/classes:
+      function mkLockedTermRow(primeToExp) {
+        const numRow = document.createElement('div'); numRow.className = 'reduce-num';
+        const denRow = document.createElement('div'); denRow.className = 'reduce-den';
+    
+        function addLockedPrime(rowEl, p, exp) {
+          if (rowEl.children.length > 0) {
+            const times = document.createElement('span');
+            times.className = 'reduce-times';
+            times.textContent = '×';
+            rowEl.appendChild(times);
+          }
+          const term = document.createElement('span');
+          term.className = 'exp-term';
+    
+          const baseSpan = document.createElement('span');
+          baseSpan.textContent = String(p);
+          term.appendChild(baseSpan);
+    
+          const sup = document.createElement('span');
+          sup.className = 'exp-sup';
+    
+          const box = document.createElement('span');
+          box.className = 'expo-box';
+          box.textContent = String(exp);
+          sup.appendChild(box);
+    
+          term.appendChild(sup);
+          rowEl.appendChild(term);
+        }
+    
+        return { numRow, denRow, addLockedPrime };
+      }
+    
+      function mkInteractiveTermRow(targetNumMap, targetDenMap, onRowSolved) {
+        const numRow = document.createElement('div'); numRow.className = 'reduce-num';
+        const denRow = document.createElement('div'); denRow.className = 'reduce-den';
+    
+        const correctNum = new Map();
+        const correctDen = new Map();
+    
+        function checkSolved() {
+          for (const p of primesUnion) {
+            if (correctNum.get(p) !== true) return;
+            if (correctDen.get(p) !== true) return;
+          }
+          onRowSolved?.();
+        }
+    
+        function addPrimeWithInput(rowEl, p, target, setCorrectMap) {
+          if (rowEl.children.length > 0) {
+            const times = document.createElement('span');
+            times.className = 'reduce-times';
+            times.textContent = '×';
+            rowEl.appendChild(times);
+          }
+    
+          const term = document.createElement('span');
+          term.className = 'exp-term';
+    
+          const baseSpan = document.createElement('span');
+          baseSpan.textContent = String(p);
+          term.appendChild(baseSpan);
+    
+          const sup = document.createElement('span');
+          sup.className = 'exp-sup';
+    
+          const input = document.createElement('input');
+          input.type = 'number';
+          input.className = 'exp-input';
+          input.min = '0'; input.step = '1'; input.placeholder = '…';
+    
+          input.addEventListener('change', () => {
+            const val = Number(input.value);
+            if (!Number.isInteger(val) || val < 0) return;
+            if (val !== (target.get(p) || 0)) return;
+    
+            const box = document.createElement('span');
+            box.className = 'expo-box';
+            box.textContent = String(val);
+            sup.replaceChild(box, input);
+    
+            setCorrectMap(p, true);
+            checkSolved();
+          });
+    
+          sup.appendChild(input);
+          term.appendChild(sup);
+          rowEl.appendChild(term);
+        }
+    
+        primesUnion.forEach(p => addPrimeWithInput(numRow, p, targetNumMap, (q, ok) => { correctNum.set(q, ok); }));
+        primesUnion.forEach(p => addPrimeWithInput(denRow, p, targetDenMap, (q, ok) => { correctDen.set(q, ok); }));
+    
+        return { numRow, denRow };
+      }
+    
+      // Build one row like Stage 3 (left MathJax fraction =, mid locked fraction =, right interactive fraction)
+      function buildRow(numerVal, denMap, rowLabelLatex) {
+        const wrap = document.createElement('div');
+        wrap.className = 'reduce-wrap';
+    
+        const leftFrac = document.createElement('span');  // larger via CSS you already added
+        leftFrac.textContent = rowLabelLatex;
+    
+        const eq1 = document.createElement('span');
+        eq1.className = 'reduce-equals';
+        eq1.textContent = '=';
+    
+        // Non-interactive middle: locked decomposition of (numerVal)/(denominator)
+        const numerMap = factorMapSmall(numerVal);
+        // union is still primesUnion; show zeros where needed
+        const midBlock = document.createElement('div');
+        midBlock.className = 'reduce-frac';
+        const midTop = document.createElement('div'); midTop.className = 'reduce-num';
+        const midBot = document.createElement('div'); midBot.className = 'reduce-den';
+    
+        primesUnion.forEach(p => {
+          // numerator fixed
+          if (midTop.children.length > 0) {
+            const t = document.createElement('span'); t.className = 'reduce-times'; t.textContent = '×'; midTop.appendChild(t);
+          }
+          const term = document.createElement('span'); term.className = 'exp-term';
+          const base = document.createElement('span'); base.textContent = String(p); term.appendChild(base);
+          const sup = document.createElement('span'); sup.className = 'exp-sup';
+          const box = document.createElement('span'); box.className = 'expo-box'; box.textContent = String(numerMap.get(p) || 0);
+          sup.appendChild(box); term.appendChild(sup); midTop.appendChild(term);
+        });
+    
+        primesUnion.forEach(p => {
+          // denominator fixed from denMap
+          if (midBot.children.length > 0) {
+            const t = document.createElement('span'); t.className = 'reduce-times'; t.textContent = '×'; midBot.appendChild(t);
+          }
+          const term = document.createElement('span'); term.className = 'exp-term';
+          const base = document.createElement('span'); base.textContent = String(p); term.appendChild(base);
+          const sup = document.createElement('span'); sup.className = 'exp-sup';
+          const box = document.createElement('span'); box.className = 'expo-box'; box.textContent = String(denMap.get(p) || 0);
+          sup.appendChild(box); term.appendChild(sup); midBot.appendChild(term);
+        });
+    
+        const midBar = document.createElement('div');
+        midBar.style.height = '2px'; midBar.style.width = '100%';
+        midBar.style.background = '#1a1a4b'; midBar.style.margin = '2px 0';
+    
+        midBlock.appendChild(midTop);
+        midBlock.appendChild(midBar);
+        midBlock.appendChild(midBot);
+    
+        const eq2 = document.createElement('span');
+        eq2.className = 'reduce-equals';
+        eq2.textContent = '=';
+    
+        // Interactive right side targets:
+        // denominator -> lcmExp
+        // numerator -> (numerMap + (lcmExp - denMap)) per prime
+        const targetDen = new Map();
+        const targetNum = new Map();
+        primesUnion.forEach(p => {
+          const l = lcmExp.get(p) || 0;
+          const d = denMap.get(p) || 0;
+          const delta = l - d;
+          targetDen.set(p, l);
+          targetNum.set(p, (numerMap.get(p) || 0) + delta);
+        });
+    
+        const interBlock = document.createElement('div');
+        interBlock.className = 'reduce-frac';
+        const interTop = document.createElement('div'); interTop.className = 'reduce-num';
+        const interBot = document.createElement('div'); interBot.className = 'reduce-den';
+    
+        mkInteractiveTermRow(targetNum, targetDen).numRow.childNodes; // just to ensure fn is parsed before call
+        const interRows = mkInteractiveTermRow(targetNum, targetDen, null);
+        interRows.numRow.childNodes; // noop
+    
+        // Fill interactive rows with inputs:
+        // (mkInteractiveTermRow already created rows with inputs, but we need to append those rows)
+        interBlock.appendChild(interRows.numRow);
+        const bar2 = document.createElement('div');
+        bar2.style.height = '2px'; bar2.style.width = '100%';
+        bar2.style.background = '#1a1a4b'; bar2.style.margin = '2px 0';
+        interBlock.appendChild(bar2);
+        interBlock.appendChild(interRows.denRow);
+    
+        // Assemble row
+        wrap.appendChild(leftFrac);
+        wrap.appendChild(eq1);
+        wrap.appendChild(midBlock);
+        wrap.appendChild(eq2);
+        wrap.appendChild(interBlock);
+    
+        box4.appendChild(wrap);
+    
+        if (window.MathJax?.typeset) MathJax.typeset([wrap]);
+      }
+    
+      // Random small numerators d/e
+      const d = Math.floor(Math.random() * 10) + 1;
+      const e = Math.floor(Math.random() * 10) + 1;
+    
+      // Row 1: d/a
+      buildRow(d, fa, `\\(\\dfrac{${d}}{${aVal}}\\)`);
+      // Row 2: e/b
+      buildRow(e, fb, `\\(\\dfrac{${e}}{${bVal}}\\)`);
+    }
+
 
     
     // Called when both trees are fully factored; renders inputs + gcd/lcm shells

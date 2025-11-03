@@ -724,9 +724,40 @@ fetch("/nav.html")
         };
       }
     
-      // Random numerators d/e
-      const d = Math.floor(Math.random() * 10) + 1;
-      const e = Math.floor(Math.random() * 10) + 1;
+      // Allowed prime set = union of primes in a and b
+      const allowed = new Set(primesUnion);
+    
+      // Helper: does n factor only into allowed primes?
+      function containsOnlyAllowed(n) {
+        if (n === 1) return true; // 1 has empty factorization
+        let x = n;
+        for (let p = 2; p * p <= x; p++) {
+          while (x % p === 0) {
+            if (!allowed.has(p)) return false;
+            x = Math.trunc(x / p);
+          }
+        }
+        if (x > 1 && !allowed.has(x)) return false; // leftover prime
+        return true;
+      }
+    
+      // --- Replace the old "Random numerators d/e" lines with this ---
+      let d = null, e = null;
+    
+      // find d in [1..10] whose factors are subset of allowed
+      for (let tries = 0; tries < 100 && d === null; tries++) {
+        const cand = Math.floor(Math.random() * 10) + 1;
+        if (containsOnlyAllowed(cand)) d = cand;
+      }
+      if (d === null) d = 1; // safe fallback (always valid)
+    
+      // find e in [1..10] whose factors are subset of allowed
+      for (let tries = 0; tries < 100 && e === null; tries++) {
+        const cand = Math.floor(Math.random() * 10) + 1;
+        if (containsOnlyAllowed(cand)) e = cand;
+      }
+      if (e === null) e = 1; // safe fallback
+    
     
       // Row 1: d/a (shift down 40px)
       const r1 = buildRow(d, fa, `\\(\\dfrac{${d}}{${aVal}}\\)`, 30, (num) => {

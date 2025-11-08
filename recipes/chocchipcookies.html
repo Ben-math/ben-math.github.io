@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta charset="UTF-8" />
+  <title>Chocolate Chip Cookies</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Chocolate Chip Cookies</h1>
+    <div id="nav-placeholder"></div>
+      <script>
+fetch("/nav.html")
+  .then(response => response.text())
+  .then(html => {
+    document.getElementById("nav-placeholder").innerHTML = html;
+
+    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+    const navLinks = document.querySelectorAll("#nav-placeholder a");
+    navLinks.forEach(link => {
+      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+      if (linkPath === currentPath) {
+        link.classList.add("active");
+      }
+    });
+
+    const s = document.createElement("script");
+    s.src = "/mascot.js";
+    s.defer = true;
+    document.body.appendChild(s); 
+  })
+  .catch(err => {
+    console.error("Failed to load nav:", err);
+  });
+</script>
+  </header>
+  <main>
+
+    <figure>
+        <img src="fig3.png" alt="Chocolate Chip Cookies">
+    </figure>
+    
+    <p><u><b>Ingredients:</b></u></p>
+
+    <p>2 ¼ cups flour<br> 
+    1 tsp baking powder<br>
+    1 tsp baking soda<br>
+    ¼ tsp salt</p>
+
+    <p>1 cup butter<br>
+    ¾ cup brown sugar<br>
+    ¼ cup white sugar<br>
+    2 packages of vanilla pudding mix (1.5oz each)<br>
+    2 eggs<br>
+    1 tbsp vanilla<br>
+    2 cups semi-sweet chocolate chips</p>
+
+    <p><u><b>Instructions:</b></u></p>
+
+    <p>Dry ingredients: Mix together 2 ¼ cups flour, 1 tsp baking powder, 1 tsp baking soda, ¼ tsp salt, set aside.</p>
+
+    <p>Cream together 1 cup softened butter, ¾ cup brown sugar, ¼ cup white sugar.</p>
+
+    <p>Beat in 2 packages of vanilla pudding mix (1.5oz each), then 2 eggs, and 1 tbsp vanilla.</p>
+
+    <p>Blend in dry ingredients, stir in 2 cups semi-sweet chocolate chips, and bake at 350F for 10-12 minutes.</p>
+    
+    <p>I test cookies for doneness by running a butter knife along the top of them: if they have developed a "crust" and don't depress too much, they will finish cooking in the 5 minutes you leave them on the pan after removing from the oven.  Then, move them to a cooling rack.</p>
+
+    
+  </main>
+</body>
+</html>

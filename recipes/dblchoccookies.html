@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta charset="UTF-8" />
+  <title>Double Chocolate Cookies</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Double Chocolate Cookies</h1>
+    <div id="nav-placeholder"></div>
+      <script>
+fetch("/nav.html")
+  .then(response => response.text())
+  .then(html => {
+    document.getElementById("nav-placeholder").innerHTML = html;
+
+    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+    const navLinks = document.querySelectorAll("#nav-placeholder a");
+    navLinks.forEach(link => {
+      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+      if (linkPath === currentPath) {
+        link.classList.add("active");
+      }
+    });
+
+    const s = document.createElement("script");
+    s.src = "/mascot.js";
+    s.defer = true;
+    document.body.appendChild(s); 
+  })
+  .catch(err => {
+    console.error("Failed to load nav:", err);
+  });
+</script>
+  </header>
+  <main>
+    
+    <p><u><b>Ingredients:</b></u></p>
+
+    <p>2 cups all-purpose flour<br>
+    ¾ cups cocoa<br>
+    1 tsp baking soda<br>
+    ½ tsp salt</p>
+
+    <p>2/3 cup sugar<br>
+    2/3 cup brown sugar<br>
+    1 cup butter<br>
+    2 eggs<br>
+    1 tbsp vanilla<br>
+    2 cups semi-sweet chocolate chips</p>
+
+    <p><u><b>Instructions:</b></u></p>
+
+    <p>Dry ingredients: in a bowl, mix together 2 cups all-purpose flour, ¾ cups cocoa, 1 tsp baking soda, and ½ tsp salt</p>
+
+    <p>In a separate bowl, mix together 2/3 cup sugar and 2/3 cup brown sugar, then 1 cup butter until creamy.</p>
+
+    <p>Beat in 2 eggs, and 1 tbsp vanilla.  Then beat in the dry ingredients.</p>
+
+    <p>Stir in the 2 cups of semi-sweet chocolate chips.</p>
+
+    <p>Store covered in the fridge when not in use.  Form rounded mounds of cookie dough on a cookie sheet of approximately equal size, about a tablespoon worth.  The cookies will spread while baking, so leave room between them.  Bake about 9-11 minutes (depending on size of the cookies) at 350F (you can tell they are definitely done if they start cracking).</p>
+    
+    <p>I test cookies for doneness by running a butter knife along the top of them: if they have developed a "crust" and don't depress too much, they will finish cooking in the 5 minutes you leave them on the pan after removing from the oven.  Then, move them to a cooling rack.</p>
+
+    
+  </main>
+</body>
+</html>

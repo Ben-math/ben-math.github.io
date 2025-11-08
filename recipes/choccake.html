@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta charset="UTF-8" />
+  <title>Chocolate Cake</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Chocolate Cake</h1>
+    <div id="nav-placeholder"></div>
+      <script>
+fetch("/nav.html")
+  .then(response => response.text())
+  .then(html => {
+    document.getElementById("nav-placeholder").innerHTML = html;
+
+    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+    const navLinks = document.querySelectorAll("#nav-placeholder a");
+    navLinks.forEach(link => {
+      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+      if (linkPath === currentPath) {
+        link.classList.add("active");
+      }
+    });
+
+    const s = document.createElement("script");
+    s.src = "/mascot.js";
+    s.defer = true;
+    document.body.appendChild(s); 
+  })
+  .catch(err => {
+    console.error("Failed to load nav:", err);
+  });
+</script>
+  </header>
+  <main>
+
+    <figure>
+        <img src="fig5.png" alt="Chocolate Cake">
+    </figure>
+    
+    <p><u><b>Ingredients:</b></u></p>
+
+    <p>2 cups sugar<br>
+    1 3/4 cups all-purpose flour<br>
+    3/4 cups cocoa<br>
+    1 1/2 tsp baking soda<br>
+    1 1/2 tsp baking powder<br>
+    1 tsp salt</p>
+
+    <p>2 eggs<br>
+    1 cups milk<br>
+    1/2 cup vegetable oil<br>
+    1 tbsp vanilla extract<br>
+    1 cup freshly brewed coffee</p>
+
+    <p>1 cup butter<br>
+    5 cups icing sugar<br>
+    1 1/2 cups cocoa<br>
+    2/3 cup milk<br>
+    1 tbsp vanilla</p>
+
+    <p><u><b>Instructions:</b></u></p>
+
+    <p>Dry ingredients: Mix together 2 cups sugar, 1 3/4 cups all-purpose flour, 3/4 cups cocoa, 1 1/2 tsp baking soda, 1 1/2 tsp baking powder, 1 tsp salt.</p>
+      
+    <p>Blend in 2 eggs, 1 cups milk, 1/2 cup vegetable oil, 1 tbsp vanilla extract at medium-high speed for 2.5-3 minutes (the colour of the batter should start to lighten by the end).</p>
+      
+    <p>Stir in 1 cup freshly brewed coffee thoroughly.  Batter will be very thin and soupy.</p>
+      
+    <p>Bake at 350 F.  Recipe makes approximately 1 13X9 cake or 2 9” round cakes.  Test with toothpicks for doneness, use flower nails to cook level as appropriate.</p>
+      
+    <p>Chocolate Icing: Soften 3/4 - 1 cup butter, whip until fluffy, blend in approximately 5 cups icing sugar and 1 1/2 cups cocoa alternately with 2/3 cup milk and 1 tbsp vanilla.  Spread icing on levelled cakes.  Use less milk if making icing for piping.</p>
+
+    
+  </main>
+</body>
+</html>

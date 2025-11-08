@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta charset="UTF-8" />
+  <title>Apple Squares</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Apple Squares</h1>
+    <div id="nav-placeholder"></div>
+      <script>
+fetch("/nav.html")
+  .then(response => response.text())
+  .then(html => {
+    document.getElementById("nav-placeholder").innerHTML = html;
+
+    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+    const navLinks = document.querySelectorAll("#nav-placeholder a");
+    navLinks.forEach(link => {
+      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+      if (linkPath === currentPath) {
+        link.classList.add("active");
+      }
+    });
+
+    const s = document.createElement("script");
+    s.src = "/mascot.js";
+    s.defer = true;
+    document.body.appendChild(s); 
+  })
+  .catch(err => {
+    console.error("Failed to load nav:", err);
+  });
+</script>
+  </header>
+  <main>
+
+    <figure>
+        <img src="fig2.png" alt="Apple Squares">
+    </figure>
+    
+    <p><u><b>Ingredients:</b></u></p>
+
+    <p>2 cups all-purpose flour<br>
+    2 tsp baking powder<br>
+    ½ tsp salt<br>
+    ½ tsp cinnamon</p>
+
+    <p>¾ cup white sugar<br>
+    ¾ cup brown sugar<br>
+    ½ cup butter<br>
+    2 eggs<br>
+    2 tsp vanilla<br>
+    2 cups of diced granny smith apple</p>
+
+    <p>2 tbsp white sugar<br>
+    2 tsp cinnamon</p>
+
+    <p><u><b>Instructions:</b></u></p>
+
+    <p>Dry ingredients: in a bowl, mix together 2 cups all-purpose flour, 2 tsp baking powder, ½ tsp salt, ½ tsp cinnamon</p>
+
+    <p>In another bowl, mix together ¾ cup white sugar and ¾ cup brown sugar.  Then mix in ½ cup butter (soften the butter by leaving it out awhile or putting in the microwave first).  Use a mixer to whip them together until creamy.</p>
+
+    <p>Mix in 2 eggs, and 2 tsp vanilla to the bowl with the sugar-butter mixture.  Then mix in the dry ingredients, about a third at a time.</p>
+
+    <p>Stir in 2 cups of diced granny smith apple (ideally cooking apples should be firmer apples).  The moisture from the apples should gradually make the mixture a little more liquidy and easy to stir.  Spread the batter into a greased 13x9 pan (grease the pan with butter).</p>
+
+    <p>In a separate bowl, mix together 2 tbsp white sugar and 2 tsp cinnamon.  Sprinkle this mixture on top of the batter in the pan evenly.</p>
+
+    <p>Bake at 350F for 30-35 minutes approximately.  You can test whether it's done or not by lightly touching the cake with your fingertips.  If you find that it springs back up a little bit when you press down, then it's either done or nearly done.  (Or you can just cut into the center and try some of the cake!)</p>
+
+    <p>Let cool on a cooling rack, cut into squares and enjoy!</p>
+
+    
+  </main>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta charset="UTF-8" />
+  <title>Macarons</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Macarons</h1>
+    <div id="nav-placeholder"></div>
+      <script>
+fetch("/nav.html")
+  .then(response => response.text())
+  .then(html => {
+    document.getElementById("nav-placeholder").innerHTML = html;
+
+    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+    const navLinks = document.querySelectorAll("#nav-placeholder a");
+    navLinks.forEach(link => {
+      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+      if (linkPath === currentPath) {
+        link.classList.add("active");
+      }
+    });
+
+    const s = document.createElement("script");
+    s.src = "/mascot.js";
+    s.defer = true;
+    document.body.appendChild(s); 
+  })
+  .catch(err => {
+    console.error("Failed to load nav:", err);
+  });
+</script>
+  </header>
+  <main>
+
+    <figure>
+        <img src="fig6.png" alt="Macarons">
+    </figure>
+    
+    <p><u><b>Ingredients:</b></u></p>
+
+    <p>120g egg whites<br>
+    <br>225g icing sugar<br>
+    125g almond meal<br>
+    50g sugar</p>
+    
+    <p>1/2 cup heavy cream<br>
+    12 ounces white chocolate<br>
+    Food colouring<br>
+    Desired extracts</p>
+
+    <p>(For chocolate macarons, add 18g cocoa to icing sugar/almond meal mixture, increase egg whites to 130g)</p>
+
+    <p><u><b>Instructions:</b></u></p>
+
+    <p>Macarons are a challenging one to get right: if attempting this recipe, you will likely have to make a few batches before you know your oven and pans well enough that they turn out right.  Good luck!</p>
+
+    <p>Age 120g egg whites (age for 2 days at room temperature or 4 days in fridge, but bring to room temperature before starting)</p>
+
+    <p>Sift together 225g icing sugar with 125g almond meal (may be difficult to sift almond flour - discard larger particles which don't go easily through the sieve after weighing them and replace with an equal amount and try sifting again until you reach 125g finely ground almonds)</p>
+
+    <p>Make meringue: whip egg whites with a pinch of salt until foamy.  Add 50g sugar and whip to stiff peaks.  Whip in desired food colouring and extracts (yellow: lemon, orange: orange, red: cherry, green: mint).</p>
+
+    <p>Macaronage: fold in icing sugar mixture gently (fold until small peaks slowly dissolve to flat, often described as “flows like magma”  This stage is critical, folding too much or not enough will make the macarons not turn out right)</p>
+
+    <p>Pipe through a 1cm icing tip onto a silicone mat on a cookie sheet (can also line it with parchment paper, but it's not nearly as good) into circles 1 inch in diamater (these cookies will not spread, so get them to exactly the shape and size you want.  Be careful when pulling away the icing tip not to leave a little peak on top of the cookie, and flatten it out if necessary)</p>
+
+    <p>Tap the underside of the cookie sheet, and let the cookies sit for 1 hour (for skins to form on the top of the cookies)</p>
+
+    <p>Bake at 300F for approximately 15 minutes.  Everyone's oven is different, and macarons are very sensitive to high heat, so this part can be tricky.  You may need to use lower oven temperatures or prop open the door of your oven a little bit with something.  Most recipes call for 325F and a shorter bake time, but I find it's too risky.  Experiment with each batch of macarons until you find what works for you.  (However long you bake them for, rotate the cookie sheet at the midway point of baking to ensure even coverage).  If the macarons brown at all, you're cooking them at too high a heat.</p>
+
+    <p>Remove from oven and let the macarons cool before detaching from the silicone mat.  They will not come off easily if they either did not bake for long enough, or if they haven't cooled off enough.  I usually stick the cookie sheet in the freezer for a couple minutes to give them a little help, and they should just pop right off easily.  Let the macarons sit in the fridge while you make the ganache.</p>
+
+    <p><u>Ganache</u></p>
+
+    <p>Making your ganache thick enough is often tricky.  You want to make a ganache which would be just a little bit too runny at room temperature, but when used to fill your macarons stored in a fridge, they will set nicely.  There are a few ways to thicken it up a little bit: allowing it to cool until slightly thickened and then whipping it like crazy until it's fluffier, changing the ratio of heavy cream to chocolate (more chocolate, less cream), or adding a thickening mixture of gelatin and water.  Note that white chocolate is MUCH lighter than dark, which is why there is a much higher ratio of chocolate to cream in this recipe:  I recommend 2:1.  Below is my basic recipe which you can modify as necessary:</p>
+
+    <p>Chop about 12 ounces of white chocolate very finely (so that it will melt faster later).  Heat 1/2 cup heavy cream just to a boil (on medium heat), and then immediately pour over the chocolate and whisk until fully dissolved.  At this point it will take a while for the ganache to cool and thicken.  (Optionally: after it has cooled just slightly, whisking in an egg yolk may help it reach the desired consistency)  You can use the fridge, freezer, or an ice bath to speed up the cooling process, and try whipping it occasionally until you get it to the point where it can hold its shape while kept cool.  (Add food colouring and extracts as desired: I use the same ones as in the cookies themselves)</p>
+
+    <p>Once the ganache is ready, pipe it onto the flat side of half of the macaron cookies.  If it's still a little runny and it'd be messy to complete the cookie sandwich, stick them in the freezer for a couple minutes first, then attach the top half to each macaron.  Now store the macarons in the fridge so that they set competely.  They are best if you wait a day before serving.</p>
+
+    
+  </main>
+</body>
+</html>

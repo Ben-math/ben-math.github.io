@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta charset="UTF-8" />
+  <title>Cheesecake</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Cheesecake</h1>
+    <div id="nav-placeholder"></div>
+      <script>
+fetch("/nav.html")
+  .then(response => response.text())
+  .then(html => {
+    document.getElementById("nav-placeholder").innerHTML = html;
+
+    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+    const navLinks = document.querySelectorAll("#nav-placeholder a");
+    navLinks.forEach(link => {
+      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+      if (linkPath === currentPath) {
+        link.classList.add("active");
+      }
+    });
+
+    const s = document.createElement("script");
+    s.src = "/mascot.js";
+    s.defer = true;
+    document.body.appendChild(s); 
+  })
+  .catch(err => {
+    console.error("Failed to load nav:", err);
+  });
+</script>
+  </header>
+  <main>
+
+    <figure>
+        <img src="fig2.png" alt="Apple Squares">
+    </figure>
+    
+    <p><u><b>Ingredients:</b></u></p>
+
+    <p>6.5 tbsp butter<br>
+    1.5 cups graham crumbs<br>
+    1/3 cup sugar<br>
+    ½ tsp cinnamon</p>
+
+    <p>4 packages of cream cheese (not the light stuff!)<br>
+    1.125 cups sugar<br>
+    2 tsp vanilla<br>
+    4 eggs<br>
+    4 tbsp flour</p>
+
+    <p>Optional: ½ cup semi-sweet chocolate chips (or equivalent amount baker’s chocolate)<br>
+    Optional: Strawberries</p>
+
+    <p><u><b>Instructions:</b></u></p>
+
+    <p>Crust: Melt ~6.5 tbsp butter.  In a bowl, mix together 1.5 cups graham crumbs, 1/3 cup sugar, and ½ tsp cinnamon.  Mix in the melted butter.  Press the mixture into whatever you’re baking in (I use 24 large or jumbo cupcake liners, and usually have enough extra to do an extra 6 inch round cake), and bake at 375 for about 4 minutes (they will likely produce some smoke, so watch carefully to ensure they don’t burn).  Remove to cool for a few minutes.</p>
+
+    <p>In a bowl, combine 4 packages of cream cheese (not the light stuff!), 1.125 cups of sugar, 2 tsp vanilla.  Beat in 4 eggs, one at a time, until relatively smooth.  Mix in 4 tbsp flour.</p>
+
+    <p>Optional: Melt ½ cup semi-sweet chocolate chips (or equivalent amount baker’s chocolate), mix with ¼ of the batter in a separate bowl.</p>
+
+    <p>Fill the prepared crusts with the batter (optionally: fill with the normal batter first, then put some chocolate batter on top and swirl it in with a knife to create a nice design).</p>
+
+    <p>Bake at 325 for about 20 minutes (For cupcakes.  Larger round cakes will need longer, and are at greater risk of cracking).  (It’s said that to prevent cracking of the cheesecake, you may want to let them cool more slowly in the oven, turned off.  I find the main culprit of cracking is simply overcooking, and there is enough residual heat in the metal of the pan that if you remove it to a cooling rack promptly, the cakes will cool slowly enough anyways)</p>
+
+    <p>Remove from pan after about 15 minutes to a cooling rack, refridgerate or serve warm!</p>
+
+    <p>Optional: Create a topping to add to the cheesecake(s).For the standard non-chocolate cheesecake, I suggest cooking a strawberry sauce, pour on top, with a few strawberry halves scattered about.</p>
+
+
+    
+  </main>
+</body>
+</html>

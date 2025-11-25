@@ -3,7 +3,7 @@
 <head>
   <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
   <meta charset="UTF-8" />
-  <title>Fraction Multiplication Activity</title>
+  <title>Multiplication Activity</title>
   <link rel="stylesheet" href="/style.css" />
 
   <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
@@ -13,7 +13,7 @@
 </head>
 <body>
   <header>
-    <h1>Fraction Multiplication Activity</h1>
+    <h1>Multiplication Activity</h1>
     <div id="nav-placeholder"></div>
     <script>
       fetch("/nav.html")
@@ -307,19 +307,17 @@
       ctx.lineWidth = 3;
       ctx.strokeRect(x0, y0, totalWidth, totalHeight);
 
-      // Labels
+      // Plain-text labels (no LaTeX on canvas)
       ctx.fillStyle = 'black';
       ctx.font = '28px Arial';
       ctx.textAlign = 'center';
 
-      ctx.fillText(`\\(\\dfrac{${a}}{${b}}\\)`, x0 + totalWidth / 2, y0 - 20);
+      ctx.fillText(`${a}/${b}`, x0 + totalWidth / 2, y0 - 20);
       ctx.save();
       ctx.translate(x0 - 50, y0 + totalHeight / 2);
       ctx.rotate(-Math.PI / 2);
-      ctx.fillText(`\\(\\dfrac{${c}}{${d}}\\)`, 0, 0);
+      ctx.fillText(`${c}/${d}`, 0, 0);
       ctx.restore();
-
-      // Trigger MathJax for the labels (they are drawn as text, but we also show algebraic question elsewhere)
     }
 
     // Mixed-number picture: (m1 + a/b)*(m2 + c/d)
@@ -335,8 +333,10 @@
       const x0 = margin;
       const y0 = margin;
 
-      const totalWidthUnits = m1 + a / b;
-      const totalHeightUnits = m2 + c / d;
+      // Include one extra uncoloured row/column:
+      // overall rectangle is (m1+1) by (m2+1)
+      const totalWidthUnits = m1 + 1;
+      const totalHeightUnits = m2 + 1;
 
       const unitW = totalWidthPx / totalWidthUnits;
       const unitH = totalHeightPx / totalHeightUnits;
@@ -367,8 +367,8 @@
       ctx.strokeStyle = 'black';
       ctx.lineWidth = 1;
 
-      // Vertical integer lines
-      for (let i = 0; i <= m1; i++) {
+      // Vertical integer lines 0..m1+1
+      for (let i = 0; i <= m1 + 1; i++) {
         const x = x0 + i * unitW;
         ctx.beginPath();
         ctx.moveTo(x, y0);
@@ -376,9 +376,9 @@
         ctx.stroke();
       }
 
-      // Within the fractional part horizontally:
-      const fracStepW = unitW / b; // fractional part length a/b * unitW is subdivided into a segments of length 1/b * unitW
-      for (let j = 0; j <= a; j++) {
+      // Subdivide last unit horizontally into b equal parts:
+      const fracStepW = unitW / b;
+      for (let j = 1; j < b; j++) {
         const x = x0 + m1 * unitW + j * fracStepW;
         ctx.beginPath();
         ctx.moveTo(x, y0);
@@ -386,8 +386,8 @@
         ctx.stroke();
       }
 
-      // Horizontal integer lines
-      for (let k = 0; k <= m2; k++) {
+      // Horizontal integer lines 0..m2+1
+      for (let k = 0; k <= m2 + 1; k++) {
         const y = y0 + k * unitH;
         ctx.beginPath();
         ctx.moveTo(x0, y);
@@ -395,9 +395,9 @@
         ctx.stroke();
       }
 
-      // Within the fractional part vertically:
+      // Subdivide last unit vertically into d equal parts:
       const fracStepH = unitH / d;
-      for (let j = 0; j <= c; j++) {
+      for (let j = 1; j < d; j++) {
         const y = y0 + m2 * unitH + j * fracStepH;
         ctx.beginPath();
         ctx.moveTo(x0, y);
@@ -546,7 +546,7 @@
       currentStep = 1;
       hintBtn.disabled = true;
 
-      // Choose nice-ish ranges so the picture isn't too insane.
+      // Choose ranges so the picture stays manageable
       const b = Math.floor(Math.random() * 8) + 2; // 2..9
       const d = Math.floor(Math.random() * 8) + 2;
       const a = Math.floor(Math.random() * (b - 1)) + 1;
@@ -712,7 +712,7 @@
         } else {
           finalInput.style.backgroundColor = '#f8d7da';
           feedbackText.textContent = '';
-          hintBtn.disabled = true; // stay disabled until correct? up to you
+          hintBtn.disabled = true;
         }
       }
 

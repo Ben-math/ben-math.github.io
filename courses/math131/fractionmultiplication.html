@@ -152,7 +152,7 @@
     let activityMode = null;  // 'proper' or 'mixed'
     let currentStep = 0;      // for mixed mode only
 
-    // Proper fractions state: { a, b, c, d }
+    // Proper fractions state: { a, b, c, d, prodNum, prodDen }
     // Mixed numbers state: { m1, a, b, m2, c, d, foil: [f1,f2,f3,f4], sum: frac }
     let state = {};
 
@@ -471,6 +471,42 @@
       }
     }
 
+    // --- Proper fraction helpers --------------------------------------------
+
+    function validateProperInputs() {
+      const numInput = document.getElementById('proper-num');
+      const denInput = document.getElementById('proper-den');
+      if (!numInput || !denInput) return false;
+
+      const { prodNum, prodDen } = state;
+
+      const numStr = numInput.value.trim();
+      const denStr = denInput.value.trim();
+
+      const nVal = parseInt(numStr, 10);
+      const dVal = parseInt(denStr, 10);
+
+      const numCorrect = (!isNaN(nVal) && nVal === prodNum);
+      const denCorrect = (!isNaN(dVal) && dVal === prodDen);
+
+      // Colour: green if correct, red if non-empty and incorrect, blank if empty
+      if (numStr === '') {
+        numInput.style.backgroundColor = '';
+      } else {
+        numInput.style.backgroundColor = numCorrect ? '#c8f7c5' : '#f8d7da';
+      }
+
+      if (denStr === '') {
+        denInput.style.backgroundColor = '';
+      } else {
+        denInput.style.backgroundColor = denCorrect ? '#c8f7c5' : '#f8d7da';
+      }
+
+      const allCorrect = numCorrect && denCorrect;
+      hintBtn.disabled = !allCorrect;
+      return allCorrect;
+    }
+
     // --- Proper fraction mode ------------------------------------------------
 
     function initProperProblem() {
@@ -508,33 +544,14 @@
       const numInput = document.getElementById('proper-num');
       const denInput = document.getElementById('proper-den');
 
-      checkBtn.style.display = 'inline-block';
+      // No separate Check button in this mode
+      checkBtn.style.display = 'none';
 
-      function checkProperAnswer() {
-        const n = parseInt(numInput.value, 10);
-        const dVal = parseInt(denInput.value, 10);
+      numInput.addEventListener('input', validateProperInputs);
+      denInput.addEventListener('input', validateProperInputs);
 
-        let correct = true;
-        if (isNaN(n) || n !== prodNum) correct = false;
-        if (isNaN(dVal) || dVal !== prodDen) correct = false;
-
-        if (correct) {
-          numInput.style.backgroundColor = '#c8f7c5';
-          denInput.style.backgroundColor = '#c8f7c5';
-          feedbackText.textContent = 'Correct!';
-          feedbackText.style.color = 'green';
-        } else {
-          numInput.style.backgroundColor = '#f8d7da';
-          denInput.style.backgroundColor = '#f8d7da';
-          feedbackText.textContent = 'Incorrect. Try again!';
-          feedbackText.style.color = 'red';
-        }
-      }
-
-      checkBtn.onclick = () => {
-        playClickSound();
-        checkProperAnswer();
-      };
+      feedbackText.textContent = '';
+      feedbackText.style.color = '';
 
       drawProperFractionCanvas();
     }
@@ -606,6 +623,9 @@
 
           if (correct) {
             inp.style.backgroundColor = '#c8f7c5';
+          } else if (value === '') {
+            inp.style.backgroundColor = '';
+            allCorrect = false;
           } else {
             inp.style.backgroundColor = '#f8d7da';
             allCorrect = false;
@@ -631,12 +651,6 @@
       step1Inputs.forEach(inp => inp.disabled = true);
 
       // Step 2: FOIL partial products
-      // (m1 + a/b)(m2 + c/d) =
-      // 1) m1*m2
-      // 2) m1*(c/d)
-      // 3) (a/b)*m2
-      // 4) (a/b)*(c/d)
-
       const f1 = multiplyFrac({ n: m1, d: 1 }, { n: m2, d: 1 });
       const f2 = multiplyFrac({ n: m1, d: 1 }, { n: c, d: d });
       const f3 = multiplyFrac({ n: a, d: b }, { n: m2, d: 1 });
@@ -668,6 +682,9 @@
           const correct = frac && fractionsEqual(frac, expected);
           if (correct) {
             inp.style.backgroundColor = '#c8f7c5';
+          } else if (val === '') {
+            inp.style.backgroundColor = '';
+            allCorrect = false;
           } else {
             inp.style.backgroundColor = '#f8d7da';
             allCorrect = false;
@@ -709,10 +726,12 @@
           feedbackText.textContent = 'Correct!';
           feedbackText.style.color = 'green';
           hintBtn.disabled = true;
+        } else if (finalInput.value.trim() === '') {
+          finalInput.style.backgroundColor = '';
+          feedbackText.textContent = '';
         } else {
           finalInput.style.backgroundColor = '#f8d7da';
           feedbackText.textContent = '';
-          hintBtn.disabled = true;
         }
       }
 
@@ -738,6 +757,23 @@
 
     hintBtn.addEventListener('click', () => {
       playClickSound();
+
+      if (activityMode === 'proper') {
+        // Only move if both inputs are correct
+        const ok = validateProperInputs();
+        if (!ok) return;
+
+        const numInput = document.getElementById('proper-num');
+        const denInput = document.getElementById('proper-den');
+        if (numInput) numInput.disabled = true;
+        if (denInput) denInput.disabled = true;
+
+        feedbackText.textContent = 'Correct!';
+        feedbackText.style.color = 'green';
+        hintBtn.disabled = true;
+        return;
+      }
+
       if (activityMode !== 'mixed') return;
 
       if (currentStep === 1) {
@@ -749,7 +785,7 @@
       }
     });
 
-    // For proper-fraction mode, checkBtn is wired inside initProperProblem.
+    // For proper-fraction mode, there is no separate Check button anymore.
   </script>
 
   <audio id="click-sound" src="button.mp3" preload="auto"></audio>

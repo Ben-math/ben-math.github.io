@@ -60,7 +60,7 @@ fetch("/nav.html")
     <div id="answer-section" style="margin-top: 20px; text-align: center;">
       <label for="user-answer">Enter your answer:</label>
       <input type="text" id="user-answer" />
-      <label style="margin-left: 0.5em;">
+      <label id="repeating-container" style="margin-left: 0.5em;">
         <input type="checkbox" id="repeating-checkbox" />
         Repeating
       </label>
@@ -89,6 +89,7 @@ fetch("/nav.html")
 
     const answerInput = document.getElementById('user-answer');
     const repeatingCheckbox = document.getElementById('repeating-checkbox');
+    const repeatingContainer = document.getElementById('repeating-container');
     const feedback = document.getElementById('answer-feedback');
 
     // -----------------------------
@@ -320,10 +321,6 @@ fetch("/nav.html")
 
     // -----------------------------
     // Repeating-answer checks
-    // We require:
-    //  - user checked "Repeating"
-    //  - integer part matches the canonical integer part
-    //  - digits after decimal are exactly (nonRepeat + one full cycle of repeat)
     // -----------------------------
     function repeatingAnswerMatches(decimalParsed, info) {
       if (info.type !== 'repeating') return false;
@@ -334,6 +331,61 @@ fetch("/nav.html")
 
       const canonicalDigits = (info.nonRepeat || '') + (info.repeat || '');
       return decimalParsed.fracDigits === canonicalDigits;
+    }
+
+    // -----------------------------
+    // Hint construction
+    // -----------------------------
+    function buildHintSteps() {
+      hintSteps = [];
+      hintIndex = 0;
+      hintArea.innerHTML = '';
+
+      if (!currentFraction || !decimalInfo || !percentInfo || !givenForm || !targetForm) {
+        return;
+      }
+
+      const p = currentFraction.p;
+      const q = currentFraction.q;
+
+      const seq = ['fraction', 'decimal', 'percent'];
+      const path = [];
+
+      const iG = seq.indexOf(givenForm);
+      const iT = seq.indexOf(targetForm);
+
+      if (iG <= iT) {
+        for (let i = iG; i <= iT; i++) path.push(seq[i]);
+      } else {
+        for (let i = iG; i >= iT; i--) path.push(seq[i]);
+      }
+
+      const fracTeX = formatFractionTeX(p, q);
+      const decTeX = formatDecimalTeX(decimalInfo, false);
+      const percTeX = formatDecimalTeX(percentInfo, true);
+
+      for (let i = 0; i < path.length - 1; i++) {
+        const from = path[i];
+        const to = path[i + 1];
+
+        if (from === 'fraction' && to === 'decimal') {
+          const general = `\\[\\text{To convert a fraction to a decimal, divide the numerator by the denominator. For this fraction, divide ${p} \\text{ by } ${q}.}\\]`;
+          const example = `\\[ ${fracTeX} = ${decTeX} \\]`;
+          hintSteps.push(general, example);
+        } else if (from === 'decimal' && to === 'fraction') {
+          const general = `\\[\\text{To convert a decimal to a fraction, write the decimal digits over a power of 10 (like 10, 100, or 1000) and then simplify. For a repeating decimal, think of the fraction whose decimal expansion repeats in this way.}\\]`;
+          const example = `\\[ ${decTeX} = ${fracTeX} \\]`;
+          hintSteps.push(general, example);
+        } else if (from === 'decimal' && to === 'percent') {
+          const general = `\\[\\text{To convert a decimal to a percent, multiply by 100 and attach a percent sign.}\\]`;
+          const example = `\\[ ${decTeX} \\times 100 = ${percTeX} \\]`;
+          hintSteps.push(general, example);
+        } else if (from === 'percent' && to === 'decimal') {
+          const general = `\\[\\text{To convert a percent to a decimal, divide by 100 (move the decimal point two places to the left).}\\]`;
+          const example = `\\[ ${percTeX} = ${decTeX} \\]`;
+          hintSteps.push(general, example);
+        }
+      }
     }
 
     // -----------------------------
@@ -357,8 +409,8 @@ fetch("/nav.html")
       hintIndex = 0;
 
       // Generate random fraction:
-      // denominator between 2 and 20
-      const q = Math.floor(Math.random() * 19) + 2; // 2..20
+      // denominator between 2 and 10
+      const q = Math.floor(Math.random() * 9) + 2; // 2..10
       const p = Math.floor(Math.random() * (q - 1)) + 1; // 1..(q-1)
 
       currentFraction = { p, q };
@@ -374,6 +426,14 @@ fetch("/nav.html")
 
       const remaining = forms.filter(f => f !== givenForm);
       targetForm = remaining[Math.floor(Math.random() * remaining.length)];
+
+      // Show/hide repeating checkbox depending on target form
+      if (targetForm === 'fraction') {
+        repeatingContainer.style.display = 'none';
+        repeatingCheckbox.checked = false;
+      } else {
+        repeatingContainer.style.display = 'inline-block';
+      }
 
       // Build TeX for the question
       let givenTeX = '';
@@ -397,6 +457,9 @@ fetch("/nav.html")
       if (window.MathJax && MathJax.typeset) {
         MathJax.typeset([questionText]);
       }
+
+      // Build hint steps for this problem
+      buildHintSteps();
     });
 
     // -----------------------------
@@ -543,7 +606,7 @@ fetch("/nav.html")
     });
 
     // -----------------------------
-    // Hint button (no actual hints yet)
+    // Hint button
     // -----------------------------
     hintBtn.addEventListener('click', () => {
       const sound = document.getElementById('click-sound');
@@ -552,17 +615,34 @@ fetch("/nav.html")
         sound.play();
       }
 
-      // For now, no hint steps. Leaving this empty as requested.
-      // You can later populate hintSteps[] and this will reveal them one by one.
-      if (hintIndex === 0) {
+      if (!hintSteps || hintSteps.length === 0) {
         const hintPara = document.createElement('div');
         hintPara.classList.add('hint-step');
-        hintPara.textContent = 'Hints coming soon!';
+        hintPara.textContent = 'No hints are available for this question.';
+        hintArea.appendChild(hintPara);
+        if (window.MathJax && MathJax.typeset) {
+          MathJax.typeset([hintPara]);
+        }
+        return;
+      }
+
+      if (hintIndex < hintSteps.length) {
+        const hintPara = document.createElement('div');
+        hintPara.classList.add('hint-step');
+        hintPara.innerHTML = hintSteps[hintIndex];
         hintArea.appendChild(hintPara);
         if (window.MathJax && MathJax.typeset) {
           MathJax.typeset([hintPara]);
         }
         hintIndex++;
+      } else {
+        // Optionally, you could add a small "no more hints" message once
+        if (!hintArea.querySelector('.no-more-hints')) {
+          const done = document.createElement('div');
+          done.classList.add('no-more-hints');
+          done.textContent = 'No more hint steps for this question.';
+          hintArea.appendChild(done);
+        }
       }
     });
   </script>

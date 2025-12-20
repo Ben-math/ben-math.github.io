@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta charset="UTF-8" />
+  <title>Fractions/Decimals/Percent Activity</title>
+  <link rel="stylesheet" href="/style.css" />
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+</head>
+<body>
+  <header>
+    <h1>Fractions/Decimals/Percent Activity</h1>
+    <div id="nav-placeholder"></div>
+      <script>
+fetch("/nav.html")
+  .then(response => response.text())
+  .then(html => {
+    document.getElementById("nav-placeholder").innerHTML = html;
+
+    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+    const navLinks = document.querySelectorAll("#nav-placeholder a");
+    navLinks.forEach(link => {
+      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+      if (linkPath === currentPath) {
+        link.classList.add("active");
+      }
+    });
+
+    const s = document.createElement("script");
+    s.src = "/mascot.js";
+    s.defer = true;
+    document.body.appendChild(s); 
+  })
+  .catch(err => {
+    console.error("Failed to load nav:", err);
+  });
+</script>
+  </header>
+  <main>
+
+    <p>Placeholder!</p>
+
+    <div class="button-container">
+      <button id="start-btn" class="rubber-button">Start!</button>
+    </div>
+    
+    <p id="question-text"></p>
+
+    <div class="button-container">
+      <button id="hint-btn" class="rubber-button">Hint</button>
+    </div>
+    
+    <div id="hint-area" class="math" style="margin-top: 1em;"></div>
+
+
+    <div id="answer-section" style="margin-top: 20px; text-align: center;">
+      <label for="user-answer">Enter your answer:</label>
+      <input type="number" id="user-answer" />
+      <button id="check-answer-btn" class="rubber-button">Check Answer</button>
+      <p id="answer-feedback" style="font-weight: bold; margin-top: 10px;"></p>
+    </div>
+
+
+
+
+  </main>
+  <script>
+
+    let m = 0;
+    let x = 0;
+    let y = 0;
+    
+    const hintBtn = document.getElementById('hint-btn');
+    const hintArea = document.getElementById('hint-area');
+    
+    let hintSteps = [];
+    let hintIndex = 0;
+    
+    const startBtn = document.getElementById('start-btn');
+    const questionText = document.getElementById('question-text');
+
+    
+    let correctAnswer = null;
+  
+    startBtn.addEventListener('click', () => {
+
+      const feedback = document.getElementById('answer-feedback');
+      feedback.textContent = '';
+
+      // Play sound when view button is clicked
+      const sound = document.getElementById('click-sound');
+      if (sound) {
+        sound.currentTime = 0; // rewind to start in case it's still playing
+        sound.play();
+      }
+
+      m = 0;
+      x = 0;
+      y = 0;
+
+      // Choose the mode: 1 and 2 are conversion from binary/quinary to decimal, 3 and 4 are conversion from decimal to binary/quinary
+      m = Math.floor(Math.random() * 4) + 1;
+
+      x = Math.floor(Math.random() * 350) + 120;
+
+      if (m === 1 || m === 3) {
+        // Convert x into binary, store in y
+        y = parseInt(x.toString(2), 10);
+      } else {
+        // Convert x into quinary, store in y
+        y = parseInt(x.toString(5), 10);
+      }
+
+      
+
+      hintSteps = [];
+      hintIndex = 0;
+
+      // Here we will generate and store hints
+      let i = 0
+
+
+      let question = "";
+      if (m === 1) {
+        question = `\\[ \\text{Convert } ${y} \\text{ from binary to decimal.} \\]`;
+        correctAnswer = x;
+        let digits = [];
+        let temp = y; // preserve original y
+        while (temp > 0) {
+          digits.push(temp % 10);
+          temp = Math.floor(temp / 10);
+        }
+        
+        hintSteps[i] = `\\[ ${y}_2 = `;
+        for (let j = 0; j < digits.length; j++) {
+          hintSteps[i] += `${digits[j]} \\cdot 2^{${j}}`;
+          if (j !== digits.length - 1) {
+            hintSteps[i] += ` + `;
+          }
+        }
+        hintSteps[i] += ` \\]`;
+         
+        i++;
+        hintSteps[i] = `\\[ = ${correctAnswer} \\]`;
+        i++;
+      } else if (m === 2) {
+        question = `\\[ \\text{Convert } ${y} \\text{ from quinary to decimal.} \\]`;
+        correctAnswer = x;
+        let digits = [];
+        let temp = y; // preserve original y
+        while (temp > 0) {
+          digits.push(temp % 10);
+          temp = Math.floor(temp / 10);
+        }
+        
+        hintSteps[i] = `\\[ ${y}_5 = `;
+        for (let j = 0; j < digits.length; j++) {
+          hintSteps[i] += `${digits[j]} \\cdot 5^{${j}}`;
+          if (j !== digits.length - 1) {
+            hintSteps[i] += ` + `;
+          }
+        }
+        hintSteps[i] += ` \\]`;
+         
+        i++;
+        hintSteps[i] = `\\[ = ${correctAnswer} \\]`;
+        i++;
+      } else if (m === 3) {
+        question = `\\[ \\text{Convert } ${x} \\text{ from decimal to binary.} \\]`;
+        correctAnswer = y;
+        intPart = x;
+        while (intPart > 0) {
+          let remainder = intPart % 2;
+          let temp = Math.floor(intPart / 2);
+          hintSteps[i] = `\\[ ${intPart} \\div 2 = ${temp}R${remainder} \\]`;
+          i++;
+          intPart = temp;
+        }
+        hintSteps[i] = `\\[ \\text{Arrange the remainders, in the order we got them, from right-to-left to build the binary representation.} \\]`;
+        i++;
+      } else {
+        question = `\\[ \\text{Convert } ${x} \\text{ from decimal to quinary.} \\]`;
+        correctAnswer = y;
+        intPart = x;
+        while (intPart > 0) {
+          let remainder = intPart % 5;
+          let temp = Math.floor(intPart / 5);
+          hintSteps[i] = `\\[ ${intPart} \\div 5 = ${temp}R${remainder} \\]`;
+          i++;
+          intPart = temp;
+        }
+        hintSteps[i] = `\\[ \\text{Arrange the remainders, in the order we got them, from right-to-left to build the quinary representation.} \\]`;
+        i++;
+      }
+
+  
+      // Display the question
+      questionText.textContent = question;
+      MathJax.typeset([questionText]);
+
+      hintIndex = 0;
+      hintArea.innerHTML = "";  // Clear previous hints
+
+      
+      
+    });
+
+
+    
+    document.getElementById('check-answer-btn').addEventListener('click', () => {
+      // Play sound when view button is clicked
+      const sound = document.getElementById('click-sound');
+      if (sound) {
+        sound.currentTime = 0; // rewind to start in case it's still playing
+        sound.play();
+      }
+      const userInput = parseInt(document.getElementById('user-answer').value);
+      const feedback = document.getElementById('answer-feedback');
+    
+      if (isNaN(userInput)) {
+        feedback.textContent = 'Please enter a number.';
+        feedback.style.color = 'black';
+      } else if (userInput === correctAnswer) {
+        feedback.textContent = 'Correct!';
+        feedback.style.color = 'green';
+      } else {
+        feedback.textContent = 'Incorrect. Try again!';
+        feedback.style.color = 'red';
+      }
+    });
+
+
+
+    hintBtn.addEventListener('click', () => {
+      // Play sound when view button is clicked
+      const sound = document.getElementById('click-sound');
+      if (sound) {
+        sound.currentTime = 0; // rewind to start in case it's still playing
+        sound.play();
+      }
+      if (hintIndex < hintSteps.length) {
+        // Create a new paragraph for each hint
+        const hintPara = document.createElement('div');
+        hintPara.classList.add('hint-step');
+        hintPara.textContent = hintSteps[hintIndex];
+        hintArea.appendChild(hintPara);
+        
+        MathJax.typeset([hintPara]);
+        hintIndex++;
+      }
+    });
+
+
+
+
+    
+  </script>
+
+  <audio id="click-sound" src="button.mp3" preload="auto"></audio>
+  <audio id="set-sound" src="set2.mp3" preload="auto"></audio>
+
+</body>
+</html>

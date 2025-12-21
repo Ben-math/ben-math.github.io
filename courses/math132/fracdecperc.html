@@ -54,6 +54,28 @@ fetch("/nav.html")
     <p>This is a simple conversion if you have a calculator: simply divide the numerator by the denominator!  (If you don't, let the long division
     begin):</p>
 
+    <div style="flex: 1;">
+        Flexible scaffold
+        \[
+       \require{enclose}
+       \begin{array}{rr}
+       & 3 \hspace{1mm}\\
+       & 5 \hspace{1mm}\\
+       & 10 \hspace{1mm}\\
+       & 10 \hspace{1mm}\\
+       8 & \enclose{longdiv}{224} \\
+       & \underline{- {\color{ForestGreen}80}} \hspace{1mm}\\
+       & 144 \hspace{1mm}\\
+       & \underline{- {\color{blue}80}} \hspace{1mm}\\
+       & 64 \hspace{1mm}\\
+       & \underline{- {\color{purple}40}} \hspace{1mm}\\
+       & 24 \hspace{1mm}\\
+       & \underline{- {\color{orange}24}} \hspace{1mm}\\
+       & 0 \hspace{1mm}
+       \end{array}
+       \]
+      </div>
+
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>

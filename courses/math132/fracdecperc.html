@@ -70,6 +70,26 @@ fetch("/nav.html")
        \]
       </div>
 
+    <p>Sometimes the division doesn't result in a <i>terminating</i> decimal.  Sometimes we enter an endless cycle: these <i>repeating</i> decimals
+    can be found by dividing until the first repetition after the decimal point occurs.  See below a worked example using the flexible scaffold
+    (partial quotients) division method, to convert :</p>
+
+    <div style="flex: 1;">
+        \[
+       \require{enclose}
+       \begin{array}{rr}
+       & 0.375 \hspace{1mm}\\
+       8 & \enclose{longdiv}{3.000} \\
+       & \underline{- 2.4} \hspace{7mm}\\
+       & .60 \hspace{4.5mm}\\
+       & \underline{- .56 \hspace{1mm}}\hspace{3.5mm}\\
+       & .040 \hspace{2mm}\\
+       & \underline{- .040 \hspace{2mm}}\\
+       & .000 \hspace{2mm}
+       \end{array}
+       \]
+      </div>
+
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>

@@ -368,10 +368,6 @@ fetch("/nav.html")
         const from = path[i];
         const to = path[i + 1];
 
-        hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
-            = f'(x) \\pm g(x)\\]
-            \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
-
         if (from === 'fraction' && to === 'decimal') {
           const general = `\\[\\text{To convert a fraction to a decimal, divide the numerator by the denominator. For this fraction, divide ${p} by ${q}.}\\]`;
           const example = `\\[ ${fracTeX} = ${decTeX} \\]`;

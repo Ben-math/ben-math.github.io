@@ -369,11 +369,11 @@ fetch("/nav.html")
         const to = path[i + 1];
 
         if (from === 'fraction' && to === 'decimal') {
-          const general = `\\[\\text{To convert a fraction to a decimal, divide the numerator by the denominator. For this fraction, divide ${p} \\text{ by } ${q}.}\\]`;
+          const general = `\\[\\text{To convert a fraction to a decimal, divide the numerator by the denominator. For this fraction, divide ${p} by ${q}.}\\]`;
           const example = `\\[ ${fracTeX} = ${decTeX} \\]`;
           hintSteps.push(general, example);
         } else if (from === 'decimal' && to === 'fraction') {
-          const general = `\\[\\text{To convert a decimal to a fraction, write the decimal digits over a power of 10 (like 10, 100, or 1000) and then simplify. For a repeating decimal, think of the fraction whose decimal expansion repeats in this way.}\\]`;
+          const general = `\\[\\text{To convert a decimal to a fraction, write the decimal digits over a power of 10 (like 10, 100, or 1000) and then simplify. \\For a repeating decimal, think of the fraction whose decimal expansion repeats in this way.}\\]`;
           const example = `\\[ ${decTeX} = ${fracTeX} \\]`;
           hintSteps.push(general, example);
         } else if (from === 'decimal' && to === 'percent') {
@@ -542,7 +542,7 @@ fetch("/nav.html")
         } else {
           // Repeating interpretation
           if (decimalInfo.type !== 'repeating') {
-            message = 'This decimal does not repeat. Do not check the "Repeating" box for this question.';
+            message = 'This decimal does not repeat.';
             feedback.textContent = message;
             feedback.style.color = 'black';
             return;
@@ -586,7 +586,7 @@ fetch("/nav.html")
           }
         } else {
           if (percentInfo.type !== 'repeating') {
-            message = 'This percent does not have a repeating decimal part. Do not check the "Repeating" box for this question.';
+            message = 'This percent does not have a repeating decimal part.';
             feedback.textContent = message;
             feedback.style.color = 'black';
             return;

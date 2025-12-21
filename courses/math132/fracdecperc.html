@@ -635,14 +635,6 @@ fetch("/nav.html")
           MathJax.typeset([hintPara]);
         }
         hintIndex++;
-      } else {
-        // Optionally, you could add a small "no more hints" message once
-        if (!hintArea.querySelector('.no-more-hints')) {
-          const done = document.createElement('div');
-          done.classList.add('no-more-hints');
-          done.textContent = 'No more hint steps for this question.';
-          hintArea.appendChild(done);
-        }
       }
     });
   </script>

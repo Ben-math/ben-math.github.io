@@ -486,7 +486,7 @@ fetch("/nav.html")
           if (decimalInfo.type == `terminating`){
             example = `\\[ ${decTeX} = \\frac{${decimalInfo.nonRepeat}}{${10**decimalInfo.nonRepeat.length}} = ${fracTeX} \\]`;
           } else {
-            example = `\\[ ${decTeX} = \\frac{${decimalInfo.nonRepeat}}{${10**decimalInfo.nonRepeat.length}} + \\frac{${decimalInfo.repeat}}{Number('9'.repeat(${decimalInfo.repeat.length}))} = ${fracTeX} \\]`;
+            example = `\\[ ${decTeX} = \\frac{${decimalInfo.nonRepeat}}{${10**decimalInfo.nonRepeat.length}} + \\frac{${decimalInfo.repeat}}{${Number('9'.repeat(${decimalInfo.repeat.length}))}} = ${fracTeX} \\]`;
           }
           hintSteps.push(general, example);
         } else if (from === 'decimal' && to === 'percent') {

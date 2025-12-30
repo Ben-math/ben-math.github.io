@@ -482,7 +482,7 @@ fetch("/nav.html")
         } else if (from === 'decimal' && to === 'fraction') {
           const general = `\\[\\text{To convert a decimal to a fraction, write the decimal digits over a power of 10 with one additional digit, and then simplify.}\\] 
           \\[\\text{For a repeating decimal, see the 9s strategy above.}\\]`;
-          const example = `\\[ ${decTeX} = ${fracTeX} \\]`;
+          const example = `\\[ ${decTeX} = ${decimalInfo.nonRepeat} = ${fracTeX} \\]`;
           hintSteps.push(general, example);
         } else if (from === 'decimal' && to === 'percent') {
           const general = `\\[\\text{To convert a decimal to a percent, multiply by 100 and attach a percent sign.}\\]`;

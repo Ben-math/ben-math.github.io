@@ -363,6 +363,14 @@ fetch("/nav.html")
           stage = 2;
           answerInput.value = '';
           answerLabel.textContent = 'Enter the minimum final exam grade needed to hit the target final course grade:';
+
+          // Encourage inputs > 100 (as requested)
+          const note = document.createElement('div');
+          note.style.marginTop = '10px';
+          note.style.fontWeight = 'bold';
+          note.textContent = '(Or 0 if it is not necessary to write the final exam at all.)';
+          note.id = 'over-100-note';
+          document.getElementById('answer-section').appendChild(note);
         } else {
           feedback.textContent = 'Not quite. Try again (fractions OK; within 0.1 is accepted).';
           feedback.style.color = 'red';

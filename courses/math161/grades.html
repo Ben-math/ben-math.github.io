@@ -152,6 +152,17 @@ fetch("/nav.html")
     function parseNumber(str) {
       const s = (str || '').trim();
       if (!s) return null;
+
+      // Accept fractions like "3/4" (with optional spaces, optional leading sign)
+      const fracMatch = s.match(/^([+-]?\d+)\s*\/\s*([+-]?\d+)$/);
+      if (fracMatch) {
+        const num = Number(fracMatch[1]);
+        const den = Number(fracMatch[2]);
+        if (!Number.isFinite(num) || !Number.isFinite(den) || den === 0) return null;
+        return num / den;
+      }
+
+      // Otherwise treat as decimal / integer
       const n = Number(s);
       if (!Number.isFinite(n)) return null;
       return n;
@@ -250,43 +261,57 @@ fetch("/nav.html")
     // Scenario generation
     // -----------------------------
     function generateScenario() {
-      const finalExamWeight = randInt(10, 50);
-      const numOther = randInt(3, 6);
+      // We generate weights/grades first, then choose a target in [50,70]
+      // that is achievable with a final exam score of 100 or less.
+      // If the required score would be negative, then 0 will be treated as correct.
 
-      const nonFinalTotalWeight = 100 - finalExamWeight;
-      const otherWeights = randomComposition(numOther, nonFinalTotalWeight);
+      while (true) {
+        const finalExamWeight = randInt(10, 50);
+        const numOther = randInt(3, 6);
 
-      const nonFinalComponents = otherWeights.map((w, i) => ({
-        name: `Component ${i + 1}`,
-        weight: w,
-        grade: randInt(0, 100),
-        type: 'nonfinal'
-      }));
+        const nonFinalTotalWeight = 100 - finalExamWeight;
+        const otherWeights = randomComposition(numOther, nonFinalTotalWeight);
 
-      const finalComponent = { name: 'Final Exam', weight: finalExamWeight, grade: null, type: 'final' };
+        const nonFinalComponents = otherWeights.map((w, i) => ({
+          name: `Component ${i + 1}`,
+          weight: w,
+          grade: randInt(0, 100),
+          type: 'nonfinal'
+        }));
 
-      // Current grade so far (weighted over the non-final total)
-      const sumWeighted = nonFinalComponents.reduce((acc, c) => acc + c.grade * c.weight, 0);
-      const currentGradeSoFarExact = sumWeighted / nonFinalTotalWeight;
+        const finalComponent = { name: 'Final Exam', weight: finalExamWeight, grade: null, type: 'final' };
 
-      const targetFinalCourseGrade = randInt(50, 70);
+        // Current grade so far (weighted over the non-final total)
+        const sumWeighted = nonFinalComponents.reduce((acc, c) => acc + c.grade * c.weight, 0);
+        const currentGradeSoFarExact = sumWeighted / nonFinalTotalWeight;
 
-      // Required final exam grade x for target:
-      const requiredFinalExamExact =
-        (targetFinalCourseGrade - currentGradeSoFarExact * (nonFinalTotalWeight / 100)) / (finalExamWeight / 100);
+        // With final exam score x in [0,100], achievable final-course grade range is:
+        const minAchievable = currentGradeSoFarExact * (nonFinalTotalWeight / 100); // x = 0
+        const maxAchievable = minAchievable + 100 * (finalExamWeight / 100);       // x = 100
 
-      const components = [...nonFinalComponents, finalComponent];
+        // Pick a target integer in [50,70] that is <= maxAchievable (so x <= 100 is possible).
+        const upper = Math.min(70, Math.floor(maxAchievable));
+        if (upper < 50) continue; // impossible to hit even 50 with x <= 100, regenerate
 
-      return {
-        finalExamWeight,
-        numOther,
-        nonFinalTotalWeight,
-        components,
-        nonFinalComponents,
-        currentGradeSoFarExact,
-        targetFinalCourseGrade,
-        requiredFinalExamExact
-      };
+        const targetFinalCourseGrade = randInt(50, upper);
+
+        // Required final exam grade x for target:
+        const requiredFinalExamExact =
+          (targetFinalCourseGrade - currentGradeSoFarExact * (nonFinalTotalWeight / 100)) / (finalExamWeight / 100);
+
+        const components = [...nonFinalComponents, finalComponent];
+
+        return {
+          finalExamWeight,
+          numOther,
+          nonFinalTotalWeight,
+          components,
+          nonFinalComponents,
+          currentGradeSoFarExact,
+          targetFinalCourseGrade,
+          requiredFinalExamExact
+        };
+      }
     }
 
     // -----------------------------
@@ -347,25 +372,29 @@ fetch("/nav.html")
           note.id = 'over-100-note';
           document.getElementById('answer-section').appendChild(note);
         } else {
-          feedback.textContent = 'Not quite. Try again (within 0.1 is accepted).';
+          feedback.textContent = 'Not quite. Try again (fractions OK; within 0.1 is accepted).';
           feedback.style.color = 'red';
         }
         return;
       }
 
       if (stage === 2) {
-        const correct = scenario.requiredFinalExamExact;
+        // If the algebra gives a negative required score, then 0 on the final is already enough,
+        // so we treat 0 as the correct minimum.
+        const raw = scenario.requiredFinalExamExact;
+        const correct = Math.max(0, raw);
         const ok = roughlyEqual(userVal, correct, 0.1);
 
         if (ok) {
           feedback.textContent = 'Correct! Press Start for a new random scenario.';
           feedback.style.color = 'green';
         } else {
-          feedback.textContent = 'Incorrect. Try again (within 0.1 is accepted).';
+          feedback.textContent = 'Incorrect. Try again (fractions OK; within 0.1 is accepted).';
           feedback.style.color = 'red';
         }
       }
     });
+
   </script>
   <audio id="click-sound" src="button.mp3" preload="auto"></audio>
   <audio id="set-sound" src="set2.mp3" preload="auto"></audio>

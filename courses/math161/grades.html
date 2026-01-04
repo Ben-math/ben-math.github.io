@@ -55,11 +55,19 @@ fetch("/nav.html")
 
     <p><u><b>Weighted Averages:</b></u></p>
 
-    <p>More often, different components of a course are weighted differently.</p>
+    <p>More often, different components of a course are weighted differently.  Now, suppose you scored 70 on Test 1 (worth 20%), 40 on Test 2 (worth 
+    20%), 80 on your Final Presentation (worth 10%), and 75 on the Final Exam (worth 50%).  We can find the weighted average as follows:
+    \[70(\frac{20}{100}) + 40(\frac{20}{100}) + 80(\frac{10}{100}) + 75(\frac{50}{100}) = 67.5</p>
 
     <p><u><b>What grade do I need on the final exam?</b></u></p>
 
-    <p>Depends what final grade in the course you're aiming for, how heavily the final exam is weighted, and what your grade so far is!</p>
+    <p>Depends what final grade in the course you're aiming for, how heavily the final exam is weighted, and what your grade so far is!  Suppose you 
+    scored 65 on your Midterm (worth 30%), 20 on Participation (worth 10%), and 30 on your Term Paper (worth 20%).  What grade do you need on the final 
+    exam (worth 40%) to have a final grade of 60%?</p>
+
+    <p>We can start by computing our current grade in the course, as a weighted average (note that the fractions are out of 60 because so far 60% of the 
+      course grade is in - we are missing the 40% final exam):
+    \[65(\frac{30}{60}) + 20(\frac{10}{60}) + 30(\frac{20}{60}) = \frac{275}{6} = 45.8\overline{3}\]</p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -76,22 +77,17 @@ fetch("/nav.html")
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>
     
-    <p id="question-text" class="math"></p>
+    <div id="activity-area" class="math" style="margin-top: 1em;"></div>
 
     <div class="button-container">
       <button id="hint-btn" class="rubber-button">Hint</button>
     </div>
-    
+
     <div id="hint-area" class="math" style="margin-top: 1em;"></div>
 
-
     <div id="answer-section" style="margin-top: 20px; text-align: center;">
-      <label for="user-answer">Enter your answer:</label>
+      <label id="answer-label" for="user-answer">Enter your current grade in the course:</label>
       <input type="text" id="user-answer" />
-      <label id="repeating-container" style="margin-left: 0.5em;">
-        <input type="checkbox" id="repeating-checkbox" />
-        Repeating
-      </label>
       <button id="check-answer-btn" class="rubber-button" style="margin-left: 0.5em;">Check Answer</button>
       <p id="answer-feedback" style="font-weight: bold; margin-top: 10px;"></p>
     </div>
@@ -101,580 +97,276 @@ fetch("/nav.html")
     // -----------------------------
     // State
     // -----------------------------
-    let currentFraction = null; // { p, q }
-    let decimalInfo = null;     // decomposition for the raw decimal form of p/q
-    let percentInfo = null;     // decomposition for 100 * p/q
-    let givenForm = null;       // 'fraction' | 'decimal' | 'percent'
-    let targetForm = null;      // one of the remaining two
-
-    const hintBtn = document.getElementById('hint-btn');
-    const hintArea = document.getElementById('hint-area');
-    let hintSteps = [];
-    let hintIndex = 0;
+    let scenario = null; // generated when Start is pressed
+    let stage = 0;       // 0 = not started, 1 = ask current grade, 2 = ask required final exam grade
 
     const startBtn = document.getElementById('start-btn');
-    const questionText = document.getElementById('question-text');
+    const hintBtn = document.getElementById('hint-btn');
 
+    const activityArea = document.getElementById('activity-area');
+    const hintArea = document.getElementById('hint-area');
+
+    const answerLabel = document.getElementById('answer-label');
     const answerInput = document.getElementById('user-answer');
-    const repeatingCheckbox = document.getElementById('repeating-checkbox');
-    const repeatingContainer = document.getElementById('repeating-container');
+    const checkBtn = document.getElementById('check-answer-btn');
     const feedback = document.getElementById('answer-feedback');
 
     // -----------------------------
-    // Utility: GCD for fraction equality
+    // Helpers
     // -----------------------------
-    function gcd(a, b) {
-      a = Math.abs(a);
-      b = Math.abs(b);
-      while (b !== 0) {
-        const t = b;
-        b = a % b;
-        a = t;
-      }
-      return a;
+    function randInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
-    // -----------------------------
-    // Utility: decimal decomposition of a rational number
-    // numerator / denominator  (both integers)
-    // Returns:
-    // {
-    //   type: 'terminating' | 'repeating',
-    //   sign: 1 or -1,
-    //   intPart: integer part >= 0,
-    //   nonRepeat: string of digits (may be ''),
-    //   repeat: string of digits ('' if terminating)
-    // }
-    // -----------------------------
-    function decimalDecomposition(numerator, denominator) {
-      let sign = 1;
-      if (numerator < 0) {
-        sign *= -1;
-        numerator = -numerator;
-      }
-      if (denominator < 0) {
-        sign *= -1;
-        denominator = -denominator;
-      }
-
-      const intPart = Math.floor(numerator / denominator);
-      let remainder = numerator % denominator;
-
-      if (remainder === 0) {
-        // Exact integer
-        return {
-          type: 'terminating',
-          sign,
-          intPart,
-          nonRepeat: '',
-          repeat: ''
-        };
-      }
-
-      const digits = [];
-      const remainderIndex = {};
-      let repeatStart = -1;
-
-      while (remainder !== 0 && remainderIndex[remainder] === undefined) {
-        remainderIndex[remainder] = digits.length;
-        remainder *= 10;
-        const digit = Math.floor(remainder / denominator);
-        digits.push(digit);
-        remainder = remainder % denominator;
-      }
-
-      if (remainder === 0) {
-        // Terminating decimal
-        return {
-          type: 'terminating',
-          sign,
-          intPart,
-          nonRepeat: digits.join(''),
-          repeat: ''
-        };
-      } else {
-        // Repeating decimal
-        repeatStart = remainderIndex[remainder];
-        const nonRepeatDigits = digits.slice(0, repeatStart);
-        const repeatDigits = digits.slice(repeatStart);
-        return {
-          type: 'repeating',
-          sign,
-          intPart,
-          nonRepeat: nonRepeatDigits.join(''),
-          repeat: repeatDigits.join('')
-        };
+    function playClick() {
+      const sound = document.getElementById('click-sound');
+      if (sound) {
+        sound.currentTime = 0;
+        sound.play();
       }
     }
 
-    // -----------------------------
-    // Formatting functions
-    // -----------------------------
-    function formatFractionTeX(p, q) {
-      return `\\dfrac{${p}}{${q}}`;
+    // Random positive integer weights that sum to total
+    function randomComposition(k, total) {
+      // Choose k-1 cut points from 1..total-1
+      const cuts = [];
+      for (let i = 0; i < k - 1; i++) {
+        cuts.push(randInt(1, total - 1));
+      }
+      cuts.sort((a, b) => a - b);
+
+      const parts = [];
+      let prev = 0;
+      for (const c of cuts) {
+        parts.push(c - prev);
+        prev = c;
+      }
+      parts.push(total - prev);
+      return parts;
     }
 
-    function formatDecimalTeX(info, asPercent) {
-      let s = '';
-      if (info.sign < 0) {
-        s += '-';
-      }
-      s += info.intPart.toString();
+    function toOneDecimal(x) {
+      return Math.round(x * 10) / 10;
+    }
 
-      if (info.type === 'terminating') {
-        if (info.nonRepeat && info.nonRepeat.length > 0) {
-          s += '.' + info.nonRepeat;
-        }
-      } else {
-        s += '.';
-        if (info.nonRepeat && info.nonRepeat.length > 0) {
-          s += info.nonRepeat;
-        }
-        s += `\\overline{${info.repeat}}`;
+    function parseNumber(str) {
+      const s = (str || '').trim();
+      if (!s) return null;
+      const n = Number(s);
+      if (!Number.isFinite(n)) return null;
+      return n;
+    }
+
+    function roughlyEqual(a, b, tol = 0.1) {
+      return Math.abs(a - b) <= tol;
+    }
+
+    function renderScenario() {
+      if (!scenario) return;
+
+      // Build a simple table (HTML)
+      let html = '';
+      html += '<div style="max-width: 900px; margin: 0 auto; text-align: left;">';
+      html += '<p><b>Your course components:</b></p>';
+      html += '<table style="border-collapse: collapse; width: 100%;">';
+      html += '<tr><th style="border-bottom: 1px solid #999; padding: 6px 8px; text-align: left;">Component</th>';
+      html += '<th style="border-bottom: 1px solid #999; padding: 6px 8px; text-align: right;">Weight</th>';
+      html += '<th style="border-bottom: 1px solid #999; padding: 6px 8px; text-align: right;">Grade</th></tr>';
+
+      scenario.components.forEach(c => {
+        const gradeText = (c.type === 'final') ? '<i>unknown</i>' : `${c.grade}%`;
+        html += '<tr>';
+        html += `<td style="padding: 6px 8px;">${c.name}</td>`;
+        html += `<td style="padding: 6px 8px; text-align: right;">${c.weight}%</td>`;
+        html += `<td style="padding: 6px 8px; text-align: right;">${gradeText}</td>`;
+        html += '</tr>';
+      });
+
+      html += '</table>';
+      html += `<p style="margin-top: 12px;"><b>Target final course grade:</b> ${scenario.targetFinalCourseGrade}%</p>`;
+      html += '</div>';
+
+      activityArea.innerHTML = html;
+    }
+
+    function renderHint() {
+      if (!scenario) {
+        hintArea.innerHTML = '<p>No hints yet. Press Start first.</p>';
+        return;
       }
 
-      if (asPercent) {
-        s += '\\%';
+      const fW = scenario.finalExamWeight;
+      const nf = scenario.nonFinalTotalWeight;
+
+      // Current grade so far:
+      const sumStr = scenario.nonFinalComponents
+        .map(c => `${c.grade}\\left(\\frac{${c.weight}}{${nf}}\\right)`)
+        .join(' + ');
+
+      const currentExact = scenario.currentGradeSoFarExact;
+      const current1 = toOneDecimal(currentExact);
+
+      const reqExact = scenario.requiredFinalExamExact;
+
+      const hintTeX = `
+        <div class="hint-step">
+          \\[\\textbf{Step 1: Compute your current grade (so far).}\\]
+          \\[\\text{So far, } ${nf}\\% \\text{ of the course is in, so divide weights by } ${nf}.\\]
+          \\[\\text{Current grade} = ${sumStr} = ${current1}\\]
+        </div>
+        <div class="hint-step" style="margin-top: 1em;">
+          \\[\\textbf{Step 2: Solve for the final exam grade } x.\\]
+          \\[\\text{Final course grade} = (\\text{current grade})\\left(\\frac{${nf}}{100}\\right) + x\\left(\\frac{${fW}}{100}\\right)\\]
+          \\[${current1}\\left(\\frac{${nf}}{100}\\right) + x\\left(\\frac{${fW}}{100}\\right) = ${scenario.targetFinalCourseGrade}\\]
+          \\[x = \\frac{${scenario.targetFinalCourseGrade} - ${current1}\\left(\\frac{${nf}}{100}\\right)}{\\left(\\frac{${fW}}{100}\\right)} \\approx ${toOneDecimal(reqExact)}\\]
+        </div>
+      `;
+
+      hintArea.innerHTML = hintTeX;
+      if (window.MathJax && MathJax.typeset) {
+        MathJax.typeset([hintArea]);
       }
-      return s;
+    }
+
+    function resetUIForNewScenario() {
+      hintArea.innerHTML = '';
+      feedback.textContent = '';
+      feedback.style.color = 'black';
+      answerInput.value = '';
+
+      const note = document.getElementById('over-100-note');
+      if (note) note.remove();
+
+      answerLabel.textContent = 'Enter your current grade in the course:';
+      checkBtn.textContent = 'Check Answer';
+      stage = 1;
+
+      if (window.MathJax && MathJax.typeset) {
+        MathJax.typeset([activityArea]);
+      }
     }
 
     // -----------------------------
-    // Parsing user input
+    // Scenario generation
     // -----------------------------
-    function parseFractionInput(str) {
-      const trimmed = str.trim();
-      const fracRegex = /^(\d+)\s*\/\s*(\d+)$/;
-      const match = trimmed.match(fracRegex);
-      if (!match) {
-        return null;
-      }
-      const num = parseInt(match[1], 10);
-      const den = parseInt(match[2], 10);
-      if (!Number.isInteger(num) || !Number.isInteger(den) || den === 0) {
-        return null;
-      }
-      return { num, den };
-    }
+    function generateScenario() {
+      const finalExamWeight = randInt(10, 50);
+      const numOther = randInt(3, 6);
 
-    function parseDecimalInput(str) {
-      const trimmed = str.trim();
-      if (!trimmed) return null;
+      const nonFinalTotalWeight = 100 - finalExamWeight;
+      const otherWeights = randomComposition(numOther, nonFinalTotalWeight);
 
-      // Allow forms like "0.25", ".25", "25", "-0.3"
-      const regex = /^-?\d*(\.\d*)?$/;
-      if (!regex.test(trimmed)) return null;
+      const nonFinalComponents = otherWeights.map((w, i) => ({
+        name: `Component ${i + 1}`,
+        weight: w,
+        grade: randInt(0, 100),
+        type: 'nonfinal'
+      }));
 
-      let s = trimmed;
-      let sign = 1;
-      if (s[0] === '-') {
-        sign = -1;
-        s = s.slice(1);
-      }
+      const finalComponent = { name: 'Final Exam', weight: finalExamWeight, grade: null, type: 'final' };
 
-      let intPartStr = s;
-      let fracPartStr = '';
+      // Current grade so far (weighted over the non-final total)
+      const sumWeighted = nonFinalComponents.reduce((acc, c) => acc + c.grade * c.weight, 0);
+      const currentGradeSoFarExact = sumWeighted / nonFinalTotalWeight;
 
-      if (s.includes('.')) {
-        const parts = s.split('.');
-        intPartStr = parts[0] === '' ? '0' : parts[0];
-        fracPartStr = parts[1] || '';
-      } else {
-        intPartStr = s === '' ? '0' : s;
-      }
+      const targetFinalCourseGrade = randInt(50, 70);
 
-      let intPart = parseInt(intPartStr, 10);
-      if (Number.isNaN(intPart)) intPart = 0;
+      // Required final exam grade x for target:
+      const requiredFinalExamExact =
+        (targetFinalCourseGrade - currentGradeSoFarExact * (nonFinalTotalWeight / 100)) / (finalExamWeight / 100);
+
+      const components = [...nonFinalComponents, finalComponent];
 
       return {
-        sign,
-        intPart,
-        fracDigits: fracPartStr
+        finalExamWeight,
+        numOther,
+        nonFinalTotalWeight,
+        components,
+        nonFinalComponents,
+        currentGradeSoFarExact,
+        targetFinalCourseGrade,
+        requiredFinalExamExact
       };
     }
 
     // -----------------------------
-    // Equality checks
-    // -----------------------------
-    function fractionEquals(num1, den1, num2, den2) {
-      // No need to reduce; cross-multiply
-      return num1 * den2 === num2 * den1;
-    }
-
-    function decimalEqualsFraction(decimalParsed, fraction) {
-      // decimalParsed: { sign, intPart, fracDigits }
-      // fraction: { p, q } (positive)
-      if (decimalParsed.sign < 0) {
-        return false; // our numbers are always positive
-      }
-      const fracDigits = decimalParsed.fracDigits;
-      const k = fracDigits.length;
-      const intPart = decimalParsed.intPart;
-
-      let fracInt = 0;
-      if (k > 0) {
-        fracInt = parseInt(fracDigits, 10);
-        if (Number.isNaN(fracInt)) fracInt = 0;
-      }
-
-      const num = intPart * Math.pow(10, k) + fracInt;
-      const den = Math.pow(10, k);
-
-      // Compare num/den to p/q
-      return fractionEquals(num, den, fraction.p, fraction.q);
-    }
-
-    // For percent answers, 100 * (p/q)
-    function decimalEqualsPercentFraction(decimalParsed, fraction) {
-      if (decimalParsed.sign < 0) return false;
-      const fracDigits = decimalParsed.fracDigits;
-      const k = fracDigits.length;
-      const intPart = decimalParsed.intPart;
-
-      let fracInt = 0;
-      if (k > 0) {
-        fracInt = parseInt(fracDigits, 10);
-        if (Number.isNaN(fracInt)) fracInt = 0;
-      }
-
-      const num = intPart * Math.pow(10, k) + fracInt;
-      const den = Math.pow(10, k);
-
-      // compare num/den to 100 * p / q
-      const targetNum = 100 * fraction.p;
-      const targetDen = fraction.q;
-
-      return fractionEquals(num, den, targetNum, targetDen);
-    }
-
-    // -----------------------------
-    // Repeating-answer checks
-    // -----------------------------
-    function repeatingAnswerMatches(decimalParsed, info) {
-      if (info.type !== 'repeating') return false;
-      if (decimalParsed.sign < 0) return false;
-      if (!decimalParsed.fracDigits || decimalParsed.fracDigits.length === 0) return false;
-
-      if (decimalParsed.intPart !== info.intPart) return false;
-
-      const canonicalDigits = (info.nonRepeat || '') + (info.repeat || '');
-      return decimalParsed.fracDigits === canonicalDigits;
-    }
-
-    // -----------------------------
-    // Hint construction
-    // -----------------------------
-    function buildHintSteps() {
-      hintSteps = [];
-      hintIndex = 0;
-      hintArea.innerHTML = '';
-
-      if (!currentFraction || !decimalInfo || !percentInfo || !givenForm || !targetForm) {
-        return;
-      }
-
-      const p = currentFraction.p;
-      const q = currentFraction.q;
-
-      const seq = ['fraction', 'decimal', 'percent'];
-      const path = [];
-
-      const iG = seq.indexOf(givenForm);
-      const iT = seq.indexOf(targetForm);
-
-      if (iG <= iT) {
-        for (let i = iG; i <= iT; i++) path.push(seq[i]);
-      } else {
-        for (let i = iG; i >= iT; i--) path.push(seq[i]);
-      }
-
-      const fracTeX = formatFractionTeX(p, q);
-      const decTeX = formatDecimalTeX(decimalInfo, false);
-      const percTeX = formatDecimalTeX(percentInfo, true);
-
-      for (let i = 0; i < path.length - 1; i++) {
-        const from = path[i];
-        const to = path[i + 1];
-
-        if (from === 'fraction' && to === 'decimal') {
-          const general = `\\[\\text{To convert a fraction to a decimal, divide the numerator by the denominator. For this fraction, divide ${p} by ${q}.}\\]`;
-          const example = `\\[ ${fracTeX} = ${decTeX} \\]`;
-          hintSteps.push(general, example);
-        } else if (from === 'decimal' && to === 'fraction') {
-          const general = `\\[\\text{To convert a decimal to a fraction, write the decimal digits over a power of 10 with one additional digit, and then simplify.}\\] 
-          \\[\\text{For a repeating decimal, see the 9s strategy above.}\\]`;
-          let example = ``;
-          if (decimalInfo.type == `terminating`){
-            example = `\\[ ${decTeX} = \\frac{${decimalInfo.nonRepeat}}{${10**decimalInfo.nonRepeat.length}} = ${fracTeX} \\]`;
-          } else if (decimalInfo.nonRepeat.length > 0) {
-            example = `\\[ ${decTeX} = \\frac{${decimalInfo.nonRepeat}}{${10**decimalInfo.nonRepeat.length}} + \\frac{1}{${10**decimalInfo.nonRepeat.length}} \\cdot \\frac{${decimalInfo.repeat}}{${Number('9'.repeat(decimalInfo.repeat.length))}} = ${fracTeX} \\]`;
-          } else {
-            example = `\\[ ${decTeX} = \\frac{${decimalInfo.repeat}}{${Number('9'.repeat(decimalInfo.repeat.length))}} = ${fracTeX} \\]`;
-          }
-          hintSteps.push(general, example);
-        } else if (from === 'decimal' && to === 'percent') {
-          const general = `\\[\\text{To convert a decimal to a percent, multiply by 100 and attach a percent sign.}\\]`;
-          const example = `\\[ ${decTeX} \\times 100 = ${percTeX} \\]`;
-          hintSteps.push(general, example);
-        } else if (from === 'percent' && to === 'decimal') {
-          const general = `\\[\\text{To convert a percent to a decimal, divide by 100 and remove the percent sign.}\\]`;
-          const example = `\\[ ${percTeX} = ${decTeX} \\]`;
-          hintSteps.push(general, example);
-        }
-      }
-    }
-
-    // -----------------------------
-    // Question generation
+    // Start button
     // -----------------------------
     startBtn.addEventListener('click', () => {
-      // Play sound
-      const sound = document.getElementById('click-sound');
-      if (sound) {
-        sound.currentTime = 0;
-        sound.play();
-      }
+      playClick();
 
-      // Reset feedback / answer / hints
-      feedback.textContent = '';
-      feedback.style.color = 'black';
-      answerInput.value = '';
-      repeatingCheckbox.checked = false;
-      hintArea.innerHTML = '';
-      hintSteps = [];
-      hintIndex = 0;
-
-      // Generate random fraction:
-      // denominator between 2 and 10
-      const q = Math.floor(Math.random() * 29) + 2; // 2..30
-      const p = Math.floor(Math.random() * (q - 1)) + 1; // 1..(q-1)
-
-      currentFraction = { p, q };
-
-      // Precompute decimal and percent decompositions
-      decimalInfo = decimalDecomposition(p, q);
-      // percent is 100 * p / q
-      percentInfo = decimalDecomposition(100 * p, q);
-
-      // Choose given form and target form
-      const forms = ['fraction', 'decimal', 'percent'];
-      givenForm = forms[Math.floor(Math.random() * forms.length)];
-
-      const remaining = forms.filter(f => f !== givenForm);
-      targetForm = remaining[Math.floor(Math.random() * remaining.length)];
-
-      // Show/hide repeating checkbox depending on target form
-      if (targetForm === 'fraction') {
-        repeatingContainer.style.display = 'none';
-        repeatingCheckbox.checked = false;
-      } else {
-        repeatingContainer.style.display = 'inline-block';
-      }
-
-      // Build TeX for the question
-      let givenTeX = '';
-      if (givenForm === 'fraction') {
-        givenTeX = formatFractionTeX(p, q);
-      } else if (givenForm === 'decimal') {
-        givenTeX = formatDecimalTeX(decimalInfo, false);
-      } else {
-        // percent
-        givenTeX = formatDecimalTeX(percentInfo, true);
-      }
-
-      const targetLabel =
-        targetForm === 'fraction'
-          ? 'fraction'
-          : (targetForm === 'decimal' ? 'decimal' : 'percent');
-
-      const question = `\\[ \\text{Convert } ${givenTeX} \\text{ to a ${targetLabel}.} \\]`;
-
-      questionText.innerHTML = question;
-      if (window.MathJax && MathJax.typeset) {
-        MathJax.typeset([questionText]);
-      }
-
-      // Build hint steps for this problem
-      buildHintSteps();
-    });
-
-    // -----------------------------
-    // Check answer
-    // -----------------------------
-    document.getElementById('check-answer-btn').addEventListener('click', () => {
-      const sound = document.getElementById('click-sound');
-      if (sound) {
-        sound.currentTime = 0;
-        sound.play();
-      }
-
-      const raw = answerInput.value.trim();
-      const isRepeating = repeatingCheckbox.checked;
-
-      if (!currentFraction || !givenForm || !targetForm) {
-        feedback.textContent = 'Press Start to get a question first.';
-        feedback.style.color = 'black';
-        return;
-      }
-
-      if (!raw) {
-        feedback.textContent = 'Please enter an answer.';
-        feedback.style.color = 'black';
-        return;
-      }
-
-      let correct = false;
-      let message = '';
-
-      if (targetForm === 'fraction') {
-        // Expect something like "3/4"
-        const frac = parseFractionInput(raw);
-        if (!frac) {
-          message = 'Please enter your answer as a fraction, like 3/4.';
-          feedback.textContent = message;
-          feedback.style.color = 'black';
-          return;
-        }
-
-        correct = fractionEquals(frac.num, frac.den, currentFraction.p, currentFraction.q);
-
-        if (correct) {
-          message = 'Correct!';
-          feedback.style.color = 'green';
-        } else {
-          message = 'Incorrect. Try again!';
-          feedback.style.color = 'red';
-        }
-
-      } else if (targetForm === 'decimal') {
-        const parsed = parseDecimalInput(raw);
-        if (!parsed) {
-          message = 'Please enter your answer as a decimal number (for example, 0.25).';
-          feedback.textContent = message;
-          feedback.style.color = 'black';
-          return;
-        }
-
-        if (!isRepeating) {
-          // Non-repeating interpretation
-          if (decimalInfo.type === 'repeating') {
-            // This rational has a repeating decimal expansion,
-            // so they must use the Repeating checkbox and the full cycle.
-            message = 'This decimal repeats. Include one full repeating cycle after the decimal point and check the "Repeating" box.';
-            feedback.textContent = message;
-            feedback.style.color = 'black';
-            return;
-          } else {
-            // Terminating: numeric equality to the fraction is enough
-            correct = decimalEqualsFraction(parsed, currentFraction);
-            if (correct) {
-              message = 'Correct!';
-              feedback.style.color = 'green';
-            } else {
-              message = 'Incorrect. Make sure you give the full decimal expansion.';
-              feedback.style.color = 'red';
-            }
-          }
-        } else {
-          // Repeating interpretation
-          if (decimalInfo.type !== 'repeating') {
-            message = 'This decimal does not repeat.';
-            feedback.textContent = message;
-            feedback.style.color = 'black';
-            return;
-          }
-          // Check against canonical repeating form
-          correct = repeatingAnswerMatches(parsed, decimalInfo);
-          if (correct) {
-            message = 'Correct!';
-            feedback.style.color = 'green';
-          } else {
-            message = 'Incorrect. Make sure you include exactly one full repeating cycle after the decimal point.';
-            feedback.style.color = 'red';
-          }
-        }
-
-      } else if (targetForm === 'percent') {
-        const parsed = parseDecimalInput(raw);
-        if (!parsed) {
-          message = 'Please enter the percent as a decimal number (for example, 25 or 37.5). Do not include the % sign.';
-          feedback.textContent = message;
-          feedback.style.color = 'black';
-          return;
-        }
-
-        if (!isRepeating) {
-          if (percentInfo.type === 'repeating') {
-            message = 'This percent has a repeating decimal part. Include one full repeating cycle and check the "Repeating" box.';
-            feedback.textContent = message;
-            feedback.style.color = 'black';
-            return;
-          } else {
-            // Terminating percent: numeric equality with 100 * (p/q)
-            correct = decimalEqualsPercentFraction(parsed, currentFraction);
-            if (correct) {
-              message = 'Correct!';
-              feedback.style.color = 'green';
-            } else {
-              message = 'Incorrect. Make sure you give the full decimal expansion for the percent.';
-              feedback.style.color = 'red';
-            }
-          }
-        } else {
-          if (percentInfo.type !== 'repeating') {
-            message = 'This percent does not have a repeating decimal part.';
-            feedback.textContent = message;
-            feedback.style.color = 'black';
-            return;
-          }
-          correct = repeatingAnswerMatches(parsed, percentInfo);
-          if (correct) {
-            message = 'Correct!';
-            feedback.style.color = 'green';
-          } else {
-            message = 'Incorrect. Make sure your digits match one full repeating cycle.';
-            feedback.style.color = 'red';
-          }
-        }
-      }
-
-      feedback.textContent = message;
+      scenario = generateScenario();
+      renderScenario();
+      resetUIForNewScenario();
     });
 
     // -----------------------------
     // Hint button
     // -----------------------------
     hintBtn.addEventListener('click', () => {
-      const sound = document.getElementById('click-sound');
-      if (sound) {
-        sound.currentTime = 0;
-        sound.play();
+      playClick();
+      renderHint();
+    });
+
+    // -----------------------------
+    // Check answer
+    // -----------------------------
+    checkBtn.addEventListener('click', () => {
+      playClick();
+
+      if (!scenario || stage === 0) {
+        feedback.textContent = 'Press Start to generate a problem first.';
+        feedback.style.color = 'black';
+        return;
       }
 
-      if (!hintSteps || hintSteps.length === 0) {
-        const hintPara = document.createElement('div');
-        hintPara.classList.add('hint-step');
-        hintPara.textContent = 'No hints are available for this question.';
-        hintArea.appendChild(hintPara);
-        if (window.MathJax && MathJax.typeset) {
-          MathJax.typeset([hintPara]);
+      const userVal = parseNumber(answerInput.value);
+      if (userVal === null) {
+        feedback.textContent = 'Please enter a number.';
+        feedback.style.color = 'black';
+        return;
+      }
+
+      if (stage === 1) {
+        const correct = scenario.currentGradeSoFarExact;
+        const ok = roughlyEqual(userVal, correct, 0.1);
+
+        if (ok) {
+          feedback.textContent = 'Correct! Now solve for the minimum final exam grade needed.';
+          feedback.style.color = 'green';
+
+          stage = 2;
+          answerInput.value = '';
+          answerLabel.textContent = 'Enter the minimum final exam grade needed to hit the target final course grade:';
+
+          // Encourage inputs > 100 (as requested)
+          const note = document.createElement('div');
+          note.style.marginTop = '10px';
+          note.style.fontWeight = 'bold';
+          note.textContent = '(This can be bigger than 100.)';
+          note.id = 'over-100-note';
+          document.getElementById('answer-section').appendChild(note);
+        } else {
+          feedback.textContent = 'Not quite. Try again (within 0.1 is accepted).';
+          feedback.style.color = 'red';
         }
         return;
       }
 
-      if (hintIndex < hintSteps.length) {
-        const hintPara = document.createElement('div');
-        hintPara.classList.add('hint-step');
-        hintPara.innerHTML = hintSteps[hintIndex];
-        hintArea.appendChild(hintPara);
-        if (window.MathJax && MathJax.typeset) {
-          MathJax.typeset([hintPara]);
+      if (stage === 2) {
+        const correct = scenario.requiredFinalExamExact;
+        const ok = roughlyEqual(userVal, correct, 0.1);
+
+        if (ok) {
+          feedback.textContent = 'Correct! Press Start for a new random scenario.';
+          feedback.style.color = 'green';
+        } else {
+          feedback.textContent = 'Incorrect. Try again (within 0.1 is accepted).';
+          feedback.style.color = 'red';
         }
-        hintIndex++;
       }
     });
   </script>
-
   <audio id="click-sound" src="button.mp3" preload="auto"></audio>
   <audio id="set-sound" src="set2.mp3" preload="auto"></audio>
 

@@ -46,18 +46,19 @@ fetch("/nav.html")
     "experiment" need not refer to the hard science you had in mind, but something as simple as rolling a 6-sided die.  There are 6 equally likely
     outcomes: the numbers from one to six.  We call the set of all possible outcomes the <b>sample space</b>, denoted by S:
     \[S = \{1,2,3,4,5,6\}\]
-      An <b>outcome</b> is a single element of the sample space, and an <b>event</b> is a subset of the sample space. Each of the six outcomes  in this 
-      example is equally likely (assuming the die is not weighted), and it is not possible for any two of the outcomes to occur.  This property: 
+      An <b>outcome</b> is a single element of the sample space, and an <b>event</b> is a subset of the sample space. Each of the six outcomes in this 
+      example are equally likely (assuming the die is not weighted), and it is not possible for any two of the outcomes to occur.  This property: 
       that the outcomes do not overlap, is that they are <b>mutually exclusive</b>.  We will see that when events
       are mutually exclusive, the probability that any one of them happens is equal to the sum of their individual probabilities.
     </p>
     
-    <p>Somehwat confusingly, "rational numbers" need not necessarily be written in the form of a fraction.  We have seen that all integers
-    are themselves rational numbers, so in this case it is obvious:
-    \[5 = \frac{5}{1}\]
-    But what about decimal numbers, and percentages?  Are they rational numbers?  The answer is not obvious, but it turns out that
-    any number which can be written with a terminating or repeating decimal expansion <i>is</i> a rational number, and we can demonstrate
-    this by converting them into fractions.</p>
+    <p>When there are \(n\) many equally likely outcomes, then the probability of any one of them occurring is
+    \[\frac{1}{n}\]
+    Say we want to find the probability of rolling either a 6 or less than a 3, where \(X\) is the outcome of the roll.  The two events, "rolling a 6"
+      and "rolling less than 3" are mutually exclusive: they don't overlap.  So,
+    \[P(X < 3 \cup X = 6) = P(X < 3) + P(X = 6)\]
+    Then, the events of rolling less than a 3 is the same as rolling a 2 or lower, which is the same as rolling a 1 or 2.  So,
+    \[P(X < 3) + P(X = 6) = P(X = 1) + P(X = 2) + P(X = 6) = \frac{1}{6} + \frac{1}{6} + \frac{1}{6} = \frac{3}{6} = \frac{1}{2}\]</p>
 
     <p><u><b>Converting fractions to decimals:</b></u></p>
 

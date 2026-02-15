@@ -126,98 +126,512 @@ fetch("/nav.html")
 
   </main>
   <script>
+  const hintBtn = document.getElementById('hint-btn');
+  const hintArea = document.getElementById('hint-area');
+  let hintSteps = [];
+  let hintIndex = 0;
 
-    const hintBtn = document.getElementById('hint-btn');
-    const hintArea = document.getElementById('hint-area');
-    let hintSteps = [];
-    let hintIndex = 0;
+  const startBtn = document.getElementById('start-btn');
+  const questionText = document.getElementById('question-text');
 
-    const startBtn = document.getElementById('start-btn');
-    const questionText = document.getElementById('question-text');
+  const answerInput = document.getElementById('user-answer');
+  const feedback = document.getElementById('answer-feedback');
 
-    const answerInput = document.getElementById('user-answer');
-    const feedback = document.getElementById('answer-feedback');
+  // Current correct answer stored as a reduced fraction num/den
+  let currentAnsNum = null;
+  let currentAnsDen = null;
 
-    
+  // -----------------------------
+  // Helpers
+  // -----------------------------
+  function playSound(id) {
+    const s = document.getElementById(id);
+    if (s) {
+      s.currentTime = 0;
+      s.play();
+    }
+  }
 
-    // -----------------------------
-    // Question generation
-    // -----------------------------
-    startBtn.addEventListener('click', () => {
-      // Play sound
-      const sound = document.getElementById('click-sound');
-      if (sound) {
-        sound.currentTime = 0;
-        sound.play();
+  function randInt(a, b) {
+    return Math.floor(Math.random() * (b - a + 1)) + a;
+  }
+
+  function gcd(a, b) {
+    a = Math.abs(a); b = Math.abs(b);
+    while (b !== 0) {
+      const t = a % b;
+      a = b;
+      b = t;
+    }
+    return a === 0 ? 1 : a;
+  }
+
+  function reduceFrac(num, den) {
+    if (den < 0) { den = -den; num = -num; }
+    const g = gcd(num, den);
+    return [num / g, den / g];
+  }
+
+  function fracToMath(num, den) {
+    if (den === 1) return `${num}`;
+    return `\\dfrac{${num}}{${den}}`;
+  }
+
+  function setAnswer(num, den) {
+    const r = reduceFrac(num, den);
+    currentAnsNum = r[0];
+    currentAnsDen = r[1];
+  }
+
+  function resetUIForNewQuestion() {
+    feedback.textContent = '';
+    feedback.style.color = 'black';
+    answerInput.value = '';
+    hintArea.innerHTML = '';
+    hintSteps = [];
+    hintIndex = 0;
+  }
+
+  function typeset(elements = []) {
+    if (window.MathJax && MathJax.typeset) {
+      if (elements.length > 0) MathJax.typeset(elements);
+      else MathJax.typeset();
+    }
+  }
+
+  function parseUserAnswer(raw) {
+    // Accept:
+    //  - integer: "3"
+    //  - fraction: "3/8" (spaces ok)
+    //  - decimal: "0.375"
+    const s = raw.replace(/\s+/g, '');
+
+    // Fraction a/b
+    const fracMatch = s.match(/^([+-]?\d+)\/([+-]?\d+)$/);
+    if (fracMatch) {
+      const a = parseInt(fracMatch[1], 10);
+      const b = parseInt(fracMatch[2], 10);
+      if (b === 0) return null;
+      return reduceFrac(a, b);
+    }
+
+    // Integer
+    const intMatch = s.match(/^[+-]?\d+$/);
+    if (intMatch) {
+      return [parseInt(s, 10), 1];
+    }
+
+    // Decimal
+    const decMatch = s.match(/^[+-]?\d*\.\d+$/);
+    if (decMatch) {
+      const sign = s.startsWith('-') ? -1 : 1;
+      const t = s.replace('-', '');
+      const parts = t.split('.');
+      const whole = parts[0] === '' ? 0 : parseInt(parts[0], 10);
+      const fracPart = parts[1];
+      const den = Math.pow(10, fracPart.length);
+      const num = sign * (whole * den + parseInt(fracPart, 10));
+      return reduceFrac(num, den);
+    }
+
+    return null;
+  }
+
+  function isCorrect(userFrac) {
+    if (!userFrac || currentAnsNum === null || currentAnsDen === null) return false;
+    const [uNum, uDen] = reduceFrac(userFrac[0], userFrac[1]);
+    // Exact fraction equality after reduction
+    return (uNum === currentAnsNum && uDen === currentAnsDen);
+  }
+
+  function letterName(i) {
+    // A, B, C, ...
+    return String.fromCharCode('A'.charCodeAt(0) + i);
+  }
+
+  // -----------------------------
+  // Question type 1
+  // -----------------------------
+  function generateType1() {
+    const N = randInt(20, 80);
+    const k = randInt(2, 5);
+
+    // Random positive parts summing to N
+    let cuts = [];
+    for (let i = 0; i < k - 1; i++) cuts.push(randInt(1, N - 1));
+    cuts.sort((a, b) => a - b);
+
+    const parts = [];
+    let prev = 0;
+    for (let i = 0; i < cuts.length; i++) {
+      parts.push(cuts[i] - prev);
+      prev = cuts[i];
+    }
+    parts.push(N - prev);
+
+    // Choose between 1 and k-1 pieces
+    const m = randInt(1, k - 1);
+    const idx = [...Array(k).keys()];
+    // shuffle
+    for (let i = idx.length - 1; i > 0; i--) {
+      const j = randInt(0, i);
+      [idx[i], idx[j]] = [idx[j], idx[i]];
+    }
+    const chosen = idx.slice(0, m).sort((a, b) => a - b);
+
+    const chosenSum = chosen.reduce((acc, i) => acc + parts[i], 0);
+    setAnswer(chosenSum, N);
+
+    const pieceLines = parts
+      .map((sz, i) => `${letterName(i)}: ${sz}`)
+      .join(', ');
+
+    const chosenNames = chosen.map(i => letterName(i)).join(', ');
+
+    questionText.innerHTML =
+      `A set has ${N} elements and is partitioned into ${k} mutually exclusive pieces with sizes: ` +
+      `\\(${pieceLines}\\). ` +
+      `A random element \\(X\\) is chosen from the set. ` +
+      `What is \\(P(X\\in ${chosenNames})\\)? ` +
+      `(Give your answer as a reduced fraction.)`;
+
+    hintSteps = [
+      `Because the pieces are mutually exclusive, you can add probabilities.`,
+      `Each piece has probability \\(\\text{size}/ ${N}\\).`,
+      `So \\(P(X\\in ${chosenNames}) = \\dfrac{\\text{(sum of chosen sizes)}}{${N}}\\). Reduce if needed.`
+    ];
+
+    typeset([questionText]);
+  }
+
+  // -----------------------------
+  // Question type 2
+  // -----------------------------
+  function generateType2() {
+    const n = randInt(10, 100); // n-sided die
+    const r = randInt(2, 5);    // number of disjoint ranges
+
+    // Decide how many "outer" ranges (0,1,2)
+    let outerCount = randInt(0, 2);
+    // Ensure feasibility: we need room for internal intervals if any
+    // We'll build outer ranges using cutpoints a<b, so require n>=3 (true here)
+    const hasLowOuter = outerCount >= 1 ? (Math.random() < 0.5) : false;
+    const hasHighOuter = outerCount === 2 ? true : (outerCount === 1 ? !hasLowOuter : false);
+
+    // Choose cutpoints for potential outer ranges
+    // low outer: X < a  corresponds to outcomes 1..a-1
+    // high outer: X >= b corresponds to outcomes b..n
+    // Make sure (a-1) and (n-b+1) are positive if used.
+    let a = 2;
+    let b = n;
+    if (hasLowOuter || hasHighOuter) {
+      // pick a and b with some slack
+      a = randInt(2, Math.max(2, n - 2));      // at least 2
+      b = randInt(Math.min(n - 1, a + 1), n);  // at least a+1
+      if (b <= a) b = a + 1;
+      if (b > n) b = n;
+    }
+
+    const intervals = [];
+    // Add low outer interval if used
+    if (hasLowOuter) {
+      intervals.push([1, a - 1]);
+    }
+    // Add high outer interval if used
+    if (hasHighOuter) {
+      intervals.push([b, n]);
+    }
+
+    // Internal intervals needed
+    const internalNeeded = r - intervals.length;
+    if (internalNeeded > 0) {
+      const L = hasLowOuter ? a : 1;
+      const U = hasHighOuter ? (b - 1) : n;
+      const span = U - L + 1;
+
+      // If span is too small, fall back to just using outer ranges or fewer internals
+      // (but keep r as requested by spec — so we’ll adjust by making sure span works)
+      // Since n is at least 10, this should almost always work.
+      const picks = [];
+      // pick 2*internalNeeded cutpoints in [L,U]
+      while (picks.length < 2 * internalNeeded) {
+        const x = randInt(L, U);
+        if (!picks.includes(x)) picks.push(x);
       }
+      picks.sort((x, y) => x - y);
 
-      // Reset feedback / answer / hints
-      feedback.textContent = '';
+      for (let i = 0; i < picks.length; i += 2) {
+        let s = picks[i];
+        let t = picks[i + 1];
+        if (t < s) [s, t] = [t, s];
+        intervals.push([s, t]);
+      }
+    }
+
+    // Clean up: sort intervals and ensure disjointness (they should be, but just in case)
+    intervals.sort((I, J) => I[0] - J[0]);
+    // Merge any overlaps (rare) into disjoint by trimming
+    const disjoint = [];
+    for (const [s, t] of intervals) {
+      if (disjoint.length === 0) {
+        disjoint.push([s, t]);
+      } else {
+        const last = disjoint[disjoint.length - 1];
+        if (s > last[1]) {
+          disjoint.push([s, t]);
+        } else {
+          // overlap: trim this interval to start after last end, if possible
+          const ns = last[1] + 1;
+          if (ns <= t) disjoint.push([ns, t]);
+        }
+      }
+    }
+
+    // If we ended up with fewer than r intervals due to trimming, pad with tiny disjoint intervals
+    // in gaps (best-effort, but should be extremely rare).
+    while (disjoint.length < r) {
+      // find a gap
+      disjoint.sort((I, J) => I[0] - J[0]);
+      let placed = false;
+      let prevEnd = 0;
+      for (const [s, t] of disjoint) {
+        if (s - prevEnd >= 2) { // gap has at least 1 integer
+          disjoint.push([prevEnd + 1, prevEnd + 1]);
+          placed = true;
+          break;
+        }
+        prevEnd = t;
+      }
+      if (!placed && prevEnd < n) {
+        disjoint.push([prevEnd + 1, prevEnd + 1]);
+      }
+      if (disjoint.length > 10) break; // sanity
+    }
+
+    disjoint.sort((I, J) => I[0] - J[0]);
+    const finalIntervals = disjoint.slice(0, r);
+
+    // Build event text; convert edge-touching intervals to "outer" forms (up to 2)
+    let usedOuter = 0;
+    const eventStrings = finalIntervals.map(([s, t], idx) => {
+      if (s === 1 && usedOuter < 2) {
+        usedOuter++;
+        return `X < ${t + 1}`;
+      }
+      if (t === n && usedOuter < 2) {
+        usedOuter++;
+        return `X \\ge ${s}`;
+      }
+      if (s === t) return `X = ${s}`;
+      return `${s} \\le X \\le ${t}`;
+    });
+
+    const favorable = finalIntervals.reduce((acc, [s, t]) => acc + (t - s + 1), 0);
+    setAnswer(favorable, n);
+
+    questionText.innerHTML =
+      `Let \\(X\\) be the outcome of rolling a fair \\(${n}\\)-sided die (outcomes \\(1\\) through \\(${n}\\)). ` +
+      `Find \\(P(\\,${eventStrings.join(' \\;\\cup\\; ')}\\,)\\). ` +
+      `(Give your answer as a reduced fraction.)`;
+
+    hintSteps = [
+      `These ranges are mutually exclusive (disjoint), so probabilities add.`,
+      `Each individual outcome has probability \\(\\frac{1}{${n}}\\).`,
+      `Count how many outcomes are included in the union, then divide by ${n} and reduce.`
+    ];
+
+    typeset([questionText]);
+  }
+
+  // -----------------------------
+  // Question type 3
+  // -----------------------------
+  function generateType3() {
+    // Work with denominator 100 for easy randoms, then reduce.
+    const den = 100;
+
+    let pE = randInt(10, 80);
+    let pF = randInt(10, 80);
+
+    // Choose an intersection in the valid range:
+    // max(0, pE+pF-100) <= pInt <= min(pE,pF)
+    const minInt = Math.max(0, pE + pF - den);
+    const maxInt = Math.min(pE, pF);
+    let pInt = randInt(minInt, maxInt);
+
+    const pUnion = pE + pF - pInt; // in [0,100]
+
+    // Randomly decide which is given: union or intersection
+    const giveUnion = Math.random() < 0.5;
+
+    if (giveUnion) {
+      // ask for intersection
+      setAnswer(pInt, den);
+      questionText.innerHTML =
+        `Events \\(E\\) and \\(F\\) satisfy: ` +
+        `\\(P(E) = ${fracToMath(...reduceFrac(pE, den))}\\), ` +
+        `\\(P(F) = ${fracToMath(...reduceFrac(pF, den))}\\), and ` +
+        `\\(P(E \\cup F) = ${fracToMath(...reduceFrac(pUnion, den))}\\). ` +
+        `Find \\(P(E \\cap F)\\). (Reduced fraction.)`;
+
+      hintSteps = [
+        `Use inclusion-exclusion: \\(P(E\\cup F)=P(E)+P(F)-P(E\\cap F)\\).`,
+        `Rearrange: \\(P(E\\cap F)=P(E)+P(F)-P(E\\cup F)\\).`,
+        `Substitute and reduce.`
+      ];
+    } else {
+      // ask for union
+      setAnswer(pUnion, den);
+      questionText.innerHTML =
+        `Events \\(E\\) and \\(F\\) satisfy: ` +
+        `\\(P(E) = ${fracToMath(...reduceFrac(pE, den))}\\), ` +
+        `\\(P(F) = ${fracToMath(...reduceFrac(pF, den))}\\), and ` +
+        `\\(P(E \\cap F) = ${fracToMath(...reduceFrac(pInt, den))}\\). ` +
+        `Find \\(P(E \\cup F)\\). (Reduced fraction.)`;
+
+      hintSteps = [
+        `Use inclusion-exclusion: \\(P(E\\cup F)=P(E)+P(F)-P(E\\cap F)\\).`,
+        `Substitute the given probabilities.`,
+        `Reduce the resulting fraction.`
+      ];
+    }
+
+    typeset([questionText]);
+  }
+
+  // -----------------------------
+  // Question type 4
+  // -----------------------------
+  function generateType4() {
+    const N = randInt(50, 500);
+
+    // Choose subset sizes
+    let a = randInt(5, Math.floor(0.8 * N));
+    let b = randInt(5, Math.floor(0.8 * N));
+
+    // Decide whether we give union or intersection
+    const giveUnion = Math.random() < 0.5;
+
+    if (giveUnion) {
+      // union size must be between max(a,b) and min(N, a+b)
+      const uMin = Math.max(a, b);
+      const uMax = Math.min(N, a + b);
+      const u = randInt(uMin, uMax);
+      const inter = a + b - u;
+
+      // ask for probability of intersection
+      setAnswer(inter, N);
+
+      questionText.innerHTML =
+        `A population has \\(${N}\\) members. ` +
+        `Subset \\(E\\) has \\(${a}\\) members and subset \\(F\\) has \\(${b}\\) members. ` +
+        `Also, \\(|E\\cup F| = ${u}\\). ` +
+        `If a person is selected uniformly at random, what is ` +
+        `\\(P(\\text{person} \\in E\\cap F)\\)? (Reduced fraction.)`;
+
+      hintSteps = [
+        `Use the counting version of inclusion-exclusion: \\(|E\\cup F| = |E|+|F|-|E\\cap F|\\).`,
+        `Solve for \\(|E\\cap F|\\): \\(|E\\cap F|=|E|+|F|-|E\\cup F|\\).`,
+        `Then probability is \\(\\dfrac{|E\\cap F|}{${N}}\\). Reduce.`
+      ];
+    } else {
+      // intersection size must be between max(0,a+b-N) and min(a,b)
+      const iMin = Math.max(0, a + b - N);
+      const iMax = Math.min(a, b);
+      const inter = randInt(iMin, iMax);
+      const u = a + b - inter;
+
+      // ask for probability of union
+      setAnswer(u, N);
+
+      questionText.innerHTML =
+        `A population has \\(${N}\\) members. ` +
+        `Subset \\(E\\) has \\(${a}\\) members and subset \\(F\\) has \\(${b}\\) members. ` +
+        `Also, \\(|E\\cap F| = ${inter}\\). ` +
+        `If a person is selected uniformly at random, what is ` +
+        `\\(P(\\text{person} \\in E\\cup F)\\)? (Reduced fraction.)`;
+
+      hintSteps = [
+        `Use inclusion-exclusion (counts): \\(|E\\cup F| = |E|+|F|-|E\\cap F|\\).`,
+        `Compute \\(|E\\cup F|\\), then divide by \\(${N}\\).`,
+        `Reduce the fraction.`
+      ];
+    }
+
+    typeset([questionText]);
+  }
+
+  // -----------------------------
+  // Start: generate a question
+  // -----------------------------
+  startBtn.addEventListener('click', () => {
+    playSound('click-sound');
+    resetUIForNewQuestion();
+
+    const qType = randInt(1, 4);
+
+    if (qType === 1) generateType1();
+    if (qType === 2) generateType2();
+    if (qType === 3) generateType3();
+    if (qType === 4) generateType4();
+  });
+
+  // -----------------------------
+  // Check answer (listener attached ONCE)
+  // -----------------------------
+  document.getElementById('check-answer-btn').addEventListener('click', () => {
+    playSound('click-sound');
+
+    const raw = answerInput.value.trim();
+    if (!raw) {
+      feedback.textContent = 'Please enter an answer.';
       feedback.style.color = 'black';
-      answerInput.value = '';
-      hintArea.innerHTML = '';
-      hintSteps = [];
-      hintIndex = 0;
+      return;
+    }
 
+    const parsed = parseUserAnswer(raw);
+    if (!parsed) {
+      feedback.textContent = 'I couldn’t parse that. Use a reduced fraction like 3/8 (or a decimal).';
+      feedback.style.color = 'black';
+      return;
+    }
 
-    // -----------------------------
-    // Check answer
-    // -----------------------------
-    document.getElementById('check-answer-btn').addEventListener('click', () => {
-      const sound = document.getElementById('click-sound');
-      if (sound) {
-        sound.currentTime = 0;
-        sound.play();
-      }
+    if (isCorrect(parsed)) {
+      feedback.textContent = 'Correct!';
+      feedback.style.color = 'green';
+    } else {
+      const correctMath = fracToMath(currentAnsNum, currentAnsDen);
+      feedback.innerHTML = `Not quite. Correct answer: \\(${correctMath}\\).`;
+      feedback.style.color = 'crimson';
+      typeset([feedback]);
+    }
+  });
 
-      const raw = answerInput.value.trim();
+  // -----------------------------
+  // Hint button (listener attached ONCE)
+  // -----------------------------
+  hintBtn.addEventListener('click', () => {
+    playSound('click-sound');
 
-      if (!raw) {
-        feedback.textContent = 'Please enter an answer.';
-        feedback.style.color = 'black';
-        return;
-      }
+    if (!hintSteps || hintSteps.length === 0) {
+      const hintPara = document.createElement('div');
+      hintPara.classList.add('hint-step');
+      hintPara.textContent = 'No hints are available for this question.';
+      hintArea.appendChild(hintPara);
+      typeset([hintPara]);
+      return;
+    }
 
-      let correct = false;
-      let message = '';
-
-
-      feedback.textContent = message;
-    });
-
-    // -----------------------------
-    // Hint button
-    // -----------------------------
-    hintBtn.addEventListener('click', () => {
-      const sound = document.getElementById('click-sound');
-      if (sound) {
-        sound.currentTime = 0;
-        sound.play();
-      }
-
-      if (!hintSteps || hintSteps.length === 0) {
-        const hintPara = document.createElement('div');
-        hintPara.classList.add('hint-step');
-        hintPara.textContent = 'No hints are available for this question.';
-        hintArea.appendChild(hintPara);
-        if (window.MathJax && MathJax.typeset) {
-          MathJax.typeset([hintPara]);
-        }
-        return;
-      }
-
-      if (hintIndex < hintSteps.length) {
-        const hintPara = document.createElement('div');
-        hintPara.classList.add('hint-step');
-        hintPara.innerHTML = hintSteps[hintIndex];
-        hintArea.appendChild(hintPara);
-        if (window.MathJax && MathJax.typeset) {
-          MathJax.typeset([hintPara]);
-        }
-        hintIndex++;
-      }
-    });
-  </script>
+    if (hintIndex < hintSteps.length) {
+      const hintPara = document.createElement('div');
+      hintPara.classList.add('hint-step');
+      hintPara.innerHTML = hintSteps[hintIndex];
+      hintArea.appendChild(hintPara);
+      typeset([hintPara]);
+      hintIndex++;
+    }
+  });
+</script>
 
   <audio id="click-sound" src="button.mp3" preload="auto"></audio>
   <audio id="set-sound" src="set2.mp3" preload="auto"></audio>

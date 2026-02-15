@@ -56,10 +56,20 @@ fetch("/nav.html")
     \[\frac{1}{n}\]
       Since individual outcomes, by their nature, are mutually exclusive, the odds of one of \(x\) many of them happening is
       \[\frac{x}{n}\]
-      For instance, if a group of animals consists of 15 dogs, 20 cats, and 3 kangaroos, and an animal is selected at random, the probability of
-      selecting a kangaroo is
-      \[\frac{3}{38}\]
-      since there are 38 equally likely outcomes (the 38 total animals), 3 of which are in the event we are interested in (the 3 kangaroos).
+      For instance, if a group of animals consists of 15 dogs, 20 cats, and 3 kangaroos, and an animal is selected at random, let \(X\) be the 
+      selected animal.  The probability of selecting a kangaroo is
+      \[P(X = \text{kangaroo}) = \frac{3}{38}\]
+      since there are 38 equally likely outcomes (the 38 total animals), 3 of which are in the event we are interested in (the 3 kangaroos).  To find 
+      the probability that either a cat <b>or</b> a dog is selected, since an animal can't be both a cat and a dog simultaneously, these events are
+      mutually exclusive, and
+      \[P(X = \text{cat} \cup X = \text{dog}) = P(X = \text{cat}) + P(X = \text{dog}) = \frac{20}{38} + \frac{15}{38} = \frac{35}{38}\]
+      The opposite of an event is called its <b>complement</b>.  In the above example, the event of <b>not</b> selecting a kangaroo is the 
+      complement of selecting a kangaroo.  The probability of the complement of an event \(E\), denoted \(\overline{E}\) is
+      \[P(\overline{E}) = 1 - P(E)\]
+      Note that the event of not selecting a kangaroo is the same as the event of selecting a cat or dog.  So,
+      \[P(X = \text{cat} \cup X = \text{dog}) = P(\overline{X = \text{kangaroo}}) = 1 - P(X = \text{kangaroo}) = 1 - \frac{3}{38} = \frac{35}{38}\]
+      which is exactly the result we obtained using another method.  This happens generally in the study of probability: there are often many ways
+      of solving the same problem!
     </p>
 
       

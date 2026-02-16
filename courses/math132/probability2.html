@@ -43,64 +43,37 @@ fetch("/nav.html")
   </header>
   <main>
 
-    <p>We begin our introduction to probability with the simplest case: when an experiment is performed with equally likely outcomes.  Here
-    "experiment" need not refer to the hard science you had in mind, but something as simple as rolling a 6-sided die.  There are 6 equally likely
-    outcomes: the numbers from one to six.  We call the set of all possible outcomes the <b>sample space</b>, denoted by S:
-    \[S = \{1,2,3,4,5,6\}\]
-      An <b>outcome</b> is a single element of the sample space, and an <b>event</b> is a subset of the sample space. Each of the six outcomes in this 
-      example are equally likely (assuming the die is not weighted), and it is not possible for any two of the outcomes to occur.  This property: 
-      that the outcomes do not overlap, is that they are <b>mutually exclusive</b>.  We will see that when events
-      are mutually exclusive, the probability that any one of them happens is equal to the sum of their individual probabilities.
+    <p>Our next step in studying probability is some basic combinatorics (the study of counting).  Our bread and butter is the 
+      <b>multiplication principle</b>: if there are \(n\) many ways of doing one thing, and \(m\) many ways of doing another, then there are 
+      \[m \cdot n\] 
+      many ways of doing both things.  This generalizes to arbitrarily large combinations of events.
     </p>
     
-    <p>When there are \(n\) many equally likely outcomes, then the probability of any one of them occurring is
-    \[\frac{1}{n}\]
-      Since individual outcomes, by their nature, are mutually exclusive, the odds of one of \(x\) many of them happening is
-      \[\frac{x}{n}\]
-      For instance, if a group of animals consists of 15 dogs, 20 cats, and 3 kangaroos, and an animal is selected at random, let \(X\) be the 
-      selected animal.  The probability of selecting a kangaroo is
-      \[P(X = \text{kangaroo}) = \frac{3}{38}\]
-      since there are 38 equally likely outcomes (the 38 total animals), 3 of which are in the event we are interested in (the 3 kangaroos).  To find 
-      the probability that either a cat <b>or</b> a dog is selected, since an animal can't be both a cat and a dog simultaneously, these events are
-      mutually exclusive, and
-      \[P(X = \text{cat} \cup X = \text{dog}) = P(X = \text{cat}) + P(X = \text{dog}) = \frac{20}{38} + \frac{15}{38} = \frac{35}{38}\]
-      The opposite of an event is called its <b>complement</b>.  In the above example, the event of <b>not</b> selecting a kangaroo is the 
-      complement of selecting a kangaroo.  The probability of the complement of an event \(E\), denoted \(\overline{E}\) is
-      \[P(\overline{E}) = 1 - P(E)\]
-      Note that the event of not selecting a kangaroo is the same as the event of selecting a cat or dog.  So,
-      \[P(X = \text{cat} \cup X = \text{dog}) = P(\overline{X = \text{kangaroo}}) = 1 - P(X = \text{kangaroo}) = 1 - \frac{3}{38} = \frac{35}{38}\]
-      which is exactly the result we obtained using another method.  This happens generally in the study of probability: there are often many ways
-      of solving the same problem!
+    <p>For instance, if you choose one of 5 movies to watch, and one of 3 snacks to eat, and one of 8 friends to watch the movie with, then in total 
+      there are
+      \[5 \cdot 3 \cdot 8 = 120\]
+      many possible triples you could pick.
     </p>
 
       
-    <p>Say we want to find the probability of rolling either a 6 or less than a 3, where \(X\) is the outcome of the roll of a 6-sided die.  The two 
-      events, "rolling a 6" and "rolling less than 3" are mutually exclusive: they don't overlap.  So,
-    \[P(X < 3 \cup X = 6) = P(X < 3) + P(X = 6)\]
-    Then, the events of rolling less than a 3 is the same as rolling a 2 or lower, which is the same as rolling a 1 or 2.  So,
-    \[P(X < 3) + P(X = 6) = P(X = 1) + P(X = 2) + P(X = 6) = \frac{1}{6} + \frac{1}{6} + \frac{1}{6} = \frac{3}{6} = \frac{1}{2}\]
+    <p>This same principle applies to probability.  You have a \(\frac{1}{3}\) chance of winning a game of rock-paper scissors, and a \(\frac{1}{6}\) chance 
+      of rolling a 5 on a 6-sided die.  So, the probability that you both win a game of rock paper scissors <b>and</b> roll a 5 on the die is
+      \[\frac{1}{3} \cdot \frac{1}{6} = \frac{1}{18}\]
     </p>
 
 
-    <p>Things get complicated when we want to find the probability that one of two events will occur when they are not mutually exclusive (they overlap).
-      For instance, what is the probability of rolling higher than a 3, or rolling an even number?  The outcomes in this event are
-      \[\{2, 4, 5, 6\}\]
-      so the probability is
-      \[P(X > 3 \cup X = \text{even}) = \frac{4}{6}\]
-      However, note that the outcomes in the individual events "rolling higher than a 3" and "rolling an even number" are
-      \[\{4, 5, 6\} \text{ and } \{2, 4, 6\}\]
-      respectively.  If we were to add the probabilities of those events, we'd get
-      \[P(X > 3) + P(X = \text{even}) = \frac{3}{6} + \frac{3}{6} = \frac{6}{6} = 1\]
-      which is certainly not true.  The issue here is that we have double-counted the overlap between the two events.  This leads us to the
-      inclusion-exclusion princple,
-      \[P(E \cup F) = P(E) + P(F) - P(E \cap F)\]
-      That is, the overlap between the two events is
-      \[P(X > 3 \cap X = \text{even}) = \frac{2}{6}\]
-      since there are 2 numbers which are both greater than 3 and even, namely 4 and 6.  Using this information together with the inclusion-exclusion 
-      princple, we can now solve the problem:
-      \[P(X > 3 \cup X = \text{even}) = P(X > 3) + P(X = \text{even}) - P(X > 3 \cap X = \text{even}) = \frac{3}{6} + \frac{3}{6} - \frac{2}{6} = 
-      \frac{4}{6}\]
-      which is the same result we obtained previously!
+    <p>A visual aid often used in the computation of probabiltiies where multiple events are involved is a <b>tree diagram</b>.  Suppose we conduct 
+      two experiments in sequence.  The sample space for each is partitioned into events with some prescribed probabilities.  Then the first experiment 
+      gives us the first branches, with those probabilities, and then off of each of those branches, we have branches corresponding to the second 
+      experiment branching off.  Then, the ends of the branches (called leaves) correspond to the probability of an "AND" event: both the first branch 
+      occurring on the first experiment, and the second branch occurring on the second experiment (given that the first branch occurred).  So, we multiply 
+      down the branches to get the probability that both of these occur.
+    </p>
+
+    <p>For a concrete example, suppose we have a group of 100 people.  Of these, 40 are accountants, and 60 are bankers.  Of the accountants, 30 like 
+      sushi, and 10 don't.  Of the bankers, 20 like sushi, and 40 don't.  If we randomly select one of the 100 people, we can find the probability that 
+      the person belongs to one of 4 groups (accountant that likes sushi, accountant that doesn't, banker that likes sushi, banker that doesn't) using a 
+      tree diagram.
     </p>
 
     

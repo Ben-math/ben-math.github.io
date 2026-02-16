@@ -232,8 +232,8 @@ fetch("/nav.html")
   function fracTex(num, den) {
     const r = reduceFrac(num, den);
     const n = r[0], d = r[1];
-    if (d === 1) return `${n}`;
-    return `\frac{${n}}{${d}}`;
+    if (d === 1) return `\\frac{${n}}{${d}}`;
+    return `\\frac{${n}}{${d}}`;
   }
 
   function parseUserAnswer(raw) {

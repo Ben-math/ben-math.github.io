@@ -233,7 +233,7 @@ fetch("/nav.html")
     const r = reduceFrac(num, den);
     const n = r[0], d = r[1];
     if (d === 1) return `${n}`;
-    return `\\dfrac{${n}}{${d}}`;
+    return `\\\frac{${n}}{${d}}`;
   }
 
   function parseUserAnswer(raw) {
@@ -416,7 +416,7 @@ fetch("/nav.html")
   `Add the counts for the types listed in the question to get the number of favorable outcomes.`,
   `There are ${picked.map(i => counts[i]).join(' + ')} = ${favorable} ${scenario.categoryPlur} which are ${askedTypes.join(' or ')}.`,
   `Divide by the total number of outcomes (the total size of the set).`,
-  `The proportion of ${scenario.categoryPlur} which are ${askedTypes.join(' or ')} is \(${fracTex(favorable, N)}\).`
+  `The proportion of ${scenario.categoryPlur} which are ${askedTypes.join(' or ')} is \\(${fracTex(favorable, N)}\\).`
 ];
   }
 
@@ -488,7 +488,7 @@ fetch("/nav.html")
   `Count how many outcomes satisfy at least one of the listed conditions.`,
   `There are ${favorable} natural numbers which are ${joinWithOr(phrases)}.`,
   `Divide by the total number of outcomes (${n}).`,
-  `The proportion of natural numbers which are ${n} or less that are ${joinWithOr(phrases)} is \(${fracTex(favorable, n)}\).`
+  `The proportion of natural numbers which are ${n} or less that are ${joinWithOr(phrases)} is \\(${fracTex(favorable, n)}\\).`
 ];
   }
 
@@ -533,17 +533,17 @@ fetch("/nav.html")
     return [
       `Use inclusion-exclusion.`,
       `Rearrange depending on which quantity you’re missing.`,
-      `\(P(E \cap F) = P(E) + P(F) - P(E \cup F)\)`,
-      `Let \(E\) be the event that ${eText}, and let \(F\) be the event that ${fText}.`,
-      `Substitute: \(P(E \cap F) = ${fracTex(pE, den)} + ${fracTex(pF, den)} - ${fracTex(pUnion, den)} = ${fracTex(pInt, den)}\).`
+      `\\(P(E \\cap F) = P(E) + P(F) - P(E \\cup F)\\)`,
+      `Let \\(E\\) be the event that ${eText}, and let \\(F\\) be the event that ${fText}.`,
+      `Substitute: \\(P(E \\cap F) = ${fracTex(pE, den)} + ${fracTex(pF, den)} - ${fracTex(pUnion, den)} = ${fracTex(pInt, den)}\\).`
     ];
   } else {
     return [
       `Use inclusion-exclusion.`,
       `Rearrange depending on which quantity you’re missing.`,
-      `\(P(E \cup F) = P(E) + P(F) - P(E \cap F)\)`,
-      `Let \(E\) be the event that ${eText}, and let \(F\) be the event that ${fText}.`,
-      `Substitute: \(P(E \cup F) = ${fracTex(pE, den)} + ${fracTex(pF, den)} - ${fracTex(pInt, den)} = ${fracTex(pUnion, den)}\).`
+      `\\(P(E \\cup F) = P(E) + P(F) - P(E \\cap F)\\)`,
+      `Let \\(E\\) be the event that ${eText}, and let \\(F\\) be the event that ${fText}.`,
+      `Substitute: \\(P(E \\cup F) = ${fracTex(pE, den)} + ${fracTex(pF, den)} - ${fracTex(pInt, den)} = ${fracTex(pUnion, den)}\\).`
     ];
   }
 })();
@@ -600,23 +600,23 @@ fetch("/nav.html")
 
   if (giveUnion) {
     return [
-      `Use inclusion-exclusion: \(|A \cup B| = |A| + |B| - |A \cap B|\).`,
-      `Find the missing amount, \(|A \cap B|\).`,
-      `Let \(A =\) ${A} and let \(B =\) ${B}.`,
-      `Substitute: \(${u} = ${a} + ${b} - |A \cap B|\).`,
-      `So \(|A \cap B| = ${a} + ${b} - ${u} = ${inter}\).`,
+      `Use inclusion-exclusion: \\(|A \\cup B| = |A| + |B| - |A \\cap B|\\).`,
+      `Find the missing amount, \\(|A \\cap B|\\).`,
+      `Let \\(A =\\) ${A} and let \\(B =\\) ${B}.`,
+      `Substitute: \\(${u} = ${a} + ${b} - |A \\cap B|\\).`,
+      `So \\(|A \\cap B| = ${a} + ${b} - ${u} = ${inter}\\).`,
       `Divide by the total population to get the probability.`,
-      `The proportion of ${scenario.population} which are ${A} and ${B} is \(${fracTex(inter, N)}\).`
+      `The proportion of ${scenario.population} which are ${A} and ${B} is \\(${fracTex(inter, N)}\\).`
     ];
   } else {
     return [
-      `Use inclusion-exclusion: \(|A \cup B| = |A| + |B| - |A \cap B|\).`,
-      `Find the missing amount, \(|A \cup B|\).`,
-      `Let \(A =\) ${A} and let \(B =\) ${B}.`,
-      `Substitute: \(|A \cup B| = ${a} + ${b} - ${inter}\).`,
-      `So \(|A \cup B| = ${u}\).`,
+      `Use inclusion-exclusion: \\(|A \\cup B| = |A| + |B| - |A \\cap B|\\).`,
+      `Find the missing amount, \\(|A \\cup B|\\).`,
+      `Let \\(A =\\) ${A} and let \\(B =\\) ${B}.`,
+      `Substitute: \\(|A \\cup B| = ${a} + ${b} - ${inter}\\).`,
+      `So \\(|A \\cup B| = ${u}\\).`,
       `Divide by the total population to get the probability.`,
-      `The proportion of ${scenario.population} which are ${A} or ${B} is \(${fracTex(u, N)}\).`
+      `The proportion of ${scenario.population} which are ${A} or ${B} is \\(${fracTex(u, N)}\\).`
     ];
   }
 })();

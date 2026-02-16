@@ -190,7 +190,13 @@ fetch("/nav.html")
 
 
   function typeset(elements = []) {
-    if (window.MathJax && MathJax.typeset) {
+    if (!window.MathJax) return;
+    if (MathJax.typesetPromise) {
+      if (elements.length > 0) MathJax.typesetPromise(elements);
+      else MathJax.typesetPromise();
+      return;
+    }
+    if (MathJax.typeset) {
       if (elements.length > 0) MathJax.typeset(elements);
       else MathJax.typeset();
     }
@@ -408,7 +414,7 @@ fetch("/nav.html")
 
     hintSteps = [
   `Add the counts for the types listed in the question to get the number of favorable outcomes.`,
-  `There are ${picked.map(i => counts[i]).join(' + ')} = ${favorable} many ${scenario.categoryPlur} which are ${askedTypes.join(' or ')}.`,
+  `There are ${picked.map(i => counts[i]).join(' + ')} = ${favorable} ${scenario.categoryPlur} which are ${askedTypes.join(' or ')}.`,
   `Divide by the total number of outcomes (the total size of the set).`,
   `The proportion of ${scenario.categoryPlur} which are ${askedTypes.join(' or ')} is \(${fracTex(favorable, N)}\).`
 ];
@@ -480,7 +486,7 @@ fetch("/nav.html")
 
     hintSteps = [
   `Count how many outcomes satisfy at least one of the listed conditions.`,
-  `There are ${favorable} many natural numbers which are ${joinWithOr(phrases)}.`,
+  `There are ${favorable} natural numbers which are ${joinWithOr(phrases)}.`,
   `Divide by the total number of outcomes (${n}).`,
   `The proportion of natural numbers which are ${n} or less that are ${joinWithOr(phrases)} is \(${fracTex(favorable, n)}\).`
 ];
@@ -555,11 +561,14 @@ fetch("/nav.html")
 
     const giveUnion = Math.random() < 0.5;
 
+    let u;
+    let inter;
+
     if (giveUnion) {
       const uMin = Math.max(a, b);
       const uMax = Math.min(N, a + b);
-      const u = randInt(uMin, uMax);
-      const inter = a + b - u;
+      u = randInt(uMin, uMax);
+      inter = a + b - u;
 
       setAnswer(inter, N);
 
@@ -572,8 +581,8 @@ fetch("/nav.html")
     } else {
       const iMin = Math.max(0, a + b - N);
       const iMax = Math.min(a, b);
-      const inter = randInt(iMin, iMax);
-      const u = a + b - inter;
+      inter = randInt(iMin, iMax);
+      u = a + b - inter;
 
       setAnswer(u, N);
 
@@ -680,8 +689,8 @@ fetch("/nav.html")
       hintPara.classList.add('hint-step');
       hintPara.style.textAlign = 'center';
       hintPara.innerHTML = hintSteps[hintIndex];
-        typeset([hintPara]);
       hintArea.appendChild(hintPara);
+      typeset([hintPara]);
       hintIndex++;
     }
   });

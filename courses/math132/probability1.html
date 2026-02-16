@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,647 +17,513 @@
     <h1>Probability I Activity</h1>
     <div id="nav-placeholder"></div>
       <script>
-fetch("/nav.html")
-  .then(response => response.text())
-  .then(html => {
-    document.getElementById("nav-placeholder").innerHTML = html;
 
-    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
-    const navLinks = document.querySelectorAll("#nav-placeholder a");
-    navLinks.forEach(link => {
-      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
-      if (linkPath === currentPath) {
-        link.classList.add("active");
+    const hintBtn = document.getElementById('hint-btn');
+    const hintArea = document.getElementById('hint-area');
+    let hintSteps = [];
+    let hintIndex = 0;
+
+    const startBtn = document.getElementById('start-btn');
+    const questionText = document.getElementById('question-text');
+
+    const answerInput = document.getElementById('user-answer');
+    const feedback = document.getElementById('answer-feedback');
+
+    // Correct answer stored as reduced fraction num/den
+    let currentAnsNum = null;
+    let currentAnsDen = null;
+
+    // -----------------------------
+    // Helpers
+    // -----------------------------
+    function playSound(id) {
+      const s = document.getElementById(id);
+      if (s) {
+        s.currentTime = 0;
+        s.play();
       }
-    });
-
-    const s = document.createElement("script");
-    s.src = "/mascot.js";
-    s.defer = true;
-    document.body.appendChild(s); 
-  })
-  .catch(err => {
-    console.error("Failed to load nav:", err);
-  });
-</script>
-  </header>
-  <main>
-
-    <p>We begin our introduction to probability with the simplest case: when an experiment is performed with equally likely outcomes.  Here
-    "experiment" need not refer to the hard science you had in mind, but something as simple as rolling a 6-sided die.  There are 6 equally likely
-    outcomes: the numbers from one to six.  We call the set of all possible outcomes the <b>sample space</b>, denoted by S:
-    \[S = \{1,2,3,4,5,6\}\]
-      An <b>outcome</b> is a single element of the sample space, and an <b>event</b> is a subset of the sample space. Each of the six outcomes in this 
-      example are equally likely (assuming the die is not weighted), and it is not possible for any two of the outcomes to occur.  This property: 
-      that the outcomes do not overlap, is that they are <b>mutually exclusive</b>.  We will see that when events
-      are mutually exclusive, the probability that any one of them happens is equal to the sum of their individual probabilities.
-    </p>
-    
-    <p>When there are \(n\) many equally likely outcomes, then the probability of any one of them occurring is
-    \[\frac{1}{n}\]
-      Since individual outcomes, by their nature, are mutually exclusive, the odds of one of \(x\) many of them happening is
-      \[\frac{x}{n}\]
-      For instance, if a group of animals consists of 15 dogs, 20 cats, and 3 kangaroos, and an animal is selected at random, let \(X\) be the 
-      selected animal.  The probability of selecting a kangaroo is
-      \[P(X = \text{kangaroo}) = \frac{3}{38}\]
-      since there are 38 equally likely outcomes (the 38 total animals), 3 of which are in the event we are interested in (the 3 kangaroos).  To find 
-      the probability that either a cat <b>or</b> a dog is selected, since an animal can't be both a cat and a dog simultaneously, these events are
-      mutually exclusive, and
-      \[P(X = \text{cat} \cup X = \text{dog}) = P(X = \text{cat}) + P(X = \text{dog}) = \frac{20}{38} + \frac{15}{38} = \frac{35}{38}\]
-      The opposite of an event is called its <b>complement</b>.  In the above example, the event of <b>not</b> selecting a kangaroo is the 
-      complement of selecting a kangaroo.  The probability of the complement of an event \(E\), denoted \(\overline{E}\) is
-      \[P(\overline{E}) = 1 - P(E)\]
-      Note that the event of not selecting a kangaroo is the same as the event of selecting a cat or dog.  So,
-      \[P(X = \text{cat} \cup X = \text{dog}) = P(\overline{X = \text{kangaroo}}) = 1 - P(X = \text{kangaroo}) = 1 - \frac{3}{38} = \frac{35}{38}\]
-      which is exactly the result we obtained using another method.  This happens generally in the study of probability: there are often many ways
-      of solving the same problem!
-    </p>
-
-      
-    <p>Say we want to find the probability of rolling either a 6 or less than a 3, where \(X\) is the outcome of the roll of a 6-sided die.  The two 
-      events, "rolling a 6" and "rolling less than 3" are mutually exclusive: they don't overlap.  So,
-    \[P(X < 3 \cup X = 6) = P(X < 3) + P(X = 6)\]
-    Then, the events of rolling less than a 3 is the same as rolling a 2 or lower, which is the same as rolling a 1 or 2.  So,
-    \[P(X < 3) + P(X = 6) = P(X = 1) + P(X = 2) + P(X = 6) = \frac{1}{6} + \frac{1}{6} + \frac{1}{6} = \frac{3}{6} = \frac{1}{2}\]
-    </p>
-
-
-    <p>Things get complicated when we want to find the probability that one of two events will occur when they are not mutually exclusive (they overlap).
-      For instance, what is the probability of rolling higher than a 3, or rolling an even number?  The outcomes in this event are
-      \[\{2, 4, 5, 6\}\]
-      so the probability is
-      \[P(X > 3 \cup X = \text{even}) = \frac{4}{6}\]
-      However, note that the outcomes in the individual events "rolling higher than a 3" and "rolling an even number" are
-      \[\{4, 5, 6\} \text{ and } \{2, 4, 6\}\]
-      respectively.  If we were to add the probabilities of those events, we'd get
-      \[P(X > 3) + P(X = \text{even}) = \frac{3}{6} + \frac{3}{6} = \frac{6}{6} = 1\]
-      which is certainly not true.  The issue here is that we have double-counted the overlap between the two events.  This leads us to the
-      inclusion-exclusion princple,
-      \[P(E \cup F) = P(E) + P(F) - P(E \cap F)\]
-      That is, the overlap between the two events is
-      \[P(X > 3 \cap X = \text{even}) = \frac{2}{6}\]
-      since there are 2 numbers which are both greater than 3 and even, namely 4 and 6.  Using this information together with the inclusion-exclusion 
-      princple, we can now solve the problem:
-      \[P(X > 3 \cup X = \text{even}) = P(X > 3) + P(X = \text{even}) - P(X > 3 \cap X = \text{even}) = \frac{3}{6} + \frac{3}{6} - \frac{2}{6} = 
-      \frac{4}{6}\]
-      which is the same result we obtained previously!
-    </p>
-
-    
-
-    <div class="button-container">
-      <button id="start-btn" class="rubber-button">Start!</button>
-    </div>
-    
-    <p id="question-text" class="math"></p>
-
-    <div class="button-container">
-      <button id="hint-btn" class="rubber-button">Hint</button>
-    </div>
-    
-    <div id="hint-area" class="math" style="margin-top: 1em; text-align: center;"></div>
-
-
-    <div id="answer-section" style="margin-top: 20px; text-align: center;">
-      <label for="user-answer">Enter your answer:</label>
-      <input type="text" id="user-answer" />
-      <button id="check-answer-btn" class="rubber-button" style="margin-left: 0.5em;">Check Answer</button>
-      <p id="answer-feedback" style="font-weight: bold; margin-top: 10px;"></p>
-    </div>
-
-  </main>
-  <script>
-  const hintBtn = document.getElementById('hint-btn');
-  const hintArea = document.getElementById('hint-area');
-  let hintSteps = [];
-  let hintIndex = 0;
-
-  const startBtn = document.getElementById('start-btn');
-  const questionText = document.getElementById('question-text');
-
-  const answerInput = document.getElementById('user-answer');
-  const feedback = document.getElementById('answer-feedback');
-
-  // Correct answer stored as reduced fraction num/den
-  let currentAnsNum = null;
-  let currentAnsDen = null;
-
-  // -----------------------------
-  // Helpers
-  // -----------------------------
-  function playSound(id) {
-    const s = document.getElementById(id);
-    if (s) {
-      s.currentTime = 0;
-      s.play();
-    }
-  }
-
-  function randInt(a, b) {
-    return Math.floor(Math.random() * (b - a + 1)) + a;
-  }
-
-  function gcd(a, b) {
-    a = Math.abs(a); b = Math.abs(b);
-    while (b !== 0) {
-      const t = a % b;
-      a = b;
-      b = t;
-    }
-    return a === 0 ? 1 : a;
-  }
-
-  function reduceFrac(num, den) {
-    if (den < 0) { den = -den; num = -num; }
-    const g = gcd(num, den);
-    return [num / g, den / g];
-  }
-
-  function setAnswer(num, den) {
-    const r = reduceFrac(num, den);
-    currentAnsNum = r[0];
-    currentAnsDen = r[1];
-  }
-
-  function resetUIForNewQuestion() {
-    feedback.textContent = '';
-    feedback.style.color = 'black';
-    answerInput.value = '';
-    hintArea.innerHTML = '';
-    hintSteps = [];
-    hintIndex = 0;
-  }
-
-  function toDecimalString(num, den) {
-    // Display probabilities nicely (2 decimal places, trimmed)
-    const x = num / den;
-    let s = x.toFixed(2);
-    s = s.replace(/0+$/, '').replace(/\.$/, '');
-    return s;
-  }
-
-  function countSignificantDigits(decimalStr) {
-    // expects no spaces, no sign; may have leading 0s, may contain '.'
-    // significant digits = digits excluding leading zeros before first nonzero
-    const s = decimalStr.replace(/^0+/, ''); // drop leading zeros (before decimal if any)
-    // But if it begins with ".", we still need to skip leading zeros after decimal
-    const cleaned = decimalStr.replace('.', '');
-    // remove leading zeros in the digit stream
-    const digits = cleaned.replace(/^0+/, '');
-    return digits.length; // if "0.00340" -> digits "340" length 3
-  }
-
-  function parseUserAnswer(raw) {
-    // Accept:
-    //  - integer: "3"
-    //  - fraction: "3/8"
-    //  - decimal: "0.375"
-    //
-    // Returns:
-    //  { kind:'exact', num, den } for integer/fraction
-    //  { kind:'decimal', value, tol } for decimals (graded by tolerance)
-    const s = raw.replace(/\s+/g, '');
-
-    // Fraction a/b
-    const fracMatch = s.match(/^([+-]?\d+)\/([+-]?\d+)$/);
-    if (fracMatch) {
-      const a = parseInt(fracMatch[1], 10);
-      const b = parseInt(fracMatch[2], 10);
-      if (b === 0) return { error: 'Denominator cannot be 0.' };
-      const [rn, rd] = reduceFrac(a, b);
-      return { kind: 'exact', num: rn, den: rd };
     }
 
-    // Integer
-    const intMatch = s.match(/^[+-]?\d+$/);
-    if (intMatch) {
-      const a = parseInt(s, 10);
-      return { kind: 'exact', num: a, den: 1 };
+    function randInt(a, b) {
+      return Math.floor(Math.random() * (b - a + 1)) + a;
     }
 
-    // Decimal
-    const decMatch = s.match(/^[+-]?\d*\.\d+$/);
-    if (decMatch) {
-      const sign = s.startsWith('-') ? -1 : 1;
-      const t = s.replace('-', '');
+    function gcd(a, b) {
+      a = Math.abs(a); b = Math.abs(b);
+      while (b !== 0) {
+        const t = a % b;
+        a = b;
+        b = t;
+      }
+      return a === 0 ? 1 : a;
+    }
 
-      // Require at least 2 significant digits in the decimal expansion
-      const sig = countSignificantDigits(t);
-      if (sig < 2) {
-        return { error: 'Decimal needs at least 2 significant digits (e.g., 0.33, 0.050, 0.125).' };
+    function reduceFrac(num, den) {
+      if (den < 0) { den = -den; num = -num; }
+      const g = gcd(num, den);
+      return [num / g, den / g];
+    }
+
+    function setAnswer(num, den) {
+      const r = reduceFrac(num, den);
+      currentAnsNum = r[0];
+      currentAnsDen = r[1];
+    }
+
+    function resetUIForNewQuestion() {
+      feedback.textContent = '';
+      feedback.style.color = 'black';
+      answerInput.value = '';
+      hintArea.innerHTML = '';
+      hintSteps = [];
+      hintIndex = 0;
+    }
+
+    function toDecimalString(num, den) {
+      // Display probabilities nicely (2 decimal places, trimmed)
+      const x = num / den;
+      let s = x.toFixed(2);
+      s = s.replace(/0+$/, '').replace(/\.$/, '');
+      return s;
+    }
+
+    function parseUserAnswer(raw) {
+      // Accept integer, fraction, or decimal.
+      // Returns:
+      //  { kind:'exact', num, den } for integer/fraction
+      //  { kind:'decimal', value } for decimals
+      const s = raw.replace(/\s+/g, '');
+
+      // Fraction a/b
+      const fracMatch = s.match(/^([+-]?\d+)\/([+-]?\d+)$/);
+      if (fracMatch) {
+        const a = parseInt(fracMatch[1], 10);
+        const b = parseInt(fracMatch[2], 10);
+        if (b === 0) return { error: 'Denominator cannot be 0.' };
+        const [rn, rd] = reduceFrac(a, b);
+        return { kind: 'exact', num: rn, den: rd };
       }
 
-      const parts = t.split('.');
-      const whole = parts[0] === '' ? 0 : parseInt(parts[0], 10);
-      const fracPart = parts[1];
-      const den = Math.pow(10, fracPart.length);
-      const num = sign * (whole * den + parseInt(fracPart, 10));
-      const value = num / den;
+      // Integer
+      const intMatch = s.match(/^[+-]?\d+$/);
+      if (intMatch) {
+        const a = parseInt(s, 10);
+        return { kind: 'exact', num: a, den: 1 };
+      }
 
-      // Tolerance: half of the last decimal place entered
-      const tol = 0.5 / den;
+      // Decimal
+      const decMatch = s.match(/^[+-]?\d*\.\d+$/);
+      if (decMatch) {
+        const value = Number(s);
+        if (!Number.isFinite(value)) {
+          return { error: 'That decimal does not look valid.' };
+        }
+        return { kind: 'decimal', value };
+      }
 
-      return { kind: 'decimal', value, tol };
+      return { error: 'I couldn’t parse that. Use a fraction like 3/8 or a decimal like 0.375.' };
     }
 
-    return { error: 'I couldn’t parse that. Use a fraction like 3/8 or a decimal like 0.375.' };
-  }
+    function isCorrect(parsed) {
+      if (currentAnsNum === null || currentAnsDen === null) return false;
+      const correctVal = currentAnsNum / currentAnsDen;
 
-  function isCorrect(parsed) {
-    if (currentAnsNum === null || currentAnsDen === null) return false;
-    const correctVal = currentAnsNum / currentAnsDen;
+      if (!parsed || parsed.error) return false;
 
-    if (!parsed || parsed.error) return false;
+      if (parsed.kind === 'exact') {
+        const [uNum, uDen] = reduceFrac(parsed.num, parsed.den);
+        return (uNum === currentAnsNum && uDen === currentAnsDen);
+      }
 
-    if (parsed.kind === 'exact') {
-      const [uNum, uDen] = reduceFrac(parsed.num, parsed.den);
-      return (uNum === currentAnsNum && uDen === currentAnsDen);
+      if (parsed.kind === 'decimal') {
+        // Accept if within 0.01% of the exact value.
+        // (Also allow a small absolute tolerance for values near 0.)
+        const tol = Math.max(1e-6, Math.abs(correctVal) * 1e-4);
+        return Math.abs(parsed.value - correctVal) <= tol;
+      }
+
+      return false;
     }
 
-    if (parsed.kind === 'decimal') {
-      return Math.abs(parsed.value - correctVal) <= parsed.tol;
+    function joinWithOr(items) {
+      if (items.length === 1) return items[0];
+      if (items.length === 2) return `${items[0]} or ${items[1]}`;
+      return `${items.slice(0, -1).join(', ')}, or ${items[items.length - 1]}`;
     }
 
-    return false;
-  }
-
-  function joinWithOr(items) {
-    if (items.length === 1) return items[0];
-    if (items.length === 2) return `${items[0]} or ${items[1]}`;
-    return `${items.slice(0, -1).join(', ')}, or ${items[items.length - 1]}`;
-  }
-
-  // -----------------------------
-  // Banks
-  // -----------------------------
-  const type1Bank = [
-    { categorySing: 'fruit', categoryPlur: 'fruits', items: ['apples', 'bananas', 'oranges', 'pears', 'grapefruits'] },
-    { categorySing: 'animal', categoryPlur: 'animals', items: ['cats', 'dogs', 'birds', 'bears', 'lions'] },
-    { categorySing: 'musical instrument', categoryPlur: 'musical instruments', items: ['trumpets', 'flutes', 'clarinets', 'tubas', 'saxophones'] },
-    { categorySing: 'piece of furniture', categoryPlur: 'pieces of furniture', items: ['chairs', 'tables', 'couches', 'beds', 'dressers'] },
-    { categorySing: 'utensil', categoryPlur: 'utensils', items: ['forks', 'spoons', 'knives', 'spatulas', 'whisks'] },
-    { categorySing: 'vehicle', categoryPlur: 'vehicles', items: ['sedans', 'jeeps', 'SUVs', 'trucks', 'vans'] },
-    { categorySing: 'shape', categoryPlur: 'shapes', items: ['squares', 'triangles', 'circles', 'pentagons', 'hexagons'] }
-  ];
-
-  const type3Bank = [
-    { e: 'it rains', f: 'the temperature is below 5°C' },
-    { e: 'you score a touchdown', f: 'you are the game MVP' },
-    { e: 'the Best Actor winner is from Europe', f: 'the Best Actor winner is over 40 years old' },
-    { e: 'a newborn has brown hair', f: 'a newborn weighs more than 8 lbs at birth' },
-
-    // extra suggestions (feel free to remove/replace)
-    { e: 'a randomly selected email is spam', f: 'the email contains the word “free”' },
-    { e: 'a randomly selected day is a weekend', f: 'it rains that day' },
-    { e: 'a student passes the final exam', f: 'the student studied at least 5 hours' },
-    { e: 'a customer buys something', f: 'the customer used a coupon' }
-  ];
-
-  const type4Bank = [
-    {
-      population: 'employees at Ben Co',
-      member: 'employee',
-      aLabel: 'lawyers at Ben Co',
-      bLabel: 'employees at Ben Co earning more than 100K'
-    },
-    {
-      population: 'students at VIU',
-      member: 'student',
-      aLabel: 'students enrolled in Math 132',
-      bLabel: 'students enrolled in Math 161'
-    },
-    {
-      population: 'players in the NHL',
-      member: 'player',
-      aLabel: 'centers in the NHL',
-      bLabel: 'players in the NHL who have averaged more than a point per game'
-    },
-
-    // extra suggestions
-    {
-      population: 'books in a library',
-      member: 'book',
-      aLabel: 'fiction books',
-      bLabel: 'books currently checked out'
-    },
-    {
-      population: 'cars in a parking lot',
-      member: 'car',
-      aLabel: 'cars that are SUVs',
-      bLabel: 'cars that are electric'
+    function singularize(word) {
+      // Good enough for the current banks (apples->apple, trucks->truck, etc.)
+      if (word.endsWith('s')) return word.slice(0, -1);
+      return word;
     }
-  ];
 
-  // -----------------------------
-  // Type 1 (concrete set bank)
-  // -----------------------------
-  function generateType1() {
-    const scenario = type1Bank[randInt(0, type1Bank.length - 1)];
-
-    const N = randInt(20, 80);
-    const k = randInt(2, 5);
-
-    // choose k distinct items from the 5
-    const indices = [0, 1, 2, 3, 4];
-    for (let i = indices.length - 1; i > 0; i--) {
-      const j = randInt(0, i);
-      [indices[i], indices[j]] = [indices[j], indices[i]];
+    function articleFor(word) {
+      const first = word[0];
+      const vowelLetter = /^[aeiou]/i.test(first);
+      const anInitialism = /^[FHLMNRSX]/.test(first); // “an” F, H, L, M, N, R, S, X
+      return (vowelLetter || anInitialism) ? 'an' : 'a';
     }
-    const chosenTypesIdx = indices.slice(0, k);
-    const chosenTypes = chosenTypesIdx.map(i => scenario.items[i]);
 
-    // random positive parts summing to N
-    let cuts = [];
-    for (let i = 0; i < k - 1; i++) cuts.push(randInt(1, N - 1));
-    cuts.sort((a, b) => a - b);
-
-    const counts = [];
-    let prev = 0;
-    for (let i = 0; i < cuts.length; i++) {
-      counts.push(cuts[i] - prev);
-      prev = cuts[i];
-    }
-    counts.push(N - prev);
-
-    // choose between 1 and k-1 of the pieces for the OR question
-    const m = randInt(1, k - 1);
-    const idx2 = [...Array(k).keys()];
-    for (let i = idx2.length - 1; i > 0; i--) {
-      const j = randInt(0, i);
-      [idx2[i], idx2[j]] = [idx2[j], idx2[i]];
-    }
-    const picked = idx2.slice(0, m).sort((a, b) => a - b);
-
-    const favorable = picked.reduce((acc, i) => acc + counts[i], 0);
-    setAnswer(favorable, N);
-
-    const breakdown = chosenTypes
-      .map((t, i) => `${counts[i]} ${t}`)
-      .join(', ');
-
-    const askedTypes = picked.map(i => chosenTypes[i]);
-    const askedPhrase = joinWithOr(askedTypes);
-
-    questionText.textContent =
-      `A ${scenario.categorySing} is randomly selected from a set of ${N} ${scenario.categoryPlur}. ` +
-      `There are ${breakdown}. ` +
-      `What is the probability that a ${askedPhrase} is selected?`;
-
-    hintSteps = [
-      `Add the counts for the types listed in the question to get the number of favorable outcomes.`,
-      `Divide by the total number of outcomes (the total size of the set).`,
-      `You can answer as a reduced fraction or as a decimal (with at least 2 significant digits).`
+    // -----------------------------
+    // Banks
+    // -----------------------------
+    const type1Bank = [
+      { categorySing: 'fruit', categoryPlur: 'fruits', items: ['apples', 'bananas', 'oranges', 'pears', 'grapefruits'] },
+      { categorySing: 'animal', categoryPlur: 'animals', items: ['cats', 'dogs', 'birds', 'bears', 'lions'] },
+      { categorySing: 'musical instrument', categoryPlur: 'musical instruments', items: ['trumpets', 'flutes', 'clarinets', 'tubas', 'saxophones'] },
+      { categorySing: 'piece of furniture', categoryPlur: 'pieces of furniture', items: ['chairs', 'tables', 'couches', 'beds', 'dressers'] },
+      { categorySing: 'utensil', categoryPlur: 'utensils', items: ['forks', 'spoons', 'knives', 'spatulas', 'whisks'] },
+      { categorySing: 'vehicle', categoryPlur: 'vehicles', items: ['sedans', 'jeeps', 'SUVs', 'trucks', 'vans'] },
+      { categorySing: 'shape', categoryPlur: 'shapes', items: ['squares', 'triangles', 'circles', 'pentagons', 'hexagons'] }
     ];
-  }
 
-  // -----------------------------
-  // Type 2 (die OR of 1–3 disjoint events, plain English)
-  // -----------------------------
-  function generateType2() {
-    const n = randInt(10, 100);
-    const r = randInt(1, 3);
+    const type3Bank = [
+      { e: 'it rains', f: 'the temperature is below 5°C' },
+      { e: 'you score a touchdown', f: 'you are the game MVP' },
+      { e: 'the Best Actor winner is from Europe', f: 'the Best Actor winner is over 40 years old' },
+      { e: 'a newborn has brown hair', f: 'a newborn weighs more than 8 lbs at birth' },
+      // extra suggestions
+      { e: 'a randomly selected email is spam', f: 'the email contains the word “free”' },
+      { e: 'a randomly selected day is a weekend', f: 'it rains that day' },
+      { e: 'a student passes the final exam', f: 'the student studied at least 5 hours' },
+      { e: 'a customer buys something', f: 'the customer used a coupon' }
+    ];
 
-    // Build r disjoint intervals inside 1..n, allowing at most 2 "outer" style phrases.
-    // We'll create cutpoints and then select disjoint blocks.
-    const points = new Set();
-    while (points.size < 2 * r) points.add(randInt(1, n));
-    const sorted = Array.from(points).sort((a, b) => a - b);
+    const type4Bank = [
+      {
+        population: 'employees at Ben Co',
+        member: 'employee',
+        aLabel: 'lawyers at Ben Co',
+        bLabel: 'employees at Ben Co earning more than 100K'
+      },
+      {
+        population: 'students at VIU',
+        member: 'student',
+        aLabel: 'students enrolled in Math 132',
+        bLabel: 'students enrolled in Math 161'
+      },
+      {
+        population: 'players in the NHL',
+        member: 'player',
+        aLabel: 'centers in the NHL',
+        bLabel: 'players in the NHL who have averaged more than a point per game'
+      },
+      // extra suggestions
+      {
+        population: 'books in a library',
+        member: 'book',
+        aLabel: 'fiction books',
+        bLabel: 'books currently checked out'
+      },
+      {
+        population: 'cars in a parking lot',
+        member: 'car',
+        aLabel: 'cars that are SUVs',
+        bLabel: 'cars that are electric'
+      }
+    ];
 
-    const intervals = [];
-    for (let i = 0; i < sorted.length; i += 2) {
-      let a = sorted[i], b = sorted[i + 1];
-      if (b < a) [a, b] = [b, a];
-      intervals.push([a, b]);
+    // -----------------------------
+    // Type 1
+    // -----------------------------
+    function generateType1() {
+      const scenario = type1Bank[randInt(0, type1Bank.length - 1)];
+
+      const N = randInt(20, 80);
+      const k = randInt(2, 5);
+
+      // choose k distinct items from the 5
+      const indices = [0, 1, 2, 3, 4];
+      for (let i = indices.length - 1; i > 0; i--) {
+        const j = randInt(0, i);
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+      }
+      const chosenTypesIdx = indices.slice(0, k);
+      const chosenTypes = chosenTypesIdx.map(i => scenario.items[i]);
+
+      // random positive parts summing to N
+      let cuts = [];
+      for (let i = 0; i < k - 1; i++) cuts.push(randInt(1, N - 1));
+      cuts.sort((a, b) => a - b);
+
+      const counts = [];
+      let prev = 0;
+      for (let i = 0; i < cuts.length; i++) {
+        counts.push(cuts[i] - prev);
+        prev = cuts[i];
+      }
+      counts.push(N - prev);
+
+      // choose between 1 and k-1 of the pieces for the OR question
+      const m = randInt(1, k - 1);
+      const idx2 = [...Array(k).keys()];
+      for (let i = idx2.length - 1; i > 0; i--) {
+        const j = randInt(0, i);
+        [idx2[i], idx2[j]] = [idx2[j], idx2[i]];
+      }
+      const picked = idx2.slice(0, m).sort((a, b) => a - b);
+
+      const favorable = picked.reduce((acc, i) => acc + counts[i], 0);
+      setAnswer(favorable, N);
+
+      const breakdown = chosenTypes
+        .map((t, i) => `${counts[i]} ${t}`)
+        .join(', ');
+
+      const askedTypes = picked.map(i => chosenTypes[i]);
+      const askedSingles = askedTypes.map(t => {
+        const s = singularize(t);
+        return `${articleFor(s)} ${s}`;
+      });
+      const askedPhrase = joinWithOr(askedSingles);
+
+      questionText.textContent =
+        `A ${scenario.categorySing} is randomly selected from a set of ${N} ${scenario.categoryPlur}. ` +
+        `There are ${breakdown}. ` +
+        `What is the probability that ${askedPhrase} is selected?`;
+
+      hintSteps = [
+        `Add the counts for the types listed in the question to get the number of favorable outcomes.`,
+        `Divide by the total number of outcomes (the total size of the set).`,
+        `You can answer as a reduced fraction or as a decimal.`
+      ];
     }
-    intervals.sort((I, J) => I[0] - J[0]);
 
-    // Make disjoint by trimming overlaps
-    const disjoint = [];
-    for (const [s, t] of intervals) {
-      if (disjoint.length === 0) disjoint.push([s, t]);
-      else {
-        const last = disjoint[disjoint.length - 1];
-        if (s > last[1]) disjoint.push([s, t]);
+    // -----------------------------
+    // Type 2
+    // -----------------------------
+    function generateType2() {
+      const n = randInt(10, 100);
+      const r = randInt(1, 3);
+
+      // create r disjoint intervals
+      const points = new Set();
+      while (points.size < 2 * r) points.add(randInt(1, n));
+      const sorted = Array.from(points).sort((a, b) => a - b);
+
+      const intervals = [];
+      for (let i = 0; i < sorted.length; i += 2) {
+        let a = sorted[i], b = sorted[i + 1];
+        if (b < a) [a, b] = [b, a];
+        intervals.push([a, b]);
+      }
+      intervals.sort((I, J) => I[0] - J[0]);
+
+      const disjoint = [];
+      for (const [s, t] of intervals) {
+        if (disjoint.length === 0) disjoint.push([s, t]);
         else {
-          const ns = last[1] + 1;
-          if (ns <= t) disjoint.push([ns, t]);
+          const last = disjoint[disjoint.length - 1];
+          if (s > last[1]) disjoint.push([s, t]);
+          else {
+            const ns = last[1] + 1;
+            if (ns <= t) disjoint.push([ns, t]);
+          }
         }
       }
+
+      while (disjoint.length < r) {
+        const x = randInt(1, n);
+        let ok = true;
+        for (const [s, t] of disjoint) if (x >= s && x <= t) ok = false;
+        if (ok) disjoint.push([x, x]);
+        if (disjoint.length > 10) break;
+      }
+
+      disjoint.sort((I, J) => I[0] - J[0]);
+      const finalIntervals = disjoint.slice(0, r);
+
+      let outerUsed = 0;
+      const phrases = finalIntervals.map(([s, t]) => {
+        if (s === 1 && outerUsed < 2) {
+          outerUsed++;
+          return `less than ${t + 1}`;
+        }
+        if (t === n && outerUsed < 2) {
+          outerUsed++;
+          return `${s} or higher`;
+        }
+        if (s === t) return `exactly ${s}`;
+        return `between ${s} and ${t} (inclusive)`;
+      });
+
+      const favorable = finalIntervals.reduce((acc, [s, t]) => acc + (t - s + 1), 0);
+      setAnswer(favorable, n);
+
+      questionText.textContent =
+        `A ${n}-sided die is rolled. ` +
+        `What is the probability that the number rolled is ${joinWithOr(phrases)}?`;
+
+      hintSteps = [
+        `Count how many outcomes satisfy at least one of the listed conditions.`,
+        `Divide by the total number of outcomes (${n}).`,
+        `You can answer as a reduced fraction or as a decimal.`
+      ];
     }
 
-    // If too short (rare), pad with singletons
-    while (disjoint.length < r) {
-      const x = randInt(1, n);
-      let ok = true;
-      for (const [s, t] of disjoint) if (x >= s && x <= t) ok = false;
-      if (ok) disjoint.push([x, x]);
-      if (disjoint.length > 10) break;
+    // -----------------------------
+    // Type 3
+    // -----------------------------
+    function generateType3() {
+      const scenario = type3Bank[randInt(0, type3Bank.length - 1)];
+      const den = 100;
+
+      const pE = randInt(10, 80);
+      const pF = randInt(10, 80);
+
+      const minInt = Math.max(0, pE + pF - den);
+      const maxInt = Math.min(pE, pF);
+      const pInt = randInt(minInt, maxInt);
+
+      const pUnion = pE + pF - pInt;
+
+      const giveUnion = Math.random() < 0.5;
+
+      if (giveUnion) {
+        setAnswer(pInt, den);
+        questionText.textContent =
+          `There is a ${toDecimalString(pE, den)} probability that ${scenario.e}, ` +
+          `a ${toDecimalString(pF, den)} probability that ${scenario.f}, ` +
+          `and a ${toDecimalString(pUnion, den)} probability that ${scenario.e} or ${scenario.f}. ` +
+          `What is the probability that ${scenario.e} and ${scenario.f}?`;
+      } else {
+        setAnswer(pUnion, den);
+        questionText.textContent =
+          `There is a ${toDecimalString(pE, den)} probability that ${scenario.e}, ` +
+          `a ${toDecimalString(pF, den)} probability that ${scenario.f}, ` +
+          `and a ${toDecimalString(pInt, den)} probability that ${scenario.e} and ${scenario.f}. ` +
+          `What is the probability that ${scenario.e} or ${scenario.f}?`;
+      }
+
+      hintSteps = [
+        `Use: probability of (A or B) = probability of A + probability of B − probability of (A and B).`,
+        `Rearrange depending on which quantity you’re missing.`,
+        `You can answer as a reduced fraction or as a decimal.`
+      ];
     }
 
-    disjoint.sort((I, J) => I[0] - J[0]);
-    const finalIntervals = disjoint.slice(0, r);
+    // -----------------------------
+    // Type 4
+    // -----------------------------
+    function generateType4() {
+      const scenario = type4Bank[randInt(0, type4Bank.length - 1)];
 
-    // Convert to plain English phrases
-    // Allow at most 2 outer phrases if the interval touches endpoints
-    let outerUsed = 0;
-    const phrases = finalIntervals.map(([s, t]) => {
-      if (s === 1 && outerUsed < 2) {
-        outerUsed++;
-        return `less than ${t + 1}`;
+      const N = randInt(80, 600);
+      const a = randInt(10, Math.floor(0.75 * N));
+      const b = randInt(10, Math.floor(0.75 * N));
+
+      const giveUnion = Math.random() < 0.5;
+
+      if (giveUnion) {
+        const uMin = Math.max(a, b);
+        const uMax = Math.min(N, a + b);
+        const u = randInt(uMin, uMax);
+        const inter = a + b - u;
+
+        setAnswer(inter, N);
+
+        questionText.textContent =
+          `There are ${N} ${scenario.population}. ` +
+          `${a} are ${scenario.aLabel}, ${b} are ${scenario.bLabel}, ` +
+          `and ${u} are ${scenario.aLabel} or ${scenario.bLabel}. ` +
+          `If a ${scenario.member} is selected at random, what is the probability they are ` +
+          `${scenario.aLabel} and ${scenario.bLabel}?`;
+      } else {
+        const iMin = Math.max(0, a + b - N);
+        const iMax = Math.min(a, b);
+        const inter = randInt(iMin, iMax);
+        const u = a + b - inter;
+
+        setAnswer(u, N);
+
+        questionText.textContent =
+          `There are ${N} ${scenario.population}. ` +
+          `${a} are ${scenario.aLabel}, ${b} are ${scenario.bLabel}, ` +
+          `and ${inter} are ${scenario.aLabel} and ${scenario.bLabel}. ` +
+          `If a ${scenario.member} is selected at random, what is the probability they are ` +
+          `${scenario.aLabel} or ${scenario.bLabel}?`;
       }
-      if (t === n && outerUsed < 2) {
-        outerUsed++;
-        return `${s} or higher`;
-      }
-      if (s === t) return `exactly ${s}`;
-      return `between ${s} and ${t} (inclusive)`;
+
+      hintSteps = [
+        `Use: (A or B) = A + B − (A and B). (This works with counts too.)`,
+        `First compute the missing count (union or intersection).`,
+        `Then divide by the total population to get the probability.`
+      ];
+    }
+
+    // -----------------------------
+    // Start
+    // -----------------------------
+    startBtn.addEventListener('click', () => {
+      playSound('click-sound');
+      resetUIForNewQuestion();
+
+      const qType = randInt(1, 4);
+      if (qType === 1) generateType1();
+      if (qType === 2) generateType2();
+      if (qType === 3) generateType3();
+      if (qType === 4) generateType4();
     });
 
-    const favorable = finalIntervals.reduce((acc, [s, t]) => acc + (t - s + 1), 0);
-    setAnswer(favorable, n);
+    // -----------------------------
+    // Check answer
+    // -----------------------------
+    document.getElementById('check-answer-btn').addEventListener('click', () => {
+      playSound('click-sound');
 
-    questionText.textContent =
-      `A ${n}-sided die is rolled. ` +
-      `What is the probability that the number rolled is ${joinWithOr(phrases)}?`;
+      const raw = answerInput.value.trim();
+      if (!raw) {
+        feedback.textContent = 'Please enter an answer.';
+        feedback.style.color = 'black';
+        return;
+      }
 
-    hintSteps = [
-      `Count how many outcomes satisfy at least one of the listed conditions.`,
-      `Divide by the total number of outcomes (${n}).`,
-      `You can answer as a reduced fraction or as a decimal (with at least 2 significant digits).`
-    ];
-  }
+      const parsed = parseUserAnswer(raw);
+      if (parsed.error) {
+        feedback.textContent = parsed.error;
+        feedback.style.color = 'black';
+        return;
+      }
 
-  // -----------------------------
-  // Type 3 (event bank, inclusion–exclusion, plain English)
-  // -----------------------------
-  function generateType3() {
-    const scenario = type3Bank[randInt(0, type3Bank.length - 1)];
+      if (isCorrect(parsed)) {
+        feedback.textContent = 'Correct!';
+        feedback.style.color = 'green';
+      } else {
+        const exact = `${currentAnsNum}/${currentAnsDen}`;
+        const dec = (currentAnsNum / currentAnsDen).toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
+        feedback.textContent = `Not quite. Correct answer is ${exact} (≈ ${dec}).`;
+        feedback.style.color = 'crimson';
+      }
+    });
 
-    // Use denominator 100 to keep things easy/clean
-    const den = 100;
+    // -----------------------------
+    // Hint button
+    // -----------------------------
+    hintBtn.addEventListener('click', () => {
+      playSound('click-sound');
 
-    const pE = randInt(10, 80);
-    const pF = randInt(10, 80);
+      if (!hintSteps || hintSteps.length === 0) {
+        const hintPara = document.createElement('div');
+        hintPara.classList.add('hint-step');
+        hintPara.style.textAlign = 'center';
+        hintPara.textContent = 'No hints are available for this question.';
+        hintArea.appendChild(hintPara);
+        if (window.MathJax && MathJax.typeset) MathJax.typeset([hintPara]);
+        return;
+      }
 
-    const minInt = Math.max(0, pE + pF - den);
-    const maxInt = Math.min(pE, pF);
-    const pInt = randInt(minInt, maxInt);
+      if (hintIndex < hintSteps.length) {
+        const hintPara = document.createElement('div');
+        hintPara.classList.add('hint-step');
+        hintPara.style.textAlign = 'center';
+        hintPara.textContent = hintSteps[hintIndex];
+        hintArea.appendChild(hintPara);
+        if (window.MathJax && MathJax.typeset) MathJax.typeset([hintPara]);
+        hintIndex++;
+      }
+    });
 
-    const pUnion = pE + pF - pInt;
-
-    const giveUnion = Math.random() < 0.5;
-
-    if (giveUnion) {
-      // Given P(E), P(F), P(E or F). Ask P(E and F).
-      setAnswer(pInt, den);
-
-      questionText.textContent =
-        `There is a ${toDecimalString(pE, den)} probability that ${scenario.e}, ` +
-        `a ${toDecimalString(pF, den)} probability that ${scenario.f}, ` +
-        `and a ${toDecimalString(pUnion, den)} probability that ${scenario.e} or ${scenario.f}. ` +
-        `What is the probability that ${scenario.e} and ${scenario.f}?`;
-    } else {
-      // Given P(E), P(F), P(E and F). Ask P(E or F).
-      setAnswer(pUnion, den);
-
-      questionText.textContent =
-        `There is a ${toDecimalString(pE, den)} probability that ${scenario.e}, ` +
-        `a ${toDecimalString(pF, den)} probability that ${scenario.f}, ` +
-        `and a ${toDecimalString(pInt, den)} probability that ${scenario.e} and ${scenario.f}. ` +
-        `What is the probability that ${scenario.e} or ${scenario.f}?`;
-    }
-
-    hintSteps = [
-      `Use: probability of (A or B) = probability of A + probability of B − probability of (A and B).`,
-      `Rearrange depending on which quantity you’re missing.`,
-      `Answer as a reduced fraction or as a decimal (at least 2 significant digits).`
-    ];
-  }
-
-  // -----------------------------
-  // Type 4 (population/subset bank, inclusion–exclusion, plain English)
-  // -----------------------------
-  function generateType4() {
-    const scenario = type4Bank[randInt(0, type4Bank.length - 1)];
-
-    const N = randInt(80, 600);
-    const a = randInt(10, Math.floor(0.75 * N));
-    const b = randInt(10, Math.floor(0.75 * N));
-
-    const giveUnion = Math.random() < 0.5;
-
-    if (giveUnion) {
-      // give union size, ask intersection probability
-      const uMin = Math.max(a, b);
-      const uMax = Math.min(N, a + b);
-      const u = randInt(uMin, uMax);
-      const inter = a + b - u;
-
-      setAnswer(inter, N);
-
-      questionText.textContent =
-        `There are ${N} ${scenario.population}. ` +
-        `${a} are ${scenario.aLabel}, ${b} are ${scenario.bLabel}, ` +
-        `and ${u} are ${scenario.aLabel} or ${scenario.bLabel}. ` +
-        `If a ${scenario.member} is selected at random, what is the probability they are ` +
-        `${scenario.aLabel} and ${scenario.bLabel}?`;
-    } else {
-      // give intersection size, ask union probability
-      const iMin = Math.max(0, a + b - N);
-      const iMax = Math.min(a, b);
-      const inter = randInt(iMin, iMax);
-      const u = a + b - inter;
-
-      setAnswer(u, N);
-
-      questionText.textContent =
-        `There are ${N} ${scenario.population}. ` +
-        `${a} are ${scenario.aLabel}, ${b} are ${scenario.bLabel}, ` +
-        `and ${inter} are ${scenario.aLabel} and ${scenario.bLabel}. ` +
-        `If a ${scenario.member} is selected at random, what is the probability they are ` +
-        `${scenario.aLabel} or ${scenario.bLabel}?`;
-    }
-
-    hintSteps = [
-      `Use: (A or B) = A + B − (A and B). (This works with counts too.)`,
-      `First compute the missing count (union or intersection).`,
-      `Then divide by the total population to get the probability.`
-    ];
-  }
-
-  // -----------------------------
-  // Start: generate a question
-  // -----------------------------
-  startBtn.addEventListener('click', () => {
-    playSound('click-sound');
-    resetUIForNewQuestion();
-
-    const qType = randInt(1, 4);
-
-    if (qType === 1) generateType1();
-    if (qType === 2) generateType2();
-    if (qType === 3) generateType3();
-    if (qType === 4) generateType4();
-  });
-
-  // -----------------------------
-  // Check answer
-  // -----------------------------
-  document.getElementById('check-answer-btn').addEventListener('click', () => {
-    playSound('click-sound');
-
-    const raw = answerInput.value.trim();
-    if (!raw) {
-      feedback.textContent = 'Please enter an answer.';
-      feedback.style.color = 'black';
-      return;
-    }
-
-    const parsed = parseUserAnswer(raw);
-    if (parsed.error) {
-      feedback.textContent = parsed.error;
-      feedback.style.color = 'black';
-      return;
-    }
-
-    if (isCorrect(parsed)) {
-      feedback.textContent = 'Correct!';
-      feedback.style.color = 'green';
-    } else {
-      // Show the exact answer (fraction) and a decimal to help students
-      const exact = `${currentAnsNum}/${currentAnsDen}`;
-      const dec = (currentAnsNum / currentAnsDen).toFixed(4).replace(/0+$/, '').replace(/\.$/, '');
-      feedback.textContent = `Not quite. Correct answer is ${exact} (≈ ${dec}).`;
-      feedback.style.color = 'crimson';
-    }
-  });
-
-  // -----------------------------
-  // Hint button (centered)
-  // -----------------------------
-  hintBtn.addEventListener('click', () => {
-    playSound('click-sound');
-
-    if (!hintSteps || hintSteps.length === 0) {
-      const hintPara = document.createElement('div');
-      hintPara.classList.add('hint-step');
-      hintPara.style.textAlign = 'center';
-      hintPara.textContent = 'No hints are available for this question.';
-      hintArea.appendChild(hintPara);
-      return;
-    }
-
-    if (hintIndex < hintSteps.length) {
-      const hintPara = document.createElement('div');
-      hintPara.classList.add('hint-step');
-      hintPara.style.textAlign = 'center';
-      hintPara.textContent = hintSteps[hintIndex];
-      hintArea.appendChild(hintPara);
-      hintIndex++;
-    }
-  });
-</script>
-
+  </script>
 
   <audio id="click-sound" src="button.mp3" preload="auto"></audio>
   <audio id="set-sound" src="set2.mp3" preload="auto"></audio>

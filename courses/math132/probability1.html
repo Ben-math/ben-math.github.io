@@ -115,7 +115,7 @@ fetch("/nav.html")
       <button id="hint-btn" class="rubber-button">Hint</button>
     </div>
     
-    <div id="hint-area" class="math" style="margin-top: 1em;; text-align: center"></div>
+    <div id="hint-area" class="math" style="margin-top: 1em; text-align: center"></div>
 
 
     <div id="answer-section" style="margin-top: 20px; text-align: center;">
@@ -188,6 +188,14 @@ fetch("/nav.html")
     hintIndex = 0;
   }
 
+
+  function typeset(elements = []) {
+    if (window.MathJax && MathJax.typeset) {
+      if (elements.length > 0) MathJax.typeset(elements);
+      else MathJax.typeset();
+    }
+  }
+
   function toDecimalString(num, den) {
     const x = num / den;
     let s = x.toFixed(2);
@@ -212,6 +220,14 @@ fetch("/nav.html")
     const vowelLetter = /^[aeiou]/i.test(first);
     const anInitialism = /^[FHLMNRSX]/.test(first); // “an” F, H, L, M, N, R, S, X
     return (vowelLetter || anInitialism) ? 'an' : 'a';
+  }
+
+
+  function fracTex(num, den) {
+    const r = reduceFrac(num, den);
+    const n = r[0], d = r[1];
+    if (d === 1) return `${n}`;
+    return `\\dfrac{${n}}{${d}}`;
   }
 
   function parseUserAnswer(raw) {
@@ -391,10 +407,11 @@ fetch("/nav.html")
       `What is the probability that ${askedPhrase} is selected?`;
 
     hintSteps = [
-      `Add the counts for the types listed in the question to get the number of favorable outcomes.`,
-      `Divide by the total number of outcomes (the total size of the set).`,
-      `You can answer as a reduced fraction or as a decimal.`
-    ];
+  `Add the counts for the types listed in the question to get the number of favorable outcomes.`,
+  `There are ${picked.map(i => counts[i]).join(' + ')} = ${favorable} many ${scenario.categoryPlur} which are ${askedTypes.join(' or ')}.`,
+  `Divide by the total number of outcomes (the total size of the set).`,
+  `The proportion of ${scenario.categoryPlur} which are ${askedTypes.join(' or ')} is \(${fracTex(favorable, N)}\).`
+];
   }
 
   // -----------------------------
@@ -462,10 +479,11 @@ fetch("/nav.html")
       `What is the probability that the number rolled is ${joinWithOr(phrases)}?`;
 
     hintSteps = [
-      `Count how many outcomes satisfy at least one of the listed conditions.`,
-      `Divide by the total number of outcomes (${n}).`,
-      `You can answer as a reduced fraction or as a decimal.`
-    ];
+  `Count how many outcomes satisfy at least one of the listed conditions.`,
+  `There are ${favorable} many natural numbers which are ${joinWithOr(phrases)}.`,
+  `Divide by the total number of outcomes (${n}).`,
+  `The proportion of natural numbers which are ${n} or less that are ${joinWithOr(phrases)} is \(${fracTex(favorable, n)}\).`
+];
   }
 
   // -----------------------------
@@ -501,11 +519,28 @@ fetch("/nav.html")
         `What is the probability that ${scenario.e} or ${scenario.f}?`;
     }
 
-    hintSteps = [
-      `Use: probability of (A or B) = probability of A + probability of B − probability of (A and B).`,
+    hintSteps = (() => {
+  const eText = scenario.e;
+  const fText = scenario.f;
+
+  if (giveUnion) {
+    return [
+      `Use inclusion-exclusion.`,
       `Rearrange depending on which quantity you’re missing.`,
-      `Answer as a reduced fraction or as a decimal.`
+      `\(P(E \cap F) = P(E) + P(F) - P(E \cup F)\)`,
+      `Let \(E\) be the event that ${eText}, and let \(F\) be the event that ${fText}.`,
+      `Substitute: \(P(E \cap F) = ${fracTex(pE, den)} + ${fracTex(pF, den)} - ${fracTex(pUnion, den)} = ${fracTex(pInt, den)}\).`
     ];
+  } else {
+    return [
+      `Use inclusion-exclusion.`,
+      `Rearrange depending on which quantity you’re missing.`,
+      `\(P(E \cup F) = P(E) + P(F) - P(E \cap F)\)`,
+      `Let \(E\) be the event that ${eText}, and let \(F\) be the event that ${fText}.`,
+      `Substitute: \(P(E \cup F) = ${fracTex(pE, den)} + ${fracTex(pF, den)} - ${fracTex(pInt, den)} = ${fracTex(pUnion, den)}\).`
+    ];
+  }
+})();
   }
 
   // -----------------------------
@@ -550,11 +585,32 @@ fetch("/nav.html")
         `${scenario.aLabel} or ${scenario.bLabel}?`;
     }
 
-    hintSteps = [
-      `Use: (A or B) = A + B − (A and B). (This works with counts too.)`,
-      `First compute the missing count (union or intersection).`,
-      `Then divide by the total population to get the probability.`
+    hintSteps = (() => {
+  const A = scenario.aLabel;
+  const B = scenario.bLabel;
+
+  if (giveUnion) {
+    return [
+      `Use inclusion-exclusion: \(|A \cup B| = |A| + |B| - |A \cap B|\).`,
+      `Find the missing amount, \(|A \cap B|\).`,
+      `Let \(A =\) ${A} and let \(B =\) ${B}.`,
+      `Substitute: \(${u} = ${a} + ${b} - |A \cap B|\).`,
+      `So \(|A \cap B| = ${a} + ${b} - ${u} = ${inter}\).`,
+      `Divide by the total population to get the probability.`,
+      `The proportion of ${scenario.population} which are ${A} and ${B} is \(${fracTex(inter, N)}\).`
     ];
+  } else {
+    return [
+      `Use inclusion-exclusion: \(|A \cup B| = |A| + |B| - |A \cap B|\).`,
+      `Find the missing amount, \(|A \cup B|\).`,
+      `Let \(A =\) ${A} and let \(B =\) ${B}.`,
+      `Substitute: \(|A \cup B| = ${a} + ${b} - ${inter}\).`,
+      `So \(|A \cup B| = ${u}\).`,
+      `Divide by the total population to get the probability.`,
+      `The proportion of ${scenario.population} which are ${A} or ${B} is \(${fracTex(u, N)}\).`
+    ];
+  }
+})();
   }
 
   // -----------------------------
@@ -615,6 +671,7 @@ fetch("/nav.html")
       hintPara.style.textAlign = 'center';
       hintPara.textContent = 'No hints are available for this question.';
       hintArea.appendChild(hintPara);
+      typeset([hintPara]);
       return;
     }
 
@@ -622,7 +679,8 @@ fetch("/nav.html")
       const hintPara = document.createElement('div');
       hintPara.classList.add('hint-step');
       hintPara.style.textAlign = 'center';
-      hintPara.textContent = hintSteps[hintIndex];
+      hintPara.innerHTML = hintSteps[hintIndex];
+        typeset([hintPara]);
       hintArea.appendChild(hintPara);
       hintIndex++;
     }

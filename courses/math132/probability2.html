@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -165,16 +166,22 @@ fetch("/nav.html")
 
   </main>
   <script>
-  const hintBtn = document.getElementById('hint-btn');
-  const hintArea = document.getElementById('hint-area');
-  let hintSteps = [];
-  let hintIndex = 0;
+  // =============================
+  // Probability II Activity Script
+  // =============================
 
   const startBtn = document.getElementById('start-btn');
+  const hintBtn = document.getElementById('hint-btn');
+  const checkBtn = document.getElementById('check-answer-btn');
+
   const questionText = document.getElementById('question-text');
+  const hintArea = document.getElementById('hint-area');
 
   const answerInput = document.getElementById('user-answer');
   const feedback = document.getElementById('answer-feedback');
+
+  let hintSteps = [];
+  let hintIndex = 0;
 
   // Correct answer stored as reduced fraction num/den
   let currentAnsNum = null;
@@ -191,8 +198,29 @@ fetch("/nav.html")
     }
   }
 
+  function typeset(elements = []) {
+    if (!window.MathJax) return;
+    if (MathJax.typesetPromise) {
+      if (elements.length > 0) MathJax.typesetPromise(elements);
+      else MathJax.typesetPromise();
+      return;
+    }
+    if (MathJax.typeset) {
+      if (elements.length > 0) MathJax.typeset(elements);
+      else MathJax.typeset();
+    }
+  }
+
   function randInt(a, b) {
     return Math.floor(Math.random() * (b - a + 1)) + a;
+  }
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = randInt(0, i);
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
   }
 
   function gcd(a, b) {
@@ -217,6 +245,20 @@ fetch("/nav.html")
     currentAnsDen = r[1];
   }
 
+  // IMPORTANT: In JS strings, "\f" is a real escape. To produce TeX "\frac",
+  // we must place "\\frac" inside a template literal.
+  function fracTex(num, den) {
+    const r = reduceFrac(num, den);
+    const n = r[0], d = r[1];
+    if (d === 1) return `${n}`;
+    return `\\frac{${n}}{${d}}`;
+  }
+
+  function fracPlain(num, den) {
+    const r = reduceFrac(num, den);
+    return `${r[0]}/${r[1]}`;
+  }
+
   function resetUIForNewQuestion() {
     feedback.textContent = '';
     feedback.style.color = 'black';
@@ -226,66 +268,14 @@ fetch("/nav.html")
     hintIndex = 0;
   }
 
-
-  function typeset(elements = []) {
-    if (!window.MathJax) return;
-    if (MathJax.typesetPromise) {
-      if (elements.length > 0) MathJax.typesetPromise(elements);
-      else MathJax.typesetPromise();
-      return;
-    }
-    if (MathJax.typeset) {
-      if (elements.length > 0) MathJax.typeset(elements);
-      else MathJax.typeset();
-    }
-  }
-
-  function toDecimalString(num, den) {
-    const x = num / den;
-    let s = x.toFixed(2);
-    s = s.replace(/0+$/, '').replace(/\.$/, '');
-    return s;
-  }
-
-  function joinWithOr(items) {
-    if (items.length === 1) return items[0];
-    if (items.length === 2) return `${items[0]} or ${items[1]}`;
-    return `${items.slice(0, -1).join(', ')}, or ${items[items.length - 1]}`;
-  }
-
-  function singularize(word) {
-    // Good enough for your current banks (apples->apple, SUVs->SUV, etc.)
-    if (word.endsWith('s')) return word.slice(0, -1);
-    return word;
-  }
-
-  function articleFor(word) {
-    const first = word[0];
-    const vowelLetter = /^[aeiou]/i.test(first);
-    const anInitialism = /^[FHLMNRSX]/.test(first); // “an” F, H, L, M, N, R, S, X
-    return (vowelLetter || anInitialism) ? 'an' : 'a';
-  }
-
-
-  function fracTex(num, den) {
-    const r = reduceFrac(num, den);
-    const n = r[0], d = r[1];
-    if (d === 1) return `${n}`;
-    return `\frac{${n}}{${d}}`;
-  }
-
   function parseUserAnswer(raw) {
     // Accept:
     //  - integer: "3"
     //  - fraction: "3/8"
     //  - decimal: "0.375"
-    //
-    // Returns:
-    //  { kind:'exact', num, den } for integer/fraction
-    //  { kind:'decimal', value, relTol } for decimals (graded by relative tolerance)
+    // Decimals graded with relative tolerance 0.01%.
     const s = raw.replace(/\s+/g, '');
 
-    // Fraction a/b
     const fracMatch = s.match(/^([+-]?\d+)\/([+-]?\d+)$/);
     if (fracMatch) {
       const a = parseInt(fracMatch[1], 10);
@@ -295,20 +285,17 @@ fetch("/nav.html")
       return { kind: 'exact', num: rn, den: rd };
     }
 
-    // Integer
     const intMatch = s.match(/^[+-]?\d+$/);
     if (intMatch) {
       const a = parseInt(s, 10);
       return { kind: 'exact', num: a, den: 1 };
     }
 
-    // Decimal
     const decMatch = s.match(/^[+-]?\d*\.\d+$/);
     if (decMatch) {
       const value = Number(s);
       if (!Number.isFinite(value)) return { error: 'That decimal does not look valid.' };
       if (value < 0) return { error: 'Probabilities cannot be negative.' };
-      // Allow decimals; grade with 0.01% relative tolerance
       return { kind: 'decimal', value, relTol: 0.0001 };
     }
 
@@ -334,351 +321,445 @@ fetch("/nav.html")
     return false;
   }
 
-  // -----------------------------
-  // Banks
-  // -----------------------------
-  const type1Bank = [
-    { categorySing: 'fruit', categoryPlur: 'fruits', items: ['apples', 'bananas', 'oranges', 'pears', 'grapefruits'] },
-    { categorySing: 'animal', categoryPlur: 'animals', items: ['cats', 'dogs', 'birds', 'bears', 'lions'] },
-    { categorySing: 'musical instrument', categoryPlur: 'musical instruments', items: ['trumpets', 'flutes', 'clarinets', 'tubas', 'saxophones'] },
-    { categorySing: 'piece of furniture', categoryPlur: 'pieces of furniture', items: ['chairs', 'tables', 'couches', 'beds', 'dressers'] },
-    { categorySing: 'utensil', categoryPlur: 'utensils', items: ['forks', 'spoons', 'knives', 'spatulas', 'whisks'] },
-    { categorySing: 'vehicle', categoryPlur: 'vehicles', items: ['sedans', 'jeeps', 'SUVs', 'trucks', 'vans'] },
-    { categorySing: 'shape', categoryPlur: 'shapes', items: ['squares', 'triangles', 'circles', 'pentagons', 'hexagons'] }
-  ];
+  function joinWithAnd(items) {
+    if (items.length === 1) return items[0];
+    if (items.length === 2) return `${items[0]} and ${items[1]}`;
+    return `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`;
+  }
 
-  const type3Bank = [
-    { e: 'it rains', f: 'the temperature is below 5°C' },
-    { e: 'you score a touchdown', f: 'you are the game MVP' },
-    { e: 'the Best Actor winner is from Europe', f: 'the Best Actor winner is over 40 years old' },
-    { e: 'a newborn has brown hair', f: 'a newborn weighs more than 8 lbs at birth' },
-    { e: 'a randomly selected email is spam', f: 'the email contains the word “free”' },
-    { e: 'a randomly selected day is a weekend', f: 'it rains that day' },
-    { e: 'a student passes the final exam', f: 'the student studied at least 5 hours' },
-    { e: 'a customer buys something', f: 'the customer used a coupon' }
-  ];
+  function joinWithOr(items) {
+    if (items.length === 1) return items[0];
+    if (items.length === 2) return `${items[0]} or ${items[1]}`;
+    return `${items.slice(0, -1).join(', ')}, or ${items[items.length - 1]}`;
+  }
 
-  const type4Bank = [
-    {
-      population: 'employees at Ben Co',
-      member: 'employee',
-      aLabel: 'lawyers at Ben Co',
-      bLabel: 'employees at Ben Co earning more than 100K'
-    },
-    {
-      population: 'students at VIU',
-      member: 'student',
-      aLabel: 'students enrolled in Math 132',
-      bLabel: 'students enrolled in Math 161'
-    },
-    {
-      population: 'players in the NHL',
-      member: 'player',
-      aLabel: 'centers in the NHL',
-      bLabel: 'players in the NHL who have averaged more than a point per game'
-    },
-    {
-      population: 'books in a library',
-      member: 'book',
-      aLabel: 'fiction books',
-      bLabel: 'books currently checked out'
-    },
-    {
-      population: 'cars in a parking lot',
-      member: 'car',
-      aLabel: 'cars that are SUVs',
-      bLabel: 'cars that are electric'
-    }
-  ];
+  function singularize(word) {
+    // works for your banks (Apples->Apple, SUVs->SUV, etc.)
+    if (word.endsWith('s')) return word.slice(0, -1);
+    return word;
+  }
 
-  // -----------------------------
-  // Type 1
-  // -----------------------------
-  function generateType1() {
-    const scenario = type1Bank[randInt(0, type1Bank.length - 1)];
-
-    const N = randInt(20, 80);
-    const k = randInt(2, 5);
-
-    // choose k distinct items from the 5
-    const indices = [0, 1, 2, 3, 4];
-    for (let i = indices.length - 1; i > 0; i--) {
-      const j = randInt(0, i);
-      [indices[i], indices[j]] = [indices[j], indices[i]];
-    }
-    const chosenTypesIdx = indices.slice(0, k);
-    const chosenTypes = chosenTypesIdx.map(i => scenario.items[i]);
-
-    // random positive parts summing to N
-    let cuts = [];
-    for (let i = 0; i < k - 1; i++) cuts.push(randInt(1, N - 1));
-    cuts.sort((a, b) => a - b);
-
-    const counts = [];
-    let prev = 0;
-    for (let i = 0; i < cuts.length; i++) {
-      counts.push(cuts[i] - prev);
-      prev = cuts[i];
-    }
-    counts.push(N - prev);
-
-    // choose between 1 and k-1 of the pieces for the OR question
-    const m = randInt(1, k - 1);
-    const idx2 = [...Array(k).keys()];
-    for (let i = idx2.length - 1; i > 0; i--) {
-      const j = randInt(0, i);
-      [idx2[i], idx2[j]] = [idx2[j], idx2[i]];
-    }
-    const picked = idx2.slice(0, m).sort((a, b) => a - b);
-
-    const favorable = picked.reduce((acc, i) => acc + counts[i], 0);
-    setAnswer(favorable, N);
-
-    const breakdown = chosenTypes
-      .map((t, i) => `${counts[i]} ${t}`)
-      .join(', ');
-
-    const askedTypes = picked.map(i => chosenTypes[i]);
-    const askedSingles = askedTypes.map(t => {
-      const s = singularize(t);
-      return `${articleFor(s)} ${s}`;
-    });
-    const askedPhrase = joinWithOr(askedSingles);
-
-    questionText.textContent =
-      `A ${scenario.categorySing} is randomly selected from a set of ${N} ${scenario.categoryPlur}. ` +
-      `There are ${breakdown}. ` +
-      `What is the probability that ${askedPhrase} is selected?`;
-
-    hintSteps = [
-  `Add the counts for the types listed in the question to get the number of favorable outcomes.`,
-  `There are ${picked.map(i => counts[i]).join(' + ')} = ${favorable} ${scenario.categoryPlur} which are ${askedTypes.join(' or ')}.`,
-  `Divide by the total number of outcomes (the total size of the set).`,
-  `The proportion of ${scenario.categoryPlur} which are ${askedTypes.join(' or ')} is \\(${fracTex(favorable, N)}\\).`
-];
+  function articleFor(word) {
+    const first = word[0];
+    const vowelLetter = /^[aeiou]/i.test(first);
+    const anInitialism = /^[FHLMNRSX]/.test(first);
+    return (vowelLetter || anInitialism) ? 'an' : 'a';
   }
 
   // -----------------------------
-  // Type 2
+  // Type (1): Independent events
+  // -----------------------------
+  function makeDieEvent() {
+    const sides = randInt(6, 20);
+    const mode = randInt(1, 3); // 1 exact, 2 higher than, 3 lower than
+    if (mode === 1) {
+      const k = randInt(1, sides);
+      return {
+        desc: `you roll a ${k} on a ${sides}-sided die`,
+        num: 1,
+        den: sides
+      };
+    }
+    if (mode === 2) {
+      const t = randInt(1, sides - 1); // "higher than t"
+      const favorable = sides - t;
+      return {
+        desc: `you roll higher than ${t} on a ${sides}-sided die`,
+        num: favorable,
+        den: sides
+      };
+    }
+    const t = randInt(2, sides); // "lower than t"
+    const favorable = t - 1;
+    return {
+      desc: `you roll lower than ${t} on a ${sides}-sided die`,
+      num: favorable,
+      den: sides
+    };
+  }
+
+  function makeCoinEvent() {
+    const ht = randInt(0, 1) === 0 ? 'heads' : 'tails';
+    return {
+      desc: `you flip ${ht}`,
+      num: 1,
+      den: 2
+    };
+  }
+
+  function makeCardEvent() {
+    const suits = ['spade', 'heart', 'diamond', 'club'];
+    const suitPlural = { spade: 'spades', heart: 'hearts', diamond: 'diamonds', club: 'clubs' };
+    const ranks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+    const faces = ['J','Q','K'];
+
+    const kind = randInt(1, 4); // 1 suit, 2 face card, 3 specific card, 4 diamond face card style
+    if (kind === 1) {
+      const s = suits[randInt(0, 3)];
+      return { desc: `you draw a ${s}`, num: 13, den: 52 };
+    }
+    if (kind === 2) {
+      return { desc: `you draw a face card`, num: 12, den: 52 };
+    }
+    if (kind === 3) {
+      const r = ranks[randInt(0, ranks.length - 1)];
+      const s = suits[randInt(0, 3)];
+      const suitName = suitPlural[s];
+      const rankName = (r === 'A') ? 'ace' : (r === 'J' ? 'jack' : (r === 'Q' ? 'queen' : (r === 'K' ? 'king' : r)));
+      return { desc: `you draw the ${rankName} of ${suitName}`, num: 1, den: 52 };
+    }
+    // diamond face card
+    const s = 'diamond';
+    return { desc: `you draw a diamond face card`, num: 3, den: 52 };
+  }
+
+  function generateType1() {
+    const howMany = randInt(2, 3);
+
+    const generators = [makeDieEvent, makeCoinEvent, makeCardEvent];
+    const chosen = [];
+    // ensure variety by shuffling generators first, then allow repeats if 3 events
+    shuffle(generators);
+    for (let i = 0; i < howMany; i++) {
+      const g = generators[i % generators.length];
+      chosen.push(g());
+    }
+
+    const descs = chosen.map(e => e.desc);
+    const num = chosen.reduce((acc, e) => acc * e.num, 1);
+    const den = chosen.reduce((acc, e) => acc * e.den, 1);
+    setAnswer(num, den);
+
+    questionText.textContent = `What is the probability that ${joinWithAnd(descs)}?`;
+
+    hintSteps = [
+      `These are independent experiments, so multiply their probabilities.`,
+      `Compute each probability, then multiply: \\(P = ${chosen.map(e => fracTex(e.num, e.den)).join(' \\cdot ')}\\).`,
+      `So the probability is \\(${fracTex(num, den)}\\).`
+    ];
+  }
+
+  // -----------------------------
+  // Type (2): Urn (2 draws)
   // -----------------------------
   function generateType2() {
-    const n = randInt(10, 100);
-    const r = randInt(1, 3);
+    const R = randInt(1, 20);
+    const G = randInt(1, 20);
+    const T = R + G;
 
-    const points = new Set();
-    while (points.size < 2 * r) points.add(randInt(1, n));
-    const sorted = Array.from(points).sort((a, b) => a - b);
+    const withReplacement = randInt(0, 1) === 0; // true => returned
+    const returnText = withReplacement ? 'then returned to the urn' : 'then not returned to the urn';
 
-    const intervals = [];
-    for (let i = 0; i < sorted.length; i += 2) {
-      let a = sorted[i], b = sorted[i + 1];
-      if (b < a) [a, b] = [b, a];
-      intervals.push([a, b]);
+    const color = randInt(0, 1) === 0 ? 'red' : 'green';
+
+    const eventBank = [
+      { key: 'atLeastOne', text: `at least one draw is ${color}` },
+      { key: 'both',       text: `both draws are ${color}` },
+      { key: 'neither',    text: `neither draw is ${color}` },
+      { key: 'first',      text: `the first draw is ${color}` },
+      { key: 'second',     text: `the second draw is ${color}` },
+      { key: 'oneEach',    text: `one red and one green are drawn` }
+    ];
+
+    const chosenEvent = eventBank[randInt(0, eventBank.length - 1)];
+
+    function pColor1() {
+      return color === 'red' ? [R, T] : [G, T];
     }
-    intervals.sort((I, J) => I[0] - J[0]);
+    function pNotColor1() {
+      return color === 'red' ? [G, T] : [R, T];
+    }
 
-    const disjoint = [];
-    for (const [s, t] of intervals) {
-      if (disjoint.length === 0) disjoint.push([s, t]);
-      else {
-        const last = disjoint[disjoint.length - 1];
-        if (s > last[1]) disjoint.push([s, t]);
-        else {
-          const ns = last[1] + 1;
-          if (ns <= t) disjoint.push([ns, t]);
+    let num = 0, den = 1;
+
+    if (withReplacement) {
+      const [pN, pD] = pColor1();
+      const [qN, qD] = pNotColor1(); // same denom
+      // Two independent draws
+      if (chosenEvent.key === 'both') {
+        num = pN * pN;
+        den = pD * pD;
+      } else if (chosenEvent.key === 'neither') {
+        num = qN * qN;
+        den = qD * qD;
+      } else if (chosenEvent.key === 'first' || chosenEvent.key === 'second') {
+        num = pN;
+        den = pD;
+      } else if (chosenEvent.key === 'atLeastOne') {
+        // 1 - P(neither)
+        num = den = 1; // placeholder then compute
+        const n0 = qN * qN;
+        const d0 = qD * qD;
+        // 1 - n0/d0 = (d0 - n0)/d0
+        num = d0 - n0;
+        den = d0;
+      } else if (chosenEvent.key === 'oneEach') {
+        // RG or GR
+        // P(R then G) + P(G then R)
+        const nRG = R * G;
+        const dRG = T * T;
+        const nGR = G * R;
+        const dGR = T * T;
+        num = nRG + nGR;
+        den = dRG; // same
+      }
+    } else {
+      // without replacement
+      // After first draw, totals change.
+      const r = R, g = G;
+      if (chosenEvent.key === 'both') {
+        if (color === 'red') {
+          num = r * (r - 1);
+          den = T * (T - 1);
+        } else {
+          num = g * (g - 1);
+          den = T * (T - 1);
         }
+      } else if (chosenEvent.key === 'neither') {
+        if (color === 'red') {
+          num = g * (g - 1);
+          den = T * (T - 1);
+        } else {
+          num = r * (r - 1);
+          den = T * (T - 1);
+        }
+      } else if (chosenEvent.key === 'first') {
+        num = (color === 'red') ? r : g;
+        den = T;
+      } else if (chosenEvent.key === 'second') {
+        // symmetry: second draw marginal is same as first for hypergeometric
+        num = (color === 'red') ? r : g;
+        den = T;
+      } else if (chosenEvent.key === 'atLeastOne') {
+        // 1 - P(neither)
+        const nNeither = (color === 'red') ? g * (g - 1) : r * (r - 1);
+        const dAll = T * (T - 1);
+        num = dAll - nNeither;
+        den = dAll;
+      } else if (chosenEvent.key === 'oneEach') {
+        // RG or GR: 2*r*g / (T*(T-1))
+        num = 2 * r * g;
+        den = T * (T - 1);
       }
     }
 
-    while (disjoint.length < r) {
-      const x = randInt(1, n);
-      let ok = true;
-      for (const [s, t] of disjoint) if (x >= s && x <= t) ok = false;
-      if (ok) disjoint.push([x, x]);
-      if (disjoint.length > 10) break;
-    }
-
-    disjoint.sort((I, J) => I[0] - J[0]);
-    const finalIntervals = disjoint.slice(0, r);
-
-    let outerUsed = 0;
-    const phrases = finalIntervals.map(([s, t]) => {
-      if (s === 1 && outerUsed < 2) {
-        outerUsed++;
-        return `less than ${t + 1}`;
-      }
-      if (t === n && outerUsed < 2) {
-        outerUsed++;
-        return `${s} or higher`;
-      }
-      if (s === t) return `exactly ${s}`;
-      return `between ${s} and ${t} (inclusive)`;
-    });
-
-    const favorable = finalIntervals.reduce((acc, [s, t]) => acc + (t - s + 1), 0);
-    setAnswer(favorable, n);
+    setAnswer(num, den);
 
     questionText.textContent =
-      `A ${n}-sided die is rolled. ` +
-      `What is the probability that the number rolled is ${joinWithOr(phrases)}?`;
+      `An urn contains ${R} red balls and ${G} green balls. ` +
+      `If a ball is drawn at random, ${returnText}, and a ball is drawn at random again, ` +
+      `what is the probability that ${chosenEvent.text}?`;
+
+    // basic hints (we'll refine later)
+    hintSteps = withReplacement ? [
+      `With replacement means the two draws are independent.`,
+      `Compute the probability for each draw and multiply (or use a complement if needed).`,
+      `So the probability is \\(${fracTex(num, den)}\\).`
+    ] : [
+      `Without replacement means the second draw depends on what happened on the first draw.`,
+      `Use a tree idea: probabilities on the second draw use totals of \\(T-1\\).`,
+      `So the probability is \\(${fracTex(num, den)}\\).`
+    ];
+  }
+
+  // -----------------------------
+  // Type (3): Two populations, two partitions
+  // -----------------------------
+  const popBank = [
+    { labelSing: 'fruit', labelPlur: 'fruits', items: ['Apples', 'Bananas', 'Oranges', 'Pears'] },
+    { labelSing: 'animal', labelPlur: 'animals', items: ['Cats', 'Dogs', 'Birds', 'Bears'] },
+    { labelSing: 'musical instrument', labelPlur: 'musical instruments', items: ['Trumpets', 'Flutes', 'Clarinets', 'Tubas'] },
+    { labelSing: 'piece of furniture', labelPlur: 'pieces of furniture', items: ['Chairs', 'Tables', 'Couches', 'Beds'] },
+    { labelSing: 'utensil', labelPlur: 'utensils', items: ['Forks', 'Spoons', 'Spatulas', 'Whisks'] },
+    { labelSing: 'vehicle', labelPlur: 'vehicles', items: ['Sedans', 'Jeeps', 'SUVs', 'Trucks'] },
+    { labelSing: 'shape', labelPlur: 'shapes', items: ['Squares', 'Triangles', 'Circles', 'Pentagons'] }
+  ];
+
+  function randomPartition(total, k) {
+    // positive parts summing to total
+    let cuts = [];
+    for (let i = 0; i < k - 1; i++) cuts.push(randInt(1, total - 1));
+    cuts.sort((a, b) => a - b);
+    const parts = [];
+    let prev = 0;
+    for (let i = 0; i < cuts.length; i++) {
+      parts.push(cuts[i] - prev);
+      prev = cuts[i];
+    }
+    parts.push(total - prev);
+    return parts;
+  }
+
+  function generateType3() {
+    const idxs = shuffle([0,1,2,3,4,5,6]);
+    const popA = popBank[idxs[0]];
+    const popB = popBank[idxs[1]];
+
+    const NA = randInt(10, 100);
+    const NB = randInt(10, 100);
+
+    const kA = randInt(2, 4);
+    const kB = randInt(2, 4);
+
+    const itemsA = shuffle([...popA.items]).slice(0, kA);
+    const itemsB = shuffle([...popB.items]).slice(0, kB);
+
+    const countsA = randomPartition(NA, kA);
+    const countsB = randomPartition(NB, kB);
+
+    const breakdownA = itemsA.map((it, i) => `${countsA[i]} ${it}`).join(', ');
+    const breakdownB = itemsB.map((it, i) => `${countsB[i]} ${it}`).join(', ');
+
+    const pickA = randInt(0, kA - 1);
+    const pickB = randInt(0, kB - 1);
+
+    const countFavA = countsA[pickA];
+    const countFavB = countsB[pickB];
+
+    const num = countFavA * countFavB;
+    const den = NA * NB;
+    setAnswer(num, den);
+
+    const aSing = popA.labelSing;
+    const bSing = popB.labelSing;
+
+    const aChosen = singularize(itemsA[pickA]);
+    const bChosen = singularize(itemsB[pickB]);
+
+    questionText.textContent =
+      `There are ${NA} ${popA.labelPlur}, consisting of ${breakdownA}, and ${NB} ${popB.labelPlur}, consisting of ${breakdownB}. ` +
+      `If a ${aSing} and a ${bSing} are selected at random, what is the probability that ` +
+      `${articleFor(aChosen)} ${aChosen.toLowerCase()} and ${articleFor(bChosen)} ${bChosen.toLowerCase()} are selected?`;
 
     hintSteps = [
-  `Count how many outcomes satisfy at least one of the listed conditions.`,
-  `There are ${favorable} natural numbers which are ${joinWithOr(phrases)}.`,
-  `Divide by the total number of outcomes (${n}).`,
-  `The proportion of natural numbers which are ${n} or less that are ${joinWithOr(phrases)} is \\(${fracTex(favorable, n)}\\).`
-];
-  }
-
-  // -----------------------------
-  // Type 3
-  // -----------------------------
-  function generateType3() {
-    const scenario = type3Bank[randInt(0, type3Bank.length - 1)];
-
-    const den = 100;
-    const pE = randInt(10, 80);
-    const pF = randInt(10, 80);
-
-    const minInt = Math.max(0, pE + pF - den);
-    const maxInt = Math.min(pE, pF);
-    const pInt = randInt(minInt, maxInt);
-
-    const pUnion = pE + pF - pInt;
-    const giveUnion = Math.random() < 0.5;
-
-    if (giveUnion) {
-      setAnswer(pInt, den);
-      questionText.textContent =
-        `There is a ${toDecimalString(pE, den)} probability that ${scenario.e}, ` +
-        `a ${toDecimalString(pF, den)} probability that ${scenario.f}, ` +
-        `and a ${toDecimalString(pUnion, den)} probability that ${scenario.e} or ${scenario.f}. ` +
-        `What is the probability that ${scenario.e} and ${scenario.f}?`;
-    } else {
-      setAnswer(pUnion, den);
-      questionText.textContent =
-        `There is a ${toDecimalString(pE, den)} probability that ${scenario.e}, ` +
-        `a ${toDecimalString(pF, den)} probability that ${scenario.f}, ` +
-        `and a ${toDecimalString(pInt, den)} probability that ${scenario.e} and ${scenario.f}. ` +
-        `What is the probability that ${scenario.e} or ${scenario.f}?`;
-    }
-
-    hintSteps = (() => {
-  const eText = scenario.e;
-  const fText = scenario.f;
-
-  if (giveUnion) {
-    return [
-      `Use inclusion-exclusion.`,
-      `Rearrange depending on which quantity you’re missing.`,
-      `\\(P(E \\cap F) = P(E) + P(F) - P(E \\cup F)\\)`,
-      `Let \\(E\\) be the event that ${eText}, and let \\(F\\) be the event that ${fText}.`,
-      `Substitute: \\(P(E \\cap F) = ${fracTex(pE, den)} + ${fracTex(pF, den)} - ${fracTex(pUnion, den)} = ${fracTex(pInt, den)}\\).`
-    ];
-  } else {
-    return [
-      `Use inclusion-exclusion.`,
-      `Rearrange depending on which quantity you’re missing.`,
-      `\\(P(E \\cup F) = P(E) + P(F) - P(E \\cap F)\\)`,
-      `Let \\(E\\) be the event that ${eText}, and let \\(F\\) be the event that ${fText}.`,
-      `Substitute: \\(P(E \\cup F) = ${fracTex(pE, den)} + ${fracTex(pF, den)} - ${fracTex(pInt, den)} = ${fracTex(pUnion, den)}\\).`
+      `Find the probability of selecting the desired type from the first population: ${countFavA}/${NA}.`,
+      `Find the probability of selecting the desired type from the second population: ${countFavB}/${NB}.`,
+      `Selections are independent, so multiply: \\(${fracTex(countFavA, NA)} \\cdot ${fracTex(countFavB, NB)} = ${fracTex(num, den)}\\).`
     ];
   }
-})();
-  }
 
   // -----------------------------
-  // Type 4
+  // Type (4): One population, partition + property rates
   // -----------------------------
+  const propertyByCategory = {
+    'fruit': 'rotten',
+    'animal': 'rabid',
+    'musical instrument': 'brass',
+    'piece of furniture': 'antique',
+    'utensil': 'silver',
+    'vehicle': 'electric',
+    'shape': 'blue'
+  };
+
   function generateType4() {
-    const scenario = type4Bank[randInt(0, type4Bank.length - 1)];
+    const pop = popBank[randInt(0, popBank.length - 1)];
+    const prop = propertyByCategory[pop.labelSing];
 
-    const N = randInt(80, 600);
-    const a = randInt(10, Math.floor(0.75 * N));
-    const b = randInt(10, Math.floor(0.75 * N));
+    const N = randInt(10, 100);
+    const k = randInt(2, 4);
 
-    const giveUnion = Math.random() < 0.5;
+    const items = shuffle([...pop.items]).slice(0, k);
+    const counts = randomPartition(N, k);
 
-    let u;
-    let inter;
-
-    if (giveUnion) {
-      const uMin = Math.max(a, b);
-      const uMax = Math.min(N, a + b);
-      u = randInt(uMin, uMax);
-      inter = a + b - u;
-
-      setAnswer(inter, N);
-
-      questionText.textContent =
-        `There are ${N} ${scenario.population}. ` +
-        `${a} are ${scenario.aLabel}, ${b} are ${scenario.bLabel}, ` +
-        `and ${u} are ${scenario.aLabel} or ${scenario.bLabel}. ` +
-        `If a ${scenario.member} is selected at random, what is the probability they are ` +
-        `${scenario.aLabel} and ${scenario.bLabel}?`;
-    } else {
-      const iMin = Math.max(0, a + b - N);
-      const iMax = Math.min(a, b);
-      inter = randInt(iMin, iMax);
-      u = a + b - inter;
-
-      setAnswer(u, N);
-
-      questionText.textContent =
-        `There are ${N} ${scenario.population}. ` +
-        `${a} are ${scenario.aLabel}, ${b} are ${scenario.bLabel}, ` +
-        `and ${inter} are ${scenario.aLabel} and ${scenario.bLabel}. ` +
-        `If a ${scenario.member} is selected at random, what is the probability they are ` +
-        `${scenario.aLabel} or ${scenario.bLabel}?`;
+    // For each subset, choose a percentage 1..99 and compute count with property
+    const perc = [];
+    const propCounts = [];
+    for (let i = 0; i < k; i++) {
+      const p = randInt(1, 99);
+      perc.push(p);
+      // round to nearest integer for a cleaner story
+      let c = Math.round(counts[i] * p / 100);
+      c = Math.max(0, Math.min(counts[i], c));
+      propCounts.push(c);
     }
 
-    hintSteps = (() => {
-  const A = scenario.aLabel;
-  const B = scenario.bLabel;
+    const breakdown = items.map((it, i) => `${counts[i]} ${it}`).join(', ');
+    const propertyLines = items.map((it, i) => `${propCounts[i]} of the ${it.toLowerCase()} are ${prop}.`).join(' ');
 
-  if (giveUnion) {
-    return [
-      `Use inclusion-exclusion: \\(|A \\cup B| = |A| + |B| - |A \\cap B|\\).`,
-      `Find the missing amount, \\(|A \\cap B|\\).`,
-      `Let \\(A =\\) ${A} and let \\(B =\\) ${B}.`,
-      `Substitute: \\(${u} = ${a} + ${b} - |A \\cap B|\\).`,
-      `So \\(|A \\cap B| = ${a} + ${b} - ${u} = ${inter}\\).`,
-      `Divide by the total population to get the probability.`,
-      `The proportion of ${scenario.population} which are ${A} and ${B} is \\(${fracTex(inter, N)}\\).`
+    // Choose question subtype:
+    // A) property only: is / isn't
+    // B) property and subset: is / isn't AND is a subset
+    const subtype = randInt(1, 2);
+    const isNot = randInt(0, 1) === 0 ? 'is' : "isn't";
+
+    let favorable = 0;
+    let targetPhrase = '';
+
+    if (subtype === 1) {
+      const totalProp = propCounts.reduce((a, b) => a + b, 0);
+      favorable = (isNot === 'is') ? totalProp : (N - totalProp);
+      targetPhrase = `${isNot} ${prop}`;
+    } else {
+      const j = randInt(0, k - 1);
+      const subset = items[j].toLowerCase();
+      const subsetSing = singularize(items[j]).toLowerCase();
+      const inSubsetProp = propCounts[j];
+      const inSubsetNot = counts[j] - propCounts[j];
+      favorable = (isNot === 'is') ? inSubsetProp : inSubsetNot;
+      targetPhrase = `${isNot} ${prop} and is ${articleFor(subsetSing)} ${subsetSing}`;
+    }
+
+    setAnswer(favorable, N);
+
+    questionText.textContent =
+      `There are ${N} ${pop.labelPlur}, consisting of ${breakdown}. ` +
+      `${propertyLines} ` +
+      `What is the probability that a randomly selected ${pop.labelSing} ${targetPhrase}?`;
+
+    hintSteps = [
+      `Identify how many outcomes are favorable for the event described.`,
+      `Divide the number of favorable outcomes by the total population size (${N}).`,
+      `So the probability is \\(${fracTex(favorable, N)}\\).`
     ];
-  } else {
-    return [
-      `Use inclusion-exclusion: \\(|A \\cup B| = |A| + |B| - |A \\cap B|\\).`,
-      `Find the missing amount, \\(|A \\cup B|\\).`,
-      `Let \\(A =\\) ${A} and let \\(B =\\) ${B}.`,
-      `Substitute: \\(|A \\cup B| = ${a} + ${b} - ${inter}\\).`,
-      `So \\(|A \\cup B| = ${u}\\).`,
-      `Divide by the total population to get the probability.`,
-      `The proportion of ${scenario.population} which are ${A} or ${B} is \\(${fracTex(u, N)}\\).`
-    ];
-  }
-})();
   }
 
   // -----------------------------
-  // Start: generate a question
+  // Start button: choose type 1..4
   // -----------------------------
   startBtn.addEventListener('click', () => {
     playSound('click-sound');
     resetUIForNewQuestion();
 
     const qType = randInt(1, 4);
-
     if (qType === 1) generateType1();
     if (qType === 2) generateType2();
     if (qType === 3) generateType3();
     if (qType === 4) generateType4();
+
+    typeset([questionText]);
+  });
+
+  // -----------------------------
+  // Hint button
+  // -----------------------------
+  hintBtn.addEventListener('click', () => {
+    playSound('click-sound');
+
+    if (!hintSteps || hintSteps.length === 0) {
+      const hintPara = document.createElement('div');
+      hintPara.classList.add('hint-step');
+      hintPara.style.textAlign = 'center';
+      hintPara.textContent = 'No hints are available for this question.';
+      hintArea.appendChild(hintPara);
+      typeset([hintPara]);
+      return;
+    }
+
+    if (hintIndex < hintSteps.length) {
+      const hintPara = document.createElement('div');
+      hintPara.classList.add('hint-step');
+      hintPara.style.textAlign = 'center';
+      hintPara.innerHTML = hintSteps[hintIndex];
+      hintArea.appendChild(hintPara);
+      typeset([hintPara]);
+      hintIndex++;
+    }
   });
 
   // -----------------------------
   // Check answer
   // -----------------------------
-  document.getElementById('check-answer-btn').addEventListener('click', () => {
+  checkBtn.addEventListener('click', () => {
     playSound('click-sound');
 
     const raw = answerInput.value.trim();
@@ -705,34 +786,8 @@ fetch("/nav.html")
       feedback.style.color = 'crimson';
     }
   });
-
-  // -----------------------------
-  // Hint button (centered)
-  // -----------------------------
-  hintBtn.addEventListener('click', () => {
-    playSound('click-sound');
-
-    if (!hintSteps || hintSteps.length === 0) {
-      const hintPara = document.createElement('div');
-      hintPara.classList.add('hint-step');
-      hintPara.style.textAlign = 'center';
-      hintPara.textContent = 'No hints are available for this question.';
-      hintArea.appendChild(hintPara);
-      typeset([hintPara]);
-      return;
-    }
-
-    if (hintIndex < hintSteps.length) {
-      const hintPara = document.createElement('div');
-      hintPara.classList.add('hint-step');
-      hintPara.style.textAlign = 'center';
-      hintPara.innerHTML = hintSteps[hintIndex];
-      hintArea.appendChild(hintPara);
-      typeset([hintPara]);
-      hintIndex++;
-    }
-  });
 </script>
+
 
 
   <audio id="click-sound" src="button.mp3" preload="auto"></audio>

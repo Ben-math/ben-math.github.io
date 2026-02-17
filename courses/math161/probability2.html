@@ -1,0 +1,797 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta charset="UTF-8" />
+  <title>Probability II Activity</title>
+  <link rel="stylesheet" href="/style.css" />
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+</head>
+<body>
+  <header>
+    <h1>Probability II Activity</h1>
+    <div id="nav-placeholder"></div>
+      <script>
+fetch("/nav.html")
+  .then(response => response.text())
+  .then(html => {
+    document.getElementById("nav-placeholder").innerHTML = html;
+
+    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+    const navLinks = document.querySelectorAll("#nav-placeholder a");
+    navLinks.forEach(link => {
+      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+      if (linkPath === currentPath) {
+        link.classList.add("active");
+      }
+    });
+
+    const s = document.createElement("script");
+    s.src = "/mascot.js";
+    s.defer = true;
+    document.body.appendChild(s); 
+  })
+  .catch(err => {
+    console.error("Failed to load nav:", err);
+  });
+</script>
+  </header>
+  <main>
+
+    <p>Our next step in studying probability is some basic combinatorics (the study of counting).  Our bread and butter is the 
+      <b>multiplication principle</b>: if there are \(n\) many ways of doing one thing, and \(m\) many ways of doing another, then there are 
+      \[m \cdot n\] 
+      many ways of doing both things.  This generalizes to arbitrarily large combinations of events.
+    </p>
+    
+    <p>For instance, if you choose one of 5 movies to watch, one of 3 snacks to eat, and one of 8 friends to watch the movie with, then in total 
+      there are
+      \[5 \cdot 3 \cdot 8 = 120\]
+      many possible triples you could pick.
+    </p>
+
+      
+    <p>This same principle applies to probability.  You have a \(\frac{1}{3}\) chance of winning a game of rock-paper scissors, and a \(\frac{1}{6}\) chance 
+      of rolling a 5 on a 6-sided die.  So, the probability that you both win a game of rock paper scissors <b>and</b> roll a 5 on the die is
+      \[\frac{1}{3} \cdot \frac{1}{6} = \frac{1}{18}\]
+    </p>
+
+
+    <p>A visual aid often used in the computation of probabiltiies where multiple events are involved is a <b>tree diagram</b>.  Suppose we conduct 
+      two experiments in sequence.  The sample space for each is partitioned into events with some prescribed probabilities.  Then the first experiment 
+      gives us the first branches, with those probabilities, and then off of each of those branches, we have branches corresponding to the second 
+      experiment branching off.  Then, the ends of the branches (called leaves) correspond to the probability of an "AND" event: both the first branch 
+      occurring on the first experiment, and the second branch occurring on the second experiment (given that the first branch occurred).  So, we multiply 
+      down the branches to get the probability that both of these occur.
+    </p>
+
+    <p>For a concrete example, suppose we have a group of 100 people.  Of these, 40 are accountants, 50 are teachers, and 10 are nurses.  Of the 
+      accountants, 30 like sushi, and 10 don't.  Of the teachers, 20 like sushi, and 30 don't.  Of the nurses, 7 like sushi, and 3 don't.  If we 
+      randomly select one of the 100 people, we can find the probability that the person belongs to one of \(3 \cdot 2 = 6\) groups (accountant that 
+      likes sushi, accountant that doesn't, teacher that likes sushi, teacher that doesn't, nurse that likes sushi, nurse that doesn't) using a 
+      tree diagram.  Let A, T, N represent the events of being an accountant, teacher, or nurse respectively, and let \(S\) and \(\overline{S}\) be the 
+      events of liking or not liking sushi respectively.  Then we have the following tree diagram:
+    </p>
+
+    <figure style="text-align: center;">
+      <img src="fig10.png" alt="Tree diagram for profession and sushi example" style="display: inline-block;">
+    </figure>
+
+    <p>We can check that we haven't made a mistake in creating our tree diagram by verifying that adding the probabilities at all of the leaves results 
+      in 1: since we have partitioned the sample space, so the probability that <b>an</b> event within the sample space occurs is 100%.  Inexplicably, 
+      people tend to be much more comfortable working with decimals than fractions.  You can certainly create a tree diagram that avoids 
+      fractions, but it is encouraged to use fractions, as these are exact.
+    </p>
+
+    <p>The preceding example used events which were not independent: the odds of liking sushi varied <b>depending</b> on the profession of the person 
+      chosen.  This leads to our discussion of the two general types of tree diagrams you will draw: where the events are <b>independent</b>, and where 
+      they are not.
+    </p>
+
+    <p>Suppose an urn contains 4 red balls and 6 green balls.  If you draw a ball at random, put it back in the urn, and then draw a ball at random 
+      again, then the probabilities associated with the second draw are <b>independent</b> of what happened on the first draw.  This is a  
+      <i>with replacement</i> combinatorics example.  If we let \(R_1\), \(G_1\), \(R_2\), and \(G_2\) represent the events of drawing a red first, 
+      drawing a green first, drawing a red second, and drawing a green second respectively, then
+      \[P(R_1) = P(R_2) = \frac{4}{10} = 0.4 \text{ and } P(G_1) = P(G_2) = \frac{6}{10} = 0.6\]
+      So we have the following tree diagram (we'll write \(R_1R_2\) as an abbreviation of \(R_1 \cap R_2\)):
+    </p>
+
+    <figure style="text-align: center;">
+      <img src="fig11.png" alt="With replacement urn example" style="display: inline-block;">
+    </figure>
+
+    <p>Now, suppose again that an urn contains 4 red balls and 6 green balls.  If you draw a ball at random, but this time <i>don't put it back</i>, and 
+      then draw a ball at random again, then the probabilities associated with the second draw <b>depend</b> on what happened on the first draw.  This is 
+      a  <i>without replacement</i> combinatorics example.  If we let \(R_1\), \(G_1\), \(R_2\), and \(G_2\) represent the events of drawing a red first, 
+      drawing a green first, drawing a red second, and drawing a green second respectively, then we <b>given that</b> we draw a red first, the 
+      probability of drawing a red second have changed: there are 9 balls remaining, 3 of which are red:
+      \[P(R_2|R_1) = \frac{3}{9}\]
+      We obtain the following tree diagram in this case (we can verify we didn't make an error at the end by adding all the probabilities of the leaves 
+      and obtaining 1):
+    </p>
+
+    <figure style="text-align: center;">
+      <img src="fig12.png" alt="Without replacement urn example" style="display: inline-block;">
+    </figure>
+
+    <p>The leaves at the end of a tree diagram represent a partition of the sample space: they are all mutually exclusive events.  This helps us answer 
+      some more complex probability questions.  For instance, if we want to know the probability of drawing <i>at least one green ball</i>, then we sum 
+      the probabilities corresponding to the events having at least one green:
+      \[P((R_1 \cap G_2) \cup (G_1 \cap R_2) \cup (G_1 \cap G_2)) = P(R_1 \cap G_2) + P(G_1 \cap R_2) + P(G_1 \cap G_2) = \frac{24}{90} + \frac{24}{90} + 
+      \frac{30}{90} = \frac{78}{90} = \frac{13}{15}\]
+    </p>
+
+    <figure style="text-align: center;">
+      <img src="fig13.png" alt="Without replacement urn example" style="display: inline-block;">
+    </figure>
+
+    <p>A specific example which occurs frequently is the Law of Total Probability.  If a sample space is partitioned into events \(F_1\), \(F_2\), ..., 
+      \(F_n\), then
+      \[P(E) = P(E|F_1) + P(E|F_2) + ... + P(E|F_n)\]
+      For instance, in our first example, to find the probability that a person likes sushi, we sum the probability that they like sushi <i>given that 
+      they are an accountant</i>, with the probability they like sushi <i>given that they are a teacher</i>, with the probability that they like sushi 
+      <i>given that they are a nurse</i>:
+      \[P(S) = P(S|A) + P(S|T) + P(S|N) = \frac{30}{100} + \frac{20}{100} + \frac{7}{100} = \frac{57}{100}\]
+    </p>
+
+    <figure style="text-align: center;">
+      <img src="fig14.png" alt="Law of Total Probability example" style="display: inline-block;">
+    </figure>
+
+    <div class="button-container">
+      <button id="start-btn" class="rubber-button">Start!</button>
+    </div>
+    
+    <p id="question-text" class="math"></p>
+
+    <div class="button-container">
+      <button id="hint-btn" class="rubber-button">Hint</button>
+    </div>
+    
+    <div id="hint-area" class="math" style="margin-top: 1em; text-align: center"></div>
+
+
+    <div id="answer-section" style="margin-top: 20px; text-align: center;">
+      <label for="user-answer">Enter your answer:</label>
+      <input type="text" id="user-answer" />
+      <button id="check-answer-btn" class="rubber-button" style="margin-left: 0.5em;">Check Answer</button>
+      <p id="answer-feedback" style="font-weight: bold; margin-top: 10px;"></p>
+    </div>
+
+  </main>
+  <script>
+  // =============================
+  // Probability II Activity Script
+  // =============================
+
+  const startBtn = document.getElementById('start-btn');
+  const hintBtn = document.getElementById('hint-btn');
+  const checkBtn = document.getElementById('check-answer-btn');
+
+  const questionText = document.getElementById('question-text');
+  const hintArea = document.getElementById('hint-area');
+
+  const answerInput = document.getElementById('user-answer');
+  const feedback = document.getElementById('answer-feedback');
+
+  let hintSteps = [];
+  let hintIndex = 0;
+
+  // Correct answer stored as reduced fraction num/den
+  let currentAnsNum = null;
+  let currentAnsDen = null;
+
+  // -----------------------------
+  // Helpers
+  // -----------------------------
+  function playSound(id) {
+    const s = document.getElementById(id);
+    if (s) {
+      s.currentTime = 0;
+      s.play();
+    }
+  }
+
+  function typeset(elements = []) {
+    if (!window.MathJax) return;
+    if (MathJax.typesetPromise) {
+      if (elements.length > 0) MathJax.typesetPromise(elements);
+      else MathJax.typesetPromise();
+      return;
+    }
+    if (MathJax.typeset) {
+      if (elements.length > 0) MathJax.typeset(elements);
+      else MathJax.typeset();
+    }
+  }
+
+  function randInt(a, b) {
+    return Math.floor(Math.random() * (b - a + 1)) + a;
+  }
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = randInt(0, i);
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function gcd(a, b) {
+    a = Math.abs(a); b = Math.abs(b);
+    while (b !== 0) {
+      const t = a % b;
+      a = b;
+      b = t;
+    }
+    return a === 0 ? 1 : a;
+  }
+
+  function reduceFrac(num, den) {
+    if (den < 0) { den = -den; num = -num; }
+    const g = gcd(num, den);
+    return [num / g, den / g];
+  }
+
+  function setAnswer(num, den) {
+    const r = reduceFrac(num, den);
+    currentAnsNum = r[0];
+    currentAnsDen = r[1];
+  }
+
+  // IMPORTANT: In JS strings, "\f" is a real escape. To produce TeX "\frac",
+  // we must place "\\frac" inside a template literal.
+  function fracTex(num, den) {
+    const r = reduceFrac(num, den);
+    const n = r[0], d = r[1];
+    if (d === 1) return `${n}`;
+    return `\\frac{${n}}{${d}}`;
+  }
+
+  function fracPlain(num, den) {
+    const r = reduceFrac(num, den);
+    return `${r[0]}/${r[1]}`;
+  }
+
+  function resetUIForNewQuestion() {
+    feedback.textContent = '';
+    feedback.style.color = 'black';
+    answerInput.value = '';
+    hintArea.innerHTML = '';
+    hintSteps = [];
+    hintIndex = 0;
+  }
+
+  function parseUserAnswer(raw) {
+    // Accept:
+    //  - integer: "3"
+    //  - fraction: "3/8"
+    //  - decimal: "0.375"
+    // Decimals graded with relative tolerance 0.01%.
+    const s = raw.replace(/\s+/g, '');
+
+    const fracMatch = s.match(/^([+-]?\d+)\/([+-]?\d+)$/);
+    if (fracMatch) {
+      const a = parseInt(fracMatch[1], 10);
+      const b = parseInt(fracMatch[2], 10);
+      if (b === 0) return { error: 'Denominator cannot be 0.' };
+      const [rn, rd] = reduceFrac(a, b);
+      return { kind: 'exact', num: rn, den: rd };
+    }
+
+    const intMatch = s.match(/^[+-]?\d+$/);
+    if (intMatch) {
+      const a = parseInt(s, 10);
+      return { kind: 'exact', num: a, den: 1 };
+    }
+
+    const decMatch = s.match(/^[+-]?\d*\.\d+$/);
+    if (decMatch) {
+      const value = Number(s);
+      if (!Number.isFinite(value)) return { error: 'That decimal does not look valid.' };
+      if (value < 0) return { error: 'Probabilities cannot be negative.' };
+      return { kind: 'decimal', value, relTol: 0.0001 };
+    }
+
+    return { error: 'I couldn’t parse that. Use a fraction like 3/8 or a decimal like 0.375.' };
+  }
+
+  function isCorrect(parsed) {
+    if (currentAnsNum === null || currentAnsDen === null) return false;
+    const correctVal = currentAnsNum / currentAnsDen;
+
+    if (!parsed || parsed.error) return false;
+
+    if (parsed.kind === 'exact') {
+      const [uNum, uDen] = reduceFrac(parsed.num, parsed.den);
+      return (uNum === currentAnsNum && uDen === currentAnsDen);
+    }
+
+    if (parsed.kind === 'decimal') {
+      const denom = Math.max(1e-12, Math.abs(correctVal));
+      return Math.abs(parsed.value - correctVal) <= parsed.relTol * denom;
+    }
+
+    return false;
+  }
+
+  function joinWithAnd(items) {
+    if (items.length === 1) return items[0];
+    if (items.length === 2) return `${items[0]} and ${items[1]}`;
+    return `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`;
+  }
+
+  function joinWithOr(items) {
+    if (items.length === 1) return items[0];
+    if (items.length === 2) return `${items[0]} or ${items[1]}`;
+    return `${items.slice(0, -1).join(', ')}, or ${items[items.length - 1]}`;
+  }
+
+  function singularize(word) {
+    // works for your banks (Apples->Apple, SUVs->SUV, etc.)
+    if (word.endsWith('s')) return word.slice(0, -1);
+    return word;
+  }
+
+  function articleFor(word) {
+    const first = word[0];
+    const vowelLetter = /^[aeiou]/i.test(first);
+    const anInitialism = /^[FHLMNRSX]/.test(first);
+    return (vowelLetter || anInitialism) ? 'an' : 'a';
+  }
+
+  // -----------------------------
+  // Type (1): Independent events
+  // -----------------------------
+  function makeDieEvent() {
+    const sides = randInt(6, 20);
+    const mode = randInt(1, 3); // 1 exact, 2 higher than, 3 lower than
+    if (mode === 1) {
+      const k = randInt(1, sides);
+      return {
+        desc: `you roll a ${k} on a ${sides}-sided die`,
+        num: 1,
+        den: sides
+      };
+    }
+    if (mode === 2) {
+      const t = randInt(1, sides - 1); // "higher than t"
+      const favorable = sides - t;
+      return {
+        desc: `you roll higher than ${t} on a ${sides}-sided die`,
+        num: favorable,
+        den: sides
+      };
+    }
+    const t = randInt(2, sides); // "lower than t"
+    const favorable = t - 1;
+    return {
+      desc: `you roll lower than ${t} on a ${sides}-sided die`,
+      num: favorable,
+      den: sides
+    };
+  }
+
+  function makeCoinEvent() {
+    const ht = randInt(0, 1) === 0 ? 'heads' : 'tails';
+    return {
+      desc: `you flip ${ht}`,
+      num: 1,
+      den: 2
+    };
+  }
+
+  function makeCardEvent() {
+    const suits = ['spade', 'heart', 'diamond', 'club'];
+    const suitPlural = { spade: 'spades', heart: 'hearts', diamond: 'diamonds', club: 'clubs' };
+    const ranks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+    const faces = ['J','Q','K'];
+
+    const kind = randInt(1, 4); // 1 suit, 2 face card, 3 specific card, 4 diamond face card style
+    if (kind === 1) {
+      const s = suits[randInt(0, 3)];
+      return { desc: `you draw a ${s}`, num: 13, den: 52 };
+    }
+    if (kind === 2) {
+      return { desc: `you draw a face card`, num: 12, den: 52 };
+    }
+    if (kind === 3) {
+      const r = ranks[randInt(0, ranks.length - 1)];
+      const s = suits[randInt(0, 3)];
+      const suitName = suitPlural[s];
+      const rankName = (r === 'A') ? 'ace' : (r === 'J' ? 'jack' : (r === 'Q' ? 'queen' : (r === 'K' ? 'king' : r)));
+      return { desc: `you draw the ${rankName} of ${suitName}`, num: 1, den: 52 };
+    }
+    // diamond face card
+    const s = 'diamond';
+    return { desc: `you draw a diamond face card`, num: 3, den: 52 };
+  }
+
+  function generateType1() {
+    const howMany = randInt(2, 3);
+
+    const generators = [makeDieEvent, makeCoinEvent, makeCardEvent];
+    const chosen = [];
+    // ensure variety by shuffling generators first, then allow repeats if 3 events
+    shuffle(generators);
+    for (let i = 0; i < howMany; i++) {
+      const g = generators[i % generators.length];
+      chosen.push(g());
+    }
+
+    const descs = chosen.map(e => e.desc);
+    const num = chosen.reduce((acc, e) => acc * e.num, 1);
+    const den = chosen.reduce((acc, e) => acc * e.den, 1);
+    setAnswer(num, den);
+
+    questionText.textContent = `What is the probability that ${joinWithAnd(descs)}?`;
+
+    hintSteps = [
+      `These are independent experiments, so multiply their probabilities.`,
+      `Compute each probability, then multiply: \\(P = ${chosen.map(e => fracTex(e.num, e.den)).join(' \\cdot ')}\\).`,
+      `So the probability is \\(${fracTex(num, den)}\\).`
+    ];
+  }
+
+  // -----------------------------
+  // Type (2): Urn (2 draws)
+  // -----------------------------
+  function generateType2() {
+    const R = randInt(1, 20);
+    const G = randInt(1, 20);
+    const T = R + G;
+
+    const withReplacement = randInt(0, 1) === 0; // true => returned
+    const returnText = withReplacement ? 'then returned to the urn' : 'then not returned to the urn';
+
+    const color = randInt(0, 1) === 0 ? 'red' : 'green';
+
+    const eventBank = [
+      { key: 'atLeastOne', text: `at least one draw is ${color}` },
+      { key: 'both',       text: `both draws are ${color}` },
+      { key: 'neither',    text: `neither draw is ${color}` },
+      { key: 'first',      text: `the first draw is ${color}` },
+      { key: 'second',     text: `the second draw is ${color}` },
+      { key: 'oneEach',    text: `one red and one green are drawn` }
+    ];
+
+    const chosenEvent = eventBank[randInt(0, eventBank.length - 1)];
+
+    function pColor1() {
+      return color === 'red' ? [R, T] : [G, T];
+    }
+    function pNotColor1() {
+      return color === 'red' ? [G, T] : [R, T];
+    }
+
+    let num = 0, den = 1;
+
+    if (withReplacement) {
+      const [pN, pD] = pColor1();
+      const [qN, qD] = pNotColor1(); // same denom
+      // Two independent draws
+      if (chosenEvent.key === 'both') {
+        num = pN * pN;
+        den = pD * pD;
+      } else if (chosenEvent.key === 'neither') {
+        num = qN * qN;
+        den = qD * qD;
+      } else if (chosenEvent.key === 'first' || chosenEvent.key === 'second') {
+        num = pN;
+        den = pD;
+      } else if (chosenEvent.key === 'atLeastOne') {
+        // 1 - P(neither)
+        num = den = 1; // placeholder then compute
+        const n0 = qN * qN;
+        const d0 = qD * qD;
+        // 1 - n0/d0 = (d0 - n0)/d0
+        num = d0 - n0;
+        den = d0;
+      } else if (chosenEvent.key === 'oneEach') {
+        // RG or GR
+        // P(R then G) + P(G then R)
+        const nRG = R * G;
+        const dRG = T * T;
+        const nGR = G * R;
+        const dGR = T * T;
+        num = nRG + nGR;
+        den = dRG; // same
+      }
+    } else {
+      // without replacement
+      // After first draw, totals change.
+      const r = R, g = G;
+      if (chosenEvent.key === 'both') {
+        if (color === 'red') {
+          num = r * (r - 1);
+          den = T * (T - 1);
+        } else {
+          num = g * (g - 1);
+          den = T * (T - 1);
+        }
+      } else if (chosenEvent.key === 'neither') {
+        if (color === 'red') {
+          num = g * (g - 1);
+          den = T * (T - 1);
+        } else {
+          num = r * (r - 1);
+          den = T * (T - 1);
+        }
+      } else if (chosenEvent.key === 'first') {
+        num = (color === 'red') ? r : g;
+        den = T;
+      } else if (chosenEvent.key === 'second') {
+        // symmetry: second draw marginal is same as first for hypergeometric
+        num = (color === 'red') ? r : g;
+        den = T;
+      } else if (chosenEvent.key === 'atLeastOne') {
+        // 1 - P(neither)
+        const nNeither = (color === 'red') ? g * (g - 1) : r * (r - 1);
+        const dAll = T * (T - 1);
+        num = dAll - nNeither;
+        den = dAll;
+      } else if (chosenEvent.key === 'oneEach') {
+        // RG or GR: 2*r*g / (T*(T-1))
+        num = 2 * r * g;
+        den = T * (T - 1);
+      }
+    }
+
+    setAnswer(num, den);
+
+    questionText.textContent =
+      `An urn contains ${R} red balls and ${G} green balls. ` +
+      `If a ball is drawn at random, ${returnText}, and a ball is drawn at random again, ` +
+      `what is the probability that ${chosenEvent.text}?`;
+
+    // basic hints (we'll refine later)
+    hintSteps = withReplacement ? [
+      `With replacement means the two draws are independent.`,
+      `Compute the probability for each draw and multiply (or use a complement if needed).`,
+      `So the probability is \\(${fracTex(num, den)}\\).`
+    ] : [
+      `Without replacement means the second draw depends on what happened on the first draw.`,
+      `Use a tree idea: probabilities on the second draw use totals of \\(T-1\\).`,
+      `So the probability is \\(${fracTex(num, den)}\\).`
+    ];
+  }
+
+  // -----------------------------
+  // Type (3): Two populations, two partitions
+  // -----------------------------
+  const popBank = [
+    { labelSing: 'fruit', labelPlur: 'fruits', items: ['Apples', 'Bananas', 'Oranges', 'Pears'] },
+    { labelSing: 'animal', labelPlur: 'animals', items: ['Cats', 'Dogs', 'Birds', 'Bears'] },
+    { labelSing: 'musical instrument', labelPlur: 'musical instruments', items: ['Trumpets', 'Flutes', 'Clarinets', 'Tubas'] },
+    { labelSing: 'piece of furniture', labelPlur: 'pieces of furniture', items: ['Chairs', 'Tables', 'Couches', 'Beds'] },
+    { labelSing: 'utensil', labelPlur: 'utensils', items: ['Forks', 'Spoons', 'Spatulas', 'Whisks'] },
+    { labelSing: 'vehicle', labelPlur: 'vehicles', items: ['Sedans', 'Jeeps', 'SUVs', 'Trucks'] },
+    { labelSing: 'shape', labelPlur: 'shapes', items: ['Squares', 'Triangles', 'Circles', 'Pentagons'] }
+  ];
+
+  function randomPartition(total, k) {
+    // positive parts summing to total
+    let cuts = [];
+    for (let i = 0; i < k - 1; i++) cuts.push(randInt(1, total - 1));
+    cuts.sort((a, b) => a - b);
+    const parts = [];
+    let prev = 0;
+    for (let i = 0; i < cuts.length; i++) {
+      parts.push(cuts[i] - prev);
+      prev = cuts[i];
+    }
+    parts.push(total - prev);
+    return parts;
+  }
+
+  function generateType3() {
+    const idxs = shuffle([0,1,2,3,4,5,6]);
+    const popA = popBank[idxs[0]];
+    const popB = popBank[idxs[1]];
+
+    const NA = randInt(10, 100);
+    const NB = randInt(10, 100);
+
+    const kA = randInt(2, 4);
+    const kB = randInt(2, 4);
+
+    const itemsA = shuffle([...popA.items]).slice(0, kA);
+    const itemsB = shuffle([...popB.items]).slice(0, kB);
+
+    const countsA = randomPartition(NA, kA);
+    const countsB = randomPartition(NB, kB);
+
+    const breakdownA = itemsA.map((it, i) => `${countsA[i]} ${it}`).join(', ');
+    const breakdownB = itemsB.map((it, i) => `${countsB[i]} ${it}`).join(', ');
+
+    const pickA = randInt(0, kA - 1);
+    const pickB = randInt(0, kB - 1);
+
+    const countFavA = countsA[pickA];
+    const countFavB = countsB[pickB];
+
+    const num = countFavA * countFavB;
+    const den = NA * NB;
+    setAnswer(num, den);
+
+    const aSing = popA.labelSing;
+    const bSing = popB.labelSing;
+
+    const aChosen = singularize(itemsA[pickA]);
+    const bChosen = singularize(itemsB[pickB]);
+
+    questionText.textContent =
+      `There are ${NA} ${popA.labelPlur}, consisting of ${breakdownA}, and ${NB} ${popB.labelPlur}, consisting of ${breakdownB}. ` +
+      `If a ${aSing} and a ${bSing} are selected at random, what is the probability that ` +
+      `${articleFor(aChosen)} ${aChosen.toLowerCase()} and ${articleFor(bChosen)} ${bChosen.toLowerCase()} are selected?`;
+
+    hintSteps = [
+      `Find the probability of selecting the desired type from the first population: ${countFavA}/${NA}.`,
+      `Find the probability of selecting the desired type from the second population: ${countFavB}/${NB}.`,
+      `Selections are independent, so multiply: \\(${fracTex(countFavA, NA)} \\cdot ${fracTex(countFavB, NB)} = ${fracTex(num, den)}\\).`
+    ];
+  }
+
+  // -----------------------------
+  // Type (4): One population, partition + property rates
+  // -----------------------------
+  const propertyByCategory = {
+    'fruit': 'rotten',
+    'animal': 'rabid',
+    'musical instrument': 'brass',
+    'piece of furniture': 'antique',
+    'utensil': 'silver',
+    'vehicle': 'electric',
+    'shape': 'blue'
+  };
+
+  function generateType4() {
+    const pop = popBank[randInt(0, popBank.length - 1)];
+    const prop = propertyByCategory[pop.labelSing];
+
+    const N = randInt(10, 100);
+    const k = randInt(2, 4);
+
+    const items = shuffle([...pop.items]).slice(0, k);
+    const counts = randomPartition(N, k);
+
+    // For each subset, choose a percentage 1..99 and compute count with property
+    const perc = [];
+    const propCounts = [];
+    for (let i = 0; i < k; i++) {
+      const p = randInt(1, 99);
+      perc.push(p);
+      // round to nearest integer for a cleaner story
+      let c = Math.round(counts[i] * p / 100);
+      c = Math.max(0, Math.min(counts[i], c));
+      propCounts.push(c);
+    }
+
+    const breakdown = items.map((it, i) => `${counts[i]} ${it}`).join(', ');
+    const propertyLines = items.map((it, i) => `${propCounts[i]} of the ${it.toLowerCase()} are ${prop}.`).join(' ');
+
+    // Choose question subtype:
+    // A) property only: is / isn't
+    // B) property and subset: is / isn't AND is a subset
+    const subtype = randInt(1, 2);
+    const isNot = randInt(0, 1) === 0 ? 'is' : "isn't";
+
+    let favorable = 0;
+    let targetPhrase = '';
+
+    if (subtype === 1) {
+      const totalProp = propCounts.reduce((a, b) => a + b, 0);
+      favorable = (isNot === 'is') ? totalProp : (N - totalProp);
+      targetPhrase = `${isNot} ${prop}`;
+    } else {
+      const j = randInt(0, k - 1);
+      const subset = items[j].toLowerCase();
+      const subsetSing = singularize(items[j]).toLowerCase();
+      const inSubsetProp = propCounts[j];
+      const inSubsetNot = counts[j] - propCounts[j];
+      favorable = (isNot === 'is') ? inSubsetProp : inSubsetNot;
+      targetPhrase = `${isNot} ${prop} and is ${articleFor(subsetSing)} ${subsetSing}`;
+    }
+
+    setAnswer(favorable, N);
+
+    questionText.textContent =
+      `There are ${N} ${pop.labelPlur}, consisting of ${breakdown}. ` +
+      `${propertyLines} ` +
+      `What is the probability that a randomly selected ${pop.labelSing} ${targetPhrase}?`;
+
+    hintSteps = [
+      `Identify how many outcomes are favorable for the event described.`,
+      `Divide the number of favorable outcomes by the total population size (${N}).`,
+      `So the probability is \\(${fracTex(favorable, N)}\\).`
+    ];
+  }
+
+  // -----------------------------
+  // Start button: choose type 1..4
+  // -----------------------------
+  startBtn.addEventListener('click', () => {
+    playSound('click-sound');
+    resetUIForNewQuestion();
+
+    const qType = randInt(1, 4);
+    if (qType === 1) generateType1();
+    if (qType === 2) generateType2();
+    if (qType === 3) generateType3();
+    if (qType === 4) generateType4();
+
+    typeset([questionText]);
+  });
+
+  // -----------------------------
+  // Hint button
+  // -----------------------------
+  hintBtn.addEventListener('click', () => {
+    playSound('click-sound');
+
+    if (!hintSteps || hintSteps.length === 0) {
+      const hintPara = document.createElement('div');
+      hintPara.classList.add('hint-step');
+      hintPara.style.textAlign = 'center';
+      hintPara.textContent = 'No hints are available for this question.';
+      hintArea.appendChild(hintPara);
+      typeset([hintPara]);
+      return;
+    }
+
+    if (hintIndex < hintSteps.length) {
+      const hintPara = document.createElement('div');
+      hintPara.classList.add('hint-step');
+      hintPara.style.textAlign = 'center';
+      hintPara.innerHTML = hintSteps[hintIndex];
+      hintArea.appendChild(hintPara);
+      typeset([hintPara]);
+      hintIndex++;
+    }
+  });
+
+  // -----------------------------
+  // Check answer
+  // -----------------------------
+  checkBtn.addEventListener('click', () => {
+    playSound('click-sound');
+
+    const raw = answerInput.value.trim();
+    if (!raw) {
+      feedback.textContent = 'Please enter an answer.';
+      feedback.style.color = 'black';
+      return;
+    }
+
+    const parsed = parseUserAnswer(raw);
+    if (parsed.error) {
+      feedback.textContent = parsed.error;
+      feedback.style.color = 'black';
+      return;
+    }
+
+    if (isCorrect(parsed)) {
+      feedback.textContent = 'Correct!';
+      feedback.style.color = 'green';
+    } else {
+      const exact = `${currentAnsNum}/${currentAnsDen}`;
+      const dec = (currentAnsNum / currentAnsDen).toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
+      feedback.textContent = `Not quite. Correct answer is ${exact} (≈ ${dec}).`;
+      feedback.style.color = 'crimson';
+    }
+  });
+</script>
+
+
+
+  <audio id="click-sound" src="button.mp3" preload="auto"></audio>
+  <audio id="set-sound" src="set2.mp3" preload="auto"></audio>
+
+</body>
+</html>

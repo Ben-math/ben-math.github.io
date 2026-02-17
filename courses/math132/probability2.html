@@ -334,6 +334,138 @@ fetch("/nav.html")
     return (vowelLetter || anInitialism) ? 'an' : 'a';
   }
 
+
+// -----------------------------
+// Tree diagram (SVG) helpers
+// -----------------------------
+function escHtml(s) {
+  return String(s)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function makeSvg(width, height, elements) {
+  return `
+    <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Tree diagram">
+      <style>
+        .td-text { font: 14px system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; fill: #111; }
+        .td-small { font: 12px system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; fill: #111; }
+        .td-edge { stroke: #222; stroke-width: 1.5; fill: none; }
+      </style>
+      ${elements.join('\\n')}
+    </svg>
+  `;
+}
+
+function line(x1, y1, x2, y2) {
+  return `<line class="td-edge" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" />`;
+}
+
+function text(x, y, s, cls="td-text", anchor="start") {
+  return `<text class="${cls}" x="${x}" y="${y}" text-anchor="${anchor}" dominant-baseline="middle">${escHtml(s)}</text>`;
+}
+
+function treeContainerHtml(title, svg) {
+  return `
+    <div style="margin-top: 10px;">
+      <div style="font-weight: 600; margin-bottom: 6px;">${escHtml(title)}</div>
+      <div style="display: inline-block; border: 1px solid #ddd; border-radius: 10px; padding: 10px; background: #fff;">
+        ${svg}
+      </div>
+    </div>
+  `;
+}
+
+function fracPlain(n, d) {
+  const r = reduceFrac(n, d);
+  return (r[1] === 1) ? String(r[0]) : `${r[0]}/${r[1]}`;
+}
+
+function buildUrnTreeSVG({R, G, withReplacement}) {
+  const T = R + G;
+  const rootX = 20, rootY = 90;
+  const lvl1X = 170, lvl2X = 360;
+
+  const yR1 = 40, yG1 = 140;
+  const yRR = 20, yRG = 70, yGR = 110, yGG = 160;
+
+  const elems = [];
+  elems.push(text(rootX, rootY, "Start"));
+
+  elems.push(line(rootX+40, rootY, lvl1X-20, yR1));
+  elems.push(line(rootX+40, rootY, lvl1X-20, yG1));
+
+  elems.push(text(70, (rootY+yR1)/2, `Red (${fracPlain(R, T)})`, "td-small"));
+  elems.push(text(70, (rootY+yG1)/2, `Green (${fracPlain(G, T)})`, "td-small"));
+
+  elems.push(text(lvl1X, yR1, "Red"));
+  elems.push(text(lvl1X, yG1, "Green"));
+
+  const pR_after_R = withReplacement ? fracPlain(R, T) : fracPlain(R-1, T-1);
+  const pG_after_R = withReplacement ? fracPlain(G, T) : fracPlain(G, T-1);
+  const pR_after_G = withReplacement ? fracPlain(R, T) : fracPlain(R, T-1);
+  const pG_after_G = withReplacement ? fracPlain(G, T) : fracPlain(G-1, T-1);
+
+  elems.push(line(lvl1X+40, yR1, lvl2X-20, yRR));
+  elems.push(line(lvl1X+40, yR1, lvl2X-20, yRG));
+  elems.push(text(200, (yR1+yRR)/2, `Red (${pR_after_R})`, "td-small"));
+  elems.push(text(200, (yR1+yRG)/2, `Green (${pG_after_R})`, "td-small"));
+
+  elems.push(line(lvl1X+40, yG1, lvl2X-20, yGR));
+  elems.push(line(lvl1X+40, yG1, lvl2X-20, yGG));
+  elems.push(text(200, (yG1+yGR)/2, `Red (${pR_after_G})`, "td-small"));
+  elems.push(text(200, (yG1+yGG)/2, `Green (${pG_after_G})`, "td-small"));
+
+  elems.push(text(lvl2X, yRR, "RR"));
+  elems.push(text(lvl2X, yRG, "RG"));
+  elems.push(text(lvl2X, yGR, "GR"));
+  elems.push(text(lvl2X, yGG, "GG"));
+
+  return makeSvg(460, 190, elems);
+}
+
+function buildPartitionPropTreeSVG({subsets, counts, prop, propCounts}) {
+  const N = counts.reduce((a,b)=>a+b,0);
+  const k = subsets.length;
+
+  const width = 760;
+  const rootX = 20, rootY = 30 + 40 * k;
+  const lvl1X = 300, lvl2X = 560;
+
+  const elems = [];
+  elems.push(text(rootX, rootY, "Start"));
+
+  const y1 = [];
+  for (let i = 0; i < k; i++) y1.push(30 + i * 80);
+
+  for (let i = 0; i < k; i++) {
+    elems.push(line(rootX+40, rootY, lvl1X-20, y1[i]));
+    elems.push(text(70, (rootY+y1[i])/2, `${subsets[i]} (${fracPlain(counts[i], N)})`, "td-small"));
+    elems.push(text(lvl1X, y1[i], subsets[i]));
+
+    const yProp = y1[i] - 18;
+    const yNot = y1[i] + 18;
+
+    const pProp = fracPlain(propCounts[i], counts[i]);
+    const pNot = fracPlain(counts[i] - propCounts[i], counts[i]);
+
+    elems.push(line(lvl1X+90, y1[i], lvl2X-20, yProp));
+    elems.push(line(lvl1X+90, y1[i], lvl2X-20, yNot));
+
+    elems.push(text(lvl1X+110, (y1[i]+yProp)/2, `${prop} (${pProp})`, "td-small"));
+    elems.push(text(lvl1X+110, (y1[i]+yNot)/2, `not ${prop} (${pNot})`, "td-small"));
+
+    elems.push(text(lvl2X, yProp, "✔"));
+    elems.push(text(lvl2X, yNot, "✘"));
+  }
+
+  const height = 30 + 80 * k;
+  return makeSvg(width, height, elems);
+}
+
   // -----------------------------
   // Type (1): Independent events
   // -----------------------------
@@ -519,7 +651,13 @@ fetch("/nav.html")
         `So, the probability that ${chosenEvent.text} is \\(${exprTex} = ${fracTex(num, den)}\\).`
       ];
     }
-  }
+
+  // Final hint: tree diagram
+  hintSteps.push(treeContainerHtml(
+    withReplacement ? 'Tree diagram (with replacement)' : 'Tree diagram (without replacement)',
+    buildUrnTreeSVG({ R, G, withReplacement })
+  ));
+}
 
   // -----------------------------
   // Type (3): Two populations, two partitions
@@ -686,7 +824,18 @@ fetch("/nav.html")
       `Multiply the probabilities down the branches to find the probabilities of the "AND" events.`,
       `Sum the probabilities of the events that make up the situation we are interested in: \\(${sumTex}\\).`
     ];
-  }
+
+  // Final hint: tree diagram
+  hintSteps.push(treeContainerHtml(
+    'Tree diagram',
+    buildPartitionPropTreeSVG({
+      subsets: subsetNames,
+      counts,
+      prop,
+      propCounts
+    })
+  ));
+}
 
   // -----------------------------
   // Start button

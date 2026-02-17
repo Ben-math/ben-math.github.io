@@ -398,8 +398,8 @@ fetch("/nav.html")
 
     hintSteps = [
       `These are independent experiments, so multiply their probabilities.`,
-      `Compute each probability, then multiply: \(P = ${chosen.map(e => fracTex(e.num, e.den)).join(' \cdot ')}\).`,
-      `So the probability is \(${fracTex(num, den)}\).`
+      `Compute each probability, then multiply: \\(P = ${chosen.map(e => fracTex(e.num, e.den)).join(' \\\cdot ')}\\).`,
+      `So the probability is \\(${fracTex(num, den)}\\).`
     ];
   }
 
@@ -475,48 +475,48 @@ fetch("/nav.html")
     if (withReplacement) {
       if (chosenEvent.key === 'both') {
         const p = (color === 'red') ? fracTex(R, T) : fracTex(G, T);
-        exprTex = `${p} \cdot ${p}`;
+        exprTex = `${p} \\\cdot ${p}`;
       } else if (chosenEvent.key === 'neither') {
         const q = (color === 'red') ? fracTex(G, T) : fracTex(R, T);
-        exprTex = `${q} \cdot ${q}`;
+        exprTex = `${q} \\\cdot ${q}`;
       } else if (chosenEvent.key === 'first' || chosenEvent.key === 'second') {
         const p = (color === 'red') ? fracTex(R, T) : fracTex(G, T);
         exprTex = `${p}`;
       } else if (chosenEvent.key === 'atLeastOne') {
         const q = (color === 'red') ? fracTex(G, T) : fracTex(R, T);
-        exprTex = `1 - (${q} \cdot ${q})`;
+        exprTex = `1 - (${q} \\\cdot ${q})`;
       } else if (chosenEvent.key === 'oneEach') {
-        exprTex = `(${fracTex(R, T)} \cdot ${fracTex(G, T)}) + (${fracTex(G, T)} \cdot ${fracTex(R, T)})`;
+        exprTex = `(${fracTex(R, T)} \\\cdot ${fracTex(G, T)}) + (${fracTex(G, T)} \\\cdot ${fracTex(R, T)})`;
       }
 
       hintSteps = [
         `Since the first ball drawn was returned, we are in a "with replacement" situation: the probabilities for the second draw are independent of the outcome of the first draw.`,
         `The probabilities in the second branches should be identical to the probabilities in the first branches.`,
-        `So, the probability that ${chosenEvent.text} is \(${exprTex} = ${fracTex(num, den)}\).`
+        `So, the probability that ${chosenEvent.text} is \\(${exprTex} = ${fracTex(num, den)}\\).`
       ];
     } else {
       if (chosenEvent.key === 'both') {
-        if (color === 'red') exprTex = `${fracTex(R, T)} \cdot ${fracTex(R - 1, T - 1)}`;
-        else exprTex = `${fracTex(G, T)} \cdot ${fracTex(G - 1, T - 1)}`;
+        if (color === 'red') exprTex = `${fracTex(R, T)} \\\cdot ${fracTex(R - 1, T - 1)}`;
+        else exprTex = `${fracTex(G, T)} \\\cdot ${fracTex(G - 1, T - 1)}`;
       } else if (chosenEvent.key === 'neither') {
-        if (color === 'red') exprTex = `${fracTex(G, T)} \cdot ${fracTex(G - 1, T - 1)}`;
-        else exprTex = `${fracTex(R, T)} \cdot ${fracTex(R - 1, T - 1)}`;
+        if (color === 'red') exprTex = `${fracTex(G, T)} \\\cdot ${fracTex(G - 1, T - 1)}`;
+        else exprTex = `${fracTex(R, T)} \\\cdot ${fracTex(R - 1, T - 1)}`;
       } else if (chosenEvent.key === 'first' || chosenEvent.key === 'second') {
         const p = (color === 'red') ? fracTex(R, T) : fracTex(G, T);
         exprTex = `${p}`;
       } else if (chosenEvent.key === 'atLeastOne') {
         let neitherTex = '';
-        if (color === 'red') neitherTex = `${fracTex(G, T)} \cdot ${fracTex(G - 1, T - 1)}`;
-        else neitherTex = `${fracTex(R, T)} \cdot ${fracTex(R - 1, T - 1)}`;
+        if (color === 'red') neitherTex = `${fracTex(G, T)} \\\cdot ${fracTex(G - 1, T - 1)}`;
+        else neitherTex = `${fracTex(R, T)} \\\cdot ${fracTex(R - 1, T - 1)}`;
         exprTex = `1 - (${neitherTex})`;
       } else if (chosenEvent.key === 'oneEach') {
-        exprTex = `(${fracTex(R, T)} \cdot ${fracTex(G, T - 1)}) + (${fracTex(G, T)} \cdot ${fracTex(R, T - 1)})`;
+        exprTex = `(${fracTex(R, T)} \\\cdot ${fracTex(G, T - 1)}) + (${fracTex(G, T)} \\\cdot ${fracTex(R, T - 1)})`;
       }
 
       hintSteps = [
         `Since the first ball drawn was not returned, we are in a "without replacement" situation: the probabilities for the second draw are dependent on the outcome of the first draw.`,
         `The total number of remaining balls is reduced by one on the second draw.`,
-        `So, the probability that ${chosenEvent.text} is \(${exprTex} = ${fracTex(num, den)}\).`
+        `So, the probability that ${chosenEvent.text} is \\(${exprTex} = ${fracTex(num, den)}\\).`
       ];
     }
   }
@@ -587,9 +587,9 @@ fetch("/nav.html")
       `${articleFor(aChosen)} ${aChosen.toLowerCase()} and ${articleFor(bChosen)} ${bChosen.toLowerCase()} are selected?`;
 
     hintSteps = [
-      `The probability of selecting ${articleFor(aChosen)} ${aChosen.toLowerCase()} from ${NA} total ${popA.labelPlur} is \(${fracTex(countFavA, NA)}\).`,
-      `The probability of selecting ${articleFor(bChosen)} ${bChosen.toLowerCase()} from ${NB} total ${popB.labelPlur} is \(${fracTex(countFavB, NB)}\).`,
-      `Selections are independent, so multiply: \(${fracTex(countFavA, NA)} \cdot ${fracTex(countFavB, NB)} = ${fracTex(num, den)}\).`
+      `The probability of selecting ${articleFor(aChosen)} ${aChosen.toLowerCase()} from ${NA} total ${popA.labelPlur} is \\(${fracTex(countFavA, NA)}\\).`,
+      `The probability of selecting ${articleFor(bChosen)} ${bChosen.toLowerCase()} from ${NB} total ${popB.labelPlur} is \\(${fracTex(countFavB, NB)}\\).`,
+      `Selections are independent, so multiply: \\(${fracTex(countFavA, NA)} \\\cdot ${fracTex(countFavB, NB)} = ${fracTex(num, den)}\\).`
     ];
   }
 
@@ -665,7 +665,7 @@ fetch("/nav.html")
         const second = (isNot === 'is')
           ? `${fracTex(propCounts[i], counts[i])}`
           : `${fracTex(counts[i] - propCounts[i], counts[i])}`;
-        return `(${first} \cdot ${second})`;
+        return `(${first} \\\cdot ${second})`;
       });
       sumTex = terms.join(' + ');
     } else {
@@ -677,14 +677,14 @@ fetch("/nav.html")
       }
       const first = `${fracTex(counts[jj], N)}`;
       const second = (isNot === 'is') ? `${fracTex(propCounts[jj], counts[jj])}` : `${fracTex(counts[jj] - propCounts[jj], counts[jj])}`;
-      sumTex = `(${first} \cdot ${second})`;
+      sumTex = `(${first} \\\cdot ${second})`;
     }
 
     hintSteps = [
       `The ${pop.labelPlur} are partitioned into ${subsetList}. So this gives us the probabilities for the first branch of a tree diagram.`,
-      `Each of the subsets in the partition are either ${prop} or not ${prop}. So each of the nodes at the first level branches off twice at the second stage.`,
+      `Each of the subsets in the partition are either ${prop} or not ${prop}. So each of the nodes at the first level branch off twice at the second stage.`,
       `Multiply the probabilities down the branches to find the probabilities of the "AND" events.`,
-      `Sum the probabilities of the events that make up the situation we are interested in: \(${sumTex}\).`
+      `Sum the probabilities of the events that make up the situation we are interested in: \\(${sumTex}\\).`
     ];
   }
 

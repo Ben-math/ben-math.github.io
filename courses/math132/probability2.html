@@ -254,11 +254,6 @@ fetch("/nav.html")
     return `\\frac{${n}}{${d}}`;
   }
 
-  function fracPlain(num, den) {
-    const r = reduceFrac(num, den);
-    return `${r[0]}/${r[1]}`;
-  }
-
   function resetUIForNewQuestion() {
     feedback.textContent = '';
     feedback.style.color = 'black';
@@ -327,14 +322,7 @@ fetch("/nav.html")
     return `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`;
   }
 
-  function joinWithOr(items) {
-    if (items.length === 1) return items[0];
-    if (items.length === 2) return `${items[0]} or ${items[1]}`;
-    return `${items.slice(0, -1).join(', ')}, or ${items[items.length - 1]}`;
-  }
-
   function singularize(word) {
-    // works for your banks (Apples->Apple, SUVs->SUV, etc.)
     if (word.endsWith('s')) return word.slice(0, -1);
     return word;
   }
@@ -354,46 +342,29 @@ fetch("/nav.html")
     const mode = randInt(1, 3); // 1 exact, 2 higher than, 3 lower than
     if (mode === 1) {
       const k = randInt(1, sides);
-      return {
-        desc: `you roll a ${k} on a ${sides}-sided die`,
-        num: 1,
-        den: sides
-      };
+      return { desc: `you roll a ${k} on a ${sides}-sided die`, num: 1, den: sides };
     }
     if (mode === 2) {
-      const t = randInt(1, sides - 1); // "higher than t"
+      const t = randInt(1, sides - 1);
       const favorable = sides - t;
-      return {
-        desc: `you roll higher than ${t} on a ${sides}-sided die`,
-        num: favorable,
-        den: sides
-      };
+      return { desc: `you roll higher than ${t} on a ${sides}-sided die`, num: favorable, den: sides };
     }
-    const t = randInt(2, sides); // "lower than t"
+    const t = randInt(2, sides);
     const favorable = t - 1;
-    return {
-      desc: `you roll lower than ${t} on a ${sides}-sided die`,
-      num: favorable,
-      den: sides
-    };
+    return { desc: `you roll lower than ${t} on a ${sides}-sided die`, num: favorable, den: sides };
   }
 
   function makeCoinEvent() {
     const ht = randInt(0, 1) === 0 ? 'heads' : 'tails';
-    return {
-      desc: `you flip ${ht}`,
-      num: 1,
-      den: 2
-    };
+    return { desc: `you flip ${ht}`, num: 1, den: 2 };
   }
 
   function makeCardEvent() {
     const suits = ['spade', 'heart', 'diamond', 'club'];
     const suitPlural = { spade: 'spades', heart: 'hearts', diamond: 'diamonds', club: 'clubs' };
     const ranks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
-    const faces = ['J','Q','K'];
 
-    const kind = randInt(1, 4); // 1 suit, 2 face card, 3 specific card, 4 diamond face card style
+    const kind = randInt(1, 4); // 1 suit, 2 face card, 3 specific card, 4 diamond face card
     if (kind === 1) {
       const s = suits[randInt(0, 3)];
       return { desc: `you draw a ${s}`, num: 13, den: 52 };
@@ -408,22 +379,15 @@ fetch("/nav.html")
       const rankName = (r === 'A') ? 'ace' : (r === 'J' ? 'jack' : (r === 'Q' ? 'queen' : (r === 'K' ? 'king' : r)));
       return { desc: `you draw the ${rankName} of ${suitName}`, num: 1, den: 52 };
     }
-    // diamond face card
-    const s = 'diamond';
     return { desc: `you draw a diamond face card`, num: 3, den: 52 };
   }
 
   function generateType1() {
     const howMany = randInt(2, 3);
-
     const generators = [makeDieEvent, makeCoinEvent, makeCardEvent];
     const chosen = [];
-    // ensure variety by shuffling generators first, then allow repeats if 3 events
     shuffle(generators);
-    for (let i = 0; i < howMany; i++) {
-      const g = generators[i % generators.length];
-      chosen.push(g());
-    }
+    for (let i = 0; i < howMany; i++) chosen.push(generators[i % generators.length]());
 
     const descs = chosen.map(e => e.desc);
     const num = chosen.reduce((acc, e) => acc * e.num, 1);
@@ -434,8 +398,8 @@ fetch("/nav.html")
 
     hintSteps = [
       `These are independent experiments, so multiply their probabilities.`,
-      `Compute each probability, then multiply: \\(P = ${chosen.map(e => fracTex(e.num, e.den)).join(' \\cdot ')}\\).`,
-      `So the probability is \\(${fracTex(num, den)}\\).`
+      `Compute each probability, then multiply: \(P = ${chosen.map(e => fracTex(e.num, e.den)).join(' \cdot ')}\).`,
+      `So the probability is \(${fracTex(num, den)}\).`
     ];
   }
 
@@ -447,7 +411,7 @@ fetch("/nav.html")
     const G = randInt(1, 20);
     const T = R + G;
 
-    const withReplacement = randInt(0, 1) === 0; // true => returned
+    const withReplacement = randInt(0, 1) === 0;
     const returnText = withReplacement ? 'then returned to the urn' : 'then not returned to the urn';
 
     const color = randInt(0, 1) === 0 ? 'red' : 'green';
@@ -463,83 +427,39 @@ fetch("/nav.html")
 
     const chosenEvent = eventBank[randInt(0, eventBank.length - 1)];
 
-    function pColor1() {
-      return color === 'red' ? [R, T] : [G, T];
-    }
-    function pNotColor1() {
-      return color === 'red' ? [G, T] : [R, T];
-    }
-
     let num = 0, den = 1;
 
     if (withReplacement) {
-      const [pN, pD] = pColor1();
-      const [qN, qD] = pNotColor1(); // same denom
-      // Two independent draws
+      const pN = (color === 'red') ? R : G;
+      const qN = (color === 'red') ? G : R;
+
       if (chosenEvent.key === 'both') {
-        num = pN * pN;
-        den = pD * pD;
+        num = pN * pN; den = T * T;
       } else if (chosenEvent.key === 'neither') {
-        num = qN * qN;
-        den = qD * qD;
+        num = qN * qN; den = T * T;
       } else if (chosenEvent.key === 'first' || chosenEvent.key === 'second') {
-        num = pN;
-        den = pD;
+        num = pN; den = T;
       } else if (chosenEvent.key === 'atLeastOne') {
-        // 1 - P(neither)
-        num = den = 1; // placeholder then compute
-        const n0 = qN * qN;
-        const d0 = qD * qD;
-        // 1 - n0/d0 = (d0 - n0)/d0
-        num = d0 - n0;
-        den = d0;
+        num = (T * T) - (qN * qN); den = T * T;
       } else if (chosenEvent.key === 'oneEach') {
-        // RG or GR
-        // P(R then G) + P(G then R)
-        const nRG = R * G;
-        const dRG = T * T;
-        const nGR = G * R;
-        const dGR = T * T;
-        num = nRG + nGR;
-        den = dRG; // same
+        num = 2 * R * G; den = T * T;
       }
     } else {
       // without replacement
-      // After first draw, totals change.
-      const r = R, g = G;
       if (chosenEvent.key === 'both') {
-        if (color === 'red') {
-          num = r * (r - 1);
-          den = T * (T - 1);
-        } else {
-          num = g * (g - 1);
-          den = T * (T - 1);
-        }
+        if (color === 'red') { num = R * (R - 1); den = T * (T - 1); }
+        else { num = G * (G - 1); den = T * (T - 1); }
       } else if (chosenEvent.key === 'neither') {
-        if (color === 'red') {
-          num = g * (g - 1);
-          den = T * (T - 1);
-        } else {
-          num = r * (r - 1);
-          den = T * (T - 1);
-        }
-      } else if (chosenEvent.key === 'first') {
-        num = (color === 'red') ? r : g;
-        den = T;
-      } else if (chosenEvent.key === 'second') {
-        // symmetry: second draw marginal is same as first for hypergeometric
-        num = (color === 'red') ? r : g;
-        den = T;
+        if (color === 'red') { num = G * (G - 1); den = T * (T - 1); }
+        else { num = R * (R - 1); den = T * (T - 1); }
+      } else if (chosenEvent.key === 'first' || chosenEvent.key === 'second') {
+        num = (color === 'red') ? R : G; den = T;
       } else if (chosenEvent.key === 'atLeastOne') {
-        // 1 - P(neither)
-        const nNeither = (color === 'red') ? g * (g - 1) : r * (r - 1);
+        const nNeither = (color === 'red') ? (G * (G - 1)) : (R * (R - 1));
         const dAll = T * (T - 1);
-        num = dAll - nNeither;
-        den = dAll;
+        num = dAll - nNeither; den = dAll;
       } else if (chosenEvent.key === 'oneEach') {
-        // RG or GR: 2*r*g / (T*(T-1))
-        num = 2 * r * g;
-        den = T * (T - 1);
+        num = 2 * R * G; den = T * (T - 1);
       }
     }
 
@@ -550,16 +470,55 @@ fetch("/nav.html")
       `If a ball is drawn at random, ${returnText}, and a ball is drawn at random again, ` +
       `what is the probability that ${chosenEvent.text}?`;
 
-    // basic hints (we'll refine later)
-    hintSteps = withReplacement ? [
-      `With replacement means the two draws are independent.`,
-      `Compute the probability for each draw and multiply (or use a complement if needed).`,
-      `So the probability is \\(${fracTex(num, den)}\\).`
-    ] : [
-      `Without replacement means the second draw depends on what happened on the first draw.`,
-      `Use a tree idea: probabilities on the second draw use totals of \\(T-1\\).`,
-      `So the probability is \\(${fracTex(num, den)}\\).`
-    ];
+    // Updated hints per your specs:
+    let exprTex = '';
+    if (withReplacement) {
+      if (chosenEvent.key === 'both') {
+        const p = (color === 'red') ? fracTex(R, T) : fracTex(G, T);
+        exprTex = `${p} \cdot ${p}`;
+      } else if (chosenEvent.key === 'neither') {
+        const q = (color === 'red') ? fracTex(G, T) : fracTex(R, T);
+        exprTex = `${q} \cdot ${q}`;
+      } else if (chosenEvent.key === 'first' || chosenEvent.key === 'second') {
+        const p = (color === 'red') ? fracTex(R, T) : fracTex(G, T);
+        exprTex = `${p}`;
+      } else if (chosenEvent.key === 'atLeastOne') {
+        const q = (color === 'red') ? fracTex(G, T) : fracTex(R, T);
+        exprTex = `1 - (${q} \cdot ${q})`;
+      } else if (chosenEvent.key === 'oneEach') {
+        exprTex = `(${fracTex(R, T)} \cdot ${fracTex(G, T)}) + (${fracTex(G, T)} \cdot ${fracTex(R, T)})`;
+      }
+
+      hintSteps = [
+        `Since the first ball drawn was returned, we are in a "with replacement" situation: the probabilities for the second draw are independent of the outcome of the first draw.`,
+        `The probabilities in the second branches should be identical to the probabilities in the first branches.`,
+        `So, the probability that ${chosenEvent.text} is \(${exprTex} = ${fracTex(num, den)}\).`
+      ];
+    } else {
+      if (chosenEvent.key === 'both') {
+        if (color === 'red') exprTex = `${fracTex(R, T)} \cdot ${fracTex(R - 1, T - 1)}`;
+        else exprTex = `${fracTex(G, T)} \cdot ${fracTex(G - 1, T - 1)}`;
+      } else if (chosenEvent.key === 'neither') {
+        if (color === 'red') exprTex = `${fracTex(G, T)} \cdot ${fracTex(G - 1, T - 1)}`;
+        else exprTex = `${fracTex(R, T)} \cdot ${fracTex(R - 1, T - 1)}`;
+      } else if (chosenEvent.key === 'first' || chosenEvent.key === 'second') {
+        const p = (color === 'red') ? fracTex(R, T) : fracTex(G, T);
+        exprTex = `${p}`;
+      } else if (chosenEvent.key === 'atLeastOne') {
+        let neitherTex = '';
+        if (color === 'red') neitherTex = `${fracTex(G, T)} \cdot ${fracTex(G - 1, T - 1)}`;
+        else neitherTex = `${fracTex(R, T)} \cdot ${fracTex(R - 1, T - 1)}`;
+        exprTex = `1 - (${neitherTex})`;
+      } else if (chosenEvent.key === 'oneEach') {
+        exprTex = `(${fracTex(R, T)} \cdot ${fracTex(G, T - 1)}) + (${fracTex(G, T)} \cdot ${fracTex(R, T - 1)})`;
+      }
+
+      hintSteps = [
+        `Since the first ball drawn was not returned, we are in a "without replacement" situation: the probabilities for the second draw are dependent on the outcome of the first draw.`,
+        `The total number of remaining balls is reduced by one on the second draw.`,
+        `So, the probability that ${chosenEvent.text} is \(${exprTex} = ${fracTex(num, den)}\).`
+      ];
+    }
   }
 
   // -----------------------------
@@ -576,16 +535,12 @@ fetch("/nav.html")
   ];
 
   function randomPartition(total, k) {
-    // positive parts summing to total
     let cuts = [];
     for (let i = 0; i < k - 1; i++) cuts.push(randInt(1, total - 1));
     cuts.sort((a, b) => a - b);
     const parts = [];
     let prev = 0;
-    for (let i = 0; i < cuts.length; i++) {
-      parts.push(cuts[i] - prev);
-      prev = cuts[i];
-    }
+    for (let i = 0; i < cuts.length; i++) { parts.push(cuts[i] - prev); prev = cuts[i]; }
     parts.push(total - prev);
     return parts;
   }
@@ -632,9 +587,9 @@ fetch("/nav.html")
       `${articleFor(aChosen)} ${aChosen.toLowerCase()} and ${articleFor(bChosen)} ${bChosen.toLowerCase()} are selected?`;
 
     hintSteps = [
-      `Find the probability of selecting the desired type from the first population: ${countFavA}/${NA}.`,
-      `Find the probability of selecting the desired type from the second population: ${countFavB}/${NB}.`,
-      `Selections are independent, so multiply: \\(${fracTex(countFavA, NA)} \\cdot ${fracTex(countFavB, NB)} = ${fracTex(num, den)}\\).`
+      `The probability of selecting ${articleFor(aChosen)} ${aChosen.toLowerCase()} from ${NA} total ${popA.labelPlur} is \(${fracTex(countFavA, NA)}\).`,
+      `The probability of selecting ${articleFor(bChosen)} ${bChosen.toLowerCase()} from ${NB} total ${popB.labelPlur} is \(${fracTex(countFavB, NB)}\).`,
+      `Selections are independent, so multiply: \(${fracTex(countFavA, NA)} \cdot ${fracTex(countFavB, NB)} = ${fracTex(num, den)}\).`
     ];
   }
 
@@ -661,13 +616,9 @@ fetch("/nav.html")
     const items = shuffle([...pop.items]).slice(0, k);
     const counts = randomPartition(N, k);
 
-    // For each subset, choose a percentage 1..99 and compute count with property
-    const perc = [];
     const propCounts = [];
     for (let i = 0; i < k; i++) {
       const p = randInt(1, 99);
-      perc.push(p);
-      // round to nearest integer for a cleaner story
       let c = Math.round(counts[i] * p / 100);
       c = Math.max(0, Math.min(counts[i], c));
       propCounts.push(c);
@@ -676,9 +627,6 @@ fetch("/nav.html")
     const breakdown = items.map((it, i) => `${counts[i]} ${it}`).join(', ');
     const propertyLines = items.map((it, i) => `${propCounts[i]} of the ${it.toLowerCase()} are ${prop}.`).join(' ');
 
-    // Choose question subtype:
-    // A) property only: is / isn't
-    // B) property and subset: is / isn't AND is a subset
     const subtype = randInt(1, 2);
     const isNot = randInt(0, 1) === 0 ? 'is' : "isn't";
 
@@ -691,7 +639,6 @@ fetch("/nav.html")
       targetPhrase = `${isNot} ${prop}`;
     } else {
       const j = randInt(0, k - 1);
-      const subset = items[j].toLowerCase();
       const subsetSing = singularize(items[j]).toLowerCase();
       const inSubsetProp = propCounts[j];
       const inSubsetNot = counts[j] - propCounts[j];
@@ -706,15 +653,43 @@ fetch("/nav.html")
       `${propertyLines} ` +
       `What is the probability that a randomly selected ${pop.labelSing} ${targetPhrase}?`;
 
+    const subsetNames = items.map(x => x.toLowerCase());
+    const subsetList = (subsetNames.length === 2)
+      ? `${subsetNames[0]} and ${subsetNames[1]}`
+      : `${subsetNames.slice(0, -1).join(', ')}, and ${subsetNames[subsetNames.length - 1]}`;
+
+    let sumTex = '';
+    if (subtype === 1) {
+      const terms = items.map((_, i) => {
+        const first = `${fracTex(counts[i], N)}`;
+        const second = (isNot === 'is')
+          ? `${fracTex(propCounts[i], counts[i])}`
+          : `${fracTex(counts[i] - propCounts[i], counts[i])}`;
+        return `(${first} \cdot ${second})`;
+      });
+      sumTex = terms.join(' + ');
+    } else {
+      // single branch
+      let jj = 0;
+      for (let i = 0; i < k; i++) {
+        const cand = (isNot === 'is') ? propCounts[i] : (counts[i] - propCounts[i]);
+        if (cand === favorable) { jj = i; break; }
+      }
+      const first = `${fracTex(counts[jj], N)}`;
+      const second = (isNot === 'is') ? `${fracTex(propCounts[jj], counts[jj])}` : `${fracTex(counts[jj] - propCounts[jj], counts[jj])}`;
+      sumTex = `(${first} \cdot ${second})`;
+    }
+
     hintSteps = [
-      `Identify how many outcomes are favorable for the event described.`,
-      `Divide the number of favorable outcomes by the total population size (${N}).`,
-      `So the probability is \\(${fracTex(favorable, N)}\\).`
+      `The ${pop.labelPlur} are partitioned into ${subsetList}. So this gives us the probabilities for the first branch of a tree diagram.`,
+      `Each of the subsets in the partition are either ${prop} or not ${prop}. So each of the nodes at the first level branches off twice at the second stage.`,
+      `Multiply the probabilities down the branches to find the probabilities of the "AND" events.`,
+      `Sum the probabilities of the events that make up the situation we are interested in: \(${sumTex}\).`
     ];
   }
 
   // -----------------------------
-  // Start button: choose type 1..4
+  // Start button
   // -----------------------------
   startBtn.addEventListener('click', () => {
     playSound('click-sound');

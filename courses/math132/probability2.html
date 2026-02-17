@@ -82,7 +82,9 @@ fetch("/nav.html")
       <img src="fig10.png" alt="Tree diagram for profession and sushi example" style="display: inline-block;">
     </figure>
 
-    <p>Inexplicably, people tend to be much more comfortable working with decimals than fractions.  You can certainly create a tree diagram that avoids 
+    <p>We can check that we haven't made a mistake in creating our tree diagram by verifying that adding the probabilities at all of the leaves results 
+      in 1: since we have partitioned the sample space, so the probability that <b>an</b> event within the sample space occurs is 100%.  Inexplicably, 
+      people tend to be much more comfortable working with decimals than fractions.  You can certainly create a tree diagram that avoids 
       fractions, but it is encouraged to use fractions, as these are exact.
     </p>
 
@@ -101,6 +103,20 @@ fetch("/nav.html")
 
     <figure style="text-align: center;">
       <img src="fig11.png" alt="With replacement urn example" style="display: inline-block;">
+    </figure>
+
+    <p>Now, suppose again that an urn contains 4 red balls and 6 green balls.  If you draw a ball at random, but this time <i>don't put it back</i>, and 
+      then draw a ball at random again, then the probabilities associated with the second draw <b>depend</b> on what happened on the first draw.  This is 
+      a  <i>without replacement</i> combinatorics example.  If we let \(R_1\), \(G_1\), \(R_2\), and \(G_2\) represent the events of drawing a red first, 
+      drawing a green first, drawing a red second, and drawing a green second respectively, then we <b>given that</b> we draw a red first, the 
+      probability of drawing a red second have changed: there are 9 balls remaining, 3 of which are red:
+      \[P(R_2|R_1) = \frac{3}{9}\]
+      We obtain the following tree diagram in this case (we can verify we didn't make an error at the end by adding all the probabilities of the leaves 
+      and obtaining 1):
+    </p>
+
+    <figure style="text-align: center;">
+      <img src="fig12.png" alt="With replacement urn example" style="display: inline-block;">
     </figure>
 
     <div class="button-container">

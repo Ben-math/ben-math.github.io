@@ -116,7 +116,31 @@ fetch("/nav.html")
     </p>
 
     <figure style="text-align: center;">
-      <img src="fig12.png" alt="With replacement urn example" style="display: inline-block;">
+      <img src="fig12.png" alt="Without replacement urn example" style="display: inline-block;">
+    </figure>
+
+    <p>The leaves at the end of a tree diagram represent a partition of the sample space: they are all mutually exclusive events.  This helps us answer 
+      some more complex probability questions.  For instance, if we want to know the probability of drawing <i>at least one green ball</i>, then we sum 
+      the probabilities corresponding to the events having at least one green:
+      \[P((R_1 \cap G_2) \cup (G_1 \cap R_2) \cup (G_1 \cap G_2)) = P(R_1 \cap G_2) + P(G_1 \cap R_2) + P(G_1 \cap G_2) = \frac{24}{90} + \frac{24}{90} + 
+      \frac{30}{90} = \frac{78}{90} = \frac{13}{15}\]
+    </p>
+
+    <figure style="text-align: center;">
+      <img src="fig13.png" alt="Without replacement urn example" style="display: inline-block;">
+    </figure>
+
+    <p>A specific example which occurs frequently is the Law of Total Probability.  If a sample space is partitioned into events \(F_1\), \(F_2\), ..., 
+      \(F_n\), then
+      \[P(E) = P(E|F_1) + P(E|F_2) + ... + P(E|F_n)\]
+      For instance, in our first example, to find the probability that a person likes sushi, we sum the probability that they like sushi <i>given that 
+      they are an accountant</i>, with the probability they like sushi <i>given that they are a teacher</i>, with the probability that they like sushi 
+      <i>given that they are a nurse</i>:
+      \[P(S) = P(S|A) + P(S|T) + P(S|N) = \frac{30}{100} + \frac{20}{100} + \frac{7}{100} = \frac{57}{100}
+    </p>
+
+    <figure style="text-align: center;">
+      <img src="fig14.png" alt="Law of Total Probability example" style="display: inline-block;">
     </figure>
 
     <div class="button-container">

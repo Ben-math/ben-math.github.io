@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -42,66 +44,8 @@ fetch("/nav.html")
   </header>
   <main>
 
-    <p>We begin our introduction to probability with the simplest case: when an experiment is performed with equally likely outcomes.  Here
-    "experiment" need not refer to the hard science you had in mind, but something as simple as rolling a 6-sided die.  There are 6 equally likely
-    outcomes: the numbers from one to six.  We call the set of all possible outcomes the <b>sample space</b>, denoted by S:
-    \[S = \{1,2,3,4,5,6\}\]
-      An <b>outcome</b> is a single element of the sample space, and an <b>event</b> is a subset of the sample space. Each of the six outcomes in this 
-      example are equally likely (assuming the die is not weighted), and it is not possible for any two of the outcomes to occur.  This property: 
-      that the outcomes do not overlap, is that they are <b>mutually exclusive</b>.  We will see that when events
-      are mutually exclusive, the probability that any one of them happens is equal to the sum of their individual probabilities.
+    <p>Placeholder page.
     </p>
-    
-    <p>When there are \(n\) many equally likely outcomes, then the probability of any one of them occurring is
-    \[\frac{1}{n}\]
-      Since individual outcomes, by their nature, are mutually exclusive, the odds of one of \(x\) many of them happening is
-      \[\frac{x}{n}\]
-      For instance, if a group of animals consists of 15 dogs, 20 cats, and 3 kangaroos, and an animal is selected at random, let \(X\) be the 
-      selected animal.  The probability of selecting a kangaroo is
-      \[P(X = \text{kangaroo}) = \frac{3}{38}\]
-      since there are 38 equally likely outcomes (the 38 total animals), 3 of which are in the event we are interested in (the 3 kangaroos).  To find 
-      the probability that either a cat <b>or</b> a dog is selected, since an animal can't be both a cat and a dog simultaneously, these events are
-      mutually exclusive, and
-      \[P(X = \text{cat} \cup X = \text{dog}) = P(X = \text{cat}) + P(X = \text{dog}) = \frac{20}{38} + \frac{15}{38} = \frac{35}{38}\]
-      The opposite of an event is called its <b>complement</b>.  In the above example, the event of <b>not</b> selecting a kangaroo is the 
-      complement of selecting a kangaroo.  The probability of the complement of an event \(E\), denoted \(\overline{E}\) is
-      \[P(\overline{E}) = 1 - P(E)\]
-      Note that the event of not selecting a kangaroo is the same as the event of selecting a cat or dog.  So,
-      \[P(X = \text{cat} \cup X = \text{dog}) = P(\overline{X = \text{kangaroo}}) = 1 - P(X = \text{kangaroo}) = 1 - \frac{3}{38} = \frac{35}{38}\]
-      which is exactly the result we obtained using another method.  This happens generally in the study of probability: there are often many ways
-      of solving the same problem!
-    </p>
-
-      
-    <p>Say we want to find the probability of rolling either a 6 or less than a 3, where \(X\) is the outcome of the roll of a 6-sided die.  The two 
-      events, "rolling a 6" and "rolling less than 3" are mutually exclusive: they don't overlap.  So,
-    \[P(X < 3 \cup X = 6) = P(X < 3) + P(X = 6)\]
-    Then, the events of rolling less than a 3 is the same as rolling a 2 or lower, which is the same as rolling a 1 or 2.  So,
-    \[P(X < 3) + P(X = 6) = P(X = 1) + P(X = 2) + P(X = 6) = \frac{1}{6} + \frac{1}{6} + \frac{1}{6} = \frac{3}{6} = \frac{1}{2}\]
-    </p>
-
-
-    <p>Things get complicated when we want to find the probability that one of two events will occur when they are not mutually exclusive (they overlap).
-      For instance, what is the probability of rolling higher than a 3, or rolling an even number?  The outcomes in this event are
-      \[\{2, 4, 5, 6\}\]
-      so the probability is
-      \[P(X > 3 \cup X = \text{even}) = \frac{4}{6}\]
-      However, note that the outcomes in the individual events "rolling higher than a 3" and "rolling an even number" are
-      \[\{4, 5, 6\} \text{ and } \{2, 4, 6\}\]
-      respectively.  If we were to add the probabilities of those events, we'd get
-      \[P(X > 3) + P(X = \text{even}) = \frac{3}{6} + \frac{3}{6} = \frac{6}{6} = 1\]
-      which is certainly not true.  The issue here is that we have double-counted the overlap between the two events.  This leads us to the
-      inclusion-exclusion princple,
-      \[P(E \cup F) = P(E) + P(F) - P(E \cap F)\]
-      That is, the overlap between the two events is
-      \[P(X > 3 \cap X = \text{even}) = \frac{2}{6}\]
-      since there are 2 numbers which are both greater than 3 and even, namely 4 and 6.  Using this information together with the inclusion-exclusion 
-      princple, we can now solve the problem:
-      \[P(X > 3 \cup X = \text{even}) = P(X > 3) + P(X = \text{even}) - P(X > 3 \cap X = \text{even}) = \frac{3}{6} + \frac{3}{6} - \frac{2}{6} = 
-      \frac{4}{6}\]
-      which is the same result we obtained previously!
-    </p>
-
     
 
     <div class="button-container">
@@ -114,7 +58,7 @@ fetch("/nav.html")
       <button id="hint-btn" class="rubber-button">Hint</button>
     </div>
     
-    <div id="hint-area" class="math" style="margin-top: 1em;"></div>
+    <div id="hint-area" class="math" style="margin-top: 1em; text-align: center"></div>
 
 
     <div id="answer-section" style="margin-top: 20px; text-align: center;">
@@ -126,98 +70,629 @@ fetch("/nav.html")
 
   </main>
   <script>
+  // =============================
+  // Probability II Activity Script
+  // =============================
 
-    const hintBtn = document.getElementById('hint-btn');
-    const hintArea = document.getElementById('hint-area');
-    let hintSteps = [];
-    let hintIndex = 0;
+  const startBtn = document.getElementById('start-btn');
+  const hintBtn = document.getElementById('hint-btn');
+  const checkBtn = document.getElementById('check-answer-btn');
 
-    const startBtn = document.getElementById('start-btn');
-    const questionText = document.getElementById('question-text');
+  const questionText = document.getElementById('question-text');
+  const hintArea = document.getElementById('hint-area');
 
-    const answerInput = document.getElementById('user-answer');
-    const feedback = document.getElementById('answer-feedback');
+  const answerInput = document.getElementById('user-answer');
+  const feedback = document.getElementById('answer-feedback');
 
-    
+  let hintSteps = [];
+  let hintIndex = 0;
 
-    // -----------------------------
-    // Question generation
-    // -----------------------------
-    startBtn.addEventListener('click', () => {
-      // Play sound
-      const sound = document.getElementById('click-sound');
-      if (sound) {
-        sound.currentTime = 0;
-        sound.play();
+  // Correct answer stored as reduced fraction num/den
+  let currentAnsNum = null;
+  let currentAnsDen = null;
+
+  // -----------------------------
+  // Helpers
+  // -----------------------------
+  function playSound(id) {
+    const s = document.getElementById(id);
+    if (s) {
+      s.currentTime = 0;
+      s.play();
+    }
+  }
+
+  function typeset(elements = []) {
+    if (!window.MathJax) return;
+    if (MathJax.typesetPromise) {
+      if (elements.length > 0) MathJax.typesetPromise(elements);
+      else MathJax.typesetPromise();
+      return;
+    }
+    if (MathJax.typeset) {
+      if (elements.length > 0) MathJax.typeset(elements);
+      else MathJax.typeset();
+    }
+  }
+
+  function randInt(a, b) {
+    return Math.floor(Math.random() * (b - a + 1)) + a;
+  }
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = randInt(0, i);
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function gcd(a, b) {
+    a = Math.abs(a); b = Math.abs(b);
+    while (b !== 0) {
+      const t = a % b;
+      a = b;
+      b = t;
+    }
+    return a === 0 ? 1 : a;
+  }
+
+  function reduceFrac(num, den) {
+    if (den < 0) { den = -den; num = -num; }
+    const g = gcd(num, den);
+    return [num / g, den / g];
+  }
+
+  function setAnswer(num, den) {
+    const r = reduceFrac(num, den);
+    currentAnsNum = r[0];
+    currentAnsDen = r[1];
+  }
+
+  // IMPORTANT: In JS strings, "\f" is a real escape. To produce TeX "\frac",
+  // we must place "\\frac" inside a template literal.
+  function fracTex(num, den) {
+    const r = reduceFrac(num, den);
+    const n = r[0], d = r[1];
+    if (d === 1) return `${n}`;
+    return `\\frac{${n}}{${d}}`;
+  }
+
+  function fracPlain(num, den) {
+    const r = reduceFrac(num, den);
+    return `${r[0]}/${r[1]}`;
+  }
+
+  function resetUIForNewQuestion() {
+    feedback.textContent = '';
+    feedback.style.color = 'black';
+    answerInput.value = '';
+    hintArea.innerHTML = '';
+    hintSteps = [];
+    hintIndex = 0;
+  }
+
+  function parseUserAnswer(raw) {
+    // Accept:
+    //  - integer: "3"
+    //  - fraction: "3/8"
+    //  - decimal: "0.375"
+    // Decimals graded with relative tolerance 0.01%.
+    const s = raw.replace(/\s+/g, '');
+
+    const fracMatch = s.match(/^([+-]?\d+)\/([+-]?\d+)$/);
+    if (fracMatch) {
+      const a = parseInt(fracMatch[1], 10);
+      const b = parseInt(fracMatch[2], 10);
+      if (b === 0) return { error: 'Denominator cannot be 0.' };
+      const [rn, rd] = reduceFrac(a, b);
+      return { kind: 'exact', num: rn, den: rd };
+    }
+
+    const intMatch = s.match(/^[+-]?\d+$/);
+    if (intMatch) {
+      const a = parseInt(s, 10);
+      return { kind: 'exact', num: a, den: 1 };
+    }
+
+    const decMatch = s.match(/^[+-]?\d*\.\d+$/);
+    if (decMatch) {
+      const value = Number(s);
+      if (!Number.isFinite(value)) return { error: 'That decimal does not look valid.' };
+      if (value < 0) return { error: 'Probabilities cannot be negative.' };
+      return { kind: 'decimal', value, relTol: 0.0001 };
+    }
+
+    return { error: 'I couldn’t parse that. Use a fraction like 3/8 or a decimal like 0.375.' };
+  }
+
+  function isCorrect(parsed) {
+    if (currentAnsNum === null || currentAnsDen === null) return false;
+    const correctVal = currentAnsNum / currentAnsDen;
+
+    if (!parsed || parsed.error) return false;
+
+    if (parsed.kind === 'exact') {
+      const [uNum, uDen] = reduceFrac(parsed.num, parsed.den);
+      return (uNum === currentAnsNum && uDen === currentAnsDen);
+    }
+
+    if (parsed.kind === 'decimal') {
+      const denom = Math.max(1e-12, Math.abs(correctVal));
+      return Math.abs(parsed.value - correctVal) <= parsed.relTol * denom;
+    }
+
+    return false;
+  }
+
+  function joinWithAnd(items) {
+    if (items.length === 1) return items[0];
+    if (items.length === 2) return `${items[0]} and ${items[1]}`;
+    return `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`;
+  }
+
+  function joinWithOr(items) {
+    if (items.length === 1) return items[0];
+    if (items.length === 2) return `${items[0]} or ${items[1]}`;
+    return `${items.slice(0, -1).join(', ')}, or ${items[items.length - 1]}`;
+  }
+
+  function singularize(word) {
+    // works for your banks (Apples->Apple, SUVs->SUV, etc.)
+    if (word.endsWith('s')) return word.slice(0, -1);
+    return word;
+  }
+
+  function articleFor(word) {
+    const first = word[0];
+    const vowelLetter = /^[aeiou]/i.test(first);
+    const anInitialism = /^[FHLMNRSX]/.test(first);
+    return (vowelLetter || anInitialism) ? 'an' : 'a';
+  }
+
+  // -----------------------------
+  // Type (1): Independent events
+  // -----------------------------
+  function makeDieEvent() {
+    const sides = randInt(6, 20);
+    const mode = randInt(1, 3); // 1 exact, 2 higher than, 3 lower than
+    if (mode === 1) {
+      const k = randInt(1, sides);
+      return {
+        desc: `you roll a ${k} on a ${sides}-sided die`,
+        num: 1,
+        den: sides
+      };
+    }
+    if (mode === 2) {
+      const t = randInt(1, sides - 1); // "higher than t"
+      const favorable = sides - t;
+      return {
+        desc: `you roll higher than ${t} on a ${sides}-sided die`,
+        num: favorable,
+        den: sides
+      };
+    }
+    const t = randInt(2, sides); // "lower than t"
+    const favorable = t - 1;
+    return {
+      desc: `you roll lower than ${t} on a ${sides}-sided die`,
+      num: favorable,
+      den: sides
+    };
+  }
+
+  function makeCoinEvent() {
+    const ht = randInt(0, 1) === 0 ? 'heads' : 'tails';
+    return {
+      desc: `you flip ${ht}`,
+      num: 1,
+      den: 2
+    };
+  }
+
+  function makeCardEvent() {
+    const suits = ['spade', 'heart', 'diamond', 'club'];
+    const suitPlural = { spade: 'spades', heart: 'hearts', diamond: 'diamonds', club: 'clubs' };
+    const ranks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+    const faces = ['J','Q','K'];
+
+    const kind = randInt(1, 4); // 1 suit, 2 face card, 3 specific card, 4 diamond face card style
+    if (kind === 1) {
+      const s = suits[randInt(0, 3)];
+      return { desc: `you draw a ${s}`, num: 13, den: 52 };
+    }
+    if (kind === 2) {
+      return { desc: `you draw a face card`, num: 12, den: 52 };
+    }
+    if (kind === 3) {
+      const r = ranks[randInt(0, ranks.length - 1)];
+      const s = suits[randInt(0, 3)];
+      const suitName = suitPlural[s];
+      const rankName = (r === 'A') ? 'ace' : (r === 'J' ? 'jack' : (r === 'Q' ? 'queen' : (r === 'K' ? 'king' : r)));
+      return { desc: `you draw the ${rankName} of ${suitName}`, num: 1, den: 52 };
+    }
+    // diamond face card
+    const s = 'diamond';
+    return { desc: `you draw a diamond face card`, num: 3, den: 52 };
+  }
+
+  function generateType1() {
+    const howMany = randInt(2, 3);
+
+    const generators = [makeDieEvent, makeCoinEvent, makeCardEvent];
+    const chosen = [];
+    // ensure variety by shuffling generators first, then allow repeats if 3 events
+    shuffle(generators);
+    for (let i = 0; i < howMany; i++) {
+      const g = generators[i % generators.length];
+      chosen.push(g());
+    }
+
+    const descs = chosen.map(e => e.desc);
+    const num = chosen.reduce((acc, e) => acc * e.num, 1);
+    const den = chosen.reduce((acc, e) => acc * e.den, 1);
+    setAnswer(num, den);
+
+    questionText.textContent = `What is the probability that ${joinWithAnd(descs)}?`;
+
+    hintSteps = [
+      `These are independent experiments, so multiply their probabilities.`,
+      `Compute each probability, then multiply: \\(P = ${chosen.map(e => fracTex(e.num, e.den)).join(' \\cdot ')}\\).`,
+      `So the probability is \\(${fracTex(num, den)}\\).`
+    ];
+  }
+
+  // -----------------------------
+  // Type (2): Urn (2 draws)
+  // -----------------------------
+  function generateType2() {
+    const R = randInt(1, 20);
+    const G = randInt(1, 20);
+    const T = R + G;
+
+    const withReplacement = randInt(0, 1) === 0; // true => returned
+    const returnText = withReplacement ? 'then returned to the urn' : 'then not returned to the urn';
+
+    const color = randInt(0, 1) === 0 ? 'red' : 'green';
+
+    const eventBank = [
+      { key: 'atLeastOne', text: `at least one draw is ${color}` },
+      { key: 'both',       text: `both draws are ${color}` },
+      { key: 'neither',    text: `neither draw is ${color}` },
+      { key: 'first',      text: `the first draw is ${color}` },
+      { key: 'second',     text: `the second draw is ${color}` },
+      { key: 'oneEach',    text: `one red and one green are drawn` }
+    ];
+
+    const chosenEvent = eventBank[randInt(0, eventBank.length - 1)];
+
+    function pColor1() {
+      return color === 'red' ? [R, T] : [G, T];
+    }
+    function pNotColor1() {
+      return color === 'red' ? [G, T] : [R, T];
+    }
+
+    let num = 0, den = 1;
+
+    if (withReplacement) {
+      const [pN, pD] = pColor1();
+      const [qN, qD] = pNotColor1(); // same denom
+      // Two independent draws
+      if (chosenEvent.key === 'both') {
+        num = pN * pN;
+        den = pD * pD;
+      } else if (chosenEvent.key === 'neither') {
+        num = qN * qN;
+        den = qD * qD;
+      } else if (chosenEvent.key === 'first' || chosenEvent.key === 'second') {
+        num = pN;
+        den = pD;
+      } else if (chosenEvent.key === 'atLeastOne') {
+        // 1 - P(neither)
+        num = den = 1; // placeholder then compute
+        const n0 = qN * qN;
+        const d0 = qD * qD;
+        // 1 - n0/d0 = (d0 - n0)/d0
+        num = d0 - n0;
+        den = d0;
+      } else if (chosenEvent.key === 'oneEach') {
+        // RG or GR
+        // P(R then G) + P(G then R)
+        const nRG = R * G;
+        const dRG = T * T;
+        const nGR = G * R;
+        const dGR = T * T;
+        num = nRG + nGR;
+        den = dRG; // same
       }
+    } else {
+      // without replacement
+      // After first draw, totals change.
+      const r = R, g = G;
+      if (chosenEvent.key === 'both') {
+        if (color === 'red') {
+          num = r * (r - 1);
+          den = T * (T - 1);
+        } else {
+          num = g * (g - 1);
+          den = T * (T - 1);
+        }
+      } else if (chosenEvent.key === 'neither') {
+        if (color === 'red') {
+          num = g * (g - 1);
+          den = T * (T - 1);
+        } else {
+          num = r * (r - 1);
+          den = T * (T - 1);
+        }
+      } else if (chosenEvent.key === 'first') {
+        num = (color === 'red') ? r : g;
+        den = T;
+      } else if (chosenEvent.key === 'second') {
+        // symmetry: second draw marginal is same as first for hypergeometric
+        num = (color === 'red') ? r : g;
+        den = T;
+      } else if (chosenEvent.key === 'atLeastOne') {
+        // 1 - P(neither)
+        const nNeither = (color === 'red') ? g * (g - 1) : r * (r - 1);
+        const dAll = T * (T - 1);
+        num = dAll - nNeither;
+        den = dAll;
+      } else if (chosenEvent.key === 'oneEach') {
+        // RG or GR: 2*r*g / (T*(T-1))
+        num = 2 * r * g;
+        den = T * (T - 1);
+      }
+    }
 
-      // Reset feedback / answer / hints
-      feedback.textContent = '';
+    setAnswer(num, den);
+
+    questionText.textContent =
+      `An urn contains ${R} red balls and ${G} green balls. ` +
+      `If a ball is drawn at random, ${returnText}, and a ball is drawn at random again, ` +
+      `what is the probability that ${chosenEvent.text}?`;
+
+    // basic hints (we'll refine later)
+    hintSteps = withReplacement ? [
+      `With replacement means the two draws are independent.`,
+      `Compute the probability for each draw and multiply (or use a complement if needed).`,
+      `So the probability is \\(${fracTex(num, den)}\\).`
+    ] : [
+      `Without replacement means the second draw depends on what happened on the first draw.`,
+      `Use a tree idea: probabilities on the second draw use totals of \\(T-1\\).`,
+      `So the probability is \\(${fracTex(num, den)}\\).`
+    ];
+  }
+
+  // -----------------------------
+  // Type (3): Two populations, two partitions
+  // -----------------------------
+  const popBank = [
+    { labelSing: 'fruit', labelPlur: 'fruits', items: ['Apples', 'Bananas', 'Oranges', 'Pears'] },
+    { labelSing: 'animal', labelPlur: 'animals', items: ['Cats', 'Dogs', 'Birds', 'Bears'] },
+    { labelSing: 'musical instrument', labelPlur: 'musical instruments', items: ['Trumpets', 'Flutes', 'Clarinets', 'Tubas'] },
+    { labelSing: 'piece of furniture', labelPlur: 'pieces of furniture', items: ['Chairs', 'Tables', 'Couches', 'Beds'] },
+    { labelSing: 'utensil', labelPlur: 'utensils', items: ['Forks', 'Spoons', 'Spatulas', 'Whisks'] },
+    { labelSing: 'vehicle', labelPlur: 'vehicles', items: ['Sedans', 'Jeeps', 'SUVs', 'Trucks'] },
+    { labelSing: 'shape', labelPlur: 'shapes', items: ['Squares', 'Triangles', 'Circles', 'Pentagons'] }
+  ];
+
+  function randomPartition(total, k) {
+    // positive parts summing to total
+    let cuts = [];
+    for (let i = 0; i < k - 1; i++) cuts.push(randInt(1, total - 1));
+    cuts.sort((a, b) => a - b);
+    const parts = [];
+    let prev = 0;
+    for (let i = 0; i < cuts.length; i++) {
+      parts.push(cuts[i] - prev);
+      prev = cuts[i];
+    }
+    parts.push(total - prev);
+    return parts;
+  }
+
+  function generateType3() {
+    const idxs = shuffle([0,1,2,3,4,5,6]);
+    const popA = popBank[idxs[0]];
+    const popB = popBank[idxs[1]];
+
+    const NA = randInt(10, 100);
+    const NB = randInt(10, 100);
+
+    const kA = randInt(2, 4);
+    const kB = randInt(2, 4);
+
+    const itemsA = shuffle([...popA.items]).slice(0, kA);
+    const itemsB = shuffle([...popB.items]).slice(0, kB);
+
+    const countsA = randomPartition(NA, kA);
+    const countsB = randomPartition(NB, kB);
+
+    const breakdownA = itemsA.map((it, i) => `${countsA[i]} ${it}`).join(', ');
+    const breakdownB = itemsB.map((it, i) => `${countsB[i]} ${it}`).join(', ');
+
+    const pickA = randInt(0, kA - 1);
+    const pickB = randInt(0, kB - 1);
+
+    const countFavA = countsA[pickA];
+    const countFavB = countsB[pickB];
+
+    const num = countFavA * countFavB;
+    const den = NA * NB;
+    setAnswer(num, den);
+
+    const aSing = popA.labelSing;
+    const bSing = popB.labelSing;
+
+    const aChosen = singularize(itemsA[pickA]);
+    const bChosen = singularize(itemsB[pickB]);
+
+    questionText.textContent =
+      `There are ${NA} ${popA.labelPlur}, consisting of ${breakdownA}, and ${NB} ${popB.labelPlur}, consisting of ${breakdownB}. ` +
+      `If a ${aSing} and a ${bSing} are selected at random, what is the probability that ` +
+      `${articleFor(aChosen)} ${aChosen.toLowerCase()} and ${articleFor(bChosen)} ${bChosen.toLowerCase()} are selected?`;
+
+    hintSteps = [
+      `Find the probability of selecting the desired type from the first population: ${countFavA}/${NA}.`,
+      `Find the probability of selecting the desired type from the second population: ${countFavB}/${NB}.`,
+      `Selections are independent, so multiply: \\(${fracTex(countFavA, NA)} \\cdot ${fracTex(countFavB, NB)} = ${fracTex(num, den)}\\).`
+    ];
+  }
+
+  // -----------------------------
+  // Type (4): One population, partition + property rates
+  // -----------------------------
+  const propertyByCategory = {
+    'fruit': 'rotten',
+    'animal': 'rabid',
+    'musical instrument': 'brass',
+    'piece of furniture': 'antique',
+    'utensil': 'silver',
+    'vehicle': 'electric',
+    'shape': 'blue'
+  };
+
+  function generateType4() {
+    const pop = popBank[randInt(0, popBank.length - 1)];
+    const prop = propertyByCategory[pop.labelSing];
+
+    const N = randInt(10, 100);
+    const k = randInt(2, 4);
+
+    const items = shuffle([...pop.items]).slice(0, k);
+    const counts = randomPartition(N, k);
+
+    // For each subset, choose a percentage 1..99 and compute count with property
+    const perc = [];
+    const propCounts = [];
+    for (let i = 0; i < k; i++) {
+      const p = randInt(1, 99);
+      perc.push(p);
+      // round to nearest integer for a cleaner story
+      let c = Math.round(counts[i] * p / 100);
+      c = Math.max(0, Math.min(counts[i], c));
+      propCounts.push(c);
+    }
+
+    const breakdown = items.map((it, i) => `${counts[i]} ${it}`).join(', ');
+    const propertyLines = items.map((it, i) => `${propCounts[i]} of the ${it.toLowerCase()} are ${prop}.`).join(' ');
+
+    // Choose question subtype:
+    // A) property only: is / isn't
+    // B) property and subset: is / isn't AND is a subset
+    const subtype = randInt(1, 2);
+    const isNot = randInt(0, 1) === 0 ? 'is' : "isn't";
+
+    let favorable = 0;
+    let targetPhrase = '';
+
+    if (subtype === 1) {
+      const totalProp = propCounts.reduce((a, b) => a + b, 0);
+      favorable = (isNot === 'is') ? totalProp : (N - totalProp);
+      targetPhrase = `${isNot} ${prop}`;
+    } else {
+      const j = randInt(0, k - 1);
+      const subset = items[j].toLowerCase();
+      const subsetSing = singularize(items[j]).toLowerCase();
+      const inSubsetProp = propCounts[j];
+      const inSubsetNot = counts[j] - propCounts[j];
+      favorable = (isNot === 'is') ? inSubsetProp : inSubsetNot;
+      targetPhrase = `${isNot} ${prop} and is ${articleFor(subsetSing)} ${subsetSing}`;
+    }
+
+    setAnswer(favorable, N);
+
+    questionText.textContent =
+      `There are ${N} ${pop.labelPlur}, consisting of ${breakdown}. ` +
+      `${propertyLines} ` +
+      `What is the probability that a randomly selected ${pop.labelSing} ${targetPhrase}?`;
+
+    hintSteps = [
+      `Identify how many outcomes are favorable for the event described.`,
+      `Divide the number of favorable outcomes by the total population size (${N}).`,
+      `So the probability is \\(${fracTex(favorable, N)}\\).`
+    ];
+  }
+
+  // -----------------------------
+  // Start button: choose type 1..4
+  // -----------------------------
+  startBtn.addEventListener('click', () => {
+    playSound('click-sound');
+    resetUIForNewQuestion();
+
+    const qType = randInt(1, 4);
+    if (qType === 1) generateType1();
+    if (qType === 2) generateType2();
+    if (qType === 3) generateType3();
+    if (qType === 4) generateType4();
+
+    typeset([questionText]);
+  });
+
+  // -----------------------------
+  // Hint button
+  // -----------------------------
+  hintBtn.addEventListener('click', () => {
+    playSound('click-sound');
+
+    if (!hintSteps || hintSteps.length === 0) {
+      const hintPara = document.createElement('div');
+      hintPara.classList.add('hint-step');
+      hintPara.style.textAlign = 'center';
+      hintPara.textContent = 'No hints are available for this question.';
+      hintArea.appendChild(hintPara);
+      typeset([hintPara]);
+      return;
+    }
+
+    if (hintIndex < hintSteps.length) {
+      const hintPara = document.createElement('div');
+      hintPara.classList.add('hint-step');
+      hintPara.style.textAlign = 'center';
+      hintPara.innerHTML = hintSteps[hintIndex];
+      hintArea.appendChild(hintPara);
+      typeset([hintPara]);
+      hintIndex++;
+    }
+  });
+
+  // -----------------------------
+  // Check answer
+  // -----------------------------
+  checkBtn.addEventListener('click', () => {
+    playSound('click-sound');
+
+    const raw = answerInput.value.trim();
+    if (!raw) {
+      feedback.textContent = 'Please enter an answer.';
       feedback.style.color = 'black';
-      answerInput.value = '';
-      hintArea.innerHTML = '';
-      hintSteps = [];
-      hintIndex = 0;
+      return;
+    }
+
+    const parsed = parseUserAnswer(raw);
+    if (parsed.error) {
+      feedback.textContent = parsed.error;
+      feedback.style.color = 'black';
+      return;
+    }
+
+    if (isCorrect(parsed)) {
+      feedback.textContent = 'Correct!';
+      feedback.style.color = 'green';
+    } else {
+      const exact = `${currentAnsNum}/${currentAnsDen}`;
+      const dec = (currentAnsNum / currentAnsDen).toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
+      feedback.textContent = `Not quite. Correct answer is ${exact} (≈ ${dec}).`;
+      feedback.style.color = 'crimson';
+    }
+  });
+</script>
 
 
-    // -----------------------------
-    // Check answer
-    // -----------------------------
-    document.getElementById('check-answer-btn').addEventListener('click', () => {
-      const sound = document.getElementById('click-sound');
-      if (sound) {
-        sound.currentTime = 0;
-        sound.play();
-      }
-
-      const raw = answerInput.value.trim();
-
-      if (!raw) {
-        feedback.textContent = 'Please enter an answer.';
-        feedback.style.color = 'black';
-        return;
-      }
-
-      let correct = false;
-      let message = '';
-
-
-      feedback.textContent = message;
-    });
-
-    // -----------------------------
-    // Hint button
-    // -----------------------------
-    hintBtn.addEventListener('click', () => {
-      const sound = document.getElementById('click-sound');
-      if (sound) {
-        sound.currentTime = 0;
-        sound.play();
-      }
-
-      if (!hintSteps || hintSteps.length === 0) {
-        const hintPara = document.createElement('div');
-        hintPara.classList.add('hint-step');
-        hintPara.textContent = 'No hints are available for this question.';
-        hintArea.appendChild(hintPara);
-        if (window.MathJax && MathJax.typeset) {
-          MathJax.typeset([hintPara]);
-        }
-        return;
-      }
-
-      if (hintIndex < hintSteps.length) {
-        const hintPara = document.createElement('div');
-        hintPara.classList.add('hint-step');
-        hintPara.innerHTML = hintSteps[hintIndex];
-        hintArea.appendChild(hintPara);
-        if (window.MathJax && MathJax.typeset) {
-          MathJax.typeset([hintPara]);
-        }
-        hintIndex++;
-      }
-    });
-  </script>
 
   <audio id="click-sound" src="button.mp3" preload="auto"></audio>
   <audio id="set-sound" src="set2.mp3" preload="auto"></audio>

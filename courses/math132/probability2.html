@@ -387,14 +387,14 @@ function fracPlain(n, d) {
 function buildUrnTreeSVGVertical(R, G, withReplacement, highlightSet) {
   const T = R + G;
 
-  const W = 820, H = 420;
-  const y0 = 10, y1 = 65, y2 = 190, y3 = 335;
+  const W = 780, H = 380;
+  const y0 = 10, y1 = 55, y2 = 155, y3 = 275;
 
   const x0 = W / 2;
-  const xR = W * 0.25;
-  const xG = W * 0.75;
+  const xR = W * 0.28;
+  const xG = W * 0.72;
 
-  const dx = 160;
+  const dx = 140;
   const xRR = xR - dx/2;
   const xRG = xR + dx/2;
   const xGR = xG - dx/2;
@@ -440,7 +440,7 @@ function buildUrnTreeSVGVertical(R, G, withReplacement, highlightSet) {
     const den = leaf.first[1] * leaf.second[1];
     const frac = fracPlain(num, den);
     const green = (highlightSet && highlightSet.has(leaf.key));
-    inner += svgText(leaf.x, y3, `${leaf.label} (${frac})`, { size: 12, weight: green ? 700 : 500, color: green ? "#0a7a21" : "#111", rotate: -30, anchor: "start" });
+    inner += svgText(leaf.x, y3, `${leaf.label} (${frac})`, { size: 11, weight: green ? 700 : 500, color: green ? "#0a7a21" : "#111", rotate: -30, anchor: "middle" });
   }
 
   return wrapSvg(W, H, inner);
@@ -452,19 +452,19 @@ function buildPartitionPropTreeSVGVertical(subsetNames, counts, prop, propCounts
   const N = counts.reduce((a,b)=>a+b,0);
   const k = subsetNames.length;
 
-  const W = 1020, H = 420;
-  const y0 = 10, y1 = 65, y2 = 190, y3 = 335;
+  const W = 1120, H = 420;
+  const y0 = 10, y1 = 55, y2 = 155, y3 = 275;
 
   const x0 = W / 2;
 
   const xs1 = [];
 
-    const pad = 90;
-    if (k === 1) {
-      xs1.push(W / 2);
-    } else {
-      for (let i = 0; i < k; i++) xs1.push(pad + i * ((W - 2 * pad) / (k - 1)));
-    }
+  const pad = 120;
+  if (k === 1) {
+    xs1.push(W / 2);
+  } else {
+    for (let i = 0; i < k; i++) xs1.push(pad + i * ((W - 2 * pad) / (k - 1)));
+  }
 
   let inner = "";
 
@@ -475,7 +475,7 @@ function buildPartitionPropTreeSVGVertical(subsetNames, counts, prop, propCounts
     inner += svgText(xs1[i], y1, `${name} (${fracPlain(counts[i], N)})`, { size: 12, weight: 600 });
   }
 
-  const dx = 170;
+  const dx = 150;
   for (let i = 0; i < k; i++) {
     const xProp = xs1[i] - dx/2;
     const xNot  = xs1[i] + dx/2;
@@ -503,12 +503,12 @@ function buildPartitionPropTreeSVGVertical(subsetNames, counts, prop, propCounts
     inner += svgText(
       xProp, y3,
       `${propTitle} ${base} (${fracPlain(yes, N)})`,
-      { size: 12, weight: greenProp ? 700 : 500, color: greenProp ? "#0a7a21" : "#111", rotate: -30, anchor: "start" }
+      { size: 11, weight: greenProp ? 700 : 500, color: greenProp ? "#0a7a21" : "#111", rotate: -30, anchor: "middle" }
     );
     inner += svgText(
       xNot, y3,
       `Not ${prop} ${base} (${fracPlain(no, N)})`,
-      { size: 12, weight: greenNot ? 700 : 500, color: greenNot ? "#0a7a21" : "#111", rotate: -30, anchor: "start" }
+      { size: 11, weight: greenNot ? 700 : 500, color: greenNot ? "#0a7a21" : "#111", rotate: -30, anchor: "middle" }
     );
   }
 

@@ -452,14 +452,14 @@ function buildPartitionPropTreeSVGVertical(subsetNames, counts, prop, propCounts
   const N = counts.reduce((a,b)=>a+b,0);
   const k = subsetNames.length;
 
-  const W = 1300, H = 420;
+  const W = 1300, H = 440;
   const y0 = 10, y1 = 55, y2 = 155, y3 = 275;
 
   const x0 = W / 2;
 
   const xs1 = [];
 
-  const pad = 120;
+  const pad = 200;
   if (k === 1) {
     xs1.push(W / 2);
   } else {
@@ -475,7 +475,7 @@ function buildPartitionPropTreeSVGVertical(subsetNames, counts, prop, propCounts
     inner += svgText(xs1[i], y1, `${name} (${fracPlain(counts[i], N)})`, { size: 12, weight: 600 });
   }
 
-  const dx = 150;
+  const dx = 140;
   for (let i = 0; i < k; i++) {
     const xProp = xs1[i] - dx/2;
     const xNot  = xs1[i] + dx/2;

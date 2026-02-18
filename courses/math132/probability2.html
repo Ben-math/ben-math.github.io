@@ -338,6 +338,7 @@ fetch("/nav.html")
 // -----------------------------
 // Tree diagram (SVG) helpers
 // -----------------------------
+
 function escHtml(s) {
   return String(s)
     .replaceAll('&', '&amp;')
@@ -354,6 +355,7 @@ function makeSvg(width, height, elements) {
         .td-text { font: 14px system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; fill: #111; }
         .td-small { font: 12px system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; fill: #111; }
         .td-edge { stroke: #222; stroke-width: 1.5; fill: none; }
+        .td-green { fill: #0a7a21; font-weight: 700; }
       </style>
       ${elements.join('\\n')}
     </svg>
@@ -364,7 +366,7 @@ function line(x1, y1, x2, y2) {
   return `<line class="td-edge" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" />`;
 }
 
-function text(x, y, s, cls="td-text", anchor="start") {
+function text(x, y, s, cls="td-text", anchor="middle") {
   return `<text class="${cls}" x="${x}" y="${y}" text-anchor="${anchor}" dominant-baseline="middle">${escHtml(s)}</text>`;
 }
 
@@ -384,83 +386,127 @@ function fracPlain(n, d) {
   return (r[1] === 1) ? String(r[0]) : `${r[0]}/${r[1]}`;
 }
 
-function buildUrnTreeSVG({R, G, withReplacement}) {
+// Vertical urn tree (downward), no "Start" label.
+// Leaves in highlightSet are colored green at the final stage.
+function buildUrnTreeSVGVertical({R, G, withReplacement, highlightSet}) {
   const T = R + G;
-  const rootX = 20, rootY = 90;
-  const lvl1X = 170, lvl2X = 360;
 
-  const yR1 = 40, yG1 = 140;
-  const yRR = 20, yRG = 70, yGR = 110, yGG = 160;
+  const w = 640, h = 330;
+  const yRoot = 10, y1 = 55, y2 = 155, y3 = 265;
+
+  const xRoot = w / 2;
+
+  const xRed = w * 0.33;
+  const xGreen = w * 0.67;
+
+  const dx2 = 90;
+  const xRR = xRed - dx2/2;
+  const xRG = xRed + dx2/2;
+  const xGR = xGreen - dx2/2;
+  const xGG = xGreen + dx2/2;
 
   const elems = [];
-  elems.push(text(rootX, rootY, "Start"));
 
-  elems.push(line(rootX+40, rootY, lvl1X-20, yR1));
-  elems.push(line(rootX+40, rootY, lvl1X-20, yG1));
+  // Root to first stage
+  elems.push(line(xRoot, yRoot, xRed, y1 - 15));
+  elems.push(line(xRoot, yRoot, xGreen, y1 - 15));
 
-  elems.push(text(70, (rootY+yR1)/2, `Red (${fracPlain(R, T)})`, "td-small"));
-  elems.push(text(70, (rootY+yG1)/2, `Green (${fracPlain(G, T)})`, "td-small"));
+  elems.push(text(xRed, y1, `Red (${fracPlain(R, T)})`));
+  elems.push(text(xGreen, y1, `Green (${fracPlain(G, T)})`));
 
-  elems.push(text(lvl1X, yR1, "Red"));
-  elems.push(text(lvl1X, yG1, "Green"));
+  // Conditional probabilities for stage 2
+  const pR_after_R = withReplacement ? [R, T] : [R - 1, T - 1];
+  const pG_after_R = withReplacement ? [G, T] : [G, T - 1];
+  const pR_after_G = withReplacement ? [R, T] : [R, T - 1];
+  const pG_after_G = withReplacement ? [G, T] : [G - 1, T - 1];
 
-  const pR_after_R = withReplacement ? fracPlain(R, T) : fracPlain(R-1, T-1);
-  const pG_after_R = withReplacement ? fracPlain(G, T) : fracPlain(G, T-1);
-  const pR_after_G = withReplacement ? fracPlain(R, T) : fracPlain(R, T-1);
-  const pG_after_G = withReplacement ? fracPlain(G, T) : fracPlain(G-1, T-1);
+  // Red first branches
+  elems.push(line(xRed, y1 + 15, xRR, y2 - 15));
+  elems.push(line(xRed, y1 + 15, xRG, y2 - 15));
+  elems.push(text(xRR, y2, `Red (${fracPlain(pR_after_R[0], pR_after_R[1])})`, "td-small"));
+  elems.push(text(xRG, y2, `Green (${fracPlain(pG_after_R[0], pG_after_R[1])})`, "td-small"));
 
-  elems.push(line(lvl1X+40, yR1, lvl2X-20, yRR));
-  elems.push(line(lvl1X+40, yR1, lvl2X-20, yRG));
-  elems.push(text(200, (yR1+yRR)/2, `Red (${pR_after_R})`, "td-small"));
-  elems.push(text(200, (yR1+yRG)/2, `Green (${pG_after_R})`, "td-small"));
+  // Green first branches
+  elems.push(line(xGreen, y1 + 15, xGR, y2 - 15));
+  elems.push(line(xGreen, y1 + 15, xGG, y2 - 15));
+  elems.push(text(xGR, y2, `Red (${fracPlain(pR_after_G[0], pR_after_G[1])})`, "td-small"));
+  elems.push(text(xGG, y2, `Green (${fracPlain(pG_after_G[0], pG_after_G[1])})`, "td-small"));
 
-  elems.push(line(lvl1X+40, yG1, lvl2X-20, yGR));
-  elems.push(line(lvl1X+40, yG1, lvl2X-20, yGG));
-  elems.push(text(200, (yG1+yGR)/2, `Red (${pR_after_G})`, "td-small"));
-  elems.push(text(200, (yG1+yGG)/2, `Green (${pG_after_G})`, "td-small"));
+  const leafInfo = [
+    { key: "RR", x: xRR, first: [R, T], second: pR_after_R, label: "Red then red" },
+    { key: "RG", x: xRG, first: [R, T], second: pG_after_R, label: "Red then green" },
+    { key: "GR", x: xGR, first: [G, T], second: pR_after_G, label: "Green then red" },
+    { key: "GG", x: xGG, first: [G, T], second: pG_after_G, label: "Green then green" },
+  ];
 
-  elems.push(text(lvl2X, yRR, "RR"));
-  elems.push(text(lvl2X, yRG, "RG"));
-  elems.push(text(lvl2X, yGR, "GR"));
-  elems.push(text(lvl2X, yGG, "GG"));
+  for (const leaf of leafInfo) {
+    elems.push(line(leaf.x, y2 + 15, leaf.x, y3 - 15));
+    const num = leaf.first[0] * leaf.second[0];
+    const den = leaf.first[1] * leaf.second[1];
+    const frac = fracPlain(num, den);
+    const cls = (highlightSet && highlightSet.has(leaf.key)) ? "td-text td-green" : "td-text";
+    elems.push(text(leaf.x, y3, `${leaf.label} (${frac})`, cls));
+  }
 
-  return makeSvg(460, 190, elems);
+  return makeSvg(w, h, elems);
 }
 
-function buildPartitionPropTreeSVG({subsets, counts, prop, propCounts}) {
+// Vertical partition+property tree (downward), no "Start" label.
+// Leaves in highlight predicate are colored green at the final stage.
+function buildPartitionPropTreeSVGVertical({subsets, counts, prop, propCounts, highlight}) {
   const N = counts.reduce((a,b)=>a+b,0);
   const k = subsets.length;
 
-  const width = 760;
-  const rootX = 20, rootY = 30 + 40 * k;
-  const lvl1X = 300, lvl2X = 560;
+  const w = 860, h = 330;
+  const yRoot = 10, y1 = 55, y2 = 155, y3 = 265;
+
+  const xRoot = w / 2;
+
+  const xs1 = [];
+  for (let i = 0; i < k; i++) xs1.push((i + 1) * (w / (k + 1)));
 
   const elems = [];
-  elems.push(text(rootX, rootY, "Start"));
 
-  const y1 = [];
-  for (let i = 0; i < k; i++) y1.push(30 + i * 80);
+  // Root to stage1
+  for (let i = 0; i < k; i++) {
+    elems.push(line(xRoot, yRoot, xs1[i], y1 - 15));
+    elems.push(text(xs1[i], y1, `${subsets[i]} (${fracPlain(counts[i], N)})`));
+  }
+
+  const dx2 = 90;
+  const stage2 = [];
+  for (let i = 0; i < k; i++) {
+    const xProp = xs1[i] - dx2/2;
+    const xNot  = xs1[i] + dx2/2;
+
+    const pProp = [propCounts[i], counts[i]];
+    const pNot  = [counts[i] - propCounts[i], counts[i]];
+
+    elems.push(line(xs1[i], y1 + 15, xProp, y2 - 15));
+    elems.push(line(xs1[i], y1 + 15, xNot,  y2 - 15));
+
+    elems.push(text(xProp, y2, `${prop} (${fracPlain(pProp[0], pProp[1])})`, "td-small"));
+    elems.push(text(xNot,  y2, `Not ${prop} (${fracPlain(pNot[0], pNot[1])})`, "td-small"));
+
+    stage2.push([
+      { x: xProp, which: "prop", p: pProp, leafCount: propCounts[i], leafLabel: `${prop} ${subsets[i]}` },
+      { x: xNot,  which: "not",  p: pNot,  leafCount: counts[i] - propCounts[i], leafLabel: `Not ${prop} ${subsets[i]}` },
+    ]);
+  }
 
   for (let i = 0; i < k; i++) {
-    elems.push(line(rootX+40, rootY, lvl1X-20, y1[i]));
-    elems.push(text(70, (rootY+y1[i])/2, `${subsets[i]} (${fracPlain(counts[i], N)})`, "td-small"));
-    elems.push(text(lvl1X, y1[i], subsets[i]));
-
-    const yProp = y1[i] - 18;
-    const yNot = y1[i] + 18;
-
-    const pProp = fracPlain(propCounts[i], counts[i]);
-    const pNot = fracPlain(counts[i] - propCounts[i], counts[i]);
-
-    elems.push(line(lvl1X+90, y1[i], lvl2X-20, yProp));
-    elems.push(line(lvl1X+90, y1[i], lvl2X-20, yNot));
-
-    elems.push(text(lvl1X+110, (y1[i]+yProp)/2, `${prop} (${pProp})`, "td-small"));
-    elems.push(text(lvl1X+110, (y1[i]+yNot)/2, `not ${prop} (${pNot})`, "td-small"));
-
-    elems.push(text(lvl2X, yProp, "✔"));
-    elems.push(text(lvl2X, yNot, "✘"));
+    for (const node of stage2[i]) {
+      elems.push(line(node.x, y2 + 15, node.x, y3 - 15));
+      const num = node.leafCount;
+      const den = N;
+      const frac = fracPlain(num, den);
+      const cls = (highlight && highlight(i, node.which)) ? "td-text td-green" : "td-text";
+      elems.push(text(node.x, y3, `${node.leafLabel} (${frac})`, cls));
+    }
   }
+
+  return makeSvg(w, h, elems);
+}
 
   const height = 30 + 80 * k;
   return makeSvg(width, height, elems);
@@ -681,6 +727,31 @@ function buildPartitionPropTreeSVG({subsets, counts, prop, propCounts}) {
     for (let i = 0; i < cuts.length; i++) { parts.push(cuts[i] - prev); prev = cuts[i]; }
     parts.push(total - prev);
     return parts;
+
+
+    // Final hint: tree diagram (highlight the leaves in the OR-sum for this event)
+    const highlightSet = new Set();
+    if (chosenEvent.key === 'both') {
+      highlightSet.add(color === 'red' ? 'RR' : 'GG');
+    } else if (chosenEvent.key === 'neither') {
+      highlightSet.add(color === 'red' ? 'GG' : 'RR');
+    } else if (chosenEvent.key === 'oneEach') {
+      highlightSet.add('RG'); highlightSet.add('GR');
+    } else if (chosenEvent.key === 'first') {
+      highlightSet.add(color === 'red' ? 'RR' : 'GG');
+      highlightSet.add(color === 'red' ? 'RG' : 'GR');
+    } else if (chosenEvent.key === 'second') {
+      highlightSet.add(color === 'red' ? 'RR' : 'GG');
+      highlightSet.add(color === 'red' ? 'GR' : 'RG');
+    } else if (chosenEvent.key === 'atLeastOne') {
+      const neitherKey = (color === 'red') ? 'GG' : 'RR';
+      ['RR','RG','GR','GG'].forEach(k => { if (k !== neitherKey) highlightSet.add(k); });
+    }
+
+    hintSteps.push(treeContainerHtml(
+      withReplacement ? 'Tree diagram (with replacement)' : 'Tree diagram (without replacement)',
+      buildUrnTreeSVGVertical({ R, G, withReplacement, highlightSet })
+    ));
   }
 
   function generateType3() {
@@ -851,6 +922,32 @@ function buildPartitionPropTreeSVG({subsets, counts, prop, propCounts}) {
     if (qType === 4) generateType4();
 
     typeset([questionText]);
+
+
+    // Final hint: tree diagram (highlight the leaves that are being summed)
+    const highlight = (i, which) => {
+      if (subtype === 1) {
+        return (isNot === 'is') ? (which === 'prop') : (which === 'not');
+      }
+      let jj = 0;
+      for (let t = 0; t < k; t++) {
+        const cand = (isNot === 'is') ? propCounts[t] : (counts[t] - propCounts[t]);
+        if (cand === favorable) { jj = t; break; }
+      }
+      if (i !== jj) return false;
+      return (isNot === 'is') ? (which === 'prop') : (which === 'not');
+    };
+
+    hintSteps.push(treeContainerHtml(
+      'Tree diagram',
+      buildPartitionPropTreeSVGVertical({
+        subsets: subsetNames,
+        counts,
+        prop,
+        propCounts,
+        highlight
+      })
+    ));
   });
 
   // -----------------------------

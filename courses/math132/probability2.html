@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -334,6 +335,179 @@ fetch("/nav.html")
     return (vowelLetter || anInitialism) ? 'an' : 'a';
   }
 
+
+// -----------------------------
+// Tree diagram helpers (inline SVG)
+// -----------------------------
+function escHtml(s) {
+  return String(s)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function svgLine(x1, y1, x2, y2) {
+  return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#222" stroke-width="1.5" />`;
+}
+
+function svgText(x, y, s, opts = {}) {
+  const { anchor = "middle", size = 13, weight = 500, color = "#111" } = opts;
+  return `<text x="${x}" y="${y}" text-anchor="${anchor}" dominant-baseline="middle"
+                font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif"
+                font-size="${size}" font-weight="${weight}" fill="${color}">${escHtml(s)}</text>`;
+}
+
+function wrapSvg(width, height, inner) {
+  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"
+               xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Tree diagram">${inner}</svg>`;
+}
+
+function treeHintHtml(title, svg) {
+  return `
+    <div style="margin-top: 10px;">
+      <div style="font-weight: 600; margin-bottom: 6px;">${escHtml(title)}</div>
+      <div style="display: inline-block; border: 1px solid #ddd; border-radius: 10px; padding: 10px; background: #fff;">
+        ${svg}
+      </div>
+    </div>
+  `;
+}
+
+function fracPlain(n, d) {
+  const r = reduceFrac(n, d);
+  const rn = r[0], rd = r[1];
+  return (rd === 1) ? String(rn) : `${rn}/${rd}`;
+}
+
+// Type (2): two-draw urn tree, vertical downward, 3rd stage shows unconditional leaf probabilities.
+// highlightSet: set of leaf keys {"RR","RG","GR","GG"} to color green.
+function buildUrnTreeSVGVertical(R, G, withReplacement, highlightSet) {
+  const T = R + G;
+
+  const W = 720, H = 360;
+  const y0 = 10, y1 = 55, y2 = 155, y3 = 275;
+
+  const x0 = W / 2;
+  const xR = W * 0.32;
+  const xG = W * 0.68;
+
+  const dx = 110;
+  const xRR = xR - dx/2;
+  const xRG = xR + dx/2;
+  const xGR = xG - dx/2;
+  const xGG = xG + dx/2;
+
+  let inner = "";
+
+  // stage 1
+  inner += svgLine(x0, y0, xR, y1 - 14);
+  inner += svgLine(x0, y0, xG, y1 - 14);
+  inner += svgText(xR, y1, `Red (${fracPlain(R, T)})`);
+  inner += svgText(xG, y1, `Green (${fracPlain(G, T)})`);
+
+  // conditional probs for stage 2
+  const pR_after_R = withReplacement ? [R, T] : [R - 1, T - 1];
+  const pG_after_R = withReplacement ? [G, T] : [G, T - 1];
+  const pR_after_G = withReplacement ? [R, T] : [R, T - 1];
+  const pG_after_G = withReplacement ? [G, T] : [G - 1, T - 1];
+
+  // stage 2 from red
+  inner += svgLine(xR, y1 + 14, xRR, y2 - 14);
+  inner += svgLine(xR, y1 + 14, xRG, y2 - 14);
+  inner += svgText(xRR, y2, `Red (${fracPlain(pR_after_R[0], pR_after_R[1])})`, { size: 12, weight: 500 });
+  inner += svgText(xRG, y2, `Green (${fracPlain(pG_after_R[0], pG_after_R[1])})`, { size: 12, weight: 500 });
+
+  // stage 2 from green
+  inner += svgLine(xG, y1 + 14, xGR, y2 - 14);
+  inner += svgLine(xG, y1 + 14, xGG, y2 - 14);
+  inner += svgText(xGR, y2, `Red (${fracPlain(pR_after_G[0], pR_after_G[1])})`, { size: 12, weight: 500 });
+  inner += svgText(xGG, y2, `Green (${fracPlain(pG_after_G[0], pG_after_G[1])})`, { size: 12, weight: 500 });
+
+  const leaves = [
+    { key: "RR", x: xRR, first: [R, T], second: pR_after_R, label: "Red then red" },
+    { key: "RG", x: xRG, first: [R, T], second: pG_after_R, label: "Red then green" },
+    { key: "GR", x: xGR, first: [G, T], second: pR_after_G, label: "Green then red" },
+    { key: "GG", x: xGG, first: [G, T], second: pG_after_G, label: "Green then green" },
+  ];
+
+  // stage 3: unconditional leaf probs (product)
+  for (const leaf of leaves) {
+    inner += svgLine(leaf.x, y2 + 14, leaf.x, y3 - 14);
+    const num = leaf.first[0] * leaf.second[0];
+    const den = leaf.first[1] * leaf.second[1];
+    const frac = fracPlain(num, den);
+    const green = (highlightSet && highlightSet.has(leaf.key));
+    inner += svgText(leaf.x, y3, `${leaf.label} (${frac})`, { size: 12, weight: green ? 700 : 500, color: green ? "#0a7a21" : "#111" });
+  }
+
+  return wrapSvg(W, H, inner);
+}
+
+// Type (4): partition + property tree, vertical downward, with a third stage showing unconditional leaf probs.
+// highlight(i, which): returns true if the leaf should be green, where which is "prop" or "not".
+function buildPartitionPropTreeSVGVertical(subsetNames, counts, prop, propCounts, highlight) {
+  const N = counts.reduce((a,b)=>a+b,0);
+  const k = subsetNames.length;
+
+  const W = 900, H = 360;
+  const y0 = 10, y1 = 55, y2 = 155, y3 = 275;
+
+  const x0 = W / 2;
+
+  const xs1 = [];
+  for (let i = 0; i < k; i++) xs1.push((i + 1) * (W / (k + 1)));
+
+  let inner = "";
+
+  // stage 1: root to subsets
+  for (let i = 0; i < k; i++) {
+    inner += svgLine(x0, y0, xs1[i], y1 - 14);
+    const name = subsetNames[i][0].toUpperCase() + subsetNames[i].slice(1);
+    inner += svgText(xs1[i], y1, `${name} (${fracPlain(counts[i], N)})`, { size: 12, weight: 600 });
+  }
+
+  const dx = 120;
+  for (let i = 0; i < k; i++) {
+    const xProp = xs1[i] - dx/2;
+    const xNot  = xs1[i] + dx/2;
+
+    const yes = propCounts[i];
+    const no = counts[i] - propCounts[i];
+
+    // stage 2 split
+    inner += svgLine(xs1[i], y1 + 14, xProp, y2 - 14);
+    inner += svgLine(xs1[i], y1 + 14, xNot,  y2 - 14);
+
+    const propTitle = prop[0].toUpperCase() + prop.slice(1);
+    inner += svgText(xProp, y2, `${propTitle} (${fracPlain(yes, counts[i])})`, { size: 12 });
+    inner += svgText(xNot,  y2, `Not ${prop} (${fracPlain(no, counts[i])})`, { size: 12 });
+
+    // stage 3 straight down to unconditional leaves
+    inner += svgLine(xProp, y2 + 14, xProp, y3 - 14);
+    inner += svgLine(xNot,  y2 + 14, xNot,  y3 - 14);
+
+    const base = subsetNames[i];
+
+    const greenProp = highlight ? highlight(i, "prop") : false;
+    const greenNot  = highlight ? highlight(i, "not") : false;
+
+    inner += svgText(
+      xProp, y3,
+      `${propTitle} ${base} (${fracPlain(yes, N)})`,
+      { size: 12, weight: greenProp ? 700 : 500, color: greenProp ? "#0a7a21" : "#111" }
+    );
+    inner += svgText(
+      xNot, y3,
+      `Not ${prop} ${base} (${fracPlain(no, N)})`,
+      { size: 12, weight: greenNot ? 700 : 500, color: greenNot ? "#0a7a21" : "#111" }
+    );
+  }
+
+  return wrapSvg(W, H, inner);
+}
+
   // -----------------------------
   // Type (1): Independent events
   // -----------------------------
@@ -519,6 +693,31 @@ fetch("/nav.html")
         `So, the probability that ${chosenEvent.text} is \\(${exprTex} = ${fracTex(num, den)}\\).`
       ];
     }
+
+
+    // Final hint: tree diagram (green leaves are the ones being summed)
+    const highlightSet = new Set();
+    if (chosenEvent.key === 'both') {
+      highlightSet.add(color === 'red' ? 'RR' : 'GG');
+    } else if (chosenEvent.key === 'neither') {
+      highlightSet.add(color === 'red' ? 'GG' : 'RR');
+    } else if (chosenEvent.key === 'oneEach') {
+      highlightSet.add('RG'); highlightSet.add('GR');
+    } else if (chosenEvent.key === 'first') {
+      if (color === 'red') { highlightSet.add('RR'); highlightSet.add('RG'); }
+      else { highlightSet.add('GG'); highlightSet.add('GR'); }
+    } else if (chosenEvent.key === 'second') {
+      if (color === 'red') { highlightSet.add('RR'); highlightSet.add('GR'); }
+      else { highlightSet.add('GG'); highlightSet.add('RG'); }
+    } else if (chosenEvent.key === 'atLeastOne') {
+      const neitherKey = (color === 'red') ? 'GG' : 'RR';
+      ['RR','RG','GR','GG'].forEach(k => { if (k !== neitherKey) highlightSet.add(k); });
+    }
+
+    hintSteps.push(treeHintHtml(
+      withReplacement ? 'Tree diagram (with replacement)' : 'Tree diagram (without replacement)',
+      buildUrnTreeSVGVertical(R, G, withReplacement, highlightSet)
+    ));
   }
 
   // -----------------------------
@@ -686,6 +885,27 @@ fetch("/nav.html")
       `Multiply the probabilities down the branches to find the probabilities of the "AND" events.`,
       `Sum the probabilities of the events that make up the situation we are interested in: \\(${sumTex}\\).`
     ];
+
+
+    // Final hint: tree diagram (green leaves are the ones being summed)
+    const highlight = (i, which) => {
+      if (subtype === 1) {
+        return (isNot === 'is') ? (which === 'prop') : (which === 'not');
+      }
+      // property AND a specific subset: highlight only that subset's relevant leaf
+      let jj = 0;
+      for (let t = 0; t < k; t++) {
+        const cand = (isNot === 'is') ? propCounts[t] : (counts[t] - propCounts[t]);
+        if (cand === favorable) { jj = t; break; }
+      }
+      if (i !== jj) return false;
+      return (isNot === 'is') ? (which === 'prop') : (which === 'not');
+    };
+
+    hintSteps.push(treeHintHtml(
+      'Tree diagram',
+      buildPartitionPropTreeSVGVertical(subsetNames, counts, prop, propCounts, highlight)
+    ));
   }
 
   // -----------------------------

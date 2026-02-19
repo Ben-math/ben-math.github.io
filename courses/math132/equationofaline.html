@@ -487,6 +487,15 @@ x & f(x) \\
     const plotLayer = el('g');
     plotLayer.setAttribute('clip-path', `url(#${clipId})`);
     svg.appendChild(plotLayer);
+    // Save plotting state for overlays (additional lines / points)
+    svg.__plotState = {
+      xMin, xMax, yMin, yMax,
+      pad, w, h,
+      X, Y,
+      NS, el,
+      plotLayer
+    };
+
 
     // --- Plot ---
     if (domain === 'integers') {
@@ -556,51 +565,103 @@ x & f(x) \\
   }
 
 
-    function plotMultipleLinearFunctions(svgId, functions, intersection = null) {
-  const svg = document.getElementById(svgId);
-  if (!svg || functions.length === 0) return;
+function overlayRealLine(svg, f, style = {}) {
+  const st = svg.__plotState;
+  if (!st) return;
 
-  // Draw axes/grid using the first function
-  plotLinearFunction(svg, functions[0].f, { domain: 'reals' });
+  const { xMin, xMax, yMin, yMax, X, Y, el, plotLayer } = st;
 
-  // Overlay remaining lines
-  for (let i = 1; i < functions.length; i++) {
-    const layer = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    svg.appendChild(layer);
+  // Liang–Barsky clipping in world coordinates (same as your original)
+  function clipLineToRect(x1, y1, x2, y2, rxMin, rxMax, ryMin, ryMax) {
+    let t0 = 0, t1 = 1;
+    const dx = x2 - x1, dy = y2 - y1;
+    const p = [-dx, dx, -dy, dy];
+    const q = [x1 - rxMin, rxMax - x1, y1 - ryMin, ryMax - y1];
 
-    plotLinearFunction(layer, functions[i].f, { domain: 'reals' });
+    for (let i = 0; i < 4; i++) {
+      if (p[i] === 0) {
+        if (q[i] < 0) return null;
+      } else {
+        const r = q[i] / p[i];
+        if (p[i] < 0) {
+          if (r > t1) return null;
+          if (r > t0) t0 = r;
+        } else {
+          if (r < t0) return null;
+          if (r < t1) t1 = r;
+        }
+      }
+    }
+    return {
+      x1: x1 + t0 * dx,
+      y1: y1 + t0 * dy,
+      x2: x1 + t1 * dx,
+      y2: y1 + t1 * dy
+    };
   }
 
-  // Plot intersection point if provided
-  if (intersection) {
+  const A = { x: xMin, y: f(xMin) };
+  const B = { x: xMax, y: f(xMax) };
+  const clipped = clipLineToRect(A.x, A.y, B.x, B.y, xMin, xMax, yMin, yMax);
+  if (!clipped) return;
+
+  const seg = el('line');
+  seg.setAttribute('x1', X(clipped.x1));
+  seg.setAttribute('y1', Y(clipped.y1));
+  seg.setAttribute('x2', X(clipped.x2));
+  seg.setAttribute('y2', Y(clipped.y2));
+  seg.setAttribute('stroke', style.stroke || 'rgba(13, 110, 253, 0.95)');
+  seg.setAttribute('stroke-width', style.strokeWidth || '3.2');
+  seg.setAttribute('stroke-linecap', 'round');
+
+  plotLayer.appendChild(seg);
+}
+
+function plotMultipleLinearFunctions(svgId, functions, intersection = null) {
+  const svg = document.getElementById(svgId);
+  if (!svg || !functions || functions.length === 0) return;
+
+  // Draw axes/grid once using the first function (clears + sets __plotState)
+  plotLinearFunction(svg, functions[0].f, { domain: 'reals' });
+
+  // Overlay additional lines (NO clearing, NO axes redraw)
+  const overlayStyles = [
+    { stroke: 'rgba(13, 110, 253, 0.95)' },   // blue
+    { stroke: 'rgba(220, 53, 69, 0.95)' }     // your friendly red
+  ];
+
+  // First line: your existing plotLinearFunction already drew it in blue,
+  // but it used its internal color. We leave it.
+  for (let i = 1; i < functions.length; i++) {
+    overlayRealLine(svg, functions[i].f, overlayStyles[i] || overlayStyles[overlayStyles.length - 1]);
+  }
+
+  // Intersection point + label (uses the same coordinate mapping)
+  if (intersection && svg.__plotState) {
     const { x, y, label } = intersection;
+    const { X, Y, el } = svg.__plotState;
 
-    const pad = 34;
-    const w = svg.viewBox.baseVal.width;
-    const h = svg.viewBox.baseVal.height;
-
-    const X = (x) => pad + (x + 10) / 20 * (w - 2 * pad);
-    const Y = (y) => h - pad - (y + 10) / 20 * (h - 2 * pad);
-
-    const NS = "http://www.w3.org/2000/svg";
-
-    const dot = document.createElementNS(NS, "circle");
-    dot.setAttribute("cx", X(x));
-    dot.setAttribute("cy", Y(y));
-    dot.setAttribute("r", 5.5);
-    dot.setAttribute("fill", "black");
+    const dot = el('circle');
+    dot.setAttribute('cx', X(x));
+    dot.setAttribute('cy', Y(y));
+    dot.setAttribute('r', 5.5);
+    dot.setAttribute('fill', 'rgba(0,0,0,0.9)');
+    dot.setAttribute('stroke', 'rgba(255,255,255,0.85)');
+    dot.setAttribute('stroke-width', '2');
     svg.appendChild(dot);
 
-    const text = document.createElementNS(NS, "text");
-    text.setAttribute("x", X(x) + 8);
-    text.setAttribute("y", Y(y) - 8);
-    text.setAttribute("font-size", "13");
-    text.setAttribute("font-weight", "600");
-    text.setAttribute("fill", "rgba(0,0,0,0.85)");
+    const text = el('text');
+    text.setAttribute('x', X(x) + 10);
+    text.setAttribute('y', Y(y) - 10);
+    text.setAttribute('font-size', '13');
+    text.setAttribute('font-weight', '700');
+    text.setAttribute('fill', 'rgba(0,0,0,0.85)');
+    text.setAttribute('font-family', 'system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif');
     text.textContent = label;
     svg.appendChild(text);
   }
 }
+
 
 
 

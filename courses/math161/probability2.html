@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -254,11 +252,6 @@ fetch("/nav.html")
     return `\\frac{${n}}{${d}}`;
   }
 
-  function fracPlain(num, den) {
-    const r = reduceFrac(num, den);
-    return `${r[0]}/${r[1]}`;
-  }
-
   function resetUIForNewQuestion() {
     feedback.textContent = '';
     feedback.style.color = 'black';
@@ -327,14 +320,7 @@ fetch("/nav.html")
     return `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`;
   }
 
-  function joinWithOr(items) {
-    if (items.length === 1) return items[0];
-    if (items.length === 2) return `${items[0]} or ${items[1]}`;
-    return `${items.slice(0, -1).join(', ')}, or ${items[items.length - 1]}`;
-  }
-
   function singularize(word) {
-    // works for your banks (Apples->Apple, SUVs->SUV, etc.)
     if (word.endsWith('s')) return word.slice(0, -1);
     return word;
   }
@@ -346,6 +332,186 @@ fetch("/nav.html")
     return (vowelLetter || anInitialism) ? 'an' : 'a';
   }
 
+
+// -----------------------------
+// Tree diagram helpers (inline SVG)
+// -----------------------------
+function escHtml(s) {
+  return String(s)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function svgLine(x1, y1, x2, y2) {
+  return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#222" stroke-width="1.5" />`;
+}
+
+function svgText(x, y, s, opts = {}) {
+  const { anchor = "middle", size = 13, weight = 500, color = "#111", rotate = 0 } = opts;
+  const transform = (rotate && rotate !== 0) ? ` transform="rotate(${rotate} ${x} ${y})"` : "";
+  return `<text x="${x}" y="${y}" text-anchor="${anchor}" dominant-baseline="middle"${transform}
+                font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif"
+                font-size="${size}" font-weight="${weight}" fill="${color}">${escHtml(s)}</text>`;
+}
+
+function wrapSvg(width, height, inner) {
+  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"
+               xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Tree diagram">${inner}</svg>`;
+}
+
+function treeHintHtml(title, svg) {
+  return `
+    <div style="margin-top: 10px;">
+      <div style="font-weight: 600; margin-bottom: 6px;">${escHtml(title)}</div>
+      <div style="display: inline-block; border: 1px solid #ddd; border-radius: 10px; padding: 10px; background: #fff;">
+        ${svg}
+      </div>
+    </div>
+  `;
+}
+
+function fracPlain(n, d) {
+  const r = reduceFrac(n, d);
+  const rn = r[0], rd = r[1];
+  return (rd === 1) ? String(rn) : `${rn}/${rd}`;
+}
+
+// Type (2): two-draw urn tree, vertical downward, 3rd stage shows unconditional leaf probabilities.
+// highlightSet: set of leaf keys {"RR","RG","GR","GG"} to color green.
+function buildUrnTreeSVGVertical(R, G, withReplacement, highlightSet) {
+  const T = R + G;
+
+  const W = 780, H = 380;
+  const y0 = 10, y1 = 55, y2 = 155, y3 = 275;
+
+  const x0 = W / 2;
+  const xR = W * 0.28;
+  const xG = W * 0.72;
+
+  const dx = 140;
+  const xRR = xR - dx/2;
+  const xRG = xR + dx/2;
+  const xGR = xG - dx/2;
+  const xGG = xG + dx/2;
+
+  let inner = "";
+
+  // stage 1
+  inner += svgLine(x0, y0, xR, y1 - 14);
+  inner += svgLine(x0, y0, xG, y1 - 14);
+  inner += svgText(xR, y1, `Red (${fracPlain(R, T)})`);
+  inner += svgText(xG, y1, `Green (${fracPlain(G, T)})`);
+
+  // conditional probs for stage 2
+  const pR_after_R = withReplacement ? [R, T] : [R - 1, T - 1];
+  const pG_after_R = withReplacement ? [G, T] : [G, T - 1];
+  const pR_after_G = withReplacement ? [R, T] : [R, T - 1];
+  const pG_after_G = withReplacement ? [G, T] : [G - 1, T - 1];
+
+  // stage 2 from red
+  inner += svgLine(xR, y1 + 14, xRR, y2 - 14);
+  inner += svgLine(xR, y1 + 14, xRG, y2 - 14);
+  inner += svgText(xRR, y2, `Red (${fracPlain(pR_after_R[0], pR_after_R[1])})`, { size: 12, weight: 500 });
+  inner += svgText(xRG, y2, `Green (${fracPlain(pG_after_R[0], pG_after_R[1])})`, { size: 12, weight: 500 });
+
+  // stage 2 from green
+  inner += svgLine(xG, y1 + 14, xGR, y2 - 14);
+  inner += svgLine(xG, y1 + 14, xGG, y2 - 14);
+  inner += svgText(xGR, y2, `Red (${fracPlain(pR_after_G[0], pR_after_G[1])})`, { size: 12, weight: 500 });
+  inner += svgText(xGG, y2, `Green (${fracPlain(pG_after_G[0], pG_after_G[1])})`, { size: 12, weight: 500 });
+
+  const leaves = [
+    { key: "RR", x: xRR, first: [R, T], second: pR_after_R, label: "Red then red" },
+    { key: "RG", x: xRG, first: [R, T], second: pG_after_R, label: "Red then green" },
+    { key: "GR", x: xGR, first: [G, T], second: pR_after_G, label: "Green then red" },
+    { key: "GG", x: xGG, first: [G, T], second: pG_after_G, label: "Green then green" },
+  ];
+
+  // stage 3: unconditional leaf probs (product)
+  for (const leaf of leaves) {
+    inner += svgLine(leaf.x, y2 + 14, leaf.x, y3 - 14);
+    const num = leaf.first[0] * leaf.second[0];
+    const den = leaf.first[1] * leaf.second[1];
+    const frac = fracPlain(num, den);
+    const green = (highlightSet && highlightSet.has(leaf.key));
+    inner += svgText(leaf.x, y3, `${leaf.label} (${frac})`, { size: 11, weight: green ? 700 : 500, color: green ? "#0a7a21" : "#111", rotate: -30, anchor: "middle" });
+  }
+
+  return wrapSvg(W, H, inner);
+}
+
+// Type (4): partition + property tree, vertical downward, with a third stage showing unconditional leaf probs.
+// highlight(i, which): returns true if the leaf should be green, where which is "prop" or "not".
+function buildPartitionPropTreeSVGVertical(subsetNames, counts, prop, propCounts, highlight) {
+  const N = counts.reduce((a,b)=>a+b,0);
+  const k = subsetNames.length;
+
+  const W = 1200, H = 400;
+  const y0 = 10, y1 = 55, y2 = 155, y3 = 275;
+
+  const x0 = W / 2;
+
+  const xs1 = [];
+
+  const pad = 200;
+  if (k === 1) {
+    xs1.push(W / 2);
+  } else {
+    for (let i = 0; i < k; i++) xs1.push(pad + i * ((W - 2 * pad) / (k - 1)));
+  }
+
+  let inner = "";
+
+  // stage 1: root to subsets
+  for (let i = 0; i < k; i++) {
+    inner += svgLine(x0, y0, xs1[i], y1 - 14);
+    const name = subsetNames[i][0].toUpperCase() + subsetNames[i].slice(1);
+    inner += svgText(xs1[i], y1, `${name} (${fracPlain(counts[i], N)})`, { size: 12, weight: 600 });
+  }
+
+  const dx = 140;
+  for (let i = 0; i < k; i++) {
+    const xProp = xs1[i] - dx/2;
+    const xNot  = xs1[i] + dx/2;
+
+    const yes = propCounts[i];
+    const no = counts[i] - propCounts[i];
+
+    // stage 2 split
+    inner += svgLine(xs1[i], y1 + 14, xProp, y2 - 14);
+    inner += svgLine(xs1[i], y1 + 14, xNot,  y2 - 14);
+
+    const propTitle = prop[0].toUpperCase() + prop.slice(1);
+    inner += svgText(xProp, y2, `${propTitle} (${fracPlain(yes, counts[i])})`, { size: 12 });
+    inner += svgText(xNot,  y2, `Not ${prop} (${fracPlain(no, counts[i])})`, { size: 12 });
+
+    // stage 3 straight down to unconditional leaves
+    inner += svgLine(xProp, y2 + 14, xProp, y3 - 14);
+    inner += svgLine(xNot,  y2 + 14, xNot,  y3 - 14);
+
+    const base = subsetNames[i];
+
+    const greenProp = highlight ? highlight(i, "prop") : false;
+    const greenNot  = highlight ? highlight(i, "not") : false;
+
+    inner += svgText(
+      xProp, y3,
+      `${propTitle} ${base} (${fracPlain(yes, N)})`,
+      { size: 11, weight: greenProp ? 700 : 500, color: greenProp ? "#0a7a21" : "#111", rotate: -30, anchor: "middle" }
+    );
+    inner += svgText(
+      xNot, y3,
+      `Not ${prop} ${base} (${fracPlain(no, N)})`,
+      { size: 11, weight: greenNot ? 700 : 500, color: greenNot ? "#0a7a21" : "#111", rotate: -30, anchor: "middle" }
+    );
+  }
+
+  return wrapSvg(W, H, inner);
+}
+
   // -----------------------------
   // Type (1): Independent events
   // -----------------------------
@@ -354,46 +520,29 @@ fetch("/nav.html")
     const mode = randInt(1, 3); // 1 exact, 2 higher than, 3 lower than
     if (mode === 1) {
       const k = randInt(1, sides);
-      return {
-        desc: `you roll a ${k} on a ${sides}-sided die`,
-        num: 1,
-        den: sides
-      };
+      return { desc: `you roll a ${k} on a ${sides}-sided die`, num: 1, den: sides };
     }
     if (mode === 2) {
-      const t = randInt(1, sides - 1); // "higher than t"
+      const t = randInt(1, sides - 1);
       const favorable = sides - t;
-      return {
-        desc: `you roll higher than ${t} on a ${sides}-sided die`,
-        num: favorable,
-        den: sides
-      };
+      return { desc: `you roll higher than ${t} on a ${sides}-sided die`, num: favorable, den: sides };
     }
-    const t = randInt(2, sides); // "lower than t"
+    const t = randInt(2, sides);
     const favorable = t - 1;
-    return {
-      desc: `you roll lower than ${t} on a ${sides}-sided die`,
-      num: favorable,
-      den: sides
-    };
+    return { desc: `you roll lower than ${t} on a ${sides}-sided die`, num: favorable, den: sides };
   }
 
   function makeCoinEvent() {
     const ht = randInt(0, 1) === 0 ? 'heads' : 'tails';
-    return {
-      desc: `you flip ${ht}`,
-      num: 1,
-      den: 2
-    };
+    return { desc: `you flip ${ht}`, num: 1, den: 2 };
   }
 
   function makeCardEvent() {
     const suits = ['spade', 'heart', 'diamond', 'club'];
     const suitPlural = { spade: 'spades', heart: 'hearts', diamond: 'diamonds', club: 'clubs' };
     const ranks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
-    const faces = ['J','Q','K'];
 
-    const kind = randInt(1, 4); // 1 suit, 2 face card, 3 specific card, 4 diamond face card style
+    const kind = randInt(1, 4); // 1 suit, 2 face card, 3 specific card, 4 diamond face card
     if (kind === 1) {
       const s = suits[randInt(0, 3)];
       return { desc: `you draw a ${s}`, num: 13, den: 52 };
@@ -408,22 +557,15 @@ fetch("/nav.html")
       const rankName = (r === 'A') ? 'ace' : (r === 'J' ? 'jack' : (r === 'Q' ? 'queen' : (r === 'K' ? 'king' : r)));
       return { desc: `you draw the ${rankName} of ${suitName}`, num: 1, den: 52 };
     }
-    // diamond face card
-    const s = 'diamond';
     return { desc: `you draw a diamond face card`, num: 3, den: 52 };
   }
 
   function generateType1() {
     const howMany = randInt(2, 3);
-
     const generators = [makeDieEvent, makeCoinEvent, makeCardEvent];
     const chosen = [];
-    // ensure variety by shuffling generators first, then allow repeats if 3 events
     shuffle(generators);
-    for (let i = 0; i < howMany; i++) {
-      const g = generators[i % generators.length];
-      chosen.push(g());
-    }
+    for (let i = 0; i < howMany; i++) chosen.push(generators[i % generators.length]());
 
     const descs = chosen.map(e => e.desc);
     const num = chosen.reduce((acc, e) => acc * e.num, 1);
@@ -434,7 +576,7 @@ fetch("/nav.html")
 
     hintSteps = [
       `These are independent experiments, so multiply their probabilities.`,
-      `Compute each probability, then multiply: \\(P = ${chosen.map(e => fracTex(e.num, e.den)).join(' \\cdot ')}\\).`,
+      `Compute each probability, then multiply: \\(P = ${chosen.map(e => fracTex(e.num, e.den)).join(' \\\cdot ')}\\).`,
       `So the probability is \\(${fracTex(num, den)}\\).`
     ];
   }
@@ -447,7 +589,7 @@ fetch("/nav.html")
     const G = randInt(1, 20);
     const T = R + G;
 
-    const withReplacement = randInt(0, 1) === 0; // true => returned
+    const withReplacement = randInt(0, 1) === 0;
     const returnText = withReplacement ? 'then returned to the urn' : 'then not returned to the urn';
 
     const color = randInt(0, 1) === 0 ? 'red' : 'green';
@@ -463,83 +605,39 @@ fetch("/nav.html")
 
     const chosenEvent = eventBank[randInt(0, eventBank.length - 1)];
 
-    function pColor1() {
-      return color === 'red' ? [R, T] : [G, T];
-    }
-    function pNotColor1() {
-      return color === 'red' ? [G, T] : [R, T];
-    }
-
     let num = 0, den = 1;
 
     if (withReplacement) {
-      const [pN, pD] = pColor1();
-      const [qN, qD] = pNotColor1(); // same denom
-      // Two independent draws
+      const pN = (color === 'red') ? R : G;
+      const qN = (color === 'red') ? G : R;
+
       if (chosenEvent.key === 'both') {
-        num = pN * pN;
-        den = pD * pD;
+        num = pN * pN; den = T * T;
       } else if (chosenEvent.key === 'neither') {
-        num = qN * qN;
-        den = qD * qD;
+        num = qN * qN; den = T * T;
       } else if (chosenEvent.key === 'first' || chosenEvent.key === 'second') {
-        num = pN;
-        den = pD;
+        num = pN; den = T;
       } else if (chosenEvent.key === 'atLeastOne') {
-        // 1 - P(neither)
-        num = den = 1; // placeholder then compute
-        const n0 = qN * qN;
-        const d0 = qD * qD;
-        // 1 - n0/d0 = (d0 - n0)/d0
-        num = d0 - n0;
-        den = d0;
+        num = (T * T) - (qN * qN); den = T * T;
       } else if (chosenEvent.key === 'oneEach') {
-        // RG or GR
-        // P(R then G) + P(G then R)
-        const nRG = R * G;
-        const dRG = T * T;
-        const nGR = G * R;
-        const dGR = T * T;
-        num = nRG + nGR;
-        den = dRG; // same
+        num = 2 * R * G; den = T * T;
       }
     } else {
       // without replacement
-      // After first draw, totals change.
-      const r = R, g = G;
       if (chosenEvent.key === 'both') {
-        if (color === 'red') {
-          num = r * (r - 1);
-          den = T * (T - 1);
-        } else {
-          num = g * (g - 1);
-          den = T * (T - 1);
-        }
+        if (color === 'red') { num = R * (R - 1); den = T * (T - 1); }
+        else { num = G * (G - 1); den = T * (T - 1); }
       } else if (chosenEvent.key === 'neither') {
-        if (color === 'red') {
-          num = g * (g - 1);
-          den = T * (T - 1);
-        } else {
-          num = r * (r - 1);
-          den = T * (T - 1);
-        }
-      } else if (chosenEvent.key === 'first') {
-        num = (color === 'red') ? r : g;
-        den = T;
-      } else if (chosenEvent.key === 'second') {
-        // symmetry: second draw marginal is same as first for hypergeometric
-        num = (color === 'red') ? r : g;
-        den = T;
+        if (color === 'red') { num = G * (G - 1); den = T * (T - 1); }
+        else { num = R * (R - 1); den = T * (T - 1); }
+      } else if (chosenEvent.key === 'first' || chosenEvent.key === 'second') {
+        num = (color === 'red') ? R : G; den = T;
       } else if (chosenEvent.key === 'atLeastOne') {
-        // 1 - P(neither)
-        const nNeither = (color === 'red') ? g * (g - 1) : r * (r - 1);
+        const nNeither = (color === 'red') ? (G * (G - 1)) : (R * (R - 1));
         const dAll = T * (T - 1);
-        num = dAll - nNeither;
-        den = dAll;
+        num = dAll - nNeither; den = dAll;
       } else if (chosenEvent.key === 'oneEach') {
-        // RG or GR: 2*r*g / (T*(T-1))
-        num = 2 * r * g;
-        den = T * (T - 1);
+        num = 2 * R * G; den = T * (T - 1);
       }
     }
 
@@ -550,16 +648,80 @@ fetch("/nav.html")
       `If a ball is drawn at random, ${returnText}, and a ball is drawn at random again, ` +
       `what is the probability that ${chosenEvent.text}?`;
 
-    // basic hints (we'll refine later)
-    hintSteps = withReplacement ? [
-      `With replacement means the two draws are independent.`,
-      `Compute the probability for each draw and multiply (or use a complement if needed).`,
-      `So the probability is \\(${fracTex(num, den)}\\).`
-    ] : [
-      `Without replacement means the second draw depends on what happened on the first draw.`,
-      `Use a tree idea: probabilities on the second draw use totals of \\(T-1\\).`,
-      `So the probability is \\(${fracTex(num, den)}\\).`
-    ];
+    // Updated hints per your specs:
+    let exprTex = '';
+    if (withReplacement) {
+      if (chosenEvent.key === 'both') {
+        const p = (color === 'red') ? fracTex(R, T) : fracTex(G, T);
+        exprTex = `${p} \\\cdot ${p}`;
+      } else if (chosenEvent.key === 'neither') {
+        const q = (color === 'red') ? fracTex(G, T) : fracTex(R, T);
+        exprTex = `${q} \\\cdot ${q}`;
+      } else if (chosenEvent.key === 'first' || chosenEvent.key === 'second') {
+        const p = (color === 'red') ? fracTex(R, T) : fracTex(G, T);
+        exprTex = `${p}`;
+      } else if (chosenEvent.key === 'atLeastOne') {
+        const q = (color === 'red') ? fracTex(G, T) : fracTex(R, T);
+        exprTex = `1 - (${q} \\\cdot ${q})`;
+      } else if (chosenEvent.key === 'oneEach') {
+        exprTex = `(${fracTex(R, T)} \\\cdot ${fracTex(G, T)}) + (${fracTex(G, T)} \\\cdot ${fracTex(R, T)})`;
+      }
+
+      hintSteps = [
+        `Since the first ball drawn was returned, we are in a "with replacement" situation: the probabilities for the second draw are independent of the outcome of the first draw.`,
+        `The probabilities in the second branches should be identical to the probabilities in the first branches.`,
+        `So, the probability that ${chosenEvent.text} is \\(${exprTex} = ${fracTex(num, den)}\\).`
+      ];
+    } else {
+      if (chosenEvent.key === 'both') {
+        if (color === 'red') exprTex = `${fracTex(R, T)} \\\cdot ${fracTex(R - 1, T - 1)}`;
+        else exprTex = `${fracTex(G, T)} \\\cdot ${fracTex(G - 1, T - 1)}`;
+      } else if (chosenEvent.key === 'neither') {
+        if (color === 'red') exprTex = `${fracTex(G, T)} \\\cdot ${fracTex(G - 1, T - 1)}`;
+        else exprTex = `${fracTex(R, T)} \\\cdot ${fracTex(R - 1, T - 1)}`;
+      } else if (chosenEvent.key === 'first' || chosenEvent.key === 'second') {
+        const p = (color === 'red') ? fracTex(R, T) : fracTex(G, T);
+        exprTex = `${p}`;
+      } else if (chosenEvent.key === 'atLeastOne') {
+        let neitherTex = '';
+        if (color === 'red') neitherTex = `${fracTex(G, T)} \\\cdot ${fracTex(G - 1, T - 1)}`;
+        else neitherTex = `${fracTex(R, T)} \\\cdot ${fracTex(R - 1, T - 1)}`;
+        exprTex = `1 - (${neitherTex})`;
+      } else if (chosenEvent.key === 'oneEach') {
+        exprTex = `(${fracTex(R, T)} \\\cdot ${fracTex(G, T - 1)}) + (${fracTex(G, T)} \\\cdot ${fracTex(R, T - 1)})`;
+      }
+
+      hintSteps = [
+        `Since the first ball drawn was not returned, we are in a "without replacement" situation: the probabilities for the second draw are dependent on the outcome of the first draw.`,
+        `The total number of remaining balls is reduced by one on the second draw.`,
+        `So, the probability that ${chosenEvent.text} is \\(${exprTex} = ${fracTex(num, den)}\\).`
+      ];
+    }
+
+
+    // Final hint: tree diagram (green leaves are the ones being summed)
+    const highlightSet = new Set();
+    if (chosenEvent.key === 'both') {
+      highlightSet.add(color === 'red' ? 'RR' : 'GG');
+    } else if (chosenEvent.key === 'neither') {
+      highlightSet.add(color === 'red' ? 'GG' : 'RR');
+    } else if (chosenEvent.key === 'oneEach') {
+      highlightSet.add('RG'); highlightSet.add('GR');
+    } else if (chosenEvent.key === 'first') {
+      if (color === 'red') { highlightSet.add('RR'); highlightSet.add('RG'); }
+      else { highlightSet.add('GG'); highlightSet.add('GR'); }
+    } else if (chosenEvent.key === 'second') {
+      if (color === 'red') { highlightSet.add('RR'); highlightSet.add('GR'); }
+      else { highlightSet.add('GG'); highlightSet.add('RG'); }
+    } else if (chosenEvent.key === 'atLeastOne') {
+      const neitherKey = (color === 'red') ? 'GG' : 'RR';
+      ['RR','RG','GR','GG'].forEach(k => { if (k !== neitherKey) highlightSet.add(k); });
+    }
+
+    hintSteps.push(treeHintHtml(
+      withReplacement ? 'Tree diagram (with replacement)' : 'Tree diagram (without replacement)',
+      buildUrnTreeSVGVertical(R, G, withReplacement, highlightSet)
+    ));
   }
 
   // -----------------------------
@@ -576,16 +738,12 @@ fetch("/nav.html")
   ];
 
   function randomPartition(total, k) {
-    // positive parts summing to total
     let cuts = [];
     for (let i = 0; i < k - 1; i++) cuts.push(randInt(1, total - 1));
     cuts.sort((a, b) => a - b);
     const parts = [];
     let prev = 0;
-    for (let i = 0; i < cuts.length; i++) {
-      parts.push(cuts[i] - prev);
-      prev = cuts[i];
-    }
+    for (let i = 0; i < cuts.length; i++) { parts.push(cuts[i] - prev); prev = cuts[i]; }
     parts.push(total - prev);
     return parts;
   }
@@ -632,9 +790,9 @@ fetch("/nav.html")
       `${articleFor(aChosen)} ${aChosen.toLowerCase()} and ${articleFor(bChosen)} ${bChosen.toLowerCase()} are selected?`;
 
     hintSteps = [
-      `Find the probability of selecting the desired type from the first population: ${countFavA}/${NA}.`,
-      `Find the probability of selecting the desired type from the second population: ${countFavB}/${NB}.`,
-      `Selections are independent, so multiply: \\(${fracTex(countFavA, NA)} \\cdot ${fracTex(countFavB, NB)} = ${fracTex(num, den)}\\).`
+      `The probability of selecting ${articleFor(aChosen)} ${aChosen.toLowerCase()} from ${NA} total ${popA.labelPlur} is \\(${fracTex(countFavA, NA)}\\).`,
+      `The probability of selecting ${articleFor(bChosen)} ${bChosen.toLowerCase()} from ${NB} total ${popB.labelPlur} is \\(${fracTex(countFavB, NB)}\\).`,
+      `Selections are independent, so multiply: \\(${fracTex(countFavA, NA)} \\\cdot ${fracTex(countFavB, NB)} = ${fracTex(num, den)}\\).`
     ];
   }
 
@@ -661,13 +819,9 @@ fetch("/nav.html")
     const items = shuffle([...pop.items]).slice(0, k);
     const counts = randomPartition(N, k);
 
-    // For each subset, choose a percentage 1..99 and compute count with property
-    const perc = [];
     const propCounts = [];
     for (let i = 0; i < k; i++) {
       const p = randInt(1, 99);
-      perc.push(p);
-      // round to nearest integer for a cleaner story
       let c = Math.round(counts[i] * p / 100);
       c = Math.max(0, Math.min(counts[i], c));
       propCounts.push(c);
@@ -676,9 +830,6 @@ fetch("/nav.html")
     const breakdown = items.map((it, i) => `${counts[i]} ${it}`).join(', ');
     const propertyLines = items.map((it, i) => `${propCounts[i]} of the ${it.toLowerCase()} are ${prop}.`).join(' ');
 
-    // Choose question subtype:
-    // A) property only: is / isn't
-    // B) property and subset: is / isn't AND is a subset
     const subtype = randInt(1, 2);
     const isNot = randInt(0, 1) === 0 ? 'is' : "isn't";
 
@@ -691,7 +842,6 @@ fetch("/nav.html")
       targetPhrase = `${isNot} ${prop}`;
     } else {
       const j = randInt(0, k - 1);
-      const subset = items[j].toLowerCase();
       const subsetSing = singularize(items[j]).toLowerCase();
       const inSubsetProp = propCounts[j];
       const inSubsetNot = counts[j] - propCounts[j];
@@ -706,15 +856,64 @@ fetch("/nav.html")
       `${propertyLines} ` +
       `What is the probability that a randomly selected ${pop.labelSing} ${targetPhrase}?`;
 
+    const subsetNames = items.map(x => x.toLowerCase());
+    const subsetList = (subsetNames.length === 2)
+      ? `${subsetNames[0]} and ${subsetNames[1]}`
+      : `${subsetNames.slice(0, -1).join(', ')}, and ${subsetNames[subsetNames.length - 1]}`;
+
+    let sumTex = '';
+    if (subtype === 1) {
+      const terms = items.map((_, i) => {
+        const first = `${fracTex(counts[i], N)}`;
+        const second = (isNot === 'is')
+          ? `${fracTex(propCounts[i], counts[i])}`
+          : `${fracTex(counts[i] - propCounts[i], counts[i])}`;
+        return `(${first} \\\cdot ${second})`;
+      });
+      sumTex = terms.join(' + ');
+    } else {
+      // single branch
+      let jj = 0;
+      for (let i = 0; i < k; i++) {
+        const cand = (isNot === 'is') ? propCounts[i] : (counts[i] - propCounts[i]);
+        if (cand === favorable) { jj = i; break; }
+      }
+      const first = `${fracTex(counts[jj], N)}`;
+      const second = (isNot === 'is') ? `${fracTex(propCounts[jj], counts[jj])}` : `${fracTex(counts[jj] - propCounts[jj], counts[jj])}`;
+      sumTex = `(${first} \\\cdot ${second})`;
+    }
+
     hintSteps = [
-      `Identify how many outcomes are favorable for the event described.`,
-      `Divide the number of favorable outcomes by the total population size (${N}).`,
-      `So the probability is \\(${fracTex(favorable, N)}\\).`
+      `The ${pop.labelPlur} are partitioned into ${subsetList}. So this gives us the probabilities for the first branch of a tree diagram.`,
+      `Each of the subsets in the partition are either ${prop} or not ${prop}. So each of the nodes at the first level branch off twice at the second stage.`,
+      `Multiply the probabilities down the branches to find the probabilities of the "AND" events.`,
+      `Sum the probabilities of the events that make up the situation we are interested in: \\(${sumTex}\\).`
     ];
+
+
+    // Final hint: tree diagram (green leaves are the ones being summed)
+    const highlight = (i, which) => {
+      if (subtype === 1) {
+        return (isNot === 'is') ? (which === 'prop') : (which === 'not');
+      }
+      // property AND a specific subset: highlight only that subset's relevant leaf
+      let jj = 0;
+      for (let t = 0; t < k; t++) {
+        const cand = (isNot === 'is') ? propCounts[t] : (counts[t] - propCounts[t]);
+        if (cand === favorable) { jj = t; break; }
+      }
+      if (i !== jj) return false;
+      return (isNot === 'is') ? (which === 'prop') : (which === 'not');
+    };
+
+    hintSteps.push(treeHintHtml(
+      'Tree diagram',
+      buildPartitionPropTreeSVGVertical(subsetNames, counts, prop, propCounts, highlight)
+    ));
   }
 
   // -----------------------------
-  // Start button: choose type 1..4
+  // Start button
   // -----------------------------
   startBtn.addEventListener('click', () => {
     playSound('click-sound');

@@ -90,13 +90,18 @@ fetch("/nav.html")
     </figure>
 
     <p>\[P(G_1|E) = P(((G_1 \cap R_2) \cup (G_1 \cap G_2))|E) =  \frac{P(G_1 \cap R_2) + P(G_1 \cap G_2)}{P(R_1 \cap G_2) + P(G_1 \cap R_2) + 
-      P(G_1 \cap G_2)} = \frac{\frac{24}{90} + \frac{30}{90}}{\frac{24}{90} + \frac{24}{90} + \frac{30}{90}}\]</p>
+      P(G_1 \cap G_2)} = \frac{\frac{24}{90} + \frac{30}{90}}{\frac{24}{90} + \frac{24}{90} + \frac{30}{90}} = \frac{54}{78} = \frac{9}{13}\]</p>
 
     <p>Since the preceding is the sort of question we often want to answer, we have a special name for a narrow case of it.  Let \(F_1\),... \(F_n\) be 
       a partition of a sample space \(S\).  We saw previously the Law of Total Probability,
       \[P(E) = P(F_1) \cdot P(E|F_1) + P(F_2) \cdot P(E|F_2) + ... + P(F_n) \cdot P(E|F_n)\]
       A related question is to find \(P(F_i|E)\).  Rearranging the multiplication rule, we obtain Bayes' Theorem:
       \[P(F_i|E) = \frac{P(F_i \cap E)}{P(E)} = \frac{P(F_i) \cdot P(E|F_i)}{P(F_1) \cdot P(E|F_1) + P(F_2) \cdot P(E|F_2) + ... + P(F_n) \cdot P(E|F_n)}\]
+      In the sushi example from the previous activity, to find the probability that a person is a nurse <b>given that</b> they like sushi, we enter the 
+      reduced sample space of people who like sushi (via the Law of Total Probability): this will be our denominator.  Then our numerator, the event we're 
+      interested in, is the nurses who like sushi: this is our numerator:
+      \[P(N|S) = \frac{P(N) \cdot P(S|N)}{P(A) \cdot P(S|A) + P(T) \cdot P(S|T) + P(N) \cdot P(S|N)} = \frac{\frac{7}{100}}{\frac{30}{100} + 
+      \frac{20}{100} + \frac{7}{100}} = \frac{7}{57}\]
     </p>
       
 

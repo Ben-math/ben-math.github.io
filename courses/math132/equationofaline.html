@@ -75,37 +75,25 @@ x & f(x) \\
 \hline
 \end{array}
 \]
+      There was an oversight in the preceding definition of our function.  We did not specify its <b>domain</b>: the set of permitted inputs.  Our 
+      table of values above restricted our attention to integer inputs, but if we had written
+      \[f: \mathbb{R} \mapsto \mathbb{R}\]
+      this would tell us that the function's domain is the set of real numbers, and so is its codomain (the set of allowable outputs).  The set of 
+      outputs the function actually achieves is called its <b>range</b>.  The above could also be read as "\(f\) is a map from the real numbers to 
+      the real numbers".
     </p>
 
       
-    <p>Say we want to find the probability of rolling either a 6 or less than a 3, where \(X\) is the outcome of the roll of a 6-sided die.  The two 
-      events, "rolling a 6" and "rolling less than 3" are mutually exclusive: they don't overlap.  So,
-    \[P(X < 3 \cup X = 6) = P(X < 3) + P(X = 6)\]
-    Then, the events of rolling less than a 3 is the same as rolling a 2 or lower, which is the same as rolling a 1 or 2.  So,
-    \[P(X < 3) + P(X = 6) = P(X = 1) + P(X = 2) + P(X = 6) = \frac{1}{6} + \frac{1}{6} + \frac{1}{6} = \frac{3}{6} = \frac{1}{2}\]
+    <p>Our perhaps most familiar means of representing a function is graphically.  We plot the set of ordered pairs on a plane, where its horizontal 
+      position is determined by the independent variable (on the \(x\)-axis) and its vertical position is determined by the dependent variable (on the 
+      \(y\)-axis).  In the preceding example, if our domain and codomain were the set of integers,
+      \[f(x) = 2x + 3, \hspace{2cm} f:\mathbb{Z} \mapsto \mathbb{Z}\]
+      then we would obtain a scatter plot:
+
+      Whereas if the domain and codomain were the set of real numbers, we'd obtain a line:
     </p>
 
 
-    <p>Things get complicated when we want to find the probability that one of two events will occur when they are not mutually exclusive (they overlap).
-      For instance, what is the probability of rolling higher than a 3, or rolling an even number?  The outcomes in this event are
-      \[\{2, 4, 5, 6\}\]
-      so the probability is
-      \[P(X > 3 \cup X = \text{even}) = \frac{4}{6}\]
-      However, note that the outcomes in the individual events "rolling higher than a 3" and "rolling an even number" are
-      \[\{4, 5, 6\} \text{ and } \{2, 4, 6\}\]
-      respectively.  If we were to add the probabilities of those events, we'd get
-      \[P(X > 3) + P(X = \text{even}) = \frac{3}{6} + \frac{3}{6} = \frac{6}{6} = 1\]
-      which is certainly not true.  The issue here is that we have double-counted the overlap between the two events.  This leads us to the
-      inclusion-exclusion princple,
-      \[P(E \cup F) = P(E) + P(F) - P(E \cap F)\]
-      That is, the overlap between the two events is
-      \[P(X > 3 \cap X = \text{even}) = \frac{2}{6}\]
-      since there are 2 numbers which are both greater than 3 and even, namely 4 and 6.  Using this information together with the inclusion-exclusion 
-      princple, we can now solve the problem:
-      \[P(X > 3 \cup X = \text{even}) = P(X > 3) + P(X = \text{even}) - P(X > 3 \cap X = \text{even}) = \frac{3}{6} + \frac{3}{6} - \frac{2}{6} = 
-      \frac{4}{6}\]
-      which is the same result we obtained previously!
-    </p>
 
     
 

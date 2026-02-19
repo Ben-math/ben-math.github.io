@@ -94,7 +94,9 @@ fetch("/nav.html")
 
     <p>Since the preceding is the sort of question we often want to answer, we have a special name for a narrow case of it.  Let \(F_1\),... \(F_n\) be 
       a partition of a sample space \(S\).  We saw previously the Law of Total Probability,
-      
+      \[P(E) = P(E|F_1) + P(F_2) \cdot P(E|F_2) + ... + P(F_n) \cdot P(E|F_n)\]
+      A related question is to find \(P(F_i|E)\).  Rearranging the multiplication rule, we obtain Bayes' Theorem:
+      \[P(F_i|E) = \frac{P(F_i \cap E)}{P(E)} = \frac{P(F_i) \cdot P(E|F_i)}{P(F_1) \cdot P(E|F_1) + P(F_2) \cdot P(E|F_2) + ... + P(F_n) \cdot P(E|F_n)}\]
     </p>
       
 

@@ -42,105 +42,36 @@ fetch("/nav.html")
   </header>
   <main>
 
-    <p>Our next step in studying probability is some basic combinatorics (the study of counting).  Our bread and butter is the 
-      <b>multiplication principle</b>: if there are \(n\) many ways of doing one thing, and \(m\) many ways of doing another, then there are 
-      \[m \cdot n\] 
-      many ways of doing both things.  This generalizes to arbitrarily large combinations of events.
+    <p>In our final activity, we tackle conditional probability and Bayes' Theorem.  We have already dealt with conditional probability in the last 
+      activity, although somewhat implicitly.  The "multiplying down the branches" of a tree diagram to get the "AND" probabilities was using the 
+      <b>multiplication rule</b>,
+      \[P(E \cap F) = P(E) \cdot P(F|E)\]
+      That is, the probability that both \(E\) and \(F\) happen is the product of the probability that \(E\) happens with the probability that \(F\) 
+      happens <i>given that</i> \(E\) has happened.  In the "without replacement" urn example, we saw that the probabilities on our second draw 
+      <b>depended</b> on what happened on the first draw.  That is, \(F\) <b>depended</b> on \(E\):
     </p>
+
+    <figure style="text-align: center;">
+      <img src="fig11.png"
+           alt="Without replacement urn example"
+           style="display: inline-block; width: 60%;">
+    </figure>
     
-    <p>For instance, if you choose one of 5 movies to watch, one of 3 snacks to eat, and one of 8 friends to watch the movie with, then in total 
-      there are
-      \[5 \cdot 3 \cdot 8 = 120\]
-      many possible triples you could pick.
+    <p>In the "with replacement" urn example, we had that the second draw <b>did not depend</b> on what happened on the first draw.  That is, \(E\) 
+      and \(F\) were <b>independent events</b>, so
+      \[P(F|E) = P(F)\]
+      which simplifies the multiplication rule to
+      \[P(E \cap F) = P(E) \cdot P(F)\]
+      See below that the probabilities on the second branches are the same as those in the first branches in this case:
     </p>
+
+    <figure style="text-align: center;">
+      <img src="fig12.png"
+           alt="With replacement urn example"
+           style="display: inline-block; width: 60%;">
+    </figure>
 
       
-    <p>This same principle applies to probability.  You have a \(\frac{1}{3}\) chance of winning a game of rock-paper scissors, and a \(\frac{1}{6}\) chance 
-      of rolling a 5 on a 6-sided die.  So, the probability that you both win a game of rock paper scissors <b>and</b> roll a 5 on the die is
-      \[\frac{1}{3} \cdot \frac{1}{6} = \frac{1}{18}\]
-    </p>
-
-
-    <p>A visual aid often used in the computation of probabiltiies where multiple events are involved is a <b>tree diagram</b>.  Suppose we conduct 
-      two experiments in sequence.  The sample space for each is partitioned into events with some prescribed probabilities.  Then the first experiment 
-      gives us the first branches, with those probabilities, and then off of each of those branches, we have branches corresponding to the second 
-      experiment branching off.  Then, the ends of the branches (called leaves) correspond to the probability of an "AND" event: both the first branch 
-      occurring on the first experiment, and the second branch occurring on the second experiment (given that the first branch occurred).  So, we multiply 
-      down the branches to get the probability that both of these occur.
-    </p>
-
-    <p>For a concrete example, suppose we have a group of 100 people.  Of these, 40 are accountants, 50 are teachers, and 10 are nurses.  Of the 
-      accountants, 30 like sushi, and 10 don't.  Of the teachers, 20 like sushi, and 30 don't.  Of the nurses, 7 like sushi, and 3 don't.  If we 
-      randomly select one of the 100 people, we can find the probability that the person belongs to one of \(3 \cdot 2 = 6\) groups (accountant that 
-      likes sushi, accountant that doesn't, teacher that likes sushi, teacher that doesn't, nurse that likes sushi, nurse that doesn't) using a 
-      tree diagram.  Let A, T, N represent the events of being an accountant, teacher, or nurse respectively, and let \(S\) and \(\overline{S}\) be the 
-      events of liking or not liking sushi respectively.  Then we have the following tree diagram:
-    </p>
-
-    <figure style="text-align: center;">
-      <img src="fig10.png" alt="Tree diagram for profession and sushi example" style="display: inline-block;">
-    </figure>
-
-    <p>We can check that we haven't made a mistake in creating our tree diagram by verifying that adding the probabilities at all of the leaves results 
-      in 1: since we have partitioned the sample space, so the probability that <b>an</b> event within the sample space occurs is 100%.  Inexplicably, 
-      people tend to be much more comfortable working with decimals than fractions.  You can certainly create a tree diagram that avoids 
-      fractions, but it is encouraged to use fractions, as these are exact.
-    </p>
-
-    <p>The preceding example used events which were not independent: the odds of liking sushi varied <b>depending</b> on the profession of the person 
-      chosen.  This leads to our discussion of the two general types of tree diagrams you will draw: where the events are <b>independent</b>, and where 
-      they are not.
-    </p>
-
-    <p>Suppose an urn contains 4 red balls and 6 green balls.  If you draw a ball at random, put it back in the urn, and then draw a ball at random 
-      again, then the probabilities associated with the second draw are <b>independent</b> of what happened on the first draw.  This is a  
-      <i>with replacement</i> combinatorics example.  If we let \(R_1\), \(G_1\), \(R_2\), and \(G_2\) represent the events of drawing a red first, 
-      drawing a green first, drawing a red second, and drawing a green second respectively, then
-      \[P(R_1) = P(R_2) = \frac{4}{10} = 0.4 \text{ and } P(G_1) = P(G_2) = \frac{6}{10} = 0.6\]
-      So we have the following tree diagram (we'll write \(R_1R_2\) as an abbreviation of \(R_1 \cap R_2\)):
-    </p>
-
-    <figure style="text-align: center;">
-      <img src="fig11.png" alt="With replacement urn example" style="display: inline-block;">
-    </figure>
-
-    <p>Now, suppose again that an urn contains 4 red balls and 6 green balls.  If you draw a ball at random, but this time <i>don't put it back</i>, and 
-      then draw a ball at random again, then the probabilities associated with the second draw <b>depend</b> on what happened on the first draw.  This is 
-      a  <i>without replacement</i> combinatorics example.  If we let \(R_1\), \(G_1\), \(R_2\), and \(G_2\) represent the events of drawing a red first, 
-      drawing a green first, drawing a red second, and drawing a green second respectively, then we <b>given that</b> we draw a red first, the 
-      probability of drawing a red second have changed: there are 9 balls remaining, 3 of which are red:
-      \[P(R_2|R_1) = \frac{3}{9}\]
-      We obtain the following tree diagram in this case (we can verify we didn't make an error at the end by adding all the probabilities of the leaves 
-      and obtaining 1):
-    </p>
-
-    <figure style="text-align: center;">
-      <img src="fig12.png" alt="Without replacement urn example" style="display: inline-block;">
-    </figure>
-
-    <p>The leaves at the end of a tree diagram represent a partition of the sample space: they are all mutually exclusive events.  This helps us answer 
-      some more complex probability questions.  For instance, if we want to know the probability of drawing <i>at least one green ball</i>, then we sum 
-      the probabilities corresponding to the events having at least one green:
-      \[P((R_1 \cap G_2) \cup (G_1 \cap R_2) \cup (G_1 \cap G_2)) = P(R_1 \cap G_2) + P(G_1 \cap R_2) + P(G_1 \cap G_2) = \frac{24}{90} + \frac{24}{90} + 
-      \frac{30}{90} = \frac{78}{90} = \frac{13}{15}\]
-    </p>
-
-    <figure style="text-align: center;">
-      <img src="fig13.png" alt="Without replacement urn example" style="display: inline-block;">
-    </figure>
-
-    <p>A specific example which occurs frequently is the Law of Total Probability.  If a sample space is partitioned into events \(F_1\), \(F_2\), ..., 
-      \(F_n\), then
-      \[P(E) = P(E|F_1) + P(E|F_2) + ... + P(E|F_n)\]
-      For instance, in our first example, to find the probability that a person likes sushi, we sum the probability that they like sushi <i>given that 
-      they are an accountant</i>, with the probability they like sushi <i>given that they are a teacher</i>, with the probability that they like sushi 
-      <i>given that they are a nurse</i>:
-      \[P(S) = P(S|A) + P(S|T) + P(S|N) = \frac{30}{100} + \frac{20}{100} + \frac{7}{100} = \frac{57}{100}\]
-    </p>
-
-    <figure style="text-align: center;">
-      <img src="fig14.png" alt="Law of Total Probability example" style="display: inline-block;">
-    </figure>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

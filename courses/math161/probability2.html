@@ -142,7 +142,7 @@ fetch("/nav.html")
 
     <p>A specific example which occurs frequently is the Law of Total Probability.  If a sample space is partitioned into events \(F_1\), \(F_2\), ..., 
       \(F_n\), then
-      \[P(E) = P(E|F_1) + P(E|F_2) + ... + P(E|F_n)\]
+      \[P(E) = P(F_1) \cdot P(E|F_1) + P(F_2) \cdot P(E|F_2) + ... + P(F_n) \cdot P(E|F_n)\]
       For instance, in our first example, to find the probability that a person likes sushi, we sum the probability that they like sushi <i>given that 
       they are an accountant</i>, with the probability they like sushi <i>given that they are a teacher</i>, with the probability that they like sushi 
       <i>given that they are a nurse</i>:

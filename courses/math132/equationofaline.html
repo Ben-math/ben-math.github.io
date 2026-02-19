@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,6 +12,22 @@
   <script id="MathJax-script" async
     src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
   </script>
+
+  <style>
+    .plot-wrap {
+      display: flex;
+      justify-content: center;
+      margin: 0.75em 0 1.75em 0;
+    }
+    svg.plot {
+      max-width: 100%;
+      height: auto;
+      border-radius: 14px;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+      background: white;
+    }
+  </style>
+
 </head>
 <body>
   <header>
@@ -91,15 +108,13 @@ x & f(x) \\
       then we would obtain a scatter plot:
     </p>
 
-    <div>
-      <p style="text-align:center;"><b>Domain: Integers</b></p>
-      <svg id="integer-plot" width="300" height="300"></svg>
+    <div class="plot-wrap">
+      <svg id="integer-plot" class="plot" width="360" height="360" viewBox="0 0 360 360" aria-label="Integer-domain plot of f(x)=2x+3"></svg>
     </div>
 
     <p>Whereas if the domain and codomain were the set of real numbers, we'd obtain a line:</p>
-    <div>
-      <p style="text-align:center;"><b>Domain: Real Numbers</b></p>
-      <svg id="real-plot" width="300" height="300"></svg>
+    <div class="plot-wrap">
+      <svg id="real-plot" class="plot" width="360" height="360" viewBox="0 0 360 360" aria-label="Real-domain plot of f(x)=2x+3"></svg>
     </div>
 
 
@@ -228,6 +243,260 @@ x & f(x) \\
     const vowelLetter = /^[aeiou]/i.test(first);
     const anInitialism = /^[FHLMNRSX]/.test(first); // “an” F, H, L, M, N, R, S, X
     return (vowelLetter || anInitialism) ? 'an' : 'a';
+  }
+
+
+
+  // -----------------------------
+  // Plotting (SVG): reusable for this activity
+  // -----------------------------
+  function plotLinearFunction(svgOrId, f, opts = {}) {
+    const svg = (typeof svgOrId === 'string') ? document.getElementById(svgOrId) : svgOrId;
+    if (!svg) return;
+
+    const domain = opts.domain || 'reals'; // 'reals' or 'integers'
+    const xMin = -10, xMax = 10, yMin = -10, yMax = 10;
+    const tickStep = 2;
+
+    // Clear old contents
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+    // Ensure viewBox exists (for responsive scaling)
+    const w = svg.viewBox && svg.viewBox.baseVal && svg.viewBox.baseVal.width ? svg.viewBox.baseVal.width : (svg.width && svg.width.baseVal ? svg.width.baseVal.value : 360);
+    const h = svg.viewBox && svg.viewBox.baseVal && svg.viewBox.baseVal.height ? svg.viewBox.baseVal.height : (svg.height && svg.height.baseVal ? svg.height.baseVal.value : 360);
+    if (!svg.getAttribute('viewBox')) svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+
+    const pad = 34;
+
+    const NS = "http://www.w3.org/2000/svg";
+    const el = (name) => document.createElementNS(NS, name);
+
+    const X = (x) => pad + (x - xMin) / (xMax - xMin) * (w - 2 * pad);
+    const Y = (y) => h - pad - (y - yMin) / (yMax - yMin) * (h - 2 * pad);
+
+    // A gentle "card" border inside the SVG for your rounded-corner vibe
+    const frame = el('rect');
+    frame.setAttribute('x', pad);
+    frame.setAttribute('y', pad);
+    frame.setAttribute('width', w - 2 * pad);
+    frame.setAttribute('height', h - 2 * pad);
+    frame.setAttribute('rx', 12);
+    frame.setAttribute('ry', 12);
+    frame.setAttribute('fill', 'white');
+    frame.setAttribute('stroke', 'rgba(0,0,0,0.25)');
+    frame.setAttribute('stroke-width', '1');
+    svg.appendChild(frame);
+
+    // Grid
+    const grid = el('g');
+    grid.setAttribute('stroke', 'rgba(0,0,0,0.08)');
+    grid.setAttribute('stroke-width', '1');
+
+    for (let t = xMin; t <= xMax; t += tickStep) {
+      const v = el('line');
+      v.setAttribute('x1', X(t));
+      v.setAttribute('y1', Y(yMin));
+      v.setAttribute('x2', X(t));
+      v.setAttribute('y2', Y(yMax));
+      grid.appendChild(v);
+    }
+    for (let t = yMin; t <= yMax; t += tickStep) {
+      const hline = el('line');
+      hline.setAttribute('x1', X(xMin));
+      hline.setAttribute('y1', Y(t));
+      hline.setAttribute('x2', X(xMax));
+      hline.setAttribute('y2', Y(t));
+      grid.appendChild(hline);
+    }
+    svg.appendChild(grid);
+
+    // Axes
+    const axes = el('g');
+    axes.setAttribute('stroke', 'rgba(0,0,0,0.85)');
+    axes.setAttribute('stroke-width', '1.5');
+
+    // x-axis (y=0)
+    const xAxis = el('line');
+    xAxis.setAttribute('x1', X(xMin));
+    xAxis.setAttribute('y1', Y(0));
+    xAxis.setAttribute('x2', X(xMax));
+    xAxis.setAttribute('y2', Y(0));
+    axes.appendChild(xAxis);
+
+    // y-axis (x=0)
+    const yAxis = el('line');
+    yAxis.setAttribute('x1', X(0));
+    yAxis.setAttribute('y1', Y(yMin));
+    yAxis.setAttribute('x2', X(0));
+    yAxis.setAttribute('y2', Y(yMax));
+    axes.appendChild(yAxis);
+
+    svg.appendChild(axes);
+
+    // Ticks + labels
+    const ticks = el('g');
+    const tickLen = 6;
+
+    const labelStyle = (txt) => {
+      txt.setAttribute('font-size', '12');
+      txt.setAttribute('fill', 'rgba(0,0,0,0.75)');
+      txt.setAttribute('font-family', 'system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif');
+    };
+
+    for (let t = xMin; t <= xMax; t += tickStep) {
+      const mark = el('line');
+      mark.setAttribute('x1', X(t));
+      mark.setAttribute('y1', Y(0) - tickLen / 2);
+      mark.setAttribute('x2', X(t));
+      mark.setAttribute('y2', Y(0) + tickLen / 2);
+      mark.setAttribute('stroke', 'rgba(0,0,0,0.7)');
+      mark.setAttribute('stroke-width', '1');
+      ticks.appendChild(mark);
+
+      const lab = el('text');
+      labelStyle(lab);
+      lab.setAttribute('x', X(t));
+      lab.setAttribute('y', Y(0) + 18);
+      lab.setAttribute('text-anchor', 'middle');
+      lab.textContent = t.toString();
+      ticks.appendChild(lab);
+    }
+
+    for (let t = yMin; t <= yMax; t += tickStep) {
+      const mark = el('line');
+      mark.setAttribute('x1', X(0) - tickLen / 2);
+      mark.setAttribute('y1', Y(t));
+      mark.setAttribute('x2', X(0) + tickLen / 2);
+      mark.setAttribute('y2', Y(t));
+      mark.setAttribute('stroke', 'rgba(0,0,0,0.7)');
+      mark.setAttribute('stroke-width', '1');
+      ticks.appendChild(mark);
+
+      if (t !== 0) { // avoid clutter at the origin
+        const lab = el('text');
+        labelStyle(lab);
+        lab.setAttribute('x', X(0) - 10);
+        lab.setAttribute('y', Y(t) + 4);
+        lab.setAttribute('text-anchor', 'end');
+        lab.textContent = t.toString();
+        ticks.appendChild(lab);
+      }
+    }
+
+    svg.appendChild(ticks);
+
+    // Axis labels at the ends
+    const axisLabels = el('g');
+
+    const xLab = el('text');
+    labelStyle(xLab);
+    xLab.setAttribute('font-size', '14');
+    xLab.setAttribute('font-weight', '700');
+    xLab.setAttribute('x', X(xMax) + 12);
+    xLab.setAttribute('y', Y(0) + 5);
+    xLab.setAttribute('text-anchor', 'start');
+    xLab.textContent = 'x';
+    axisLabels.appendChild(xLab);
+
+    const yLab = el('text');
+    labelStyle(yLab);
+    yLab.setAttribute('font-size', '14');
+    yLab.setAttribute('font-weight', '700');
+    yLab.setAttribute('x', X(0) + 6);
+    yLab.setAttribute('y', Y(yMax) - 10);
+    yLab.setAttribute('text-anchor', 'start');
+    yLab.textContent = 'y';
+    axisLabels.appendChild(yLab);
+
+    svg.appendChild(axisLabels);
+
+    // Clip region so the plotted line/points stay inside the frame
+    const defs = el('defs');
+    const clipPath = el('clipPath');
+    const clipId = `clip-${svg.id || Math.random().toString(16).slice(2)}`;
+    clipPath.setAttribute('id', clipId);
+
+    const clipRect = el('rect');
+    clipRect.setAttribute('x', pad);
+    clipRect.setAttribute('y', pad);
+    clipRect.setAttribute('width', w - 2 * pad);
+    clipRect.setAttribute('height', h - 2 * pad);
+    clipRect.setAttribute('rx', 12);
+    clipRect.setAttribute('ry', 12);
+
+    clipPath.appendChild(clipRect);
+    defs.appendChild(clipPath);
+    svg.appendChild(defs);
+
+    const plotLayer = el('g');
+    plotLayer.setAttribute('clip-path', `url(#${clipId})`);
+    svg.appendChild(plotLayer);
+
+    // --- Plot ---
+    if (domain === 'integers') {
+      const pts = el('g');
+      for (let x = xMin; x <= xMax; x++) {
+        const y = f(x);
+        if (typeof y !== 'number' || !Number.isFinite(y)) continue;
+        if (y < yMin || y > yMax) continue;
+
+        const dot = el('circle');
+        dot.setAttribute('cx', X(x));
+        dot.setAttribute('cy', Y(y));
+        dot.setAttribute('r', '4.3');
+        dot.setAttribute('fill', 'rgba(220, 53, 69, 0.95)'); // friendly red
+        dot.setAttribute('stroke', 'rgba(0,0,0,0.25)');
+        dot.setAttribute('stroke-width', '1');
+        pts.appendChild(dot);
+      }
+      plotLayer.appendChild(pts);
+    } else {
+      // Reals: draw the segment clipped to the viewing box in world coords
+      function clipLineToRect(x1, y1, x2, y2, rxMin, rxMax, ryMin, ryMax) {
+        // Liang–Barsky
+        let t0 = 0, t1 = 1;
+        const dx = x2 - x1, dy = y2 - y1;
+        const p = [-dx, dx, -dy, dy];
+        const q = [x1 - rxMin, rxMax - x1, y1 - ryMin, ryMax - y1];
+
+        for (let i = 0; i < 4; i++) {
+          if (p[i] === 0) {
+            if (q[i] < 0) return null;
+          } else {
+            const r = q[i] / p[i];
+            if (p[i] < 0) {
+              if (r > t1) return null;
+              if (r > t0) t0 = r;
+            } else {
+              if (r < t0) return null;
+              if (r < t1) t1 = r;
+            }
+          }
+        }
+        return {
+          x1: x1 + t0 * dx,
+          y1: y1 + t0 * dy,
+          x2: x1 + t1 * dx,
+          y2: y1 + t1 * dy
+        };
+      }
+
+      const A = { x: xMin, y: f(xMin) };
+      const B = { x: xMax, y: f(xMax) };
+      const clipped = clipLineToRect(A.x, A.y, B.x, B.y, xMin, xMax, yMin, yMax);
+
+      if (clipped) {
+        const seg = el('line');
+        seg.setAttribute('x1', X(clipped.x1));
+        seg.setAttribute('y1', Y(clipped.y1));
+        seg.setAttribute('x2', X(clipped.x2));
+        seg.setAttribute('y2', Y(clipped.y2));
+        seg.setAttribute('stroke', 'rgba(13, 110, 253, 0.95)'); // friendly blue
+        seg.setAttribute('stroke-width', '3.2');
+        seg.setAttribute('stroke-linecap', 'round');
+        plotLayer.appendChild(seg);
+      }
+    }
   }
 
 
@@ -696,86 +965,14 @@ x & f(x) \\
       hintIndex++;
     }
   });
+
+  // -----------------------------
+  // Demo plots for the intro text
+  // -----------------------------
+  plotLinearFunction('integer-plot', (x) => 2 * x + 3, { domain: 'integers' });
+  plotLinearFunction('real-plot', (x) => 2 * x + 3, { domain: 'reals' });
+
 </script>
-
-  <script>
-function drawAxes(svg, xMin, xMax, yMin, yMax) {
-  const w = svg.viewBox.baseVal.width || svg.width.baseVal.value;
-  const h = svg.viewBox.baseVal.height || svg.height.baseVal.value;
-
-  function X(x) { return (x - xMin) / (xMax - xMin) * w; }
-  function Y(y) { return h - (y - yMin) / (yMax - yMin) * h; }
-
-  const axes = document.createElementNS("http://www.w3.org/2000/svg", "g");
-
-  const xAxis = document.createElementNS(axes.namespaceURI, "line");
-  xAxis.setAttribute("x1", X(xMin));
-  xAxis.setAttribute("y1", Y(0));
-  xAxis.setAttribute("x2", X(xMax));
-  xAxis.setAttribute("y2", Y(0));
-
-  const yAxis = document.createElementNS(axes.namespaceURI, "line");
-  yAxis.setAttribute("x1", X(0));
-  yAxis.setAttribute("y1", Y(yMin));
-  yAxis.setAttribute("x2", X(0));
-  yAxis.setAttribute("y2", Y(yMax));
-
-  [xAxis, yAxis].forEach(l => {
-    l.setAttribute("stroke", "black");
-    l.setAttribute("stroke-width", "1");
-    axes.appendChild(l);
-  });
-
-  svg.appendChild(axes);
-  return { X, Y };
-}
-
-function plotIntegers(svg) {
-  const xMin = -5, xMax = 5;
-  const yMin = -5, yMax = 15;
-
-  const { X, Y } = drawAxes(svg, xMin, xMax, yMin, yMax);
-
-  for (let x = xMin; x <= xMax; x++) {
-    const y = 2 * x + 3;
-    const dot = document.createElementNS(svg.namespaceURI, "circle");
-    dot.setAttribute("cx", X(x));
-    dot.setAttribute("cy", Y(y));
-    dot.setAttribute("r", 4);
-    dot.setAttribute("fill", "crimson");
-    svg.appendChild(dot);
-  }
-}
-
-function plotReals(svg) {
-  const xMin = -5, xMax = 5;
-  const yMin = -5, yMax = 15;
-
-  const { X, Y } = drawAxes(svg, xMin, xMax, yMin, yMax);
-
-  const path = document.createElementNS(svg.namespaceURI, "path");
-  let d = "";
-
-  const steps = 200;
-  for (let i = 0; i <= steps; i++) {
-    const x = xMin + (xMax - xMin) * i / steps;
-    const y = 2 * x + 3;
-    d += (i === 0 ? "M" : "L") + X(x) + " " + Y(y) + " ";
-  }
-
-  path.setAttribute("d", d);
-  path.setAttribute("fill", "none");
-  path.setAttribute("stroke", "steelblue");
-  path.setAttribute("stroke-width", "2");
-
-  svg.appendChild(path);
-}
-
-plotIntegers(document.getElementById("integer-plot"));
-plotReals(document.getElementById("real-plot"));
-</script>
-
-
 
   <audio id="click-sound" src="button.mp3" preload="auto"></audio>
   <audio id="set-sound" src="set2.mp3" preload="auto"></audio>

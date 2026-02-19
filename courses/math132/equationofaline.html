@@ -163,6 +163,17 @@ x & f(x) \\
       Plotting both lines on the same set of axes, we can see that their point of intersection is indeed \(\left(-\frac{15}{7},-\frac{9}{7}\right)\):
     </p>
 
+    <div class="plot-wrap">
+      <svg id="intersection-plot"
+           class="plot"
+           width="360"
+           height="360"
+           viewBox="0 0 360 360"
+           aria-label="Intersection of two lines">
+      </svg>
+    </div>
+
+
 
 
     
@@ -543,6 +554,54 @@ x & f(x) \\
       }
     }
   }
+
+
+    function plotMultipleLinearFunctions(svgId, functions, intersection = null) {
+  const svg = document.getElementById(svgId);
+  if (!svg || functions.length === 0) return;
+
+  // Draw axes/grid using the first function
+  plotLinearFunction(svg, functions[0].f, { domain: 'reals' });
+
+  // Overlay remaining lines
+  for (let i = 1; i < functions.length; i++) {
+    const layer = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    svg.appendChild(layer);
+
+    plotLinearFunction(layer, functions[i].f, { domain: 'reals' });
+  }
+
+  // Plot intersection point if provided
+  if (intersection) {
+    const { x, y, label } = intersection;
+
+    const pad = 34;
+    const w = svg.viewBox.baseVal.width;
+    const h = svg.viewBox.baseVal.height;
+
+    const X = (x) => pad + (x + 10) / 20 * (w - 2 * pad);
+    const Y = (y) => h - pad - (y + 10) / 20 * (h - 2 * pad);
+
+    const NS = "http://www.w3.org/2000/svg";
+
+    const dot = document.createElementNS(NS, "circle");
+    dot.setAttribute("cx", X(x));
+    dot.setAttribute("cy", Y(y));
+    dot.setAttribute("r", 5.5);
+    dot.setAttribute("fill", "black");
+    svg.appendChild(dot);
+
+    const text = document.createElementNS(NS, "text");
+    text.setAttribute("x", X(x) + 8);
+    text.setAttribute("y", Y(y) - 8);
+    text.setAttribute("font-size", "13");
+    text.setAttribute("font-weight", "600");
+    text.setAttribute("fill", "rgba(0,0,0,0.85)");
+    text.textContent = label;
+    svg.appendChild(text);
+  }
+}
+
 
 
   function fracTex(num, den) {
@@ -1017,6 +1076,19 @@ x & f(x) \\
   plotLinearFunction('integer-plot', (x) => 2 * x + 3, { domain: 'integers' });
   plotLinearFunction('real-plot', (x) => 2 * x + 3, { domain: 'reals' });
   plotLinearFunction('slope-example-plot', (x) => -x / 3 - 2, { domain: 'reals' });
+  plotMultipleLinearFunctions(
+    'intersection-plot',
+    [
+      { f: (x) => 2 * x + 3 },
+      { f: (x) => -x / 3 - 2 }
+    ],
+    {
+      x: -15 / 7,
+      y: -9 / 7,
+      label: "(-15/7, -9/7)"
+    }
+  );
+
 
 
 </script>

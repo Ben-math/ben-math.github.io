@@ -43,34 +43,21 @@ fetch("/nav.html")
   </header>
   <main>
 
-    <p>We begin our introduction to probability with the simplest case: when an experiment is performed with equally likely outcomes.  Here
-    "experiment" need not refer to the hard science you had in mind, but something as simple as rolling a 6-sided die.  There are 6 equally likely
-    outcomes: the numbers from one to six.  We call the set of all possible outcomes the <b>sample space</b>, denoted by S:
-    \[S = \{1,2,3,4,5,6\}\]
-      An <b>outcome</b> is a single element of the sample space, and an <b>event</b> is a subset of the sample space. Each of the six outcomes in this 
-      example are equally likely (assuming the die is not weighted), and it is not possible for any two of the outcomes to occur.  This property: 
-      that the outcomes do not overlap, is that they are <b>mutually exclusive</b>.  We will see that when events
-      are mutually exclusive, the probability that any one of them happens is equal to the sum of their individual probabilities.
+    <p>A function \(f\) is a rule which assigns to each input \(a\) a unique output \(b\), written
+      \[f(a) = b\]
+      The input is called the independent variable, and the output the dependent variable.  They are called variables because they vary, and the 
+      dependent variable is so named because its value <b>depends</b> on the value of the independent variable.  Traditionally, the letter \(x\) 
+      is often used to represent the independent variable, and the letter \(y\) to represent the dependent variable.
     </p>
     
-    <p>When there are \(n\) many equally likely outcomes, then the probability of any one of them occurring is
-    \[\frac{1}{n}\]
-      Since individual outcomes, by their nature, are mutually exclusive, the odds of one of \(x\) many of them happening is
-      \[\frac{x}{n}\]
-      For instance, if a group of animals consists of 15 dogs, 20 cats, and 3 kangaroos, and an animal is selected at random, let \(X\) be the 
-      selected animal.  The probability of selecting a kangaroo is
-      \[P(X = \text{kangaroo}) = \frac{3}{38}\]
-      since there are 38 equally likely outcomes (the 38 total animals), 3 of which are in the event we are interested in (the 3 kangaroos).  To find 
-      the probability that either a cat <b>or</b> a dog is selected, since an animal can't be both a cat and a dog simultaneously, these events are
-      mutually exclusive, and
-      \[P(X = \text{cat} \cup X = \text{dog}) = P(X = \text{cat}) + P(X = \text{dog}) = \frac{20}{38} + \frac{15}{38} = \frac{35}{38}\]
-      The opposite of an event is called its <b>complement</b>.  In the above example, the event of <b>not</b> selecting a kangaroo is the 
-      complement of selecting a kangaroo.  The probability of the complement of an event \(E\), denoted \(\overline{E}\) is
-      \[P(\overline{E}) = 1 - P(E)\]
-      Note that the event of not selecting a kangaroo is the same as the event of selecting a cat or dog.  So,
-      \[P(X = \text{cat} \cup X = \text{dog}) = P(\overline{X = \text{kangaroo}}) = 1 - P(X = \text{kangaroo}) = 1 - \frac{3}{38} = \frac{35}{38}\]
-      which is exactly the result we obtained using another method.  This happens generally in the study of probability: there are often many ways
-      of solving the same problem!
+    <p>There are many ways of representing a function, but the most commonly used are an equation, and graphically.  For instance, the function 
+      \[f(x) = 2x+3\]
+      means that the input is doubled, and then 3 is added to it, to obtain its corresponding unique output.  One such pair of input-output is 
+      called an <b>ordered pair</b>: ordered as
+      \[(\text{independent variable}, \text{dependent variable})\]
+      We could obtain several ordered pairs by "plugging in" various input numbers to the function.  For the above example, we could find 
+      \[(-2,-1), (0,3), (3, 9)\]
+      etc...  A <b>table of values</b> is one way we could organize a large set of inputs and their corresponding outputs:
     </p>
 
       

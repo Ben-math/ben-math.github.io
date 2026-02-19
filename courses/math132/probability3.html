@@ -78,8 +78,9 @@ fetch("/nav.html")
     </p>
 
     <p>For example, in the "without replacement" urn example, if we want to find that probability that our first draw was green <b>given that</b> 
-      one of our draws was green, we restrict our attention to the leaves corresponding to at least one green draw (the green circles in the tree 
-      diagram below), and then find the proportion of them in which the first draw was green (the ones with blue circles as well):
+      one of our draws was green (let us call this event \(E\), we restrict our attention to the leaves corresponding to at least one green draw 
+      (the green circles in the tree diagram below), and then find the proportion of them in which the first draw was green (the ones with blue 
+      circles as well):
     </p>
 
     <figure style="text-align: center;">
@@ -87,6 +88,9 @@ fetch("/nav.html")
            alt="With replacement urn example"
            style="display: inline-block; width: 30%;">
     </figure>
+
+    <p>\[P(G_1|E) = P(((G_1 \cap R_2) \cup (G_1 \cap G_2))|E) =  \frac{P(G_1 \cap R_2) + P(G_1 \cap G_2)}{P(R_1 \cap G_2) + P(G_1 \cap R_2) + 
+      P(G_1 \cap G_2)}</p>
 
       
 

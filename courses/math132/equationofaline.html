@@ -183,6 +183,8 @@ x & f(x) \\
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>
 
+    <div id="solution-steps" class="math" style="max-width: 900px; margin: 10px auto 0 auto; text-align:center;"></div>
+
     <p id="question-text" class="math" style="text-align:center;"></p>
 
     <div id="activity-input-row" style="text-align:center; margin-top: 8px;">
@@ -201,7 +203,8 @@ x & f(x) \\
     </div>
 
     <div class="button-container" style="margin-top: 14px;">
-      <button id="next-btn" class="rubber-button" style="display:none;">Next</button>
+      <button id="next-btn" class="rubber-button" style="display:none; margin-right: 0.75em;">Next</button>
+      <button id="hint-btn" class="rubber-button" style="display:none;">Hint</button>
     </div>
 
     <p id="activity-feedback" style="font-weight: bold; margin-top: 10px; text-align:center;"></p>
@@ -652,7 +655,9 @@ x & f(x) \\
   // -----------------------------
   const startBtn = document.getElementById('start-btn');
   const nextBtn = document.getElementById('next-btn');
+  const hintBtn = document.getElementById('hint-btn');
 
+  const solutionStepsEl = document.getElementById('solution-steps');
   const promptEl = document.getElementById('question-text');
   const feedbackEl = document.getElementById('activity-feedback');
 
@@ -682,6 +687,7 @@ x & f(x) \\
     line1: null,
     line2: null,
     intersection: null,
+    solutionShown: {},
     plot: {
       anchor: null,
       ray: null,
@@ -908,6 +914,53 @@ x & f(x) \\
     typeset([promptEl]);
   }
 
+  function clearSolutions() {
+    solutionStepsEl.innerHTML = '';
+    activity.solutionShown = {};
+  }
+
+  function appendSolutionStep(latexBlock) {
+    const div = document.createElement('div');
+    div.classList.add('math');
+    div.style.margin = '0.35em auto';
+    div.innerHTML = latexBlock;
+    solutionStepsEl.appendChild(div);
+    typeset([div]);
+  }
+
+  function revealSolutionForStage(stage) {
+    if (activity.solutionShown[stage]) return;
+    const l = (stage.startsWith('L1_')) ? activity.line1 : activity.line2;
+
+    if (stage === STAGES.L1_SLOPE || stage === STAGES.L2_SLOPE) {
+      const x1 = decimal1FromTenth(l.p1.X), y1 = decimal1FromTenth(l.p1.Y);
+      const x2 = decimal1FromTenth(l.p2.X), y2 = decimal1FromTenth(l.p2.Y);
+      const mTex = fracToTex(l.m);
+
+      // show a compact but explicit computation
+      appendSolutionStep(
+        `\[m = \frac{y_2-y_1}{x_2-x_1} = \frac{(${y2})-(${y1})}{(${x2})-(${x1})} = ${mTex}\]`
+      );
+      activity.solutionShown[stage] = true;
+      return;
+    }
+
+    if (stage === STAGES.L1_B || stage === STAGES.L2_B) {
+      const x1 = decimal1FromTenth(l.p1.X), y1 = decimal1FromTenth(l.p1.Y);
+      const mTex = fracToTex(l.m);
+      const bTex = fracToTex(l.b);
+
+      appendSolutionStep(
+        `\[y - (${y1}) = ${mTex}\bigl(x - (${x1})\bigr) \implies y = ${mTex}x + ${bTex}\]`
+      );
+      activity.solutionShown[stage] = true;
+      return;
+    }
+
+    // For plotting / intersection stages, no worked-solution step requested.
+    activity.solutionShown[stage] = true;
+  }
+
   function startActivity() {
     initAxesIfNeeded();
     // Clear everything on the activity axes and redraw axes/grid
@@ -915,6 +968,7 @@ x & f(x) \\
 
     clearPlotAttempt();
     clearGivenPoints();
+    clearSolutions();
     setFeedback('');
 
     if (!generateTwoLines()) {
@@ -924,6 +978,7 @@ x & f(x) \\
 
     startBtn.style.display = 'none';
     nextBtn.style.display = 'inline-block';
+    hintBtn.style.display = 'inline-block';
 
     activity.stage = STAGES.L1_SLOPE;
     renderStage();
@@ -1008,6 +1063,7 @@ x & f(x) \\
       singleWrap.style.display = 'none';
       pairWrap.style.display = 'none';
       nextBtn.style.display = 'none';
+      hintBtn.style.display = 'none';
       setPromptLatex(`🎉 Nice. You found everything correctly.`);
       setFeedback('', 'ok');
       drawActualLine(l1, 'rgba(13, 110, 253, 0.95)');
@@ -1036,6 +1092,7 @@ x & f(x) \\
       const mUser = reduceFrac(parsed.num, parsed.den);
 
       if (mUser[0] === mTrue[0] && mUser[1] === mTrue[1]) {
+        revealSolutionForStage(STAGES.L1_SLOPE);
         activity.stage = STAGES.L1_B;
         renderStage();
       } else {
@@ -1052,6 +1109,7 @@ x & f(x) \\
       const bUser = reduceFrac(parsed.num, parsed.den);
 
       if (bUser[0] === bTrue[0] && bUser[1] === bTrue[1]) {
+        revealSolutionForStage(STAGES.L1_B);
         activity.stage = STAGES.L1_PLOT;
         renderStage();
       } else {
@@ -1068,6 +1126,7 @@ x & f(x) \\
       const mUser = reduceFrac(parsed.num, parsed.den);
 
       if (mUser[0] === mTrue[0] && mUser[1] === mTrue[1]) {
+        revealSolutionForStage(STAGES.L2_SLOPE);
         activity.stage = STAGES.L2_B;
         renderStage();
       } else {
@@ -1084,6 +1143,7 @@ x & f(x) \\
       const bUser = reduceFrac(parsed.num, parsed.den);
 
       if (bUser[0] === bTrue[0] && bUser[1] === bTrue[1]) {
+        revealSolutionForStage(STAGES.L2_B);
         activity.stage = STAGES.L2_PLOT;
         renderStage();
       } else {
@@ -1203,6 +1263,13 @@ x & f(x) \\
 
   nextBtn.addEventListener('click', handleNext);
 
+  hintBtn.addEventListener('click', () => {
+    playSound('click-sound');
+    setFeedback('');
+    // Reveal the worked step for the current stage, but do not advance.
+    revealSolutionForStage(activity.stage);
+  });
+
   // UX: Enter key submits when single input is visible
   singleInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && nextBtn.style.display !== 'none') {
@@ -1224,6 +1291,8 @@ x & f(x) \\
   initAxesIfNeeded();
   setPromptLatex(`Click <b>Start!</b> to begin the activity.`);
   nextBtn.textContent = 'Next';
+  hintBtn.textContent = 'Hint';
+  hintBtn.style.display = 'none';
 </script>
 
   <audio id="click-sound" src="button.mp3" preload="auto"></audio>

@@ -684,6 +684,7 @@ x & f(x) \\
 
   const activity = {
     stage: null,
+    useIntegers: false,
     line1: null,
     line2: null,
     intersection: null,
@@ -722,7 +723,10 @@ x & f(x) \\
   }
 
   function tenthRand() {
-    return randInt(-100, 100); // integer tenths
+    // Return coordinates in integer tenths.
+    // If useIntegers is true, coordinates are integers (i.e., multiples of 10 tenths).
+    if (activity.useIntegers) return randInt(-10, 10) * 10;
+    return randInt(-100, 100);
   }
 
   function makeLineFromTwoPoints(p1, p2) {
@@ -999,6 +1003,9 @@ x & f(x) \\
     clearGivenPoints();
     clearSolutions();
     setFeedback('');
+
+    // 50% chance: all coordinates are integers for BOTH lines.
+    activity.useIntegers = (Math.random() < 0.5);
 
     if (!generateTwoLines()) {
       setFeedback('Something went wrong generating lines. Refresh the page and try again.');

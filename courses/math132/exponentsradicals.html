@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -232,50 +233,56 @@ function addHintStep(html) {
   typeset([d]);
 }
 
-function makeSingleAnswerRow() {
-  const row = document.createElement('div');
-  row.style.display = 'flex';
-  row.style.justifyContent = 'center';
-  row.style.alignItems = 'center';
-  row.style.gap = '0.5em';
-  row.style.margin = '0.35em 0';
+function makeAnswerRows() {
+  const wrap = document.createElement('div');
+  wrap.style.display = 'flex';
+  wrap.style.justifyContent = 'center';
+  wrap.style.alignItems = 'center';
+  wrap.style.gap = '0.6em';
+  wrap.style.flexWrap = 'wrap';
+  wrap.style.margin = '0.35em 0';
 
-  const label = document.createElement('span');
-  label.textContent = 'Exponent a:';
+  const baseLabel = document.createElement('span');
+  baseLabel.textContent = 'Base:';
 
-  const inp = document.createElement('input');
-  inp.type = 'text';
-  inp.id = 'ans1';
-  inp.style.width = '180px';
-  inp.style.fontSize = '1rem';
+  const baseInp = document.createElement('input');
+  baseInp.type = 'text';
+  baseInp.id = 'ans-base';
+  baseInp.style.width = '140px';
+  baseInp.style.fontSize = '1rem';
 
-  const mark = document.createElement('span');
-  mark.className = 'mark';
-  mark.style.display = 'inline-block';
-  mark.style.minWidth = '1.2em';
-  mark.style.fontWeight = '800';
+  const expLabel = document.createElement('span');
+  expLabel.textContent = 'Exponent:';
 
-  row.appendChild(label);
-  row.appendChild(inp);
-  row.appendChild(mark);
-  return row;
+  const expInp = document.createElement('input');
+  expInp.type = 'text';
+  expInp.id = 'ans-exp';
+  expInp.style.width = '140px';
+  expInp.style.fontSize = '1rem';
+
+  // visual cue: base ^ exponent
+  const caret = document.createElement('span');
+  caret.textContent = '^';
+  caret.style.fontWeight = '800';
+  caret.style.margin = '0 0.2em';
+
+  wrap.appendChild(baseLabel);
+  wrap.appendChild(baseInp);
+  wrap.appendChild(caret);
+  wrap.appendChild(expLabel);
+  wrap.appendChild(expInp);
+
+  return wrap;
 }
 
 function buildAnswerUI() {
   answerArea.innerHTML = '';
   answerArea.style.display = 'block';
-  answerArea.appendChild(makeSingleAnswerRow());
+  answerArea.appendChild(makeAnswerRows());
   hintBtn.style.display = 'inline-block';
   checkBtn.style.display = 'inline-block';
 }
 
-function markInput(ok) {
-  const inp = document.getElementById('ans1');
-  const mark = inp?.parentElement?.querySelector('.mark');
-  if (!mark) return;
-  mark.textContent = ok ? '✓' : '✗';
-  mark.style.color = ok ? 'green' : 'crimson';
-}
 
 // -----------------------------
 // Type (1) generator
@@ -551,20 +558,67 @@ function genType1() {
 // -----------------------------
 // Answer checking
 // -----------------------------
+function isPowerOf(n, base) {
+  // returns k such that n = base^k for integer k>=0, or null
+  if (n === 1) return 0;
+  if (n <= 0) return null;
+  let k = 0;
+  while (n % base === 0) {
+    n = n / base;
+    k++;
+  }
+  return (n === 1) ? k : null;
+}
+
+function baseAsPowerOfX(baseFrac, x) {
+  // baseFrac = {num, den} reduced; requires num>0, den>0
+  const kn = isPowerOf(Math.abs(baseFrac.num), x);
+  const kd = isPowerOf(baseFrac.den, x);
+  if (kn === null || kd === null) return null;
+  // allow negative power if denominator has more x than numerator, etc.
+  return kn - kd;
+}
+
 function checkAnswer() {
   if (!current) return;
-  const inp = document.getElementById('ans1');
-  const parsed = parseExactRational(inp.value);
-  if (!parsed.ok) {
-    setFeedback(parsed.msg, 'crimson');
-    markInput(false);
+
+  const baseInp = document.getElementById('ans-base');
+  const expInp = document.getElementById('ans-exp');
+
+  const baseParsed = parseExactRational(baseInp.value);
+  if (!baseParsed.ok) {
+    setFeedback("Base: " + baseParsed.msg, 'crimson');
     return;
   }
-  const [n, d] = reduceFrac(parsed.num, parsed.den);
-  const [an, ad] = current.ans;
+  if (baseParsed.num === 0) {
+    setFeedback("Base cannot be 0.", 'crimson');
+    return;
+  }
+  // For fractional exponents we need a positive base.
+  if (baseParsed.num < 0) {
+    setFeedback("Base must be positive.", 'crimson');
+    return;
+  }
 
-  const ok = (n === an && d === ad);
-  markInput(ok);
+  const expParsed = parseExactRational(expInp.value);
+  if (!expParsed.ok) {
+    setFeedback("Exponent: " + expParsed.msg, 'crimson');
+    return;
+  }
+
+  const kBase = baseAsPowerOfX({ num: baseParsed.num, den: baseParsed.den }, current.x);
+  if (kBase === null) {
+    setFeedback(`Your base must be a power of ${current.x} (e.g. ${current.x}, ${current.x}^2, 1/${current.x}, ...).`, 'crimson');
+    return;
+  }
+
+  // user total exponent on x is (kBase) * (expParsed)
+  const userExp = reduceFrac(kBase * expParsed.num, expParsed.den);
+  const userN = userExp[0], userD = userExp[1];
+
+  const [an, ad] = current.ans;
+  const ok = (userN === an && userD === ad);
+
   setFeedback(ok ? 'Correct!' : 'Not quite.', ok ? 'green' : 'crimson');
 }
 

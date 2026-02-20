@@ -1,0 +1,1403 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta charset="UTF-8" />
+  <title>Systems of Equations</title>
+  <link rel="stylesheet" href="/style.css" />
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+
+  <style>
+    .plot-wrap {
+      display: flex;
+      justify-content: center;
+      margin: 0.75em 0 1.75em 0;
+    }
+    svg.plot {
+      max-width: 100%;
+      height: auto;
+      border-radius: 14px;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+      background: white;
+    }
+  </style>
+
+</head>
+<body>
+  <header>
+    <h1>Systems of Equations</h1>
+    <div id="nav-placeholder"></div>
+      <script>
+fetch("/nav.html")
+  .then(response => response.text())
+  .then(html => {
+    document.getElementById("nav-placeholder").innerHTML = html;
+
+    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+    const navLinks = document.querySelectorAll("#nav-placeholder a");
+    navLinks.forEach(link => {
+      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+      if (linkPath === currentPath) {
+        link.classList.add("active");
+      }
+    });
+
+    const s = document.createElement("script");
+    s.src = "/mascot.js";
+    s.defer = true;
+    document.body.appendChild(s); 
+  })
+  .catch(err => {
+    console.error("Failed to load nav:", err);
+  });
+</script>
+  </header>
+  <main>
+
+    <p>A function \(f\) is a rule which assigns to each input \(a\) a unique output \(b\), written
+      \[f(a) = b\]
+      The input is called the independent variable, and the output the dependent variable.  They are called variables because they vary, and the 
+      dependent variable is so named because its value <b>depends</b> on the value of the independent variable.  Traditionally, the letter \(x\) 
+      is often used to represent the independent variable, and the letter \(y\) to represent the dependent variable.
+    </p>
+    
+    <p>There are many ways of representing a function, but the most commonly used are an equation, and graphically.  For instance, the function 
+      \[f(x) = 2x+3\]
+      means that the input is doubled, and then 3 is added to it, to obtain its corresponding unique output.  One such pair of input-output is 
+      called an <b>ordered pair</b>: ordered as
+      \[(\text{independent variable}, \text{dependent variable})\]
+      We could obtain several ordered pairs by "plugging in" various input numbers to the function.  For the above example, we could find 
+      \[(-2,-1), (0,3), (3, 9)\]
+      etc...  A <b>table of values</b> is one way we could organize a large set of inputs and their corresponding outputs:
+      \[
+\begin{array}{|c|c|}
+\hline
+x & f(x) \\
+\hline
+-4 & -5 \\
+-3 & -3 \\
+-2 & -1 \\
+-1 & 1 \\
+0 & 3 \\
+1 & 5 \\
+2 & 7 \\
+3 & 9 \\
+4 & 11 \\
+\hline
+\end{array}
+\]
+      There was an oversight in the preceding definition of our function.  We did not specify its <b>domain</b>: the set of permitted inputs.  Our 
+      table of values above restricted our attention to integer inputs, but if we had written
+      \[f: \mathbb{R} \mapsto \mathbb{R}\]
+      this would tell us that the function's domain is the set of real numbers, and so is its codomain (the set of allowable outputs).  The set of 
+      outputs the function actually achieves is called its <b>range</b>.  The above could also be read as "\(f\) is a map from the real numbers to 
+      the real numbers".
+    </p>
+
+      
+    <p>Our perhaps most familiar means of representing a function is graphically.  We plot the set of ordered pairs on a plane, where its horizontal 
+      position is determined by the independent variable (on the \(x\)-axis) and its vertical position is determined by the dependent variable (on the 
+      \(y\)-axis).  In the preceding example, if our domain and codomain were the set of integers,
+      \[f(x) = 2x + 3, \hspace{2cm} f:\mathbb{Z} \mapsto \mathbb{Z}\]
+      then we would obtain a scatter plot:
+    </p>
+
+    <div class="plot-wrap">
+      <svg id="integer-plot" class="plot" width="360" height="360" viewBox="0 0 360 360" aria-label="Integer-domain plot of f(x)=2x+3"></svg>
+    </div>
+
+    <p>Whereas if the domain and codomain were the set of real numbers, we'd obtain a line:</p>
+    <div class="plot-wrap">
+      <svg id="real-plot" class="plot" width="360" height="360" viewBox="0 0 360 360" aria-label="Real-domain plot of f(x)=2x+3"></svg>
+    </div>
+
+    <p>Often we don't start with the equation of a line, but have one or more points on it.  If we have either two points on the line, or one point 
+      and its <b>slope</b>, then we have enough information to find its equation, and graph it.  Slope is a measure of whether and to what degree a 
+      function is increasing or decreasing.  For instance, in the example above, the function has a slope of 2: for every increase in the independent 
+      variable by 1, the dependent variable increases by 2.
+    </p>
+
+    <p>If we have two points, we can determine the slope of the line which passes through both of them.  For instance, given the points
+      \[(9,-5), (-6,0)\]
+      we determine the slope using the \(\frac{\text{rise}}{\text{run}}\) formula, which gives a ratio between the change in \(y\) to the change in 
+      \(x\) (denoted using the Greek letter \(\Delta\), \(\frac{\Delta x}{\Delta y}\).  We traditionally use the letter \(m\) to denote slope:
+      \[m = \frac{\Delta y}{\Delta x} = \frac{y_2 - y_1}{x_2 - x_1} = \frac{0 - (-5)}{-6 - 9} = \frac{5}{-15} = -\frac{1}{3}\]
+      (where we assigned to each of the ordered pairs above the role of first/second point, so \((-6,0) = (x_2,y_2)\) and \((9,-5) = (x_1,y_1)\)).
+    </p>
+
+    <p>We then plug our known information into the point-slope form of the equation of a line:
+      \[y - y_1 = m(x - x_1) \implies y - (-5) = -\frac{1}{3}(x - 9)\]
+      It is often easier to graph a line if we put its equation in a familar form, the slope-intercept form:
+      \[y = mx +b\]
+      where \(b\) is the <b>\(y\)-intercept</b> of the line, where it intersects the \(y\)-axis (and hence the \(x\)-coordinate of that point is zero). 
+      Manipulating our previous equation:
+      \[y - (-5) = -\frac{1}{3}(x - 9) \implies y + 5 = -\frac{1}{3}x + 3 \implies y = -\frac{1}{3}x - 2\]
+      we get it into that form.  We then know the point \((0,-2)\) is on the line, and can plot the other points by using the slope (for every 1 we go 
+      to the right, we go \(\frac{1}{3}\) down, so for every 3 we go to the right, we go one down, and similarly, for every 3 we go to the left, we 
+      go 1 up):
+    </p>
+
+    <div class="plot-wrap">
+      <svg id="slope-example-plot"
+           class="plot"
+           width="360"
+           height="360"
+           viewBox="0 0 360 360"
+           aria-label="Plot of f(x) = -1/3 x - 2">
+      </svg>
+    </div>
+
+    <p>Finally, we are sometimes interested in finding the <b>point of intersection</b> of two lines.  This is simple to do if both equations have 
+      been put in the form \(y = mx +b\): simply set their right-hand sides equal to one another, solve for \(x\), and then plug that value into 
+      either function to find the \(y\)-coordinate of their intersection point.  For instance, to find the intersection point of our two lines thus 
+      far:
+      \[2x + 3 = -\frac{1}{3}x - 2 \implies \frac{7}{3}x = -5 \implies x = -\frac{15}{7}\]
+      and then plugging that into either of the functions:
+      \[f\left(-\frac{15}{7}\right) = 2\left(-\frac{15}{7}\right) + 3 = -\frac{30}{7} + 3 = -\frac{9}{7}\]
+      Plotting both lines on the same set of axes, we can see that their point of intersection is indeed \(\left(-\frac{15}{7},-\frac{9}{7}\right)\):
+    </p>
+
+    <div class="plot-wrap">
+      <svg id="intersection-plot"
+           class="plot"
+           width="360"
+           height="360"
+           viewBox="0 0 360 360"
+           aria-label="Intersection of two lines">
+      </svg>
+    </div>
+
+
+
+
+    
+
+        <div class="button-container">
+      <button id="start-btn" class="rubber-button">Start!</button>
+    </div>
+
+    <div id="solution-steps" class="math" style="max-width: 900px; margin: 10px auto 0 auto; text-align:center;"></div>
+
+    <p id="question-text" class="math" style="text-align:center;"></p>
+
+    <div id="activity-input-row" style="text-align:center; margin-top: 8px;">
+      <span id="single-input-wrap">
+        <label for="single-input" id="single-input-label" style="margin-right:0.5em;">Answer:</label>
+        <input type="text" id="single-input" />
+      </span>
+
+      <span id="pair-input-wrap" style="display:none;">
+        <span style="font-size: 1.2em;">(</span>
+        <input type="text" id="pair-input-x" style="width: 7em;" />
+        <span style="font-size: 1.2em;">,</span>
+        <input type="text" id="pair-input-y" style="width: 7em;" />
+        <span style="font-size: 1.2em;">)</span>
+      </span>
+    </div>
+
+    <div class="button-container" style="margin-top: 14px;">
+      <button id="next-btn" class="rubber-button" style="display:none; margin-right: 0.75em;">Next</button>
+      <button id="hint-btn" class="rubber-button" style="display:none;">Hint</button>
+    </div>
+
+    <p id="activity-feedback" style="font-weight: bold; margin-top: 10px; text-align:center;"></p>
+
+    <div class="plot-wrap" style="margin-top: 18px;">
+      <svg id="activity-axes" class="plot" width="420" height="420" viewBox="0 0 420 420" aria-label="Activity axes"></svg>
+    </div>
+
+  </main>
+  <script>
+  // -----------------------------
+  // Small utilities
+  // -----------------------------
+  function playSound(id) {
+    const s = document.getElementById(id);
+    if (s) {
+      s.currentTime = 0;
+      s.play();
+    }
+  }
+
+  function randInt(a, b) {
+    return Math.floor(Math.random() * (b - a + 1)) + a;
+  }
+
+  function gcd(a, b) {
+    a = Math.abs(a); b = Math.abs(b);
+    while (b !== 0) {
+      const t = a % b;
+      a = b;
+      b = t;
+    }
+    return a === 0 ? 1 : a;
+  }
+
+  function reduceFrac(num, den) {
+    if (den === 0) return [num, den];
+    if (den < 0) { den = -den; num = -num; }
+    const g = gcd(num, den);
+    return [num / g, den / g];
+  }
+
+  function addFrac(a, b) { return reduceFrac(a[0]*b[1] + b[0]*a[1], a[1]*b[1]); }
+  function subFrac(a, b) { return reduceFrac(a[0]*b[1] - b[0]*a[1], a[1]*b[1]); }
+  function mulFrac(a, b) { return reduceFrac(a[0]*b[0], a[1]*b[1]); }
+  function divFrac(a, b) { return reduceFrac(a[0]*b[1], a[1]*b[0]); }
+
+  function fracToNumber(a) { return a[0] / a[1]; }
+
+  // Exact parsing: integer, fraction, terminating decimal (treated exactly)
+  function parseExactNumber(raw) {
+    const s = (raw || '').trim().replace(/\s+/g, '');
+    if (!s) return { error: 'Please enter an answer.' };
+
+    const fracMatch = s.match(/^([+-]?\d+)\/([+-]?\d+)$/);
+    if (fracMatch) {
+      const n = parseInt(fracMatch[1], 10);
+      const d = parseInt(fracMatch[2], 10);
+      if (d === 0) return { error: 'Denominator cannot be 0.' };
+      const r = reduceFrac(n, d);
+      return { num: r[0], den: r[1] };
+    }
+
+    const intMatch = s.match(/^[+-]?\d+$/);
+    if (intMatch) {
+      const n = parseInt(s, 10);
+      return { num: n, den: 1 };
+    }
+
+    const decMatch = s.match(/^([+-])?(\d*)\.(\d+)$/);
+    if (decMatch) {
+      const sign = decMatch[1] === '-' ? -1 : 1;
+      const whole = decMatch[2] ? decMatch[2] : '0';
+      const frac = decMatch[3];
+      const den = Math.pow(10, frac.length);
+      const num = sign * (parseInt(whole, 10) * den + parseInt(frac, 10));
+      const r = reduceFrac(num, den);
+      return { num: r[0], den: r[1] };
+    }
+
+    return { error: 'Use an integer (3), a fraction (3/5), or a terminating decimal (0.6).' };
+  }
+
+  function fracToTex(a) {
+    const n = a[0], d = a[1];
+    if (d === 1) return `${n}`;
+    if (n === 0) return `0`;
+    return `\\frac{${n}}{${d}}`;
+  }
+
+  function decimal1FromTenth(t) {
+    // t is integer tenths
+    const s = (t / 10).toFixed(1);
+    return s.replace(/-0\.0$/, '0.0');
+  }
+
+  function typeset(elements = []) {
+    if (!window.MathJax) return;
+    if (MathJax.typesetPromise) {
+      if (elements.length > 0) MathJax.typesetPromise(elements);
+      else MathJax.typesetPromise();
+      return;
+    }
+    if (MathJax.typeset) {
+      if (elements.length > 0) MathJax.typeset(elements);
+      else MathJax.typeset();
+    }
+  }
+
+  // -----------------------------
+  // Plotting (SVG): reusable for lesson + activity
+  // -----------------------------
+  function plotLinearFunction(svgOrId, f, opts = {}) {
+    const svg = (typeof svgOrId === 'string') ? document.getElementById(svgOrId) : svgOrId;
+    if (!svg) return;
+
+    const domain = opts.domain || 'reals'; // 'reals' or 'integers'
+    const xMin = -10, xMax = 10, yMin = -10, yMax = 10;
+    const tickStep = 2;
+
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+    const w = svg.viewBox && svg.viewBox.baseVal && svg.viewBox.baseVal.width ? svg.viewBox.baseVal.width : (svg.width && svg.width.baseVal ? svg.width.baseVal.value : 360);
+    const h = svg.viewBox && svg.viewBox.baseVal && svg.viewBox.baseVal.height ? svg.viewBox.baseVal.height : (svg.height && svg.height.baseVal ? svg.height.baseVal.value : 360);
+    if (!svg.getAttribute('viewBox')) svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+
+    const pad = 34;
+    const NS = "http://www.w3.org/2000/svg";
+    const el = (name) => document.createElementNS(NS, name);
+
+    const X = (x) => pad + (x - xMin) / (xMax - xMin) * (w - 2 * pad);
+    const Y = (y) => h - pad - (y - yMin) / (yMax - yMin) * (h - 2 * pad);
+
+    const frame = el('rect');
+    frame.setAttribute('x', pad);
+    frame.setAttribute('y', pad);
+    frame.setAttribute('width', w - 2 * pad);
+    frame.setAttribute('height', h - 2 * pad);
+    frame.setAttribute('rx', 12);
+    frame.setAttribute('ry', 12);
+    frame.setAttribute('fill', 'white');
+    frame.setAttribute('stroke', 'rgba(0,0,0,0.25)');
+    frame.setAttribute('stroke-width', '1');
+    svg.appendChild(frame);
+
+    const grid = el('g');
+    grid.setAttribute('stroke', 'rgba(0,0,0,0.08)');
+    grid.setAttribute('stroke-width', '1');
+
+    for (let t = xMin; t <= xMax; t += tickStep) {
+      const v = el('line');
+      v.setAttribute('x1', X(t));
+      v.setAttribute('y1', Y(yMin));
+      v.setAttribute('x2', X(t));
+      v.setAttribute('y2', Y(yMax));
+      grid.appendChild(v);
+    }
+    for (let t = yMin; t <= yMax; t += tickStep) {
+      const hline = el('line');
+      hline.setAttribute('x1', X(xMin));
+      hline.setAttribute('y1', Y(t));
+      hline.setAttribute('x2', X(xMax));
+      hline.setAttribute('y2', Y(t));
+      grid.appendChild(hline);
+    }
+    svg.appendChild(grid);
+
+    const axes = el('g');
+    axes.setAttribute('stroke', 'rgba(0,0,0,0.85)');
+    axes.setAttribute('stroke-width', '1.5');
+
+    const xAxis = el('line');
+    xAxis.setAttribute('x1', X(xMin));
+    xAxis.setAttribute('y1', Y(0));
+    xAxis.setAttribute('x2', X(xMax));
+    xAxis.setAttribute('y2', Y(0));
+    axes.appendChild(xAxis);
+
+    const yAxis = el('line');
+    yAxis.setAttribute('x1', X(0));
+    yAxis.setAttribute('y1', Y(yMin));
+    yAxis.setAttribute('x2', X(0));
+    yAxis.setAttribute('y2', Y(yMax));
+    axes.appendChild(yAxis);
+
+    svg.appendChild(axes);
+
+    const ticks = el('g');
+    const tickLen = 6;
+
+    const labelStyle = (txt) => {
+      txt.setAttribute('font-size', '12');
+      txt.setAttribute('fill', 'rgba(0,0,0,0.75)');
+      txt.setAttribute('font-family', 'system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif');
+    };
+
+    for (let t = xMin; t <= xMax; t += tickStep) {
+      const mark = el('line');
+      mark.setAttribute('x1', X(t));
+      mark.setAttribute('y1', Y(0) - tickLen / 2);
+      mark.setAttribute('x2', X(t));
+      mark.setAttribute('y2', Y(0) + tickLen / 2);
+      mark.setAttribute('stroke', 'rgba(0,0,0,0.7)');
+      mark.setAttribute('stroke-width', '1');
+      ticks.appendChild(mark);
+
+      const lab = el('text');
+      labelStyle(lab);
+      lab.setAttribute('x', X(t));
+      lab.setAttribute('y', Y(0) + 18);
+      lab.setAttribute('text-anchor', 'middle');
+      lab.textContent = t.toString();
+      ticks.appendChild(lab);
+    }
+
+    for (let t = yMin; t <= yMax; t += tickStep) {
+      const mark = el('line');
+      mark.setAttribute('x1', X(0) - tickLen / 2);
+      mark.setAttribute('y1', Y(t));
+      mark.setAttribute('x2', X(0) + tickLen / 2);
+      mark.setAttribute('y2', Y(t));
+      mark.setAttribute('stroke', 'rgba(0,0,0,0.7)');
+      mark.setAttribute('stroke-width', '1');
+      ticks.appendChild(mark);
+
+      if (t !== 0) {
+        const lab = el('text');
+        labelStyle(lab);
+        lab.setAttribute('x', X(0) - 10);
+        lab.setAttribute('y', Y(t) + 4);
+        lab.setAttribute('text-anchor', 'end');
+        lab.textContent = t.toString();
+        ticks.appendChild(lab);
+      }
+    }
+
+    svg.appendChild(ticks);
+
+    const axisLabels = el('g');
+
+    const xLab = el('text');
+    labelStyle(xLab);
+    xLab.setAttribute('font-size', '14');
+    xLab.setAttribute('font-weight', '700');
+    xLab.setAttribute('x', X(xMax) + 12);
+    xLab.setAttribute('y', Y(0) + 5);
+    xLab.setAttribute('text-anchor', 'start');
+    xLab.textContent = 'x';
+    axisLabels.appendChild(xLab);
+
+    const yLab = el('text');
+    labelStyle(yLab);
+    yLab.setAttribute('font-size', '14');
+    yLab.setAttribute('font-weight', '700');
+    yLab.setAttribute('x', X(0) + 6);
+    yLab.setAttribute('y', Y(yMax) - 10);
+    yLab.setAttribute('text-anchor', 'start');
+    yLab.textContent = 'y';
+    axisLabels.appendChild(yLab);
+
+    svg.appendChild(axisLabels);
+
+    const defs = el('defs');
+    const clipPath = el('clipPath');
+    const clipId = `clip-${svg.id || Math.random().toString(16).slice(2)}`;
+    clipPath.setAttribute('id', clipId);
+
+    const clipRect = el('rect');
+    clipRect.setAttribute('x', pad);
+    clipRect.setAttribute('y', pad);
+    clipRect.setAttribute('width', w - 2 * pad);
+    clipRect.setAttribute('height', h - 2 * pad);
+    clipRect.setAttribute('rx', 12);
+    clipRect.setAttribute('ry', 12);
+
+    clipPath.appendChild(clipRect);
+    defs.appendChild(clipPath);
+    svg.appendChild(defs);
+
+    const plotLayer = el('g');
+    plotLayer.setAttribute('clip-path', `url(#${clipId})`);
+    svg.appendChild(plotLayer);
+
+    svg.__plotState = { xMin, xMax, yMin, yMax, pad, w, h, X, Y, NS, el, plotLayer };
+
+    if (domain === 'integers') {
+      const pts = el('g');
+      for (let x = xMin; x <= xMax; x++) {
+        const y = f(x);
+        if (typeof y !== 'number' || !Number.isFinite(y)) continue;
+        if (y < yMin || y > yMax) continue;
+
+        const dot = el('circle');
+        dot.setAttribute('cx', X(x));
+        dot.setAttribute('cy', Y(y));
+        dot.setAttribute('r', '4.3');
+        dot.setAttribute('fill', 'rgba(220, 53, 69, 0.95)');
+        dot.setAttribute('stroke', 'rgba(0,0,0,0.25)');
+        dot.setAttribute('stroke-width', '1');
+        pts.appendChild(dot);
+      }
+      plotLayer.appendChild(pts);
+      return;
+    }
+
+    function clipLineToRect(x1, y1, x2, y2, rxMin, rxMax, ryMin, ryMax) {
+      let t0 = 0, t1 = 1;
+      const dx = x2 - x1, dy = y2 - y1;
+      const p = [-dx, dx, -dy, dy];
+      const q = [x1 - rxMin, rxMax - x1, y1 - ryMin, ryMax - y1];
+
+      for (let i = 0; i < 4; i++) {
+        if (p[i] === 0) {
+          if (q[i] < 0) return null;
+        } else {
+          const r = q[i] / p[i];
+          if (p[i] < 0) {
+            if (r > t1) return null;
+            if (r > t0) t0 = r;
+          } else {
+            if (r < t0) return null;
+            if (r < t1) t1 = r;
+          }
+        }
+      }
+      return { x1: x1 + t0 * dx, y1: y1 + t0 * dy, x2: x1 + t1 * dx, y2: y1 + t1 * dy };
+    }
+
+    const A = { x: xMin, y: f(xMin) };
+    const B = { x: xMax, y: f(xMax) };
+    const clipped = clipLineToRect(A.x, A.y, B.x, B.y, xMin, xMax, yMin, yMax);
+
+    if (clipped) {
+      const seg = el('line');
+      seg.setAttribute('x1', X(clipped.x1));
+      seg.setAttribute('y1', Y(clipped.y1));
+      seg.setAttribute('x2', X(clipped.x2));
+      seg.setAttribute('y2', Y(clipped.y2));
+      seg.setAttribute('stroke', 'rgba(13, 110, 253, 0.95)');
+      seg.setAttribute('stroke-width', '3.2');
+      seg.setAttribute('stroke-linecap', 'round');
+      plotLayer.appendChild(seg);
+    }
+  }
+
+  function overlayRealLine(svg, f, style = {}) {
+    const st = svg.__plotState;
+    if (!st) return;
+    const { xMin, xMax, yMin, yMax, X, Y, el, plotLayer } = st;
+
+    function clipLineToRect(x1, y1, x2, y2, rxMin, rxMax, ryMin, ryMax) {
+      let t0 = 0, t1 = 1;
+      const dx = x2 - x1, dy = y2 - y1;
+      const p = [-dx, dx, -dy, dy];
+      const q = [x1 - rxMin, rxMax - x1, y1 - ryMin, ryMax - y1];
+
+      for (let i = 0; i < 4; i++) {
+        if (p[i] === 0) {
+          if (q[i] < 0) return null;
+        } else {
+          const r = q[i] / p[i];
+          if (p[i] < 0) {
+            if (r > t1) return null;
+            if (r > t0) t0 = r;
+          } else {
+            if (r < t0) return null;
+            if (r < t1) t1 = r;
+          }
+        }
+      }
+      return { x1: x1 + t0 * dx, y1: y1 + t0 * dy, x2: x1 + t1 * dx, y2: y1 + t1 * dy };
+    }
+
+    const A = { x: xMin, y: f(xMin) };
+    const B = { x: xMax, y: f(xMax) };
+    const clipped = clipLineToRect(A.x, A.y, B.x, B.y, xMin, xMax, yMin, yMax);
+    if (!clipped) return;
+
+    const seg = el('line');
+    seg.setAttribute('x1', X(clipped.x1));
+    seg.setAttribute('y1', Y(clipped.y1));
+    seg.setAttribute('x2', X(clipped.x2));
+    seg.setAttribute('y2', Y(clipped.y2));
+    seg.setAttribute('stroke', style.stroke || 'rgba(13, 110, 253, 0.95)');
+    seg.setAttribute('stroke-width', style.strokeWidth || '3.2');
+    seg.setAttribute('stroke-linecap', 'round');
+    if (style.dash) seg.setAttribute('stroke-dasharray', style.dash);
+    plotLayer.appendChild(seg);
+    return seg;
+  }
+
+  function plotMultipleLinearFunctions(svgId, functions, intersection = null) {
+    const svg = document.getElementById(svgId);
+    if (!svg || !functions || functions.length === 0) return;
+
+    plotLinearFunction(svg, functions[0].f, { domain: 'reals' });
+
+    const styles = [
+      { stroke: 'rgba(13, 110, 253, 0.95)' },
+      { stroke: 'rgba(220, 53, 69, 0.95)' }
+    ];
+    for (let i = 1; i < functions.length; i++) {
+      overlayRealLine(svg, functions[i].f, styles[i] || styles[styles.length - 1]);
+    }
+
+    if (intersection && svg.__plotState) {
+      const { x, y, label } = intersection;
+      const { X, Y, el } = svg.__plotState;
+
+      const dot = el('circle');
+      dot.setAttribute('cx', X(x));
+      dot.setAttribute('cy', Y(y));
+      dot.setAttribute('r', 5.5);
+      dot.setAttribute('fill', 'rgba(0,0,0,0.9)');
+      dot.setAttribute('stroke', 'rgba(255,255,255,0.85)');
+      dot.setAttribute('stroke-width', '2');
+      svg.appendChild(dot);
+
+      const text = el('text');
+      text.setAttribute('x', X(x) + 10);
+      text.setAttribute('y', Y(y) - 10);
+      text.setAttribute('font-size', '13');
+      text.setAttribute('font-weight', '700');
+      text.setAttribute('fill', 'rgba(0,0,0,0.85)');
+      text.setAttribute('font-family', 'system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif');
+      text.textContent = label;
+      svg.appendChild(text);
+    }
+  }
+
+  // -----------------------------
+  // Lesson demo plots
+  // -----------------------------
+  plotLinearFunction('integer-plot', (x) => 2 * x + 3, { domain: 'integers' });
+  plotLinearFunction('real-plot', (x) => 2 * x + 3, { domain: 'reals' });
+  plotLinearFunction('slope-example-plot', (x) => -x / 3 - 2, { domain: 'reals' });
+  plotMultipleLinearFunctions(
+    'intersection-plot',
+    [
+      { f: (x) => 2 * x + 3 },
+      { f: (x) => -x / 3 - 2 }
+    ],
+    { x: -15 / 7, y: -9 / 7, label: "(-15/7, -9/7)" }
+  );
+
+  // -----------------------------
+  // Activity: two lines, then intersection
+  // -----------------------------
+  const startBtn = document.getElementById('start-btn');
+  const nextBtn = document.getElementById('next-btn');
+  const hintBtn = document.getElementById('hint-btn');
+
+  const solutionStepsEl = document.getElementById('solution-steps');
+  const promptEl = document.getElementById('question-text');
+  const feedbackEl = document.getElementById('activity-feedback');
+
+  const singleWrap = document.getElementById('single-input-wrap');
+  const singleLabel = document.getElementById('single-input-label');
+  const singleInput = document.getElementById('single-input');
+
+  const pairWrap = document.getElementById('pair-input-wrap');
+  const pairX = document.getElementById('pair-input-x');
+  const pairY = document.getElementById('pair-input-y');
+
+  const axesSvg = document.getElementById('activity-axes');
+
+  const STAGES = {
+    L1_SLOPE: 'L1_SLOPE',
+    L1_B: 'L1_B',
+    L1_PLOT: 'L1_PLOT',
+    L2_SLOPE: 'L2_SLOPE',
+    L2_B: 'L2_B',
+    L2_PLOT: 'L2_PLOT',
+    INTERSECTION: 'INTERSECTION',
+    DONE: 'DONE'
+  };
+
+  const activity = {
+    stage: null,
+    useIntegers: false,
+    line1: null,
+    line2: null,
+    intersection: null,
+    solutionShown: {},
+    plot: {
+      anchor: null,
+      ray: null,
+      tempLine: null,
+      active: false
+    }
+  };
+
+  function setFeedback(msg, kind = 'error') {
+    feedbackEl.textContent = msg || '';
+    if (!msg) {
+      feedbackEl.style.color = 'black';
+      return;
+    }
+    feedbackEl.style.color = (kind === 'ok') ? 'green' : 'crimson';
+  }
+
+  function showSingleInput(labelText) {
+    singleLabel.textContent = labelText;
+    singleWrap.style.display = 'inline';
+    pairWrap.style.display = 'none';
+    singleInput.value = '';
+    singleInput.focus();
+  }
+
+  function showPairInput() {
+    singleWrap.style.display = 'none';
+    pairWrap.style.display = 'inline';
+    pairX.value = '';
+    pairY.value = '';
+    pairX.focus();
+  }
+
+  function tenthRand() {
+    // Return coordinates in integer tenths.
+    // If useIntegers is true, coordinates are integers (i.e., multiples of 10 tenths).
+    if (activity.useIntegers) return randInt(-10, 10) * 10;
+    return randInt(-100, 100);
+  }
+
+  function makeLineFromTwoPoints(p1, p2) {
+    // p1, p2 are {X,Y} in integer tenths
+    const dX = p2.X - p1.X;
+    if (dX === 0) return null; // vertical: reject
+    const dY = p2.Y - p1.Y;
+
+    const m = reduceFrac(dY, dX); // tenths cancel
+    // b = y - m x; where x,y are /10
+    // b = (Y/10) - (mN/mD)*(X/10) = (Y*mD - mN*X)/(10*mD)
+    const b = reduceFrac(p1.Y * m[1] - m[0] * p1.X, 10 * m[1]);
+
+    return { p1, p2, m, b };
+  }
+
+  function evalLine(line, x) {
+    // x is number (real)
+    return fracToNumber(line.m) * x + fracToNumber(line.b);
+  }
+
+  function intersectionOfLines(l1, l2) {
+    // Solve (m1-m2)x = b2-b1
+    const dm = subFrac(l1.m, l2.m);
+    if (dm[0] === 0) return null;
+    const db = subFrac(l2.b, l1.b);
+    const x = divFrac(db, dm);
+    const y = addFrac(mulFrac(l1.m, x), l1.b);
+    return { x, y };
+  }
+
+  function initAxesIfNeeded() {
+    if (!axesSvg.__plotState) {
+      // Dummy far-away function => no visible line, but axes/grid are drawn.
+      plotLinearFunction(axesSvg, () => 1e9, { domain: 'reals' });
+    }
+  }
+
+  function clearPlotAttempt() {
+    const st = axesSvg.__plotState;
+    if (!st) return;
+    const { plotLayer } = st;
+    // remove only attempt elements (tagged)
+    const toRemove = [];
+    for (const child of Array.from(plotLayer.children)) {
+      if (child.getAttribute && child.getAttribute('data-attempt') === '1') toRemove.push(child);
+    }
+    toRemove.forEach(n => n.remove());
+
+    activity.plot.anchor = null;
+    activity.plot.ray = null;
+    activity.plot.tempLine = null;
+    // Note: do NOT flip active off here; this is also used mid-plot.
+  }
+
+  function worldFromEvent(evt) {
+    const st = axesSvg.__plotState;
+    if (!st) return null;
+    const rect = axesSvg.getBoundingClientRect();
+    const px = (evt.clientX - rect.left) * (st.w / rect.width);
+    const py = (evt.clientY - rect.top) * (st.h / rect.height);
+
+    const x = st.xMin + (px - st.pad) / (st.w - 2 * st.pad) * (st.xMax - st.xMin);
+    const y = st.yMax - (py - st.pad) / (st.h - 2 * st.pad) * (st.yMax - st.yMin);
+    return { x, y, px, py };
+  }
+
+  function drawPoint(worldX, worldY, style = {}) {
+    const st = axesSvg.__plotState;
+    const { el, X, Y, plotLayer } = st;
+    const c = el('circle');
+    c.setAttribute('cx', X(worldX));
+    c.setAttribute('cy', Y(worldY));
+    c.setAttribute('r', style.r || 4.8);
+    c.setAttribute('fill', style.fill || 'rgba(0,0,0,0.85)');
+    c.setAttribute('stroke', style.stroke || 'rgba(255,255,255,0.85)');
+    c.setAttribute('stroke-width', style.strokeWidth || '2');
+    if (style.attempt) c.setAttribute('data-attempt', '1');
+    if (style.tag) c.setAttribute('data-tag', style.tag);
+    plotLayer.appendChild(c);
+    return c;
+  }
+
+  function drawRay(pA, pB) {
+    const st = axesSvg.__plotState;
+    const { el, X, Y, plotLayer } = st;
+    const line = el('line');
+    line.setAttribute('x1', X(pA.x));
+    line.setAttribute('y1', Y(pA.y));
+    line.setAttribute('x2', X(pB.x));
+    line.setAttribute('y2', Y(pB.y));
+    line.setAttribute('stroke', 'rgba(0,0,0,0.35)');
+    line.setAttribute('stroke-width', '3');
+    line.setAttribute('stroke-linecap', 'round');
+    line.setAttribute('stroke-dasharray', '7 6');
+    line.setAttribute('data-attempt', '1');
+    plotLayer.appendChild(line);
+    return line;
+  }
+
+  function updateRay(rayEl, pA, pB) {
+    const st = axesSvg.__plotState;
+    const { X, Y } = st;
+    rayEl.setAttribute('x1', X(pA.x));
+    rayEl.setAttribute('y1', Y(pA.y));
+    rayEl.setAttribute('x2', X(pB.x));
+    rayEl.setAttribute('y2', Y(pB.y));
+  }
+
+  function userLineCloseEnough(userP1, userP2, trueLine) {
+    // Reject near-vertical clicks
+    if (Math.abs(userP2.x - userP1.x) < 0.2) return false;
+
+    const mUser = (userP2.y - userP1.y) / (userP2.x - userP1.x);
+    const bUser = userP1.y - mUser * userP1.x;
+
+    const mTrue = fracToNumber(trueLine.m);
+    const bTrue = fracToNumber(trueLine.b);
+
+    const yU1 = mUser * (-10) + bUser;
+    const yU2 = mUser * (10) + bUser;
+
+    const yT1 = mTrue * (-10) + bTrue;
+    const yT2 = mTrue * (10) + bTrue;
+
+    const tol = 0.55;
+    return (Math.abs(yU1 - yT1) <= tol && Math.abs(yU2 - yT2) <= tol);
+  }
+
+  function drawActualLine(line, color) {
+    overlayRealLine(axesSvg, (x) => evalLine(line, x), { stroke: color, strokeWidth: '3.4' });
+  }
+
+  function drawLinePoints(line, color) {
+    const p1 = { x: line.p1.X / 10, y: line.p1.Y / 10 };
+    const p2 = { x: line.p2.X / 10, y: line.p2.Y / 10 };
+    drawPoint(p1.x, p1.y, { fill: color, r: 4.8, stroke: 'rgba(255,255,255,0.9)', strokeWidth: 2, tag: 'given' });
+    drawPoint(p2.x, p2.y, { fill: color, r: 4.8, stroke: 'rgba(255,255,255,0.9)', strokeWidth: 2, tag: 'given' });
+  }
+
+  function clearGivenPoints() {
+    const st = axesSvg.__plotState;
+    if (!st) return;
+    const { plotLayer } = st;
+    const toRemove = [];
+    for (const child of Array.from(plotLayer.children)) {
+      if (child.getAttribute && child.getAttribute('data-tag') === 'given') toRemove.push(child);
+    }
+    toRemove.forEach(n => n.remove());
+  }
+
+  function generateTwoLines() {
+    // Keep regenerating until intersection is reasonably inside the viewing window
+    for (let tries = 0; tries < 500; tries++) {
+      const p1 = { X: tenthRand(), Y: tenthRand() };
+      const p2 = { X: tenthRand(), Y: tenthRand() };
+      if (p1.X === p2.X) continue;
+
+      const l1 = makeLineFromTwoPoints(p1, p2);
+      if (!l1) continue;
+
+      const q1 = { X: tenthRand(), Y: tenthRand() };
+      const q2 = { X: tenthRand(), Y: tenthRand() };
+      if (q1.X === q2.X) continue;
+
+      const l2 = makeLineFromTwoPoints(q1, q2);
+      if (!l2) continue;
+
+      if (l1.m[0] * l2.m[1] === l2.m[0] * l1.m[1]) continue; // parallel
+
+      const inter = intersectionOfLines(l1, l2);
+      if (!inter) continue;
+
+      const x = fracToNumber(inter.x);
+      const y = fracToNumber(inter.y);
+
+      if (x < -9.5 || x > 9.5 || y < -9.5 || y > 9.5) continue;
+
+      activity.line1 = l1;
+      activity.line2 = l2;
+      activity.intersection = inter;
+      return true;
+    }
+    return false;
+  }
+
+  function setPromptLatex(latex) {
+    promptEl.innerHTML = latex;
+    typeset([promptEl]);
+  }
+
+  function clearSolutions() {
+    solutionStepsEl.innerHTML = '';
+    activity.solutionShown = {};
+  }
+
+  function appendSolutionStep(latexBlock) {
+    const div = document.createElement('div');
+    div.classList.add('math');
+    div.style.margin = '0.35em auto';
+    div.innerHTML = latexBlock;
+    solutionStepsEl.appendChild(div);
+    typeset([div]);
+  }
+
+  function revealSolutionForStage(stage) {
+    if (activity.solutionShown[stage]) return;
+    const l = (stage.startsWith('L1_')) ? activity.line1 : activity.line2;
+
+    if (stage === STAGES.L1_SLOPE || stage === STAGES.L2_SLOPE) {
+      const x1 = decimal1FromTenth(l.p1.X), y1 = decimal1FromTenth(l.p1.Y);
+      const x2 = decimal1FromTenth(l.p2.X), y2 = decimal1FromTenth(l.p2.Y);
+      const mTex = fracToTex(l.m);
+
+      // show a compact but explicit computation
+      appendSolutionStep(
+        String.raw`\[m = \frac{y_2-y_1}{x_2-x_1} = \frac{(${y2})-(${y1})}{(${x2})-(${x1})} = ${mTex}\]`
+      );
+      activity.solutionShown[stage] = true;
+      return;
+    }
+
+    if (stage === STAGES.L1_B || stage === STAGES.L2_B) {
+      const x1 = decimal1FromTenth(l.p1.X), y1 = decimal1FromTenth(l.p1.Y);
+      const mTex = fracToTex(l.m);
+      const bTex = fracToTex(l.b);
+
+      appendSolutionStep(
+        String.raw`\[y - (${y1}) = ${mTex}\bigl(x - (${x1})\bigr) \implies y = ${mTex}x + ${bTex}\]`
+      );
+      activity.solutionShown[stage] = true;
+      return;
+    }
+
+    if (stage === STAGES.INTERSECTION) {
+      const l1 = activity.line1;
+      const l2 = activity.line2;
+
+      const m1 = l1.m, b1 = l1.b;
+      const m2 = l2.m, b2 = l2.b;
+
+      const dm = subFrac(m1, m2);
+      const db = subFrac(b2, b1);
+      const x = divFrac(db, dm);
+      const y = addFrac(mulFrac(m1, x), b1);
+
+      const m1Tex = fracToTex(m1);
+      const b1Tex = fracToTex(b1);
+      const m2Tex = fracToTex(m2);
+      const b2Tex = fracToTex(b2);
+
+      const dmTex = fracToTex(dm);
+      const dbTex = fracToTex(db);
+      const xTex = fracToTex(x);
+      const yTex = fracToTex(y);
+
+      appendSolutionStep(
+        String.raw`\[${m1Tex}x + ${b1Tex} = ${m2Tex}x + ${b2Tex} \implies (${dmTex})x = ${dbTex} \implies x = ${xTex} \implies y = ${yTex}\]`
+      );
+      
+      appendSolutionStep(
+        String.raw`\[\text{So, the point of intersection is } \left(${xTex}, ${yTex}\right).\]`
+      );
+activity.solutionShown[stage] = true;
+      return;
+    }
+
+    // For plotting stages, no worked-solution step requested.
+    activity.solutionShown[stage] = true;
+  }
+
+  function startActivity() {
+    initAxesIfNeeded();
+    // Clear everything on the activity axes and redraw axes/grid
+    plotLinearFunction(axesSvg, () => 1e9, { domain: 'reals' });
+
+    clearPlotAttempt();
+    clearGivenPoints();
+    clearSolutions();
+    setFeedback('');
+
+    // 50% chance: all coordinates are integers for BOTH lines.
+    activity.useIntegers = (Math.random() < 0.5);
+
+    if (!generateTwoLines()) {
+      setFeedback('Something went wrong generating lines. Refresh the page and try again.');
+      return;
+    }
+    nextBtn.style.display = 'inline-block';
+    hintBtn.style.display = 'inline-block';
+
+    activity.stage = STAGES.L1_SLOPE;
+    renderStage();
+  }
+
+  function renderStage() {
+    setFeedback('');
+    clearPlotAttempt();
+    clearGivenPoints();
+
+    const l1 = activity.line1;
+    const l2 = activity.line2;
+
+    if (activity.stage === STAGES.L1_SLOPE) {
+      showSingleInput('Slope m:');
+      const p1 = `(${decimal1FromTenth(l1.p1.X)}, ${decimal1FromTenth(l1.p1.Y)})`;
+      const p2 = `(${decimal1FromTenth(l1.p2.X)}, ${decimal1FromTenth(l1.p2.Y)})`;
+      setPromptLatex(`Find the slope of the line through the two points \\(${p1}\\) and \\(${p2}\\).`);
+      drawLinePoints(l1, 'rgba(13, 110, 253, 0.95)');
+      return;
+    }
+
+    if (activity.stage === STAGES.L1_B) {
+      showSingleInput('y-intercept b:');
+      setPromptLatex(`Using your slope, find the \\(y\\)-intercept \\(b\\) of the line.`);
+      drawLinePoints(l1, 'rgba(13, 110, 253, 0.95)');
+      return;
+    }
+
+    if (activity.stage === STAGES.L1_PLOT) {
+      singleWrap.style.display = 'none';
+      pairWrap.style.display = 'none';
+      const mTex = fracToTex(l1.m);
+      const bTex = fracToTex(l1.b);
+      setPromptLatex(`Plot the line \\(y = ${mTex}x + ${bTex}\\). Click once to set a starting point, then click again to place the line.`);
+      drawLinePoints(l1, 'rgba(13, 110, 253, 0.95)');
+      enablePlotMode(l1);
+      return;
+    }
+
+    if (activity.stage === STAGES.L2_SLOPE) {
+      showSingleInput('Slope m:');
+      const p1 = `(${decimal1FromTenth(l2.p1.X)}, ${decimal1FromTenth(l2.p1.Y)})`;
+      const p2 = `(${decimal1FromTenth(l2.p2.X)}, ${decimal1FromTenth(l2.p2.Y)})`;
+      setPromptLatex(`Now do it again. Find the slope of the line through \\(${p1}\\) and \\(${p2}\\).`);
+
+      // Keep line 1 visible
+      drawActualLine(l1, 'rgba(13, 110, 253, 0.95)');
+      drawLinePoints(l2, 'rgba(220, 53, 69, 0.95)');
+      return;
+    }
+
+    if (activity.stage === STAGES.L2_B) {
+      showSingleInput('y-intercept b:');
+      setPromptLatex(`Find the \\(y\\)-intercept \\(b\\) of the second line.`);
+      drawActualLine(l1, 'rgba(13, 110, 253, 0.95)');
+      drawLinePoints(l2, 'rgba(220, 53, 69, 0.95)');
+      return;
+    }
+
+    if (activity.stage === STAGES.L2_PLOT) {
+      singleWrap.style.display = 'none';
+      pairWrap.style.display = 'none';
+      const mTex = fracToTex(l2.m);
+      const bTex = fracToTex(l2.b);
+      setPromptLatex(`Plot the line \\(y = ${mTex}x + ${bTex}\\). Click once to set a starting point, then click again to place the line.`);
+      drawActualLine(l1, 'rgba(13, 110, 253, 0.95)');
+      drawLinePoints(l2, 'rgba(220, 53, 69, 0.95)');
+      enablePlotMode(l2);
+      return;
+    }
+
+    if (activity.stage === STAGES.INTERSECTION) {
+      showPairInput();
+      setPromptLatex(`Finally, enter the point of intersection of the two lines:`);
+      drawActualLine(l1, 'rgba(13, 110, 253, 0.95)');
+      drawActualLine(l2, 'rgba(220, 53, 69, 0.95)');
+      return;
+    }
+
+    if (activity.stage === STAGES.DONE) {
+      singleWrap.style.display = 'none';
+      pairWrap.style.display = 'none';
+      nextBtn.style.display = 'none';
+      hintBtn.style.display = 'none';
+      setPromptLatex(``);
+      setFeedback('Correct!', 'ok');
+      drawActualLine(l1, 'rgba(13, 110, 253, 0.95)');
+      drawActualLine(l2, 'rgba(220, 53, 69, 0.95)');
+
+      // Plot intersection point
+      const ix = fracToNumber(activity.intersection.x);
+      const iy = fracToNumber(activity.intersection.y);
+      drawPoint(ix, iy, { fill: 'rgba(0,0,0,0.9)', r: 5.8, stroke: 'rgba(255,255,255,0.9)', strokeWidth: 2.2 });
+      return;
+    }
+  }
+
+  function handleNext() {
+    playSound('click-sound');
+    setFeedback('');
+
+    const l1 = activity.line1;
+    const l2 = activity.line2;
+
+    if (activity.stage === STAGES.L1_SLOPE) {
+      const parsed = parseExactNumber(singleInput.value);
+      if (parsed.error) return setFeedback(parsed.error);
+
+      const mTrue = l1.m;
+      const mUser = reduceFrac(parsed.num, parsed.den);
+
+      if (mUser[0] === mTrue[0] && mUser[1] === mTrue[1]) {
+        revealSolutionForStage(STAGES.L1_SLOPE);
+        activity.stage = STAGES.L1_B;
+        renderStage();
+      } else {
+        setFeedback('Not quite. That slope is not exact.');
+      }
+      return;
+    }
+
+    if (activity.stage === STAGES.L1_B) {
+      const parsed = parseExactNumber(singleInput.value);
+      if (parsed.error) return setFeedback(parsed.error);
+
+      const bTrue = l1.b;
+      const bUser = reduceFrac(parsed.num, parsed.den);
+
+      if (bUser[0] === bTrue[0] && bUser[1] === bTrue[1]) {
+        revealSolutionForStage(STAGES.L1_B);
+        activity.stage = STAGES.L1_PLOT;
+        renderStage();
+      } else {
+        setFeedback('Not quite. That y-intercept is not exact.');
+      }
+      return;
+    }
+
+    if (activity.stage === STAGES.L2_SLOPE) {
+      const parsed = parseExactNumber(singleInput.value);
+      if (parsed.error) return setFeedback(parsed.error);
+
+      const mTrue = l2.m;
+      const mUser = reduceFrac(parsed.num, parsed.den);
+
+      if (mUser[0] === mTrue[0] && mUser[1] === mTrue[1]) {
+        revealSolutionForStage(STAGES.L2_SLOPE);
+        activity.stage = STAGES.L2_B;
+        renderStage();
+      } else {
+        setFeedback('Not quite. That slope is not exact.');
+      }
+      return;
+    }
+
+    if (activity.stage === STAGES.L2_B) {
+      const parsed = parseExactNumber(singleInput.value);
+      if (parsed.error) return setFeedback(parsed.error);
+
+      const bTrue = l2.b;
+      const bUser = reduceFrac(parsed.num, parsed.den);
+
+      if (bUser[0] === bTrue[0] && bUser[1] === bTrue[1]) {
+        revealSolutionForStage(STAGES.L2_B);
+        activity.stage = STAGES.L2_PLOT;
+        renderStage();
+      } else {
+        setFeedback('Not quite. That y-intercept is not exact.');
+      }
+      return;
+    }
+
+    if (activity.stage === STAGES.INTERSECTION) {
+      const px = parseExactNumber(pairX.value);
+      if (px.error) return setFeedback(px.error);
+      const py = parseExactNumber(pairY.value);
+      if (py.error) return setFeedback(py.error);
+
+      const xTrue = activity.intersection.x;
+      const yTrue = activity.intersection.y;
+
+      const xUser = reduceFrac(px.num, px.den);
+      const yUser = reduceFrac(py.num, py.den);
+
+      if (xUser[0] === xTrue[0] && xUser[1] === xTrue[1] && yUser[0] === yTrue[0] && yUser[1] === yTrue[1]) {
+        activity.stage = STAGES.DONE;
+        renderStage();
+      } else {
+        setFeedback('Nope — that intersection point is not exact.');
+      }
+      return;
+    }
+
+    // During plotting stages, Next does nothing (you advance by placing a correct line)
+  }
+
+  // -----------------------------
+  // Plot interaction (click, ray, place line)
+  // -----------------------------
+  function enablePlotMode(trueLine) {
+    initAxesIfNeeded();
+    activity.plot.active = true;
+
+    function onMove(evt) {
+      if (!activity.plot.active) return;
+      if (!activity.plot.anchor || !activity.plot.ray) return;
+      const p = worldFromEvent(evt);
+      if (!p) return;
+      updateRay(activity.plot.ray, activity.plot.anchor, p);
+    }
+
+    function onClick(evt) {
+      if (!activity.plot.active) return;
+      const p = worldFromEvent(evt);
+      if (!p) return;
+
+      // Ignore clicks outside the framed plotting region
+      const st = axesSvg.__plotState;
+      const inX = (p.px >= st.pad && p.px <= (st.w - st.pad));
+      const inY = (p.py >= st.pad && p.py <= (st.h - st.pad));
+      if (!inX || !inY) return;
+
+      if (!activity.plot.anchor) {
+        clearPlotAttempt();
+        activity.plot.anchor = { x: p.x, y: p.y };
+        activity.plot.ray = drawRay(activity.plot.anchor, activity.plot.anchor);
+        return;
+      }
+
+      // Second click: validate
+      const p2 = { x: p.x, y: p.y };
+      const ok = userLineCloseEnough(activity.plot.anchor, p2, trueLine);
+
+      if (!ok) {
+        setFeedback('That line is not close enough. Try again.');
+        clearPlotAttempt();
+        return;
+      }
+
+      // Correct: show the actual line, advance stage
+      setFeedback('', 'ok');
+      clearPlotAttempt();
+
+      if (activity.stage === STAGES.L1_PLOT) {
+        drawActualLine(activity.line1, 'rgba(13, 110, 253, 0.95)');
+        // Note: do NOT flip active off here; this is also used mid-plot.
+        axesSvg.removeEventListener('mousemove', onMove);
+        axesSvg.removeEventListener('click', onClick);
+        activity.stage = STAGES.L2_SLOPE;
+        renderStage();
+        return;
+      }
+
+      if (activity.stage === STAGES.L2_PLOT) {
+        drawActualLine(activity.line1, 'rgba(13, 110, 253, 0.95)');
+        drawActualLine(activity.line2, 'rgba(220, 53, 69, 0.95)');
+        // Note: do NOT flip active off here; this is also used mid-plot.
+        axesSvg.removeEventListener('mousemove', onMove);
+        axesSvg.removeEventListener('click', onClick);
+        activity.stage = STAGES.INTERSECTION;
+        renderStage();
+        return;
+      }
+    }
+
+    activity.plot._onMove = onMove;
+    activity.plot._onClick = onClick;
+
+    // Ensure listeners are not stacked
+    axesSvg.onmousemove = null;
+    axesSvg.onclick = null;
+
+    axesSvg.addEventListener('mousemove', onMove);
+    axesSvg.addEventListener('click', onClick);
+  }
+
+  // -----------------------------
+  // Wire up buttons
+  // -----------------------------
+  startBtn.addEventListener('click', () => {
+    playSound('click-sound');
+    startActivity();
+  });
+
+  nextBtn.addEventListener('click', handleNext);
+
+  hintBtn.addEventListener('click', () => {
+    playSound('click-sound');
+    setFeedback('');
+
+    // Hint advances exactly as if the user entered the correct answer.
+    if (activity.stage === STAGES.L1_SLOPE) {
+      revealSolutionForStage(STAGES.L1_SLOPE);
+      activity.stage = STAGES.L1_B;
+      renderStage();
+      return;
+    }
+
+    if (activity.stage === STAGES.L1_B) {
+      revealSolutionForStage(STAGES.L1_B);
+      activity.stage = STAGES.L1_PLOT;
+      renderStage();
+      return;
+    }
+
+    if (activity.stage === STAGES.L1_PLOT) {
+      // Just show the correct line and move on.
+      activity.plot.active = false;
+      clearPlotAttempt();
+      if (activity.plot._onMove) axesSvg.removeEventListener('mousemove', activity.plot._onMove);
+      if (activity.plot._onClick) axesSvg.removeEventListener('click', activity.plot._onClick);
+
+      drawActualLine(activity.line1, 'rgba(13, 110, 253, 0.95)');
+      activity.stage = STAGES.L2_SLOPE;
+      renderStage();
+      return;
+    }
+
+    if (activity.stage === STAGES.L2_SLOPE) {
+      revealSolutionForStage(STAGES.L2_SLOPE);
+      activity.stage = STAGES.L2_B;
+      renderStage();
+      return;
+    }
+
+    if (activity.stage === STAGES.L2_B) {
+      revealSolutionForStage(STAGES.L2_B);
+      activity.stage = STAGES.L2_PLOT;
+      renderStage();
+      return;
+    }
+
+    if (activity.stage === STAGES.L2_PLOT) {
+      // Just show the correct line and move on.
+      activity.plot.active = false;
+      clearPlotAttempt();
+      if (activity.plot._onMove) axesSvg.removeEventListener('mousemove', activity.plot._onMove);
+      if (activity.plot._onClick) axesSvg.removeEventListener('click', activity.plot._onClick);
+
+      drawActualLine(activity.line1, 'rgba(13, 110, 253, 0.95)');
+      drawActualLine(activity.line2, 'rgba(220, 53, 69, 0.95)');
+      activity.stage = STAGES.INTERSECTION;
+      renderStage();
+      return;
+    }
+
+    if (activity.stage === STAGES.INTERSECTION) {
+      revealSolutionForStage(STAGES.INTERSECTION);
+      activity.stage = STAGES.DONE;
+      renderStage();
+      return;
+    }
+  });
+
+  // UX: Enter key submits when single input is visible
+  singleInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && nextBtn.style.display !== 'none') {
+      handleNext();
+    }
+  });
+  pairX.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && nextBtn.style.display !== 'none') {
+      handleNext();
+    }
+  });
+  pairY.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && nextBtn.style.display !== 'none') {
+      handleNext();
+    }
+  });
+
+  // Initialize axes immediately (so "nothing appears" is not an option)
+  initAxesIfNeeded();
+  nextBtn.textContent = 'Next';
+  hintBtn.textContent = 'Hint';
+  hintBtn.style.display = 'none';
+</script>
+
+  <audio id="click-sound" src="button.mp3" preload="auto"></audio>
+  <audio id="set-sound" src="set2.mp3" preload="auto"></audio>
+
+</body>
+</html>

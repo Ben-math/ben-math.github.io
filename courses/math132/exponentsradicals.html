@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -240,7 +241,7 @@ function makeSingleAnswerRow() {
   row.style.margin = '0.35em 0';
 
   const label = document.createElement('span');
-  label.textContent = 'Answer:';
+  label.textContent = 'Exponent a:';
 
   const inp = document.createElement('input');
   inp.type = 'text';
@@ -343,7 +344,7 @@ function buildType1Once() {
     ops.push(Math.random() < 0.5 ? '·' : '÷');
   }
 
-  const maxZ = 100;
+  const maxZ = 50;
 
   // Build terms
   const terms = [];
@@ -435,13 +436,10 @@ function buildType1Once() {
     else totalExp = subFrac(totalExp, contribs[i]);
   }
 
-  // must simplify to x^a where a is integer in range
-  const [tn, td] = totalExp;
-  if (td !== 1) return null;
-
-  const a = tn;
-  const bound = (x <= 5) ? 3 : 2;
-  if (a < -bound || a > bound) return null;
+  // Total exponent on x (may be fractional)
+  const [tn0, td0] = totalExp;
+  const [tn, td] = reduceFrac(tn0, td0);
+  const aTex = fracToTex(tn, td);
 
   // Build expression TeX with operators
   let expr = termTexes[0];
@@ -481,20 +479,13 @@ function buildType1Once() {
     rewriteExpr += `\\ ${op}\\ ${rewriteTerms[i]}`;
   }
 
-  // final numeric answer
-  const ansNum = (a >= 0) ? Math.pow(x, a) : 1;
-  const ansDen = (a >= 0) ? 1 : Math.pow(x, -a);
-
-  const ansTex = (a >= 0) ? `${ansNum}` : `\\frac{1}{${ansDen}}`;
-
   return {
     type: 1,
     x,
     exprTex: expr,
     rewriteExprTex: rewriteExpr,
-    expATex: `${a}`,
-    ans: reduceFrac(ansNum, ansDen),
-    ansTex
+    expATex: aTex,
+    ans: [tn, td]
   };
 }
 
@@ -505,10 +496,10 @@ function genType1() {
 
     current = p;
 
-    questionText.innerHTML = String.raw`Simplify:
-    \[
-      ${p.exprTex}
-    \]`;
+    questionText.innerHTML = String.raw`Simplify. Your final answer should be written as \(${p.x}^{a}\). Enter the exponent \(a\):
+\[
+  ${p.exprTex}
+\]`;
 
     hintSteps = [
       String.raw`Rewrite every base as a power of ${p.x}:
@@ -519,9 +510,9 @@ function genType1() {
       \[
         ${p.x}^{${p.expATex}}.
       \]`,
-      String.raw`Evaluate:
+      String.raw`So the expression simplifies to
       \[
-        ${p.x}^{${p.expATex}} = ${p.ansTex}.
+        ${p.x}^{${p.expATex}}.
       \]`
     ];
 
@@ -535,10 +526,9 @@ function genType1() {
     exprTex: `\\left(4^2\\right)\\div\\left(2\\right)`,
     rewriteExprTex: `\\left(\\left(2^2\\right)^2\\right)\\div\\left(2\\right)`,
     expATex: `3`,
-    ans: [8, 1],
-    ansTex: `8`
+    ans: [3, 1]
   };
-  questionText.innerHTML = String.raw`Simplify:
+  questionText.innerHTML = String.raw`Simplify. Your final answer should be written as \(${current.x}^{a}\). Enter the exponent \(a\):
   \[
     ${current.exprTex}
   \]`;
@@ -551,9 +541,9 @@ function genType1() {
     \[
       ${current.x}^{${current.expATex}}.
     \]`,
-    String.raw`Evaluate:
+    String.raw`So the expression simplifies to:
     \[
-      ${current.x}^{${current.expATex}} = ${current.ansTex}.
+      ${current.x}^{${current.expATex}}.
     \]`
   ];
 }

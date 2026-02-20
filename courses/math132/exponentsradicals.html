@@ -42,96 +42,33 @@ fetch("/nav.html")
   </header>
   <main>
 
-    <p>We have previously seen how to solve simple systems of equations: namely, when two lines were put in slope-intercept form, 
-      setting their right-hand sides equal to one another to solve for \(x\) (and subsequently, \(y\).  This is a specific case 
-      of a more general strategy for solving systems of equations: that is, multiple equations are all true, and we need to find 
-      what values of the variables satisfy all simultaneously.
+    <p>In much the same way that multiplication is defined by repeated addition:
+      \[3 \cdot 5 = 3 + 3 + 3 + 3 + 3\]
+      exponentiation is defined by repeated multiplication:
+      \[2^4 = 2 \cdot 2 \cdot 2 \cdot 2\]
+      Using this definition, it is possible to derive the following exponent laws, for any real numbers \(a, b, m, n\):
     </p>
+
+    <ul>
+      <li>\(a^0 = 1\)</li>
+      <li>\(a^m \cdot a^n = a^{m+n}\)</li>
+      <li>\(\frac{a^m}{a^n} = a^{m-n}\)</li>
+      <li>\((a^m)^n = a^{mn}\)</li>
+      <li>\(a^{-n} = \frac{1}{a^n}\)</li>
+      <li>\(a^{\frac{m}{n}} = (a^m)^{\frac{1}{n}} = \left(a^{\frac{1}{n}}\right)^m\)</li>
+      <li>\((ab)^n = a^n \cdot b^n\)</li>
+      <li>\(\left(\frac{a}{b}\right)^n = \frac{a^n}{b^n}\)</li>
+    </ul>
     
-    <p>Note that our previous strategy <b>reduced</b> the problem to solving an equation which contained only a single variable, 
-      \(x\).  This will be our strategy in general: to eliminate variables from the problem, and solve over a reduced number of 
-      variables.  This is called <b>Gaussian elimination</b>.  Operations we are allowed to perform are:
+    <p>In the above, the only exponent that it is unclear how to perform the computation with is the fractional exponent.  These can also be represented 
+      with a radical symbol:
+      \[a^{\frac{1}{n}} = \sqrt[n]{a}\]
+      To evaluate a radical, we use the following definition:
+      \[\sqrt[n]{a} = x \iff a = x^n\]
+      That is, to take the \(n^{\text{th}}\) power of \(a\), we are looking for a number \(x\), which when raised to the \(n^{\text{th}}\) power, gives 
+      \(a\).
     </p>
 
-    <ul>
-      <li>Multiply an equation by a nonzero constant</li>
-      <li>Add/subtract a multiple of one equation to/from another</li>
-    </ul>
-      
-    <p>Generally, this algorithm will amount to multiplying two equations by different numbers so that the coefficients on one 
-      of the variables line up across both equations, and then subtracting one equation from the other.  As far as <i>what</i> 
-      numbers we multiply the equations by, the choice will look very much like giving two fractions common denominators: multiply 
-      each equation by the coefficient of the variable on the other equation.  For instance, to solve the system
-      \[2x + 5y = 9\]
-      \[3x + 4y = 10\]
-      we can multiply the first equation by 3, and the second equation by 2 (the coefficient of \(x\) in the other equation), 
-      obtaining
-      \[6x + 15y = 27\]
-      \[6x + 8y = 7\]
-      and then subtracting the second equation from the first, we get
-      \[7y = y \implies y = 1\]
-      and substituting this value for \(y\) into either of our starting equations, we solve for \(x\):
-      \[2x + 5(1) = 9 \implies 2x = 4 \implies x = 2\]
-    </p>
-
-
-    <p>Another strategy we can use to solve systems of equations is <b>substitution</b>: wherein we can substitute one expression 
-      for another when they are known to be equal to one another.  Some problems lend themselves particularly naturally to the 
-      substitution strategy.  Take for instance the following word problem.
-    </p>
-
-    <p>A steak costs twice as much as a bowl of pasta, and a side of fries costs one third of what a bowl of pasta costs. 
-      If you order all three items, it costs $70.  How much does each item cost?
-    </p>
-
-    <p>We start with some "let" statements, where we choose sensibly-named variables to represent the cost of each item:
-    </p>
-
-    <ul>
-      <li>Let \(s\) be the price of a steak</li>
-      <li>Let \(p\) be the price of a bowl of pasta</li>
-      <li>Let \(f\) be the price of a side of fries</li>
-    </ul>
-
-    <p>Then, we can use the relationships between the prices of the items to obtain some equations:
-    </p>
-
-    <ul>
-      <li>\(s = 2p\)</li>
-      <li>\(f = \frac{1}{3}p\)</li>
-      <li>\(s + p + f = 70\)</li>
-    </ul>
-
-    <p>We want to reduce the problem to one over a single variable.  There are a few ways we could do this, all of which will lead 
-      us to the same solution in the end.  The obvious one from the above is that we have expressed the price of both steak and 
-      fries in terms of the price of pasta: we could <b>substitute</b> these expressions for \(s\) and \(f\) in the final equation:
-      \[s + p + f = 70 \implies 2p + p + \frac{1}{3}p = 70\]
-      We can then solve for \(p\):
-      \[2p + p + \frac{1}{3}p = 70 \implies \frac{10}{3}p = 70 \implies p = 70 \div \frac{10}{3} \implies p = 70 \cdot \frac{3}{10} 
-      \implies p = 21\]
-      Then, substituting our price for pasta into the expressions for the other prices, we find them all:
-      \[s = 2p \implies s = 2(21) = 42 \hspace{3cm} f = \frac{1}{3}p \implies f = \frac{1}{3} \cdot 21 = 7\]
-      People often have difficulty working with fractions.  Consider an alternate choice of substitution which would have avoided 
-      them in the above solution.
-    </p>
-
-    <p>Since fries cost a third of what pasta costs, pasta costs triple what fries cost.  Then since steak costs double what pasta 
-      costs, it costs six times as much as fries:
-    </p>
-
-    <ul>
-      <li>\(s = 6f\)</li>
-      <li>\(p = 3f\)</li>
-      <li>\(s + p + f = 70\)</li>
-    </ul>
-
-    <p>Then we follow the same substitution strategy:
-      \[s + p + f = 70 \implies 6f + 3f + f = 70\]
-      We can then solve for \(f\):
-      \[6f + 3f + f = 70 \implies 10f = 70 \implies f = 7\]
-      Then, substituting our price for fries into the expressions for the other prices, we find them all:
-      \[s = 6f \implies s = 6(7) = 42 \hspace{3cm} p = 3f \implies p = 3(7) = 21\]
-    </p>
 
     
 

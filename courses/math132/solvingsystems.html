@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -100,7 +101,7 @@ fetch("/nav.html")
     <ul>
       <li>\(s = 2p\)</li>
       <li>\(f = \frac{1}{3}p\)</li>
-      <li>s + p + f = 70</li>
+      <li>\(s + p + f = 70\)</li>
     </ul>
 
     <p>We want to reduce the problem to one over a single variable.  There are a few ways we could do this, all of which will lead 
@@ -123,7 +124,7 @@ fetch("/nav.html")
     <ul>
       <li>\(s = 6f\)</li>
       <li>\(p = 3f\)</li>
-      <li>s + p + f = 70</li>
+      <li>\(s + p + f = 70\)</li>
     </ul>
 
     <p>Then we follow the same substitution strategy:
@@ -141,591 +142,294 @@ fetch("/nav.html")
     </div>
     
     <p id="question-text" class="math"></p>
+</main>
+<script>
+// -----------------------------
+// Systems of Equations: question generation only
+// -----------------------------
+const startBtn = document.getElementById('start-btn');
+const questionText = document.getElementById('question-text');
 
-    <div class="button-container">
-      <button id="hint-btn" class="rubber-button">Hint</button>
-    </div>
-    
-    <div id="hint-area" class="math" style="margin-top: 1em; text-align: center"></div>
+function playSound(id) {
+  const s = document.getElementById(id);
+  if (s) { s.currentTime = 0; s.play(); }
+}
 
+function randInt(a, b) {
+  return Math.floor(Math.random() * (b - a + 1)) + a;
+}
 
-    <div id="answer-section" style="margin-top: 20px; text-align: center;">
-      <label for="user-answer">Enter your answer:</label>
-      <input type="text" id="user-answer" />
-      <button id="check-answer-btn" class="rubber-button" style="margin-left: 0.5em;">Check Answer</button>
-      <p id="answer-feedback" style="font-weight: bold; margin-top: 10px;"></p>
-    </div>
+function choice(arr) {
+  return arr[randInt(0, arr.length - 1)];
+}
 
-  </main>
-  <script>
-  const hintBtn = document.getElementById('hint-btn');
-  const hintArea = document.getElementById('hint-area');
-  let hintSteps = [];
-  let hintIndex = 0;
+function gcd(a, b) {
+  a = Math.abs(a); b = Math.abs(b);
+  while (b !== 0) { const t = a % b; a = b; b = t; }
+  return a === 0 ? 1 : a;
+}
 
-  const startBtn = document.getElementById('start-btn');
-  const questionText = document.getElementById('question-text');
+function reduceFrac(num, den) {
+  if (den < 0) { den = -den; num = -num; }
+  const g = gcd(num, den);
+  return [num / g, den / g];
+}
 
-  const answerInput = document.getElementById('user-answer');
-  const feedback = document.getElementById('answer-feedback');
+function fracToTex(num, den) {
+  const [n, d] = reduceFrac(num, den);
+  if (d === 1) return `${n}`;
+  return `\frac{${n}}{${d}}`;
+}
 
-  // Correct answer stored as reduced fraction num/den
-  let currentAnsNum = null;
-  let currentAnsDen = null;
+function moneyFromCents(cents) {
+  const sign = cents < 0 ? "-" : "";
+  cents = Math.abs(Math.round(cents));
+  const dollars = Math.floor(cents / 100);
+  const rem = cents % 100;
+  return sign + "$" + dollars.toString() + (rem === 0 ? "" : "." + rem.toString().padStart(2, "0"));
+}
 
-  // -----------------------------
-  // Helpers
-  // -----------------------------
-  function playSound(id) {
-    const s = document.getElementById(id);
-    if (s) {
-      s.currentTime = 0;
-      s.play();
-    }
-  }
+function typeset() {
+  if (!window.MathJax) return;
+  if (MathJax.typesetPromise) MathJax.typesetPromise();
+  else if (MathJax.typeset) MathJax.typeset();
+}
 
-  function randInt(a, b) {
-    return Math.floor(Math.random() * (b - a + 1)) + a;
-  }
-
-  function gcd(a, b) {
-    a = Math.abs(a); b = Math.abs(b);
-    while (b !== 0) {
-      const t = a % b;
-      a = b;
-      b = t;
-    }
-    return a === 0 ? 1 : a;
-  }
-
-  function reduceFrac(num, den) {
-    if (den < 0) { den = -den; num = -num; }
-    const g = gcd(num, den);
-    return [num / g, den / g];
-  }
-
-  function setAnswer(num, den) {
-    const r = reduceFrac(num, den);
-    currentAnsNum = r[0];
-    currentAnsDen = r[1];
-  }
-
-  function resetUIForNewQuestion() {
-    feedback.textContent = '';
-    feedback.style.color = 'black';
-    answerInput.value = '';
-    hintArea.innerHTML = '';
-    hintSteps = [];
-    hintIndex = 0;
-  }
-
-
-  function typeset(elements = []) {
-    if (!window.MathJax) return;
-    if (MathJax.typesetPromise) {
-      if (elements.length > 0) MathJax.typesetPromise(elements);
-      else MathJax.typesetPromise();
-      return;
-    }
-    if (MathJax.typeset) {
-      if (elements.length > 0) MathJax.typeset(elements);
-      else MathJax.typeset();
-    }
-  }
-
-  function toDecimalString(num, den) {
-    const x = num / den;
-    let s = x.toFixed(2);
-    s = s.replace(/0+$/, '').replace(/\.$/, '');
-    return s;
-  }
-
-  function joinWithOr(items) {
-    if (items.length === 1) return items[0];
-    if (items.length === 2) return `${items[0]} or ${items[1]}`;
-    return `${items.slice(0, -1).join(', ')}, or ${items[items.length - 1]}`;
-  }
-
-  function singularize(word) {
-    // Good enough for your current banks (apples->apple, SUVs->SUV, etc.)
-    if (word.endsWith('s')) return word.slice(0, -1);
-    return word;
-  }
-
-  function articleFor(word) {
-    const first = word[0];
-    const vowelLetter = /^[aeiou]/i.test(first);
-    const anInitialism = /^[FHLMNRSX]/.test(first); // “an” F, H, L, M, N, R, S, X
-    return (vowelLetter || anInitialism) ? 'an' : 'a';
-  }
-
-
-  function fracTex(num, den) {
-    const r = reduceFrac(num, den);
-    const n = r[0], d = r[1];
-    if (d === 1) return `\\frac{${n}}{${d}}`;
-    return `\\frac{${n}}{${d}}`;
-  }
-
-  function parseUserAnswer(raw) {
-    // Accept:
-    //  - integer: "3"
-    //  - fraction: "3/8"
-    //  - decimal: "0.375"
-    //
-    // Returns:
-    //  { kind:'exact', num, den } for integer/fraction
-    //  { kind:'decimal', value, relTol } for decimals (graded by relative tolerance)
-    const s = raw.replace(/\s+/g, '');
-
-    // Fraction a/b
-    const fracMatch = s.match(/^([+-]?\d+)\/([+-]?\d+)$/);
-    if (fracMatch) {
-      const a = parseInt(fracMatch[1], 10);
-      const b = parseInt(fracMatch[2], 10);
-      if (b === 0) return { error: 'Denominator cannot be 0.' };
-      const [rn, rd] = reduceFrac(a, b);
-      return { kind: 'exact', num: rn, den: rd };
-    }
-
-    // Integer
-    const intMatch = s.match(/^[+-]?\d+$/);
-    if (intMatch) {
-      const a = parseInt(s, 10);
-      return { kind: 'exact', num: a, den: 1 };
-    }
-
-    // Decimal
-    const decMatch = s.match(/^[+-]?\d*\.\d+$/);
-    if (decMatch) {
-      const value = Number(s);
-      if (!Number.isFinite(value)) return { error: 'That decimal does not look valid.' };
-      if (value < 0) return { error: 'Probabilities cannot be negative.' };
-      // Allow decimals; grade with 0.01% relative tolerance
-      return { kind: 'decimal', value, relTol: 0.0001 };
-    }
-
-    return { error: 'I couldn’t parse that. Use a fraction like 3/8 or a decimal like 0.375.' };
-  }
-
-  function isCorrect(parsed) {
-    if (currentAnsNum === null || currentAnsDen === null) return false;
-    const correctVal = currentAnsNum / currentAnsDen;
-
-    if (!parsed || parsed.error) return false;
-
-    if (parsed.kind === 'exact') {
-      const [uNum, uDen] = reduceFrac(parsed.num, parsed.den);
-      return (uNum === currentAnsNum && uDen === currentAnsDen);
-    }
-
-    if (parsed.kind === 'decimal') {
-      const denom = Math.max(1e-12, Math.abs(correctVal));
-      return Math.abs(parsed.value - correctVal) <= parsed.relTol * denom;
-    }
-
-    return false;
-  }
-
-  // -----------------------------
-  // Banks
-  // -----------------------------
-  const type1Bank = [
-    { categorySing: 'fruit', categoryPlur: 'fruits', items: ['apples', 'bananas', 'oranges', 'pears', 'grapefruits'] },
-    { categorySing: 'animal', categoryPlur: 'animals', items: ['cats', 'dogs', 'birds', 'bears', 'lions'] },
-    { categorySing: 'musical instrument', categoryPlur: 'musical instruments', items: ['trumpets', 'flutes', 'clarinets', 'tubas', 'saxophones'] },
-    { categorySing: 'piece of furniture', categoryPlur: 'pieces of furniture', items: ['chairs', 'tables', 'couches', 'beds', 'dressers'] },
-    { categorySing: 'utensil', categoryPlur: 'utensils', items: ['forks', 'spoons', 'knives', 'spatulas', 'whisks'] },
-    { categorySing: 'vehicle', categoryPlur: 'vehicles', items: ['sedans', 'jeeps', 'SUVs', 'trucks', 'vans'] },
-    { categorySing: 'shape', categoryPlur: 'shapes', items: ['squares', 'triangles', 'circles', 'pentagons', 'hexagons'] }
-  ];
-
-  const type3Bank = [
-    { e: 'it rains', f: 'the temperature is below 5°C' },
-    { e: 'you score a touchdown', f: 'you are the game MVP' },
-    { e: 'the Best Actor winner is from Europe', f: 'the Best Actor winner is over 40 years old' },
-    { e: 'a newborn has brown hair', f: 'a newborn weighs more than 8 lbs at birth' },
-    { e: 'a randomly selected email is spam', f: 'the email contains the word “free”' },
-    { e: 'a randomly selected day is a weekend', f: 'it rains that day' },
-    { e: 'a student passes the final exam', f: 'the student studied at least 5 hours' },
-    { e: 'a customer buys something', f: 'the customer used a coupon' }
-  ];
-
-  const type4Bank = [
-    {
-      population: 'employees at Ben Co',
-      member: 'employee',
-      aLabel: 'lawyers at Ben Co',
-      bLabel: 'employees at Ben Co earning more than 100K'
-    },
-    {
-      population: 'students at VIU',
-      member: 'student',
-      aLabel: 'students enrolled in Math 132',
-      bLabel: 'students enrolled in Math 161'
-    },
-    {
-      population: 'players in the NHL',
-      member: 'player',
-      aLabel: 'centers in the NHL',
-      bLabel: 'players in the NHL who have averaged more than a point per game'
-    },
-    {
-      population: 'books in a library',
-      member: 'book',
-      aLabel: 'fiction books',
-      bLabel: 'books currently checked out'
-    },
-    {
-      population: 'cars in a parking lot',
-      member: 'car',
-      aLabel: 'cars that are SUVs',
-      bLabel: 'cars that are electric'
-    }
-  ];
-
-  // -----------------------------
-  // Type 1
-  // -----------------------------
-  function generateType1() {
-    const scenario = type1Bank[randInt(0, type1Bank.length - 1)];
-
-    const N = randInt(20, 80);
-    const k = randInt(2, 5);
-
-    // choose k distinct items from the 5
-    const indices = [0, 1, 2, 3, 4];
-    for (let i = indices.length - 1; i > 0; i--) {
-      const j = randInt(0, i);
-      [indices[i], indices[j]] = [indices[j], indices[i]];
-    }
-    const chosenTypesIdx = indices.slice(0, k);
-    const chosenTypes = chosenTypesIdx.map(i => scenario.items[i]);
-
-    // random positive parts summing to N
-    let cuts = [];
-    for (let i = 0; i < k - 1; i++) cuts.push(randInt(1, N - 1));
-    cuts.sort((a, b) => a - b);
-
-    const counts = [];
-    let prev = 0;
-    for (let i = 0; i < cuts.length; i++) {
-      counts.push(cuts[i] - prev);
-      prev = cuts[i];
-    }
-    counts.push(N - prev);
-
-    // choose between 1 and k-1 of the pieces for the OR question
-    const m = randInt(1, k - 1);
-    const idx2 = [...Array(k).keys()];
-    for (let i = idx2.length - 1; i > 0; i--) {
-      const j = randInt(0, i);
-      [idx2[i], idx2[j]] = [idx2[j], idx2[i]];
-    }
-    const picked = idx2.slice(0, m).sort((a, b) => a - b);
-
-    const favorable = picked.reduce((acc, i) => acc + counts[i], 0);
-    setAnswer(favorable, N);
-
-    const breakdown = chosenTypes
-      .map((t, i) => `${counts[i]} ${t}`)
-      .join(', ');
-
-    const askedTypes = picked.map(i => chosenTypes[i]);
-    const askedSingles = askedTypes.map(t => {
-      const s = singularize(t);
-      return `${articleFor(s)} ${s}`;
-    });
-    const askedPhrase = joinWithOr(askedSingles);
-
-    questionText.textContent =
-      `A ${scenario.categorySing} is randomly selected from a set of ${N} ${scenario.categoryPlur}. ` +
-      `There are ${breakdown}. ` +
-      `What is the probability that ${askedPhrase} is selected?`;
-
-    hintSteps = [
-  `Add the counts for the types listed in the question to get the number of favorable outcomes.`,
-  `There are ${picked.map(i => counts[i]).join(' + ')} = ${favorable} ${scenario.categoryPlur} which are ${askedTypes.join(' or ')}.`,
-  `Divide by the total number of outcomes (the total size of the set).`,
-  `The proportion of ${scenario.categoryPlur} which are ${askedTypes.join(' or ')} is \\(${fracTex(favorable, N)}\\).`
+// -----------------------------
+// Type (1): compare two pricing schemes
+// -----------------------------
+const type1Scenarios = [
+  { x: "admission", y: "theme park price", z: "ride", mode: "integerZ" },
+  { x: "admission", y: "wedding", z: "drink", mode: "integerZ" },
+  { x: "the rental", y: "moving company fee", z: "lb", mode: "positiveZ" },
+  { x: "the realtor fee", y: "land parcel price", z: "km^2", mode: "positiveZ" }
 ];
+
+function genType1() {
+  const sc = choice(type1Scenarios);
+
+  // We'll work in cents to avoid floating issues.
+  // Price model: total = flat + rate * z
+  // Solve flat1 + rate1*z = flat2 + rate2*z -> z = (flat2-flat1)/(rate1-rate2)
+
+  let flat1, flat2, rate1, rate2, zNum, zDen;
+
+  function reasonableRanges() {
+    // returns [flatMin, flatMax, rateMin, rateMax] in cents (rate is per z unit)
+    if (sc.y === "theme park price") return [1500, 8000, 100, 900];          // $15-$80 admission, $1-$9 per ride
+    if (sc.y === "wedding") return [20000, 120000, 150, 1500];               // $200-$1200 base, $1.50-$15 per drink
+    if (sc.y === "moving company fee") return [5000, 40000, 5, 60];           // $50-$400 base, $0.05-$0.60 per lb
+    return [10000, 120000, 50, 900];                                         // realtor fee: $100-$1200 base, $0.50-$9 per km^2
   }
 
-  // -----------------------------
-  // Type 2
-  // -----------------------------
-  function generateType2() {
-    const n = randInt(10, 100);
-    const r = randInt(1, 3);
+  const [flatMin, flatMax, rateMin, rateMax] = reasonableRanges();
 
-    const points = new Set();
-    while (points.size < 2 * r) points.add(randInt(1, n));
-    const sorted = Array.from(points).sort((a, b) => a - b);
+  if (sc.mode === "integerZ") {
+    // Force a positive nonzero integer solution z
+    const z = randInt(1, 25);
 
-    const intervals = [];
-    for (let i = 0; i < sorted.length; i += 2) {
-      let a = sorted[i], b = sorted[i + 1];
-      if (b < a) [a, b] = [b, a];
-      intervals.push([a, b]);
+    // Choose distinct integer cent rates
+    do {
+      rate1 = randInt(rateMin, rateMax);
+      rate2 = randInt(rateMin, rateMax);
+    } while (rate1 === rate2);
+
+    // Choose a flat1, then set flat2 so that z solves it.
+    // flat2 = flat1 + z*(rate1-rate2)
+    // Make sure flats stay positive and within some reasonable extension of range.
+    for (let tries = 0; tries < 500; tries++) {
+      flat1 = randInt(flatMin, flatMax);
+      const delta = z * (rate1 - rate2);
+      flat2 = flat1 + delta;
+
+      if (flat2 > 0 && flat2 >= Math.floor(flatMin * 0.6) && flat2 <= Math.floor(flatMax * 1.4)) {
+        zNum = z; zDen = 1;
+        break;
+      }
     }
-    intervals.sort((I, J) => I[0] - J[0]);
+    if (!zNum) return genType1(); // retry if unlucky
+  } else {
+    // Only need positive z (can be non-integer). We'll randomly generate and reject until z>0.
+    for (let tries = 0; tries < 2000; tries++) {
+      flat1 = randInt(flatMin, flatMax);
+      flat2 = randInt(flatMin, flatMax);
+      rate1 = randInt(rateMin, rateMax);
+      rate2 = randInt(rateMin, rateMax);
+      if (rate1 === rate2) continue;
 
-    const disjoint = [];
-    for (const [s, t] of intervals) {
-      if (disjoint.length === 0) disjoint.push([s, t]);
-      else {
-        const last = disjoint[disjoint.length - 1];
-        if (s > last[1]) disjoint.push([s, t]);
-        else {
-          const ns = last[1] + 1;
-          if (ns <= t) disjoint.push([ns, t]);
+      const num = flat2 - flat1;
+      const den = rate1 - rate2;
+      if (num === 0) continue;
+
+      // z = num/den > 0
+      if ((num > 0 && den > 0) || (num < 0 && den < 0)) {
+        const [rn, rd] = reduceFrac(num, den);
+        if (rn > 0 && rd > 0) {
+          zNum = rn; zDen = rd;
+          break;
         }
       }
     }
+    if (!zNum) return genType1();
+  }
 
-    while (disjoint.length < r) {
-      const x = randInt(1, n);
-      let ok = true;
-      for (const [s, t] of disjoint) if (x >= s && x <= t) ok = false;
-      if (ok) disjoint.push([x, x]);
-      if (disjoint.length > 10) break;
-    }
+  // Render
+  const zAnswerTex = (zDen === 1) ? `${zNum}` : `\frac{${zNum}}{${zDen}}`;
 
-    disjoint.sort((I, J) => I[0] - J[0]);
-    const finalIntervals = disjoint.slice(0, r);
+  questionText.innerHTML =
+    `You are comparing two different ${sc.y}s. ` +
+    `The first ${sc.y} costs a flat amount for ${sc.x} of ${moneyFromCents(flat1)}, plus ${moneyFromCents(rate1)} per ${sc.z}. ` +
+    `The second ${sc.y} costs a flat amount for ${sc.x} of ${moneyFromCents(flat2)}, plus ${moneyFromCents(rate2)} per ${sc.z}. ` +
+    `At how many ${sc.z}s are the two ${sc.y}s the same price?`;
 
-    let outerUsed = 0;
-    const phrases = finalIntervals.map(([s, t]) => {
-      if (s === 1 && outerUsed < 2) {
-        outerUsed++;
-        return `less than ${t + 1}`;
-      }
-      if (t === n && outerUsed < 2) {
-        outerUsed++;
-        return `${s} or higher`;
-      }
-      if (s === t) return `exactly ${s}`;
-      return `between ${s} and ${t} (inclusive)`;
-    });
+  // (We compute the answer but do not display/grade yet)
+  window.__lastSystemAnswer = { type: 1, zNum, zDen, zTex: zAnswerTex };
+}
 
-    const favorable = finalIntervals.reduce((acc, [s, t]) => acc + (t - s + 1), 0);
-    setAnswer(favorable, n);
-
-    questionText.textContent =
-      `A ${n}-sided die is rolled. ` +
-      `What is the probability that the number rolled is ${joinWithOr(phrases)}?`;
-
-    hintSteps = [
-  `Count how many outcomes satisfy at least one of the listed conditions.`,
-  `There are ${favorable} natural numbers which are ${joinWithOr(phrases)}.`,
-  `Divide by the total number of outcomes (${n}).`,
-  `The proportion of natural numbers which are ${n} or less that are ${joinWithOr(phrases)} is \\(${fracTex(favorable, n)}\\).`
+// -----------------------------
+// Type (2): ratios relative to y plus total
+// -----------------------------
+const type2Scenarios = [
+  { x: "steak", y: "lobster", z: "caviar", base: [1200, 6500] },                 // y dollars range
+  { x: "a sedan", y: "a van", z: "a truck", base: [1800000, 5200000] },          // y dollars range
+  { x: "a hammer", y: "a table saw", z: "a drill", base: [1500, 55000] },        // y dollars range
+  { x: "socks", y: "a shirt", z: "a coat", base: [800, 18000] }                  // y dollars range
 ];
+
+function randomRatio() {
+  // Return rational a/b and a human-readable phrase and TeX
+  const asInteger = Math.random() < 0.6; // slight bias toward integers
+  if (asInteger) {
+    const k = randInt(2, 10);
+    return { a: k, b: 1, phrase: `${k} times`, tex: `${k}` };
   }
+  const d = randInt(2, 10);
+  return { a: 1, b: d, phrase: `\(\frac{1}{${d}}\) of`, tex: `\frac{1}{${d}}` };
+}
 
-  // -----------------------------
-  // Type 3
-  // -----------------------------
-  function generateType3() {
-    const scenario = type3Bank[randInt(0, type3Bank.length - 1)];
+function genType2() {
+  const sc = choice(type2Scenarios);
 
-    const den = 100;
-    const pE = randInt(10, 80);
-    const pF = randInt(10, 80);
+  const rX = randomRatio(); // x = (a/b)*y
+  const rZ = randomRatio(); // z = (a/b)*y
 
-    const minInt = Math.max(0, pE + pF - den);
-    const maxInt = Math.min(pE, pF);
-    const pInt = randInt(minInt, maxInt);
+  // Choose y as cents (integer dollars 75% of the time, else cents),
+  // then compute x and z exactly.
+  const integerDollars = Math.random() < 0.75;
 
-    const pUnion = pE + pF - pInt;
-    const giveUnion = Math.random() < 0.5;
-
-    if (giveUnion) {
-      setAnswer(pInt, den);
-      questionText.textContent =
-        `There is a ${toDecimalString(pE, den)} probability that ${scenario.e}, ` +
-        `a ${toDecimalString(pF, den)} probability that ${scenario.f}, ` +
-        `and a ${toDecimalString(pUnion, den)} probability that ${scenario.e} or ${scenario.f}. ` +
-        `What is the probability that ${scenario.e} and ${scenario.f}?`;
+  for (let tries = 0; tries < 2000; tries++) {
+    let yCents;
+    if (integerDollars) {
+      const yDollars = randInt(Math.floor(sc.base[0] / 100), Math.floor(sc.base[1] / 100));
+      yCents = yDollars * 100;
     } else {
-      setAnswer(pUnion, den);
-      questionText.textContent =
-        `There is a ${toDecimalString(pE, den)} probability that ${scenario.e}, ` +
-        `a ${toDecimalString(pF, den)} probability that ${scenario.f}, ` +
-        `and a ${toDecimalString(pInt, den)} probability that ${scenario.e} and ${scenario.f}. ` +
-        `What is the probability that ${scenario.e} or ${scenario.f}?`;
+      // cents: pick to the nearest 5 cents to keep numbers sane
+      const lo = sc.base[0], hi = sc.base[1];
+      yCents = randInt(Math.floor(lo / 5), Math.floor(hi / 5)) * 5;
     }
 
-    hintSteps = (() => {
-  const eText = scenario.e;
-  const fText = scenario.f;
+    // x = (rX.a/rX.b)*y; z = (rZ.a/rZ.b)*y
+    if ((yCents * rX.a) % rX.b !== 0) continue;
+    if ((yCents * rZ.a) % rZ.b !== 0) continue;
 
-  if (giveUnion) {
-    return [
-      `Use inclusion-exclusion.`,
-      `Rearrange depending on which quantity you’re missing.`,
-      `\\(P(E \\cap F) = P(E) + P(F) - P(E \\cup F)\\)`,
-      `Let \\(E\\) be the event that ${eText}, and let \\(F\\) be the event that ${fText}.`,
-      `Substitute: \\(P(E \\cap F) = ${fracTex(pE, den)} + ${fracTex(pF, den)} - ${fracTex(pUnion, den)} = ${fracTex(pInt, den)}\\).`
-    ];
-  } else {
-    return [
-      `Use inclusion-exclusion.`,
-      `Rearrange depending on which quantity you’re missing.`,
-      `\\(P(E \\cup F) = P(E) + P(F) - P(E \\cap F)\\)`,
-      `Let \\(E\\) be the event that ${eText}, and let \\(F\\) be the event that ${fText}.`,
-      `Substitute: \\(P(E \\cup F) = ${fracTex(pE, den)} + ${fracTex(pF, den)} - ${fracTex(pInt, den)} = ${fracTex(pUnion, den)}\\).`
-    ];
+    const xCents = (yCents * rX.a) / rX.b;
+    const zCents = (yCents * rZ.a) / rZ.b;
+
+    const total = xCents + yCents + zCents;
+
+    // Sanity bounds: avoid absurd totals
+    if (total <= 0) continue;
+
+    questionText.innerHTML =
+      `If ${sc.x} costs ${rX.phrase} as much as ${sc.y}, ` +
+      `and ${sc.z} costs ${rZ.phrase} as much as ${sc.y}, ` +
+      `and together, they all cost ${moneyFromCents(total)}, ` +
+      `then how much does each item cost?`;
+
+    window.__lastSystemAnswer = {
+      type: 2,
+      xCents, yCents, zCents,
+      totalCents: total,
+      ratios: { rX, rZ },
+      items: sc
+    };
+    break;
   }
-})();
-  }
+}
 
-  // -----------------------------
-  // Type 4
-  // -----------------------------
-  function generateType4() {
-    const scenario = type4Bank[randInt(0, type4Bank.length - 1)];
+// -----------------------------
+// Type (3): two bills -> solve for unit prices
+// -----------------------------
+const type3Scenarios = [
+  { x: "steak", y: "lobster", px: [1800, 6500], py: [1800, 6500] },
+  { x: "sedan", y: "van", px: [1600000, 4200000], py: [1600000, 4200000] },
+  { x: "hammer", y: "drill", px: [1200, 55000], py: [1200, 55000] },
+  { x: "shirt", y: "coat", px: [1200, 18000], py: [1200, 18000] }
+];
 
-    const N = randInt(80, 600);
-    const a = randInt(10, Math.floor(0.75 * N));
-    const b = randInt(10, Math.floor(0.75 * N));
+function genType3() {
+  const sc = choice(type3Scenarios);
+  const integerDollars = Math.random() < 0.75;
 
-    const giveUnion = Math.random() < 0.5;
-
-    let u;
-    let inter;
-
-    if (giveUnion) {
-      const uMin = Math.max(a, b);
-      const uMax = Math.min(N, a + b);
-      u = randInt(uMin, uMax);
-      inter = a + b - u;
-
-      setAnswer(inter, N);
-
-      questionText.textContent =
-        `There are ${N} ${scenario.population}. ` +
-        `${a} are ${scenario.aLabel}, ${b} are ${scenario.bLabel}, ` +
-        `and ${u} are ${scenario.aLabel} or ${scenario.bLabel}. ` +
-        `If a ${scenario.member} is selected at random, what is the probability they are ` +
-        `${scenario.aLabel} and ${scenario.bLabel}?`;
-    } else {
-      const iMin = Math.max(0, a + b - N);
-      const iMax = Math.min(a, b);
-      inter = randInt(iMin, iMax);
-      u = a + b - inter;
-
-      setAnswer(u, N);
-
-      questionText.textContent =
-        `There are ${N} ${scenario.population}. ` +
-        `${a} are ${scenario.aLabel}, ${b} are ${scenario.bLabel}, ` +
-        `and ${inter} are ${scenario.aLabel} and ${scenario.bLabel}. ` +
-        `If a ${scenario.member} is selected at random, what is the probability they are ` +
-        `${scenario.aLabel} or ${scenario.bLabel}?`;
+  // generate prices
+  let px, py;
+  function pickPrice(range) {
+    if (integerDollars) {
+      const dollars = randInt(Math.floor(range[0] / 100), Math.floor(range[1] / 100));
+      return dollars * 100;
     }
-
-    hintSteps = (() => {
-  const A = scenario.aLabel;
-  const B = scenario.bLabel;
-
-  if (giveUnion) {
-    return [
-      `Use inclusion-exclusion: \\(|A \\cup B| = |A| + |B| - |A \\cap B|\\).`,
-      `Find the missing amount, \\(|A \\cap B|\\).`,
-      `Let \\(A =\\) ${A} and let \\(B =\\) ${B}.`,
-      `Substitute: \\(${u} = ${a} + ${b} - |A \\cap B|\\).`,
-      `So \\(|A \\cap B| = ${a} + ${b} - ${u} = ${inter}\\).`,
-      `Divide by the total population to get the probability.`,
-      `The proportion of ${scenario.population} which are ${A} and ${B} is \\(${fracTex(inter, N)}\\).`
-    ];
-  } else {
-    return [
-      `Use inclusion-exclusion: \\(|A \\cup B| = |A| + |B| - |A \\cap B|\\).`,
-      `Find the missing amount, \\(|A \\cup B|\\).`,
-      `Let \\(A =\\) ${A} and let \\(B =\\) ${B}.`,
-      `Substitute: \\(|A \\cup B| = ${a} + ${b} - ${inter}\\).`,
-      `So \\(|A \\cup B| = ${u}\\).`,
-      `Divide by the total population to get the probability.`,
-      `The proportion of ${scenario.population} which are ${A} or ${B} is \\(${fracTex(u, N)}\\).`
-    ];
-  }
-})();
+    return randInt(Math.floor(range[0] / 5), Math.floor(range[1] / 5)) * 5;
   }
 
-  // -----------------------------
-  // Start: generate a question
-  // -----------------------------
-  startBtn.addEventListener('click', () => {
-    playSound('click-sound');
-    resetUIForNewQuestion();
+  for (let tries = 0; tries < 2000; tries++) {
+    px = pickPrice(sc.px);
+    py = pickPrice(sc.py);
+    if (px <= 0 || py <= 0) continue;
 
-    const qType = randInt(1, 4);
+    const a = randInt(2, 15);
+    const b = randInt(2, 15);
+    const c = randInt(2, 15);
+    const d = randInt(2, 15);
 
-    if (qType === 1) generateType1();
-    if (qType === 2) generateType2();
-    if (qType === 3) generateType3();
-    if (qType === 4) generateType4();
-  });
+    // Ensure not proportional: unique solution
+    if (a * d === b * c) continue;
 
-  // -----------------------------
-  // Check answer
-  // -----------------------------
-  document.getElementById('check-answer-btn').addEventListener('click', () => {
-    playSound('click-sound');
+    const bill1 = a * px + b * py;
+    const bill2 = c * px + d * py;
 
-    const raw = answerInput.value.trim();
-    if (!raw) {
-      feedback.textContent = 'Please enter an answer.';
-      feedback.style.color = 'black';
-      return;
-    }
+    questionText.innerHTML =
+      `If you buy ${a} ${sc.x}${a === 1 ? "" : "s"} and ${b} ${sc.y}${b === 1 ? "" : "s"}, your bill is ${moneyFromCents(bill1)}, ` +
+      `and if you buy ${c} ${sc.x}${c === 1 ? "" : "s"} and ${d} ${sc.y}${d === 1 ? "" : "s"}, your bill is ${moneyFromCents(bill2)}. ` +
+      `How much does each item cost?`;
 
-    const parsed = parseUserAnswer(raw);
-    if (parsed.error) {
-      feedback.textContent = parsed.error;
-      feedback.style.color = 'black';
-      return;
-    }
+    window.__lastSystemAnswer = {
+      type: 3,
+      pxCents: px, pyCents: py,
+      a, b, c, d,
+      bill1Cents: bill1, bill2Cents: bill2,
+      items: sc
+    };
+    break;
+  }
+}
 
-    if (isCorrect(parsed)) {
-      feedback.textContent = 'Correct!';
-      feedback.style.color = 'green';
-    } else {
-      const exact = `${currentAnsNum}/${currentAnsDen}`;
-      const dec = (currentAnsNum / currentAnsDen).toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
-      feedback.textContent = `Not quite. Correct answer is ${exact} (≈ ${dec}).`;
-      feedback.style.color = 'crimson';
-    }
-  });
+// -----------------------------
+// Start: generate one of the 3 types
+// -----------------------------
+startBtn.addEventListener('click', () => {
+  playSound('click-sound');
+  // Clear any old question
+  questionText.textContent = '';
 
-  // -----------------------------
-  // Hint button (centered)
-  // -----------------------------
-  hintBtn.addEventListener('click', () => {
-    playSound('click-sound');
+  const t = randInt(1, 3);
+  if (t === 1) genType1();
+  if (t === 2) genType2();
+  if (t === 3) genType3();
 
-    if (!hintSteps || hintSteps.length === 0) {
-      const hintPara = document.createElement('div');
-      hintPara.classList.add('hint-step');
-      hintPara.style.textAlign = 'center';
-      hintPara.textContent = 'No hints are available for this question.';
-      hintArea.appendChild(hintPara);
-      typeset([hintPara]);
-      return;
-    }
-
-    if (hintIndex < hintSteps.length) {
-      const hintPara = document.createElement('div');
-      hintPara.classList.add('hint-step');
-      hintPara.style.textAlign = 'center';
-      hintPara.innerHTML = hintSteps[hintIndex];
-      hintArea.appendChild(hintPara);
-      typeset([hintPara]);
-      hintIndex++;
-    }
-  });
+  typeset();
+});
 </script>
+
 
 
   <audio id="click-sound" src="button.mp3" preload="auto"></audio>

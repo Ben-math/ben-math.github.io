@@ -521,8 +521,8 @@ function genType1() {
 
     let simplifiedLine = termPows[0];
     for (let i = 1; i < termPows.length; i++) {
-      const op = (p.ops[i - 1] === '·') ? '\cdot' : '\div';
-      simplifiedLine += `\ ${op}\ ${termPows[i]}`;
+      const op = (p.ops[i - 1] === '·') ? String.raw`\cdot` : String.raw`\div`;
+      simplifiedLine += String.raw`\ ${op}\ ${termPows[i]}`;
     }
 
     hintSteps = [

@@ -957,7 +957,36 @@ x & f(x) \\
       return;
     }
 
-    // For plotting / intersection stages, no worked-solution step requested.
+    if (stage === STAGES.INTERSECTION) {
+      const l1 = activity.line1;
+      const l2 = activity.line2;
+
+      const m1 = l1.m, b1 = l1.b;
+      const m2 = l2.m, b2 = l2.b;
+
+      const dm = subFrac(m1, m2);
+      const db = subFrac(b2, b1);
+      const x = divFrac(db, dm);
+      const y = addFrac(mulFrac(m1, x), b1);
+
+      const m1Tex = fracToTex(m1);
+      const b1Tex = fracToTex(b1);
+      const m2Tex = fracToTex(m2);
+      const b2Tex = fracToTex(b2);
+
+      const dmTex = fracToTex(dm);
+      const dbTex = fracToTex(db);
+      const xTex = fracToTex(x);
+      const yTex = fracToTex(y);
+
+      appendSolutionStep(
+        String.raw`\[${m1Tex}x + ${b1Tex} = ${m2Tex}x + ${b2Tex} \implies (${dmTex})x = ${dbTex} \implies x = ${xTex} \implies y = ${yTex}\]`
+      );
+      activity.solutionShown[stage] = true;
+      return;
+    }
+
+    // For plotting stages, no worked-solution step requested.
     activity.solutionShown[stage] = true;
   }
 
@@ -1064,8 +1093,8 @@ x & f(x) \\
       pairWrap.style.display = 'none';
       nextBtn.style.display = 'none';
       hintBtn.style.display = 'none';
-      setPromptLatex(`🎉 Nice. You found everything correctly.`);
-      setFeedback('', 'ok');
+      setPromptLatex(``);
+      setFeedback('Correct!', 'ok');
       drawActualLine(l1, 'rgba(13, 110, 253, 0.95)');
       drawActualLine(l2, 'rgba(220, 53, 69, 0.95)');
 
@@ -1245,6 +1274,9 @@ x & f(x) \\
       }
     }
 
+    activity.plot._onMove = onMove;
+    activity.plot._onClick = onClick;
+
     // Ensure listeners are not stacked
     axesSvg.onmousemove = null;
     axesSvg.onclick = null;
@@ -1266,8 +1298,69 @@ x & f(x) \\
   hintBtn.addEventListener('click', () => {
     playSound('click-sound');
     setFeedback('');
-    // Reveal the worked step for the current stage, but do not advance.
-    revealSolutionForStage(activity.stage);
+
+    // Hint advances exactly as if the user entered the correct answer.
+    if (activity.stage === STAGES.L1_SLOPE) {
+      revealSolutionForStage(STAGES.L1_SLOPE);
+      activity.stage = STAGES.L1_B;
+      renderStage();
+      return;
+    }
+
+    if (activity.stage === STAGES.L1_B) {
+      revealSolutionForStage(STAGES.L1_B);
+      activity.stage = STAGES.L1_PLOT;
+      renderStage();
+      return;
+    }
+
+    if (activity.stage === STAGES.L1_PLOT) {
+      // Just show the correct line and move on.
+      activity.plot.active = false;
+      clearPlotAttempt();
+      if (activity.plot._onMove) axesSvg.removeEventListener('mousemove', activity.plot._onMove);
+      if (activity.plot._onClick) axesSvg.removeEventListener('click', activity.plot._onClick);
+
+      drawActualLine(activity.line1, 'rgba(13, 110, 253, 0.95)');
+      activity.stage = STAGES.L2_SLOPE;
+      renderStage();
+      return;
+    }
+
+    if (activity.stage === STAGES.L2_SLOPE) {
+      revealSolutionForStage(STAGES.L2_SLOPE);
+      activity.stage = STAGES.L2_B;
+      renderStage();
+      return;
+    }
+
+    if (activity.stage === STAGES.L2_B) {
+      revealSolutionForStage(STAGES.L2_B);
+      activity.stage = STAGES.L2_PLOT;
+      renderStage();
+      return;
+    }
+
+    if (activity.stage === STAGES.L2_PLOT) {
+      // Just show the correct line and move on.
+      activity.plot.active = false;
+      clearPlotAttempt();
+      if (activity.plot._onMove) axesSvg.removeEventListener('mousemove', activity.plot._onMove);
+      if (activity.plot._onClick) axesSvg.removeEventListener('click', activity.plot._onClick);
+
+      drawActualLine(activity.line1, 'rgba(13, 110, 253, 0.95)');
+      drawActualLine(activity.line2, 'rgba(220, 53, 69, 0.95)');
+      activity.stage = STAGES.INTERSECTION;
+      renderStage();
+      return;
+    }
+
+    if (activity.stage === STAGES.INTERSECTION) {
+      revealSolutionForStage(STAGES.INTERSECTION);
+      activity.stage = STAGES.DONE;
+      renderStage();
+      return;
+    }
   });
 
   // UX: Enter key submits when single input is visible

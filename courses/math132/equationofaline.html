@@ -986,7 +986,11 @@ x & f(x) \\
       appendSolutionStep(
         String.raw`\[${m1Tex}x + ${b1Tex} = ${m2Tex}x + ${b2Tex} \implies (${dmTex})x = ${dbTex} \implies x = ${xTex} \implies y = ${yTex}\]`
       );
-      activity.solutionShown[stage] = true;
+      
+      appendSolutionStep(
+        String.raw`\[\text{So, the point of intersection is } \left(${xTex}, ${yTex}\right).\]`
+      );
+activity.solutionShown[stage] = true;
       return;
     }
 
@@ -1011,8 +1015,6 @@ x & f(x) \\
       setFeedback('Something went wrong generating lines. Refresh the page and try again.');
       return;
     }
-
-    startBtn.style.display = 'none';
     nextBtn.style.display = 'inline-block';
     hintBtn.style.display = 'inline-block';
 
@@ -1389,7 +1391,6 @@ x & f(x) \\
 
   // Initialize axes immediately (so "nothing appears" is not an option)
   initAxesIfNeeded();
-  setPromptLatex(`Click <b>Start!</b> to begin the activity.`);
   nextBtn.textContent = 'Next';
   hintBtn.textContent = 'Hint';
   hintBtn.style.display = 'none';

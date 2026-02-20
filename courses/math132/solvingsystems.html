@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -142,13 +143,37 @@ fetch("/nav.html")
     </div>
     
     <p id="question-text" class="math"></p>
+
+    <div id="activity-ui" style="margin-top: 1.2em; text-align: center;">
+      <div id="answer-area" style="display:none; margin-top: 0.5em;"></div>
+      <div class="button-container" style="margin-top: 0.6em;">
+        <button id="hint-btn" class="rubber-button" style="display:none;">Hint</button>
+        <button id="check-btn" class="rubber-button" style="display:none; margin-left: 0.5em;">Check Answer</button>
+      </div>
+      <p id="feedback" style="font-weight: bold; margin-top: 0.6em;"></p>
+      <div id="hint-area" class="math" style="margin-top: 1em;"></div>
+    </div>
+
 </main>
 <script>
 // -----------------------------
-// Systems of Equations: question generation only
+// Systems of Equations Activity
+// (question generation + hints + answer input)
 // -----------------------------
 const startBtn = document.getElementById('start-btn');
 const questionText = document.getElementById('question-text');
+
+const hintBtn = document.getElementById('hint-btn');
+const checkBtn = document.getElementById('check-btn');
+const answerArea = document.getElementById('answer-area');
+const feedback = document.getElementById('feedback');
+const hintArea = document.getElementById('hint-area');
+
+let hintSteps = [];
+let hintIndex = 0;
+
+// The current problem data lives here.
+let current = null;
 
 function playSound(id) {
   const s = document.getElementById(id);
@@ -181,6 +206,78 @@ function fracToTex(num, den) {
   return `\\frac{${n}}{${d}}`;
 }
 
+// ---- parsing helpers ----
+function parseExactRational(raw) {
+  // Accept integer, fraction a/b, or terminating decimal.
+  // Returns { ok:true, num, den } reduced, or { ok:false, msg }
+  if (raw == null) return { ok:false, msg:'Please enter an answer.' };
+  const s0 = raw.trim();
+  if (!s0) return { ok:false, msg:'Please enter an answer.' };
+
+  // allow leading +/-, remove spaces
+  const s = s0.replace(/\s+/g, '');
+
+  // fraction
+  const fm = s.match(/^([+-]?\d+)\/([+-]?\d+)$/);
+  if (fm) {
+    const a = parseInt(fm[1], 10);
+    const b = parseInt(fm[2], 10);
+    if (b === 0) return { ok:false, msg:'Denominator cannot be 0.' };
+    const [n, d] = reduceFrac(a, b);
+    return { ok:true, num:n, den:d };
+  }
+
+  // integer
+  if (/^[+-]?\d+$/.test(s)) {
+    const a = parseInt(s, 10);
+    return { ok:true, num:a, den:1 };
+  }
+
+  // terminating decimal: optional leading digits then . digits
+  const dm = s.match(/^([+-]?)(\d*)\.(\d+)$/);
+  if (dm) {
+    const sign = dm[1] === '-' ? -1 : 1;
+    const intPart = dm[2] ? parseInt(dm[2], 10) : 0;
+    const fracPartStr = dm[3];
+    // exact fraction from base-10 expansion
+    const k = fracPartStr.length;
+    const den = Math.pow(10, k);
+    const fracPart = parseInt(fracPartStr, 10);
+    const num = sign * (intPart * den + fracPart);
+    const [n, d] = reduceFrac(num, den);
+    return { ok:true, num:n, den:d };
+  }
+
+  return { ok:false, msg:'Use an integer, a fraction like 3/7, or a terminating decimal like 2.5.' };
+}
+
+function parseMoneyToCents(raw) {
+  // Accept: 42, 42.5, 42.50, $1,200.50
+  // Returns { ok:true, cents } or { ok:false, msg }
+  if (raw == null) return { ok:false, msg:'Please enter an answer.' };
+  let s = raw.trim();
+  if (!s) return { ok:false, msg:'Please enter an answer.' };
+
+  s = s.replace(/\$/g, '').replace(/,/g, '').replace(/\s+/g, '');
+
+  // integer dollars
+  if (/^[+-]?\d+$/.test(s)) {
+    const dollars = parseInt(s, 10);
+    return { ok:true, cents: dollars * 100 };
+  }
+
+  // dollars.cents (1 or 2 decimal digits)
+  const m = s.match(/^([+-]?\d+)\.(\d{1,2})$/);
+  if (m) {
+    const dollars = parseInt(m[1], 10);
+    const cents = parseInt(m[2].padEnd(2, '0'), 10);
+    const sign = dollars < 0 ? -1 : 1;
+    return { ok:true, cents: dollars * 100 + sign * cents };
+  }
+
+  return { ok:false, msg:'Enter a dollar amount like 42, 42.50, or 1,200.50.' };
+}
+
 function moneyFromCents(cents) {
   const sign = cents < 0 ? "-" : "";
   cents = Math.abs(Math.round(cents));
@@ -189,10 +286,102 @@ function moneyFromCents(cents) {
   return sign + "$" + dollars.toString() + (rem === 0 ? "" : "." + rem.toString().padStart(2, "0"));
 }
 
-function typeset() {
+function typeset(elements = []) {
   if (!window.MathJax) return;
-  if (MathJax.typesetPromise) MathJax.typesetPromise();
-  else if (MathJax.typeset) MathJax.typeset();
+  if (MathJax.typesetPromise) {
+    if (elements.length > 0) MathJax.typesetPromise(elements);
+    else MathJax.typesetPromise();
+  } else if (MathJax.typeset) {
+    if (elements.length > 0) MathJax.typeset(elements);
+    else MathJax.typeset();
+  }
+}
+
+// ---- UI helpers ----
+function resetUIForNewProblem() {
+  feedback.textContent = '';
+  feedback.style.color = 'black';
+  hintArea.innerHTML = '';
+  hintSteps = [];
+  hintIndex = 0;
+
+  answerArea.innerHTML = '';
+  answerArea.style.display = 'none';
+
+  hintBtn.style.display = 'none';
+  checkBtn.style.display = 'none';
+}
+
+function setFeedback(msg, color) {
+  feedback.textContent = msg;
+  feedback.style.color = color;
+}
+
+function addHintStep(html) {
+  const d = document.createElement('div');
+  d.classList.add('hint-step');
+  d.style.textAlign = 'center';
+  d.style.marginTop = '0.35em';
+  d.innerHTML = html;
+  hintArea.appendChild(d);
+  typeset([d]);
+}
+
+function clearMarks() {
+  const marks = answerArea.querySelectorAll('.mark');
+  marks.forEach(m => m.textContent = '');
+}
+
+function makeInputRow(labelText, inputId) {
+  const row = document.createElement('div');
+  row.style.display = 'flex';
+  row.style.justifyContent = 'center';
+  row.style.alignItems = 'center';
+  row.style.gap = '0.5em';
+  row.style.margin = '0.35em 0';
+
+  const label = document.createElement('span');
+  label.textContent = labelText;
+
+  const inp = document.createElement('input');
+  inp.type = 'text';
+  inp.id = inputId;
+  inp.style.width = '160px';
+  inp.style.fontSize = '1rem';
+
+  const mark = document.createElement('span');
+  mark.className = 'mark';
+  mark.style.display = 'inline-block';
+  mark.style.minWidth = '1.2em';
+  mark.style.fontWeight = '800';
+
+  row.appendChild(label);
+  row.appendChild(inp);
+  row.appendChild(mark);
+  return row;
+}
+
+function buildAnswerUI() {
+  answerArea.innerHTML = '';
+  answerArea.style.display = 'block';
+
+  if (!current) return;
+
+  if (current.type === 1) {
+    // one box: z value (number of rides/drinks/lb/km^2 units)
+    answerArea.appendChild(makeInputRow(`Answer:`, 'ans1'));
+  } else if (current.type === 2) {
+    // three boxes: x,y,z costs
+    answerArea.appendChild(makeInputRow(`${current.items.x}:`, 'ans1'));
+    answerArea.appendChild(makeInputRow(`${current.items.y}:`, 'ans2'));
+    answerArea.appendChild(makeInputRow(`${current.items.z}:`, 'ans3'));
+  } else if (current.type === 3) {
+    answerArea.appendChild(makeInputRow(`${current.items.x}:`, 'ans1'));
+    answerArea.appendChild(makeInputRow(`${current.items.y}:`, 'ans2'));
+  }
+
+  hintBtn.style.display = 'inline-block';
+  checkBtn.style.display = 'inline-block';
 }
 
 // -----------------------------
@@ -208,49 +397,39 @@ const type1Scenarios = [
 function genType1() {
   const sc = choice(type1Scenarios);
 
-  // We'll work in cents to avoid floating issues.
-  // Price model: total = flat + rate * z
-  // Solve flat1 + rate1*z = flat2 + rate2*z -> z = (flat2-flat1)/(rate1-rate2)
-
   let flat1, flat2, rate1, rate2, zNum, zDen;
 
   function reasonableRanges() {
-    // returns [flatMin, flatMax, rateMin, rateMax] in cents (rate is per z unit)
-    if (sc.y === "theme park price") return [1500, 8000, 100, 900];          // $15-$80 admission, $1-$9 per ride
-    if (sc.y === "wedding") return [20000, 120000, 150, 1500];               // $200-$1200 base, $1.50-$15 per drink
-    if (sc.y === "moving company fee") return [5000, 40000, 5, 60];           // $50-$400 base, $0.05-$0.60 per lb
-    return [10000, 120000, 50, 900];                                         // realtor fee: $100-$1200 base, $0.50-$9 per km^2
+    if (sc.y === "theme park price") return [1500, 8000, 100, 900];          // $15-$80, $1-$9 per ride
+    if (sc.y === "wedding") return [20000, 120000, 150, 1500];               // $200-$1200, $1.50-$15 per drink
+    if (sc.y === "moving company fee") return [5000, 40000, 5, 60];           // $50-$400, $0.05-$0.60 per lb
+    return [10000, 120000, 50, 900];                                         // $100-$1200, $0.50-$9 per km^2
   }
 
   const [flatMin, flatMax, rateMin, rateMax] = reasonableRanges();
 
   if (sc.mode === "integerZ") {
-    // Force a positive nonzero integer solution z
     const z = randInt(1, 25);
-
-    // Choose distinct integer cent rates
     do {
       rate1 = randInt(rateMin, rateMax);
       rate2 = randInt(rateMin, rateMax);
     } while (rate1 === rate2);
 
-    // Choose a flat1, then set flat2 so that z solves it.
-    // flat2 = flat1 + z*(rate1-rate2)
-    // Make sure flats stay positive and within some reasonable extension of range.
-    for (let tries = 0; tries < 500; tries++) {
+    let ok = false;
+    for (let tries = 0; tries < 600; tries++) {
       flat1 = randInt(flatMin, flatMax);
       const delta = z * (rate1 - rate2);
       flat2 = flat1 + delta;
-
       if (flat2 > 0 && flat2 >= Math.floor(flatMin * 0.6) && flat2 <= Math.floor(flatMax * 1.4)) {
         zNum = z; zDen = 1;
+        ok = true;
         break;
       }
     }
-    if (!zNum) return genType1(); // retry if unlucky
+    if (!ok) return genType1();
   } else {
-    // Only need positive z (can be non-integer). We'll randomly generate and reject until z>0.
-    for (let tries = 0; tries < 2000; tries++) {
+    let ok = false;
+    for (let tries = 0; tries < 2200; tries++) {
       flat1 = randInt(flatMin, flatMax);
       flat2 = randInt(flatMin, flatMax);
       rate1 = randInt(rateMin, rateMax);
@@ -261,20 +440,17 @@ function genType1() {
       const den = rate1 - rate2;
       if (num === 0) continue;
 
-      // z = num/den > 0
       if ((num > 0 && den > 0) || (num < 0 && den < 0)) {
         const [rn, rd] = reduceFrac(num, den);
         if (rn > 0 && rd > 0) {
           zNum = rn; zDen = rd;
+          ok = true;
           break;
         }
       }
     }
-    if (!zNum) return genType1();
+    if (!ok) return genType1();
   }
-
-  // Render
-  const zAnswerTex = (zDen === 1) ? `${zNum}` : `\\frac{${zNum}}{${zDen}}`;
 
   questionText.innerHTML =
     `You are comparing two different ${sc.y}s. ` +
@@ -282,23 +458,53 @@ function genType1() {
     `The second ${sc.y} costs a flat amount for ${sc.x} of ${moneyFromCents(flat2)}, plus ${moneyFromCents(rate2)} per ${sc.z}. ` +
     `At how many ${sc.z}s are the two ${sc.y}s the same price?`;
 
-  // (We compute the answer but do not display/grade yet)
-  window.__lastSystemAnswer = { type: 1, zNum, zDen, zTex: zAnswerTex };
+  current = {
+    type: 1,
+    scenario: sc,
+    flat1, flat2, rate1, rate2,
+    zNum, zDen
+  };
+
+  // Build hint steps (no $ inside math)
+  const flat1Txt = (flat1 / 100).toFixed(2).replace(/\.00$/, '');
+  const flat2Txt = (flat2 / 100).toFixed(2).replace(/\.00$/, '');
+  const rate1Txt = (rate1 / 100).toFixed(2).replace(/\.00$/, '');
+  const rate2Txt = (rate2 / 100).toFixed(2).replace(/\.00$/, '');
+
+  const zTex = fracToTex(zNum, zDen);
+
+  hintSteps = [
+    String.raw`Let \(z\) be the number of ${sc.z}s. Then the two prices are
+    \[
+      P_1 = ${flat1Txt} + ${rate1Txt}\,z,
+      \qquad
+      P_2 = ${flat2Txt} + ${rate2Txt}\,z.
+    \]`,
+    String.raw`Set the right-hand sides equal:
+    \[
+      ${flat1Txt} + ${rate1Txt}\,z = ${flat2Txt} + ${rate2Txt}\,z.
+    \]`,
+    String.raw`Solve for \(z\):
+    \[
+      (${rate1Txt} - ${rate2Txt})z = ${flat2Txt} - ${flat1Txt}
+      \;\implies\;
+      z = ${zTex}.
+    \]`
+  ];
 }
 
 // -----------------------------
 // Type (2): ratios relative to y plus total
 // -----------------------------
 const type2Scenarios = [
-  { x: "steak", y: "lobster", z: "caviar", base: [1200, 6500] },                 // y dollars range
-  { x: "a sedan", y: "a van", z: "a truck", base: [1800000, 5200000] },          // y dollars range
-  { x: "a hammer", y: "a table saw", z: "a drill", base: [1500, 55000] },        // y dollars range
-  { x: "socks", y: "a shirt", z: "a coat", base: [800, 18000] }                  // y dollars range
+  { x: "steak", y: "lobster", z: "caviar", base: [1200, 6500] },
+  { x: "a sedan", y: "a van", z: "a truck", base: [1800000, 5200000] },
+  { x: "a hammer", y: "a table saw", z: "a drill", base: [1500, 55000] },
+  { x: "socks", y: "a shirt", z: "a coat", base: [800, 18000] }
 ];
 
 function randomRatio() {
-  // Return rational a/b and a human-readable phrase and TeX
-  const asInteger = Math.random() < 0.6; // slight bias toward integers
+  const asInteger = Math.random() < 0.6;
   if (asInteger) {
     const k = randInt(2, 10);
     return { a: k, b: 1, phrase: `${k} times`, tex: `${k}` };
@@ -313,48 +519,84 @@ function genType2() {
   const rX = randomRatio(); // x = (a/b)*y
   const rZ = randomRatio(); // z = (a/b)*y
 
-  // Choose y as cents (integer dollars 75% of the time, else cents),
-  // then compute x and z exactly.
   const integerDollars = Math.random() < 0.75;
 
-  for (let tries = 0; tries < 2000; tries++) {
-    let yCents;
+  let xCents, yCents, zCents, total;
+  for (let tries = 0; tries < 2500; tries++) {
+    let yc;
     if (integerDollars) {
       const yDollars = randInt(Math.floor(sc.base[0] / 100), Math.floor(sc.base[1] / 100));
-      yCents = yDollars * 100;
+      yc = yDollars * 100;
     } else {
-      // cents: pick to the nearest 5 cents to keep numbers sane
       const lo = sc.base[0], hi = sc.base[1];
-      yCents = randInt(Math.floor(lo / 5), Math.floor(hi / 5)) * 5;
+      yc = randInt(Math.floor(lo / 5), Math.floor(hi / 5)) * 5;
     }
 
-    // x = (rX.a/rX.b)*y; z = (rZ.a/rZ.b)*y
-    if ((yCents * rX.a) % rX.b !== 0) continue;
-    if ((yCents * rZ.a) % rZ.b !== 0) continue;
+    if ((yc * rX.a) % rX.b !== 0) continue;
+    if ((yc * rZ.a) % rZ.b !== 0) continue;
 
-    const xCents = (yCents * rX.a) / rX.b;
-    const zCents = (yCents * rZ.a) / rZ.b;
+    yCents = yc;
+    xCents = (yc * rX.a) / rX.b;
+    zCents = (yc * rZ.a) / rZ.b;
+    total = xCents + yCents + zCents;
 
-    const total = xCents + yCents + zCents;
-
-    // Sanity bounds: avoid absurd totals
     if (total <= 0) continue;
-
-    questionText.innerHTML =
-      `If ${sc.x} costs ${rX.phrase} as much as ${sc.y}, ` +
-      `and ${sc.z} costs ${rZ.phrase} as much as ${sc.y}, ` +
-      `and together, they all cost ${moneyFromCents(total)}, ` +
-      `then how much does each item cost?`;
-
-    window.__lastSystemAnswer = {
-      type: 2,
-      xCents, yCents, zCents,
-      totalCents: total,
-      ratios: { rX, rZ },
-      items: sc
-    };
     break;
   }
+
+  questionText.innerHTML =
+    `If ${sc.x} costs ${rX.phrase} as much as ${sc.y}, ` +
+    `and ${sc.z} costs ${rZ.phrase} as much as ${sc.y}, ` +
+    `and together, they all cost ${moneyFromCents(total)}, ` +
+    `then how much does each item cost?`;
+
+  current = {
+    type: 2,
+    items: sc,
+    ratios: { rX, rZ },
+    xCents, yCents, zCents, totalCents: total
+  };
+
+  const xOverY = (rX.b === 1) ? `${rX.a}` : fracToTex(rX.a, rX.b);
+  const zOverY = (rZ.b === 1) ? `${rZ.a}` : fracToTex(rZ.a, rZ.b);
+
+  const totalTxt = (total / 100).toFixed(2).replace(/\.00$/, '');
+  const yTxt = (yCents / 100).toFixed(2).replace(/\.00$/, '');
+  const xTxt = (xCents / 100).toFixed(2).replace(/\.00$/, '');
+  const zTxt = (zCents / 100).toFixed(2).replace(/\.00$/, '');
+
+  // coefficient: (x/y) + 1 + (z/y)
+  // We'll do it as a rational: (rX.a/rX.b) + 1 + (rZ.a/rZ.b)
+  const num = rX.a * rZ.b + rX.b * rZ.b + rZ.a * rX.b;
+  const den = rX.b * rZ.b;
+  const coefTex = fracToTex(num, den);
+
+  hintSteps = [
+    String.raw`Let \(y\) be the cost of ${sc.y}. Then
+    \[
+      x = \left(${xOverY}\right)y,\qquad z = \left(${zOverY}\right)y.
+    \]`,
+    String.raw`The total-cost equation is
+    \[
+      x + y + z = ${totalTxt}.
+    \]
+    Substitute the expressions in terms of \(y\):
+    \[
+      \left(${xOverY}\right)y + y + \left(${zOverY}\right)y = ${totalTxt}.
+    \]`,
+    String.raw`Combine like terms and solve for \(y\):
+    \[
+      \left(${coefTex}\right)y = ${totalTxt}
+      \;\implies\;
+      y = ${yTxt}.
+    \]`,
+    String.raw`Now substitute \(y=${yTxt}\) into the expressions:
+    \[
+      x = \left(${xOverY}\right)(${yTxt}) = ${xTxt},
+      \qquad
+      z = \left(${zOverY}\right)(${yTxt}) = ${zTxt}.
+    \]`
+  ];
 }
 
 // -----------------------------
@@ -371,8 +613,6 @@ function genType3() {
   const sc = choice(type3Scenarios);
   const integerDollars = Math.random() < 0.75;
 
-  // generate prices
-  let px, py;
   function pickPrice(range) {
     if (integerDollars) {
       const dollars = randInt(Math.floor(range[0] / 100), Math.floor(range[1] / 100));
@@ -381,36 +621,161 @@ function genType3() {
     return randInt(Math.floor(range[0] / 5), Math.floor(range[1] / 5)) * 5;
   }
 
-  for (let tries = 0; tries < 2000; tries++) {
+  let px, py, a, b, c, d, bill1, bill2;
+  for (let tries = 0; tries < 2500; tries++) {
     px = pickPrice(sc.px);
     py = pickPrice(sc.py);
     if (px <= 0 || py <= 0) continue;
 
-    const a = randInt(2, 15);
-    const b = randInt(2, 15);
-    const c = randInt(2, 15);
-    const d = randInt(2, 15);
+    a = randInt(2, 15);
+    b = randInt(2, 15);
+    c = randInt(2, 15);
+    d = randInt(2, 15);
 
-    // Ensure not proportional: unique solution
     if (a * d === b * c) continue;
 
-    const bill1 = a * px + b * py;
-    const bill2 = c * px + d * py;
-
-    questionText.innerHTML =
-      `If you buy ${a} ${sc.x}${a === 1 ? "" : "s"} and ${b} ${sc.y}${b === 1 ? "" : "s"}, your bill is ${moneyFromCents(bill1)}, ` +
-      `and if you buy ${c} ${sc.x}${c === 1 ? "" : "s"} and ${d} ${sc.y}${d === 1 ? "" : "s"}, your bill is ${moneyFromCents(bill2)}. ` +
-      `How much does each item cost?`;
-
-    window.__lastSystemAnswer = {
-      type: 3,
-      pxCents: px, pyCents: py,
-      a, b, c, d,
-      bill1Cents: bill1, bill2Cents: bill2,
-      items: sc
-    };
+    bill1 = a * px + b * py;
+    bill2 = c * px + d * py;
     break;
   }
+
+  questionText.innerHTML =
+    `If you buy ${a} ${sc.x}${a === 1 ? "" : "s"} and ${b} ${sc.y}${b === 1 ? "" : "s"}, your bill is ${moneyFromCents(bill1)}, ` +
+    `and if you buy ${c} ${sc.x}${c === 1 ? "" : "s"} and ${d} ${sc.y}${d === 1 ? "" : "s"}, your bill is ${moneyFromCents(bill2)}. ` +
+    `How much does each item cost?`;
+
+  current = {
+    type: 3,
+    items: sc,
+    a, b, c, d,
+    bill1Cents: bill1, bill2Cents: bill2,
+    pxCents: px, pyCents: py
+  };
+
+  const bill1Txt = (bill1 / 100).toFixed(2).replace(/\.00$/, '');
+  const bill2Txt = (bill2 / 100).toFixed(2).replace(/\.00$/, '');
+  const yTxt = (py / 100).toFixed(2).replace(/\.00$/, '');
+  const xTxt = (px / 100).toFixed(2).replace(/\.00$/, '');
+
+  hintSteps = [
+    String.raw`Let \(x\) be the cost of ${sc.x} and \(y\) be the cost of ${sc.y}. Then
+    \[
+      ${a}x + ${b}y = ${bill1Txt},
+      \qquad
+      ${c}x + ${d}y = ${bill2Txt}.
+    \]`,
+    String.raw`Multiply the first equation by ${c}, and the second by ${a}:
+    \[
+      ${c}(${a}x + ${b}y) = ${c}\cdot ${bill1Txt},
+      \qquad
+      ${a}(${c}x + ${d}y) = ${a}\cdot ${bill2Txt}.
+    \]`,
+    String.raw`Subtract one equation from the other to eliminate \(x\):
+    \[
+      (${c*b} - ${a*d})y = ${c}\cdot ${bill1Txt} - ${a}\cdot ${bill2Txt}.
+    \]`,
+    String.raw`Solve for \(y\):
+    \[
+      y = ${yTxt}.
+    \]`,
+    String.raw`Substitute \(y=${yTxt}\) into the first equation and solve for \(x\):
+    \[
+      ${a}x + ${b}(${yTxt}) = ${bill1Txt}
+      \;\implies\;
+      x = ${xTxt}.
+    \]`
+  ];
+}
+
+// -----------------------------
+// Checking answers
+// -----------------------------
+function markInput(inp, ok) {
+  const mark = inp.parentElement.querySelector('.mark');
+  if (!mark) return;
+  mark.textContent = ok ? '✓' : '✗';
+  mark.style.color = ok ? 'green' : 'crimson';
+}
+
+function checkAnswers() {
+  if (!current) return;
+  clearMarks();
+  setFeedback('', 'black');
+
+  if (current.type === 1) {
+    const inp = document.getElementById('ans1');
+    const parsed = parseExactRational(inp.value);
+    if (!parsed.ok) {
+      setFeedback(parsed.msg, 'crimson');
+      return;
+    }
+    const [n, d] = reduceFrac(parsed.num, parsed.den);
+    const [an, ad] = reduceFrac(current.zNum, current.zDen);
+    const ok = (n === an && d === ad);
+    markInput(inp, ok);
+    setFeedback(ok ? 'Correct!' : 'Not quite.', ok ? 'green' : 'crimson');
+    return;
+  }
+
+  if (current.type === 2) {
+    const inps = [document.getElementById('ans1'), document.getElementById('ans2'), document.getElementById('ans3')];
+    const answers = [current.xCents, current.yCents, current.zCents];
+    let allOk = true;
+    let anyOk = false;
+
+    for (let i = 0; i < 3; i++) {
+      const parsed = parseMoneyToCents(inps[i].value);
+      if (!parsed.ok) {
+        allOk = false;
+        markInput(inps[i], false);
+        continue;
+      }
+      const ok = (Math.round(parsed.cents) === Math.round(answers[i]));
+      markInput(inps[i], ok);
+      allOk = allOk && ok;
+      anyOk = anyOk || ok;
+    }
+
+    if (allOk) setFeedback('Correct!', 'green');
+    else if (anyOk) setFeedback('Some parts are correct.', 'crimson');
+    else setFeedback('Not quite.', 'crimson');
+    return;
+  }
+
+  if (current.type === 3) {
+    const inps = [document.getElementById('ans1'), document.getElementById('ans2')];
+    const answers = [current.pxCents, current.pyCents];
+    let allOk = true;
+    let anyOk = false;
+
+    for (let i = 0; i < 2; i++) {
+      const parsed = parseMoneyToCents(inps[i].value);
+      if (!parsed.ok) {
+        allOk = false;
+        markInput(inps[i], false);
+        continue;
+      }
+      const ok = (Math.round(parsed.cents) === Math.round(answers[i]));
+      markInput(inps[i], ok);
+      allOk = allOk && ok;
+      anyOk = anyOk || ok;
+    }
+
+    if (allOk) setFeedback('Correct!', 'green');
+    else if (anyOk) setFeedback('Some parts are correct.', 'crimson');
+    else setFeedback('Not quite.', 'crimson');
+    return;
+  }
+}
+
+// -----------------------------
+// Hint button
+// -----------------------------
+function showNextHint() {
+  if (!hintSteps || hintSteps.length === 0) return;
+  if (hintIndex >= hintSteps.length) return;
+  addHintStep(hintSteps[hintIndex]);
+  hintIndex++;
 }
 
 // -----------------------------
@@ -418,15 +783,27 @@ function genType3() {
 // -----------------------------
 startBtn.addEventListener('click', () => {
   playSound('click-sound');
-  // Clear any old question
   questionText.textContent = '';
+  resetUIForNewProblem();
+  current = null;
 
   const t = randInt(1, 3);
   if (t === 1) genType1();
   if (t === 2) genType2();
   if (t === 3) genType3();
 
+  buildAnswerUI();
   typeset();
+});
+
+checkBtn.addEventListener('click', () => {
+  playSound('click-sound');
+  checkAnswers();
+});
+
+hintBtn.addEventListener('click', () => {
+  playSound('click-sound');
+  showNextHint();
 });
 </script>
 

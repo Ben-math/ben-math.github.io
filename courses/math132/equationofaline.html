@@ -775,7 +775,7 @@ x & f(x) \\
     activity.plot.anchor = null;
     activity.plot.ray = null;
     activity.plot.tempLine = null;
-    activity.plot.active = false;
+    // Note: do NOT flip active off here; this is also used mid-plot.
   }
 
   function worldFromEvent(evt) {
@@ -1225,7 +1225,7 @@ x & f(x) \\
 
       if (activity.stage === STAGES.L1_PLOT) {
         drawActualLine(activity.line1, 'rgba(13, 110, 253, 0.95)');
-        activity.plot.active = false;
+        // Note: do NOT flip active off here; this is also used mid-plot.
         axesSvg.removeEventListener('mousemove', onMove);
         axesSvg.removeEventListener('click', onClick);
         activity.stage = STAGES.L2_SLOPE;
@@ -1236,7 +1236,7 @@ x & f(x) \\
       if (activity.stage === STAGES.L2_PLOT) {
         drawActualLine(activity.line1, 'rgba(13, 110, 253, 0.95)');
         drawActualLine(activity.line2, 'rgba(220, 53, 69, 0.95)');
-        activity.plot.active = false;
+        // Note: do NOT flip active off here; this is also used mid-plot.
         axesSvg.removeEventListener('mousemove', onMove);
         axesSvg.removeEventListener('click', onClick);
         activity.stage = STAGES.INTERSECTION;

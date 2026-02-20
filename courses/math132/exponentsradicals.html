@@ -492,7 +492,9 @@ function buildType1Once() {
     exprTex: expr,
     rewriteExprTex: rewriteExpr,
     expATex: aTex,
-    ans: [tn, td]
+    ans: [tn, td],
+    ops,
+    contribs
   };
 }
 
@@ -503,24 +505,36 @@ function genType1() {
 
     current = p;
 
-    questionText.innerHTML = String.raw`Simplify. Your final answer should be written as \(${p.x}^{a}\). Enter the exponent \(a\):
+    questionText.innerHTML = String.raw`Simplify:
 \[
   ${p.exprTex}
 \]`;
 
+    // For Hint 2: simplify each large term to a single power of x, then rebuild the whole expression
+    const termPows = p.contribs.map(fr => {
+      const n = fr[0], d = fr[1];
+      if (n === 0) return `1`;
+      const eTex = fracToTex(n, d);
+      // Keep it as x^{...} (even if ... = 1) for consistency
+      return `${p.x}^{${eTex}}`;
+    });
+
+    let simplifiedLine = termPows[0];
+    for (let i = 1; i < termPows.length; i++) {
+      const op = (p.ops[i - 1] === '·') ? '\cdot' : '\div';
+      simplifiedLine += `\ ${op}\ ${termPows[i]}`;
+    }
+
     hintSteps = [
-      String.raw`Rewrite every base as a power of ${p.x}:
-      \[
-        ${p.rewriteExprTex}
-      \]`,
-      String.raw`Use \((a^m)^n = a^{mn}\), then combine exponents (products add, quotients subtract) to get
-      \[
-        ${p.x}^{${p.expATex}}.
-      \]`,
-      String.raw`So the expression simplifies to
-      \[
-        ${p.x}^{${p.expATex}}.
-      \]`
+      String.raw`\[
+= ${p.rewriteExprTex}
+\]`,
+      String.raw`\[
+= ${simplifiedLine}
+\]`,
+      String.raw`\[
+= ${p.x}^{${p.expATex}}
+\]`
     ];
 
     return;
@@ -535,23 +549,22 @@ function genType1() {
     expATex: `3`,
     ans: [3, 1]
   };
-  questionText.innerHTML = String.raw`Simplify. Your final answer should be written as \(${current.x}^{a}\). Enter the exponent \(a\):
+  questionText.innerHTML = String.raw`Simplify:
   \[
     ${current.exprTex}
   \]`;
+
+  // fallback simplified line is already just one term ÷ one term, so show x^{exp} directly
   hintSteps = [
-    String.raw`Rewrite every base as a power of ${current.x}:
-    \[
-      ${current.rewriteExprTex}
-    \]`,
-    String.raw`Combine exponents:
-    \[
-      ${current.x}^{${current.expATex}}.
-    \]`,
-    String.raw`So the expression simplifies to:
-    \[
-      ${current.x}^{${current.expATex}}.
-    \]`
+    String.raw`\[
+= ${current.rewriteExprTex}
+\]`,
+    String.raw`\[
+= ${current.x}^{${current.expATex}}
+\]`,
+    String.raw`\[
+= ${current.x}^{${current.expATex}}
+\]`
   ];
 }
 

@@ -939,7 +939,7 @@ x & f(x) \\
 
       // show a compact but explicit computation
       appendSolutionStep(
-        `\[m = \frac{y_2-y_1}{x_2-x_1} = \frac{(${y2})-(${y1})}{(${x2})-(${x1})} = ${mTex}\]`
+        String.raw`\[m = \frac{y_2-y_1}{x_2-x_1} = \frac{(${y2})-(${y1})}{(${x2})-(${x1})} = ${mTex}\]`
       );
       activity.solutionShown[stage] = true;
       return;
@@ -951,7 +951,7 @@ x & f(x) \\
       const bTex = fracToTex(l.b);
 
       appendSolutionStep(
-        `\[y - (${y1}) = ${mTex}\bigl(x - (${x1})\bigr) \implies y = ${mTex}x + ${bTex}\]`
+        String.raw`\[y - (${y1}) = ${mTex}\bigl(x - (${x1})\bigr) \implies y = ${mTex}x + ${bTex}\]`
       );
       activity.solutionShown[stage] = true;
       return;

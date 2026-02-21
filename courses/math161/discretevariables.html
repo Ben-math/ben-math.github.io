@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -504,15 +505,16 @@ fetch("/nav.html")
     stageFeedback.style.color = color;
   }
 
-  function buildType1Problem() {
+    function buildType1Problem() {
     // Dice only.
+
+    // Step 1: choose operation uniformly (each has probability 1/3)
+    let op = ['sum', 'difference', 'product'][randInt(0, 2)];
+
+    // Step 2: generate dice
     const n1 = randInt(4, 10);
     const n2 = randInt(4, 10);
     const total = n1 * n2;
-
-    // Randomly select operation: sum, difference, or (sometimes) product.
-    // Product is only allowed if the number of distinct products is <= 20.
-    let op = ['sum', 'difference', 'product'][randInt(0, 2)];
 
     const countsForOp = (operation) => {
       const counts = new Map();
@@ -524,6 +526,64 @@ fetch("/nav.html")
           else x = a * b;
           counts.set(x, (counts.get(x) ?? 0) + 1);
         }
+      }
+      return counts;
+    };
+
+    // Step 3: if product was selected but would create too many distinct products,
+    // fall back to sum/difference (keeping the same dice).
+    let counts = countsForOp(op);
+    if (op === 'product' && counts.size > 20) {
+      op = (Math.random() < 0.5) ? 'sum' : 'difference';
+      counts = countsForOp(op);
+    }
+
+    const xVals = Array.from(counts.keys()).sort((u, v) => u - v);
+    const probs = xVals.map(x => {
+      const c = counts.get(x);
+      return reduceFrac(c, total);
+    });
+
+    // Mean mu = sum x * P(X=x) = (sum x*count)/total
+    let muNum = 0;
+    for (const x of xVals) muNum += x * counts.get(x);
+    let muDen = total;
+    [muNum, muDen] = reduceFrac(muNum, muDen);
+
+    // (x - mu)^2 = (x*muDen - muNum)^2 / muDen^2
+    const sq = xVals.map(x => {
+      const t = x * muDen - muNum;
+      const num = t * t;
+      const den = muDen * muDen;
+      return reduceFrac(num, den);
+    });
+
+    // (x - mu)^2 * f(x)
+    const sqp = xVals.map((x, i) => {
+      const [sNum, sDen] = sq[i];
+      const [pNum, pDen] = probs[i];
+      return mulFrac(sNum, sDen, pNum, pDen);
+    });
+
+    // variance = sum sqp
+    let varNum = 0, varDen = 1;
+    for (const [a, b] of sqp) {
+      [varNum, varDen] = addFrac(varNum, varDen, a, b);
+    }
+
+    const variance = [varNum, varDen];
+    const sigma = Math.sqrt(varNum / varDen);
+
+    return {
+      op, n1, n2, total,
+      xVals, counts, probs,
+      mu: [muNum, muDen],
+      sq, sqp,
+      variance,
+      sigma
+    };
+  }
+
       }
       return counts;
     };

@@ -62,25 +62,9 @@ fetch("/nav.html")
     </p>
 
 
-    <p>Things get complicated when we want to find the probability that one of two events will occur when they are not mutually exclusive (they overlap).
-      For instance, what is the probability of rolling higher than a 3, or rolling an even number?  The outcomes in this event are
-      \[\{2, 4, 5, 6\}\]
-      so the probability is
-      \[P(X > 3 \cup X = \text{even}) = \frac{4}{6}\]
-      However, note that the outcomes in the individual events "rolling higher than a 3" and "rolling an even number" are
-      \[\{4, 5, 6\} \text{ and } \{2, 4, 6\}\]
-      respectively.  If we were to add the probabilities of those events, we'd get
-      \[P(X > 3) + P(X = \text{even}) = \frac{3}{6} + \frac{3}{6} = \frac{6}{6} = 1\]
-      which is certainly not true.  The issue here is that we have double-counted the overlap between the two events.  This leads us to the
-      inclusion-exclusion princple,
-      \[P(E \cup F) = P(E) + P(F) - P(E \cap F)\]
-      That is, the overlap between the two events is
-      \[P(X > 3 \cap X = \text{even}) = \frac{2}{6}\]
-      since there are 2 numbers which are both greater than 3 and even, namely 4 and 6.  Using this information together with the inclusion-exclusion 
-      princple, we can now solve the problem:
-      \[P(X > 3 \cup X = \text{even}) = P(X > 3) + P(X = \text{even}) - P(X > 3 \cap X = \text{even}) = \frac{3}{6} + \frac{3}{6} - \frac{2}{6} = 
-      \frac{4}{6}\]
-      which is the same result we obtained previously!
+    <p>A function which maps all of the values a discrete random variable \(X\) takes on to their respective probabilities is called its 
+      <b>probability distribution function</b>, defined by
+      \[f(x) = P(X = x)\]
     </p>
 
     

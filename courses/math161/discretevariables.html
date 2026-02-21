@@ -103,6 +103,17 @@ fetch("/nav.html")
       of \(X\) is computed exactly as you'd expect: as a weighted average of the values of \(X\), weighted by their respective probabilities (the values 
       of the pdf):
       \[E(X) = \sum_x xf(x)\]
+      For example, to find the expected value of the sum of two dice \(X\), we compute
+      \[\frac{1}{36}(2) + \frac{2}{36}(3) + \frac{3}{36}(4) + \frac{4}{36}(5) + \frac{5}{36}(6) + \frac{6}{36}(7) + \frac{5}{36}(8) + 
+      \frac{4}{36}(9) + \frac{3}{36}(10) + \frac{2}{36}(11) + \frac{1}{36}(12) = \frac{252}{36} = 7\]
+      This is in line with what we'd expect, since the pdf is symmetric about 7.
+    </p>
+
+    <p>Finally, our formula for the standard deviation \(\sigma\) of a random variable \(X\) is also as we've seen previously (just replacing relative 
+      frequency with the values of the pdf in our formula):
+      \[\sigma = \sqrt{\sum_x\left[(x - \mu)^2f(x)\right]}\]
+      So to find the standard deviation in our running example,
+      \[\sigma = \sqrt{(2-7)^2 \cdot \frac{1}{36} + (3-7)^2 \cdot \frac{2}{36} + ... + (12-7)^2 \cdot \frac{1}{36}} = \sqrt{\frac{210}{36}} \approx 2.42\]
     </p>
 
     

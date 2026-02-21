@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -147,49 +148,42 @@ fetch("/nav.html")
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>
-    
+
     <p id="question-text" class="math"></p>
 
-    <div class="button-container">
-      <button id="hint-btn" class="rubber-button">Hint</button>
+    <div id="activity-area" style="margin-top: 1rem;">
+      <div id="table-area" class="math" style="margin: 1rem auto; max-width: 900px; text-align: center;"></div>
+
+      <div id="work-area" class="math" style="margin-top: 1rem; text-align: center;"></div>
+
+      <div id="histogram-area" style="margin: 1rem auto; max-width: 740px;"></div>
+
+      <p id="stage-feedback" style="font-weight: bold; margin-top: 0.75rem; text-align: center;"></p>
+
+      <div class="button-container" style="gap: 0.75rem;">
+        <button id="hint-btn" class="rubber-button">Hint</button>
+        <button id="next-btn" class="rubber-button">Next</button>
+      </div>
     </div>
-    
-    <div id="hint-area" class="math" style="margin-top: 1em; text-align: center"></div>
-
-
-    <div id="answer-section" style="margin-top: 20px; text-align: center;">
-      <label for="user-answer">Enter your answer:</label>
-      <input type="text" id="user-answer" />
-      <button id="check-answer-btn" class="rubber-button" style="margin-left: 0.5em;">Check Answer</button>
-      <p id="answer-feedback" style="font-weight: bold; margin-top: 10px;"></p>
-    </div>
-
-  </main>
-  <script>
-  const hintBtn = document.getElementById('hint-btn');
-  const hintArea = document.getElementById('hint-area');
-  let hintSteps = [];
-  let hintIndex = 0;
-
+</main>
+  
+<script>
   const startBtn = document.getElementById('start-btn');
+  const hintBtn = document.getElementById('hint-btn');
+  const nextBtn = document.getElementById('next-btn');
+
   const questionText = document.getElementById('question-text');
-
-  const answerInput = document.getElementById('user-answer');
-  const feedback = document.getElementById('answer-feedback');
-
-  // Correct answer stored as reduced fraction num/den
-  let currentAnsNum = null;
-  let currentAnsDen = null;
+  const tableArea = document.getElementById('table-area');
+  const workArea = document.getElementById('work-area');
+  const histogramArea = document.getElementById('histogram-area');
+  const stageFeedback = document.getElementById('stage-feedback');
 
   // -----------------------------
   // Helpers
   // -----------------------------
   function playSound(id) {
     const s = document.getElementById(id);
-    if (s) {
-      s.currentTime = 0;
-      s.play();
-    }
+    if (s) { s.currentTime = 0; s.play(); }
   }
 
   function randInt(a, b) {
@@ -198,11 +192,7 @@ fetch("/nav.html")
 
   function gcd(a, b) {
     a = Math.abs(a); b = Math.abs(b);
-    while (b !== 0) {
-      const t = a % b;
-      a = b;
-      b = t;
-    }
+    while (b !== 0) { const t = a % b; a = b; b = t; }
     return a === 0 ? 1 : a;
   }
 
@@ -212,21 +202,31 @@ fetch("/nav.html")
     return [num / g, den / g];
   }
 
-  function setAnswer(num, den) {
-    const r = reduceFrac(num, den);
-    currentAnsNum = r[0];
-    currentAnsDen = r[1];
+  function addFrac(aNum, aDen, bNum, bDen) {
+    const num = aNum * bDen + bNum * aDen;
+    const den = aDen * bDen;
+    return reduceFrac(num, den);
   }
 
-  function resetUIForNewQuestion() {
-    feedback.textContent = '';
-    feedback.style.color = 'black';
-    answerInput.value = '';
-    hintArea.innerHTML = '';
-    hintSteps = [];
-    hintIndex = 0;
+  function subFrac(aNum, aDen, bNum, bDen) {
+    return addFrac(aNum, aDen, -bNum, bDen);
   }
 
+  function mulFrac(aNum, aDen, bNum, bDen) {
+    return reduceFrac(aNum * bNum, aDen * bDen);
+  }
+
+  function fracToTex(num, den) {
+    const [n, d] = reduceFrac(num, den);
+    if (d === 1) return `${n}`;
+    return `\\frac{${n}}{${d}}`;
+  }
+
+  function fracToString(num, den) {
+    const [n, d] = reduceFrac(num, den);
+    if (d === 1) return `${n}`;
+    return `${n}/${d}`;
+  }
 
   function typeset(elements = []) {
     if (!window.MathJax) return;
@@ -241,21 +241,55 @@ fetch("/nav.html")
     }
   }
 
-  function toDecimalString(num, den) {
-    const x = num / den;
-    let s = x.toFixed(2);
-    s = s.replace(/0+$/, '').replace(/\.$/, '');
-    return s;
+  function parseNumber(raw) {
+    // Accept integer, fraction, or decimal.
+    const s = (raw ?? '').trim().replace(/\s+/g, '');
+    if (!s) return { error: 'Please enter a value.' };
+
+    const fracMatch = s.match(/^([+-]?\d+)\/([+-]?\d+)$/);
+    if (fracMatch) {
+      const a = parseInt(fracMatch[1], 10);
+      const b = parseInt(fracMatch[2], 10);
+      if (b === 0) return { error: 'Denominator cannot be 0.' };
+      const [n, d] = reduceFrac(a, b);
+      return { kind: 'frac', num: n, den: d, value: n / d };
+    }
+
+    const intMatch = s.match(/^[+-]?\d+$/);
+    if (intMatch) {
+      const a = parseInt(s, 10);
+      return { kind: 'frac', num: a, den: 1, value: a };
+    }
+
+    const decMatch = s.match(/^[+-]?\d*\.\d+$/);
+    if (decMatch) {
+      const v = Number(s);
+      if (!Number.isFinite(v)) return { error: 'That decimal does not look valid.' };
+      return { kind: 'dec', value: v };
+    }
+
+    return { error: 'I couldn’t parse that. Use an integer, a fraction like 3/8, or a decimal like 0.375.' };
   }
 
-  function joinWithOr(items) {
-    if (items.length === 1) return items[0];
-    if (items.length === 2) return `${items[0]} or ${items[1]}`;
-    return `${items.slice(0, -1).join(', ')}, or ${items[items.length - 1]}`;
+  function relClose(a, b, relTol) {
+    const denom = Math.max(1e-12, Math.abs(b));
+    return Math.abs(a - b) <= relTol * denom;
+  }
+
+  function inputMatchesRational(parsed, tNum, tDen, relTol = 0.001) {
+    const target = tNum / tDen;
+    if (parsed.error) return false;
+    if (parsed.kind === 'frac') {
+      const [n, d] = reduceFrac(parsed.num, parsed.den);
+      const [tn, td] = reduceFrac(tNum, tDen);
+      return (n === tn && d === td);
+    }
+    if (parsed.kind === 'dec') return relClose(parsed.value, target, relTol);
+    return false;
   }
 
   // -----------------------------
-  // Inline-SVG histogram for discrete pdfs
+  // Inline-SVG histogram for discrete pdfs (already used above)
   // -----------------------------
   // Usage:
   //   renderDiscreteHistogram('#some-div', [{x:2,p:1/36}, ...], { title: '...' })
@@ -277,8 +311,7 @@ fetch("/nav.html")
     const plotW = W - pad.left - pad.right;
     const plotH = H - pad.top - pad.bottom;
 
-    const xMax = data.length;
-    const xStep = plotW / xMax;
+    const xStep = plotW / data.length;
 
     const y = (p) => pad.top + (1 - (p / maxP)) * plotH;
     const barW = xStep * 0.78;
@@ -295,7 +328,6 @@ fetch("/nav.html")
     const g = document.createElementNS(svgNS, 'g');
     svg.appendChild(g);
 
-    // Title
     if (options.title) {
       const t = document.createElementNS(svgNS, 'text');
       t.setAttribute('x', String(W / 2));
@@ -308,7 +340,6 @@ fetch("/nav.html")
       g.appendChild(t);
     }
 
-    // Axes
     const axisColor = options.axisColor ?? 'currentColor';
     const axisOpacity = options.axisOpacity ?? '0.55';
 
@@ -332,7 +363,6 @@ fetch("/nav.html")
     yAxis.setAttribute('stroke-width', '1');
     g.appendChild(yAxis);
 
-    // Y ticks
     const ticks = options.yTicks ?? 3;
     for (let k = 0; k < ticks; k++) {
       const frac = (ticks === 1) ? 0 : k / (ticks - 1);
@@ -360,7 +390,6 @@ fetch("/nav.html")
       g.appendChild(lab);
     }
 
-    // Bars + x labels
     for (let i = 0; i < data.length; i++) {
       const d = data[i];
       const x = x0(i);
@@ -390,7 +419,6 @@ fetch("/nav.html")
       g.appendChild(xl);
     }
 
-    // Axis labels
     if (options.xLabel) {
       const xl2 = document.createElementNS(svgNS, 'text');
       xl2.setAttribute('x', String(pad.left + plotW / 2));
@@ -420,418 +448,9 @@ fetch("/nav.html")
     el.appendChild(svg);
   }
 
-  function singularize(word) {
-    // Good enough for your current banks (apples->apple, SUVs->SUV, etc.)
-    if (word.endsWith('s')) return word.slice(0, -1);
-    return word;
-  }
-
-  function articleFor(word) {
-    const first = word[0];
-    const vowelLetter = /^[aeiou]/i.test(first);
-    const anInitialism = /^[FHLMNRSX]/.test(first); // “an” F, H, L, M, N, R, S, X
-    return (vowelLetter || anInitialism) ? 'an' : 'a';
-  }
-
-
-  function fracTex(num, den) {
-    const r = reduceFrac(num, den);
-    const n = r[0], d = r[1];
-    if (d === 1) return `\\frac{${n}}{${d}}`;
-    return `\\frac{${n}}{${d}}`;
-  }
-
-  function parseUserAnswer(raw) {
-    // Accept:
-    //  - integer: "3"
-    //  - fraction: "3/8"
-    //  - decimal: "0.375"
-    //
-    // Returns:
-    //  { kind:'exact', num, den } for integer/fraction
-    //  { kind:'decimal', value, relTol } for decimals (graded by relative tolerance)
-    const s = raw.replace(/\s+/g, '');
-
-    // Fraction a/b
-    const fracMatch = s.match(/^([+-]?\d+)\/([+-]?\d+)$/);
-    if (fracMatch) {
-      const a = parseInt(fracMatch[1], 10);
-      const b = parseInt(fracMatch[2], 10);
-      if (b === 0) return { error: 'Denominator cannot be 0.' };
-      const [rn, rd] = reduceFrac(a, b);
-      return { kind: 'exact', num: rn, den: rd };
-    }
-
-    // Integer
-    const intMatch = s.match(/^[+-]?\d+$/);
-    if (intMatch) {
-      const a = parseInt(s, 10);
-      return { kind: 'exact', num: a, den: 1 };
-    }
-
-    // Decimal
-    const decMatch = s.match(/^[+-]?\d*\.\d+$/);
-    if (decMatch) {
-      const value = Number(s);
-      if (!Number.isFinite(value)) return { error: 'That decimal does not look valid.' };
-      if (value < 0) return { error: 'Probabilities cannot be negative.' };
-      // Allow decimals; grade with 0.01% relative tolerance
-      return { kind: 'decimal', value, relTol: 0.0001 };
-    }
-
-    return { error: 'I couldn’t parse that. Use a fraction like 3/8 or a decimal like 0.375.' };
-  }
-
-  function isCorrect(parsed) {
-    if (currentAnsNum === null || currentAnsDen === null) return false;
-    const correctVal = currentAnsNum / currentAnsDen;
-
-    if (!parsed || parsed.error) return false;
-
-    if (parsed.kind === 'exact') {
-      const [uNum, uDen] = reduceFrac(parsed.num, parsed.den);
-      return (uNum === currentAnsNum && uDen === currentAnsDen);
-    }
-
-    if (parsed.kind === 'decimal') {
-      const denom = Math.max(1e-12, Math.abs(correctVal));
-      return Math.abs(parsed.value - correctVal) <= parsed.relTol * denom;
-    }
-
-    return false;
-  }
-
   // -----------------------------
-  // Banks
+  // Static histogram for the two-dice example in the text above
   // -----------------------------
-  const type1Bank = [
-    { categorySing: 'fruit', categoryPlur: 'fruits', items: ['apples', 'bananas', 'oranges', 'pears', 'grapefruits'] },
-    { categorySing: 'animal', categoryPlur: 'animals', items: ['cats', 'dogs', 'birds', 'bears', 'lions'] },
-    { categorySing: 'musical instrument', categoryPlur: 'musical instruments', items: ['trumpets', 'flutes', 'clarinets', 'tubas', 'saxophones'] },
-    { categorySing: 'piece of furniture', categoryPlur: 'pieces of furniture', items: ['chairs', 'tables', 'couches', 'beds', 'dressers'] },
-    { categorySing: 'utensil', categoryPlur: 'utensils', items: ['forks', 'spoons', 'knives', 'spatulas', 'whisks'] },
-    { categorySing: 'vehicle', categoryPlur: 'vehicles', items: ['sedans', 'jeeps', 'SUVs', 'trucks', 'vans'] },
-    { categorySing: 'shape', categoryPlur: 'shapes', items: ['squares', 'triangles', 'circles', 'pentagons', 'hexagons'] }
-  ];
-
-  const type3Bank = [
-    { e: 'it rains', f: 'the temperature is below 5°C' },
-    { e: 'you score a touchdown', f: 'you are the game MVP' },
-    { e: 'the Best Actor winner is from Europe', f: 'the Best Actor winner is over 40 years old' },
-    { e: 'a newborn has brown hair', f: 'a newborn weighs more than 8 lbs at birth' },
-    { e: 'a randomly selected email is spam', f: 'the email contains the word “free”' },
-    { e: 'a randomly selected day is a weekend', f: 'it rains that day' },
-    { e: 'a student passes the final exam', f: 'the student studied at least 5 hours' },
-    { e: 'a customer buys something', f: 'the customer used a coupon' }
-  ];
-
-  const type4Bank = [
-    {
-      population: 'employees at Ben Co',
-      member: 'employee',
-      aLabel: 'lawyers at Ben Co',
-      bLabel: 'employees at Ben Co earning more than 100K'
-    },
-    {
-      population: 'students at VIU',
-      member: 'student',
-      aLabel: 'students enrolled in Math 132',
-      bLabel: 'students enrolled in Math 161'
-    },
-    {
-      population: 'players in the NHL',
-      member: 'player',
-      aLabel: 'centers in the NHL',
-      bLabel: 'players in the NHL who have averaged more than a point per game'
-    },
-    {
-      population: 'books in a library',
-      member: 'book',
-      aLabel: 'fiction books',
-      bLabel: 'books currently checked out'
-    },
-    {
-      population: 'cars in a parking lot',
-      member: 'car',
-      aLabel: 'cars that are SUVs',
-      bLabel: 'cars that are electric'
-    }
-  ];
-
-  // -----------------------------
-  // Type 1
-  // -----------------------------
-  function generateType1() {
-    const scenario = type1Bank[randInt(0, type1Bank.length - 1)];
-
-    const N = randInt(20, 80);
-    const k = randInt(2, 5);
-
-    // choose k distinct items from the 5
-    const indices = [0, 1, 2, 3, 4];
-    for (let i = indices.length - 1; i > 0; i--) {
-      const j = randInt(0, i);
-      [indices[i], indices[j]] = [indices[j], indices[i]];
-    }
-    const chosenTypesIdx = indices.slice(0, k);
-    const chosenTypes = chosenTypesIdx.map(i => scenario.items[i]);
-
-    // random positive parts summing to N
-    let cuts = [];
-    for (let i = 0; i < k - 1; i++) cuts.push(randInt(1, N - 1));
-    cuts.sort((a, b) => a - b);
-
-    const counts = [];
-    let prev = 0;
-    for (let i = 0; i < cuts.length; i++) {
-      counts.push(cuts[i] - prev);
-      prev = cuts[i];
-    }
-    counts.push(N - prev);
-
-    // choose between 1 and k-1 of the pieces for the OR question
-    const m = randInt(1, k - 1);
-    const idx2 = [...Array(k).keys()];
-    for (let i = idx2.length - 1; i > 0; i--) {
-      const j = randInt(0, i);
-      [idx2[i], idx2[j]] = [idx2[j], idx2[i]];
-    }
-    const picked = idx2.slice(0, m).sort((a, b) => a - b);
-
-    const favorable = picked.reduce((acc, i) => acc + counts[i], 0);
-    setAnswer(favorable, N);
-
-    const breakdown = chosenTypes
-      .map((t, i) => `${counts[i]} ${t}`)
-      .join(', ');
-
-    const askedTypes = picked.map(i => chosenTypes[i]);
-    const askedSingles = askedTypes.map(t => {
-      const s = singularize(t);
-      return `${articleFor(s)} ${s}`;
-    });
-    const askedPhrase = joinWithOr(askedSingles);
-
-    questionText.textContent =
-      `A ${scenario.categorySing} is randomly selected from a set of ${N} ${scenario.categoryPlur}. ` +
-      `There are ${breakdown}. ` +
-      `What is the probability that ${askedPhrase} is selected?`;
-
-    hintSteps = [
-  `Add the counts for the types listed in the question to get the number of favorable outcomes.`,
-  `There are ${picked.map(i => counts[i]).join(' + ')} = ${favorable} ${scenario.categoryPlur} which are ${askedTypes.join(' or ')}.`,
-  `Divide by the total number of outcomes (the total size of the set).`,
-  `The proportion of ${scenario.categoryPlur} which are ${askedTypes.join(' or ')} is \\(${fracTex(favorable, N)}\\).`
-];
-  }
-
-  // -----------------------------
-  // Type 2
-  // -----------------------------
-  function generateType2() {
-    const n = randInt(10, 100);
-    const r = randInt(1, 3);
-
-    const points = new Set();
-    while (points.size < 2 * r) points.add(randInt(1, n));
-    const sorted = Array.from(points).sort((a, b) => a - b);
-
-    const intervals = [];
-    for (let i = 0; i < sorted.length; i += 2) {
-      let a = sorted[i], b = sorted[i + 1];
-      if (b < a) [a, b] = [b, a];
-      intervals.push([a, b]);
-    }
-    intervals.sort((I, J) => I[0] - J[0]);
-
-    const disjoint = [];
-    for (const [s, t] of intervals) {
-      if (disjoint.length === 0) disjoint.push([s, t]);
-      else {
-        const last = disjoint[disjoint.length - 1];
-        if (s > last[1]) disjoint.push([s, t]);
-        else {
-          const ns = last[1] + 1;
-          if (ns <= t) disjoint.push([ns, t]);
-        }
-      }
-    }
-
-    while (disjoint.length < r) {
-      const x = randInt(1, n);
-      let ok = true;
-      for (const [s, t] of disjoint) if (x >= s && x <= t) ok = false;
-      if (ok) disjoint.push([x, x]);
-      if (disjoint.length > 10) break;
-    }
-
-    disjoint.sort((I, J) => I[0] - J[0]);
-    const finalIntervals = disjoint.slice(0, r);
-
-    let outerUsed = 0;
-    const phrases = finalIntervals.map(([s, t]) => {
-      if (s === 1 && outerUsed < 2) {
-        outerUsed++;
-        return `less than ${t + 1}`;
-      }
-      if (t === n && outerUsed < 2) {
-        outerUsed++;
-        return `${s} or higher`;
-      }
-      if (s === t) return `exactly ${s}`;
-      return `between ${s} and ${t} (inclusive)`;
-    });
-
-    const favorable = finalIntervals.reduce((acc, [s, t]) => acc + (t - s + 1), 0);
-    setAnswer(favorable, n);
-
-    questionText.textContent =
-      `A ${n}-sided die is rolled. ` +
-      `What is the probability that the number rolled is ${joinWithOr(phrases)}?`;
-
-    hintSteps = [
-  `Count how many outcomes satisfy at least one of the listed conditions.`,
-  `There are ${favorable} natural numbers which are ${joinWithOr(phrases)}.`,
-  `Divide by the total number of outcomes (${n}).`,
-  `The proportion of natural numbers which are ${n} or less that are ${joinWithOr(phrases)} is \\(${fracTex(favorable, n)}\\).`
-];
-  }
-
-  // -----------------------------
-  // Type 3
-  // -----------------------------
-  function generateType3() {
-    const scenario = type3Bank[randInt(0, type3Bank.length - 1)];
-
-    const den = 100;
-    const pE = randInt(10, 80);
-    const pF = randInt(10, 80);
-
-    const minInt = Math.max(0, pE + pF - den);
-    const maxInt = Math.min(pE, pF);
-    const pInt = randInt(minInt, maxInt);
-
-    const pUnion = pE + pF - pInt;
-    const giveUnion = Math.random() < 0.5;
-
-    if (giveUnion) {
-      setAnswer(pInt, den);
-      questionText.textContent =
-        `There is a ${toDecimalString(pE, den)} probability that ${scenario.e}, ` +
-        `a ${toDecimalString(pF, den)} probability that ${scenario.f}, ` +
-        `and a ${toDecimalString(pUnion, den)} probability that ${scenario.e} or ${scenario.f}. ` +
-        `What is the probability that ${scenario.e} and ${scenario.f}?`;
-    } else {
-      setAnswer(pUnion, den);
-      questionText.textContent =
-        `There is a ${toDecimalString(pE, den)} probability that ${scenario.e}, ` +
-        `a ${toDecimalString(pF, den)} probability that ${scenario.f}, ` +
-        `and a ${toDecimalString(pInt, den)} probability that ${scenario.e} and ${scenario.f}. ` +
-        `What is the probability that ${scenario.e} or ${scenario.f}?`;
-    }
-
-    hintSteps = (() => {
-  const eText = scenario.e;
-  const fText = scenario.f;
-
-  if (giveUnion) {
-    return [
-      `Use inclusion-exclusion.`,
-      `Rearrange depending on which quantity you’re missing.`,
-      `\\(P(E \\cap F) = P(E) + P(F) - P(E \\cup F)\\)`,
-      `Let \\(E\\) be the event that ${eText}, and let \\(F\\) be the event that ${fText}.`,
-      `Substitute: \\(P(E \\cap F) = ${fracTex(pE, den)} + ${fracTex(pF, den)} - ${fracTex(pUnion, den)} = ${fracTex(pInt, den)}\\).`
-    ];
-  } else {
-    return [
-      `Use inclusion-exclusion.`,
-      `Rearrange depending on which quantity you’re missing.`,
-      `\\(P(E \\cup F) = P(E) + P(F) - P(E \\cap F)\\)`,
-      `Let \\(E\\) be the event that ${eText}, and let \\(F\\) be the event that ${fText}.`,
-      `Substitute: \\(P(E \\cup F) = ${fracTex(pE, den)} + ${fracTex(pF, den)} - ${fracTex(pInt, den)} = ${fracTex(pUnion, den)}\\).`
-    ];
-  }
-})();
-  }
-
-  // -----------------------------
-  // Type 4
-  // -----------------------------
-  function generateType4() {
-    const scenario = type4Bank[randInt(0, type4Bank.length - 1)];
-
-    const N = randInt(80, 600);
-    const a = randInt(10, Math.floor(0.75 * N));
-    const b = randInt(10, Math.floor(0.75 * N));
-
-    const giveUnion = Math.random() < 0.5;
-
-    let u;
-    let inter;
-
-    if (giveUnion) {
-      const uMin = Math.max(a, b);
-      const uMax = Math.min(N, a + b);
-      u = randInt(uMin, uMax);
-      inter = a + b - u;
-
-      setAnswer(inter, N);
-
-      questionText.textContent =
-        `There are ${N} ${scenario.population}. ` +
-        `${a} are ${scenario.aLabel}, ${b} are ${scenario.bLabel}, ` +
-        `and ${u} are ${scenario.aLabel} or ${scenario.bLabel}. ` +
-        `If a ${scenario.member} is selected at random, what is the probability they are ` +
-        `${scenario.aLabel} and ${scenario.bLabel}?`;
-    } else {
-      const iMin = Math.max(0, a + b - N);
-      const iMax = Math.min(a, b);
-      inter = randInt(iMin, iMax);
-      u = a + b - inter;
-
-      setAnswer(u, N);
-
-      questionText.textContent =
-        `There are ${N} ${scenario.population}. ` +
-        `${a} are ${scenario.aLabel}, ${b} are ${scenario.bLabel}, ` +
-        `and ${inter} are ${scenario.aLabel} and ${scenario.bLabel}. ` +
-        `If a ${scenario.member} is selected at random, what is the probability they are ` +
-        `${scenario.aLabel} or ${scenario.bLabel}?`;
-    }
-
-    hintSteps = (() => {
-  const A = scenario.aLabel;
-  const B = scenario.bLabel;
-
-  if (giveUnion) {
-    return [
-      `Use inclusion-exclusion: \\(|A \\cup B| = |A| + |B| - |A \\cap B|\\).`,
-      `Find the missing amount, \\(|A \\cap B|\\).`,
-      `Let \\(A =\\) ${A} and let \\(B =\\) ${B}.`,
-      `Substitute: \\(${u} = ${a} + ${b} - |A \\cap B|\\).`,
-      `So \\(|A \\cap B| = ${a} + ${b} - ${u} = ${inter}\\).`,
-      `Divide by the total population to get the probability.`,
-      `The proportion of ${scenario.population} which are ${A} and ${B} is \\(${fracTex(inter, N)}\\).`
-    ];
-  } else {
-    return [
-      `Use inclusion-exclusion: \\(|A \\cup B| = |A| + |B| - |A \\cap B|\\).`,
-      `Find the missing amount, \\(|A \\cup B|\\).`,
-      `Let \\(A =\\) ${A} and let \\(B =\\) ${B}.`,
-      `Substitute: \\(|A \\cup B| = ${a} + ${b} - ${inter}\\).`,
-      `So \\(|A \\cup B| = ${u}\\).`,
-      `Divide by the total population to get the probability.`,
-      `The proportion of ${scenario.population} which are ${A} or ${B} is \\(${fracTex(u, N)}\\).`
-    ];
-  }
-})();
-  }
-
-  // -----------------------------
-  // Start: generate a question
-  // -----------------------------
-
-  // Insert the histogram for the two-dice example (static, above the interactive section)
   renderDiscreteHistogram('#dice-histogram', [
     { x: 2,  p: 1/36 },
     { x: 3,  p: 2/36 },
@@ -849,7 +468,6 @@ fetch("/nav.html")
     xLabel: 'x',
     yLabel: 'f(x)',
     yFormatter: (v) => {
-      // Show as a simplified fraction of 36 when it’s clean, otherwise decimal.
       const n = Math.round(v * 36);
       const den = 36;
       const g = gcd(n, den);
@@ -859,76 +477,472 @@ fetch("/nav.html")
     }
   });
 
+  // -----------------------------
+  // Activity state (Type 1)
+  // -----------------------------
+  const REL_TOL = 0.001; // 0.1%
+
+  let stage = 0; // 0 = not started, 1..6 as described
+  let problem = null;
+
+  function clearActivity() {
+    tableArea.innerHTML = '';
+    workArea.innerHTML = '';
+    histogramArea.innerHTML = '';
+    stageFeedback.textContent = '';
+    stageFeedback.style.color = 'black';
+    typeset();
+  }
+
+  function setFeedback(msg, color = 'black') {
+    stageFeedback.textContent = msg;
+    stageFeedback.style.color = color;
+  }
+
+  function buildType1Problem() {
+    const op = (Math.random() < 0.5) ? 'sum' : 'difference';
+    const src = (Math.random() < 0.5) ? 'dice' : 'cards';
+
+    let n1, n2, total;
+    let aMin, aMax, bMin, bMax;
+
+    if (src === 'dice') {
+      n1 = randInt(4, 10);
+      n2 = randInt(4, 10);
+      total = n1 * n2;
+      aMin = 1; aMax = n1;
+      bMin = 1; bMax = n2;
+    } else {
+      n1 = 13; n2 = 13;
+      total = 13 * 13;
+      aMin = 1; aMax = 13;
+      bMin = 1; bMax = 13;
+    }
+
+    const counts = new Map();
+    for (let a = aMin; a <= aMax; a++) {
+      for (let b = bMin; b <= bMax; b++) {
+        const x = (op === 'sum') ? (a + b) : (a - b);
+        counts.set(x, (counts.get(x) ?? 0) + 1);
+      }
+    }
+
+    const xVals = Array.from(counts.keys()).sort((u, v) => u - v);
+    const probs = xVals.map(x => {
+      const c = counts.get(x);
+      return reduceFrac(c, total);
+    });
+
+    // Mean mu = sum x * P(X=x) = (sum x*count)/total
+    let muNum = 0;
+    for (const x of xVals) muNum += x * counts.get(x);
+    let muDen = total;
+    [muNum, muDen] = reduceFrac(muNum, muDen);
+
+    // (x - mu)^2 = (x*muDen - muNum)^2 / muDen^2
+    const sq = xVals.map(x => {
+      const t = x * muDen - muNum;
+      const num = t * t;
+      const den = muDen * muDen;
+      return reduceFrac(num, den);
+    });
+
+    // (x - mu)^2 * f(x)
+    const sqp = xVals.map((x, i) => {
+      const [sNum, sDen] = sq[i];
+      const [pNum, pDen] = probs[i];
+      return mulFrac(sNum, sDen, pNum, pDen);
+    });
+
+    // variance = sum sqp
+    let varNum = 0, varDen = 1;
+    for (const [a, b] of sqp) {
+      [varNum, varDen] = addFrac(varNum, varDen, a, b);
+    }
+
+    const variance = [varNum, varDen];
+    const sigma = Math.sqrt(varNum / varDen);
+
+    return {
+      op, src, n1, n2, total,
+      xVals, counts, probs,
+      mu: [muNum, muDen],
+      sq, sqp,
+      variance,
+      sigma
+    };
+  }
+
+  function problemPrompt(p) {
+    if (p.src === 'dice') {
+      const die1 = `${p.n1}-sided die`;
+      const die2 = `${p.n2}-sided die`;
+      const expr = (p.op === 'sum') ? 'the sum' : 'the difference (first minus second)';
+      return `Let \\(X\\) be ${expr} of two rolls: one roll of a \\(${die1}\\) and one roll of a \\(${die2}\\).`;
+    } else {
+      const expr = (p.op === 'sum') ? 'the sum' : 'the difference (first minus second)';
+      return `Let \\(X\\) be ${expr} of the ranks of two card draws (with \\(A=1\\), \\(J=11\\), \\(Q=12\\), \\(K=13\\)).`;
+    }
+  }
+
+  function makeInputCell(id, placeholder = '') {
+    return `<input id="${id}" type="text" inputmode="decimal" style="width: 6.5em; text-align: center;" placeholder="${placeholder}">`;
+  }
+
+  function renderTable() {
+    if (!problem) return;
+
+    const headers = ['x', 'f(x)', '(x - \\mu)^2', '(x - \\mu)^2\\cdot f(x)'];
+    const rows = problem.xVals.length;
+
+    let html = `<table style="margin: 0 auto; border-collapse: collapse; min-width: 640px;">
+      <thead><tr>`;
+    for (const h of headers) {
+      html += `<th style="border: 1px solid rgba(0,0,0,0.35); padding: 8px 10px;">\\(${h}\\)</th>`;
+    }
+    html += `</tr></thead><tbody>`;
+
+    for (let i = 0; i < rows; i++) {
+      const x = problem.xVals[i];
+      const [pNum, pDen] = problem.probs[i];
+      const [sqNum, sqDen] = problem.sq[i];
+      const [sqpNum, sqpDen] = problem.sqp[i];
+
+      html += `<tr>`;
+
+      // x col
+      if (stage === 1) html += `<td style="border: 1px solid rgba(0,0,0,0.35); padding: 8px 10px;">${makeInputCell(`x-${i}`)}</td>`;
+      else html += `<td style="border: 1px solid rgba(0,0,0,0.35); padding: 8px 10px;">\\(${x}\\)</td>`;
+
+      // f(x)
+      if (stage === 2) html += `<td style="border: 1px solid rgba(0,0,0,0.35); padding: 8px 10px;">${makeInputCell(`p-${i}`, 'e.g. 3/36')}</td>`;
+      else if (stage >= 3) html += `<td style="border: 1px solid rgba(0,0,0,0.35); padding: 8px 10px;">\\(${fracToTex(pNum, pDen)}\\)</td>`;
+      else html += `<td style="border: 1px solid rgba(0,0,0,0.35); padding: 8px 10px;"></td>`;
+
+      // (x-mu)^2
+      if (stage === 4) html += `<td style="border: 1px solid rgba(0,0,0,0.35); padding: 8px 10px;">${makeInputCell(`sq-${i}`)}</td>`;
+      else if (stage >= 5) html += `<td style="border: 1px solid rgba(0,0,0,0.35); padding: 8px 10px;">\\(${fracToTex(sqNum, sqDen)}\\)</td>`;
+      else html += `<td style="border: 1px solid rgba(0,0,0,0.35); padding: 8px 10px;"></td>`;
+
+      // (x-mu)^2 f(x)
+      if (stage === 5) html += `<td style="border: 1px solid rgba(0,0,0,0.35); padding: 8px 10px;">${makeInputCell(`sqp-${i}`)}</td>`;
+      else if (stage >= 6) html += `<td style="border: 1px solid rgba(0,0,0,0.35); padding: 8px 10px;">\\(${fracToTex(sqpNum, sqpDen)}\\)</td>`;
+      else html += `<td style="border: 1px solid rgba(0,0,0,0.35); padding: 8px 10px;"></td>`;
+
+      html += `</tr>`;
+    }
+
+    html += `</tbody></table>`;
+    tableArea.innerHTML = html;
+  }
+
+  function renderStageInstructions() {
+    if (!problem) return;
+
+    histogramArea.innerHTML = '';
+    setFeedback('');
+
+    if (stage === 1) {
+      workArea.innerHTML = `<div>Stage 1: Enter the possible values of \\(x\\) in <b>ascending order</b>.</div>`;
+    }
+
+    if (stage === 2) {
+      workArea.innerHTML = `<div>Stage 2: Enter the pdf values \\(f(x)=P(X=x)\\) for each \\(x\\).</div>`;
+    }
+
+    if (stage === 3) {
+      const [muNum, muDen] = problem.mu;
+      workArea.innerHTML = `
+        <div style="margin-bottom: 0.5rem;">Stage 3: Compute the mean \\(\\mu = E(X)\\).</div>
+        <div>
+          <label for="mu-input">\\(\\mu =\\)</label>
+          <input id="mu-input" type="text" style="width: 10em; text-align: center;">
+        </div>
+      `;
+      // histogram should already be shown from stage2->3 transition, but keep it visible
+    }
+
+    if (stage === 4) {
+      workArea.innerHTML = `<div>Stage 4: Compute each value of \\((x-\\mu)^2\\).</div>`;
+    }
+
+    if (stage === 5) {
+      workArea.innerHTML = `<div>Stage 5: Compute each value of \\((x-\\mu)^2\\cdot f(x)\\).</div>`;
+    }
+
+    if (stage === 6) {
+      workArea.innerHTML = `
+        <div style="margin-bottom: 0.5rem;">Stage 6: Compute the standard deviation \\(\\sigma\\).</div>
+        <div>
+          <label for="sigma-input">\\(\\sigma =\\)</label>
+          <input id="sigma-input" type="text" style="width: 10em; text-align: center;">
+        </div>
+      `;
+    }
+  }
+
+  function showHistogram() {
+    if (!problem) return;
+    const pts = problem.xVals.map((x, i) => {
+      const [pNum, pDen] = problem.probs[i];
+      return { x, p: pNum / pDen };
+    });
+
+    renderDiscreteHistogram(histogramArea, pts, {
+      title: 'Histogram of the pdf',
+      xLabel: 'x',
+      yLabel: 'f(x)',
+      yFormatter: (v) => v.toFixed(3).replace(/0+$/, '').replace(/\.$/, '')
+    });
+  }
+
+  function showOneProbabilityComputation() {
+    const i = randInt(0, problem.xVals.length - 1);
+    const x = problem.xVals[i];
+    const favorable = problem.counts.get(x);
+    const total = problem.total;
+    const [pNum, pDen] = problem.probs[i];
+
+    let context = '';
+    if (problem.src === 'dice') {
+      context = `There are \\(${problem.n1}\\cdot ${problem.n2} = ${total}\\) equally likely outcomes.`;
+    } else {
+      context = `There are \\(13\\cdot 13 = ${total}\\) equally likely outcomes.`;
+    }
+
+    const detail = `
+      <div style="margin-top: 1rem;">
+        <div><b>Example computation:</b> for \\(x=${x}\\)</div>
+        <div>${context}</div>
+        <div>There are \\(${favorable}\\) outcomes that give \\(X=${x}\\), so</div>
+        <div>\\(f(${x}) = P(X=${x}) = \\dfrac{${favorable}}{${total}} = ${fracToTex(pNum, pDen)}\\).</div>
+      </div>
+    `;
+    workArea.insertAdjacentHTML('beforeend', detail);
+  }
+
+  function renderAll() {
+    renderTable();
+    renderStageInstructions();
+    if (stage >= 3) showHistogram(); // keep visible from stage 3 onward
+    typeset([tableArea, workArea, histogramArea, questionText]);
+  }
+
+  function advanceTo(newStage) {
+    stage = newStage;
+    renderAll();
+  }
+
+  function checkStage1() {
+    for (let i = 0; i < problem.xVals.length; i++) {
+      const el = document.getElementById(`x-${i}`);
+      const parsed = parseNumber(el?.value ?? '');
+      if (parsed.error) return { ok: false, msg: parsed.error };
+      // must be exact integer match
+      if (parsed.kind !== 'frac' || parsed.den !== 1) return { ok: false, msg: 'Please enter integers for the x-values.' };
+      if (parsed.num !== problem.xVals[i]) return { ok: false, msg: 'One or more x-values are incorrect (or not in ascending order).' };
+    }
+    return { ok: true };
+  }
+
+  function checkStage2() {
+    for (let i = 0; i < problem.xVals.length; i++) {
+      const el = document.getElementById(`p-${i}`);
+      const parsed = parseNumber(el?.value ?? '');
+      const [tNum, tDen] = problem.probs[i];
+      if (parsed.error) return { ok: false, msg: parsed.error };
+      if (!inputMatchesRational(parsed, tNum, tDen, REL_TOL)) return { ok: false, msg: 'One or more pdf values are incorrect.' };
+    }
+    return { ok: true };
+  }
+
+  function checkStage3() {
+    const el = document.getElementById('mu-input');
+    const parsed = parseNumber(el?.value ?? '');
+    const [tNum, tDen] = problem.mu;
+    if (parsed.error) return { ok: false, msg: parsed.error };
+    if (!inputMatchesRational(parsed, tNum, tDen, REL_TOL)) return { ok: false, msg: 'That mean is not correct.' };
+    return { ok: true };
+  }
+
+  function checkStage4() {
+    for (let i = 0; i < problem.xVals.length; i++) {
+      const el = document.getElementById(`sq-${i}`);
+      const parsed = parseNumber(el?.value ?? '');
+      const [tNum, tDen] = problem.sq[i];
+      if (parsed.error) return { ok: false, msg: parsed.error };
+      if (!inputMatchesRational(parsed, tNum, tDen, REL_TOL)) return { ok: false, msg: 'One or more (x-μ)^2 entries are incorrect.' };
+    }
+    return { ok: true };
+  }
+
+  function checkStage5() {
+    for (let i = 0; i < problem.xVals.length; i++) {
+      const el = document.getElementById(`sqp-${i}`);
+      const parsed = parseNumber(el?.value ?? '');
+      const [tNum, tDen] = problem.sqp[i];
+      if (parsed.error) return { ok: false, msg: parsed.error };
+      if (!inputMatchesRational(parsed, tNum, tDen, REL_TOL)) return { ok: false, msg: 'One or more (x-μ)^2·f(x) entries are incorrect.' };
+    }
+    return { ok: true };
+  }
+
+  function checkStage6() {
+    const el = document.getElementById('sigma-input');
+    const parsed = parseNumber(el?.value ?? '');
+    if (parsed.error) return { ok: false, msg: parsed.error };
+    const target = problem.sigma;
+    const val = (parsed.kind === 'frac') ? (parsed.num / parsed.den) : parsed.value;
+    if (!relClose(val, target, REL_TOL)) return { ok: false, msg: 'That standard deviation is not correct.' };
+    return { ok: true };
+  }
+
+  function fillStageAndAdvance() {
+    // Hint behaviour: fill current stage and move on.
+    if (!problem) return;
+
+    if (stage === 1) {
+      setFeedback('Filled in the x-values.', 'black');
+      advanceTo(2);
+      return;
+    }
+
+    if (stage === 2) {
+      // When leaving stage 2: show one f(x) computation + histogram (starting in stage 3)
+      advanceTo(3);
+      showOneProbabilityComputation();
+      showHistogram();
+      typeset([workArea, histogramArea]);
+      return;
+    }
+
+    if (stage === 3) {
+      const [muNum, muDen] = problem.mu;
+      workArea.innerHTML = `
+        <div style="margin-bottom: 0.5rem;">Stage 3: Compute the mean \\(\\mu = E(X)\\).</div>
+        <div>\\(\\mu = \\sum_x x f(x) = ${fracToTex(muNum, muDen)}\\)</div>
+      `;
+      showHistogram();
+      typeset([workArea, histogramArea]);
+      advanceTo(4);
+      return;
+    }
+
+    if (stage === 4) {
+      setFeedback('Filled in the (x-μ)^2 column.', 'black');
+      advanceTo(5);
+      return;
+    }
+
+    if (stage === 5) {
+      setFeedback('Filled in the (x-μ)^2·f(x) column.', 'black');
+      advanceTo(6);
+      return;
+    }
+
+    if (stage === 6) {
+      const [vNum, vDen] = problem.variance;
+      const sig = problem.sigma;
+      workArea.innerHTML = `
+        <div style="margin-bottom: 0.5rem;">Stage 6: Compute the standard deviation \\(\\sigma\\).</div>
+        <div>\\(\\sigma = \\sqrt{\\sum_x (x-\\mu)^2 f(x)} = \\sqrt{${fracToTex(vNum, vDen)}} \\approx ${sig.toFixed(4)}\\)</div>
+      `;
+      showHistogram();
+      setFeedback('Done!', 'green');
+      typeset([workArea, histogramArea]);
+      return;
+    }
+  }
+
+  function nextStageIfCorrect() {
+    if (!problem) return;
+
+    let result = { ok: false, msg: 'Not ready.' };
+
+    if (stage === 1) result = checkStage1();
+    if (stage === 2) result = checkStage2();
+    if (stage === 3) result = checkStage3();
+    if (stage === 4) result = checkStage4();
+    if (stage === 5) result = checkStage5();
+    if (stage === 6) result = checkStage6();
+
+    if (!result.ok) {
+      setFeedback(result.msg ?? 'Not quite.', 'crimson');
+      return;
+    }
+
+    setFeedback('Correct!', 'green');
+
+    if (stage === 1) { advanceTo(2); return; }
+
+    if (stage === 2) {
+      advanceTo(3);
+      showOneProbabilityComputation();
+      showHistogram();
+      typeset([workArea, histogramArea]);
+      return;
+    }
+
+    if (stage === 3) {
+      // replace input with exact computation
+      const [muNum, muDen] = problem.mu;
+      workArea.innerHTML = `
+        <div style="margin-bottom: 0.5rem;">Stage 3: Compute the mean \\(\\mu = E(X)\\).</div>
+        <div>\\(\\mu = \\sum_x x f(x) = ${fracToTex(muNum, muDen)}\\)</div>
+      `;
+      showHistogram();
+      typeset([workArea, histogramArea]);
+      advanceTo(4);
+      return;
+    }
+
+    if (stage === 4) { advanceTo(5); return; }
+    if (stage === 5) { advanceTo(6); return; }
+
+    if (stage === 6) {
+      const [vNum, vDen] = problem.variance;
+      const sig = problem.sigma;
+      workArea.innerHTML = `
+        <div style="margin-bottom: 0.5rem;">Stage 6: Compute the standard deviation \\(\\sigma\\).</div>
+        <div>\\(\\sigma = \\sqrt{${fracToTex(vNum, vDen)}} \\approx ${sig.toFixed(4)}\\)</div>
+      `;
+      showHistogram();
+      setFeedback('Done!', 'green');
+      typeset([workArea, histogramArea]);
+      return;
+    }
+  }
+
+  function startType1() {
+    clearActivity();
+    problem = buildType1Problem();
+    stage = 1;
+
+    questionText.innerHTML = problemPrompt(problem);
+    typeset([questionText]);
+
+    renderAll();
+  }
+
+  // -----------------------------
+  // Start: (for now) always Type 1
+  // -----------------------------
   startBtn.addEventListener('click', () => {
     playSound('click-sound');
-    resetUIForNewQuestion();
-
-    const qType = randInt(1, 4);
-
-    if (qType === 1) generateType1();
-    if (qType === 2) generateType2();
-    if (qType === 3) generateType3();
-    if (qType === 4) generateType4();
+    startType1();
   });
 
-  // -----------------------------
-  // Check answer
-  // -----------------------------
-  document.getElementById('check-answer-btn').addEventListener('click', () => {
-    playSound('click-sound');
-
-    const raw = answerInput.value.trim();
-    if (!raw) {
-      feedback.textContent = 'Please enter an answer.';
-      feedback.style.color = 'black';
-      return;
-    }
-
-    const parsed = parseUserAnswer(raw);
-    if (parsed.error) {
-      feedback.textContent = parsed.error;
-      feedback.style.color = 'black';
-      return;
-    }
-
-    if (isCorrect(parsed)) {
-      feedback.textContent = 'Correct!';
-      feedback.style.color = 'green';
-    } else {
-      const exact = `${currentAnsNum}/${currentAnsDen}`;
-      const dec = (currentAnsNum / currentAnsDen).toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
-      feedback.textContent = `Not quite. Correct answer is ${exact} (≈ ${dec}).`;
-      feedback.style.color = 'crimson';
-    }
-  });
-
-  // -----------------------------
-  // Hint button (centered)
-  // -----------------------------
   hintBtn.addEventListener('click', () => {
     playSound('click-sound');
+    fillStageAndAdvance();
+  });
 
-    if (!hintSteps || hintSteps.length === 0) {
-      const hintPara = document.createElement('div');
-      hintPara.classList.add('hint-step');
-      hintPara.style.textAlign = 'center';
-      hintPara.textContent = 'No hints are available for this question.';
-      hintArea.appendChild(hintPara);
-      typeset([hintPara]);
-      return;
-    }
-
-    if (hintIndex < hintSteps.length) {
-      const hintPara = document.createElement('div');
-      hintPara.classList.add('hint-step');
-      hintPara.style.textAlign = 'center';
-      hintPara.innerHTML = hintSteps[hintIndex];
-      hintArea.appendChild(hintPara);
-      typeset([hintPara]);
-      hintIndex++;
-    }
+  nextBtn.addEventListener('click', () => {
+    playSound('click-sound');
+    nextStageIfCorrect();
   });
 </script>
+
 
 
   <audio id="click-sound" src="button.mp3" preload="auto"></audio>

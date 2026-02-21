@@ -154,6 +154,8 @@ fetch("/nav.html")
     <div id="activity-area" style="margin-top: 1rem;">
       <div id="table-area" class="math" style="margin: 1rem auto; max-width: 900px; text-align: center;"></div>
 
+      <div id="mean-area" class="math" style="margin-top: 0.75rem; text-align: center;"></div>
+
       <div id="work-area" class="math" style="margin-top: 1rem; text-align: center;"></div>
 
       <div id="histogram-area" style="margin: 1rem auto; max-width: 740px;"></div>
@@ -174,6 +176,7 @@ fetch("/nav.html")
 
   const questionText = document.getElementById('question-text');
   const tableArea = document.getElementById('table-area');
+  const meanArea = document.getElementById('mean-area');
   const workArea = document.getElementById('work-area');
   const histogramArea = document.getElementById('histogram-area');
   const stageFeedback = document.getElementById('stage-feedback');
@@ -484,9 +487,11 @@ fetch("/nav.html")
 
   let stage = 0; // 0 = not started, 1..6 as described
   let problem = null;
+  let meanRevealed = false;
 
   function clearActivity() {
     tableArea.innerHTML = '';
+    meanArea.innerHTML = '';
     workArea.innerHTML = '';
     histogramArea.innerHTML = '';
     stageFeedback.textContent = '';
@@ -500,31 +505,33 @@ fetch("/nav.html")
   }
 
   function buildType1Problem() {
-    const op = (Math.random() < 0.5) ? 'sum' : 'difference';
-    const src = (Math.random() < 0.5) ? 'dice' : 'cards';
+    // Dice only.
+    const n1 = randInt(4, 10);
+    const n2 = randInt(4, 10);
+    const total = n1 * n2;
 
-    let n1, n2, total;
-    let aMin, aMax, bMin, bMax;
+    // Randomly select operation: sum, difference, or (sometimes) product.
+    // Product is only allowed if the number of distinct products is <= 20.
+    let op = ['sum', 'difference', 'product'][randInt(0, 2)];
 
-    if (src === 'dice') {
-      n1 = randInt(4, 10);
-      n2 = randInt(4, 10);
-      total = n1 * n2;
-      aMin = 1; aMax = n1;
-      bMin = 1; bMax = n2;
-    } else {
-      n1 = 13; n2 = 13;
-      total = 13 * 13;
-      aMin = 1; aMax = 13;
-      bMin = 1; bMax = 13;
-    }
-
-    const counts = new Map();
-    for (let a = aMin; a <= aMax; a++) {
-      for (let b = bMin; b <= bMax; b++) {
-        const x = (op === 'sum') ? (a + b) : (a - b);
-        counts.set(x, (counts.get(x) ?? 0) + 1);
+    const countsForOp = (operation) => {
+      const counts = new Map();
+      for (let a = 1; a <= n1; a++) {
+        for (let b = 1; b <= n2; b++) {
+          let x;
+          if (operation === 'sum') x = a + b;
+          else if (operation === 'difference') x = a - b;
+          else x = a * b;
+          counts.set(x, (counts.get(x) ?? 0) + 1);
+        }
       }
+      return counts;
+    };
+
+    let counts = countsForOp(op);
+    if (op === 'product' && counts.size > 20) {
+      op = (Math.random() < 0.5) ? 'sum' : 'difference';
+      counts = countsForOp(op);
     }
 
     const xVals = Array.from(counts.keys()).sort((u, v) => u - v);
@@ -564,7 +571,7 @@ fetch("/nav.html")
     const sigma = Math.sqrt(varNum / varDen);
 
     return {
-      op, src, n1, n2, total,
+      op, n1, n2, total,
       xVals, counts, probs,
       mu: [muNum, muDen],
       sq, sqp,
@@ -574,15 +581,14 @@ fetch("/nav.html")
   }
 
   function problemPrompt(p) {
-    if (p.src === 'dice') {
-      const die1 = `${p.n1}-sided die`;
-      const die2 = `${p.n2}-sided die`;
-      const expr = (p.op === 'sum') ? 'the sum' : 'the difference (first minus second)';
-      return `Let \\(X\\) be ${expr} of two rolls: one roll of a \\(${die1}\\) and one roll of a \\(${die2}\\).`;
-    } else {
-      const expr = (p.op === 'sum') ? 'the sum' : 'the difference (first minus second)';
-      return `Let \\(X\\) be ${expr} of the ranks of two card draws (with \\(A=1\\), \\(J=11\\), \\(Q=12\\), \\(K=13\\)).`;
-    }
+    const expr = (p.op === 'sum')
+      ? 'the sum'
+      : (p.op === 'difference')
+        ? 'the difference (first minus second)'
+        : 'the product';
+
+    // Keep the die descriptions OUT of math mode to avoid MathJax mangling text like "6-sided die".
+    return `Let \\(X\\) be ${expr} of two rolls: one roll of a ${p.n1}-sided die and one roll of a ${p.n2}-sided die.`;
   }
 
   function makeInputCell(id, placeholder = '') {
@@ -703,12 +709,7 @@ fetch("/nav.html")
     const total = problem.total;
     const [pNum, pDen] = problem.probs[i];
 
-    let context = '';
-    if (problem.src === 'dice') {
-      context = `There are \\(${problem.n1}\\cdot ${problem.n2} = ${total}\\) equally likely outcomes.`;
-    } else {
-      context = `There are \\(13\\cdot 13 = ${total}\\) equally likely outcomes.`;
-    }
+    const context = `There are \\(${problem.n1}\\cdot ${problem.n2} = ${total}\\) equally likely outcomes.`;
 
     const detail = `
       <div style="margin-top: 1rem;">
@@ -725,12 +726,20 @@ fetch("/nav.html")
     renderTable();
     renderStageInstructions();
     if (stage >= 3) showHistogram(); // keep visible from stage 3 onward
-    typeset([tableArea, workArea, histogramArea, questionText]);
+    typeset([tableArea, meanArea, workArea, histogramArea, questionText]);
+  }
+
+  function renderMeanIfKnown() {
+    if (!problem || !meanRevealed) return;
+    const [muNum, muDen] = problem.mu;
+    meanArea.innerHTML = `<div><b>Mean:</b> \\(\\mu = E(X) = \\sum_x x f(x) = ${fracToTex(muNum, muDen)}\\)</div>`;
   }
 
   function advanceTo(newStage) {
     stage = newStage;
     renderAll();
+    renderMeanIfKnown();
+    typeset([meanArea]);
   }
 
   function checkStage1() {
@@ -817,13 +826,10 @@ fetch("/nav.html")
     }
 
     if (stage === 3) {
-      const [muNum, muDen] = problem.mu;
-      workArea.innerHTML = `
-        <div style="margin-bottom: 0.5rem;">Stage 3: Compute the mean \\(\\mu = E(X)\\).</div>
-        <div>\\(\\mu = \\sum_x x f(x) = ${fracToTex(muNum, muDen)}\\)</div>
-      `;
+      meanRevealed = true;
+      renderMeanIfKnown();
       showHistogram();
-      typeset([workArea, histogramArea]);
+      typeset([meanArea, histogramArea]);
       advanceTo(4);
       return;
     }
@@ -884,14 +890,11 @@ fetch("/nav.html")
     }
 
     if (stage === 3) {
-      // replace input with exact computation
-      const [muNum, muDen] = problem.mu;
-      workArea.innerHTML = `
-        <div style="margin-bottom: 0.5rem;">Stage 3: Compute the mean \\(\\mu = E(X)\\).</div>
-        <div>\\(\\mu = \\sum_x x f(x) = ${fracToTex(muNum, muDen)}\\)</div>
-      `;
+      // Persist the mean computation for the rest of the problem.
+      meanRevealed = true;
+      renderMeanIfKnown();
       showHistogram();
-      typeset([workArea, histogramArea]);
+      typeset([meanArea, histogramArea]);
       advanceTo(4);
       return;
     }
@@ -917,11 +920,13 @@ fetch("/nav.html")
     clearActivity();
     problem = buildType1Problem();
     stage = 1;
+    meanRevealed = false;
 
     questionText.innerHTML = problemPrompt(problem);
     typeset([questionText]);
 
     renderAll();
+    renderMeanIfKnown();
   }
 
   // -----------------------------

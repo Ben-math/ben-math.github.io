@@ -71,7 +71,8 @@ fetch("/nav.html")
 
     <p>It's that second property - that its values sum to 1 - which is often helpful in checking whether you've correctly computed its values, as you 
       can afterwards verify that they sum to 1.  For example, if we compute all the values of the probability distribution function \(f\) of the random 
-      variable \(X\) which gives the sum of two 6-sided dice, we obtain the following table of values:
+      variable \(X\) which gives the sum of two 6-sided dice, we obtain the following table of values (note the values \(x\) are the possible sums when 
+      rolling two 6-sided dice, so they are between 2 and 12):
       \[
       \begin{array}{|c|c|c|c|c|c|c|c|c|c|c|c|}
       \hline
@@ -82,6 +83,9 @@ fetch("/nav.html")
       \hline
       \end{array}
       \]
+      We can verify we've found the correct values of \(f(x)\) above by confirming
+      \[\frac{1}{36} + \frac{2}{36} + \frac{3}{36} + \frac{4}{36} + \frac{5}{36} + \frac{6}{36} + \frac{5}{36} + \frac{4}{36} + \frac{3}{36} + 
+      \frac{2}{36} + \frac{1}{36} = \frac{36}{36} = 1\] 
     </p>
 
     

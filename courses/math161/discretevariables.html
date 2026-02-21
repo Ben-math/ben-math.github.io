@@ -94,6 +94,17 @@ fetch("/nav.html")
       \[P(5 \leq X \leq 7) = P(X = 5) + P(X = 6) + P(X = 7) = \frac{4}{36} + \frac{5}{36} + \frac{6}{36} = \frac{15}{36} = \frac{5}{12}\]
     </p>
 
+    <p>We've previously seen that to compute the mean of a set of data, we are computing a weighted average of the data values, where each value is 
+      weighted by its relative frequency.  For instance, if playing basketball you take 20 shots, miss on 10 of them, score 2 points on 6 of them, and 
+      score 3 points on 4 of them, then the mean points you scored per shot is
+      \[\frac{10}{20}(0) + \frac{6}{20}(2) + \frac{4}{20}(3) = \frac{24}{20} = 1.2\]
+      This same idea extends to finding the mean - also called <b>expected value</b> - of a random variable \(X\), denoted by \(E(X) = \mu\).  Observe 
+      that the relative frequency of a data value <b>is</b> the probability it would be selected at random from the data set.  So, the expected value 
+      of \(X\) is computed exactly as you'd expect: as a weighted average of the values of \(X\), weighted by their respective probabilities (the values 
+      of the pdf):
+      \[E(X) = \sum_x xf(x)\]
+    </p>
+
     
 
     <div class="button-container">

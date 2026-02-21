@@ -104,7 +104,7 @@ fetch("/nav.html")
       of the pdf):
       \[E(X) = \sum_x xf(x)\]
       For example, to find the expected value of the sum of two dice \(X\), we compute
-      \[\frac{1}{36}(2) + \frac{2}{36}(3) + \frac{3}{36}(4) + \frac{4}{36}(5) + \frac{5}{36}(6) + \frac{6}{36}(7) + \frac{5}{36}(8) + 
+      \[\mu = \frac{1}{36}(2) + \frac{2}{36}(3) + \frac{3}{36}(4) + \frac{4}{36}(5) + \frac{5}{36}(6) + \frac{6}{36}(7) + \frac{5}{36}(8) + 
       \frac{4}{36}(9) + \frac{3}{36}(10) + \frac{2}{36}(11) + \frac{1}{36}(12) = \frac{252}{36} = 7\]
       This is in line with what we'd expect, since the pdf is symmetric about 7.
     </p>
@@ -114,6 +114,26 @@ fetch("/nav.html")
       \[\sigma = \sqrt{\sum_x\left[(x - \mu)^2f(x)\right]}\]
       So to find the standard deviation in our running example,
       \[\sigma = \sqrt{(2-7)^2 \cdot \frac{1}{36} + (3-7)^2 \cdot \frac{2}{36} + ... + (12-7)^2 \cdot \frac{1}{36}} = \sqrt{\frac{210}{36}} \approx 2.42\]
+    </p>
+
+
+    <p>Generally you would find it helpful to use a similar "table method" for organizing the steps of computing standard deviation as previously.  For 
+      instance, let \(X\) be the random variable giving your winnings from a lottery ticket.  If you have a 75% chance of winning nothing, a 20% chance 
+      of winning $5, and a 5% chance of winning $100, then we can construct a table with the pdf for \(X\), and extend it to the terms in the standard 
+      deviation computation sum once we've found the mean:
+      \[\mu = 0(0.75) + 5(0.2) + 100(0.05) = 6\]
+      \[
+      \begin{array}{|c|c|c|c|}
+      \hline
+      x & f(x) & (x- \mu)^2 & (x - \mu)^2 \cdot f(x)\\
+      \hline
+      0 & 0.75 & (0-6)^2 = 36 & 36 \cdot 0.75 = 27\\
+      5 & 0.2 & (5-6)^2 = 1 & 1 \cdot 0.2 = 0.2\\
+      100 & 0.05 & (100-6)^2 = 8836 & 8836 \cdot 0.05 = 441.8
+      \hline
+      \end{array}
+      \]
+      \[\sigma = \sqrt{27 + 0.2 + 441.8} = \approx 21.67\]
     </p>
 
     

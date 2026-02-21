@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -83,6 +84,9 @@ fetch("/nav.html")
       \hline
       \end{array}
       \]
+
+      <div id="dice-histogram" style="margin: 1rem auto; max-width: 640px;"></div>
+
       We can verify we've found the correct values of \(f(x)\) above by confirming
       \[\frac{1}{36} + \frac{2}{36} + \frac{3}{36} + \frac{4}{36} + \frac{5}{36} + \frac{6}{36} + \frac{5}{36} + \frac{4}{36} + \frac{3}{36} + 
       \frac{2}{36} + \frac{1}{36} = \frac{36}{36} = 1\] 
@@ -248,6 +252,172 @@ fetch("/nav.html")
     if (items.length === 1) return items[0];
     if (items.length === 2) return `${items[0]} or ${items[1]}`;
     return `${items.slice(0, -1).join(', ')}, or ${items[items.length - 1]}`;
+  }
+
+  // -----------------------------
+  // Inline-SVG histogram for discrete pdfs
+  // -----------------------------
+  // Usage:
+  //   renderDiscreteHistogram('#some-div', [{x:2,p:1/36}, ...], { title: '...' })
+  function renderDiscreteHistogram(container, points, options = {}) {
+    const el = (typeof container === 'string') ? document.querySelector(container) : container;
+    if (!el) return;
+
+    const W = options.width ?? 620;
+    const H = options.height ?? 240;
+    const pad = { left: 44, right: 16, top: (options.title ? 30 : 14), bottom: 46, ...(options.padding ?? {}) };
+
+    const data = (points || []).map(d => ({ x: d.x, p: d.p })).sort((a, b) => a.x - b.x);
+    if (data.length === 0) {
+      el.textContent = 'No data to plot.';
+      return;
+    }
+
+    const maxP = Math.max(...data.map(d => d.p));
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+
+    const xMax = data.length;
+    const xStep = plotW / xMax;
+
+    const y = (p) => pad.top + (1 - (p / maxP)) * plotH;
+    const barW = xStep * 0.78;
+    const x0 = (i) => pad.left + i * xStep + (xStep - barW) / 2;
+
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', String(H));
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', options.ariaLabel ?? 'Histogram of a discrete probability distribution');
+
+    const g = document.createElementNS(svgNS, 'g');
+    svg.appendChild(g);
+
+    // Title
+    if (options.title) {
+      const t = document.createElementNS(svgNS, 'text');
+      t.setAttribute('x', String(W / 2));
+      t.setAttribute('y', '18');
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('font-size', '14');
+      t.setAttribute('font-weight', '600');
+      t.setAttribute('fill', 'currentColor');
+      t.textContent = options.title;
+      g.appendChild(t);
+    }
+
+    // Axes
+    const axisColor = options.axisColor ?? 'currentColor';
+    const axisOpacity = options.axisOpacity ?? '0.55';
+
+    const xAxis = document.createElementNS(svgNS, 'line');
+    xAxis.setAttribute('x1', String(pad.left));
+    xAxis.setAttribute('y1', String(pad.top + plotH));
+    xAxis.setAttribute('x2', String(pad.left + plotW));
+    xAxis.setAttribute('y2', String(pad.top + plotH));
+    xAxis.setAttribute('stroke', axisColor);
+    xAxis.setAttribute('stroke-opacity', axisOpacity);
+    xAxis.setAttribute('stroke-width', '1');
+    g.appendChild(xAxis);
+
+    const yAxis = document.createElementNS(svgNS, 'line');
+    yAxis.setAttribute('x1', String(pad.left));
+    yAxis.setAttribute('y1', String(pad.top));
+    yAxis.setAttribute('x2', String(pad.left));
+    yAxis.setAttribute('y2', String(pad.top + plotH));
+    yAxis.setAttribute('stroke', axisColor);
+    yAxis.setAttribute('stroke-opacity', axisOpacity);
+    yAxis.setAttribute('stroke-width', '1');
+    g.appendChild(yAxis);
+
+    // Y ticks
+    const ticks = options.yTicks ?? 3;
+    for (let k = 0; k < ticks; k++) {
+      const frac = (ticks === 1) ? 0 : k / (ticks - 1);
+      const yy = pad.top + (1 - frac) * plotH;
+
+      const tick = document.createElementNS(svgNS, 'line');
+      tick.setAttribute('x1', String(pad.left - 4));
+      tick.setAttribute('y1', String(yy));
+      tick.setAttribute('x2', String(pad.left));
+      tick.setAttribute('y2', String(yy));
+      tick.setAttribute('stroke', axisColor);
+      tick.setAttribute('stroke-opacity', axisOpacity);
+      tick.setAttribute('stroke-width', '1');
+      g.appendChild(tick);
+
+      const lab = document.createElementNS(svgNS, 'text');
+      lab.setAttribute('x', String(pad.left - 8));
+      lab.setAttribute('y', String(yy + 4));
+      lab.setAttribute('text-anchor', 'end');
+      lab.setAttribute('font-size', '12');
+      lab.setAttribute('fill', axisColor);
+      lab.setAttribute('fill-opacity', axisOpacity);
+      const val = frac * maxP;
+      lab.textContent = (options.yFormatter ? options.yFormatter(val) : val.toFixed(3).replace(/0+$/, '').replace(/\.$/, ''));
+      g.appendChild(lab);
+    }
+
+    // Bars + x labels
+    for (let i = 0; i < data.length; i++) {
+      const d = data[i];
+      const x = x0(i);
+      const yy = y(d.p);
+      const h = (pad.top + plotH) - yy;
+
+      const rect = document.createElementNS(svgNS, 'rect');
+      rect.setAttribute('x', String(x));
+      rect.setAttribute('y', String(yy));
+      rect.setAttribute('width', String(barW));
+      rect.setAttribute('height', String(Math.max(0, h)));
+      rect.setAttribute('fill', options.barFill ?? 'currentColor');
+      rect.setAttribute('fill-opacity', options.barFillOpacity ?? '0.35');
+      rect.setAttribute('stroke', options.barStroke ?? 'currentColor');
+      rect.setAttribute('stroke-opacity', options.barStrokeOpacity ?? '0.75');
+      rect.setAttribute('stroke-width', options.barStrokeWidth ?? '1');
+      g.appendChild(rect);
+
+      const xl = document.createElementNS(svgNS, 'text');
+      xl.setAttribute('x', String(x + barW / 2));
+      xl.setAttribute('y', String(pad.top + plotH + 20));
+      xl.setAttribute('text-anchor', 'middle');
+      xl.setAttribute('font-size', '12');
+      xl.setAttribute('fill', 'currentColor');
+      xl.setAttribute('fill-opacity', '0.85');
+      xl.textContent = String(d.x);
+      g.appendChild(xl);
+    }
+
+    // Axis labels
+    if (options.xLabel) {
+      const xl2 = document.createElementNS(svgNS, 'text');
+      xl2.setAttribute('x', String(pad.left + plotW / 2));
+      xl2.setAttribute('y', String(H - 10));
+      xl2.setAttribute('text-anchor', 'middle');
+      xl2.setAttribute('font-size', '12');
+      xl2.setAttribute('fill', 'currentColor');
+      xl2.setAttribute('fill-opacity', '0.85');
+      xl2.textContent = options.xLabel;
+      g.appendChild(xl2);
+    }
+
+    if (options.yLabel) {
+      const yl2 = document.createElementNS(svgNS, 'text');
+      yl2.setAttribute('x', '14');
+      yl2.setAttribute('y', String(pad.top + plotH / 2));
+      yl2.setAttribute('text-anchor', 'middle');
+      yl2.setAttribute('font-size', '12');
+      yl2.setAttribute('fill', 'currentColor');
+      yl2.setAttribute('fill-opacity', '0.85');
+      yl2.setAttribute('transform', `rotate(-90 14 ${pad.top + plotH / 2})`);
+      yl2.textContent = options.yLabel;
+      g.appendChild(yl2);
+    }
+
+    el.innerHTML = '';
+    el.appendChild(svg);
   }
 
   function singularize(word) {
@@ -660,6 +830,35 @@ fetch("/nav.html")
   // -----------------------------
   // Start: generate a question
   // -----------------------------
+
+  // Insert the histogram for the two-dice example (static, above the interactive section)
+  renderDiscreteHistogram('#dice-histogram', [
+    { x: 2,  p: 1/36 },
+    { x: 3,  p: 2/36 },
+    { x: 4,  p: 3/36 },
+    { x: 5,  p: 4/36 },
+    { x: 6,  p: 5/36 },
+    { x: 7,  p: 6/36 },
+    { x: 8,  p: 5/36 },
+    { x: 9,  p: 4/36 },
+    { x: 10, p: 3/36 },
+    { x: 11, p: 2/36 },
+    { x: 12, p: 1/36 }
+  ], {
+    title: 'Histogram of the pdf for the sum of two dice',
+    xLabel: 'x',
+    yLabel: 'f(x)',
+    yFormatter: (v) => {
+      // Show as a simplified fraction of 36 when it’s clean, otherwise decimal.
+      const n = Math.round(v * 36);
+      const den = 36;
+      const g = gcd(n, den);
+      const nn = n / g;
+      const dd = den / g;
+      return (n === 0) ? '0' : `${nn}/${dd}`;
+    }
+  });
+
   startBtn.addEventListener('click', () => {
     playSound('click-sound');
     resetUIForNewQuestion();

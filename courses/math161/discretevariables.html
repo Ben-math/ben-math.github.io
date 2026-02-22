@@ -682,7 +682,7 @@ function problemPrompt(p) {
         const c = p.counts.get(x);
         return `${c} have ${x} ${p.y}`;
       });
-      return `A survey was conducted. Let \\(X\\) be the random variable that selects a random respondent and records the number of ${p.y} they have. Out of ${p.N} respondents: ${parts.join(', ')}.`;
+      return `A survey was conducted. Let \\(X\\) be the random variable that selects a random respondent and records the number of ${p.y} they have. Of the respondents: ${parts.join(', ')}.`;
     }
 
     const expr = (p.op === 'sum')

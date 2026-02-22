@@ -626,9 +626,10 @@ fetch("/nav.html")
 
   let stage = 0;         // 0 = not started; 1..4
   let prob = null;       // current problem object
-  let solutionLog = '';  // keeps revealed solutions visible
-  let solutionCounter = 0;
-  let activityComplete = false;
+  let solutionLog = '';
+  let activityDone = false;
+  let solCounter = 0; // for unique solution histogram ids
+  // keeps revealed solutions visible
 
   function clearActivity() {
     tableArea.innerHTML = '';
@@ -638,8 +639,8 @@ fetch("/nav.html")
     stageFeedback.textContent = '';
     stageFeedback.style.color = 'black';
     solutionLog = '';
-    solutionCounter = 0;
-    activityComplete = false;
+    activityDone = false;
+    solCounter = 0;
     hintBtn.disabled = false;
     nextBtn.disabled = false;
     typeset();
@@ -799,23 +800,85 @@ fetch("/nav.html")
 
     if (stage === 1) {
       const x = prob.stage1.x;
+      workArea.innerHTML = `
+        <div style="margin-bottom:0.75rem;">What is the probability of <b>${x}</b> successes?</div>
+        <div>\\(P(X=${x}) =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
+      `;
+    } else if (stage === 2) {
+      const rel = prob.stage2.relationTex;
+      workArea.innerHTML = `
+        <div style="margin-bottom:0.75rem;">Compute \\(${rel}\\).</div>
+        <div>\\(${rel} =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
+      `;
+    } else if (stage === 3) {
+      workArea.innerHTML = `
+        <div style="margin-bottom:0.75rem;">Compute the mean \\(\\mu\\) of \\(X\\).</div>
+        <div>\\(\\mu =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
+      `;
+    } else if (stage === 4) {
+      workArea.innerHTML = `
+        <div style="margin-bottom:0.75rem;">Compute the standard deviation \\(\\sigma\\) of \\(X\\).</div>
+        <div>\\(\\sigma =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
+      `;
+    } else {
+      workArea.innerHTML = `<div>Press Start to begin.</div>`;
+    }
+
+    typeset([meanArea, workArea]);
+  }
+
+  function appendSolution(texBlock) {
+    solutionLog += `<div style="margin-top:0.75rem; text-align:center;">${texBlock}</div>`;
+    meanArea.innerHTML = solutionLog;
+  }
+
+  function revealStageSolution() {
+    if (!prob) return;
+    histogramArea.innerHTML = '';
+
+    if (stage === 1) {
+      const x = prob.stage1.x;
       const n = prob.n;
       const p = prob.p;
       const val = prob.stage1.targetProb;
 
-      appendSolutionWithHistogram(`\\[P(X=${x}) = f(${x};n,p) = \\binom{${n}}{${x}}p^{${x}}(1-p)^{${n}-${x}} \\approx ${val.toFixed(6)}\\]`, n, p, [x]);
+      const hid = `sol-hist-${solCounter++}`;
+      appendSolution(`
+        \[
+          P(X=${x}) = f(${x};n,p) = \binom{${n}}{${x}} p^{${x}}(1-p)^{${n}-${x}}
+          \approx ${val.toFixed(6)}
+        \]
+        <div id="${hid}" style="margin: 0.75rem auto; max-width: 640px;"></div>
+      `);
+
+      renderBinomialHistogram(document.getElementById(hid), n, p, {
+        xLabel: 'x',
+        yLabel: 'f(x)',
+        highlightXs: [x]
+      });
+      typeset([meanArea]);
       return;
     }
 
     if (stage === 2) {
-      appendSolutionWithHistogram(`
+      const hid = `sol-hist-${solCounter++}`;
+      appendSolution(`
         ${prob.stage2.solutionTex}
-      `, prob.n, prob.p, prob.stage2.highlightXs);
+        <div id="${hid}" style="margin: 0.75rem auto; max-width: 640px;"></div>
+      `);
+
+      renderBinomialHistogram(document.getElementById(hid), prob.n, prob.p, {
+        xLabel: 'x',
+        yLabel: 'f(x)',
+        highlightXs: prob.stage2.highlightXs
+      });
+      typeset([meanArea]);
       return;
     }
 
     if (stage === 3) {
       appendSolution(`
+        <div><b>Stage 3 solution</b></div>
         \\[
           \\mu = np = ${prob.n}\\left(${prob.p.toFixed(6)}\\right) \\approx ${prob.mean.toFixed(6)}
         \\]
@@ -826,17 +889,14 @@ fetch("/nav.html")
 
     if (stage === 4) {
       appendSolution(`
-        \[
-          \sigma = \sqrt{np(1-p)} = \sqrt{${prob.n}\left(${prob.p.toFixed(6)}\right)\left(${(1-prob.p).toFixed(6)}\right)}
-          \approx ${prob.sigma.toFixed(6)}
-        \]
+        
+        \\[
+          \\sigma = \\sqrt{np(1-p)} = \\sqrt{${prob.n}\\left(${prob.p.toFixed(6)}\\right)\\left(${(1-prob.p).toFixed(6)}\\right)}
+          \\approx ${prob.sigma.toFixed(6)}
+        \\]
       `);
-      activityComplete = true;
-      hintBtn.disabled = true;
-      nextBtn.disabled = true;
-      workArea.innerHTML = `<div style="margin-top:0.5rem;">Activity complete. Press Start for a new question.</div>`;
       setFeedback('Done!', 'green');
-      typeset([meanArea, workArea]);
+      typeset([meanArea]);
       return;
     }
   }
@@ -851,7 +911,7 @@ fetch("/nav.html")
   }
 
   function onNext() {
-    if (!prob || stage === 0 || activityComplete) return;
+    if (!prob || stage === 0 || activityDone) return;
     const target = currentTarget();
     const parsed = parseDecimal(document.getElementById('ans')?.value ?? '');
     if (parsed.error) { setFeedback(parsed.error, 'crimson'); return; }
@@ -863,7 +923,7 @@ fetch("/nav.html")
   }
 
   function onHint() {
-    if (!prob || stage === 0 || activityComplete) return;
+    if (!prob || stage === 0 || activityDone) return;
     revealStageSolution();
     if (stage < 4) { stage += 1; renderStage(); }
   }

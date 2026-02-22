@@ -1,6 +1,5 @@
 
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -626,10 +625,7 @@ fetch("/nav.html")
 
   let stage = 0;         // 0 = not started; 1..4
   let prob = null;       // current problem object
-  let solutionLog = '';
-  let activityDone = false;
-  let solCounter = 0; // for unique solution histogram ids
-  // keeps revealed solutions visible
+  let solutionLog = '';  // keeps revealed solutions visible
 
   function clearActivity() {
     tableArea.innerHTML = '';
@@ -639,10 +635,6 @@ fetch("/nav.html")
     stageFeedback.textContent = '';
     stageFeedback.style.color = 'black';
     solutionLog = '';
-    activityDone = false;
-    solCounter = 0;
-    hintBtn.disabled = false;
-    nextBtn.disabled = false;
     typeset();
   }
 
@@ -801,23 +793,23 @@ fetch("/nav.html")
     if (stage === 1) {
       const x = prob.stage1.x;
       workArea.innerHTML = `
-        <div style="margin-bottom:0.75rem;">What is the probability of <b>${x}</b> successes?</div>
+        <div style="margin-bottom:0.75rem;"><b>Stage 1.</b> What is the probability of <b>${x}</b> successes?</div>
         <div>\\(P(X=${x}) =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
       `;
     } else if (stage === 2) {
       const rel = prob.stage2.relationTex;
       workArea.innerHTML = `
-        <div style="margin-bottom:0.75rem;">Compute \\(${rel}\\).</div>
+        <div style="margin-bottom:0.75rem;"><b>Stage 2.</b> Compute \\(${rel}\\).</div>
         <div>\\(${rel} =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
       `;
     } else if (stage === 3) {
       workArea.innerHTML = `
-        <div style="margin-bottom:0.75rem;">Compute the mean \\(\\mu\\) of \\(X\\).</div>
+        <div style="margin-bottom:0.75rem;"><b>Stage 3.</b> Compute the mean \\(\\mu\\) of \\(X\\).</div>
         <div>\\(\\mu =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
       `;
     } else if (stage === 4) {
       workArea.innerHTML = `
-        <div style="margin-bottom:0.75rem;">Compute the standard deviation \\(\\sigma\\) of \\(X\\).</div>
+        <div style="margin-bottom:0.75rem;"><b>Stage 4.</b> Compute the standard deviation \\(\\sigma\\) of \\(X\\).</div>
         <div>\\(\\sigma =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
       `;
     } else {
@@ -842,37 +834,35 @@ fetch("/nav.html")
       const p = prob.p;
       const val = prob.stage1.targetProb;
 
-      const hid = `sol-hist-${solCounter++}`;
       appendSolution(`
-        \[
-          P(X=${x}) = f(${x};n,p) = \binom{${n}}{${x}} p^{${x}}(1-p)^{${n}-${x}}
-          \approx ${val.toFixed(6)}
-        \]
-        <div id="${hid}" style="margin: 0.75rem auto; max-width: 640px;"></div>
+        <div><b>Stage 1 solution</b></div>
+        \\[
+          P(X=${x}) = f(${x};n,p) = \\binom{${n}}{${x}} p^{${x}}(1-p)^{${n}-${x}}
+          \\approx ${val.toFixed(6)}
+        \\]
       `);
 
-      renderBinomialHistogram(document.getElementById(hid), n, p, {
+      renderBinomialHistogram(histogramArea, n, p, {
         xLabel: 'x',
         yLabel: 'f(x)',
         highlightXs: [x]
       });
-      typeset([meanArea]);
+      typeset([meanArea, histogramArea]);
       return;
     }
 
     if (stage === 2) {
-      const hid = `sol-hist-${solCounter++}`;
       appendSolution(`
+        <div><b>Stage 2 solution</b></div>
         ${prob.stage2.solutionTex}
-        <div id="${hid}" style="margin: 0.75rem auto; max-width: 640px;"></div>
       `);
 
-      renderBinomialHistogram(document.getElementById(hid), prob.n, prob.p, {
+      renderBinomialHistogram(histogramArea, prob.n, prob.p, {
         xLabel: 'x',
         yLabel: 'f(x)',
         highlightXs: prob.stage2.highlightXs
       });
-      typeset([meanArea]);
+      typeset([meanArea, histogramArea]);
       return;
     }
 
@@ -889,7 +879,7 @@ fetch("/nav.html")
 
     if (stage === 4) {
       appendSolution(`
-        
+        <div><b>Stage 4 solution</b></div>
         \\[
           \\sigma = \\sqrt{np(1-p)} = \\sqrt{${prob.n}\\left(${prob.p.toFixed(6)}\\right)\\left(${(1-prob.p).toFixed(6)}\\right)}
           \\approx ${prob.sigma.toFixed(6)}
@@ -911,7 +901,7 @@ fetch("/nav.html")
   }
 
   function onNext() {
-    if (!prob || stage === 0 || activityDone) return;
+    if (!prob || stage === 0) return;
     const target = currentTarget();
     const parsed = parseDecimal(document.getElementById('ans')?.value ?? '');
     if (parsed.error) { setFeedback(parsed.error, 'crimson'); return; }
@@ -923,7 +913,7 @@ fetch("/nav.html")
   }
 
   function onHint() {
-    if (!prob || stage === 0 || activityDone) return;
+    if (!prob || stage === 0) return;
     revealStageSolution();
     if (stage < 4) { stage += 1; renderStage(); }
   }

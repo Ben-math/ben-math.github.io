@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -156,6 +157,8 @@ fetch("/nav.html")
 
       <div id="mean-area" class="math" style="margin-top: 0.75rem; text-align: center;"></div>
 
+      <div id="sigma-area" class="math" style="margin-top: 0.5rem; text-align: center;"></div>
+
       <div id="work-area" class="math" style="margin-top: 1rem; text-align: center;"></div>
 
       <div id="histogram-area" style="margin: 1rem auto; max-width: 740px;"></div>
@@ -177,6 +180,7 @@ fetch("/nav.html")
   const questionText = document.getElementById('question-text');
   const tableArea = document.getElementById('table-area');
   const meanArea = document.getElementById('mean-area');
+  const sigmaArea = document.getElementById('sigma-area');
   const workArea = document.getElementById('work-area');
   const histogramArea = document.getElementById('histogram-area');
   const stageFeedback = document.getElementById('stage-feedback');
@@ -485,13 +489,15 @@ fetch("/nav.html")
   // -----------------------------
   const REL_TOL = 0.001; // 0.1%
 
-  let stage = 0; // 0 = not started, 1..6 as described
+  let stage = 0; // 0 = not started, 1..7 as described
   let problem = null;
   let meanRevealed = false;
+  let sigmaRevealed = false;
 
   function clearActivity() {
     tableArea.innerHTML = '';
     meanArea.innerHTML = '';
+    sigmaArea.innerHTML = '';
     workArea.innerHTML = '';
     histogramArea.innerHTML = '';
     stageFeedback.textContent = '';
@@ -755,6 +761,41 @@ fetch("/nav.html")
     };
   }
 
+
+  // -----------------------------
+  // Stage (7): Probability of X being at/above or at/below a threshold
+  // -----------------------------
+  function buildProbabilityQuery(p) {
+    const threshold = p.xVals[randInt(0, p.xVals.length - 1)];
+    const dir = (Math.random() < 0.5) ? 'ge' : 'le'; // ge => >= threshold, le => <= threshold
+
+    let num = 0, den = 1;
+    for (let i = 0; i < p.xVals.length; i++) {
+      const x = p.xVals[i];
+      if ((dir === 'ge' && x >= threshold) || (dir === 'le' && x <= threshold)) {
+        const [pNum, pDen] = p.probs[i];
+        [num, den] = addFrac(num, den, pNum, pDen);
+      }
+    }
+    return { dir, threshold, prob: [num, den] };
+  }
+
+  function probabilityQueryText(p) {
+    const q = p.probQuery;
+    if (!q) return '';
+    if (p.kind === 'survey') {
+      const word = (q.dir === 'ge') ? 'more' : 'fewer';
+      return `What is the probability that a respondent has ${q.threshold} or ${word} ${p.y}?`;
+    }
+    if (p.kind === 'lottery') {
+      const word = (q.dir === 'ge') ? 'more' : 'less';
+      return `What is the probability that you win $${q.threshold} or ${word}?`;
+    }
+    // dice
+    const word = (q.dir === 'ge') ? 'higher' : 'lower';
+    return `What is the probability that you roll a ${q.threshold} or ${word}?`;
+  }
+
 function problemPrompt(p) {
     if (p.kind === 'survey') {
       const parts = p.xVals.map(x => {
@@ -875,7 +916,18 @@ function problemPrompt(p) {
           <input id="sigma-input" type="text" style="width: 10em; text-align: center;">
         </div>
       `;
+
+    if (stage === 7) {
+      const qText = probabilityQueryText(problem);
+      workArea.innerHTML = `
+        <div style="margin-bottom: 0.5rem;">Stage 7: ${qText}</div>
+        <div>
+          <label for="prob-input">Probability =</label>
+          <input id="prob-input" type="text" style="width: 12em; text-align: center;" placeholder="e.g. 1/6 or 0.1667">
+        </div>
+      `;
     }
+
   }
 
   function showHistogram() {
@@ -928,7 +980,7 @@ function problemPrompt(p) {
     renderTable();
     renderStageInstructions();
     if (stage >= 3) showHistogram(); // keep visible from stage 3 onward
-    typeset([tableArea, meanArea, workArea, histogramArea, questionText]);
+    typeset([tableArea, meanArea, sigmaArea, workArea, histogramArea, questionText]);
   }
 
   function renderMeanIfKnown() {
@@ -937,11 +989,20 @@ function problemPrompt(p) {
     meanArea.innerHTML = `<div><b>Mean:</b> \\(\\mu = E(X) = \\sum_x x f(x) = ${fracToTex(muNum, muDen)}\\)</div>`;
   }
 
+  function renderSigmaIfKnown() {
+    if (!problem || !sigmaRevealed) return;
+    const [vNum, vDen] = problem.variance;
+    const sig = problem.sigma;
+    sigmaArea.innerHTML = `<div><b>Standard deviation:</b> \\(\\sigma = \\sqrt{${fracToTex(vNum, vDen)}} \\approx ${sig.toFixed(4)}\\)</div>`;
+  }
+
   function advanceTo(newStage) {
     stage = newStage;
     renderAll();
     renderMeanIfKnown();
-    typeset([meanArea]);
+    renderSigmaIfKnown();
+    renderSigmaIfKnown();
+    typeset([meanArea, sigmaArea]);
   }
 
   function checkStage1() {
@@ -1008,6 +1069,17 @@ function problemPrompt(p) {
     return { ok: true };
   }
 
+  function checkStage7() {
+    const q = problem.probQuery;
+    const el = document.getElementById('prob-input');
+    const parsed = parseNumber(el?.value ?? '');
+    if (parsed.error) return { ok: false, msg: parsed.error };
+    const [tNum, tDen] = q.prob;
+    if (!inputMatchesRational(parsed, tNum, tDen, REL_TOL)) return { ok: false, msg: 'That probability is not correct.' };
+    return { ok: true };
+  }
+
+
   function fillStageAndAdvance() {
     // Hint behaviour: fill current stage and move on.
     if (!problem) return;
@@ -1048,17 +1120,42 @@ function problemPrompt(p) {
       return;
     }
 
+
     if (stage === 6) {
-      const [vNum, vDen] = problem.variance;
-      const sig = problem.sigma;
+      sigmaRevealed = true;
+      renderSigmaIfKnown();
+      setFeedback('Filled in the standard deviation.', 'black');
+      advanceTo(7);
+      return;
+    }
+
+    if (stage === 7) {
+      const q = problem.probQuery;
+      const [pNum, pDen] = q.prob;
+
+      const cond = (q.dir === 'ge') ? `\ge ${q.threshold}` : `\le ${q.threshold}`;
+      const terms = [];
+      for (let i = 0; i < problem.xVals.length; i++) {
+        const x = problem.xVals[i];
+        if ((q.dir === 'ge' && x >= q.threshold) || (q.dir === 'le' && x <= q.threshold)) {
+          const [a, b] = problem.probs[i];
+          terms.push(`f(${x}) = ${fracToTex(a, b)}`);
+        }
+      }
+
       workArea.innerHTML = `
-        <div style="margin-bottom: 0.5rem;">Stage 6: Compute the standard deviation \\(\\sigma\\).</div>
-        <div>\\(\\sigma = \\sqrt{\\sum_x (x-\\mu)^2 f(x)} = \\sqrt{${fracToTex(vNum, vDen)}} \\approx ${sig.toFixed(4)}\\)</div>
+        <div style="margin-bottom: 0.5rem;">Stage 7: ${probabilityQueryText(problem)}</div>
+        <div><b>Computation:</b></div>
+        <div>\(P(X ${cond}) = \sum f(x)\) over the qualifying values.</div>
+        <div style="margin-top: 0.25rem;">\(${terms.join(' \; + \; ').replace(/\s\+\s$/,'')}\)</div>
+        <div style="margin-top: 0.25rem;">\(P(X ${cond}) = ${fracToTex(pNum, pDen)}\).</div>
       `;
       showHistogram();
       setFeedback('Done!', 'green');
       typeset([workArea, histogramArea]);
       return;
+    }
+  }
     }
   }
 
@@ -1073,6 +1170,7 @@ function problemPrompt(p) {
     if (stage === 4) result = checkStage4();
     if (stage === 5) result = checkStage5();
     if (stage === 6) result = checkStage6();
+    if (stage === 7) result = checkStage7();
 
     if (!result.ok) {
       setFeedback(result.msg ?? 'Not quite.', 'crimson');
@@ -1105,11 +1203,32 @@ function problemPrompt(p) {
     if (stage === 5) { advanceTo(6); return; }
 
     if (stage === 6) {
-      const [vNum, vDen] = problem.variance;
-      const sig = problem.sigma;
+      sigmaRevealed = true;
+      renderSigmaIfKnown();
+      advanceTo(7);
+      return;
+    }
+
+    if (stage === 7) {
+      const q = problem.probQuery;
+      const [pNum, pDen] = q.prob;
+
+      const cond = (q.dir === 'ge') ? `\ge ${q.threshold}` : `\le ${q.threshold}`;
+      const terms = [];
+      for (let i = 0; i < problem.xVals.length; i++) {
+        const x = problem.xVals[i];
+        if ((q.dir === 'ge' && x >= q.threshold) || (q.dir === 'le' && x <= q.threshold)) {
+          const [a, b] = problem.probs[i];
+          terms.push(`f(${x}) = ${fracToTex(a, b)}`);
+        }
+      }
+
       workArea.innerHTML = `
-        <div style="margin-bottom: 0.5rem;">Stage 6: Compute the standard deviation \\(\\sigma\\).</div>
-        <div>\\(\\sigma = \\sqrt{${fracToTex(vNum, vDen)}} \\approx ${sig.toFixed(4)}\\)</div>
+        <div style="margin-bottom: 0.5rem;">Stage 7: ${probabilityQueryText(problem)}</div>
+        <div><b>Computation:</b></div>
+        <div>\(P(X ${cond}) = \sum f(x)\) over the qualifying values.</div>
+        <div style="margin-top: 0.25rem;">\(${terms.join(' \; + \; ')}\)</div>
+        <div style="margin-top: 0.25rem;">\(P(X ${cond}) = ${fracToTex(pNum, pDen)}\).</div>
       `;
       showHistogram();
       setFeedback('Done!', 'green');
@@ -1125,14 +1244,17 @@ function problemPrompt(p) {
     if (r < 1/3) problem = buildType1Problem();
     else if (r < 2/3) problem = buildType2Problem();
     else problem = buildType3Problem();
+    problem.probQuery = buildProbabilityQuery(problem);
     stage = 1;
     meanRevealed = false;
+    sigmaRevealed = false;
 
     questionText.innerHTML = problemPrompt(problem);
     typeset([questionText]);
 
     renderAll();
     renderMeanIfKnown();
+    renderSigmaIfKnown();
   }
 
   // -----------------------------

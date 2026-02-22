@@ -60,11 +60,23 @@ fetch("/nav.html")
     </p>
 
 
-    <p>A function which maps all of the values a discrete random variable \(X\) takes on to their respective probabilities is called its 
-      <b>probability distribution function</b> (we will abbreviate this with pdf), defined by
-      \[f(x) = P(X = x)\]
-      A pdf has similar properties to those of a probability itself: since its values are probabilities, they are 
-      between 0 and 1, and because it gives the probabilities of all possible values the random variable can take on, the sum of all its values is 1.
+    <p>For example, let us consider the Bernoulli trial where a success is  rolling a sum of 9 or higher on two 6-sided dice.  This has a probability of 
+      \(\frac{10}{36} = \frac{5}{18}\).  If we perform this experiment 20 times, then the corresponding binomial random variable has parameters 
+      \(\left(20, \frac{5}{18}\right)\), and pdf
+      \[f\left(x;20,\frac{5}{18}\right) = \binom{20}{x}\left(\frac{5}{18}\right)^x\left(\frac{13}{18}\right)^{20-x}\]
+      Since successes are less likely than failures, we see that the taller columns in the pdf's histogram tend leftwards:
+    </p>
+
+    <p>For instance, to find the probability of rolling a 9 or higher 6 out of the 20 times, we compute
+      \[f\left(6;20,\frac{5}{18}\right) = \binom{20}{6}\left(\frac{5}{18}\right)^6\left(\frac{13}{18}\right)^{14} = \]
+      Note that the probability above corresponds to the odds of 6 successes and 14 failures.
+    </p>
+
+    <p>We might also want to answer questions of the form
+      \[\text{``What is the probability of rolling a 9 or higher 18 or more times?''}\]
+      To answer this question, we are finding the following sum:
+      \[P(X \geq 18) = P(X = 18) + P(X = 19) + P(X = 20) = f\left(18;20,\frac{5}{18}\right) + f\left(19;20,\frac{5}{18}\right) + 
+      f\left(20;20,\frac{5}{18}\right) = \]
     </p>
 
     <p>It's that second property - that its values sum to 1 - which is often helpful in checking whether you've correctly computed its values, as you 

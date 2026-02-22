@@ -1,7 +1,6 @@
 
 
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -676,6 +675,86 @@ fetch("/nav.html")
     };
   }
 
+  // -----------------------------
+  // Type (3): Lottery ticket winnings
+  // -----------------------------
+  function randomPercentPartition(k) {
+    // Return k positive integers summing to 100.
+    const cuts = [];
+    while (cuts.length < k - 1) {
+      const c = randInt(1, 99);
+      if (!cuts.includes(c)) cuts.push(c);
+    }
+    cuts.sort((a, b) => a - b);
+    const pts = [0, ...cuts, 100];
+    const out = [];
+    for (let i = 0; i < pts.length - 1; i++) out.push(pts[i + 1] - pts[i]);
+    if (out.some(v => v <= 0)) return randomPercentPartition(k);
+    return out;
+  }
+
+  function sampleDistinctLotteryAmounts(k) {
+    // Generate k-1 distinct positive amounts of the form y * 10^n,
+    // with y in 1..9 and n in 0..6.
+    const set = new Set();
+    while (set.size < k - 1) {
+      const y = randInt(1, 9);
+      const n = randInt(0, 6);
+      set.add(y * Math.pow(10, n));
+    }
+    return Array.from(set).sort((a, b) => a - b);
+  }
+
+  function buildType3Problem() {
+    const k = randInt(3, 6);
+    const amounts = sampleDistinctLotteryAmounts(k);
+    const xVals = [0, ...amounts].sort((a, b) => a - b);
+
+    const percents = randomPercentPartition(k);
+    const counts = new Map();
+    for (let i = 0; i < k; i++) counts.set(xVals[i], percents[i]);
+
+    const total = 100;
+    const probs = xVals.map(x => reduceFrac(counts.get(x), total));
+
+    let muNum = 0;
+    for (const x of xVals) muNum += x * counts.get(x);
+    let muDen = total;
+    [muNum, muDen] = reduceFrac(muNum, muDen);
+
+    const sq = xVals.map(x => {
+      const t = x * muDen - muNum;
+      return reduceFrac(t * t, muDen * muDen);
+    });
+
+    const sqp = xVals.map((x, i) => {
+      const [sNum, sDen] = sq[i];
+      const [pNum, pDen] = probs[i];
+      return mulFrac(sNum, sDen, pNum, pDen);
+    });
+
+    let varNum = 0, varDen = 1;
+    for (const [a, b] of sqp) {
+      [varNum, varDen] = addFrac(varNum, varDen, a, b);
+    }
+
+    const variance = [varNum, varDen];
+    const sigma = Math.sqrt(varNum / varDen);
+
+    return {
+      kind: 'lottery',
+      total,
+      xVals,
+      counts, // percent "counts"
+      probs,
+      mu: [muNum, muDen],
+      sq,
+      sqp,
+      variance,
+      sigma
+    };
+  }
+
 function problemPrompt(p) {
     if (p.kind === 'survey') {
       const parts = p.xVals.map(x => {
@@ -683,6 +762,15 @@ function problemPrompt(p) {
         return `${c} have ${x} ${p.y}`;
       });
       return `A survey was conducted. Let \\(X\\) be the random variable that selects a random respondent and records the number of ${p.y} they have. Of the respondents: ${parts.join(', ')}.`;
+    }
+
+    if (p.kind === 'lottery') {
+      const parts = p.xVals.map(x => {
+        const pct = p.counts.get(x);
+        if (x === 0) return `${pct}\\% chance of winning nothing`;
+        return `${pct}\\% chance of winning \\$${x}`;
+      });
+      return `You buy a lottery ticket, and let \\(X\\) be the random variable giving your winnings. You have a ${parts.join(', a ')}.`.replace(', a a ', ', a ');
     }
 
     const expr = (p.op === 'sum')
@@ -817,6 +905,9 @@ function problemPrompt(p) {
     if (problem.kind === 'survey') {
       context = `There are \\(${total}\\) respondents total.`;
       explanationLine = `There are \\(${favorable}\\) respondents with \\(X=${x}\\), so`;
+    } else if (problem.kind === 'lottery') {
+      context = `The probabilities are given as percentages and must sum to \\(100\\%\\) (i.e., total probability 1).`;
+      explanationLine = `The chance of \\(X=${x}\\) is \\(${favorable}\\%\\), so`;
     } else {
       context = `There are \\(${problem.n1}\\cdot ${problem.n2} = ${total}\\) equally likely outcomes.`;
       explanationLine = `There are \\(${favorable}\\) outcomes that give \\(X=${x}\\), so`;
@@ -1029,8 +1120,11 @@ function problemPrompt(p) {
 
   function startRandomProblem() {
     clearActivity();
-    // Randomly choose a question type: Type (1) dice or Type (2) survey
-    problem = (Math.random() < 0.5) ? buildType1Problem() : buildType2Problem();
+    // Randomly choose a question type: Type (1) dice, Type (2) survey, or Type (3) lottery
+    const r = Math.random();
+    if (r < 1/3) problem = buildType1Problem();
+    else if (r < 2/3) problem = buildType2Problem();
+    else problem = buildType3Problem();
     stage = 1;
     meanRevealed = false;
 

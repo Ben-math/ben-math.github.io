@@ -92,8 +92,7 @@ fetch("/nav.html")
       we can compute the easier sum
       \[P(X \leq 18) = 1 - P(X \geq 19) = 1 - (P(X = 19) + P(X = 20)) = 1 - (f\left(19;20,\frac{5}{18}\right) + f\left(20;20,\frac{5}{18}\right)) \approx 
       0.9999999996\]
-      That is, we sum the two rightmost columns of the histogram, and subtract the result from 1:
-      <div id="binom-hist-4" style="margin: 1rem auto; max-width: 640px;"></div>
+      That is, we sum the two rightmost columns of the histogram, and subtract the result from 1.
     </p>
 
 
@@ -599,31 +598,22 @@ fetch("/nav.html")
   const LESSON_P = 5/18;
 
   renderBinomialHistogram('#binom-hist-1', LESSON_N, LESSON_P, {
-    title: 'Histogram of the pdf for a Binomial(20, 5/18)',
     xLabel: 'x',
     yLabel: 'f(x)'
   });
 
   renderBinomialHistogram('#binom-hist-2', LESSON_N, LESSON_P, {
-    title: 'Highlighting x = 6',
     xLabel: 'x',
     yLabel: 'f(x)',
     highlightXs: [6]
   });
 
   renderBinomialHistogram('#binom-hist-3', LESSON_N, LESSON_P, {
-    title: 'Highlighting x ≤ 2',
     xLabel: 'x',
     yLabel: 'f(x)',
     highlightXs: [0,1,2]
   });
 
-  renderBinomialHistogram('#binom-hist-4', LESSON_N, LESSON_P, {
-    title: 'Highlighting x ≥ 19',
-    xLabel: 'x',
-    yLabel: 'f(x)',
-    highlightXs: [19,20]
-  });
 
 
   // -----------------------------

@@ -42,12 +42,13 @@ fetch("/nav.html")
   </header>
   <main>
 
-    <p>A random variable \(X\) is a function
-      \[X: S \mapsto \mathbb{R}\]
-      which maps outcomes in a sample space to real numbers.  For example, it might map the outcome of rolling two dice to the sum of the two rolls.
+    <p>A Bernoulli trial is an experiment which can either be considered a success or a failure.  For instance, one may consider flipping heads a 
+      success (in which case flipping tails is a failure), or rolling a 2 or lower a success (in which case rolling a 3 or higher is a failure).
     </p>
     
-    <p>Where the range of the function \(X\) is either finite or countably infinite, it is called a <b>discrete random variable</b>.
+    <p>If \(n\) many Bernoulli trials are performed, each with probability \(p\) of success, then the random variable \(X\) with parameters \(n,p\) is 
+      called a <b>binomial random variable</b>.  Its pdf is called a <b>binomial distribution</b>, given by
+      \[f(x;n,p) = \binom{n}{x}p^x(1-o)^{n-x}, \hspace{2cm} \text{ for } x \in \{0, 1, ..., n\}\]
     </p>
 
       

@@ -1,6 +1,8 @@
 
 
 
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -628,6 +630,8 @@ fetch("/nav.html")
   let prob = null;       // current problem object
   let solutionLog = '';  // keeps revealed solutions visible
 
+  let finished = false;   // after Stage 4 solution is shown, lock Hint/Next
+
   function clearActivity() {
     tableArea.innerHTML = '';
     meanArea.innerHTML = '';
@@ -636,6 +640,9 @@ fetch("/nav.html")
     stageFeedback.textContent = '';
     stageFeedback.style.color = 'black';
     solutionLog = '';
+    finished = false;
+    hintBtn.disabled = false;
+    nextBtn.disabled = false;
     typeset();
   }
 
@@ -835,55 +842,41 @@ fetch("/nav.html")
       const p = prob.p;
       const val = prob.stage1.targetProb;
 
-            solCounter += 1;
-      const histId = `solhist-${solCounter}`;
-
-            solCounter += 1;
-      const histId = `solhist-${solCounter}`;
-
       appendSolution(`
-
-
-        <div><b>Stage 1 solution</b></div>
+        
         \\[
           P(X=${x}) = f(${x};n,p) = \\binom{${n}}{${x}} p^{${x}}(1-p)^{${n}-${x}}
           \\approx ${val.toFixed(6)}
         \\]
-      
-        <div id="${histId}" style="margin: 1rem auto; max-width: 740px;"></div>
       `);
 
-      // Histogram goes under the solution (inside the solution log)
-      typeset([meanArea]);
-      renderBinomialHistogram(`#${histId}`, n, p, {
+      renderBinomialHistogram(histogramArea, n, p, {
         xLabel: 'x',
         yLabel: 'f(x)',
         highlightXs: [x]
       });
+      typeset([meanArea, histogramArea]);
       return;
     }
 
     if (stage === 2) {
       appendSolution(`
-        <div><b>Stage 2 solution</b></div>
+        
         ${prob.stage2.solutionTex}
-      
-        <div id="${histId}" style="margin: 1rem auto; max-width: 740px;"></div>
       `);
 
-      // Histogram goes under the solution (inside the solution log)
-      typeset([meanArea]);
-      renderBinomialHistogram(`#${histId}`, prob.n, prob.p, {
+      renderBinomialHistogram(histogramArea, prob.n, prob.p, {
         xLabel: 'x',
         yLabel: 'f(x)',
         highlightXs: prob.stage2.highlightXs
       });
+      typeset([meanArea, histogramArea]);
       return;
     }
 
     if (stage === 3) {
       appendSolution(`
-        <div><b>Stage 3 solution</b></div>
+        
         \\[
           \\mu = np = ${prob.n}\\left(${prob.p.toFixed(6)}\\right) \\approx ${prob.mean.toFixed(6)}
         \\]
@@ -894,13 +887,18 @@ fetch("/nav.html")
 
     if (stage === 4) {
       appendSolution(`
-        <div><b>Stage 4 solution</b></div>
+
         \\[
           \\sigma = \\sqrt{np(1-p)} = \\sqrt{${prob.n}\\left(${prob.p.toFixed(6)}\\right)\\left(${(1-prob.p).toFixed(6)}\\right)}
           \\approx ${prob.sigma.toFixed(6)}
         \\]
       `);
-      setFeedback('Done!', 'green');
+      // lock the activity after showing the Stage 4 solution
+      finished = true;
+      hintBtn.disabled = true;
+      nextBtn.disabled = true;
+      // remove the answer box so it doesn't appear again
+      workArea.innerHTML = '';
       typeset([meanArea]);
       return;
     }
@@ -917,6 +915,7 @@ fetch("/nav.html")
 
   function onNext() {
     if (!prob || stage === 0) return;
+    if (finished) return;
     const target = currentTarget();
     const parsed = parseDecimal(document.getElementById('ans')?.value ?? '');
     if (parsed.error) { setFeedback(parsed.error, 'crimson'); return; }
@@ -929,12 +928,16 @@ fetch("/nav.html")
 
   function onHint() {
     if (!prob || stage === 0) return;
+    if (finished) return;
     revealStageSolution();
     if (stage < 4) { stage += 1; renderStage(); }
   }
 
   function startRandomProblem() {
     clearActivity();
+    finished = false;
+    hintBtn.disabled = false;
+    nextBtn.disabled = false;
     // For now: only Type (1) is implemented.
     prob = buildType1BinomialProblem();
     stage = 1;

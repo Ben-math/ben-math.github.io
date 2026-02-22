@@ -88,6 +88,7 @@ fetch("/nav.html")
       we can compute the easier sum
       \[P(X \leq 18) = 1 - P(X \geq 19) = 1 - (P(X = 19) + P(X = 20)) = 1 - (f\left(19;20,\frac{5}{18}\right) + f\left(20;20,\frac{5}{18}\right)) \approx 
       0.9999999996\]
+      That is, we sum the two rightmost columns of the histogram, and subtract the result from 1:
     </p>
 
     <p>It's that second property - that its values sum to 1 - which is often helpful in checking whether you've correctly computed its values, as you 

@@ -48,17 +48,15 @@ fetch("/nav.html")
     
     <p>If \(n\) many Bernoulli trials are performed, each with probability \(p\) of success, then the random variable \(X\) with parameters \(n,p\) is 
       called a <b>binomial random variable</b>.  Its pdf is called a <b>binomial distribution</b>, given by
-      \[f(x;n,p) = \binom{n}{x}p^x(1-o)^{n-x}, \hspace{2cm} \text{ for } x \in \{0, 1, ..., n\}\]
+      \[f(x;n,p) = \binom{n}{x}p^x(1-p)^{n-x} \hspace{2cm} \text{ for } x \in \{0, 1, ..., n\}\]
+      The input x is the number of successes, so \(f(x; n, p)\) gives the probability of having \(x\) many successes when doing \(n\) many Bernoulli 
+      trials that have a probability \(p\) of success.
     </p>
 
       
-    <p>A common question to ask is
-      \[\text{"What is the probability the random variable \(X\) takes on the value \(x\)?"}\]
-      That is, we are asking for \(P(X = x)\).  For instance, if the random variable \(X\) represents the sum of the rolls of two 6-sided dice, then 
-      \[P(X = 4) = \frac{3}{36} = \frac{1}{12}\]
-      because there are 3 outcomes
-      \[(1,3), (2,2), (3,1)\]
-      out of the 36 in the sample space which result in a sum of 4.
+    <p>The Binomial coefficients \(\binom{n}{x}\) are entries in Pascal's triangle, can be computed via the formula
+      \[\binom{n}{x} = \frac{n!}{(n-x)!x!}\]
+      or by typing "nCx" into your calculator.
     </p>
 
 

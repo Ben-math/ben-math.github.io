@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -66,11 +67,13 @@ fetch("/nav.html")
       \(\left(20, \frac{5}{18}\right)\), and pdf
       \[f\left(x;20,\frac{5}{18}\right) = \binom{20}{x}\left(\frac{5}{18}\right)^x\left(\frac{13}{18}\right)^{20-x}\]
       Since successes are less likely than failures, we see that the taller columns in the pdf's histogram tend leftwards:
+      <div id="binom-hist-1" style="margin: 1rem auto; max-width: 640px;"></div>
     </p>
 
     <p>For instance, to find the probability of rolling a 9 or higher 6 out of the 20 times, we compute
       \[f\left(6;20,\frac{5}{18}\right) = \binom{20}{6}\left(\frac{5}{18}\right)^6\left(\frac{13}{18}\right)^{14} = 0.187\]
       Note that the probability above corresponds to the odds of 6 successes and 14 failures.
+      <div id="binom-hist-2" style="margin: 1rem auto; max-width: 640px;"></div>
     </p>
 
     <p>We might also want to answer questions of the form
@@ -79,6 +82,7 @@ fetch("/nav.html")
       \[P(X \leq 2) = P(X = 0) + P(X = 1) + P(X = 2) = f\left(0;20,\frac{5}{18}\right) + f\left(1;20,\frac{5}{18}\right) + 
       f\left(2;20,\frac{5}{18}\right) \approx 0.055\]
       That is, we are summing the 3 leftmost columns in the histogram:
+      <div id="binom-hist-3" style="margin: 1rem auto; max-width: 640px;"></div>
     </p>
 
     <p>The preceding required us to compute the value of the pdf 3 times for our sum, which was quite time consuming.  Consider the problem 
@@ -89,7 +93,7 @@ fetch("/nav.html")
       we can compute the easier sum
       \[P(X \leq 18) = 1 - P(X \geq 19) = 1 - (P(X = 19) + P(X = 20)) = 1 - (f\left(19;20,\frac{5}{18}\right) + f\left(20;20,\frac{5}{18}\right)) \approx 
       0.9999999996\]
-      That is, we sum the two rightmost columns of the histogram, and subtract the result from 1:
+      That is, we sum the two rightmost columns of the histogram, and subtract the result from 1.
     </p>
 
 
@@ -98,17 +102,7 @@ fetch("/nav.html")
       In our running example, we find
       \[\mu = 20\left(\frac{5}{18}\right) \approx 5.56 \hspace{2cm} \sigma = \sqrt{20\left(\frac{5}{18}\right)\left(\frac{13}{18}\right)} \approx 2\]
     </p>
-
-    <p>
-
-      <div id="dice-histogram" style="margin: 1rem auto; max-width: 640px;"></div>
-
-    </p>
-
-
-    
-
-    <div class="button-container">
+<div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>
 
@@ -254,7 +248,190 @@ fetch("/nav.html")
     return false;
   }
 
+  
   // -----------------------------
+  // Inline-SVG histogram for Binomial(n,p)
+  // -----------------------------
+  // Usage:
+  //   renderBinomialHistogram('#div', 20, 5/18)              // all pale blue
+  //   renderBinomialHistogram('#div', 20, 5/18, {highlightXs:[6]}) // highlight x=6 in pale red
+  function renderBinomialHistogram(container, n, p, options = {}) {
+    const el = (typeof container === 'string') ? document.querySelector(container) : container;
+    if (!el) return;
+
+    const W = options.width ?? 640;
+    const H = options.height ?? 260;
+    const pad = { left: 48, right: 16, top: (options.title ? 30 : 14), bottom: 48, ...(options.padding ?? {}) };
+
+    const paleBlue = options.paleBlue ?? '#b7d8f0';
+    const paleRed = options.paleRed ?? '#f2b6b6';
+    const highlight = new Set(options.highlightXs ?? []);
+
+    const comb = (N, K) => {
+      if (K < 0 || K > N) return 0;
+      K = Math.min(K, N - K);
+      let num = 1;
+      let den = 1;
+      for (let i = 1; i <= K; i++) {
+        num *= (N - (K - i));
+        den *= i;
+        const g = gcd(num, den);
+        num /= g; den /= g;
+      }
+      return num / den;
+    };
+
+    const data = [];
+    let maxP = 0;
+    for (let x = 0; x <= n; x++) {
+      const px = comb(n, x) * Math.pow(p, x) * Math.pow(1 - p, n - x);
+      data.push({ x, p: px });
+      if (px > maxP) maxP = px;
+    }
+
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+    const xStep = plotW / data.length;
+    const barW = xStep * 0.78;
+
+    const y = (prob) => pad.top + (1 - (prob / maxP)) * plotH;
+    const x0 = (i) => pad.left + i * xStep + (xStep - barW) / 2;
+
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', String(H));
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', options.ariaLabel ?? `Histogram of Binomial(n=${n}, p=${p})`);
+
+    const g = document.createElementNS(svgNS, 'g');
+    svg.appendChild(g);
+
+    if (options.title) {
+      const t = document.createElementNS(svgNS, 'text');
+      t.setAttribute('x', String(W / 2));
+      t.setAttribute('y', '18');
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('font-size', '14');
+      t.setAttribute('font-weight', '600');
+      t.setAttribute('fill', 'currentColor');
+      t.textContent = options.title;
+      g.appendChild(t);
+    }
+
+    const axisColor = options.axisColor ?? 'currentColor';
+    const axisOpacity = options.axisOpacity ?? '0.55';
+
+    const xAxis = document.createElementNS(svgNS, 'line');
+    xAxis.setAttribute('x1', String(pad.left));
+    xAxis.setAttribute('y1', String(pad.top + plotH));
+    xAxis.setAttribute('x2', String(pad.left + plotW));
+    xAxis.setAttribute('y2', String(pad.top + plotH));
+    xAxis.setAttribute('stroke', axisColor);
+    xAxis.setAttribute('stroke-opacity', axisOpacity);
+    xAxis.setAttribute('stroke-width', '1');
+    g.appendChild(xAxis);
+
+    const yAxis = document.createElementNS(svgNS, 'line');
+    yAxis.setAttribute('x1', String(pad.left));
+    yAxis.setAttribute('y1', String(pad.top));
+    yAxis.setAttribute('x2', String(pad.left));
+    yAxis.setAttribute('y2', String(pad.top + plotH));
+    yAxis.setAttribute('stroke', axisColor);
+    yAxis.setAttribute('stroke-opacity', axisOpacity);
+    yAxis.setAttribute('stroke-width', '1');
+    g.appendChild(yAxis);
+
+    const ticks = options.yTicks ?? 3;
+    for (let k = 0; k < ticks; k++) {
+      const frac = (ticks === 1) ? 0 : k / (ticks - 1);
+      const yy = pad.top + (1 - frac) * plotH;
+
+      const tick = document.createElementNS(svgNS, 'line');
+      tick.setAttribute('x1', String(pad.left - 4));
+      tick.setAttribute('y1', String(yy));
+      tick.setAttribute('x2', String(pad.left));
+      tick.setAttribute('y2', String(yy));
+      tick.setAttribute('stroke', axisColor);
+      tick.setAttribute('stroke-opacity', axisOpacity);
+      tick.setAttribute('stroke-width', '1');
+      g.appendChild(tick);
+
+      const lab = document.createElementNS(svgNS, 'text');
+      lab.setAttribute('x', String(pad.left - 8));
+      lab.setAttribute('y', String(yy + 4));
+      lab.setAttribute('text-anchor', 'end');
+      lab.setAttribute('font-size', '12');
+      lab.setAttribute('fill', axisColor);
+      lab.setAttribute('fill-opacity', axisOpacity);
+      lab.textContent = (options.yFormatter ? options.yFormatter(frac * maxP) : (frac * maxP).toFixed(3).replace(/0+$/, '').replace(/\.$/, ''));
+      g.appendChild(lab);
+    }
+
+    for (let i = 0; i < data.length; i++) {
+      const d = data[i];
+      const xx = x0(i);
+      const yy = y(d.p);
+      const h = (pad.top + plotH) - yy;
+
+      const rect = document.createElementNS(svgNS, 'rect');
+      rect.setAttribute('x', String(xx));
+      rect.setAttribute('y', String(yy));
+      rect.setAttribute('width', String(barW));
+      rect.setAttribute('height', String(Math.max(0, h)));
+      rect.setAttribute('fill', highlight.has(d.x) ? paleRed : paleBlue);
+      rect.setAttribute('fill-opacity', '0.85');
+      rect.setAttribute('stroke', 'currentColor');
+      rect.setAttribute('stroke-opacity', '0.35');
+      rect.setAttribute('stroke-width', '1');
+      g.appendChild(rect);
+
+      // x labels: show every label for n<=25; otherwise thin out
+      const showLabel = (n <= 25) || (d.x % 2 === 0);
+      if (showLabel) {
+        const xl = document.createElementNS(svgNS, 'text');
+        xl.setAttribute('x', String(xx + barW / 2));
+        xl.setAttribute('y', String(pad.top + plotH + 20));
+        xl.setAttribute('text-anchor', 'middle');
+        xl.setAttribute('font-size', '12');
+        xl.setAttribute('fill', 'currentColor');
+        xl.setAttribute('fill-opacity', '0.85');
+        xl.textContent = String(d.x);
+        g.appendChild(xl);
+      }
+    }
+
+    if (options.xLabel) {
+      const xl2 = document.createElementNS(svgNS, 'text');
+      xl2.setAttribute('x', String(pad.left + plotW / 2));
+      xl2.setAttribute('y', String(H - 10));
+      xl2.setAttribute('text-anchor', 'middle');
+      xl2.setAttribute('font-size', '12');
+      xl2.setAttribute('fill', 'currentColor');
+      xl2.setAttribute('fill-opacity', '0.85');
+      xl2.textContent = options.xLabel;
+      g.appendChild(xl2);
+    }
+
+    if (options.yLabel) {
+      const yl2 = document.createElementNS(svgNS, 'text');
+      yl2.setAttribute('x', '16');
+      yl2.setAttribute('y', String(pad.top + plotH / 2));
+      yl2.setAttribute('text-anchor', 'middle');
+      yl2.setAttribute('font-size', '12');
+      yl2.setAttribute('fill', 'currentColor');
+      yl2.setAttribute('fill-opacity', '0.85');
+      yl2.setAttribute('transform', `rotate(-90 16 ${pad.top + plotH / 2})`);
+      yl2.textContent = options.yLabel;
+      g.appendChild(yl2);
+    }
+
+    el.innerHTML = '';
+    el.appendChild(svg);
+  }
+
+// -----------------------------
   // Inline-SVG histogram for discrete pdfs (already used above)
   // -----------------------------
   // Usage:
@@ -414,49 +591,50 @@ fetch("/nav.html")
     el.appendChild(svg);
   }
 
+  
   // -----------------------------
-  // Static histogram for the two-dice example in the text above
+  // Static binomial histograms for the lesson text above
   // -----------------------------
-  renderDiscreteHistogram('#dice-histogram', [
-    { x: 2,  p: 1/36 },
-    { x: 3,  p: 2/36 },
-    { x: 4,  p: 3/36 },
-    { x: 5,  p: 4/36 },
-    { x: 6,  p: 5/36 },
-    { x: 7,  p: 6/36 },
-    { x: 8,  p: 5/36 },
-    { x: 9,  p: 4/36 },
-    { x: 10, p: 3/36 },
-    { x: 11, p: 2/36 },
-    { x: 12, p: 1/36 }
-  ], {
-    title: 'Histogram of the pdf for the sum of two dice',
+  const LESSON_N = 20;
+  const LESSON_P = 5/18;
+
+  renderBinomialHistogram('#binom-hist-1', LESSON_N, LESSON_P, {
     xLabel: 'x',
-    yLabel: 'f(x)',
-    yFormatter: (v) => {
-      const n = Math.round(v * 36);
-      const den = 36;
-      const g = gcd(n, den);
-      const nn = n / g;
-      const dd = den / g;
-      return (n === 0) ? '0' : `${nn}/${dd}`;
-    }
+    yLabel: 'f(x)'
   });
 
+  renderBinomialHistogram('#binom-hist-2', LESSON_N, LESSON_P, {
+    xLabel: 'x',
+    yLabel: 'f(x)',
+    highlightXs: [6]
+  });
+
+  renderBinomialHistogram('#binom-hist-3', LESSON_N, LESSON_P, {
+    xLabel: 'x',
+    yLabel: 'f(x)',
+    highlightXs: [0,1,2]
+  });
+
+
+
+  
   // -----------------------------
-  // Activity: Binomial Distribution (Type 1 for now)
+  // Activity (Binomial) — Question Type (1) for now
   // -----------------------------
   const REL_TOL = 0.001; // 0.1% relative tolerance for decimal answers
 
-  let stage = 0; // 0 = not started, 1..4
-  let problem = null;
+  let stage = 0;         // 0 = not started; 1..4
+  let prob = null;       // current problem object
+  let solutionLog = '';  // keeps revealed solutions visible
 
   function clearActivity() {
     tableArea.innerHTML = '';
     meanArea.innerHTML = '';
     workArea.innerHTML = '';
     histogramArea.innerHTML = '';
-    setFeedback('');
+    stageFeedback.textContent = '';
+    stageFeedback.style.color = 'black';
+    solutionLog = '';
     typeset();
   }
 
@@ -465,26 +643,7 @@ fetch("/nav.html")
     stageFeedback.style.color = color;
   }
 
-  // robust nCk (n up to 50)
-  function combInt(n, k) {
-    if (k < 0 || k > n) return 0;
-    k = Math.min(k, n - k);
-    let num = 1;
-    let den = 1;
-    for (let i = 1; i <= k; i++) {
-      num *= (n - (k - i));
-      den *= i;
-      const g = gcd(num, den);
-      num /= g; den /= g;
-    }
-    return num / den;
-  }
-
-  function binomPMF(n, p, x) {
-    return combInt(n, x) * Math.pow(p, x) * Math.pow(1 - p, n - x);
-  }
-
-  function parseDecimalOnly(raw) {
+  function parseDecimal(raw) {
     const s = (raw ?? '').trim().replace(/\s+/g, '');
     if (!s) return { error: 'Please enter a value.' };
     const v = Number(s);
@@ -492,270 +651,298 @@ fetch("/nav.html")
     return { value: v };
   }
 
-  function decClose(inputVal, targetVal, relTol = REL_TOL) {
-    const denom = Math.max(1e-12, Math.abs(targetVal));
-    return Math.abs(inputVal - targetVal) <= relTol * denom;
+  // Stable binomial pmf values P(X=x) for x=0..n using recurrence.
+  function binomPMFArray(n, p) {
+    const arr = new Array(n + 1).fill(0);
+    if (p <= 0) { arr[0] = 1; return arr; }
+    if (p >= 1) { arr[n] = 1; return arr; }
+    const q = 1 - p;
+    let px = Math.pow(q, n); // P(0)
+    arr[0] = px;
+    for (let x = 0; x < n; x++) {
+      px = px * ((n - x) / (x + 1)) * (p / q);
+      arr[x + 1] = px;
+    }
+    return arr;
+  }
+
+  function sumRange(arr, a, b) {
+    let s = 0;
+    for (let i = a; i <= b; i++) s += arr[i];
+    return s;
   }
 
   function buildType1BinomialProblem() {
     const y = randInt(4, 20);
     const n = randInt(6, 50);
 
-    // success definition
     let successText = '';
     let p = 0;
 
     if (Math.random() < 0.3) {
-      const z = randInt(1, y);
+      const k = randInt(1, y);
+      successText = `rolling a ${k}`;
       p = 1 / y;
-      successText = `rolling a ${z}`;
     } else {
-      const dir = (Math.random() < 0.5) ? 'higher' : 'lower';
-      if (dir === 'higher') {
+      const dirHigher = Math.random() < 0.5;
+      if (dirHigher) {
         const t = randInt(1, y - 1);
-        p = (y - t) / y;
         successText = `rolling higher than ${t}`;
+        p = (y - t) / y;
       } else {
         const t = randInt(2, y);
-        p = (t - 1) / y;
         successText = `rolling lower than ${t}`;
+        p = (t - 1) / y;
       }
     }
+
+    const pmf = binomPMFArray(n, p);
 
     // Stage 1 target x
     const x1 = randInt(0, n);
 
-    // Stage 2: choose an event that requires summing 2 or 3 pmf values, with 50% chance of using a complement.
-    const wantComplement = Math.random() < 0.5;
-    const wantUpperTail = Math.random() < 0.5; // true => easy tail on the right
-    const includeEqual = Math.random() < 0.5;
-    const termCount = (Math.random() < 0.5) ? 2 : 3;
-    const m = termCount - 1;
-    const easyRight = wantUpperTail;
+    // Stage 2 inequality: ensure 2 or 3 values summed, possibly via complement
+    const kTerms = (Math.random() < 0.5) ? 2 : 3;
+    const tail = (Math.random() < 0.5) ? 'left' : 'right'; // tail to highlight/sum
+    const inclusive = (Math.random() < 0.5);
+    const useComplement = (Math.random() < 0.5);
 
-    const sumP = (xs) => xs.reduce((acc, x) => acc + binomPMF(n, p, x), 0);
-    const easyXs = easyRight
-      ? Array.from({ length: termCount }, (_, i) => n - m + i)
-      : Array.from({ length: termCount }, (_, i) => i);
-    const easySum = sumP(easyXs);
+    const stage2 = {
+      kTerms, tail, inclusive, useComplement,
+      threshold: 0,
+      relationTex: '',
+      highlightXs: [],
+      targetProb: 0,
+      solutionTex: ''
+    };
 
-    let stage2Prompt = '';
-    let stage2SolutionTex = '';
-    let stage2Target = 0;
-    const redXs = [...easyXs];
+    if (tail === 'left') {
+      const highlight = [...Array(kTerms).keys()]; // 0..kTerms-1
+      stage2.highlightXs = highlight;
 
-    const fmt = (v) => v.toFixed(3);
-
-    if (!wantComplement) {
-      if (easyRight) {
-        const k = n - m;
-        const sym = includeEqual ? '\\ge' : '>';
-        const thresh = includeEqual ? k : (k - 1);
-        stage2Prompt = `What is \\(P(X ${sym} ${thresh})\\)?`;
-        stage2Target = easySum;
-        stage2SolutionTex = `\\(P(X ${sym} ${thresh}) = ${easyXs.map(x => `f(${x};${n},p)`).join(' + ')} \\approx ${fmt(stage2Target)}\\)`;
+      if (!useComplement) {
+        // exactly kTerms via <= or <
+        stage2.threshold = inclusive ? (kTerms - 1) : kTerms;
+        stage2.relationTex = inclusive ? `P(X\\le ${stage2.threshold})` : `P(X< ${stage2.threshold})`;
+        stage2.targetProb = sumRange(pmf, 0, kTerms - 1);
+        stage2.solutionTex =
+          `\\[${stage2.relationTex} = \\sum_{x=0}^{${kTerms - 1}} f(x;n,p)\\]` +
+          `\\[= ${highlight.map(h => `f(${h};n,p)`).join(' + ')} \\approx ${stage2.targetProb.toFixed(6)}\\]`;
       } else {
-        const k = m;
-        const sym = includeEqual ? '\\le' : '<';
-        const thresh = includeEqual ? k : (k + 1);
-        stage2Prompt = `What is \\(P(X ${sym} ${thresh})\\)?`;
-        stage2Target = easySum;
-        stage2SolutionTex = `\\(P(X ${sym} ${thresh}) = ${easyXs.map(x => `f(${x};${n},p)`).join(' + ')} \\approx ${fmt(stage2Target)}\\)`;
+        // complement uses left tail
+        stage2.threshold = inclusive ? kTerms : (kTerms - 1);
+        stage2.relationTex = inclusive ? `P(X\\ge ${stage2.threshold})` : `P(X> ${stage2.threshold})`;
+        stage2.targetProb = 1 - sumRange(pmf, 0, kTerms - 1);
+        stage2.solutionTex =
+          `\\[${stage2.relationTex} = 1 - P(X\\le ${kTerms - 1})\\]` +
+          `\\[= 1 - \\sum_{x=0}^{${kTerms - 1}} f(x;n,p)\\approx ${stage2.targetProb.toFixed(6)}\\]`;
       }
     } else {
-      stage2Target = 1 - easySum;
-      if (easyRight) {
-        const k = n - m;
-        const sym = includeEqual ? '\\le' : '<';
-        const thresh = includeEqual ? (k - 1) : k;
-        stage2Prompt = `What is \\(P(X ${sym} ${thresh})\\)?`;
-        stage2SolutionTex = `\\(P(X ${sym} ${thresh}) = 1 - P(X \\ge ${k}) = 1 - (${easyXs.map(x => `f(${x};${n},p)`).join(' + ')}) \\approx ${fmt(stage2Target)}\\)`;
+      const start = n - kTerms + 1;
+      const highlight = [];
+      for (let x = start; x <= n; x++) highlight.push(x);
+      stage2.highlightXs = highlight;
+
+      if (!useComplement) {
+        stage2.threshold = inclusive ? start : (start - 1);
+        stage2.relationTex = inclusive ? `P(X\\ge ${stage2.threshold})` : `P(X> ${stage2.threshold})`;
+        stage2.targetProb = sumRange(pmf, start, n);
+        stage2.solutionTex =
+          `\\[${stage2.relationTex} = \\sum_{x=${start}}^{${n}} f(x;n,p)\\]` +
+          `\\[= ${highlight.map(h => `f(${h};n,p)`).join(' + ')} \\approx ${stage2.targetProb.toFixed(6)}\\]`;
       } else {
-        const k = m;
-        const sym = includeEqual ? '\\ge' : '>';
-        const thresh = includeEqual ? (k + 1) : k;
-        stage2Prompt = `What is \\(P(X ${sym} ${thresh})\\)?`;
-        stage2SolutionTex = `\\(P(X ${sym} ${thresh}) = 1 - P(X \\le ${k}) = 1 - (${easyXs.map(x => `f(${x};${n},p)`).join(' + ')}) \\approx ${fmt(stage2Target)}\\)`;
+        stage2.threshold = inclusive ? (start - 1) : start;
+        stage2.relationTex = inclusive ? `P(X\\le ${stage2.threshold})` : `P(X< ${stage2.threshold})`;
+        stage2.targetProb = 1 - sumRange(pmf, start, n);
+        stage2.solutionTex =
+          `\\[${stage2.relationTex} = 1 - P(X\\ge ${start})\\]` +
+          `\\[= 1 - \\sum_{x=${start}}^{${n}} f(x;n,p)\\approx ${stage2.targetProb.toFixed(6)}\\]`;
       }
     }
 
     return {
-      kind: 'binom_die',
-      y, n, p, successText,
-      x1,
-      stage2Prompt,
-      stage2Target,
-      stage2SolutionTex,
-      stage2RedXs: redXs
+      kind: 'binom_type1_die',
+      y, n, p,
+      successText,
+      pmf,
+      stage1: { x: x1, targetProb: pmf[x1] },
+      stage2,
+      mean: n * p,
+      sigma: Math.sqrt(n * p * (1 - p))
     };
   }
 
-  function problemPrompt(p) {
-    return `A ${p.y}-sided die is rolled ${p.n} times. A success will be considered ${p.successText}.`;
+  function renderPrompt() {
+    if (!prob) return;
+    questionText.innerHTML =
+      `A ${prob.y}-sided die is rolled ${prob.n} times. A success will be considered ${prob.successText}. ` +
+      `Let \\(X\\) be the number of successes.`;
+    typeset([questionText]);
   }
 
   function renderStage() {
-    if (!problem) return;
+    if (!prob) return;
+
     tableArea.innerHTML = '';
-    meanArea.innerHTML = '';
+    histogramArea.innerHTML = '';
     setFeedback('');
 
-    if (stage === 1) {
-      workArea.innerHTML = `
-        <div style="margin-bottom: 0.5rem;">Stage 1: What is the probability of \\(${problem.x1}\\) many successes?</div>
-        <div>
-          <label for="ans1">Answer (decimal):</label>
-          <input id="ans1" type="text" inputmode="decimal" style="width: 10em; text-align: center;">
-        </div>
-      `;
-      histogramArea.innerHTML = '';
-    }
-
-    if (stage === 2) {
-      workArea.innerHTML = `
-        <div style="margin-bottom: 0.5rem;">Stage 2: ${problem.stage2Prompt}</div>
-        <div>
-          <label for="ans2">Answer (decimal):</label>
-          <input id="ans2" type="text" inputmode="decimal" style="width: 10em; text-align: center;">
-        </div>
-      `;
-      histogramArea.innerHTML = '';
-    }
-
-    if (stage === 3) {
-      workArea.innerHTML = `
-        <div style="margin-bottom: 0.5rem;">Stage 3: Compute the mean \\((\\mu)\\) of \\(X\\).</div>
-        <div>
-          <label for="ans3">\\(\\mu =\\)</label>
-          <input id="ans3" type="text" inputmode="decimal" style="width: 10em; text-align: center;">
-        </div>
-      `;
-      histogramArea.innerHTML = '';
-    }
-
-    if (stage === 4) {
-      workArea.innerHTML = `
-        <div style="margin-bottom: 0.5rem;">Stage 4: Compute the standard deviation \\((\\sigma)\\) of \\(X\\).</div>
-        <div>
-          <label for="ans4">\\(\\sigma =\\)</label>
-          <input id="ans4" type="text" inputmode="decimal" style="width: 10em; text-align: center;">
-        </div>
-      `;
-      histogramArea.innerHTML = '';
-    }
-
-    typeset([workArea]);
-  }
-
-  function showStage1Solution() {
-    const n = problem.n;
-    const p = problem.p;
-    const x = problem.x1;
-    const val = binomPMF(n, p, x);
-    const tex = `\\(P(X=${x}) = f(${x};${n},p) = \\binom{${n}}{${x}} p^{${x}}(1-p)^{${n}-${x}} \\approx ${val.toFixed(4)}\\)`;
-    workArea.insertAdjacentHTML('beforeend', `<div style="margin-top: 0.75rem;">${tex}</div>`);
-    renderBinomialHistogram(histogramArea, n, p, { highlightXs: [x], xLabel: 'x', yLabel: 'f(x)' });
-    typeset([workArea]);
-  }
-
-  function showStage2Solution() {
-    const n = problem.n;
-    const p = problem.p;
-    workArea.insertAdjacentHTML('beforeend', `<div style="margin-top: 0.75rem;">${problem.stage2SolutionTex}</div>`);
-    renderBinomialHistogram(histogramArea, n, p, { highlightXs: problem.stage2RedXs, xLabel: 'x', yLabel: 'f(x)' });
-    typeset([workArea]);
-  }
-
-  function showStage3Solution() {
-    const mu = problem.n * problem.p;
-    const tex = `\\(\\mu = np = ${problem.n}\\cdot ${problem.p.toFixed(6).replace(/0+$/,'').replace(/\\.$/,'')} \\approx ${mu.toFixed(4)}\\)`;
-    workArea.insertAdjacentHTML('beforeend', `<div style="margin-top: 0.75rem;">${tex}</div>`);
-    typeset([workArea]);
-  }
-
-  function showStage4Solution() {
-    const sd = Math.sqrt(problem.n * problem.p * (1 - problem.p));
-    const tex = `\\(\\sigma = \\sqrt{np(1-p)} = \\sqrt{${problem.n}\\cdot ${problem.p.toFixed(6).replace(/0+$/,'').replace(/\\.$/,'')}\\cdot ${(1-problem.p).toFixed(6).replace(/0+$/,'').replace(/\\.$/,'')}} \\approx ${sd.toFixed(4)}\\)`;
-    workArea.insertAdjacentHTML('beforeend', `<div style="margin-top: 0.75rem;">${tex}</div>`);
-    setFeedback('Done!', 'green');
-    typeset([workArea]);
-  }
-
-  function checkAndAdvance(isHint = false) {
-    if (!problem) return;
-
-    let inputId = '';
-    let target = 0;
-    let after = () => {};
+    // keep revealed work visible
+    meanArea.innerHTML = solutionLog;
 
     if (stage === 1) {
-      inputId = 'ans1';
-      target = binomPMF(problem.n, problem.p, problem.x1);
-      after = showStage1Solution;
+      const x = prob.stage1.x;
+      workArea.innerHTML = `
+        <div style="margin-bottom:0.75rem;"><b>Stage 1.</b> What is the probability of <b>${x}</b> successes?</div>
+        <div>\\(P(X=${x}) =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
+      `;
     } else if (stage === 2) {
-      inputId = 'ans2';
-      target = problem.stage2Target;
-      after = showStage2Solution;
+      const rel = prob.stage2.relationTex;
+      workArea.innerHTML = `
+        <div style="margin-bottom:0.75rem;"><b>Stage 2.</b> Compute \\(${rel}\\).</div>
+        <div>\\(${rel} =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
+      `;
     } else if (stage === 3) {
-      inputId = 'ans3';
-      target = problem.n * problem.p;
-      after = showStage3Solution;
+      workArea.innerHTML = `
+        <div style="margin-bottom:0.75rem;"><b>Stage 3.</b> Compute the mean \\(\\mu\\) of \\(X\\).</div>
+        <div>\\(\\mu =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
+      `;
     } else if (stage === 4) {
-      inputId = 'ans4';
-      target = Math.sqrt(problem.n * problem.p * (1 - problem.p));
-      after = showStage4Solution;
+      workArea.innerHTML = `
+        <div style="margin-bottom:0.75rem;"><b>Stage 4.</b> Compute the standard deviation \\(\\sigma\\) of \\(X\\).</div>
+        <div>\\(\\sigma =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
+      `;
     } else {
+      workArea.innerHTML = `<div>Press Start to begin.</div>`;
+    }
+
+    typeset([meanArea, workArea]);
+  }
+
+  function appendSolution(texBlock) {
+    solutionLog += `<div style="margin-top:0.75rem; text-align:center;">${texBlock}</div>`;
+    meanArea.innerHTML = solutionLog;
+  }
+
+  function revealStageSolution() {
+    if (!prob) return;
+    histogramArea.innerHTML = '';
+
+    if (stage === 1) {
+      const x = prob.stage1.x;
+      const n = prob.n;
+      const p = prob.p;
+      const val = prob.stage1.targetProb;
+
+      appendSolution(`
+        <div><b>Stage 1 solution</b></div>
+        \\[
+          P(X=${x}) = f(${x};n,p) = \\binom{${n}}{${x}} p^{${x}}(1-p)^{${n}-${x}}
+          \\approx ${val.toFixed(6)}
+        \\]
+      `);
+
+      renderBinomialHistogram(histogramArea, n, p, {
+        xLabel: 'x',
+        yLabel: 'f(x)',
+        highlightXs: [x]
+      });
+      typeset([meanArea, histogramArea]);
       return;
     }
 
-    if (!isHint) {
-      const parsed = parseDecimalOnly(document.getElementById(inputId)?.value ?? '');
-      if (parsed.error) {
-        setFeedback(parsed.error, 'crimson');
-        return;
-      }
-      if (!decClose(parsed.value, target, REL_TOL)) {
-        setFeedback('Not quite.', 'crimson');
-        return;
-      }
-      setFeedback('Correct!', 'green');
-    } else {
-      setFeedback('', 'black');
+    if (stage === 2) {
+      appendSolution(`
+        <div><b>Stage 2 solution</b></div>
+        ${prob.stage2.solutionTex}
+      `);
+
+      renderBinomialHistogram(histogramArea, prob.n, prob.p, {
+        xLabel: 'x',
+        yLabel: 'f(x)',
+        highlightXs: prob.stage2.highlightXs
+      });
+      typeset([meanArea, histogramArea]);
+      return;
     }
 
-    after();
+    if (stage === 3) {
+      appendSolution(`
+        <div><b>Stage 3 solution</b></div>
+        \\[
+          \\mu = np = ${prob.n}\\left(${prob.p.toFixed(6)}\\right) \\approx ${prob.mean.toFixed(6)}
+        \\]
+      `);
+      typeset([meanArea]);
+      return;
+    }
 
-    if (stage < 4) {
-      stage += 1;
-      workArea.insertAdjacentHTML('beforeend', `<hr style="margin: 1rem auto; max-width: 640px; opacity: 0.35;">`);
-      histogramArea.innerHTML = '';
-      renderStage();
+    if (stage === 4) {
+      appendSolution(`
+        <div><b>Stage 4 solution</b></div>
+        \\[
+          \\sigma = \\sqrt{np(1-p)} = \\sqrt{${prob.n}\\left(${prob.p.toFixed(6)}\\right)\\left(${(1-prob.p).toFixed(6)}\\right)}
+          \\approx ${prob.sigma.toFixed(6)}
+        \\]
+      `);
+      setFeedback('Done!', 'green');
+      typeset([meanArea]);
+      return;
     }
   }
 
-  function startProblem() {
+  function currentTarget() {
+    if (!prob) return null;
+    if (stage === 1) return prob.stage1.targetProb;
+    if (stage === 2) return prob.stage2.targetProb;
+    if (stage === 3) return prob.mean;
+    if (stage === 4) return prob.sigma;
+    return null;
+  }
+
+  function onNext() {
+    if (!prob || stage === 0) return;
+    const target = currentTarget();
+    const parsed = parseDecimal(document.getElementById('ans')?.value ?? '');
+    if (parsed.error) { setFeedback(parsed.error, 'crimson'); return; }
+    if (!relClose(parsed.value, target, REL_TOL)) { setFeedback('Not quite.', 'crimson'); return; }
+
+    setFeedback('Correct!', 'green');
+    revealStageSolution();
+    if (stage < 4) { stage += 1; renderStage(); }
+  }
+
+  function onHint() {
+    if (!prob || stage === 0) return;
+    revealStageSolution();
+    if (stage < 4) { stage += 1; renderStage(); }
+  }
+
+  function startRandomProblem() {
     clearActivity();
-    problem = buildType1BinomialProblem();
+    // For now: only Type (1) is implemented.
+    prob = buildType1BinomialProblem();
     stage = 1;
-    questionText.innerHTML = problemPrompt(problem);
-    typeset([questionText]);
+    renderPrompt();
     renderStage();
   }
 
+  // Hook up buttons
   startBtn.addEventListener('click', () => {
     playSound('click-sound');
-    startProblem();
+    startRandomProblem();
   });
 
   hintBtn.addEventListener('click', () => {
     playSound('click-sound');
-    checkAndAdvance(true);
+    onHint();
   });
 
   nextBtn.addEventListener('click', () => {
     playSound('click-sound');
-    checkAndAdvance(false);
+    onNext();
   });
+
 </script>
 
 

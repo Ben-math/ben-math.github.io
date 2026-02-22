@@ -507,14 +507,13 @@ fetch("/nav.html")
 
   function buildType1Problem() {
     // Dice only.
-
-    // First choose the operation with equal probability (1/3 each).
-    let op = ['sum', 'difference', 'product'][randInt(0, 2)];
-
-    // Then generate the dice sizes.
     const n1 = randInt(4, 10);
     const n2 = randInt(4, 10);
     const total = n1 * n2;
+
+    // Randomly select operation: sum, difference, or (sometimes) product.
+    // Product is only allowed if the number of distinct products is <= 20.
+    let op = ['sum', 'difference', 'product'][randInt(0, 2)];
 
     const countsForOp = (operation) => {
       const counts = new Map();
@@ -530,9 +529,6 @@ fetch("/nav.html")
       return counts;
     };
 
-    // Product is only allowed if the number of distinct products is <= 20.
-    // If product was selected but would make the table too long, keep the dice
-    // and fall back to sum/difference.
     let counts = countsForOp(op);
     if (op === 'product' && counts.size > 20) {
       op = (Math.random() < 0.5) ? 'sum' : 'difference';
@@ -586,62 +582,66 @@ fetch("/nav.html")
     };
   }
 
+  
+  function sampleDistinctInts(min, max, k) {
+    const pool = [];
+    for (let v = min; v <= max; v++) pool.push(v);
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = randInt(0, i);
+      const tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
+    }
+    return pool.slice(0, k).sort((a, b) => a - b);
+  }
+
+  function randomPartitionTotal(totalN, k) {
+    // Ensure each category gets at least 1 respondent, then distribute the rest non-uniformly.
+    const counts = Array(k).fill(1);
+    let remaining = totalN - k;
+    if (remaining < 0) remaining = 0;
+
+    // Random weights -> non-uniform partition
+    const weights = Array(k).fill(0).map(() => Math.random() + 0.05);
+    const wsum = weights.reduce((a, b) => a + b, 0);
+
+    let allocated = 0;
+    for (let i = 0; i < k; i++) {
+      const add = Math.floor(remaining * (weights[i] / wsum));
+      counts[i] += add;
+      allocated += add;
+    }
+
+    let leftover = remaining - allocated;
+    while (leftover > 0) {
+      counts[randInt(0, k - 1)] += 1;
+      leftover--;
+    }
+    return counts;
+  }
 
   function buildType2Problem() {
-    // Survey-based discrete random variable.
     const yBank = ['siblings', 'pets', 'children', 'cars', 'TVs'];
     const y = yBank[randInt(0, yBank.length - 1)];
 
-    const total = randInt(100, 1000);          // number of respondents
-    const k = randInt(3, 6);                   // number of distinct x-values
+    const N = randInt(100, 1000);
+    const k = randInt(3, 6);
+    const xVals = sampleDistinctInts(0, 20, k);
 
-    // Choose k distinct x-values from 0..20
-    const xSet = new Set();
-    while (xSet.size < k) xSet.add(randInt(0, 20));
-    const xVals = Array.from(xSet).sort((a, b) => a - b);
+    const countArr = randomPartitionTotal(N, k);
+    const counts = new Map();
+    for (let i = 0; i < k; i++) counts.set(xVals[i], countArr[i]);
 
-    // Random non-uniform partition of 'total' into k positive integers.
-    // Use random weights, then round, then fix the remainder.
-    let weights = Array.from({ length: k }, () => Math.random());
-    // Encourage non-uniformity (avoid nearly-equal weights)
-    const maxW = Math.max(...weights), minW = Math.min(...weights);
-    if (maxW - minW < 0.15) weights = weights.map(w => w ** 2);
+    const probs = xVals.map(x => reduceFrac(counts.get(x), N));
 
-    const wSum = weights.reduce((a, b) => a + b, 0);
-    let counts = weights.map(w => Math.floor((w / wSum) * (total - k)) + 1); // ensure >=1
-    let remainder = total - counts.reduce((a, b) => a + b, 0);
-
-    while (remainder !== 0) {
-      const i = randInt(0, k - 1);
-      if (remainder > 0) {
-        counts[i] += 1;
-        remainder -= 1;
-      } else {
-        if (counts[i] > 1) {
-          counts[i] -= 1;
-          remainder += 1;
-        }
-      }
-    }
-
-    // Build counts map
-    const countsMap = new Map();
-    for (let i = 0; i < k; i++) countsMap.set(xVals[i], counts[i]);
-
-    const probs = xVals.map(x => reduceFrac(countsMap.get(x), total));
-
-    // Mean mu = (sum x*count)/total
+    // Mean mu = sum x * P(X=x) = (sum x*count)/N
     let muNum = 0;
-    for (const x of xVals) muNum += x * countsMap.get(x);
-    let muDen = total;
+    for (const x of xVals) muNum += x * counts.get(x);
+    let muDen = N;
     [muNum, muDen] = reduceFrac(muNum, muDen);
 
     // (x - mu)^2
     const sq = xVals.map(x => {
       const t = x * muDen - muNum;
-      const num = t * t;
-      const den = muDen * muDen;
-      return reduceFrac(num, den);
+      return reduceFrac(t * t, muDen * muDen);
     });
 
     // (x - mu)^2 * f(x)
@@ -663,9 +663,10 @@ fetch("/nav.html")
     return {
       kind: 'survey',
       y,
-      total,
+      N,
+      total: N,
       xVals,
-      counts: countsMap,
+      counts,
       probs,
       mu: [muNum, muDen],
       sq,
@@ -675,27 +676,21 @@ fetch("/nav.html")
     };
   }
 
-
-  function problemPrompt(p) {
+function problemPrompt(p) {
     if (p.kind === 'survey') {
-      // Build a short "_____ many have ____ y" style prompt.
-      // We show all categories to define the data, and the student builds the pdf.
       const parts = p.xVals.map(x => {
         const c = p.counts.get(x);
         return `${c} have ${x} ${p.y}`;
       });
-      const joined = parts.join(', ');
-      return `A survey was conducted: let \\(X\\) be the random variable that selects a random respondent and records how many ${p.y} they have. There were ${p.total} respondents. Of these, ${joined}.`;
+      return `A survey was conducted. Let \\(X\\) be the random variable that selects a random respondent and records the number of ${p.y} they have. Out of ${p.N} respondents: ${parts.join(', ')}.`;
     }
 
-    // Dice problem (Type 1)
     const expr = (p.op === 'sum')
       ? 'the sum'
       : (p.op === 'difference')
         ? 'the difference (first minus second)'
         : 'the product';
 
-    // Keep the die descriptions OUT of math mode to avoid MathJax mangling text like "6-sided die".
     return `Let \\(X\\) be ${expr} of two rolls: one roll of a ${p.n1}-sided die and one roll of a ${p.n2}-sided die.`;
   }
 
@@ -813,36 +808,25 @@ fetch("/nav.html")
   function showOneProbabilityComputation() {
     const i = randInt(0, problem.xVals.length - 1);
     const x = problem.xVals[i];
-
-    if (problem.kind === 'survey') {
-      const favorable = problem.counts.get(x);
-      const total = problem.total;
-      const [pNum, pDen] = problem.probs[i];
-
-      const detail = `
-        <div style="margin-top: 1rem;">
-          <div><b>Example computation:</b> for \\(x=${x}\\)</div>
-          <div>There are \\(${total}\\) respondents total.</div>
-          <div>There are \\(${favorable}\\) respondents with \\(X=${x}\\), so</div>
-          <div>\\(f(${x}) = P(X=${x}) = \\dfrac{${favorable}}{${total}} = ${fracToTex(pNum, pDen)}\\).</div>
-        </div>
-      `;
-      workArea.insertAdjacentHTML('beforeend', detail);
-      return;
-    }
-
-    // Dice (equally likely outcomes)
     const favorable = problem.counts.get(x);
     const total = problem.total;
     const [pNum, pDen] = problem.probs[i];
 
-    const context = `There are \\(${problem.n1}\\cdot ${problem.n2} = ${total}\\) equally likely outcomes.`;
+    let context = '';
+    let explanationLine = '';
+    if (problem.kind === 'survey') {
+      context = `There are \\(${total}\\) respondents total.`;
+      explanationLine = `There are \\(${favorable}\\) respondents with \\(X=${x}\\), so`;
+    } else {
+      context = `There are \\(${problem.n1}\\cdot ${problem.n2} = ${total}\\) equally likely outcomes.`;
+      explanationLine = `There are \\(${favorable}\\) outcomes that give \\(X=${x}\\), so`;
+    }
 
     const detail = `
       <div style="margin-top: 1rem;">
         <div><b>Example computation:</b> for \\(x=${x}\\)</div>
         <div>${context}</div>
-        <div>There are \\(${favorable}\\) outcomes that give \\(X=${x}\\), so</div>
+        <div>${explanationLine}</div>
         <div>\\(f(${x}) = P(X=${x}) = \\dfrac{${favorable}}{${total}} = ${fracToTex(pNum, pDen)}\\).</div>
       </div>
     `;
@@ -1043,9 +1027,10 @@ fetch("/nav.html")
     }
   }
 
-  function startType1() {
+  function startRandomProblem() {
     clearActivity();
-    problem = buildType1Problem();
+    // Randomly choose a question type: Type (1) dice or Type (2) survey
+    problem = (Math.random() < 0.5) ? buildType1Problem() : buildType2Problem();
     stage = 1;
     meanRevealed = false;
 
@@ -1055,33 +1040,13 @@ fetch("/nav.html")
     renderAll();
     renderMeanIfKnown();
   }
-
-  function startType2() {
-    clearActivity();
-    problem = buildType2Problem();
-    stage = 1;
-    meanRevealed = false;
-
-    questionText.innerHTML = problemPrompt(problem);
-    typeset([questionText]);
-
-    renderAll();
-    renderMeanIfKnown();
-  }
-
 
   // -----------------------------
-  // Start: randomly select a question type (Type 1 or Type 2 for now)
+  // Start: (for now) always Type 1
   // -----------------------------
   startBtn.addEventListener('click', () => {
     playSound('click-sound');
-
-    // For now, pick uniformly between Type 1 (dice) and Type 2 (survey).
-    const which = randInt(1, 2);
-    if (which === 1) startType1();
-    else startType2();
-  });
-    startType1();
+    startRandomProblem();
   });
 
   hintBtn.addEventListener('click', () => {

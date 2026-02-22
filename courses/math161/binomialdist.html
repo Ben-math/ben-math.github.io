@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -886,11 +887,11 @@ fetch("/nav.html")
 
     if (stage === 4) {
       appendSolution(`
-        
-        \[
-          \sigma = \sqrt{np(1-p)} = \sqrt{${prob.n}\left(${prob.p.toFixed(6)}\right)\left(${(1-prob.p).toFixed(6)}\right)}
-          \approx ${prob.sigma.toFixed(6)}
-        \]
+
+        \\[
+          \\sigma = \\sqrt{np(1-p)} = \\sqrt{${prob.n}\\left(${prob.p.toFixed(6)}\\right)\\left(${(1-prob.p).toFixed(6)}\\right)}
+          \\approx ${prob.sigma.toFixed(6)}
+        \\]
       `);
       // lock the activity after showing the Stage 4 solution
       finished = true;

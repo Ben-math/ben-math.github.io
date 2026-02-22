@@ -56,7 +56,7 @@ fetch("/nav.html")
       
     <p>The Binomial coefficients \(\binom{n}{x}\) are entries in Pascal's triangle, can be computed via the formula
       \[\binom{n}{x} = \frac{n!}{(n-x)!x!}\]
-      or by typing "nCx" into your calculator.
+      or by typing "nCx" (read as \(n\) choose \(x\)) into your calculator.
     </p>
 
 
@@ -68,15 +68,26 @@ fetch("/nav.html")
     </p>
 
     <p>For instance, to find the probability of rolling a 9 or higher 6 out of the 20 times, we compute
-      \[f\left(6;20,\frac{5}{18}\right) = \binom{20}{6}\left(\frac{5}{18}\right)^6\left(\frac{13}{18}\right)^{14} = \]
+      \[f\left(6;20,\frac{5}{18}\right) = \binom{20}{6}\left(\frac{5}{18}\right)^6\left(\frac{13}{18}\right)^{14} = 0.187\]
       Note that the probability above corresponds to the odds of 6 successes and 14 failures.
     </p>
 
     <p>We might also want to answer questions of the form
-      \[\text{``What is the probability of rolling a 9 or higher 18 or more times?''}\]
+      \[\text{``What is the probability of rolling a 9 or higher 2 or fewer times?''}\]
       To answer this question, we are finding the following sum:
-      \[P(X \geq 18) = P(X = 18) + P(X = 19) + P(X = 20) = f\left(18;20,\frac{5}{18}\right) + f\left(19;20,\frac{5}{18}\right) + 
-      f\left(20;20,\frac{5}{18}\right) = \]
+      \[P(X \leq 2) = P(X = 0) + P(X = 1) + P(X = 2) = f\left(0;20,\frac{5}{18}\right) + f\left(1;20,\frac{5}{18}\right) + 
+      f\left(2;20,\frac{5}{18}\right) \approx 0.055\]
+      That is, we are summing the 3 leftmost columns in the histogram:
+    </p>
+
+    <p>The preceding required us to compute the value of the pdf 3 times for our sum, which was quite time consuming.  Consider the problem
+      \[\text{``What is the probability of rolling a 9 or higher 18 or fewer times?''\]
+      We wouldn't want to find the sum
+      \[P(X \leq 18) = P(X = 0) + P(X = 1) + ... + P(X = 18)\]
+      However, observe that the complement of the event "rolling a 9 or higher 18 or fewer times" is "rolling a 9 or higher 19 or more times".  That is, 
+      we can compute the easier sum
+      \[P(X \leq 18) = 1 - P(X \geq 19) = 1 - (P(X = 19) + P(X = 20)) = 1 - (f\left(19;20,\frac{5}{18}\right) + f\left(20;20,\frac{5}{18}\right)) \approx 
+      0.9999999996\]
     </p>
 
     <p>It's that second property - that its values sum to 1 - which is often helpful in checking whether you've correctly computed its values, as you 

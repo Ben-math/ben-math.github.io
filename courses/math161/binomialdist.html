@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -65,11 +66,13 @@ fetch("/nav.html")
       \(\left(20, \frac{5}{18}\right)\), and pdf
       \[f\left(x;20,\frac{5}{18}\right) = \binom{20}{x}\left(\frac{5}{18}\right)^x\left(\frac{13}{18}\right)^{20-x}\]
       Since successes are less likely than failures, we see that the taller columns in the pdf's histogram tend leftwards:
+      <div id="binom-hist-1" style="margin: 1rem auto; max-width: 640px;"></div>
     </p>
 
     <p>For instance, to find the probability of rolling a 9 or higher 6 out of the 20 times, we compute
       \[f\left(6;20,\frac{5}{18}\right) = \binom{20}{6}\left(\frac{5}{18}\right)^6\left(\frac{13}{18}\right)^{14} = 0.187\]
       Note that the probability above corresponds to the odds of 6 successes and 14 failures.
+      <div id="binom-hist-2" style="margin: 1rem auto; max-width: 640px;"></div>
     </p>
 
     <p>We might also want to answer questions of the form
@@ -78,6 +81,7 @@ fetch("/nav.html")
       \[P(X \leq 2) = P(X = 0) + P(X = 1) + P(X = 2) = f\left(0;20,\frac{5}{18}\right) + f\left(1;20,\frac{5}{18}\right) + 
       f\left(2;20,\frac{5}{18}\right) \approx 0.055\]
       That is, we are summing the 3 leftmost columns in the histogram:
+      <div id="binom-hist-3" style="margin: 1rem auto; max-width: 640px;"></div>
     </p>
 
     <p>The preceding required us to compute the value of the pdf 3 times for our sum, which was quite time consuming.  Consider the problem 
@@ -89,6 +93,7 @@ fetch("/nav.html")
       \[P(X \leq 18) = 1 - P(X \geq 19) = 1 - (P(X = 19) + P(X = 20)) = 1 - (f\left(19;20,\frac{5}{18}\right) + f\left(20;20,\frac{5}{18}\right)) \approx 
       0.9999999996\]
       That is, we sum the two rightmost columns of the histogram, and subtract the result from 1:
+      <div id="binom-hist-4" style="margin: 1rem auto; max-width: 640px;"></div>
     </p>
 
 
@@ -97,17 +102,7 @@ fetch("/nav.html")
       In our running example, we find
       \[\mu = 20\left(\frac{5}{18}\right) \approx 5.56 \hspace{2cm} \sigma = \sqrt{20\left(\frac{5}{18}\right)\left(\frac{13}{18}\right)} \approx 2\]
     </p>
-
-    <p>
-
-      <div id="dice-histogram" style="margin: 1rem auto; max-width: 640px;"></div>
-
-    </p>
-
-
-    
-
-    <div class="button-container">
+<div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>
 
@@ -253,7 +248,190 @@ fetch("/nav.html")
     return false;
   }
 
+  
   // -----------------------------
+  // Inline-SVG histogram for Binomial(n,p)
+  // -----------------------------
+  // Usage:
+  //   renderBinomialHistogram('#div', 20, 5/18)              // all pale blue
+  //   renderBinomialHistogram('#div', 20, 5/18, {highlightXs:[6]}) // highlight x=6 in pale red
+  function renderBinomialHistogram(container, n, p, options = {}) {
+    const el = (typeof container === 'string') ? document.querySelector(container) : container;
+    if (!el) return;
+
+    const W = options.width ?? 640;
+    const H = options.height ?? 260;
+    const pad = { left: 48, right: 16, top: (options.title ? 30 : 14), bottom: 48, ...(options.padding ?? {}) };
+
+    const paleBlue = options.paleBlue ?? '#b7d8f0';
+    const paleRed = options.paleRed ?? '#f2b6b6';
+    const highlight = new Set(options.highlightXs ?? []);
+
+    const comb = (N, K) => {
+      if (K < 0 || K > N) return 0;
+      K = Math.min(K, N - K);
+      let num = 1;
+      let den = 1;
+      for (let i = 1; i <= K; i++) {
+        num *= (N - (K - i));
+        den *= i;
+        const g = gcd(num, den);
+        num /= g; den /= g;
+      }
+      return num / den;
+    };
+
+    const data = [];
+    let maxP = 0;
+    for (let x = 0; x <= n; x++) {
+      const px = comb(n, x) * Math.pow(p, x) * Math.pow(1 - p, n - x);
+      data.push({ x, p: px });
+      if (px > maxP) maxP = px;
+    }
+
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+    const xStep = plotW / data.length;
+    const barW = xStep * 0.78;
+
+    const y = (prob) => pad.top + (1 - (prob / maxP)) * plotH;
+    const x0 = (i) => pad.left + i * xStep + (xStep - barW) / 2;
+
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', String(H));
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', options.ariaLabel ?? `Histogram of Binomial(n=${n}, p=${p})`);
+
+    const g = document.createElementNS(svgNS, 'g');
+    svg.appendChild(g);
+
+    if (options.title) {
+      const t = document.createElementNS(svgNS, 'text');
+      t.setAttribute('x', String(W / 2));
+      t.setAttribute('y', '18');
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('font-size', '14');
+      t.setAttribute('font-weight', '600');
+      t.setAttribute('fill', 'currentColor');
+      t.textContent = options.title;
+      g.appendChild(t);
+    }
+
+    const axisColor = options.axisColor ?? 'currentColor';
+    const axisOpacity = options.axisOpacity ?? '0.55';
+
+    const xAxis = document.createElementNS(svgNS, 'line');
+    xAxis.setAttribute('x1', String(pad.left));
+    xAxis.setAttribute('y1', String(pad.top + plotH));
+    xAxis.setAttribute('x2', String(pad.left + plotW));
+    xAxis.setAttribute('y2', String(pad.top + plotH));
+    xAxis.setAttribute('stroke', axisColor);
+    xAxis.setAttribute('stroke-opacity', axisOpacity);
+    xAxis.setAttribute('stroke-width', '1');
+    g.appendChild(xAxis);
+
+    const yAxis = document.createElementNS(svgNS, 'line');
+    yAxis.setAttribute('x1', String(pad.left));
+    yAxis.setAttribute('y1', String(pad.top));
+    yAxis.setAttribute('x2', String(pad.left));
+    yAxis.setAttribute('y2', String(pad.top + plotH));
+    yAxis.setAttribute('stroke', axisColor);
+    yAxis.setAttribute('stroke-opacity', axisOpacity);
+    yAxis.setAttribute('stroke-width', '1');
+    g.appendChild(yAxis);
+
+    const ticks = options.yTicks ?? 3;
+    for (let k = 0; k < ticks; k++) {
+      const frac = (ticks === 1) ? 0 : k / (ticks - 1);
+      const yy = pad.top + (1 - frac) * plotH;
+
+      const tick = document.createElementNS(svgNS, 'line');
+      tick.setAttribute('x1', String(pad.left - 4));
+      tick.setAttribute('y1', String(yy));
+      tick.setAttribute('x2', String(pad.left));
+      tick.setAttribute('y2', String(yy));
+      tick.setAttribute('stroke', axisColor);
+      tick.setAttribute('stroke-opacity', axisOpacity);
+      tick.setAttribute('stroke-width', '1');
+      g.appendChild(tick);
+
+      const lab = document.createElementNS(svgNS, 'text');
+      lab.setAttribute('x', String(pad.left - 8));
+      lab.setAttribute('y', String(yy + 4));
+      lab.setAttribute('text-anchor', 'end');
+      lab.setAttribute('font-size', '12');
+      lab.setAttribute('fill', axisColor);
+      lab.setAttribute('fill-opacity', axisOpacity);
+      lab.textContent = (options.yFormatter ? options.yFormatter(frac * maxP) : (frac * maxP).toFixed(3).replace(/0+$/, '').replace(/\.$/, ''));
+      g.appendChild(lab);
+    }
+
+    for (let i = 0; i < data.length; i++) {
+      const d = data[i];
+      const xx = x0(i);
+      const yy = y(d.p);
+      const h = (pad.top + plotH) - yy;
+
+      const rect = document.createElementNS(svgNS, 'rect');
+      rect.setAttribute('x', String(xx));
+      rect.setAttribute('y', String(yy));
+      rect.setAttribute('width', String(barW));
+      rect.setAttribute('height', String(Math.max(0, h)));
+      rect.setAttribute('fill', highlight.has(d.x) ? paleRed : paleBlue);
+      rect.setAttribute('fill-opacity', '0.85');
+      rect.setAttribute('stroke', 'currentColor');
+      rect.setAttribute('stroke-opacity', '0.35');
+      rect.setAttribute('stroke-width', '1');
+      g.appendChild(rect);
+
+      // x labels: show every label for n<=25; otherwise thin out
+      const showLabel = (n <= 25) || (d.x % 2 === 0);
+      if (showLabel) {
+        const xl = document.createElementNS(svgNS, 'text');
+        xl.setAttribute('x', String(xx + barW / 2));
+        xl.setAttribute('y', String(pad.top + plotH + 20));
+        xl.setAttribute('text-anchor', 'middle');
+        xl.setAttribute('font-size', '12');
+        xl.setAttribute('fill', 'currentColor');
+        xl.setAttribute('fill-opacity', '0.85');
+        xl.textContent = String(d.x);
+        g.appendChild(xl);
+      }
+    }
+
+    if (options.xLabel) {
+      const xl2 = document.createElementNS(svgNS, 'text');
+      xl2.setAttribute('x', String(pad.left + plotW / 2));
+      xl2.setAttribute('y', String(H - 10));
+      xl2.setAttribute('text-anchor', 'middle');
+      xl2.setAttribute('font-size', '12');
+      xl2.setAttribute('fill', 'currentColor');
+      xl2.setAttribute('fill-opacity', '0.85');
+      xl2.textContent = options.xLabel;
+      g.appendChild(xl2);
+    }
+
+    if (options.yLabel) {
+      const yl2 = document.createElementNS(svgNS, 'text');
+      yl2.setAttribute('x', '16');
+      yl2.setAttribute('y', String(pad.top + plotH / 2));
+      yl2.setAttribute('text-anchor', 'middle');
+      yl2.setAttribute('font-size', '12');
+      yl2.setAttribute('fill', 'currentColor');
+      yl2.setAttribute('fill-opacity', '0.85');
+      yl2.setAttribute('transform', `rotate(-90 16 ${pad.top + plotH / 2})`);
+      yl2.textContent = options.yLabel;
+      g.appendChild(yl2);
+    }
+
+    el.innerHTML = '';
+    el.appendChild(svg);
+  }
+
+// -----------------------------
   // Inline-SVG histogram for discrete pdfs (already used above)
   // -----------------------------
   // Usage:
@@ -413,34 +591,40 @@ fetch("/nav.html")
     el.appendChild(svg);
   }
 
+  
   // -----------------------------
-  // Static histogram for the two-dice example in the text above
+  // Static binomial histograms for the lesson text above
   // -----------------------------
-  renderDiscreteHistogram('#dice-histogram', [
-    { x: 2,  p: 1/36 },
-    { x: 3,  p: 2/36 },
-    { x: 4,  p: 3/36 },
-    { x: 5,  p: 4/36 },
-    { x: 6,  p: 5/36 },
-    { x: 7,  p: 6/36 },
-    { x: 8,  p: 5/36 },
-    { x: 9,  p: 4/36 },
-    { x: 10, p: 3/36 },
-    { x: 11, p: 2/36 },
-    { x: 12, p: 1/36 }
-  ], {
-    title: 'Histogram of the pdf for the sum of two dice',
+  const LESSON_N = 20;
+  const LESSON_P = 5/18;
+
+  renderBinomialHistogram('#binom-hist-1', LESSON_N, LESSON_P, {
+    title: 'Histogram of the pdf for a Binomial(20, 5/18)',
+    xLabel: 'x',
+    yLabel: 'f(x)'
+  });
+
+  renderBinomialHistogram('#binom-hist-2', LESSON_N, LESSON_P, {
+    title: 'Highlighting x = 6',
     xLabel: 'x',
     yLabel: 'f(x)',
-    yFormatter: (v) => {
-      const n = Math.round(v * 36);
-      const den = 36;
-      const g = gcd(n, den);
-      const nn = n / g;
-      const dd = den / g;
-      return (n === 0) ? '0' : `${nn}/${dd}`;
-    }
+    highlightXs: [6]
   });
+
+  renderBinomialHistogram('#binom-hist-3', LESSON_N, LESSON_P, {
+    title: 'Highlighting x ≤ 2',
+    xLabel: 'x',
+    yLabel: 'f(x)',
+    highlightXs: [0,1,2]
+  });
+
+  renderBinomialHistogram('#binom-hist-4', LESSON_N, LESSON_P, {
+    title: 'Highlighting x ≥ 19',
+    xLabel: 'x',
+    yLabel: 'f(x)',
+    highlightXs: [19,20]
+  });
+
 
   // -----------------------------
   // Activity state (Type 1)

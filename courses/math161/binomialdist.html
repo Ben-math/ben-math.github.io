@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta charset="UTF-8" />
+  <title>Binomial Distribution Activity</title>
+  <link rel="stylesheet" href="/style.css" />
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+</head>
+<body>
+  <header>
+    <h1>Binomial Distribution Activity</h1>
+    <div id="nav-placeholder"></div>
+      <script>
+fetch("/nav.html")
+  .then(response => response.text())
+  .then(html => {
+    document.getElementById("nav-placeholder").innerHTML = html;
+
+    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+    const navLinks = document.querySelectorAll("#nav-placeholder a");
+    navLinks.forEach(link => {
+      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+      if (linkPath === currentPath) {
+        link.classList.add("active");
+      }
+    });
+
+    const s = document.createElement("script");
+    s.src = "/mascot.js";
+    s.defer = true;
+    document.body.appendChild(s); 
+  })
+  .catch(err => {
+    console.error("Failed to load nav:", err);
+  });
+</script>
+  </header>
+  <main>
+
+    <p>A random variable \(X\) is a function
+      \[X: S \mapsto \mathbb{R}\]
+      which maps outcomes in a sample space to real numbers.  For example, it might map the outcome of rolling two dice to the sum of the two rolls.
+    </p>
+    
+    <p>Where the range of the function \(X\) is either finite or countably infinite, it is called a <b>discrete random variable</b>.
+    </p>
+
+      
+    <p>A common question to ask is
+      \[\text{"What is the probability the random variable \(X\) takes on the value \(x\)?"}\]
+      That is, we are asking for \(P(X = x)\).  For instance, if the random variable \(X\) represents the sum of the rolls of two 6-sided dice, then 
+      \[P(X = 4) = \frac{3}{36} = \frac{1}{12}\]
+      because there are 3 outcomes
+      \[(1,3), (2,2), (3,1)\]
+      out of the 36 in the sample space which result in a sum of 4.
+    </p>
+
+
+    <p>A function which maps all of the values a discrete random variable \(X\) takes on to their respective probabilities is called its 
+      <b>probability distribution function</b> (we will abbreviate this with pdf), defined by
+      \[f(x) = P(X = x)\]
+      A pdf has similar properties to those of a probability itself: since its values are probabilities, they are 
+      between 0 and 1, and because it gives the probabilities of all possible values the random variable can take on, the sum of all its values is 1.
+    </p>
+
+    <p>It's that second property - that its values sum to 1 - which is often helpful in checking whether you've correctly computed its values, as you 
+      can afterwards verify that they sum to 1.  For example, if we compute all the values of the pdf \(f\) of the random 
+      variable \(X\) which gives the sum of two 6-sided dice, we obtain the following table of values (note the values \(x\) are the possible sums when 
+      rolling two 6-sided dice, so they are between 2 and 12):
+      \[
+      \begin{array}{|c|c|c|c|c|c|c|c|c|c|c|c|}
+      \hline
+      x & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 & 11 & 12\\
+      \hline
+      f(x) & \frac{1}{36} & \frac{2}{36} & \frac{3}{36} & \frac{4}{36} & \frac{5}{36} & \frac{6}{36} & \frac{5}{36} & \frac{4}{36} & \frac{3}{36} &
+       \frac{2}{36} & \frac{1}{36}\\
+      \hline
+      \end{array}
+      \]
+
+      <div id="dice-histogram" style="margin: 1rem auto; max-width: 640px;"></div>
+
+      We can verify we've found the correct values of \(f(x)\) above by confirming
+      \[\frac{1}{36} + \frac{2}{36} + \frac{3}{36} + \frac{4}{36} + \frac{5}{36} + \frac{6}{36} + \frac{5}{36} + \frac{4}{36} + \frac{3}{36} + 
+      \frac{2}{36} + \frac{1}{36} = \frac{36}{36} = 1\] 
+      Other than asking for the probability that the random variable takes on a particular value, we may ask for the probability it is greater or less 
+      than some value, or falls within a range.  This amounts to summing individual values of the pdf.  For instance, in the preceding example, to find 
+      the probability of rolling higher than a 9,
+      \[P(X > 9) = P(X = 10) + P(X = 11) + P(X = 12) = f(10) + f(11) + f(12) = \frac{3}{36} + \frac{2}{36} + \frac{1}{36} = \frac{6}{36} = \frac{1}{6}\]
+      or to find the odds of rolling between a 5 and 7 (inclusive):
+      \[P(5 \leq X \leq 7) = P(X = 5) + P(X = 6) + P(X = 7) = \frac{4}{36} + \frac{5}{36} + \frac{6}{36} = \frac{15}{36} = \frac{5}{12}\]
+    </p>
+
+    <p>We've previously seen that to compute the mean of a set of data, we are computing a weighted average of the data values, where each value is 
+      weighted by its relative frequency.  For instance, if playing basketball you take 20 shots, miss on 10 of them, score 2 points on 6 of them, and 
+      score 3 points on 4 of them, then the mean points you scored per shot is
+      \[\frac{10}{20}(0) + \frac{6}{20}(2) + \frac{4}{20}(3) = \frac{24}{20} = 1.2\]
+      This same idea extends to finding the mean - also called <b>expected value</b> - of a random variable \(X\), denoted by \(E(X) = \mu\).  Observe 
+      that the relative frequency of a data value <b>is</b> the probability it would be selected at random from the data set.  So, the expected value 
+      of \(X\) is computed exactly as you'd expect: as a weighted average of the values of \(X\), weighted by their respective probabilities (the values 
+      of the pdf):
+      \[E(X) = \sum_x xf(x)\]
+      For example, to find the expected value of the sum of two dice \(X\), we compute
+      \[\mu = \frac{1}{36}(2) + \frac{2}{36}(3) + \frac{3}{36}(4) + \frac{4}{36}(5) + \frac{5}{36}(6) + \frac{6}{36}(7) + \frac{5}{36}(8) + 
+      \frac{4}{36}(9) + \frac{3}{36}(10) + \frac{2}{36}(11) + \frac{1}{36}(12) = \frac{252}{36} = 7\]
+      This is in line with what we'd expect, since the pdf is symmetric about 7.
+    </p>
+
+    <p>Finally, our formula for the standard deviation \(\sigma\) of a random variable \(X\) is also as we've seen previously (just replacing relative 
+      frequency with the values of the pdf in our formula):
+      \[\sigma = \sqrt{\sum_x\left[(x - \mu)^2f(x)\right]}\]
+      So to find the standard deviation in our running example,
+      \[\sigma = \sqrt{(2-7)^2 \cdot \frac{1}{36} + (3-7)^2 \cdot \frac{2}{36} + ... + (12-7)^2 \cdot \frac{1}{36}} = \sqrt{\frac{210}{36}} \approx 2.42\]
+    </p>
+
+
+    <p>Generally you would find it helpful to use a similar "table method" for organizing the steps of computing standard deviation as previously.  For 
+      instance, let \(X\) be the random variable giving your winnings from a lottery ticket.  If you have a 75% chance of winning nothing, a 20% chance 
+      of winning $5, and a 5% chance of winning $100, then we can construct a table with the pdf for \(X\), and extend it to the terms in the standard 
+      deviation computation sum once we've found the mean:
+      \[\mu = 0(0.75) + 5(0.2) + 100(0.05) = 6\]
+      \[
+      \begin{array}{|c|c|c|c|}
+      \hline
+      x & f(x) & (x- \mu)^2 & (x - \mu)^2 \cdot f(x)\\
+      \hline
+      0 & 0.75 & (0-6)^2 = 36 & 36 \cdot 0.75 = 27\\
+      \hline
+      5 & 0.2 & (5-6)^2 = 1 & 1 \cdot 0.2 = 0.2\\
+      \hline
+      100 & 0.05 & (100-6)^2 = 8836 & 8836 \cdot 0.05 = 441.8\\
+      \hline
+      \end{array}
+      \]
+      \[\sigma = \sqrt{27 + 0.2 + 441.8} \approx 21.67\]
+    </p>
+
+    
+
+    <div class="button-container">
+      <button id="start-btn" class="rubber-button">Start!</button>
+    </div>
+
+    <p id="question-text" class="math"></p>
+
+    <div id="activity-area" style="margin-top: 1rem;">
+      <div id="table-area" class="math" style="margin: 1rem auto; max-width: 900px; text-align: center;"></div>
+
+      <div id="mean-area" class="math" style="margin-top: 0.75rem; text-align: center;"></div>
+
+      <div id="work-area" class="math" style="margin-top: 1rem; text-align: center;"></div>
+
+      <div id="histogram-area" style="margin: 1rem auto; max-width: 740px;"></div>
+
+      <p id="stage-feedback" style="font-weight: bold; margin-top: 0.75rem; text-align: center;"></p>
+
+      <div class="button-container" style="gap: 0.75rem;">
+        <button id="hint-btn" class="rubber-button">Hint</button>
+        <button id="next-btn" class="rubber-button">Next</button>
+      </div>
+    </div>
+</main>
+  
+<script>
+  const startBtn = document.getElementById('start-btn');
+  const hintBtn = document.getElementById('hint-btn');
+  const nextBtn = document.getElementById('next-btn');
+
+  const questionText = document.getElementById('question-text');
+  const tableArea = document.getElementById('table-area');
+  const meanArea = document.getElementById('mean-area');
+  const workArea = document.getElementById('work-area');
+  const histogramArea = document.getElementById('histogram-area');
+  const stageFeedback = document.getElementById('stage-feedback');
+
+  // -----------------------------
+  // Helpers
+  // -----------------------------
+  function playSound(id) {
+    const s = document.getElementById(id);
+    if (s) { s.currentTime = 0; s.play(); }
+  }
+
+  function randInt(a, b) {
+    return Math.floor(Math.random() * (b - a + 1)) + a;
+  }
+
+  function gcd(a, b) {
+    a = Math.abs(a); b = Math.abs(b);
+    while (b !== 0) { const t = a % b; a = b; b = t; }
+    return a === 0 ? 1 : a;
+  }
+
+  function reduceFrac(num, den) {
+    if (den < 0) { den = -den; num = -num; }
+    const g = gcd(num, den);
+    return [num / g, den / g];
+  }
+
+  function addFrac(aNum, aDen, bNum, bDen) {
+    const num = aNum * bDen + bNum * aDen;
+    const den = aDen * bDen;
+    return reduceFrac(num, den);
+  }
+
+  function subFrac(aNum, aDen, bNum, bDen) {
+    return addFrac(aNum, aDen, -bNum, bDen);
+  }
+
+  function mulFrac(aNum, aDen, bNum, bDen) {
+    return reduceFrac(aNum * bNum, aDen * bDen);
+  }
+
+  function fracToTex(num, den) {
+    const [n, d] = reduceFrac(num, den);
+    if (d === 1) return `${n}`;
+    return `\\frac{${n}}{${d}}`;
+  }
+
+  function fracToString(num, den) {
+    const [n, d] = reduceFrac(num, den);
+    if (d === 1) return `${n}`;
+    return `${n}/${d}`;
+  }
+
+  function typeset(elements = []) {
+    if (!window.MathJax) return;
+    if (MathJax.typesetPromise) {
+      if (elements.length > 0) MathJax.typesetPromise(elements);
+      else MathJax.typesetPromise();
+      return;
+    }
+    if (MathJax.typeset) {
+      if (elements.length > 0) MathJax.typeset(elements);
+      else MathJax.typeset();
+    }
+  }
+
+  function parseNumber(raw) {
+    // Accept integer, fraction, or decimal.
+    const s = (raw ?? '').trim().replace(/\s+/g, '');
+    if (!s) return { error: 'Please enter a value.' };
+
+    const fracMatch = s.match(/^([+-]?\d+)\/([+-]?\d+)$/);
+    if (fracMatch) {
+      const a = parseInt(fracMatch[1], 10);
+      const b = parseInt(fracMatch[2], 10);
+      if (b === 0) return { error: 'Denominator cannot be 0.' };
+      const [n, d] = reduceFrac(a, b);
+      return { kind: 'frac', num: n, den: d, value: n / d };
+    }
+
+    const intMatch = s.match(/^[+-]?\d+$/);
+    if (intMatch) {
+      const a = parseInt(s, 10);
+      return { kind: 'frac', num: a, den: 1, value: a };
+    }
+
+    const decMatch = s.match(/^[+-]?\d*\.\d+$/);
+    if (decMatch) {
+      const v = Number(s);
+      if (!Number.isFinite(v)) return { error: 'That decimal does not look valid.' };
+      return { kind: 'dec', value: v };
+    }
+
+    return { error: 'I couldn’t parse that. Use an integer, a fraction like 3/8, or a decimal like 0.375.' };
+  }
+
+  function relClose(a, b, relTol) {
+    const denom = Math.max(1e-12, Math.abs(b));
+    return Math.abs(a - b) <= relTol * denom;
+  }
+
+  function inputMatchesRational(parsed, tNum, tDen, relTol = 0.001) {
+    const target = tNum / tDen;
+    if (parsed.error) return false;
+    if (parsed.kind === 'frac') {
+      const [n, d] = reduceFrac(parsed.num, parsed.den);
+      const [tn, td] = reduceFrac(tNum, tDen);
+      return (n === tn && d === td);
+    }
+    if (parsed.kind === 'dec') return relClose(parsed.value, target, relTol);
+    return false;
+  }
+
+  // -----------------------------
+  // Inline-SVG histogram for discrete pdfs (already used above)
+  // -----------------------------
+  // Usage:
+  //   renderDiscreteHistogram('#some-div', [{x:2,p:1/36}, ...], { title: '...' })
+  function renderDiscreteHistogram(container, points, options = {}) {
+    const el = (typeof container === 'string') ? document.querySelector(container) : container;
+    if (!el) return;
+
+    const W = options.width ?? 620;
+    const H = options.height ?? 240;
+    const pad = { left: 44, right: 16, top: (options.title ? 30 : 14), bottom: 46, ...(options.padding ?? {}) };
+
+    const data = (points || []).map(d => ({ x: d.x, p: d.p })).sort((a, b) => a.x - b.x);
+    if (data.length === 0) {
+      el.textContent = 'No data to plot.';
+      return;
+    }
+
+    const maxP = Math.max(...data.map(d => d.p));
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+
+    const xStep = plotW / data.length;
+
+    const y = (p) => pad.top + (1 - (p / maxP)) * plotH;
+    const barW = xStep * 0.78;
+    const x0 = (i) => pad.left + i * xStep + (xStep - barW) / 2;
+
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', String(H));
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', options.ariaLabel ?? 'Histogram of a discrete probability distribution');
+
+    const g = document.createElementNS(svgNS, 'g');
+    svg.appendChild(g);
+
+    if (options.title) {
+      const t = document.createElementNS(svgNS, 'text');
+      t.setAttribute('x', String(W / 2));
+      t.setAttribute('y', '18');
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('font-size', '14');
+      t.setAttribute('font-weight', '600');
+      t.setAttribute('fill', 'currentColor');
+      t.textContent = options.title;
+      g.appendChild(t);
+    }
+
+    const axisColor = options.axisColor ?? 'currentColor';
+    const axisOpacity = options.axisOpacity ?? '0.55';
+
+    const xAxis = document.createElementNS(svgNS, 'line');
+    xAxis.setAttribute('x1', String(pad.left));
+    xAxis.setAttribute('y1', String(pad.top + plotH));
+    xAxis.setAttribute('x2', String(pad.left + plotW));
+    xAxis.setAttribute('y2', String(pad.top + plotH));
+    xAxis.setAttribute('stroke', axisColor);
+    xAxis.setAttribute('stroke-opacity', axisOpacity);
+    xAxis.setAttribute('stroke-width', '1');
+    g.appendChild(xAxis);
+
+    const yAxis = document.createElementNS(svgNS, 'line');
+    yAxis.setAttribute('x1', String(pad.left));
+    yAxis.setAttribute('y1', String(pad.top));
+    yAxis.setAttribute('x2', String(pad.left));
+    yAxis.setAttribute('y2', String(pad.top + plotH));
+    yAxis.setAttribute('stroke', axisColor);
+    yAxis.setAttribute('stroke-opacity', axisOpacity);
+    yAxis.setAttribute('stroke-width', '1');
+    g.appendChild(yAxis);
+
+    const ticks = options.yTicks ?? 3;
+    for (let k = 0; k < ticks; k++) {
+      const frac = (ticks === 1) ? 0 : k / (ticks - 1);
+      const yy = pad.top + (1 - frac) * plotH;
+
+      const tick = document.createElementNS(svgNS, 'line');
+      tick.setAttribute('x1', String(pad.left - 4));
+      tick.setAttribute('y1', String(yy));
+      tick.setAttribute('x2', String(pad.left));
+      tick.setAttribute('y2', String(yy));
+      tick.setAttribute('stroke', axisColor);
+      tick.setAttribute('stroke-opacity', axisOpacity);
+      tick.setAttribute('stroke-width', '1');
+      g.appendChild(tick);
+
+      const lab = document.createElementNS(svgNS, 'text');
+      lab.setAttribute('x', String(pad.left - 8));
+      lab.setAttribute('y', String(yy + 4));
+      lab.setAttribute('text-anchor', 'end');
+      lab.setAttribute('font-size', '12');
+      lab.setAttribute('fill', axisColor);
+      lab.setAttribute('fill-opacity', axisOpacity);
+      const val = frac * maxP;
+      lab.textContent = (options.yFormatter ? options.yFormatter(val) : val.toFixed(3).replace(/0+$/, '').replace(/\.$/, ''));
+      g.appendChild(lab);
+    }
+
+    for (let i = 0; i < data.length; i++) {
+      const d = data[i];
+      const x = x0(i);
+      const yy = y(d.p);
+      const h = (pad.top + plotH) - yy;
+
+      const rect = document.createElementNS(svgNS, 'rect');
+      rect.setAttribute('x', String(x));
+      rect.setAttribute('y', String(yy));
+      rect.setAttribute('width', String(barW));
+      rect.setAttribute('height', String(Math.max(0, h)));
+      rect.setAttribute('fill', options.barFill ?? 'currentColor');
+      rect.setAttribute('fill-opacity', options.barFillOpacity ?? '0.35');
+      rect.setAttribute('stroke', options.barStroke ?? 'currentColor');
+      rect.setAttribute('stroke-opacity', options.barStrokeOpacity ?? '0.75');
+      rect.setAttribute('stroke-width', options.barStrokeWidth ?? '1');
+      g.appendChild(rect);
+
+      const xl = document.createElementNS(svgNS, 'text');
+      xl.setAttribute('x', String(x + barW / 2));
+      xl.setAttribute('y', String(pad.top + plotH + 20));
+      xl.setAttribute('text-anchor', 'middle');
+      xl.setAttribute('font-size', '12');
+      xl.setAttribute('fill', 'currentColor');
+      xl.setAttribute('fill-opacity', '0.85');
+      xl.textContent = String(d.x);
+      g.appendChild(xl);
+    }
+
+    if (options.xLabel) {
+      const xl2 = document.createElementNS(svgNS, 'text');
+      xl2.setAttribute('x', String(pad.left + plotW / 2));
+      xl2.setAttribute('y', String(H - 10));
+      xl2.setAttribute('text-anchor', 'middle');
+      xl2.setAttribute('font-size', '12');
+      xl2.setAttribute('fill', 'currentColor');
+      xl2.setAttribute('fill-opacity', '0.85');
+      xl2.textContent = options.xLabel;
+      g.appendChild(xl2);
+    }
+
+    if (options.yLabel) {
+      const yl2 = document.createElementNS(svgNS, 'text');
+      yl2.setAttribute('x', '14');
+      yl2.setAttribute('y', String(pad.top + plotH / 2));
+      yl2.setAttribute('text-anchor', 'middle');
+      yl2.setAttribute('font-size', '12');
+      yl2.setAttribute('fill', 'currentColor');
+      yl2.setAttribute('fill-opacity', '0.85');
+      yl2.setAttribute('transform', `rotate(-90 14 ${pad.top + plotH / 2})`);
+      yl2.textContent = options.yLabel;
+      g.appendChild(yl2);
+    }
+
+    el.innerHTML = '';
+    el.appendChild(svg);
+  }
+
+  // -----------------------------
+  // Static histogram for the two-dice example in the text above
+  // -----------------------------
+  renderDiscreteHistogram('#dice-histogram', [
+    { x: 2,  p: 1/36 },
+    { x: 3,  p: 2/36 },
+    { x: 4,  p: 3/36 },
+    { x: 5,  p: 4/36 },
+    { x: 6,  p: 5/36 },
+    { x: 7,  p: 6/36 },
+    { x: 8,  p: 5/36 },
+    { x: 9,  p: 4/36 },
+    { x: 10, p: 3/36 },
+    { x: 11, p: 2/36 },
+    { x: 12, p: 1/36 }
+  ], {
+    title: 'Histogram of the pdf for the sum of two dice',
+    xLabel: 'x',
+    yLabel: 'f(x)',
+    yFormatter: (v) => {
+      const n = Math.round(v * 36);
+      const den = 36;
+      const g = gcd(n, den);
+      const nn = n / g;
+      const dd = den / g;
+      return (n === 0) ? '0' : `${nn}/${dd}`;
+    }
+  });
+
+  // -----------------------------
+  // Activity state (Type 1)
+  // -----------------------------
+  const REL_TOL = 0.001; // 0.1%
+
+  let stage = 0; // 0 = not started, 1..6 as described
+  let problem = null;
+  let meanRevealed = false;
+
+  function clearActivity() {
+    tableArea.innerHTML = '';
+    meanArea.innerHTML = '';
+    workArea.innerHTML = '';
+    histogramArea.innerHTML = '';
+    stageFeedback.textContent = '';
+    stageFeedback.style.color = 'black';
+    typeset();
+  }
+
+  function setFeedback(msg, color = 'black') {
+    stageFeedback.textContent = msg;
+    stageFeedback.style.color = color;
+  }
+
+  function buildType1Problem() {
+    // Dice only.
+    const n1 = randInt(4, 10);
+    const n2 = randInt(4, 10);
+    const total = n1 * n2;
+
+    // Randomly select operation: sum, difference, or (sometimes) product.
+    // Product is only allowed if the number of distinct products is <= 20.
+    let op = ['sum', 'difference', 'product'][randInt(0, 2)];
+
+    const countsForOp = (operation) => {
+      const counts = new Map();
+      for (let a = 1; a <= n1; a++) {
+        for (let b = 1; b <= n2; b++) {
+          let x;
+          if (operation === 'sum') x = a + b;
+          else if (operation === 'difference') x = a - b;
+          else x = a * b;
+          counts.set(x, (counts.get(x) ?? 0) + 1);
+        }
+      }
+      return counts;
+    };
+
+    let counts = countsForOp(op);
+    if (op === 'product' && counts.size > 20) {
+      op = (Math.random() < 0.5) ? 'sum' : 'difference';
+      counts = countsForOp(op);
+    }
+
+    const xVals = Array.from(counts.keys()).sort((u, v) => u - v);
+    const probs = xVals.map(x => {
+      const c = counts.get(x);
+      return reduceFrac(c, total);
+    });
+
+    // Mean mu = sum x * P(X=x) = (sum x*count)/total
+    let muNum = 0;
+    for (const x of xVals) muNum += x * counts.get(x);
+    let muDen = total;
+    [muNum, muDen] = reduceFrac(muNum, muDen);
+
+    // (x - mu)^2 = (x*muDen - muNum)^2 / muDen^2
+    const sq = xVals.map(x => {
+      const t = x * muDen - muNum;
+      const num = t * t;
+      const den = muDen * muDen;
+      return reduceFrac(num, den);
+    });
+
+    // (x - mu)^2 * f(x)
+    const sqp = xVals.map((x, i) => {
+      const [sNum, sDen] = sq[i];
+      const [pNum, pDen] = probs[i];
+      return mulFrac(sNum, sDen, pNum, pDen);
+    });
+
+    // variance = sum sqp
+    let varNum = 0, varDen = 1;
+    for (const [a, b] of sqp) {
+      [varNum, varDen] = addFrac(varNum, varDen, a, b);
+    }
+
+    const variance = [varNum, varDen];
+    const sigma = Math.sqrt(varNum / varDen);
+
+    return {
+      kind: 'dice',
+      op, n1, n2, total,
+      xVals, counts, probs,
+      mu: [muNum, muDen],
+      sq, sqp,
+      variance,
+      sigma
+    };
+  }
+
+  
+  function sampleDistinctInts(min, max, k) {
+    const pool = [];
+    for (let v = min; v <= max; v++) pool.push(v);
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = randInt(0, i);
+      const tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
+    }
+    return pool.slice(0, k).sort((a, b) => a - b);
+  }
+
+  function randomPartitionTotal(totalN, k) {
+    // Ensure each category gets at least 1 respondent, then distribute the rest non-uniformly.
+    const counts = Array(k).fill(1);
+    let remaining = totalN - k;
+    if (remaining < 0) remaining = 0;
+
+    // Random weights -> non-uniform partition
+    const weights = Array(k).fill(0).map(() => Math.random() + 0.05);
+    const wsum = weights.reduce((a, b) => a + b, 0);
+
+    let allocated = 0;
+    for (let i = 0; i < k; i++) {
+      const add = Math.floor(remaining * (weights[i] / wsum));
+      counts[i] += add;
+      allocated += add;
+    }
+
+    let leftover = remaining - allocated;
+    while (leftover > 0) {
+      counts[randInt(0, k - 1)] += 1;
+      leftover--;
+    }
+    return counts;
+  }
+
+  function buildType2Problem() {
+    const yBank = ['siblings', 'pets', 'children', 'cars', 'TVs'];
+    const y = yBank[randInt(0, yBank.length - 1)];
+
+    const N = randInt(100, 1000);
+    const k = randInt(3, 6);
+    const xVals = sampleDistinctInts(0, 20, k);
+
+    const countArr = randomPartitionTotal(N, k);
+    const counts = new Map();
+    for (let i = 0; i < k; i++) counts.set(xVals[i], countArr[i]);
+
+    const probs = xVals.map(x => reduceFrac(counts.get(x), N));
+
+    // Mean mu = sum x * P(X=x) = (sum x*count)/N
+    let muNum = 0;
+    for (const x of xVals) muNum += x * counts.get(x);
+    let muDen = N;
+    [muNum, muDen] = reduceFrac(muNum, muDen);
+
+    // (x - mu)^2
+    const sq = xVals.map(x => {
+      const t = x * muDen - muNum;
+      return reduceFrac(t * t, muDen * muDen);
+    });
+
+    // (x - mu)^2 * f(x)
+    const sqp = xVals.map((x, i) => {
+      const [sNum, sDen] = sq[i];
+      const [pNum, pDen] = probs[i];
+      return mulFrac(sNum, sDen, pNum, pDen);
+    });
+
+    // variance = sum sqp
+    let varNum = 0, varDen = 1;
+    for (const [a, b] of sqp) {
+      [varNum, varDen] = addFrac(varNum, varDen, a, b);
+    }
+
+    const variance = [varNum, varDen];
+    const sigma = Math.sqrt(varNum / varDen);
+
+    return {
+      kind: 'survey',
+      y,
+      N,
+      total: N,
+      xVals,
+      counts,
+      probs,
+      mu: [muNum, muDen],
+      sq,
+      sqp,
+      variance,
+      sigma
+    };
+  }
+
+  // -----------------------------
+  // Type (3): Lottery ticket winnings
+  // -----------------------------
+  function randomPercentPartition(k) {
+    // Return k positive integers summing to 100.
+    const cuts = [];
+    while (cuts.length < k - 1) {
+      const c = randInt(1, 99);
+      if (!cuts.includes(c)) cuts.push(c);
+    }
+    cuts.sort((a, b) => a - b);
+    const pts = [0, ...cuts, 100];
+    const out = [];
+    for (let i = 0; i < pts.length - 1; i++) out.push(pts[i + 1] - pts[i]);
+    if (out.some(v => v <= 0)) return randomPercentPartition(k);
+    return out;
+  }
+
+  function sampleDistinctLotteryAmounts(k) {
+    // Generate k-1 distinct positive amounts of the form y * 10^n,
+    // with y in 1..9 and n in 0..6.
+    const set = new Set();
+    while (set.size < k - 1) {
+      const y = randInt(1, 9);
+      const n = randInt(0, 6);
+      set.add(y * Math.pow(10, n));
+    }
+    return Array.from(set).sort((a, b) => a - b);
+  }
+
+  function buildType3Problem() {
+    const k = randInt(3, 6);
+    const amounts = sampleDistinctLotteryAmounts(k);
+    const xVals = [0, ...amounts].sort((a, b) => a - b);
+
+    const percents = randomPercentPartition(k);
+    const counts = new Map();
+    for (let i = 0; i < k; i++) counts.set(xVals[i], percents[i]);
+
+    const total = 100;
+    const probs = xVals.map(x => reduceFrac(counts.get(x), total));
+
+    let muNum = 0;
+    for (const x of xVals) muNum += x * counts.get(x);
+    let muDen = total;
+    [muNum, muDen] = reduceFrac(muNum, muDen);
+
+    const sq = xVals.map(x => {
+      const t = x * muDen - muNum;
+      return reduceFrac(t * t, muDen * muDen);
+    });
+
+    const sqp = xVals.map((x, i) => {
+      const [sNum, sDen] = sq[i];
+      const [pNum, pDen] = probs[i];
+      return mulFrac(sNum, sDen, pNum, pDen);
+    });
+
+    let varNum = 0, varDen = 1;
+    for (const [a, b] of sqp) {
+      [varNum, varDen] = addFrac(varNum, varDen, a, b);
+    }
+
+    const variance = [varNum, varDen];
+    const sigma = Math.sqrt(varNum / varDen);
+
+    return {
+      kind: 'lottery',
+      total,
+      xVals,
+      counts, // percent "counts"
+      probs,
+      mu: [muNum, muDen],
+      sq,
+      sqp,
+      variance,
+      sigma
+    };
+  }
+
+function problemPrompt(p) {
+    if (p.kind === 'survey') {
+      const parts = p.xVals.map(x => {
+        const c = p.counts.get(x);
+        return `${c} have ${x} ${p.y}`;
+      });
+      return `A survey was conducted. Let \\(X\\) be the random variable that selects a random respondent and records the number of ${p.y} they have. Of the respondents: ${parts.join(', ')}.`;
+    }
+
+    if (p.kind === 'lottery') {
+      const parts = p.xVals.map(x => {
+        const pct = p.counts.get(x);
+        if (x === 0) return `${pct}% chance of winning nothing`;
+        return `${pct}% chance of winning $${x}`;
+      });
+      return `You buy a lottery ticket, and let \\(X\\) be the random variable giving your winnings. You have a ${parts.join(', a ')}.`.replace(', a a ', ', a ');
+    }
+
+    const expr = (p.op === 'sum')
+      ? 'the sum'
+      : (p.op === 'difference')
+        ? 'the difference (first minus second)'
+        : 'the product';
+
+    return `Let \\(X\\) be ${expr} of two rolls: one roll of a ${p.n1}-sided die and one roll of a ${p.n2}-sided die.`;
+  }
+
+  function makeInputCell(id, placeholder = '') {
+    return `<input id="${id}" type="text" inputmode="decimal" style="width: 6.5em; text-align: center;" placeholder="${placeholder}">`;
+  }
+
+  function renderTable() {
+    if (!problem) return;
+
+    const headers = ['x', 'f(x)', '(x - \\mu)^2', '(x - \\mu)^2\\cdot f(x)'];
+    const rows = problem.xVals.length;
+
+    let html = `<table style="margin: 0 auto; border-collapse: collapse; min-width: 640px;">
+      <thead><tr>`;
+    for (const h of headers) {
+      html += `<th style="border: 1px solid rgba(0,0,0,0.35); padding: 8px 10px;">\\(${h}\\)</th>`;
+    }
+    html += `</tr></thead><tbody>`;
+
+    for (let i = 0; i < rows; i++) {
+      const x = problem.xVals[i];
+      const [pNum, pDen] = problem.probs[i];
+      const [sqNum, sqDen] = problem.sq[i];
+      const [sqpNum, sqpDen] = problem.sqp[i];
+
+      html += `<tr>`;
+
+      // x col
+      if (stage === 1) html += `<td style="border: 1px solid rgba(0,0,0,0.35); padding: 8px 10px;">${makeInputCell(`x-${i}`)}</td>`;
+      else html += `<td style="border: 1px solid rgba(0,0,0,0.35); padding: 8px 10px;">\\(${x}\\)</td>`;
+
+      // f(x)
+      if (stage === 2) html += `<td style="border: 1px solid rgba(0,0,0,0.35); padding: 8px 10px;">${makeInputCell(`p-${i}`, 'e.g. 3/36')}</td>`;
+      else if (stage >= 3) html += `<td style="border: 1px solid rgba(0,0,0,0.35); padding: 8px 10px;">\\(${fracToTex(pNum, pDen)}\\)</td>`;
+      else html += `<td style="border: 1px solid rgba(0,0,0,0.35); padding: 8px 10px;"></td>`;
+
+      // (x-mu)^2
+      if (stage === 4) html += `<td style="border: 1px solid rgba(0,0,0,0.35); padding: 8px 10px;">${makeInputCell(`sq-${i}`)}</td>`;
+      else if (stage >= 5) html += `<td style="border: 1px solid rgba(0,0,0,0.35); padding: 8px 10px;">\\(${fracToTex(sqNum, sqDen)}\\)</td>`;
+      else html += `<td style="border: 1px solid rgba(0,0,0,0.35); padding: 8px 10px;"></td>`;
+
+      // (x-mu)^2 f(x)
+      if (stage === 5) html += `<td style="border: 1px solid rgba(0,0,0,0.35); padding: 8px 10px;">${makeInputCell(`sqp-${i}`)}</td>`;
+      else if (stage >= 6) html += `<td style="border: 1px solid rgba(0,0,0,0.35); padding: 8px 10px;">\\(${fracToTex(sqpNum, sqpDen)}\\)</td>`;
+      else html += `<td style="border: 1px solid rgba(0,0,0,0.35); padding: 8px 10px;"></td>`;
+
+      html += `</tr>`;
+    }
+
+    html += `</tbody></table>`;
+    tableArea.innerHTML = html;
+  }
+
+  function renderStageInstructions() {
+    if (!problem) return;
+
+    histogramArea.innerHTML = '';
+    setFeedback('');
+
+    if (stage === 1) {
+      workArea.innerHTML = `<div>Stage 1: Enter the possible values of \\(x\\) in <b>ascending order</b>.</div>`;
+    }
+
+    if (stage === 2) {
+      workArea.innerHTML = `<div>Stage 2: Enter the pdf values \\(f(x)=P(X=x)\\) for each \\(x\\).</div>`;
+    }
+
+    if (stage === 3) {
+      const [muNum, muDen] = problem.mu;
+      workArea.innerHTML = `
+        <div style="margin-bottom: 0.5rem;">Stage 3: Compute the mean \\(\\mu = E(X)\\).</div>
+        <div>
+          <label for="mu-input">\\(\\mu =\\)</label>
+          <input id="mu-input" type="text" style="width: 10em; text-align: center;">
+        </div>
+      `;
+      // histogram should already be shown from stage2->3 transition, but keep it visible
+    }
+
+    if (stage === 4) {
+      workArea.innerHTML = `<div>Stage 4: Compute each value of \\((x-\\mu)^2\\).</div>`;
+    }
+
+    if (stage === 5) {
+      workArea.innerHTML = `<div>Stage 5: Compute each value of \\((x-\\mu)^2\\cdot f(x)\\).</div>`;
+    }
+
+    if (stage === 6) {
+      workArea.innerHTML = `
+        <div style="margin-bottom: 0.5rem;">Stage 6: Compute the standard deviation \\(\\sigma\\).</div>
+        <div>
+          <label for="sigma-input">\\(\\sigma =\\)</label>
+          <input id="sigma-input" type="text" style="width: 10em; text-align: center;">
+        </div>
+      `;
+    }
+  }
+
+  function showHistogram() {
+    if (!problem) return;
+    const pts = problem.xVals.map((x, i) => {
+      const [pNum, pDen] = problem.probs[i];
+      return { x, p: pNum / pDen };
+    });
+
+    renderDiscreteHistogram(histogramArea, pts, {
+      title: 'Histogram of the pdf',
+      xLabel: 'x',
+      yLabel: 'f(x)',
+      yFormatter: (v) => v.toFixed(3).replace(/0+$/, '').replace(/\.$/, '')
+    });
+  }
+
+  function showOneProbabilityComputation() {
+    const i = randInt(0, problem.xVals.length - 1);
+    const x = problem.xVals[i];
+    const favorable = problem.counts.get(x);
+    const total = problem.total;
+    const [pNum, pDen] = problem.probs[i];
+
+    let context = '';
+    let explanationLine = '';
+    if (problem.kind === 'survey') {
+      context = `There are \\(${total}\\) respondents total.`;
+      explanationLine = `There are \\(${favorable}\\) respondents with \\(X=${x}\\), so`;
+    } else if (problem.kind === 'lottery') {
+      context = `The probabilities are given as percentages and must sum to \\(100\\%\\) (i.e., total probability 1).`;
+      explanationLine = `The chance of \\(X=${x}\\) is \\(${favorable}\\%\\), so`;
+    } else {
+      context = `There are \\(${problem.n1}\\cdot ${problem.n2} = ${total}\\) equally likely outcomes.`;
+      explanationLine = `There are \\(${favorable}\\) outcomes that give \\(X=${x}\\), so`;
+    }
+
+    const detail = `
+      <div style="margin-top: 1rem;">
+        <div><b>Example computation:</b> for \\(x=${x}\\)</div>
+        <div>${context}</div>
+        <div>${explanationLine}</div>
+        <div>\\(f(${x}) = P(X=${x}) = \\dfrac{${favorable}}{${total}} = ${fracToTex(pNum, pDen)}\\).</div>
+      </div>
+    `;
+    workArea.insertAdjacentHTML('beforeend', detail);
+  }
+
+  function renderAll() {
+    renderTable();
+    renderStageInstructions();
+    if (stage >= 3) showHistogram(); // keep visible from stage 3 onward
+    typeset([tableArea, meanArea, workArea, histogramArea, questionText]);
+  }
+
+  function renderMeanIfKnown() {
+    if (!problem || !meanRevealed) return;
+    const [muNum, muDen] = problem.mu;
+    meanArea.innerHTML = `<div><b>Mean:</b> \\(\\mu = E(X) = \\sum_x x f(x) = ${fracToTex(muNum, muDen)}\\)</div>`;
+  }
+
+  function advanceTo(newStage) {
+    stage = newStage;
+    renderAll();
+    renderMeanIfKnown();
+    typeset([meanArea]);
+  }
+
+  function checkStage1() {
+    for (let i = 0; i < problem.xVals.length; i++) {
+      const el = document.getElementById(`x-${i}`);
+      const parsed = parseNumber(el?.value ?? '');
+      if (parsed.error) return { ok: false, msg: parsed.error };
+      // must be exact integer match
+      if (parsed.kind !== 'frac' || parsed.den !== 1) return { ok: false, msg: 'Please enter integers for the x-values.' };
+      if (parsed.num !== problem.xVals[i]) return { ok: false, msg: 'One or more x-values are incorrect (or not in ascending order).' };
+    }
+    return { ok: true };
+  }
+
+  function checkStage2() {
+    for (let i = 0; i < problem.xVals.length; i++) {
+      const el = document.getElementById(`p-${i}`);
+      const parsed = parseNumber(el?.value ?? '');
+      const [tNum, tDen] = problem.probs[i];
+      if (parsed.error) return { ok: false, msg: parsed.error };
+      if (!inputMatchesRational(parsed, tNum, tDen, REL_TOL)) return { ok: false, msg: 'One or more pdf values are incorrect.' };
+    }
+    return { ok: true };
+  }
+
+  function checkStage3() {
+    const el = document.getElementById('mu-input');
+    const parsed = parseNumber(el?.value ?? '');
+    const [tNum, tDen] = problem.mu;
+    if (parsed.error) return { ok: false, msg: parsed.error };
+    if (!inputMatchesRational(parsed, tNum, tDen, REL_TOL)) return { ok: false, msg: 'That mean is not correct.' };
+    return { ok: true };
+  }
+
+  function checkStage4() {
+    for (let i = 0; i < problem.xVals.length; i++) {
+      const el = document.getElementById(`sq-${i}`);
+      const parsed = parseNumber(el?.value ?? '');
+      const [tNum, tDen] = problem.sq[i];
+      if (parsed.error) return { ok: false, msg: parsed.error };
+      if (!inputMatchesRational(parsed, tNum, tDen, REL_TOL)) return { ok: false, msg: 'One or more (x-μ)^2 entries are incorrect.' };
+    }
+    return { ok: true };
+  }
+
+  function checkStage5() {
+    for (let i = 0; i < problem.xVals.length; i++) {
+      const el = document.getElementById(`sqp-${i}`);
+      const parsed = parseNumber(el?.value ?? '');
+      const [tNum, tDen] = problem.sqp[i];
+      if (parsed.error) return { ok: false, msg: parsed.error };
+      if (!inputMatchesRational(parsed, tNum, tDen, REL_TOL)) return { ok: false, msg: 'One or more (x-μ)^2·f(x) entries are incorrect.' };
+    }
+    return { ok: true };
+  }
+
+  function checkStage6() {
+    const el = document.getElementById('sigma-input');
+    const parsed = parseNumber(el?.value ?? '');
+    if (parsed.error) return { ok: false, msg: parsed.error };
+    const target = problem.sigma;
+    const val = (parsed.kind === 'frac') ? (parsed.num / parsed.den) : parsed.value;
+    if (!relClose(val, target, REL_TOL)) return { ok: false, msg: 'That standard deviation is not correct.' };
+    return { ok: true };
+  }
+
+  function fillStageAndAdvance() {
+    // Hint behaviour: fill current stage and move on.
+    if (!problem) return;
+
+    if (stage === 1) {
+      setFeedback('Filled in the x-values.', 'black');
+      advanceTo(2);
+      return;
+    }
+
+    if (stage === 2) {
+      // When leaving stage 2: show one f(x) computation + histogram (starting in stage 3)
+      advanceTo(3);
+      showOneProbabilityComputation();
+      showHistogram();
+      typeset([workArea, histogramArea]);
+      return;
+    }
+
+    if (stage === 3) {
+      meanRevealed = true;
+      renderMeanIfKnown();
+      showHistogram();
+      typeset([meanArea, histogramArea]);
+      advanceTo(4);
+      return;
+    }
+
+    if (stage === 4) {
+      setFeedback('Filled in the (x-μ)^2 column.', 'black');
+      advanceTo(5);
+      return;
+    }
+
+    if (stage === 5) {
+      setFeedback('Filled in the (x-μ)^2·f(x) column.', 'black');
+      advanceTo(6);
+      return;
+    }
+
+    if (stage === 6) {
+      const [vNum, vDen] = problem.variance;
+      const sig = problem.sigma;
+      workArea.innerHTML = `
+        <div style="margin-bottom: 0.5rem;">Stage 6: Compute the standard deviation \\(\\sigma\\).</div>
+        <div>\\(\\sigma = \\sqrt{\\sum_x (x-\\mu)^2 f(x)} = \\sqrt{${fracToTex(vNum, vDen)}} \\approx ${sig.toFixed(4)}\\)</div>
+      `;
+      showHistogram();
+      setFeedback('Done!', 'green');
+      typeset([workArea, histogramArea]);
+      return;
+    }
+  }
+
+  function nextStageIfCorrect() {
+    if (!problem) return;
+
+    let result = { ok: false, msg: 'Not ready.' };
+
+    if (stage === 1) result = checkStage1();
+    if (stage === 2) result = checkStage2();
+    if (stage === 3) result = checkStage3();
+    if (stage === 4) result = checkStage4();
+    if (stage === 5) result = checkStage5();
+    if (stage === 6) result = checkStage6();
+
+    if (!result.ok) {
+      setFeedback(result.msg ?? 'Not quite.', 'crimson');
+      return;
+    }
+
+    setFeedback('Correct!', 'green');
+
+    if (stage === 1) { advanceTo(2); return; }
+
+    if (stage === 2) {
+      advanceTo(3);
+      showOneProbabilityComputation();
+      showHistogram();
+      typeset([workArea, histogramArea]);
+      return;
+    }
+
+    if (stage === 3) {
+      // Persist the mean computation for the rest of the problem.
+      meanRevealed = true;
+      renderMeanIfKnown();
+      showHistogram();
+      typeset([meanArea, histogramArea]);
+      advanceTo(4);
+      return;
+    }
+
+    if (stage === 4) { advanceTo(5); return; }
+    if (stage === 5) { advanceTo(6); return; }
+
+    if (stage === 6) {
+      const [vNum, vDen] = problem.variance;
+      const sig = problem.sigma;
+      workArea.innerHTML = `
+        <div style="margin-bottom: 0.5rem;">Stage 6: Compute the standard deviation \\(\\sigma\\).</div>
+        <div>\\(\\sigma = \\sqrt{${fracToTex(vNum, vDen)}} \\approx ${sig.toFixed(4)}\\)</div>
+      `;
+      showHistogram();
+      setFeedback('Done!', 'green');
+      typeset([workArea, histogramArea]);
+      return;
+    }
+  }
+
+  function startRandomProblem() {
+    clearActivity();
+    // Randomly choose a question type: Type (1) dice, Type (2) survey, or Type (3) lottery
+    const r = Math.random();
+    if (r < 1/3) problem = buildType1Problem();
+    else if (r < 2/3) problem = buildType2Problem();
+    else problem = buildType3Problem();
+    stage = 1;
+    meanRevealed = false;
+
+    questionText.innerHTML = problemPrompt(problem);
+    typeset([questionText]);
+
+    renderAll();
+    renderMeanIfKnown();
+  }
+
+  // -----------------------------
+  // Start: (for now) always Type 1
+  // -----------------------------
+  startBtn.addEventListener('click', () => {
+    playSound('click-sound');
+    startRandomProblem();
+  });
+
+  hintBtn.addEventListener('click', () => {
+    playSound('click-sound');
+    fillStageAndAdvance();
+  });
+
+  nextBtn.addEventListener('click', () => {
+    playSound('click-sound');
+    nextStageIfCorrect();
+  });
+</script>
+
+
+
+  <audio id="click-sound" src="button.mp3" preload="auto"></audio>
+  <audio id="set-sound" src="set2.mp3" preload="auto"></audio>
+
+</body>
+</html>

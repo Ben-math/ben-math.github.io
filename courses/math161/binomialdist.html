@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -835,7 +836,7 @@ fetch("/nav.html")
       const val = prob.stage1.targetProb;
 
       appendSolution(`
-        <div><b>Stage 1 solution</b></div>
+        
         \\[
           P(X=${x}) = f(${x};n,p) = \\binom{${n}}{${x}} p^{${x}}(1-p)^{${n}-${x}}
           \\approx ${val.toFixed(6)}
@@ -853,7 +854,7 @@ fetch("/nav.html")
 
     if (stage === 2) {
       appendSolution(`
-        <div><b>Stage 2 solution</b></div>
+        
         ${prob.stage2.solutionTex}
       `);
 
@@ -868,7 +869,7 @@ fetch("/nav.html")
 
     if (stage === 3) {
       appendSolution(`
-        <div><b>Stage 3 solution</b></div>
+        
         \\[
           \\mu = np = ${prob.n}\\left(${prob.p.toFixed(6)}\\right) \\approx ${prob.mean.toFixed(6)}
         \\]
@@ -879,7 +880,7 @@ fetch("/nav.html")
 
     if (stage === 4) {
       appendSolution(`
-        <div><b>Stage 4 solution</b></div>
+        
         \\[
           \\sigma = \\sqrt{np(1-p)} = \\sqrt{${prob.n}\\left(${prob.p.toFixed(6)}\\right)\\left(${(1-prob.p).toFixed(6)}\\right)}
           \\approx ${prob.sigma.toFixed(6)}

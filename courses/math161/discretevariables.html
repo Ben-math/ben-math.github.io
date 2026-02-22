@@ -767,8 +767,8 @@ function problemPrompt(p) {
     if (p.kind === 'lottery') {
       const parts = p.xVals.map(x => {
         const pct = p.counts.get(x);
-        if (x === 0) return `${pct}\\% chance of winning nothing`;
-        return `${pct}\\% chance of winning \\$${x}`;
+        if (x === 0) return `${pct}% chance of winning nothing`;
+        return `${pct}% chance of winning $${x}`;
       });
       return `You buy a lottery ticket, and let \\(X\\) be the random variable giving your winnings. You have a ${parts.join(', a ')}.`.replace(', a a ', ', a ');
     }

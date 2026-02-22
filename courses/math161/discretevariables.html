@@ -157,7 +157,7 @@ fetch("/nav.html")
 
       <div id="mean-area" class="math" style="margin-top: 0.75rem; text-align: center;"></div>
 
-      <div id="sigma-area" class="math" style="margin-top: 0.5rem; text-align: center;"></div>
+      <div id="sigma-area" class="math" style="margin-top: 0.35rem; text-align: center;"></div>
 
       <div id="work-area" class="math" style="margin-top: 1rem; text-align: center;"></div>
 
@@ -761,41 +761,6 @@ fetch("/nav.html")
     };
   }
 
-
-  // -----------------------------
-  // Stage (7): Probability of X being at/above or at/below a threshold
-  // -----------------------------
-  function buildProbabilityQuery(p) {
-    const threshold = p.xVals[randInt(0, p.xVals.length - 1)];
-    const dir = (Math.random() < 0.5) ? 'ge' : 'le'; // ge => >= threshold, le => <= threshold
-
-    let num = 0, den = 1;
-    for (let i = 0; i < p.xVals.length; i++) {
-      const x = p.xVals[i];
-      if ((dir === 'ge' && x >= threshold) || (dir === 'le' && x <= threshold)) {
-        const [pNum, pDen] = p.probs[i];
-        [num, den] = addFrac(num, den, pNum, pDen);
-      }
-    }
-    return { dir, threshold, prob: [num, den] };
-  }
-
-  function probabilityQueryText(p) {
-    const q = p.probQuery;
-    if (!q) return '';
-    if (p.kind === 'survey') {
-      const word = (q.dir === 'ge') ? 'more' : 'fewer';
-      return `What is the probability that a respondent has ${q.threshold} or ${word} ${p.y}?`;
-    }
-    if (p.kind === 'lottery') {
-      const word = (q.dir === 'ge') ? 'more' : 'less';
-      return `What is the probability that you win $${q.threshold} or ${word}?`;
-    }
-    // dice
-    const word = (q.dir === 'ge') ? 'higher' : 'lower';
-    return `What is the probability that you roll a ${q.threshold} or ${word}?`;
-  }
-
 function problemPrompt(p) {
     if (p.kind === 'survey') {
       const parts = p.xVals.map(x => {
@@ -808,8 +773,8 @@ function problemPrompt(p) {
     if (p.kind === 'lottery') {
       const parts = p.xVals.map(x => {
         const pct = p.counts.get(x);
-        if (x === 0) return `${pct}% chance of winning nothing`;
-        return `${pct}% chance of winning $${x}`;
+        if (x === 0) return `${pct}\\% chance of winning nothing`;
+        return `${pct}\\% chance of winning \\$${x}`;
       });
       return `You buy a lottery ticket, and let \\(X\\) be the random variable giving your winnings. You have a ${parts.join(', a ')}.`.replace(', a a ', ', a ');
     }
@@ -916,14 +881,16 @@ function problemPrompt(p) {
           <input id="sigma-input" type="text" style="width: 10em; text-align: center;">
         </div>
       `;
+    }
+
 
     if (stage === 7) {
-      const qText = probabilityQueryText(problem);
+      const q = problem.stage7;
       workArea.innerHTML = `
-        <div style="margin-bottom: 0.5rem;">Stage 7: ${qText}</div>
+        <div style="margin-bottom: 0.5rem;">Stage 7: ${q.prompt}</div>
         <div>
-          <label for="prob-input">Probability =</label>
-          <input id="prob-input" type="text" style="width: 12em; text-align: center;" placeholder="e.g. 1/6 or 0.1667">
+          <label for="prob7-input">\(P(\text{event}) =\)</label>
+          <input id="prob7-input" type="text" style="width: 10em; text-align: center;" placeholder="e.g. 1/6 or 0.167">
         </div>
       `;
     }
@@ -975,6 +942,49 @@ function problemPrompt(p) {
     `;
     workArea.insertAdjacentHTML('beforeend', detail);
   }
+  // -----------------------------
+  // Stage 7: Cumulative probability question
+  // -----------------------------
+  function buildStage7Query(p) {
+    const xVals = p.xVals.slice().sort((a, b) => a - b);
+    const threshold = xVals[randInt(0, xVals.length - 1)];
+
+    let mode, comparatorText, predicate;
+    if (p.kind === 'survey') {
+      // "k or more" / "k or fewer"
+      mode = (Math.random() < 0.5) ? 'more' : 'fewer';
+      comparatorText = (mode === 'more') ? `${threshold} or more` : `${threshold} or fewer`;
+      predicate = (x) => (mode === 'more') ? (x >= threshold) : (x <= threshold);
+    } else if (p.kind === 'lottery') {
+      // "win $k or more" / "win $k or less"
+      mode = (Math.random() < 0.5) ? 'more' : 'less';
+      comparatorText = (mode === 'more') ? `$${threshold} or more` : `$${threshold} or less`;
+      predicate = (x) => (mode === 'more') ? (x >= threshold) : (x <= threshold);
+    } else {
+      // dice: "k or higher" / "k or lower"
+      mode = (Math.random() < 0.5) ? 'higher' : 'lower';
+      comparatorText = (mode === 'higher') ? `${threshold} or higher` : `${threshold} or lower`;
+      predicate = (x) => (mode === 'higher') ? (x >= threshold) : (x <= threshold);
+    }
+
+    let favorable = 0;
+    for (const x of p.xVals) {
+      if (predicate(x)) favorable += p.counts.get(x);
+    }
+    const [num, den] = reduceFrac(favorable, p.total);
+
+    let prompt;
+    if (p.kind === 'survey') {
+      prompt = `What is the probability that a respondent has ${comparatorText} ${p.y}?`;
+    } else if (p.kind === 'lottery') {
+      prompt = `What is the probability that you win ${comparatorText}?`;
+    } else {
+      prompt = `What is the probability that you roll a ${comparatorText}?`;
+    }
+
+    return { threshold, mode, favorable, prob: [num, den], prompt };
+  }
+
 
   function renderAll() {
     renderTable();
@@ -989,6 +999,7 @@ function problemPrompt(p) {
     meanArea.innerHTML = `<div><b>Mean:</b> \\(\\mu = E(X) = \\sum_x x f(x) = ${fracToTex(muNum, muDen)}\\)</div>`;
   }
 
+
   function renderSigmaIfKnown() {
     if (!problem || !sigmaRevealed) return;
     const [vNum, vDen] = problem.variance;
@@ -996,11 +1007,11 @@ function problemPrompt(p) {
     sigmaArea.innerHTML = `<div><b>Standard deviation:</b> \\(\\sigma = \\sqrt{${fracToTex(vNum, vDen)}} \\approx ${sig.toFixed(4)}\\)</div>`;
   }
 
+
   function advanceTo(newStage) {
     stage = newStage;
     renderAll();
     renderMeanIfKnown();
-    renderSigmaIfKnown();
     renderSigmaIfKnown();
     typeset([meanArea, sigmaArea]);
   }
@@ -1069,13 +1080,15 @@ function problemPrompt(p) {
     return { ok: true };
   }
 
+
   function checkStage7() {
-    const q = problem.probQuery;
-    const el = document.getElementById('prob-input');
+    const el = document.getElementById('prob7-input');
     const parsed = parseNumber(el?.value ?? '');
     if (parsed.error) return { ok: false, msg: parsed.error };
-    const [tNum, tDen] = q.prob;
-    if (!inputMatchesRational(parsed, tNum, tDen, REL_TOL)) return { ok: false, msg: 'That probability is not correct.' };
+    const [tNum, tDen] = problem.stage7.prob;
+    if (!inputMatchesRational(parsed, tNum, tDen, REL_TOL)) {
+      return { ok: false, msg: 'That probability is not correct.' };
+    }
     return { ok: true };
   }
 
@@ -1120,42 +1133,23 @@ function problemPrompt(p) {
       return;
     }
 
-
     if (stage === 6) {
       sigmaRevealed = true;
       renderSigmaIfKnown();
-      setFeedback('Filled in the standard deviation.', 'black');
+      typeset([sigmaArea]);
       advanceTo(7);
       return;
     }
 
     if (stage === 7) {
-      const q = problem.probQuery;
-      const [pNum, pDen] = q.prob;
-
-      const cond = (q.dir === 'ge') ? `\ge ${q.threshold}` : `\le ${q.threshold}`;
-      const terms = [];
-      for (let i = 0; i < problem.xVals.length; i++) {
-        const x = problem.xVals[i];
-        if ((q.dir === 'ge' && x >= q.threshold) || (q.dir === 'le' && x <= q.threshold)) {
-          const [a, b] = problem.probs[i];
-          terms.push(`f(${x}) = ${fracToTex(a, b)}`);
-        }
-      }
-
+      const [pNum, pDen] = problem.stage7.prob;
       workArea.innerHTML = `
-        <div style="margin-bottom: 0.5rem;">Stage 7: ${probabilityQueryText(problem)}</div>
-        <div><b>Computation:</b></div>
-        <div>\(P(X ${cond}) = \sum f(x)\) over the qualifying values.</div>
-        <div style="margin-top: 0.25rem;">\(${terms.join(' \; + \; ').replace(/\s\+\s$/,'')}\)</div>
-        <div style="margin-top: 0.25rem;">\(P(X ${cond}) = ${fracToTex(pNum, pDen)}\).</div>
+        <div style="margin-bottom: 0.5rem;">Stage 7: ${problem.stage7.prompt}</div>
+        <div>\\(P(\\text{event}) = ${fracToTex(pNum, pDen)}\\)</div>
       `;
-      showHistogram();
       setFeedback('Done!', 'green');
-      typeset([workArea, histogramArea]);
+      typeset([workArea]);
       return;
-    }
-  }
     }
   }
 
@@ -1205,30 +1199,16 @@ function problemPrompt(p) {
     if (stage === 6) {
       sigmaRevealed = true;
       renderSigmaIfKnown();
+      typeset([sigmaArea]);
       advanceTo(7);
       return;
     }
 
     if (stage === 7) {
-      const q = problem.probQuery;
-      const [pNum, pDen] = q.prob;
-
-      const cond = (q.dir === 'ge') ? `\ge ${q.threshold}` : `\le ${q.threshold}`;
-      const terms = [];
-      for (let i = 0; i < problem.xVals.length; i++) {
-        const x = problem.xVals[i];
-        if ((q.dir === 'ge' && x >= q.threshold) || (q.dir === 'le' && x <= q.threshold)) {
-          const [a, b] = problem.probs[i];
-          terms.push(`f(${x}) = ${fracToTex(a, b)}`);
-        }
-      }
-
+      const [pNum, pDen] = problem.stage7.prob;
       workArea.innerHTML = `
-        <div style="margin-bottom: 0.5rem;">Stage 7: ${probabilityQueryText(problem)}</div>
-        <div><b>Computation:</b></div>
-        <div>\(P(X ${cond}) = \sum f(x)\) over the qualifying values.</div>
-        <div style="margin-top: 0.25rem;">\(${terms.join(' \; + \; ')}\)</div>
-        <div style="margin-top: 0.25rem;">\(P(X ${cond}) = ${fracToTex(pNum, pDen)}\).</div>
+        <div style="margin-bottom: 0.5rem;">Stage 7: ${problem.stage7.prompt}</div>
+        <div>\\(P(\\text{event}) = ${fracToTex(pNum, pDen)}\\)</div>
       `;
       showHistogram();
       setFeedback('Done!', 'green');
@@ -1244,17 +1224,16 @@ function problemPrompt(p) {
     if (r < 1/3) problem = buildType1Problem();
     else if (r < 2/3) problem = buildType2Problem();
     else problem = buildType3Problem();
-    problem.probQuery = buildProbabilityQuery(problem);
     stage = 1;
     meanRevealed = false;
     sigmaRevealed = false;
+    problem.stage7 = buildStage7Query(problem);
 
     questionText.innerHTML = problemPrompt(problem);
     typeset([questionText]);
 
     renderAll();
     renderMeanIfKnown();
-    renderSigmaIfKnown();
   }
 
   // -----------------------------

@@ -3,6 +3,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -630,6 +631,7 @@ fetch("/nav.html")
   let prob = null;       // current problem object
   let solutionLog = '';  // keeps revealed solutions visible
 
+  let solHistCounter = 0; // unique ids for inline solution histograms
   let finished = false;   // after Stage 4 solution is shown, lock Hint/Next
 
   function clearActivity() {
@@ -795,8 +797,7 @@ fetch("/nav.html")
     histogramArea.innerHTML = '';
     setFeedback('');
 
-    // keep revealed work visible
-    meanArea.innerHTML = solutionLog;
+    // keep revealed work visible (solutions are appended to meanArea)
 
     if (stage === 1) {
       const x = prob.stage1.x;
@@ -827,9 +828,31 @@ fetch("/nav.html")
     typeset([meanArea, workArea]);
   }
 
+  
   function appendSolution(texBlock) {
-    solutionLog += `<div style="margin-top:0.75rem; text-align:center;">${texBlock}</div>`;
-    meanArea.innerHTML = solutionLog;
+    const wrap = document.createElement('div');
+    wrap.style.marginTop = '0.75rem';
+    wrap.style.textAlign = 'center';
+    wrap.innerHTML = texBlock;
+    meanArea.appendChild(wrap);
+  }
+
+  function appendSolutionWithHistogram(texBlock, renderFn) {
+    solHistCounter += 1;
+
+    const wrap = document.createElement('div');
+    wrap.style.marginTop = '0.75rem';
+    wrap.style.textAlign = 'center';
+    wrap.innerHTML = texBlock;
+    meanArea.appendChild(wrap);
+
+    const histWrap = document.createElement('div');
+    histWrap.id = `sol-hist-${solHistCounter}`;
+    histWrap.style.margin = '0.75rem auto 0';
+    histWrap.style.maxWidth = '740px';
+    meanArea.appendChild(histWrap);
+
+    renderFn(histWrap);
   }
 
   function revealStageSolution() {
@@ -842,35 +865,35 @@ fetch("/nav.html")
       const p = prob.p;
       const val = prob.stage1.targetProb;
 
-      appendSolution(`
+      appendSolutionWithHistogram(`
         
         \\[
           P(X=${x}) = f(${x};n,p) = \\binom{${n}}{${x}} p^{${x}}(1-p)^{${n}-${x}}
           \\approx ${val.toFixed(6)}
         \\]
-      `);
-
-      renderBinomialHistogram(histogramArea, n, p, {
-        xLabel: 'x',
-        yLabel: 'f(x)',
-        highlightXs: [x]
+      `, (el) => {
+        renderBinomialHistogram(el, n, p, {
+          xLabel: 'x',
+          yLabel: 'f(x)',
+          highlightXs: [x]
+        });
       });
-      typeset([meanArea, histogramArea]);
+      typeset([meanArea]);
       return;
     }
 
     if (stage === 2) {
-      appendSolution(`
+      appendSolutionWithHistogram(`
         
         ${prob.stage2.solutionTex}
-      `);
-
-      renderBinomialHistogram(histogramArea, prob.n, prob.p, {
-        xLabel: 'x',
-        yLabel: 'f(x)',
-        highlightXs: prob.stage2.highlightXs
+      `, (el) => {
+        renderBinomialHistogram(el, prob.n, prob.p, {
+          xLabel: 'x',
+          yLabel: 'f(x)',
+          highlightXs: prob.stage2.highlightXs
+        });
       });
-      typeset([meanArea, histogramArea]);
+      typeset([meanArea]);
       return;
     }
 

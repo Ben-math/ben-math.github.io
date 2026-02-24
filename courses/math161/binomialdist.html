@@ -683,9 +683,139 @@ fetch("/nav.html")
     return s;
   }
 
-  function buildType1BinomialProblem() {
-    const y = randInt(4, 20);
+  
+  function relationTexToEnglish(relTex) {
+    // relTex is one of: P(X\le t), P(X< t), P(X\ge t), P(X> t)
+    // Return a phrase like: "at most 3", "less than 3", "at least 3", "more than 3"
+    const m = (relTex || '').match(/P\(X\\([<>]=?)\s*([0-9]+)\)/);
+    if (!m) return '...';
+    const op = m[1];
+    const t = m[2];
+    if (op === '\\le') return `at most ${t}`;
+    if (op === '<') return `less than ${t}`;
+    if (op === '\\ge') return `at least ${t}`;
+    if (op === '>') return `more than ${t}`;
+    return `... ${t}`;
+  }
+
+  const TYPE2_BANK = [
+    {
+      x: 'shooting free throws',
+      y: 'scoring',
+      z: 'shoot',
+      stage1: (k) => `scoring on <b>${k}</b> shots`,
+      stage2: (phrase) => `scoring on <b>${phrase}</b> shots`
+    },
+    {
+      x: 'buying lottery tickets',
+      y: 'winning a prize',
+      z: 'buy',
+      stage1: (k) => `winning <b>${k}</b> prizes`,
+      stage2: (phrase) => `winning <b>${phrase}</b> prizes`
+    },
+    {
+      x: 'attempting backflips',
+      y: 'succeeding',
+      z: 'attempt',
+      stage1: (k) => `succeeding on <b>${k}</b> backflips`,
+      stage2: (phrase) => `succeeding on <b>${phrase}</b> backflips`
+    },
+    {
+      x: 'throwing darts',
+      y: 'hitting the bullseye',
+      z: 'throw',
+      stage1: (k) => `hitting the bullseye <b>${k}</b> times`,
+      stage2: (phrase) => `hitting the bullseye <b>${phrase}</b> times`
+    }
+  ];
+
+  function buildType2BinomialProblem() {
     const n = randInt(6, 16);
+
+    // m is a randomly generated probability between 0 and 100% with one digit after the decimal point.
+    const mPercent = randInt(0, 1000) / 10; // 0.0 ... 100.0
+    const p = mPercent / 100;
+
+    const scenario = TYPE2_BANK[randInt(0, TYPE2_BANK.length - 1)];
+
+    const pmf = binomPMFArray(n, p);
+
+    // Stage 1 target x
+    const x1 = randInt(0, n);
+
+    // Stage 2 inequality: ensure 2 or 3 values summed, possibly via complement
+    const kTerms = (Math.random() < 0.5) ? 2 : 3;
+    const tail = (Math.random() < 0.5) ? 'left' : 'right'; // tail to highlight/sum
+    const inclusive = (Math.random() < 0.5);
+    const useComplement = (Math.random() < 0.5);
+
+    const stage2 = {
+      kTerms, tail, inclusive, useComplement,
+      threshold: 0,
+      relationTex: '',
+      highlightXs: [],
+      targetProb: 0,
+      solutionTex: ''
+    };
+
+    if (tail === 'left') {
+      const highlight = [...Array(kTerms).keys()]; // 0..kTerms-1
+      stage2.highlightXs = highlight;
+
+      if (!useComplement) {
+        stage2.threshold = inclusive ? (kTerms - 1) : kTerms;
+        stage2.relationTex = inclusive ? `P(X\\le ${stage2.threshold})` : `P(X< ${stage2.threshold})`;
+        stage2.targetProb = sumRange(pmf, 0, kTerms - 1);
+        stage2.solutionTex =
+          `\\[${stage2.relationTex} = \\sum_{x=0}^{${kTerms - 1}} f(x;n,p)\\]` +
+          `\\[= ${highlight.map(h => `f(${h};n,p)`).join(' + ')} \\approx ${stage2.targetProb.toFixed(6)}\\]`;
+      } else {
+        stage2.threshold = inclusive ? kTerms : (kTerms - 1);
+        stage2.relationTex = inclusive ? `P(X\\ge ${stage2.threshold})` : `P(X> ${stage2.threshold})`;
+        stage2.targetProb = 1 - sumRange(pmf, 0, kTerms - 1);
+        stage2.solutionTex =
+          `\\[${stage2.relationTex} = 1 - P(X\\le ${kTerms - 1})\\]` +
+          `\\[= 1 - \\sum_{x=0}^{${kTerms - 1}} f(x;n,p)\\approx ${stage2.targetProb.toFixed(6)}\\]`;
+      }
+    } else {
+      const start = n - kTerms + 1;
+      const highlight = [];
+      for (let x = start; x <= n; x++) highlight.push(x);
+      stage2.highlightXs = highlight;
+
+      if (!useComplement) {
+        stage2.threshold = inclusive ? start : (start - 1);
+        stage2.relationTex = inclusive ? `P(X\\ge ${stage2.threshold})` : `P(X> ${stage2.threshold})`;
+        stage2.targetProb = sumRange(pmf, start, n);
+        stage2.solutionTex =
+          `\\[${stage2.relationTex} = \\sum_{x=${start}}^{${n}} f(x;n,p)\\]` +
+          `\\[= ${highlight.map(h => `f(${h};n,p)`).join(' + ')} \\approx ${stage2.targetProb.toFixed(6)}\\]`;
+      } else {
+        stage2.threshold = inclusive ? (start - 1) : start;
+        stage2.relationTex = inclusive ? `P(X\\le ${stage2.threshold})` : `P(X< ${stage2.threshold})`;
+        stage2.targetProb = 1 - sumRange(pmf, start, n);
+        stage2.solutionTex =
+          `\\[${stage2.relationTex} = 1 - P(X\\ge ${start})\\]` +
+          `\\[= 1 - \\sum_{x=${start}}^{${n}} f(x;n,p)\\approx ${stage2.targetProb.toFixed(6)}\\]`;
+      }
+    }
+
+    return {
+      kind: 'binom_type2_context',
+      n, p,
+      mPercent,
+      scenario,
+      pmf,
+      stage1: { x: x1, targetProb: pmf[x1] },
+      stage2,
+      mean: n * p,
+      sigma: Math.sqrt(n * p * (1 - p))
+    };
+  }
+
+function buildType1BinomialProblem() {
+    const y = randInt(4, 20);
+    const n = randInt(6, 50);
 
     let successText = '';
     let p = 0;
@@ -785,10 +915,23 @@ fetch("/nav.html")
 
   function renderPrompt() {
     if (!prob) return;
-    questionText.innerHTML =
-      `A ${prob.y}-sided die is rolled ${prob.n} times. A success will be considered ${prob.successText}. ` +
-      `Let \\(X\\) be the number of successes.`;
-    typeset([questionText]);
+
+    if (prob.kind === 'binom_type1_die') {
+      questionText.innerHTML =
+        `A ${prob.y}-sided die is rolled ${prob.n} times. A success will be considered ${prob.successText}. ` +
+        `Let \\(X\\) be the number of successes.`;
+      typeset([questionText]);
+      return;
+    }
+
+    if (prob.kind === 'binom_type2_context') {
+      const s = prob.scenario;
+      questionText.innerHTML =
+        `You are ${s.x}. You ${s.z} ${prob.n} many. You have a ${prob.mPercent.toFixed(1)}\\% probability of ${s.y}. ` +
+        `Let \\(X\\) be the number of successes.`;
+      typeset([questionText]);
+      return;
+    }
   }
 
   function renderStage() {
@@ -802,16 +945,37 @@ fetch("/nav.html")
 
     if (stage === 1) {
       const x = prob.stage1.x;
-      workArea.innerHTML = `
-        <div style="margin-bottom:0.75rem;"><b>Stage 1.</b> What is the probability of <b>${x}</b> successes?</div>
-        <div>\\(P(X=${x}) =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
-      `;
+
+      if (prob.kind === 'binom_type2_context') {
+        const s1 = prob.scenario.stage1(x);
+        workArea.innerHTML = `
+          <div style="margin-bottom:0.75rem;"><b>Stage 1.</b> What is the probability of ${s1}?</div>
+          <div>\\(P(X=${x}) =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
+        `;
+      } else {
+        // Type (1): die rolling
+        workArea.innerHTML = `
+          <div style="margin-bottom:0.75rem;"><b>Stage 1.</b> What is the probability of <b>${x}</b> successes?</div>
+          <div>\\(P(X=${x}) =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
+        `;
+      }
     } else if (stage === 2) {
       const rel = prob.stage2.relationTex;
-      workArea.innerHTML = `
-        <div style="margin-bottom:0.75rem;"><b>Stage 2.</b> Compute \\(${rel}\\).</div>
-        <div>\\(${rel} =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
-      `;
+
+      if (prob.kind === 'binom_type2_context') {
+        const phrase = relationTexToEnglish(rel);
+        const s2 = prob.scenario.stage2(phrase);
+        workArea.innerHTML = `
+          <div style="margin-bottom:0.75rem;"><b>Stage 2.</b> What is the probability of ${s2}?</div>
+          <div>\\(${rel} =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
+        `;
+      } else {
+        // Type (1): die rolling
+        workArea.innerHTML = `
+          <div style="margin-bottom:0.75rem;"><b>Stage 2.</b> Compute \\(${rel}\\).</div>
+          <div>\\(${rel} =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
+        `;
+      }
     } else if (stage === 3) {
       workArea.innerHTML = `
         <div style="margin-bottom:0.75rem;"><b>Stage 3.</b> Compute the mean \\(\\mu\\) of \\(X\\).</div>
@@ -962,8 +1126,8 @@ fetch("/nav.html")
     finished = false;
     hintBtn.disabled = false;
     nextBtn.disabled = false;
-    // For now: only Type (1) is implemented.
-    prob = buildType1BinomialProblem();
+    // Choose randomly between Type (1) and Type (2).
+    prob = (Math.random() < 0.5) ? buildType1BinomialProblem() : buildType2BinomialProblem();
     stage = 1;
     renderPrompt();
     renderStage();

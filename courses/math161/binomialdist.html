@@ -1071,7 +1071,7 @@ function buildType1BinomialProblem() {
         const s1 = `selecting <b>${x}</b> ${prob.scenario.desc}`;
         workArea.innerHTML = `
           <div style="margin-bottom:0.75rem;"><b>Stage 1.</b> What is the probability of ${s1}?</div>
-          <div>\(P(X=${x}) =\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
+          <div>\\(P(X=${x}) =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
         `;
       } else {
         // Type (1): die rolling
@@ -1095,7 +1095,7 @@ function buildType1BinomialProblem() {
         const s2 = `selecting <b>${phrase}</b> ${prob.scenario.desc}`;
         workArea.innerHTML = `
           <div style="margin-bottom:0.75rem;"><b>Stage 2.</b> What is the probability of ${s2}?</div>
-          <div>\(${rel} =\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
+          <div>\\(${rel} =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
         `;
       } else {
         // Type (1): die rolling

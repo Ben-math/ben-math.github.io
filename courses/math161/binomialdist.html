@@ -687,7 +687,7 @@ fetch("/nav.html")
   function relationTexToEnglish(relTex) {
     // relTex is one of: P(X\le t), P(X< t), P(X\ge t), P(X> t)
     // Return a phrase like: "at most 3", "less than 3", "at least 3", "more than 3"
-    const m = (relTex || '').match(/P\(X\\([<>]=?)\s*([0-9]+)\)/);
+    const m = (relTex || '').match(/P\(X(\\le|\\ge|<|>)\s*([0-9]+)\)/);
     if (!m) return '...';
     const op = m[1];
     const t = m[2];

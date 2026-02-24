@@ -750,7 +750,7 @@ fetch("/nav.html")
   ];
 
   function buildType3BinomialProblem() {
-    const n = randInt(6, 16);
+    const n = randInt(6, 12);
 
     // Population parameters
     const m = randInt(20, 200);
@@ -835,7 +835,7 @@ fetch("/nav.html")
   }
 
   function buildType2BinomialProblem() {
-    const n = randInt(6, 16);
+    const n = randInt(6, 12);
 
     // m is a randomly generated probability between 0 and 100% with one digit after the decimal point.
     const mPercent = randInt(0, 1000) / 10; // 0.0 ... 100.0
@@ -920,7 +920,7 @@ fetch("/nav.html")
 
 function buildType1BinomialProblem() {
     const y = randInt(4, 20);
-    const n = randInt(6, 50);
+    const n = randInt(6, 12);
 
     let successText = '';
     let p = 0;
@@ -1032,7 +1032,7 @@ function buildType1BinomialProblem() {
     if (prob.kind === 'binom_type2_context') {
       const s = prob.scenario;
       questionText.innerHTML =
-        `You are ${s.x}. You ${s.z} ${prob.n} many. You have a ${prob.mPercent.toFixed(1)}\\% probability of ${s.y}. ` +
+        `You are ${s.x}. You ${s.z} ${prob.n} many. You have a ${prob.mPercent.toFixed(1)}\% probability of ${s.y}. ` +
         `Let \\(X\\) be the number of successes.`;
       typeset([questionText]);
       return;
@@ -1042,7 +1042,7 @@ function buildType1BinomialProblem() {
       const s = prob.scenario;
       questionText.innerHTML =
         `Out of a population of ${prob.m} ${s.yPlural}, ${prob.x} many ${s.zSentence}. ` +
-        `A ${s.ySing} is selected at random ${prob.n} many times. ` +
+        `A ${s.ySing} is selected at random ${prob.n} times. ` +
         `Let \\(X\\) be the number of successes.`;
       typeset([questionText]);
       return;

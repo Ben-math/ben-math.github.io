@@ -1,10 +1,3 @@
-
-
-
-
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -729,6 +722,118 @@ fetch("/nav.html")
     }
   ];
 
+  const TYPE3_BANK = [
+    {
+      ySing: 'raccoon',
+      yPlural: 'raccoons',
+      zSentence: 'have rabies',
+      desc: 'raccoons with rabies'
+    },
+    {
+      ySing: 'quokka',
+      yPlural: 'quokkas',
+      zSentence: 'are male',
+      desc: 'male quokkas'
+    },
+    {
+      ySing: 'student',
+      yPlural: 'students',
+      zSentence: 'are in first year',
+      desc: 'first year students'
+    },
+    {
+      ySing: 'laptop',
+      yPlural: 'laptops',
+      zSentence: 'are defective',
+      desc: 'defective laptops'
+    }
+  ];
+
+  function buildType3BinomialProblem() {
+    const n = randInt(6, 16);
+
+    // Population parameters
+    const m = randInt(20, 200);
+    const x = randInt(1, m - 1); // ensure x < m and nontrivial
+
+    const scenario = TYPE3_BANK[randInt(0, TYPE3_BANK.length - 1)];
+    const p = x / m;
+
+    const pmf = binomPMFArray(n, p);
+
+    // Stage 1 target x
+    const x1 = randInt(0, n);
+
+    // Stage 2 inequality: ensure 2 or 3 values summed, possibly via complement
+    const kTerms = (Math.random() < 0.5) ? 2 : 3;
+    const tail = (Math.random() < 0.5) ? 'left' : 'right'; // tail to highlight/sum
+    const inclusive = (Math.random() < 0.5);
+    const useComplement = (Math.random() < 0.5);
+
+    const stage2 = {
+      kTerms, tail, inclusive, useComplement,
+      threshold: 0,
+      relationTex: '',
+      highlightXs: [],
+      targetProb: 0,
+      solutionTex: ''
+    };
+
+    if (tail === 'left') {
+      const highlight = [...Array(kTerms).keys()]; // 0..kTerms-1
+      stage2.highlightXs = highlight;
+
+      if (!useComplement) {
+        stage2.threshold = inclusive ? (kTerms - 1) : kTerms;
+        stage2.relationTex = inclusive ? `P(X\\le ${stage2.threshold})` : `P(X< ${stage2.threshold})`;
+        stage2.targetProb = sumRange(pmf, 0, kTerms - 1);
+        stage2.solutionTex =
+          `\\[${stage2.relationTex} = \\sum_{x=0}^{${kTerms - 1}} f(x;n,p)\\]` +
+          `\\[= ${highlight.map(h => `f(${h};n,p)`).join(' + ')} \\approx ${stage2.targetProb.toFixed(6)}\\]`;
+      } else {
+        stage2.threshold = inclusive ? kTerms : (kTerms - 1);
+        stage2.relationTex = inclusive ? `P(X\\ge ${stage2.threshold})` : `P(X> ${stage2.threshold})`;
+        stage2.targetProb = 1 - sumRange(pmf, 0, kTerms - 1);
+        stage2.solutionTex =
+          `\\[${stage2.relationTex} = 1 - P(X\\le ${kTerms - 1})\\]` +
+          `\\[= 1 - \\sum_{x=0}^{${kTerms - 1}} f(x;n,p)\\approx ${stage2.targetProb.toFixed(6)}\\]`;
+      }
+    } else {
+      const start = n - kTerms + 1;
+      const highlight = [];
+      for (let xh = start; xh <= n; xh++) highlight.push(xh);
+      stage2.highlightXs = highlight;
+
+      if (!useComplement) {
+        stage2.threshold = inclusive ? start : (start - 1);
+        stage2.relationTex = inclusive ? `P(X\\ge ${stage2.threshold})` : `P(X> ${stage2.threshold})`;
+        stage2.targetProb = sumRange(pmf, start, n);
+        stage2.solutionTex =
+          `\\[${stage2.relationTex} = \\sum_{x=${start}}^{${n}} f(x;n,p)\\]` +
+          `\\[= ${highlight.map(h => `f(${h};n,p)`).join(' + ')} \\approx ${stage2.targetProb.toFixed(6)}\\]`;
+      } else {
+        stage2.threshold = inclusive ? (start - 1) : start;
+        stage2.relationTex = inclusive ? `P(X\\le ${stage2.threshold})` : `P(X< ${stage2.threshold})`;
+        stage2.targetProb = 1 - sumRange(pmf, start, n);
+        stage2.solutionTex =
+          `\\[${stage2.relationTex} = 1 - P(X\\ge ${start})\\]` +
+          `\\[= 1 - \\sum_{x=${start}}^{${n}} f(x;n,p)\\approx ${stage2.targetProb.toFixed(6)}\\]`;
+      }
+    }
+
+    return {
+      kind: 'binom_type3_population',
+      n, p,
+      m, x,
+      scenario,
+      pmf,
+      stage1: { x: x1, targetProb: pmf[x1] },
+      stage2,
+      mean: n * p,
+      sigma: Math.sqrt(n * p * (1 - p))
+    };
+  }
+
   function buildType2BinomialProblem() {
     const n = randInt(6, 16);
 
@@ -932,6 +1037,16 @@ function buildType1BinomialProblem() {
       typeset([questionText]);
       return;
     }
+
+    if (prob.kind === 'binom_type3_population') {
+      const s = prob.scenario;
+      questionText.innerHTML =
+        `Out of a population of ${prob.m} ${s.yPlural}, ${prob.x} many ${s.zSentence}. ` +
+        `A ${s.ySing} is selected at random ${prob.n} many times. ` +
+        `Let \\(X\\) be the number of successes.`;
+      typeset([questionText]);
+      return;
+    }
   }
 
   function renderStage() {
@@ -952,6 +1067,12 @@ function buildType1BinomialProblem() {
           <div style="margin-bottom:0.75rem;"><b>Stage 1.</b> What is the probability of ${s1}?</div>
           <div>\\(P(X=${x}) =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
         `;
+      } else if (prob.kind === 'binom_type3_population') {
+        const s1 = `selecting <b>${x}</b> ${prob.scenario.desc}`;
+        workArea.innerHTML = `
+          <div style="margin-bottom:0.75rem;"><b>Stage 1.</b> What is the probability of ${s1}?</div>
+          <div>\(P(X=${x}) =\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
+        `;
       } else {
         // Type (1): die rolling
         workArea.innerHTML = `
@@ -968,6 +1089,13 @@ function buildType1BinomialProblem() {
         workArea.innerHTML = `
           <div style="margin-bottom:0.75rem;"><b>Stage 2.</b> What is the probability of ${s2}?</div>
           <div>\\(${rel} =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
+        `;
+      } else if (prob.kind === 'binom_type3_population') {
+        const phrase = relationTexToEnglish(rel);
+        const s2 = `selecting <b>${phrase}</b> ${prob.scenario.desc}`;
+        workArea.innerHTML = `
+          <div style="margin-bottom:0.75rem;"><b>Stage 2.</b> What is the probability of ${s2}?</div>
+          <div>\(${rel} =\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
         `;
       } else {
         // Type (1): die rolling
@@ -1126,8 +1254,11 @@ function buildType1BinomialProblem() {
     finished = false;
     hintBtn.disabled = false;
     nextBtn.disabled = false;
-    // Choose randomly between Type (1) and Type (2).
-    prob = (Math.random() < 0.5) ? buildType1BinomialProblem() : buildType2BinomialProblem();
+    // Choose randomly between Type (1), Type (2), and Type (3).
+    const t = randInt(1, 3);
+    if (t === 1) prob = buildType1BinomialProblem();
+    else if (t === 2) prob = buildType2BinomialProblem();
+    else prob = buildType3BinomialProblem();
     stage = 1;
     renderPrompt();
     renderStage();

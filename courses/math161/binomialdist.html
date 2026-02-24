@@ -1032,7 +1032,7 @@ function buildType1BinomialProblem() {
     if (prob.kind === 'binom_type2_context') {
       const s = prob.scenario;
       questionText.innerHTML =
-        `You are ${s.x}. You ${s.z} ${prob.n} many. You have a ${prob.mPercent.toFixed(1)}\% probability of ${s.y}. ` +
+        `You are ${s.x}. You ${s.z} ${prob.n}. You have a ${prob.mPercent.toFixed(1)}\% probability of ${s.y}. ` +
         `Let \\(X\\) be the number of successes.`;
       typeset([questionText]);
       return;
@@ -1041,7 +1041,7 @@ function buildType1BinomialProblem() {
     if (prob.kind === 'binom_type3_population') {
       const s = prob.scenario;
       questionText.innerHTML =
-        `Out of a population of ${prob.m} ${s.yPlural}, ${prob.x} many ${s.zSentence}. ` +
+        `Out of a population of ${prob.m} ${s.yPlural}, ${prob.x} ${s.zSentence}. ` +
         `A ${s.ySing} is selected at random ${prob.n} times. ` +
         `Let \\(X\\) be the number of successes.`;
       typeset([questionText]);

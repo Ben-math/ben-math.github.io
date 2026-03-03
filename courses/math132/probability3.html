@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -556,61 +557,36 @@ fetch("/nav.html")
     const givenKey = givenChoices[randInt(0, givenChoices.length - 1)];
     const givenLeaves = new Set(urnEventToLeaves[givenKey]);
 
-    // Choose an asked event as a proper sub-event of the given event, per your rules.
-    let askedKey = null;
-    if (givenKey === "atLeastOneRed") {
-      const options = ["bothRed","firstRed","secondRed","firstGreen","secondGreen"];
-      askedKey = options[randInt(0, options.length - 1)];
-    } else if (givenKey === "atLeastOneGreen") {
-      const options = ["bothGreen","firstRed","secondRed","firstGreen","secondGreen"];
-      askedKey = options[randInt(0, options.length - 1)];
-    } else if (givenKey === "firstRed") {
-      const options = ["bothRed","secondRed","secondGreen"];
-      askedKey = options[randInt(0, options.length - 1)];
-    } else if (givenKey === "firstGreen") {
-      const options = ["bothGreen","secondGreen","secondRed"];
-      askedKey = options[randInt(0, options.length - 1)];
-    } else if (givenKey === "secondRed") {
-      const options = ["bothRed","firstRed","firstGreen"];
-      askedKey = options[randInt(0, options.length - 1)];
-    } else if (givenKey === "secondGreen") {
-      const options = ["bothGreen","firstGreen","firstRed"];
-      askedKey = options[randInt(0, options.length - 1)];
-    } else if (givenKey === "oneEach") {
-      const options = ["firstRed","firstGreen","secondRed","secondGreen"];
-      askedKey = options[randInt(0, options.length - 1)];
+    // Choose an asked event (not necessarily a subset of the given event).
+    // We also avoid the trivial case A = B (which would make the answer 1).
+    const allEventKeys = [
+      "bothRed","bothGreen","firstRed","firstGreen","secondRed","secondGreen",
+      "atLeastOneRed","atLeastOneGreen","oneEach"
+    ];
+
+    let askedKey = allEventKeys[randInt(0, allEventKeys.length - 1)];
+    while (askedKey === givenKey) {
+      askedKey = allEventKeys[randInt(0, allEventKeys.length - 1)];
     }
 
     const askedLeaves = new Set(urnEventToLeaves[askedKey]);
 
-    // Ensure asked is a subset of given (it should be by construction, but safety anyway)
-    for (const lf of askedLeaves) {
-      if (!givenLeaves.has(lf)) {
-        // fall back: pick a single leaf from given
-        const arr = Array.from(givenLeaves);
-        const pick = arr[randInt(0, arr.length - 1)];
-        askedLeaves.clear(); askedLeaves.add(pick);
-        // map to a key for wording
-        if (pick === "RR") askedKey = "bothRed";
-        if (pick === "GG") askedKey = "bothGreen";
-        if (pick === "RG") askedKey = "secondGreen"; // not perfect, but shouldn't happen often
-        if (pick === "GR") askedKey = "secondRed";
-        break;
-      }
-    }
+    // Intersection leaves for A ∩ B
+    const intersectLeaves = new Set();
+    for (const lf of askedLeaves) if (givenLeaves.has(lf)) intersectLeaves.add(lf);
 
     const leafNums = urnLeafNumerators(R, G, withReplacement);
     const numGiven = sumLeavesNums(leafNums, givenLeaves);
-    const numAsked = sumLeavesNums(leafNums, askedLeaves);
+    const numIntersect = sumLeavesNums(leafNums, intersectLeaves);
 
-    // P(asked | given) = (numAsked/den) / (numGiven/den) = numAsked/numGiven
-    setAnswer(numAsked, numGiven);
+    // P(A | B) = P(A ∩ B) / P(B)
+    // Since each leaf probability has the same denominator, this reduces to numIntersect/numGiven.
+    setAnswer(numIntersect, numGiven);
 
     questionText.textContent =
       `An urn contains ${R} red balls and ${G} green balls. ` +
       `If a ball is drawn at random, ${returnText}, and a ball is drawn at random again, ` +
       `what is the probability that ${urnEventLabel(askedKey)}, given that ${urnEventLabel(givenKey)}?`;
-
     // Helpful TeX sums
     const leafToTex = (k) => {
       const n = leafNums[k];
@@ -621,18 +597,33 @@ fetch("/nav.html")
 
     const askedSumTex = texSum(askedLeaves);
     const givenSumTex = texSum(givenLeaves);
+    const intersectSumTex = texSum(intersectLeaves);
+
+    // Relationship between A and B (for a clean explanation step)
+    const isSubset = (small, big) => {
+      for (const x of small) if (!big.has(x)) return false;
+      return true;
+    };
+    const A_subset_B = isSubset(askedLeaves, givenLeaves);
+    const B_subset_A = isSubset(givenLeaves, askedLeaves);
+
+    let relationLine = `Here \\(B\\) is "${urnEventLabel(givenKey)}", and \\(A\\) is "${urnEventLabel(askedKey)}".`;
+    if (A_subset_B) relationLine += ` Since \\(A\\subseteq B\\), we have \\(A\\cap B = A\\).`;
+    else if (B_subset_A) relationLine += ` Since \\(B\\subseteq A\\), we have \\(A\\cap B = B\\).`;
+    else relationLine += ` In general, \\(A\\cap B\\) consists of the outcomes where both happen.`;
 
     hintSteps = [
       `Use conditional probability: \\(P(A\\mid B)=\\frac{P(A\\cap B)}{P(B)}\\).`,
-      `Here \\(B\\) is "${urnEventLabel(givenKey)}", and \\(A\\) is "${urnEventLabel(askedKey)}". Since \\(A\\subseteq B\\), we have \\(A\\cap B = A\\).`,
+      relationLine,
       `Compute \\(P(B)\\) by summing the relevant leaves: \\(P(B)= ${givenSumTex}\\).`,
-      `Compute \\(P(A)\\) by summing the relevant leaves: \\(P(A)= ${askedSumTex}\\).`,
-      `So \\(P(A\\mid B)=\\dfrac{${askedSumTex}}{${givenSumTex}} = \\dfrac{${numAsked}}{${numGiven}} = ${fracTex(numAsked, numGiven)}\\).`
+      `Compute \\(P(A\\cap B)\\) by summing the leaves where both happen: \\(P(A\\cap B)= ${intersectSumTex}\\).`,
+      `So \\(P(A\\mid B)=\\dfrac{${intersectSumTex}}{${givenSumTex}} = \\dfrac{${numIntersect}}{${numGiven}} = ${fracTex(numIntersect, numGiven)}\\).`
     ];
+
 
     // Final hint: tree diagram (denominator in blue, numerator in green)
     const blue = new Set(givenLeaves);
-    const green = new Set(askedLeaves);
+    const green = new Set(intersectLeaves);
     hintSteps.push(treeHintHtml(
       withReplacement ? 'Tree diagram (with replacement)' : 'Tree diagram (without replacement)',
       buildUrnTreeSVGVertical(R, G, withReplacement, green, blue)

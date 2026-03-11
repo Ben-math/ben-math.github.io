@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta charset="UTF-8" />
+  <title>Oreo Truffles</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Oreo Truffles</h1>
+    <div id="nav-placeholder"></div>
+      <script>
+fetch("/nav.html")
+  .then(response => response.text())
+  .then(html => {
+    document.getElementById("nav-placeholder").innerHTML = html;
+
+    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+    const navLinks = document.querySelectorAll("#nav-placeholder a");
+    navLinks.forEach(link => {
+      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+      if (linkPath === currentPath) {
+        link.classList.add("active");
+      }
+    });
+
+    const s = document.createElement("script");
+    s.src = "/mascot.js";
+    s.defer = true;
+    document.body.appendChild(s); 
+  })
+  .catch(err => {
+    console.error("Failed to load nav:", err);
+  });
+</script>
+  </header>
+  <main>
+
+    <figure>
+        <img src="fig10.jpg" alt="Oreo Truffles">
+    </figure>
+
+    <p>This recipe is minimally changed from a version I found on allrecipes.  The main difference is omitting the decoration.</p>
+    
+    <p><u><b>Ingredients:</b></u></p>
+
+    <p>1 package (250g) cream cheese<br>
+    2 8oz packages semi-sweet chocolate<br>
+    1 family-size package (439g) oreos</p>
+
+    <p><u><b>Instructions:</b></u></p>
+
+    <p>Finely crush oreos using a food processor (can be done by hand, but is <b>a lot</b> of work).<br>
+    Blend crushed oreos together with cream cheese.<br>
+    Form balls about 1 inch in diameter of this mixture (you may find it easier to do if the mixture is slightly chilled), then place on a cookie sheet lined in parchment paper and place in the freezer.<br>
+    In a pot, melt the semi-sweet chocolate.<br>
+    Remove half of the balls from the freezer (to keep the rest cold, as you'll want to work fast before they soften).<br>
+    The hard part: One at a time, toss a ball into the pot of melted chocolate, roll it around until coated with a pair of forks, then gently lift it out, let excess chocolate drip off, and place on a cookie sheet lined in parchment paper.<br>
+    Repeat with the second half of the balls.  If you don't work quickly enough, you may have to re-freeze the balls and/or re-melt the chocolate (as they will get softer and stiffer respectively, which makes coating them harder).<br>
+    Place in fridge to set for an hour, then serve!</p>
+
+
+    
+  </main>
+</body>
+</html>

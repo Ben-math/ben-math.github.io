@@ -9,6 +9,7 @@
 
 
 
+
  <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -770,17 +771,17 @@ fetch("/nav.html")
           ctx.strokeStyle = 'black';
           ctx.strokeRect(x, y, cellWidth, cellHeight);
           ctx.fillStyle = 'black';
-          drawWrappedTextInCell(ctx, termForCellText(multiplyTerms(leftPoly.terms[r], rightPoly.terms[c])), x + cellWidth / 2, y + cellHeight / 2, cellWidth - 22, 30);
+          drawTermOnCanvas(ctx, multiplyTerms(leftPoly.terms[r], rightPoly.terms[c]), x + cellWidth / 2, y + cellHeight / 2, { omitLeadingPlus: true });
           arcIndex++;
         }
       }
 
       ctx.font = 'bold 22px Arial';
       leftPoly.terms.forEach((term, r) => {
-        drawWrappedTextInCell(ctx, termForCellText(term), marginLeft - 62, marginTop + r * cellHeight + cellHeight / 2, 100, 25);
+        drawTermOnCanvas(ctx, term, marginLeft - 62, marginTop + r * cellHeight + cellHeight / 2, { omitLeadingPlus: true });
       });
       rightPoly.terms.forEach((term, c) => {
-        drawWrappedTextInCell(ctx, termForCellText(term), marginLeft + c * cellWidth + cellWidth / 2, marginTop - 25, cellWidth - 16, 25);
+        drawTermOnCanvas(ctx, term, marginLeft + c * cellWidth + cellWidth / 2, marginTop - 25, { omitLeadingPlus: true });
       });
     }
 
@@ -799,7 +800,7 @@ fetch("/nav.html")
       const combined = combineLikeTerms(uncombined);
       const remainderTex = polynomialListToTex(remainingFactors);
 
-      block.innerHTML = `\\[(${polynomialToTex(leftPoly)})(${polynomialToTex(rightPoly)})${remainderTex} = (${coloredExpansion})${remainderTex}\\]`;
+      block.innerHTML = `\\[(${polynomialToTex(leftPoly)})(${polynomialToTex(rightPoly)})${remainderTex} = (${coloredExpansion}){\\color{black}${remainderTex}}\\]`;
 
       if (hasLikeTerms(uncombined)) {
         const combinedLine = document.createElement('div');

@@ -7,6 +7,7 @@
 
 
 
+
  <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -579,7 +580,7 @@ fetch("/nav.html")
       block.className = 'hint-step-block';
       block.style.textAlign = 'center';
       block.style.margin = '0.18em auto';
-      block.style.padding = '0.05em';
+      block.style.padding = '0';
       block.style.maxWidth = '100%';
       block.style.overflowX = 'auto';
       block.style.lineHeight = '1.05';
@@ -623,12 +624,15 @@ fetch("/nav.html")
 
     function displayMultiplicationPicture(leftPoly, rightPoly, remainingFactors = []) {
       const block = createHintStepBlock('Pair the terms');
+      block.style.marginTop = '-0.2em';
       block.style.marginBottom = '0.45em';
       const canvas = document.createElement('canvas');
       canvas.width = 1700;
       canvas.height = 315;
       canvas.style.maxWidth = '100%';
       canvas.style.background = 'white';
+      canvas.style.display = 'block';
+      canvas.style.margin = '0 auto';
       block.appendChild(canvas);
 
       const ctx = canvas.getContext('2d');
@@ -729,6 +733,7 @@ fetch("/nav.html")
     function displayAreaModelPicture(leftPoly, rightPoly, remainingFactors = []) {
       const block = createHintStepBlock('Area model');
       block.style.marginTop = '0.45em';
+      block.style.marginBottom = '-0.45em';
       const canvas = document.createElement('canvas');
       const rows = leftPoly.terms.length;
       const cols = rightPoly.terms.length;
@@ -740,6 +745,8 @@ fetch("/nav.html")
       canvas.height = Math.max(240, marginTop * 2 + rows * cellHeight + 30);
       canvas.style.maxWidth = '100%';
       canvas.style.background = 'white';
+      canvas.style.display = 'block';
+      canvas.style.margin = '0 auto';
       block.appendChild(canvas);
 
       const ctx = canvas.getContext('2d');
@@ -784,8 +791,8 @@ fetch("/nav.html")
 
     function displayDistributedStep(leftPoly, rightPoly, remainingFactors = []) {
       const block = createHintStepBlock();
-      block.style.marginTop = '-0.15em';
-      block.style.marginBottom = '0.05em';
+      block.style.marginTop = '-0.65em';
+      block.style.marginBottom = '-0.55em';
       const coloredExpansion = coloredExpandedProductToTex(expandedProductTerms(leftPoly, rightPoly));
       const uncombined = multiplyPolynomialsUncombined(leftPoly, rightPoly);
       const combined = combineLikeTerms(uncombined);

@@ -3,6 +3,7 @@
 
 
 
+
  <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -778,24 +779,25 @@ fetch("/nav.html")
     }
 
     function displayDistributedStep(leftPoly, rightPoly, remainingFactors = []) {
+      const block = createHintStepBlock('Resulting product');
       const coloredExpansion = coloredExpandedProductToTex(expandedProductTerms(leftPoly, rightPoly));
       const remainderTex = polynomialListToTex(remainingFactors);
-      hintArea.innerHTML = `\\[(${polynomialToTex(leftPoly)})(${polynomialToTex(rightPoly)})${remainderTex} = (${coloredExpansion})${remainderTex}\\]`;
-      if (window.MathJax) MathJax.typeset([hintArea]);
+      block.innerHTML += `\\[(${polynomialToTex(leftPoly)})(${polynomialToTex(rightPoly)})${remainderTex} = (${coloredExpansion})${remainderTex}\\]`;
+      if (window.MathJax) MathJax.typeset([block]);
     }
 
     function displayCombinedStep(uncombinedProduct, remainingFactors = []) {
+      const block = createHintStepBlock('Combine like terms');
       const combined = combineLikeTerms(uncombinedProduct);
       const remainderTex = polynomialListToTex(remainingFactors);
       if (hasLikeTerms(uncombinedProduct)) {
-        hintArea.innerHTML = `\\[${polynomialToTex(uncombinedProduct)}${remainderTex} = ${polynomialToTex(combined)}${remainderTex}\\]`;
+        block.innerHTML += `\\[\\begin{aligned}${polynomialToTex(uncombinedProduct)}${remainderTex}\\\\&= ${polynomialToTex(combined)}${remainderTex}\\end{aligned}\\]`;
       } else {
-        hintArea.innerHTML = `\\[${polynomialToTex(combined)}${remainderTex}\\]`;
+        block.innerHTML += `\\[${polynomialToTex(combined)}${remainderTex}\\]`;
       }
-      if (window.MathJax) MathJax.typeset([hintArea]);
+      if (window.MathJax) MathJax.typeset([block]);
       return combined;
     }
-
     function advanceHint() {
       if (!currentProblem || currentProblem.done) return;
 

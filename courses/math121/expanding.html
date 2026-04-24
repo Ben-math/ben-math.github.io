@@ -1,5 +1,6 @@
 
 
+
  <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -346,6 +347,32 @@ fetch("/nav.html")
       return combineLikeTerms({ numberOfTerms: productTerms.length, terms: productTerms });
     }
 
+    function expandedProductTerms(polyA, polyB) {
+      const terms = [];
+      let arcIndex = 0;
+      polyA.terms.forEach(termA => {
+        polyB.terms.forEach(termB => {
+          terms.push({
+            term: multiplyTerms(termA, termB),
+            color: rainbowColors[arcIndex % rainbowColors.length]
+          });
+          arcIndex++;
+        });
+      });
+      return terms;
+    }
+
+    function coloredExpandedProductToTex(coloredTerms) {
+      if (!coloredTerms.length) return '0';
+      return coloredTerms.map((entry, index) => {
+        const tex = termToTex(entry.term, {
+          omitLeadingPlus: index === 0,
+          forceSign: index > 0
+        });
+        return `\\color{${entry.color}}{${tex}}`;
+      }).join(' ');
+    }
+
     function termToTex(term, options = {}) {
       const { omitLeadingPlus = false, forceSign = false } = options;
       const coefficient = term.coefficient;
@@ -381,12 +408,66 @@ fetch("/nav.html")
       })).join(' ');
     }
 
-    function termPlainText(term, options = {}) {
-      const tex = termToTex(term, options);
-      return tex
-        .replace(/\^\{(\d+)\}/g, '^$1')
-        .replace(/\s+/g, ' ')
-        .trim();
+    function termPiecesForCanvas(term, options = {}) {
+      const { omitLeadingPlus = false, forceSign = false } = options;
+      const coefficient = term.coefficient;
+      const absCoefficient = Math.abs(coefficient);
+      const variables = ['x', 'y', 'z']
+        .map(variable => ({ variable, power: term.powers[variable] || 0 }))
+        .filter(piece => piece.power > 0);
+
+      let sign = '';
+      if (coefficient < 0) sign = '- ';
+      else if (forceSign || !omitLeadingPlus) sign = '+ ';
+
+      let coefficientText = '';
+      if (variables.length === 0 || absCoefficient !== 1) coefficientText = `${absCoefficient}`;
+
+      return { sign, coefficientText, variables };
+    }
+
+    function measureTermOnCanvas(ctx, term, options = {}) {
+      const pieces = termPiecesForCanvas(term, options);
+      let width = ctx.measureText(pieces.sign + pieces.coefficientText).width;
+      pieces.variables.forEach(piece => {
+        width += ctx.measureText(piece.variable).width;
+        if (piece.power > 1) {
+          ctx.save();
+          ctx.font = 'bold 22px Arial';
+          width += ctx.measureText(`${piece.power}`).width;
+          ctx.restore();
+        }
+      });
+      return width;
+    }
+
+    function drawTermOnCanvas(ctx, term, centerX, centerY, options = {}) {
+      const pieces = termPiecesForCanvas(term, options);
+      const totalWidth = measureTermOnCanvas(ctx, term, options);
+      let x = centerX - totalWidth / 2;
+
+      const baseText = pieces.sign + pieces.coefficientText;
+      if (baseText) {
+        ctx.fillText(baseText, x + ctx.measureText(baseText).width / 2, centerY);
+        x += ctx.measureText(baseText).width;
+      }
+
+      pieces.variables.forEach(piece => {
+        const variableWidth = ctx.measureText(piece.variable).width;
+        ctx.fillText(piece.variable, x + variableWidth / 2, centerY);
+        x += variableWidth;
+
+        if (piece.power > 1) {
+          ctx.save();
+          ctx.font = 'bold 22px Arial';
+          ctx.textBaseline = 'alphabetic';
+          const exponentText = `${piece.power}`;
+          const exponentWidth = ctx.measureText(exponentText).width;
+          ctx.fillText(exponentText, x + exponentWidth / 2, centerY - 19);
+          x += exponentWidth;
+          ctx.restore();
+        }
+      });
     }
 
     function drawRoundedArc(ctx, startX, endX, baselineY, height, color) {
@@ -419,7 +500,8 @@ fetch("/nav.html")
       const result = document.createElement('div');
       result.className = 'math';
       result.style.marginTop = '1em';
-      result.innerHTML = `\\[${polynomialToTex(polyA)}\\;\\cdot\\;(${polynomialToTex(polyB)}) = ${polynomialToTex(product)}\\]`;
+      const coloredExpansion = coloredExpandedProductToTex(expandedProductTerms(polyA, polyB));
+      result.innerHTML = `\\[(${polynomialToTex(polyA)})\\;\\cdot\\;(${polynomialToTex(polyB)}) = ${coloredExpansion}\\]`;
       wrapper.appendChild(result);
 
       activityBox.appendChild(wrapper);
@@ -443,13 +525,13 @@ fetch("/nav.html")
 
       ctx.fillText('(', leftStart - 55, y);
       polyA.terms.forEach((term, i) => {
-        ctx.fillText(termPlainText(term, { omitLeadingPlus: i === 0, forceSign: i > 0 }), leftPositions[i], y);
+        drawTermOnCanvas(ctx, term, leftPositions[i], y, { omitLeadingPlus: i === 0, forceSign: i > 0 });
       });
       ctx.fillText(')', leftPositions[leftPositions.length - 1] + 65, y);
       ctx.fillText('×', (leftPositions[leftPositions.length - 1] + rightPositions[0]) / 2, y);
       ctx.fillText('(', rightPositions[0] - 65, y);
       polyB.terms.forEach((term, j) => {
-        ctx.fillText(termPlainText(term, { omitLeadingPlus: j === 0, forceSign: j > 0 }), rightPositions[j], y);
+        drawTermOnCanvas(ctx, term, rightPositions[j], y, { omitLeadingPlus: j === 0, forceSign: j > 0 });
       });
       ctx.fillText(')', rightPositions[rightPositions.length - 1] + 65, y);
 

@@ -5,6 +5,7 @@
 
 
 
+
  <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -576,10 +577,11 @@ fetch("/nav.html")
       const block = document.createElement('div');
       block.className = 'hint-step-block';
       block.style.textAlign = 'center';
-      block.style.margin = '1.25em auto';
-      block.style.padding = '0.75em';
+      block.style.margin = '0.45em auto';
+      block.style.padding = '0.2em';
       block.style.maxWidth = '100%';
       block.style.overflowX = 'auto';
+      block.style.lineHeight = '1.05';
 
       hintArea.appendChild(block);
       return block;
@@ -622,7 +624,7 @@ fetch("/nav.html")
       const block = createHintStepBlock('Pair the terms');
       const canvas = document.createElement('canvas');
       canvas.width = 1700;
-      canvas.height = 390;
+      canvas.height = 315;
       canvas.style.maxWidth = '100%';
       canvas.style.background = 'white';
       block.appendChild(canvas);
@@ -634,7 +636,7 @@ fetch("/nav.html")
       ctx.textAlign = 'center';
       ctx.fillStyle = 'black';
 
-      const y = 275;
+      const y = 225;
       const factorGap = 95;
       const multiplyGap = 45;
 
@@ -728,11 +730,11 @@ fetch("/nav.html")
       const rows = leftPoly.terms.length;
       const cols = rightPoly.terms.length;
       const cellWidth = Math.max(220, 720 / cols);
-      const cellHeight = Math.max(95, 280 / rows);
+      const cellHeight = Math.max(80, 230 / rows);
       const marginLeft = 120;
-      const marginTop = 50;
+      const marginTop = 38;
       canvas.width = Math.max(900, marginLeft * 2 + cols * cellWidth + 120);
-      canvas.height = Math.max(300, marginTop * 2 + rows * cellHeight + 80);
+      canvas.height = Math.max(240, marginTop * 2 + rows * cellHeight + 30);
       canvas.style.maxWidth = '100%';
       canvas.style.background = 'white';
       block.appendChild(canvas);
@@ -769,6 +771,12 @@ fetch("/nav.html")
       rightPoly.terms.forEach((term, c) => {
         drawWrappedTextInCell(ctx, termForCellText(term), marginLeft + c * cellWidth + cellWidth / 2, marginTop - 25, cellWidth - 16, 25);
       });
+    }
+
+
+    function polynomialToTexForRemainingProduct(polynomial, remainingFactors = []) {
+      const tex = polynomialToTex(polynomial);
+      return remainingFactors.length ? `(${tex})` : tex;
     }
 
     function displayDistributedStep(leftPoly, rightPoly, remainingFactors = []) {

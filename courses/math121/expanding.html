@@ -1,6 +1,7 @@
 
 
 
+
  <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -144,7 +145,7 @@ fetch("/nav.html")
     <div id="final-answer-input" style="text-align: center; margin-top: 1em;"></div>
 
     <div class="button-container">
-      <button id="hint-btn" class="rubber-button">Next</button>
+      <button id="hint-btn" class="rubber-button">Hint</button>
     </div>
     
     <div id="hint-area" class="math" style="margin-top: 1em;"></div>
@@ -214,6 +215,8 @@ fetch("/nav.html")
     let currentLeftPolynomial = null;
     let currentRightPolynomial = null;
     let currentProductPolynomial = null;
+    let currentProblem = null;
+    let hintStep = 0;
 
     function weightedChoice(choices) {
       const totalWeight = choices.reduce((sum, choice) => sum + choice.weight, 0);
@@ -260,9 +263,8 @@ fetch("/nav.html")
     }
 
     function randomPolynomial() {
-      // The requested distribution is for the initially generated polynomial:
       // 15% monomial, 60% binomial, 25% trinomial.
-      // We retry if combining like terms accidentally cancels everything.
+      // Retry if combining like terms accidentally cancels everything.
       let polynomial;
       do {
         const numberOfTerms = weightedChoice([
@@ -282,16 +284,67 @@ fetch("/nav.html")
       return polynomial;
     }
 
-    function randomPolynomialPair() {
-      let leftPolynomial;
-      let rightPolynomial;
+    function randomPowerForBinomial() {
+      return weightedChoice([
+        { value: 2, weight: 0.80 },
+        { value: 3, weight: 0.16 },
+        { value: 4, weight: 0.04 }
+      ]);
+    }
 
+    function generateExpansionProblem() {
+      const firstPolynomial = randomPolynomial();
+
+      if (firstPolynomial.numberOfTerms === 2 && Math.random() < 0.50) {
+        const exponent = randomPowerForBinomial();
+        return {
+          type: 'power',
+          base: firstPolynomial,
+          exponent,
+          factors: Array.from({ length: exponent }, () => clonePolynomial(firstPolynomial))
+        };
+      }
+
+      if (firstPolynomial.numberOfTerms === 3 && Math.random() < 0.30) {
+        return {
+          type: 'power',
+          base: firstPolynomial,
+          exponent: 2,
+          factors: [clonePolynomial(firstPolynomial), clonePolynomial(firstPolynomial)]
+        };
+      }
+
+      let secondPolynomial;
       do {
-        leftPolynomial = randomPolynomial();
-        rightPolynomial = randomPolynomial();
-      } while (leftPolynomial.numberOfTerms === 1 && rightPolynomial.numberOfTerms === 1);
+        secondPolynomial = randomPolynomial();
+      } while (firstPolynomial.numberOfTerms === 1 && secondPolynomial.numberOfTerms === 1);
 
-      return [leftPolynomial, rightPolynomial];
+      return {
+        type: 'product',
+        factors: [firstPolynomial, secondPolynomial]
+      };
+    }
+
+    function normalizeProblem(problem) {
+      // Fix the factor list for powers after the exponent has been selected.
+      if (problem.type === 'power' && problem.factors.length !== problem.exponent) {
+        problem.factors = Array.from({ length: problem.exponent }, () => clonePolynomial(problem.base));
+      }
+      problem.currentPolynomial = clonePolynomial(problem.factors[0]);
+      problem.nextFactorIndex = 1;
+      problem.phase = 'arcs';
+      problem.done = problem.factors.length <= 1;
+      return problem;
+    }
+
+    function clonePolynomial(polynomial) {
+      return {
+        numberOfTerms: polynomial.numberOfTerms,
+        terms: polynomial.terms.map(term => ({
+          coefficient: term.coefficient,
+          powers: { ...term.powers }
+        }))
+      };
     }
 
     function monomialKey(term) {
@@ -326,6 +379,10 @@ fetch("/nav.html")
       return { numberOfTerms: terms.length, terms };
     }
 
+    function hasLikeTerms(polynomial) {
+      return new Set(polynomial.terms.map(monomialKey)).size < polynomial.terms.length;
+    }
+
     function multiplyTerms(termA, termB) {
       return {
         coefficient: termA.coefficient * termB.coefficient,
@@ -337,14 +394,18 @@ fetch("/nav.html")
       };
     }
 
-    function multiplyPolynomials(polyA, polyB) {
+    function multiplyPolynomialsUncombined(polyA, polyB) {
       const productTerms = [];
       polyA.terms.forEach(termA => {
         polyB.terms.forEach(termB => {
           productTerms.push(multiplyTerms(termA, termB));
         });
       });
-      return combineLikeTerms({ numberOfTerms: productTerms.length, terms: productTerms });
+      return { numberOfTerms: productTerms.length, terms: productTerms };
+    }
+
+    function multiplyPolynomials(polyA, polyB) {
+      return combineLikeTerms(multiplyPolynomialsUncombined(polyA, polyB));
     }
 
     function expandedProductTerms(polyA, polyB) {
@@ -406,6 +467,17 @@ fetch("/nav.html")
         omitLeadingPlus: index === 0,
         forceSign: index > 0
       })).join(' ');
+    }
+
+    function polynomialListToTex(factors, startIndex = 0) {
+      return factors.slice(startIndex).map(poly => `(${polynomialToTex(poly)})`).join('');
+    }
+
+    function problemToTex(problem) {
+      if (problem.type === 'power') {
+        return `(${polynomialToTex(problem.base)})^{${problem.exponent}}`;
+      }
+      return polynomialListToTex(problem.factors);
     }
 
     function termPiecesForCanvas(term, options = {}) {
@@ -480,10 +552,26 @@ fetch("/nav.html")
       ctx.stroke();
     }
 
-    function displayPolynomialProduct(polyA, polyB) {
-      const product = multiplyPolynomials(polyA, polyB);
-      currentProductPolynomial = product;
+    function drawFactorOnCanvas(ctx, polynomial, startX, y, termSpacing, options = {}) {
+      const termPositions = polynomial.terms.map((_, i) => startX + 45 + i * termSpacing);
+      ctx.fillText('(', startX, y);
+      polynomial.terms.forEach((term, i) => {
+        drawTermOnCanvas(ctx, term, termPositions[i], y, { omitLeadingPlus: i === 0, forceSign: i > 0 });
+      });
+      const endX = termPositions[termPositions.length - 1] + 55;
+      ctx.fillText(')', endX, y);
+      if (options.power && options.power > 1) {
+        ctx.save();
+        ctx.font = 'bold 22px Arial';
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillText(`${options.power}`, endX + 22, y - 30);
+        ctx.restore();
+        return { termPositions, startX, endX: endX + 35 };
+      }
+      return { termPositions, startX, endX };
+    }
 
+    function displayMultiplicationPicture(leftPoly, rightPoly, remainingFactors = []) {
       activityBox.innerHTML = '';
 
       const wrapper = document.createElement('div');
@@ -497,13 +585,6 @@ fetch("/nav.html")
       canvas.style.background = 'white';
       wrapper.appendChild(canvas);
 
-      const result = document.createElement('div');
-      result.className = 'math';
-      result.style.marginTop = '1em';
-      const coloredExpansion = coloredExpandedProductToTex(expandedProductTerms(polyA, polyB));
-      result.innerHTML = `\\[(${polynomialToTex(polyA)})\\;\\cdot\\;(${polynomialToTex(polyB)}) = ${coloredExpansion}\\]`;
-      wrapper.appendChild(result);
-
       activityBox.appendChild(wrapper);
 
       const ctx = canvas.getContext('2d');
@@ -515,38 +596,108 @@ fetch("/nav.html")
 
       const y = 250;
       const termSpacing = 125;
-      const betweenPolysGap = 150;
-      const totalTerms = polyA.terms.length + polyB.terms.length;
-      const expressionWidth = Math.max(500, (totalTerms - 1) * termSpacing + betweenPolysGap);
+      const factorGap = 110;
+      const firstWidth = Math.max(160, (leftPoly.terms.length - 1) * termSpacing + 110);
+      const secondWidth = Math.max(160, (rightPoly.terms.length - 1) * termSpacing + 110);
+      const remainingWidth = remainingFactors.length ? 150 + 80 * remainingFactors.length : 0;
+      const expressionWidth = firstWidth + factorGap + secondWidth + remainingWidth;
       const leftStart = (canvas.width - expressionWidth) / 2;
-      const leftPositions = polyA.terms.map((_, i) => leftStart + i * termSpacing);
-      const rightStart = leftStart + Math.max(1, polyA.terms.length - 1) * termSpacing + betweenPolysGap;
-      const rightPositions = polyB.terms.map((_, j) => rightStart + j * termSpacing);
+      const leftDraw = drawFactorOnCanvas(ctx, leftPoly, leftStart, y, termSpacing);
+      ctx.fillText('×', leftDraw.endX + factorGap / 2, y);
+      const rightDraw = drawFactorOnCanvas(ctx, rightPoly, leftDraw.endX + factorGap, y, termSpacing);
 
-      ctx.fillText('(', leftStart - 55, y);
-      polyA.terms.forEach((term, i) => {
-        drawTermOnCanvas(ctx, term, leftPositions[i], y, { omitLeadingPlus: i === 0, forceSign: i > 0 });
-      });
-      ctx.fillText(')', leftPositions[leftPositions.length - 1] + 65, y);
-      ctx.fillText('×', (leftPositions[leftPositions.length - 1] + rightPositions[0]) / 2, y);
-      ctx.fillText('(', rightPositions[0] - 65, y);
-      polyB.terms.forEach((term, j) => {
-        drawTermOnCanvas(ctx, term, rightPositions[j], y, { omitLeadingPlus: j === 0, forceSign: j > 0 });
-      });
-      ctx.fillText(')', rightPositions[rightPositions.length - 1] + 65, y);
+      let cursor = rightDraw.endX;
+      if (remainingFactors.length) {
+        const sameRemainder = remainingFactors.every(poly => polynomialToTex(poly) === polynomialToTex(remainingFactors[0]));
+        const canCompress = sameRemainder && remainingFactors.length > 1;
+        ctx.fillText('×', cursor + 45, y);
+        if (canCompress) {
+          drawFactorOnCanvas(ctx, remainingFactors[0], cursor + 90, y, termSpacing, { power: remainingFactors.length });
+        } else {
+          cursor += 90;
+          remainingFactors.forEach((poly, index) => {
+            if (index > 0) {
+              ctx.fillText('×', cursor + 45, y);
+              cursor += 90;
+            }
+            const drawn = drawFactorOnCanvas(ctx, poly, cursor, y, termSpacing);
+            cursor = drawn.endX;
+          });
+        }
+      }
 
       let arcIndex = 0;
-      polyA.terms.forEach((_, i) => {
-        polyB.terms.forEach((__, j) => {
+      leftPoly.terms.forEach((_, i) => {
+        rightPoly.terms.forEach((__, j) => {
           const color = rainbowColors[arcIndex % rainbowColors.length];
           const height = 70 + 18 * ((i + j) % 5) + 8 * Math.floor(arcIndex / 3);
-          drawRoundedArc(ctx, leftPositions[i], rightPositions[j], y - 34, height, color);
+          drawRoundedArc(ctx, leftDraw.termPositions[i], rightDraw.termPositions[j], y - 34, height, color);
           arcIndex++;
         });
       });
+    }
 
-      if (window.MathJax) MathJax.typeset([result]);
-      return product;
+    function displayDistributedStep(leftPoly, rightPoly, remainingFactors = []) {
+      const coloredExpansion = coloredExpandedProductToTex(expandedProductTerms(leftPoly, rightPoly));
+      const remainderTex = polynomialListToTex(remainingFactors);
+      hintArea.innerHTML = `\\[(${polynomialToTex(leftPoly)})(${polynomialToTex(rightPoly)})${remainderTex} = (${coloredExpansion})${remainderTex}\\]`;
+      if (window.MathJax) MathJax.typeset([hintArea]);
+    }
+
+    function displayCombinedStep(uncombinedProduct, remainingFactors = []) {
+      const combined = combineLikeTerms(uncombinedProduct);
+      const remainderTex = polynomialListToTex(remainingFactors);
+      if (hasLikeTerms(uncombinedProduct)) {
+        hintArea.innerHTML = `\\[${polynomialToTex(uncombinedProduct)}${remainderTex} = ${polynomialToTex(combined)}${remainderTex}\\]`;
+      } else {
+        hintArea.innerHTML = `\\[${polynomialToTex(combined)}${remainderTex}\\]`;
+      }
+      if (window.MathJax) MathJax.typeset([hintArea]);
+      return combined;
+    }
+
+    function advanceHint() {
+      if (!currentProblem || currentProblem.done) return;
+
+      const sound = document.getElementById('click-sound');
+      if (sound) {
+        sound.currentTime = 0;
+        sound.play();
+      }
+
+      const leftPoly = currentProblem.currentPolynomial;
+      const rightPoly = currentProblem.factors[currentProblem.nextFactorIndex];
+      const remainingFactors = currentProblem.factors.slice(currentProblem.nextFactorIndex + 1);
+
+      if (currentProblem.phase === 'arcs') {
+        hintArea.innerHTML = '';
+        displayMultiplicationPicture(leftPoly, rightPoly, remainingFactors);
+        currentProblem.phase = 'distributed';
+        return;
+      }
+
+      if (currentProblem.phase === 'distributed') {
+        const uncombined = multiplyPolynomialsUncombined(leftPoly, rightPoly);
+        currentProblem.uncombinedProduct = uncombined;
+        displayDistributedStep(leftPoly, rightPoly, remainingFactors);
+        currentProblem.phase = 'combined';
+        return;
+      }
+
+      if (currentProblem.phase === 'combined') {
+        const combined = displayCombinedStep(currentProblem.uncombinedProduct, remainingFactors);
+        currentProblem.currentPolynomial = combined;
+        currentProblem.nextFactorIndex++;
+        currentProblem.uncombinedProduct = null;
+
+        if (currentProblem.nextFactorIndex >= currentProblem.factors.length) {
+          currentProblem.done = true;
+          currentProductPolynomial = combined;
+          hintBtn.disabled = true;
+        } else {
+          currentProblem.phase = 'arcs';
+        }
+      }
     }
 
     function clearOldActivityState() {
@@ -555,6 +706,8 @@ fetch("/nav.html")
       decompositionContainer.innerHTML = '';
       document.getElementById('final-answer-input').innerHTML = '';
       hintArea.innerHTML = '';
+      activityBox.innerHTML = '';
+      hintStep = 0;
       hintBtn.disabled = true;
       checkBtn.style.display = 'none';
       const oldPartialProducts = document.getElementById('partial-products-inputs');
@@ -570,14 +723,17 @@ fetch("/nav.html")
         sound.play();
       }
 
-      [currentLeftPolynomial, currentRightPolynomial] = randomPolynomialPair();
-      currentProductPolynomial = displayPolynomialProduct(currentLeftPolynomial, currentRightPolynomial);
+      currentProblem = normalizeProblem(generateExpansionProblem());
+      currentLeftPolynomial = currentProblem.factors[0];
+      currentRightPolynomial = currentProblem.factors[1] || null;
+      currentProductPolynomial = null;
 
-      questionText.innerHTML = `Expand \\[(${polynomialToTex(currentLeftPolynomial)})(${polynomialToTex(currentRightPolynomial)})\\]`;
-      MathJax.typeset([questionText]);
+      questionText.innerHTML = `Expand \\[${problemToTex(currentProblem)}\\]`;
+      hintBtn.disabled = currentProblem.done;
+      if (window.MathJax) MathJax.typeset([questionText]);
     });
 
-
+    hintBtn.addEventListener('click', advanceHint);
 
 
 
@@ -611,152 +767,6 @@ fetch("/nav.html")
 
     let partialStepCompleted = false;
 
-    hintBtn.addEventListener('click', () => {
-      const sound = document.getElementById('click-sound');
-      if (sound) {
-        sound.currentTime = 0;
-        sound.play();
-      }
-    
-      if (partialStepCompleted) {
-        console.log("Hint clicked after partial products completed — next stage should start.");
-      
-        const partialInputs = document.querySelectorAll('.partial-input');
-        partialInputs.forEach(input => input.disabled = true);
-      
-        console.log("Partial product inputs disabled.");
-      
-        // Avoid duplicating the final input
-        const finalAnswerDiv = document.getElementById('final-answer-input');
-        if (!finalAnswerDiv.querySelector('input')) {
-          console.log("Creating final answer input box.");
-          
-          const finalAnswer = a * b;
-      
-          finalAnswerDiv.innerHTML = `= <input type="text" id="final-input" data-expected="${finalAnswer}" style="width: 100px; text-align: center;" />`;
-      
-          const finalInput = document.getElementById('final-input');
-          finalInput.addEventListener('input', () => {
-            const value = parseInt(finalInput.value, ruleCheckboxes.basefive.checked ? 5 : 10);
-            const expected = parseInt(finalInput.dataset.expected);
-      
-            if (!isNaN(value) && value === expected) {
-              finalInput.style.backgroundColor = '#c8f7c5';
-              hintBtn.disabled = true;  
-              feedbackText.textContent = "Correct!";
-              feedbackText.style.color = "green";
-            } else {
-              finalInput.style.backgroundColor = '#f8d7da';
-              feedbackText.textContent = "";
-            }
-          });
-        } else {
-          console.log("Final input box already exists.");
-        }
-      
-        return;
-      }
-
-
-
-  
-    const allInputs = document.querySelectorAll('.decomp-input');
-    const allCorrect = Array.from(allInputs).every(input => {
-      return parseInt(input.value, ruleCheckboxes.basefive.checked ? 5 : 10) === parseInt(input.dataset.expected);
-    });
-  
-    if (!allCorrect) return;
-
-    console.log("Hint button clicked");
-    console.log("All decomposition inputs correct:", allCorrect);
-    console.log("aParts:", aParts);
-    console.log("bParts:", bParts);
-    console.log("Number of expected partial products:", aParts.length * bParts.length);
-
-  
-    // Freeze the inputs
-    allInputs.forEach(input => input.disabled = true);
-  
-
-    // Get the original values used for decomposition
-    aParts = [];
-    bParts = [];
-    allInputs.forEach((input, index) => {
-      const expected = parseInt(input.dataset.expected);
-      if (index < allInputs.length - bDigits.length) {
-        aParts.push(expected);
-      } else {
-        bParts.push(expected);
-      }
-    });
-    
-    // Compute partial products
-    const partialProducts = [];
-    for (let i = 0; i < aParts.length; i++) {
-      for (let j = 0; j < bParts.length; j++) {
-        partialProducts.push(aParts[i] * bParts[j]);
-      }
-    }
-
-    console.log("Partial products:", partialProducts);
-    
-    // Create the container if not already present
-    let partialProductsContainer = document.getElementById('partial-products-inputs');
-    if (!partialProductsContainer) {
-      partialProductsContainer = document.createElement('div');
-      partialProductsContainer.id = 'partial-products-inputs';
-      partialProductsContainer.style.textAlign = 'center';
-      partialProductsContainer.style.marginTop = '1em';
-      decompositionContainer.insertAdjacentElement('afterend', partialProductsContainer);
-    }
-    partialProductsContainer.innerHTML = '';
-    
-    let html = '= ' + partialProducts.map((value, index) => {
-      return `<input type="text" data-expected="${value}" class="partial-input" style="width: 70px; text-align: center;" />`;
-    }).join(' + ');
-
-    
-    partialProductsContainer.innerHTML = html;
-    
-    const partialInputs = partialProductsContainer.querySelectorAll('.partial-input');
-    
-    function validatePartialInputsAndEnableNext() {
-      let allCorrect = true;
-      partialInputs.forEach((input, index) => {
-        const expected = parseInt(input.dataset.expected);
-        const value = parseInt(input.value, ruleCheckboxes.basefive.checked ? 5 : 10);
-        console.log(`Partial input ${index}: value=${value}, expected=${expected}`);
-    
-        if (!isNaN(value) && value === expected) {
-          input.style.backgroundColor = '#c8f7c5';
-        } else {
-          input.style.backgroundColor = '#f8d7da';
-          allCorrect = false;
-        }
-      });
-    
-      console.log("All partial inputs correct?", allCorrect);
-      hintBtn.disabled = !allCorrect;
-      if (allCorrect) {
-        partialStepCompleted = true;
-      } else {
-        partialStepCompleted = false;
-      }
-
-    
-      drawCanvas(mode, inputElements, partialInputs);
-    }
-
-    
-    partialInputs.forEach(input => {
-      input.addEventListener('input', validatePartialInputsAndEnableNext);
-    });
-
-
-  });
-  
-
-    
   </script>
 
   <audio id="click-sound" src="button.mp3" preload="auto"></audio>

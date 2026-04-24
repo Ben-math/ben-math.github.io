@@ -2,6 +2,7 @@
 
 
 
+
  <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -150,9 +151,7 @@ fetch("/nav.html")
     
     <div id="hint-area" class="math" style="margin-top: 1em;"></div>
 
-    <div class="activity-box" id="my-activity">
-
-    </div>
+    <div id="my-activity" style="display: none;"></div>
 
     <div class="button-container">
       <button id="check-btn" class="rubber-button" style="display: none;">Check Answer</button>
@@ -286,9 +285,9 @@ fetch("/nav.html")
 
     function randomPowerForBinomial() {
       return weightedChoice([
-        { value: 2, weight: 0.80 },
-        { value: 3, weight: 0.16 },
-        { value: 4, weight: 0.04 }
+        { value: 2, weight: 0.60 },
+        { value: 3, weight: 0.30 },
+        { value: 4, weight: 0.10 }
       ]);
     }
 
@@ -571,56 +570,123 @@ fetch("/nav.html")
       return { termPositions, startX, endX };
     }
 
+    function createHintStepBlock(title = '') {
+      const block = document.createElement('div');
+      block.className = 'hint-step-block';
+      block.style.textAlign = 'center';
+      block.style.margin = '1.25em auto';
+      block.style.padding = '0.75em';
+      block.style.maxWidth = '100%';
+      block.style.overflowX = 'auto';
+
+      if (title) {
+        const heading = document.createElement('div');
+        heading.textContent = title;
+        heading.style.fontWeight = 'bold';
+        heading.style.marginBottom = '0.5em';
+        block.appendChild(heading);
+      }
+
+      hintArea.appendChild(block);
+      return block;
+    }
+
+    function drawFactorOnCanvasAdaptive(ctx, polynomial, startX, y, options = {}) {
+      const padding = options.padding || 22;
+      const gap = options.gap || 24;
+      const termOptions = polynomial.terms.map((_, i) => ({ omitLeadingPlus: i === 0, forceSign: i > 0 }));
+      const termWidths = polynomial.terms.map((term, i) => measureTermOnCanvas(ctx, term, termOptions[i]));
+
+      let cursor = startX + padding + 12;
+      ctx.fillText('(', startX + 8, y);
+      const termPositions = [];
+
+      polynomial.terms.forEach((term, i) => {
+        const centerX = cursor + termWidths[i] / 2;
+        termPositions.push(centerX);
+        drawTermOnCanvas(ctx, term, centerX, y, termOptions[i]);
+        cursor += termWidths[i] + gap;
+      });
+
+      const closeParenX = cursor - gap + padding + 4;
+      ctx.fillText(')', closeParenX, y);
+
+      let endX = closeParenX + padding;
+      if (options.power && options.power > 1) {
+        ctx.save();
+        ctx.font = 'bold 22px Arial';
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillText(`${options.power}`, closeParenX + 24, y - 30);
+        ctx.restore();
+        endX += 36;
+      }
+
+      return { termPositions, startX, endX, width: endX - startX };
+    }
+
     function displayMultiplicationPicture(leftPoly, rightPoly, remainingFactors = []) {
-      activityBox.innerHTML = '';
-
-      const wrapper = document.createElement('div');
-      wrapper.style.textAlign = 'center';
-      wrapper.style.padding = '1em';
-
+      const block = createHintStepBlock('Pair the terms');
       const canvas = document.createElement('canvas');
-      canvas.width = 1300;
-      canvas.height = 360;
+      canvas.width = 1700;
+      canvas.height = 390;
       canvas.style.maxWidth = '100%';
       canvas.style.background = 'white';
-      wrapper.appendChild(canvas);
-
-      activityBox.appendChild(wrapper);
+      block.appendChild(canvas);
 
       const ctx = canvas.getContext('2d');
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.font = 'bold 38px Arial';
+      ctx.font = 'bold 34px Arial';
       ctx.textBaseline = 'middle';
       ctx.textAlign = 'center';
       ctx.fillStyle = 'black';
 
-      const y = 250;
-      const termSpacing = 125;
-      const factorGap = 110;
-      const firstWidth = Math.max(160, (leftPoly.terms.length - 1) * termSpacing + 110);
-      const secondWidth = Math.max(160, (rightPoly.terms.length - 1) * termSpacing + 110);
-      const remainingWidth = remainingFactors.length ? 150 + 80 * remainingFactors.length : 0;
-      const expressionWidth = firstWidth + factorGap + secondWidth + remainingWidth;
-      const leftStart = (canvas.width - expressionWidth) / 2;
-      const leftDraw = drawFactorOnCanvas(ctx, leftPoly, leftStart, y, termSpacing);
-      ctx.fillText('×', leftDraw.endX + factorGap / 2, y);
-      const rightDraw = drawFactorOnCanvas(ctx, rightPoly, leftDraw.endX + factorGap, y, termSpacing);
+      const y = 275;
+      const factorGap = 95;
+      const multiplyGap = 45;
 
-      let cursor = rightDraw.endX;
+      const factorWidth = poly => {
+        const gap = 24;
+        const padding = 34;
+        return Math.max(150, padding * 2 + poly.terms.reduce((sum, term, i) => {
+          return sum + measureTermOnCanvas(ctx, term, { omitLeadingPlus: i === 0, forceSign: i > 0 });
+        }, 0) + gap * Math.max(0, poly.terms.length - 1));
+      };
+
+      const leftWidth = factorWidth(leftPoly);
+      const rightWidth = factorWidth(rightPoly);
+      let remainingWidth = 0;
+      let compressedRemainder = null;
       if (remainingFactors.length) {
         const sameRemainder = remainingFactors.every(poly => polynomialToTex(poly) === polynomialToTex(remainingFactors[0]));
-        const canCompress = sameRemainder && remainingFactors.length > 1;
-        ctx.fillText('×', cursor + 45, y);
-        if (canCompress) {
-          drawFactorOnCanvas(ctx, remainingFactors[0], cursor + 90, y, termSpacing, { power: remainingFactors.length });
+        if (sameRemainder && remainingFactors.length > 1) {
+          compressedRemainder = { poly: remainingFactors[0], power: remainingFactors.length };
+          remainingWidth = multiplyGap + factorWidth(remainingFactors[0]) + 45;
         } else {
-          cursor += 90;
+          remainingWidth = remainingFactors.reduce((sum, poly) => sum + multiplyGap + factorWidth(poly), 0);
+        }
+      }
+
+      const expressionWidth = leftWidth + factorGap + rightWidth + remainingWidth;
+      let cursor = Math.max(20, (canvas.width - expressionWidth) / 2);
+      const leftDraw = drawFactorOnCanvasAdaptive(ctx, leftPoly, cursor, y);
+      cursor = leftDraw.endX;
+      ctx.fillText('×', cursor + factorGap / 2, y);
+      cursor += factorGap;
+      const rightDraw = drawFactorOnCanvasAdaptive(ctx, rightPoly, cursor, y);
+      cursor = rightDraw.endX;
+
+      if (remainingFactors.length) {
+        ctx.fillText('×', cursor + multiplyGap / 2, y);
+        cursor += multiplyGap;
+        if (compressedRemainder) {
+          drawFactorOnCanvasAdaptive(ctx, compressedRemainder.poly, cursor, y, { power: compressedRemainder.power });
+        } else {
           remainingFactors.forEach((poly, index) => {
             if (index > 0) {
-              ctx.fillText('×', cursor + 45, y);
-              cursor += 90;
+              ctx.fillText('×', cursor + multiplyGap / 2, y);
+              cursor += multiplyGap;
             }
-            const drawn = drawFactorOnCanvas(ctx, poly, cursor, y, termSpacing);
+            const drawn = drawFactorOnCanvasAdaptive(ctx, poly, cursor, y);
             cursor = drawn.endX;
           });
         }
@@ -634,6 +700,80 @@ fetch("/nav.html")
           drawRoundedArc(ctx, leftDraw.termPositions[i], rightDraw.termPositions[j], y - 34, height, color);
           arcIndex++;
         });
+      });
+    }
+
+    function drawWrappedTextInCell(ctx, text, centerX, centerY, maxWidth, lineHeight) {
+      const pieces = text.split(/\s+/);
+      const lines = [];
+      let current = '';
+      pieces.forEach(piece => {
+        const test = current ? current + ' ' + piece : piece;
+        if (ctx.measureText(test).width <= maxWidth || !current) {
+          current = test;
+        } else {
+          lines.push(current);
+          current = piece;
+        }
+      });
+      if (current) lines.push(current);
+      const startY = centerY - (lines.length - 1) * lineHeight / 2;
+      lines.forEach((line, index) => ctx.fillText(line, centerX, startY + index * lineHeight));
+    }
+
+    function termForCellText(term) {
+      return termToTex(term, { omitLeadingPlus: true })
+        .replace(/\^\{(\d+)\}/g, '^$1')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function displayAreaModelPicture(leftPoly, rightPoly, remainingFactors = []) {
+      const block = createHintStepBlock('Area model');
+      const canvas = document.createElement('canvas');
+      const rows = leftPoly.terms.length;
+      const cols = rightPoly.terms.length;
+      const cellWidth = Math.max(220, 720 / cols);
+      const cellHeight = Math.max(95, 280 / rows);
+      const marginLeft = 120;
+      const marginTop = 50;
+      canvas.width = Math.max(900, marginLeft * 2 + cols * cellWidth + 120);
+      canvas.height = Math.max(300, marginTop * 2 + rows * cellHeight + 80);
+      canvas.style.maxWidth = '100%';
+      canvas.style.background = 'white';
+      block.appendChild(canvas);
+
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.font = 'bold 26px Arial';
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'center';
+      ctx.lineWidth = 3;
+
+      let arcIndex = 0;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const x = marginLeft + c * cellWidth;
+          const y = marginTop + r * cellHeight;
+          const color = rainbowColors[arcIndex % rainbowColors.length];
+          ctx.fillStyle = color;
+          ctx.globalAlpha = 0.55;
+          ctx.fillRect(x, y, cellWidth, cellHeight);
+          ctx.globalAlpha = 1;
+          ctx.strokeStyle = 'black';
+          ctx.strokeRect(x, y, cellWidth, cellHeight);
+          ctx.fillStyle = 'black';
+          drawWrappedTextInCell(ctx, termForCellText(multiplyTerms(leftPoly.terms[r], rightPoly.terms[c])), x + cellWidth / 2, y + cellHeight / 2, cellWidth - 22, 30);
+          arcIndex++;
+        }
+      }
+
+      ctx.font = 'bold 22px Arial';
+      leftPoly.terms.forEach((term, r) => {
+        drawWrappedTextInCell(ctx, termForCellText(term), marginLeft - 62, marginTop + r * cellHeight + cellHeight / 2, 100, 25);
+      });
+      rightPoly.terms.forEach((term, c) => {
+        drawWrappedTextInCell(ctx, termForCellText(term), marginLeft + c * cellWidth + cellWidth / 2, marginTop - 25, cellWidth - 16, 25);
       });
     }
 
@@ -670,8 +810,13 @@ fetch("/nav.html")
       const remainingFactors = currentProblem.factors.slice(currentProblem.nextFactorIndex + 1);
 
       if (currentProblem.phase === 'arcs') {
-        hintArea.innerHTML = '';
         displayMultiplicationPicture(leftPoly, rightPoly, remainingFactors);
+        currentProblem.phase = 'area';
+        return;
+      }
+
+      if (currentProblem.phase === 'area') {
+        displayAreaModelPicture(leftPoly, rightPoly, remainingFactors);
         currentProblem.phase = 'distributed';
         return;
       }

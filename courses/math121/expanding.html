@@ -1,4 +1,5 @@
 
+
  <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -258,18 +259,38 @@ fetch("/nav.html")
     }
 
     function randomPolynomial() {
-      const numberOfTerms = weightedChoice([
-        { value: 1, weight: 0.25 },
-        { value: 2, weight: 0.60 },
-        { value: 3, weight: 0.15 }
-      ]);
+      // The requested distribution is for the initially generated polynomial:
+      // 15% monomial, 60% binomial, 25% trinomial.
+      // We retry if combining like terms accidentally cancels everything.
+      let polynomial;
+      do {
+        const numberOfTerms = weightedChoice([
+          { value: 1, weight: 0.15 },
+          { value: 2, weight: 0.60 },
+          { value: 3, weight: 0.25 }
+        ]);
 
-      const polynomial = { numberOfTerms, terms: [] };
-      for (let i = 0; i < numberOfTerms; i++) {
-        polynomial.terms.push(randomTerm());
-      }
+        polynomial = { numberOfTerms, terms: [] };
+        for (let i = 0; i < numberOfTerms; i++) {
+          polynomial.terms.push(randomTerm());
+        }
 
-      return combineLikeTerms(polynomial);
+        polynomial = combineLikeTerms(polynomial);
+      } while (polynomial.terms.length === 0);
+
+      return polynomial;
+    }
+
+    function randomPolynomialPair() {
+      let leftPolynomial;
+      let rightPolynomial;
+
+      do {
+        leftPolynomial = randomPolynomial();
+        rightPolynomial = randomPolynomial();
+      } while (leftPolynomial.numberOfTerms === 1 && rightPolynomial.numberOfTerms === 1);
+
+      return [leftPolynomial, rightPolynomial];
     }
 
     function monomialKey(term) {
@@ -467,8 +488,7 @@ fetch("/nav.html")
         sound.play();
       }
 
-      currentLeftPolynomial = randomPolynomial();
-      currentRightPolynomial = randomPolynomial();
+      [currentLeftPolynomial, currentRightPolynomial] = randomPolynomialPair();
       currentProductPolynomial = displayPolynomialProduct(currentLeftPolynomial, currentRightPolynomial);
 
       questionText.innerHTML = `Expand \\[(${polynomialToTex(currentLeftPolynomial)})(${polynomialToTex(currentRightPolynomial)})\\]`;

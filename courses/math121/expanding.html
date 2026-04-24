@@ -8,6 +8,7 @@
 
 
 
+
  <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -624,7 +625,7 @@ fetch("/nav.html")
 
     function displayMultiplicationPicture(leftPoly, rightPoly, remainingFactors = []) {
       const block = createHintStepBlock('Pair the terms');
-      block.style.marginTop = '-0.2em';
+      block.style.marginTop = '-0.6em';
       block.style.marginBottom = '0.45em';
       const canvas = document.createElement('canvas');
       canvas.width = 1700;
@@ -733,7 +734,7 @@ fetch("/nav.html")
     function displayAreaModelPicture(leftPoly, rightPoly, remainingFactors = []) {
       const block = createHintStepBlock('Area model');
       block.style.marginTop = '0.45em';
-      block.style.marginBottom = '-0.45em';
+      block.style.marginBottom = '-0.75em';
       const canvas = document.createElement('canvas');
       const rows = leftPoly.terms.length;
       const cols = rightPoly.terms.length;
@@ -791,7 +792,7 @@ fetch("/nav.html")
 
     function displayDistributedStep(leftPoly, rightPoly, remainingFactors = []) {
       const block = createHintStepBlock();
-      block.style.marginTop = '-0.65em';
+      block.style.marginTop = '-1.0em';
       block.style.marginBottom = '-0.55em';
       const coloredExpansion = coloredExpandedProductToTex(expandedProductTerms(leftPoly, rightPoly));
       const uncombined = multiplyPolynomialsUncombined(leftPoly, rightPoly);
@@ -803,7 +804,7 @@ fetch("/nav.html")
       if (hasLikeTerms(uncombined)) {
         const combinedLine = document.createElement('div');
         combinedLine.style.textAlign = 'center';
-        combinedLine.style.marginTop = '-1.25em';
+        combinedLine.style.marginTop = '0.2em';
         combinedLine.innerHTML = `\\[= ${polynomialToTexForRemainingProduct(combined, remainingFactors)}${remainderTex}\\]`;
         block.appendChild(combinedLine);
       }

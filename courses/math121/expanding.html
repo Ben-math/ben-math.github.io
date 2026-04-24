@@ -1,3 +1,4 @@
+
  <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -206,458 +207,281 @@ fetch("/nav.html")
     const activityBox = document.getElementById('my-activity');
 
 
-    function drawCanvas(mode, inputElements, partialInputElements = []) {
-      activityBox.innerHTML = ''; 
-      const canvas = document.createElement('canvas');
-      canvas.width = 1300;
-      canvas.height = 650;
-      activityBox.appendChild(canvas);
-      const ctx = canvas.getContext('2d');
-      
-      ctx.strokeStyle = 'black';
-      ctx.lineWidth = 4;
+    const rainbowColors = ['red', 'orange', 'gold', 'blue', 'green', 'purple', 'pink', 'brown', 'grey'];
 
-      if (mode === 1) {
-        ctx.strokeRect(375, 80, 550, 550);
-        ctx.fillStyle = 'red';
-        ctx.fillRect(375, 80, 440, 440);
-        ctx.fillStyle = 'skyblue';
-        ctx.fillRect(815, 80, 110, 440);
-        ctx.fillStyle = 'orange';
-        ctx.fillRect(375, 520, 440, 110);
-        ctx.fillStyle = 'lime';
-        ctx.fillRect(815, 520, 110, 110);
-        ctx.strokeRect(375, 80, 440, 440);
-        ctx.strokeRect(815, 80, 110, 440);
-        ctx.strokeRect(375, 520, 440, 110);
-        ctx.strokeRect(815, 520, 110, 110);
-      } else if (mode === 2) {
-        ctx.fillStyle = 'red';
-        ctx.fillRect(450, 80, 320, 390);
-        ctx.fillStyle = 'orange';
-        ctx.fillRect(770, 80, 80, 390);
-        ctx.fillStyle = 'yellow';
-        ctx.fillRect(450, 470, 320, 110);
-        ctx.fillStyle = 'lime';
-        ctx.fillRect(770, 470, 80, 110);
-        ctx.fillStyle = 'skyblue';
-        ctx.fillRect(450, 580, 320, 50);
-        ctx.fillStyle = 'violet';
-        ctx.fillRect(770, 580, 80, 50);
-        ctx.strokeRect(450, 80, 400, 550);
-        ctx.strokeRect(450, 80, 320, 390);
-        ctx.strokeRect(770, 80, 80, 390);
-        ctx.strokeRect(450, 470, 320, 110);
-        ctx.strokeRect(770, 470, 80, 110);
-        ctx.strokeRect(450, 580, 320, 50);
-        ctx.strokeRect(770, 580, 80, 50);
-      } else if (mode === 3) {
-        ctx.fillStyle = 'red';
-        ctx.fillRect(375, 80, 390, 390);
-        ctx.fillStyle = 'orange';
-        ctx.fillRect(765, 80, 110, 390);
-        ctx.fillStyle = 'yellow';
-        ctx.fillRect(875, 80, 50, 390);
-        ctx.fillStyle = 'skyblue';
-        ctx.fillRect(375, 470, 390, 110);
-        ctx.fillStyle = 'lime';
-        ctx.fillRect(765, 470, 110, 110);
-        ctx.fillStyle = 'violet';
-        ctx.fillRect(875, 470, 50, 110);
-        ctx.fillStyle = 'pink';
-        ctx.fillRect(375, 580, 390, 50);
-        ctx.fillStyle = 'rgba(163,114,65,0.8)';
-        ctx.fillRect(765, 580, 110, 50);
-        ctx.fillStyle = 'lightgray';
-        ctx.fillRect(875, 580, 50, 50);
-        ctx.strokeRect(375, 80, 550, 550);
-        ctx.strokeRect(375, 80, 390, 390);
-        ctx.strokeRect(765, 80, 110, 390);
-        ctx.strokeRect(875, 80, 50, 390);
-        ctx.strokeRect(375, 470, 390, 110);
-        ctx.strokeRect(765, 470, 110, 110);
-        ctx.strokeRect(875, 470, 50, 110);
-        ctx.strokeRect(375, 580, 390, 50);
-        ctx.strokeRect(765, 580, 110, 50);
-        ctx.strokeRect(875, 580, 50, 50);
+    let currentLeftPolynomial = null;
+    let currentRightPolynomial = null;
+    let currentProductPolynomial = null;
+
+    function weightedChoice(choices) {
+      const totalWeight = choices.reduce((sum, choice) => sum + choice.weight, 0);
+      let r = Math.random() * totalWeight;
+      for (const choice of choices) {
+        r -= choice.weight;
+        if (r <= 0) return choice.value;
       }
-    
-      // Now draw the label values
-      ctx.font = "bold 48px Arial";
-      ctx.fillStyle = "black";
-
-      ctx.textAlign = "center"; // default for top labels
-
-    
-      inputElements.forEach((input, index) => {
-      const val = input.value;
-      if (!isNaN(val) && val.trim() !== "") {
-        let x = 0, y = 0;
-    
-        if (mode === 1) {
-          if (index === 0) {
-            ctx.textAlign = "right"
-            x = 370;
-            y = 330;
-          } else if (index === 1) {
-            ctx.textAlign = "right"
-            x = 370;
-            y = 590;
-          } else if (index === 2) {
-            ctx.textAlign = "center"
-            x = 595;
-            y = 70;
-          } else if (index === 3) {
-            ctx.textAlign = "center"
-            x = 870;
-            y = 70;
-          }
-        } else if (mode === 2) {
-          if (index === 0) {
-            ctx.textAlign = "right"
-            x = 440;
-            y = 300;
-          } else if (index === 1) {
-            ctx.textAlign = "right"
-            x = 440;
-            y = 546;
-          } else if (index === 2) {
-            ctx.textAlign = "right"
-            x = 440;
-            y = 623;
-          } else if (index === 3) {
-            ctx.textAlign = "center"
-            x = 613;
-            y = 70;
-          } else if (index === 4) {
-            ctx.textAlign = "center"
-            x = 813;
-            y = 70;
-          }
-        } else if (mode === 3) {
-          if (index === 0) {
-            ctx.textAlign = "right"
-            x = 370;
-            y = 300;
-          } else if (index === 1) {
-            ctx.textAlign = "right"
-            x = 370;
-            y = 546;
-          } else if (index === 2) {
-            ctx.textAlign = "right"
-            x = 370;
-            y = 623;
-          } else if (index === 3) {
-            ctx.textAlign = "center"
-            x = 570;
-            y = 70;
-          } else if (index === 4) {
-            ctx.textAlign = "center"
-            x = 820;
-            y = 70;
-          } else if (index === 5) {
-            ctx.textAlign = "center"
-            x = 900;
-            y = 70;
-          }
-        }
-    
-        ctx.fillText(val, x, y);
-      }
-    });
-
-      // Draw partial product values on canvas
-      partialInputElements.forEach((input, index) => {
-        const val = input.value;
-        if (!isNaN(val) && val.trim() !== "") {
-          ctx.font = "bold 36px Arial";
-          ctx.fillStyle = "black";
-          ctx.textAlign = "center";
-      
-          let x, y;
-
-          if (mode === 1) {
-            if (index === 0) {
-              ctx.textAlign = "center"
-              x = 595;
-              y = 320;
-              ctx.fillText(val, x, y);
-            } else if (index === 1) {
-              ctx.textAlign = "center"
-              x = 870;
-              y = 320;
-              ctx.fillText(val, x, y);
-            } else if (index === 2) {
-              ctx.textAlign = "center"
-              x = 595;
-              y = 590;
-              ctx.fillText(val, x, y);
-            } else if (index === 3) {
-              ctx.textAlign = "center"
-              x = 870;
-              y = 590;
-              ctx.fillText(val, x, y);
-            }
-          } else if (mode === 2) {
-            if (index === 0) {
-              ctx.textAlign = "center"
-              x = 613;
-              y = 290;
-              ctx.fillText(val, x, y);
-            } else if (index === 1) {
-              ctx.textAlign = "center"
-              ctx.save();
-              ctx.translate(825, 280); 
-              ctx.rotate(-Math.PI / 2); 
-              ctx.fillText(val, 0, 0);
-              ctx.restore();
-            } else if (index === 2) {
-              ctx.textAlign = "center"
-              x = 613;
-              y = 536;
-              ctx.fillText(val, x, y);
-            } else if (index === 3) {
-              ctx.textAlign = "center"
-              ctx.save();
-              ctx.translate(825, 526); 
-              ctx.rotate(-Math.PI / 2); 
-              ctx.fillText(val, 0, 0);
-              ctx.restore();
-            } else if (index === 4) {
-              ctx.textAlign = "center"
-              x = 613;
-              y = 618;
-              ctx.fillText(val, x, y);
-            } else if (index === 5) {
-              ctx.textAlign = "center"
-              ctx.save();
-              ctx.translate(810, 618); 
-              ctx.fillText(val, 0, 0);
-              ctx.restore();
-            }
-          } else if (mode === 3) {
-            if (index === 0) {
-              ctx.textAlign = "center"
-              x = 570;
-              y = 290;
-              ctx.fillText(val, x, y);
-            } else if (index === 1) {
-              ctx.textAlign = "center"
-              x = 820;
-              y = 290;
-              ctx.fillText(val, x, y);
-            } else if (index === 2) {
-              ctx.textAlign = "center"
-              ctx.save();
-              ctx.translate(915, 280); 
-              ctx.rotate(-Math.PI / 2); 
-              ctx.fillText(val, 0, 0);
-              ctx.restore();
-            } else if (index === 3) {
-              ctx.textAlign = "center"
-              x = 570;
-              y = 536;
-              ctx.fillText(val, x, y);
-            } else if (index === 4) {
-              ctx.textAlign = "center"
-              x = 820;
-              y = 536;
-              ctx.fillText(val, x, y);
-            } else if (index === 5) {
-              ctx.textAlign = "center"
-              ctx.save();
-              ctx.translate(915, 526); 
-              ctx.rotate(-Math.PI / 2); 
-              ctx.fillText(val, 0, 0);
-              ctx.restore();
-            } else if (index === 6) {
-              ctx.textAlign = "center"
-              x = 570;
-              y = 618;
-              ctx.fillText(val, x, y);
-            } else if (index === 7) {
-              ctx.textAlign = "center"
-              x = 820;
-              y = 618;
-              ctx.fillText(val, x, y);
-            } else if (index === 8) {
-              ctx.textAlign = "center"
-              ctx.save();
-              ctx.translate(900, 618); 
-              ctx.fillText(val, 0, 0);
-              ctx.restore();
-            }
-          }
-          
-        }
-      });
-
-
+      return choices[choices.length - 1].value;
     }
 
+    function randomInteger(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
 
+    function randomCoefficient() {
+      const r = Math.random();
+      if (r < 0.25) return 1;
+      if (r < 0.50) return -1;
 
+      const remainingCoefficients = [];
+      for (let n = -10; n <= 10; n++) {
+        if (n !== 0 && n !== 1 && n !== -1) remainingCoefficients.push(n);
+      }
+      return remainingCoefficients[randomInteger(0, remainingCoefficients.length - 1)];
+    }
 
+    function randomExponent() {
+      const r = Math.random();
+      if (r < 0.85) return 0;
+      if (r < 0.95) return 1;
+      return randomInteger(2, 9);
+    }
 
+    function randomTerm() {
+      return {
+        coefficient: randomCoefficient(),
+        powers: {
+          x: randomExponent(),
+          y: randomExponent(),
+          z: randomExponent()
+        }
+      };
+    }
 
+    function randomPolynomial() {
+      const numberOfTerms = weightedChoice([
+        { value: 1, weight: 0.25 },
+        { value: 2, weight: 0.60 },
+        { value: 3, weight: 0.15 }
+      ]);
 
+      const polynomial = { numberOfTerms, terms: [] };
+      for (let i = 0; i < numberOfTerms; i++) {
+        polynomial.terms.push(randomTerm());
+      }
 
-    
-  startBtn.addEventListener('click', () => {
+      return combineLikeTerms(polynomial);
+    }
 
-      const nextBtn = document.getElementById('hint-btn');
-      nextBtn.disabled = true;
+    function monomialKey(term) {
+      return ['x', 'y', 'z'].map(variable => term.powers[variable] || 0).join(',');
+    }
 
+    function combineLikeTerms(polynomial) {
+      const termsByPower = new Map();
 
+      polynomial.terms.forEach(term => {
+        const key = monomialKey(term);
+        if (!termsByPower.has(key)) {
+          termsByPower.set(key, {
+            coefficient: 0,
+            powers: { ...term.powers }
+          });
+        }
+        termsByPower.get(key).coefficient += term.coefficient;
+      });
+
+      const terms = Array.from(termsByPower.values())
+        .filter(term => term.coefficient !== 0)
+        .sort((a, b) => {
+          const aDegree = a.powers.x + a.powers.y + a.powers.z;
+          const bDegree = b.powers.x + b.powers.y + b.powers.z;
+          if (bDegree !== aDegree) return bDegree - aDegree;
+          if (b.powers.x !== a.powers.x) return b.powers.x - a.powers.x;
+          if (b.powers.y !== a.powers.y) return b.powers.y - a.powers.y;
+          return b.powers.z - a.powers.z;
+        });
+
+      return { numberOfTerms: terms.length, terms };
+    }
+
+    function multiplyTerms(termA, termB) {
+      return {
+        coefficient: termA.coefficient * termB.coefficient,
+        powers: {
+          x: termA.powers.x + termB.powers.x,
+          y: termA.powers.y + termB.powers.y,
+          z: termA.powers.z + termB.powers.z
+        }
+      };
+    }
+
+    function multiplyPolynomials(polyA, polyB) {
+      const productTerms = [];
+      polyA.terms.forEach(termA => {
+        polyB.terms.forEach(termB => {
+          productTerms.push(multiplyTerms(termA, termB));
+        });
+      });
+      return combineLikeTerms({ numberOfTerms: productTerms.length, terms: productTerms });
+    }
+
+    function termToTex(term, options = {}) {
+      const { omitLeadingPlus = false, forceSign = false } = options;
+      const coefficient = term.coefficient;
+      const absCoefficient = Math.abs(coefficient);
+      const variablePart = ['x', 'y', 'z']
+        .map(variable => {
+          const power = term.powers[variable] || 0;
+          if (power === 0) return '';
+          if (power === 1) return variable;
+          return `${variable}^{${power}}`;
+        })
+        .join('');
+
+      let body;
+      if (variablePart === '') {
+        body = `${absCoefficient}`;
+      } else if (absCoefficient === 1) {
+        body = variablePart;
+      } else {
+        body = `${absCoefficient}${variablePart}`;
+      }
+
+      if (coefficient < 0) return `- ${body}`;
+      if (forceSign || !omitLeadingPlus) return `+ ${body}`;
+      return body;
+    }
+
+    function polynomialToTex(polynomial) {
+      if (!polynomial.terms.length) return '0';
+      return polynomial.terms.map((term, index) => termToTex(term, {
+        omitLeadingPlus: index === 0,
+        forceSign: index > 0
+      })).join(' ');
+    }
+
+    function termPlainText(term, options = {}) {
+      const tex = termToTex(term, options);
+      return tex
+        .replace(/\^\{(\d+)\}/g, '^$1')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function drawRoundedArc(ctx, startX, endX, baselineY, height, color) {
+      const midX = (startX + endX) / 2;
+      ctx.beginPath();
+      ctx.moveTo(startX, baselineY);
+      ctx.quadraticCurveTo(midX, baselineY - height, endX, baselineY);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 4;
+      ctx.stroke();
+    }
+
+    function displayPolynomialProduct(polyA, polyB) {
+      const product = multiplyPolynomials(polyA, polyB);
+      currentProductPolynomial = product;
+
+      activityBox.innerHTML = '';
+
+      const wrapper = document.createElement('div');
+      wrapper.style.textAlign = 'center';
+      wrapper.style.padding = '1em';
+
+      const canvas = document.createElement('canvas');
+      canvas.width = 1300;
+      canvas.height = 360;
+      canvas.style.maxWidth = '100%';
+      canvas.style.background = 'white';
+      wrapper.appendChild(canvas);
+
+      const result = document.createElement('div');
+      result.className = 'math';
+      result.style.marginTop = '1em';
+      result.innerHTML = `\\[${polynomialToTex(polyA)}\\;\\cdot\\;(${polynomialToTex(polyB)}) = ${polynomialToTex(product)}\\]`;
+      wrapper.appendChild(result);
+
+      activityBox.appendChild(wrapper);
+
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.font = 'bold 38px Arial';
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'black';
+
+      const y = 250;
+      const termSpacing = 125;
+      const betweenPolysGap = 150;
+      const totalTerms = polyA.terms.length + polyB.terms.length;
+      const expressionWidth = Math.max(500, (totalTerms - 1) * termSpacing + betweenPolysGap);
+      const leftStart = (canvas.width - expressionWidth) / 2;
+      const leftPositions = polyA.terms.map((_, i) => leftStart + i * termSpacing);
+      const rightStart = leftStart + Math.max(1, polyA.terms.length - 1) * termSpacing + betweenPolysGap;
+      const rightPositions = polyB.terms.map((_, j) => rightStart + j * termSpacing);
+
+      ctx.fillText('(', leftStart - 55, y);
+      polyA.terms.forEach((term, i) => {
+        ctx.fillText(termPlainText(term, { omitLeadingPlus: i === 0, forceSign: i > 0 }), leftPositions[i], y);
+      });
+      ctx.fillText(')', leftPositions[leftPositions.length - 1] + 65, y);
+      ctx.fillText('×', (leftPositions[leftPositions.length - 1] + rightPositions[0]) / 2, y);
+      ctx.fillText('(', rightPositions[0] - 65, y);
+      polyB.terms.forEach((term, j) => {
+        ctx.fillText(termPlainText(term, { omitLeadingPlus: j === 0, forceSign: j > 0 }), rightPositions[j], y);
+      });
+      ctx.fillText(')', rightPositions[rightPositions.length - 1] + 65, y);
+
+      let arcIndex = 0;
+      polyA.terms.forEach((_, i) => {
+        polyB.terms.forEach((__, j) => {
+          const color = rainbowColors[arcIndex % rainbowColors.length];
+          const height = 70 + 18 * ((i + j) % 5) + 8 * Math.floor(arcIndex / 3);
+          drawRoundedArc(ctx, leftPositions[i], rightPositions[j], y - 34, height, color);
+          arcIndex++;
+        });
+      });
+
+      if (window.MathJax) MathJax.typeset([result]);
+      return product;
+    }
+
+    function clearOldActivityState() {
       const feedback = document.getElementById('feedbackText');
       feedback.textContent = '';
+      decompositionContainer.innerHTML = '';
+      document.getElementById('final-answer-input').innerHTML = '';
+      hintArea.innerHTML = '';
+      hintBtn.disabled = true;
+      checkBtn.style.display = 'none';
+      const oldPartialProducts = document.getElementById('partial-products-inputs');
+      if (oldPartialProducts) oldPartialProducts.remove();
+    }
 
-      // Play sound when view button is clicked
+    startBtn.addEventListener('click', () => {
+      clearOldActivityState();
+
       const sound = document.getElementById('click-sound');
       if (sound) {
-        sound.currentTime = 0; // rewind to start in case it's still playing
+        sound.currentTime = 0;
         sound.play();
       }
 
-      // Choose the mode, 1 is 2-digit*2-digit, 2 is 3-digit*2-digit, 3 is 3-digit*3-digit
-      mode = Math.floor(Math.random() * 3) + 1;
+      currentLeftPolynomial = randomPolynomial();
+      currentRightPolynomial = randomPolynomial();
+      currentProductPolynomial = displayPolynomialProduct(currentLeftPolynomial, currentRightPolynomial);
 
-      if (ruleCheckboxes.basefive.checked) {
-        if (mode === 1) {
-          a = Math.floor(Math.random() * 20) + 5;
-          b = Math.floor(Math.random() * 20) + 5;
-        } else if (mode === 2) {
-          a = Math.floor(Math.random() * 100) + 25;
-          b = Math.floor(Math.random() * 20) + 5;
-        } else {
-          a = Math.floor(Math.random() * 100) + 25;
-          b = Math.floor(Math.random() * 100) + 25;
-        }
-      } else {
-        if (mode === 1) {
-          a = Math.floor(Math.random() * 90) + 10;
-          b = Math.floor(Math.random() * 90) + 10;
-        } else if (mode === 2) {
-          a = Math.floor(Math.random() * 900) + 100;
-          b = Math.floor(Math.random() * 90) + 10;
-        } else {
-          a = Math.floor(Math.random() * 900) + 100;
-          b = Math.floor(Math.random() * 900) + 100;
-        }
-      }
-
-    
-      hintSteps = [];
-      hintIndex = 0;
-      let i = 0
-
-      partialStepCompleted = false;
-
-  
-      // Display the question
-      questionText.textContent = `What is \\(${ruleCheckboxes.basefive.checked ? a.toString(5) : a.toString(10)} \\cdot 
-      ${ruleCheckboxes.basefive.checked ? b.toString(5) : b.toString(10)}\\)?`;
-
+      questionText.innerHTML = `Expand \\[(${polynomialToTex(currentLeftPolynomial)})(${polynomialToTex(currentRightPolynomial)})\\]`;
       MathJax.typeset([questionText]);
-
-      
-      // Clear the activity box
-      activityBox.innerHTML = '';
-
-      decompositionContainer.innerHTML = ''; // Clear previous inputs
-      document.getElementById('final-answer-input').innerHTML = '';
-
-      const oldPartialProducts = document.getElementById('partial-products-inputs');
-      if (oldPartialProducts) oldPartialProducts.remove();
-
-      if (ruleCheckboxes.basefive.checked) {
-        aDigits = a.toString(5).split('').map(Number);
-        bDigits = b.toString(5).split('').map(Number);
-      } else {
-        aDigits = a.toString().split('').map(Number);
-        bDigits = b.toString().split('').map(Number);
-      }
-      
-      aParts = [];
-      bParts = [];
-
-      
-      if (ruleCheckboxes.basefive.checked) {
-        for (let i = 0; i < aDigits.length; i++) {
-          const place = Math.pow(5, aDigits.length - 1 - i);
-          aParts.push(aDigits[i] * place);
-        }
-        for (let i = 0; i < bDigits.length; i++) {
-          const place = Math.pow(5, bDigits.length - 1 - i);
-          bParts.push(bDigits[i] * place);
-        }
-      } else {
-        for (let i = 0; i < aDigits.length; i++) {
-          const place = Math.pow(10, aDigits.length - 1 - i);
-          aParts.push(aDigits[i] * place);
-        }
-        for (let i = 0; i < bDigits.length; i++) {
-          const place = Math.pow(10, bDigits.length - 1 - i);
-          bParts.push(bDigits[i] * place);
-        }
-      }
-      
-      const inputBox = (index, total, name) => `<input type="text" data-expected="${name[index]}" class="decomp-input" style="width: 50px; text-align: center;" />`;
-      
-      // Generate the HTML for the input boxes
-      let html = '= (';
-      html += aParts.map((_, i) => inputBox(i, aParts.length, aParts)).join(' + ');
-      html += ') × (';
-      html += bParts.map((_, i) => inputBox(i, bParts.length, bParts)).join(' + ');
-      html += ')';
-
-      console.log(`${html}`);
-      
-      decompositionContainer.innerHTML = html;
-
-      // Attach event listeners to validate input values and color them
-      inputElements = decompositionContainer.querySelectorAll('.decomp-input');
-      function validateInputsAndMaybeEnableNext() {
-      let allCorrect = true;
-    
-      inputElements.forEach(input => {
-        const expected = parseInt(input.dataset.expected);
-        console.log(`Expected=${expected}`);
-        const value = parseInt(input.value, ruleCheckboxes.basefive.checked ? 5 : 10);
-        console.log(`Input=${value}`);
-    
-        if (!isNaN(value) && value === expected) {
-          input.style.backgroundColor = '#c8f7c5';  // light green
-        } else {
-          input.style.backgroundColor = '#f8d7da';  // light red
-          allCorrect = false;
-        }
-      });
-    
-      drawCanvas(mode, inputElements, []);
-    
-      nextBtn.disabled = !allCorrect;
-    }
-    
-    inputElements.forEach(input => {
-      input.addEventListener('input', validateInputsAndMaybeEnableNext);
     });
 
 
 
 
-      
-
-
-      hintIndex = 0;
-      hintArea.innerHTML = "";  // Clear previous hints
-
-      drawCanvas(mode, inputElements, []);
 
 
 
 
-    });
 
 
     const checkBtn = document.getElementById('check-btn');

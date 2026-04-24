@@ -4,6 +4,7 @@
 
 
 
+
  <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -580,14 +581,6 @@ fetch("/nav.html")
       block.style.maxWidth = '100%';
       block.style.overflowX = 'auto';
 
-      if (title) {
-        const heading = document.createElement('div');
-        heading.textContent = title;
-        heading.style.fontWeight = 'bold';
-        heading.style.marginBottom = '0.5em';
-        block.appendChild(heading);
-      }
-
       hintArea.appendChild(block);
       return block;
     }
@@ -779,24 +772,27 @@ fetch("/nav.html")
     }
 
     function displayDistributedStep(leftPoly, rightPoly, remainingFactors = []) {
-      const block = createHintStepBlock('Resulting product');
+      const block = createHintStepBlock();
       const coloredExpansion = coloredExpandedProductToTex(expandedProductTerms(leftPoly, rightPoly));
+      const uncombined = multiplyPolynomialsUncombined(leftPoly, rightPoly);
+      const combined = combineLikeTerms(uncombined);
       const remainderTex = polynomialListToTex(remainingFactors);
-      block.innerHTML += `\\[(${polynomialToTex(leftPoly)})(${polynomialToTex(rightPoly)})${remainderTex} = (${coloredExpansion})${remainderTex}\\]`;
+
+      block.innerHTML = `\\[(${polynomialToTex(leftPoly)})(${polynomialToTex(rightPoly)})${remainderTex} = (${coloredExpansion})${remainderTex}\\]`;
+
+      if (hasLikeTerms(uncombined)) {
+        const combinedLine = document.createElement('div');
+        combinedLine.style.textAlign = 'center';
+        combinedLine.style.marginTop = '-0.75em';
+        combinedLine.innerHTML = `\\[= ${polynomialToTex(combined)}${remainderTex}\\]`;
+        block.appendChild(combinedLine);
+      }
+
       if (window.MathJax) MathJax.typeset([block]);
     }
 
     function displayCombinedStep(uncombinedProduct, remainingFactors = []) {
-      const block = createHintStepBlock('Combine like terms');
-      const combined = combineLikeTerms(uncombinedProduct);
-      const remainderTex = polynomialListToTex(remainingFactors);
-      if (hasLikeTerms(uncombinedProduct)) {
-        block.innerHTML += `\\[\\begin{aligned}${polynomialToTex(uncombinedProduct)}${remainderTex}\\\\&= ${polynomialToTex(combined)}${remainderTex}\\end{aligned}\\]`;
-      } else {
-        block.innerHTML += `\\[${polynomialToTex(combined)}${remainderTex}\\]`;
-      }
-      if (window.MathJax) MathJax.typeset([block]);
-      return combined;
+      return combineLikeTerms(uncombinedProduct);
     }
     function advanceHint() {
       if (!currentProblem || currentProblem.done) return;

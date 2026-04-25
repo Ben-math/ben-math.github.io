@@ -5,6 +5,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -581,22 +582,32 @@ fetch("/nav.html")
     function setupAnswerEditor() {
       const finalAnswerDiv = document.getElementById('final-answer-input');
       finalAnswerDiv.innerHTML = `
-        <label for="equation-answer-editor" style="font-weight: bold; margin-right: 0.5em;">x = </label>
-        <span id="equation-answer-editor" class="polynomial-answer-editor" contenteditable="true" role="textbox" aria-label="Value of x"></span>
+        <label style="font-weight: bold; margin-right: 0.5em;">x = </label>
+        <span id="equation-answer-editor-1" class="polynomial-answer-editor" contenteditable="true" role="textbox" aria-label="First value of x" style="min-width: 90px;"></span>
+        <span style="font-weight: bold; margin: 0 0.5em;">or</span>
+        <span id="equation-answer-editor-2" class="polynomial-answer-editor" contenteditable="true" role="textbox" aria-label="Second value of x" style="min-width: 90px;"></span>
       `;
-      const editor = document.getElementById('equation-answer-editor');
-      editor.addEventListener('keydown', event => {
-        if (event.key === '^') { event.preventDefault(); insertExponentEntry(); return; }
-        if (event.key === 'ArrowRight') {
-          const selection = window.getSelection();
-          if (selection.rangeCount && selection.isCollapsed) {
-            const exponentBox = getContainingExponentEntry(selection.getRangeAt(0).startContainer);
-            if (exponentBox) { event.preventDefault(); placeCaretAfterNode(exponentBox); return; }
+
+      const editors = [
+        document.getElementById('equation-answer-editor-1'),
+        document.getElementById('equation-answer-editor-2')
+      ];
+
+      editors.forEach(editor => {
+        editor.addEventListener('keydown', event => {
+          if (event.key === '^') { event.preventDefault(); insertExponentEntry(); return; }
+          if (event.key === 'ArrowRight') {
+            const selection = window.getSelection();
+            if (selection.rangeCount && selection.isCollapsed) {
+              const exponentBox = getContainingExponentEntry(selection.getRangeAt(0).startContainer);
+              if (exponentBox) { event.preventDefault(); placeCaretAfterNode(exponentBox); return; }
+            }
           }
-        }
-        if (event.key === 'Enter') { event.preventDefault(); return; }
+          if (event.key === 'Enter') { event.preventDefault(); return; }
+        });
       });
-      editor.focus();
+
+      editors[0].focus();
     }
 
     function editorToString(editor) {
@@ -627,11 +638,21 @@ fetch("/nav.html")
         sound.play();
       }
 
-      const editor = document.getElementById('equation-answer-editor');
-      if (!editor || !currentProblem) return;
+      const editor1 = document.getElementById('equation-answer-editor-1');
+      const editor2 = document.getElementById('equation-answer-editor-2');
+      if (!editor1 || !editor2 || !currentProblem) return;
 
-      const userAnswer = parseIntegerAnswer(editorToString(editor));
-      const correct = userAnswer === currentProblem.solution || userAnswer === currentProblem.otherRoot;
+      const userAnswers = [
+        parseIntegerAnswer(editorToString(editor1)),
+        parseIntegerAnswer(editorToString(editor2))
+      ];
+
+      const expectedAnswers = [currentProblem.solution, currentProblem.otherRoot];
+
+      const correct =
+        userAnswers.every(answer => answer !== null) &&
+        userAnswers[0] !== userAnswers[1] &&
+        expectedAnswers.every(answer => userAnswers.includes(answer));
 
       feedbackText.textContent = correct ? 'Correct!' : 'Incorrect, try again.';
       feedbackText.style.color = correct ? 'green' : 'red';

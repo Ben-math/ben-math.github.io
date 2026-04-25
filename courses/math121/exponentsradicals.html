@@ -1,0 +1,687 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta charset="UTF-8" />
+  <title>Exponents and Radicals Activity</title>
+  <link rel="stylesheet" href="/style.css" />
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+</head>
+<body>
+  <header>
+    <h1>Exponents and Radicals Activity</h1>
+    <div id="nav-placeholder"></div>
+      <script>
+fetch("/nav.html")
+  .then(response => response.text())
+  .then(html => {
+    document.getElementById("nav-placeholder").innerHTML = html;
+
+    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+    const navLinks = document.querySelectorAll("#nav-placeholder a");
+    navLinks.forEach(link => {
+      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+      if (linkPath === currentPath) {
+        link.classList.add("active");
+      }
+    });
+
+    const s = document.createElement("script");
+    s.src = "/mascot.js";
+    s.defer = true;
+    document.body.appendChild(s); 
+  })
+  .catch(err => {
+    console.error("Failed to load nav:", err);
+  });
+</script>
+  </header>
+  <main>
+
+    <p>In much the same way that multiplication is defined by repeated addition:
+      \[3 \cdot 5 = 3 + 3 + 3 + 3 + 3\]
+      exponentiation is defined by repeated multiplication:
+      \[2^4 = 2 \cdot 2 \cdot 2 \cdot 2\]
+      In the above, 2 is called the <b>base</b>, and 4 is called the <b>exponent.</b>  Using this definition, it is possible to derive the following 
+      exponent laws, for any real numbers \(a, b, m, n\) (provided they don't result in denominators of zero):
+    </p>
+
+    <ul>
+      <li>\(a^0 = 1\)</li>
+      <li>\(a^m \cdot a^n = a^{m+n}\)</li>
+      <li>\(\frac{a^m}{a^n} = a^{m-n}\)</li>
+      <li>\((a^m)^n = a^{mn}\)</li>
+      <li>\(a^{-n} = \frac{1}{a^n}\)</li>
+      <li>\(a^{\frac{m}{n}} = (a^m)^{\frac{1}{n}} = \left(a^{\frac{1}{n}}\right)^m\)</li>
+      <li>\((ab)^n = a^n \cdot b^n\)</li>
+      <li>\(\left(\frac{a}{b}\right)^n = \frac{a^n}{b^n}\)</li>
+    </ul>
+    
+    <p>Note that many of the laws require that the bases of two numbers be the same in order to be applied.  In the above, the only exponent that it is 
+      unclear how to perform the computation with is the fractional exponent.  These can also be represented with a radical symbol:
+      \[a^{\frac{1}{n}} = \sqrt[n]{a}\]
+      To evaluate a radical, we use the following definition:
+      \[\sqrt[n]{a} = x \iff a = x^n\]
+      That is, to take the \(n^{\text{th}}\) power of \(a\), we are looking for a number \(x\), which when raised to the \(n^{\text{th}}\) power, gives 
+      \(a\).
+    </p>
+
+    <p>Working with complicated expressions can seem overwhelming when many exponent laws are involved.  The key is to take it slow, and simplify one 
+      step at a time (noting that to apply many of the exponent laws, we require that the bases be the same, so some numbers may need to be re-expressed):
+      \[\frac{\sqrt[3]{25^{30}}}{5^7} \cdot 125^2 = \frac{\left((5^2)^{30}\right)^{\frac{1}{3}}}{5^7} \cdot (5^3)^2 = 
+      \frac{5^{2 \cdot 30 \cdot \frac{1}{3}}}{5^7} \cdot 5^{3 \cdot 2} = \frac{5^{20}}{5^7} \cdot 5^6 = 5^{20 - 7 + 6} = 5^{19}\] 
+    </p>
+
+
+    <p>Note that in the following activity, since the problems involve some element of random generation, they often don't work out very "neatly", and 
+       will often involve combining fractional exponents: consider this extra practice with giving fractions common denominators, etc.!
+    </p>
+
+
+    
+
+    <div class="button-container">
+      <button id="start-btn" class="rubber-button">Start!</button>
+    </div>
+    
+    <p id="question-text" class="math"></p>
+
+    <div id="activity-ui" style="margin-top: 1.2em; text-align: center;">
+      <div id="answer-area" style="display:none; margin-top: 0.5em;"></div>
+      <div class="button-container" style="margin-top: 0.6em;">
+        <button id="hint-btn" class="rubber-button" style="display:none;">Hint</button>
+        <button id="check-btn" class="rubber-button" style="display:none; margin-left: 0.5em;">Check Answer</button>
+      </div>
+      <p id="feedback" style="font-weight: bold; margin-top: 0.6em;"></p>
+      <div id="hint-area" class="math" style="margin-top: 1em;"></div>
+    </div>
+
+</main>
+
+<script>
+// -----------------------------
+// Exponents & Radicals Activity
+// Type (1) only (question generation + hints + answer input)
+// -----------------------------
+const startBtn = document.getElementById('start-btn');
+const questionText = document.getElementById('question-text');
+
+const hintBtn = document.getElementById('hint-btn');
+const checkBtn = document.getElementById('check-btn');
+const answerArea = document.getElementById('answer-area');
+const feedback = document.getElementById('feedback');
+const hintArea = document.getElementById('hint-area');
+
+let hintSteps = [];
+let hintIndex = 0;
+let current = null;
+
+function playSound(id) {
+  const s = document.getElementById(id);
+  if (s) { s.currentTime = 0; s.play(); }
+}
+
+function randInt(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+function choice(arr) { return arr[randInt(0, arr.length - 1)]; }
+
+function gcd(a, b) {
+  a = Math.abs(a); b = Math.abs(b);
+  while (b !== 0) { const t = a % b; a = b; b = t; }
+  return a === 0 ? 1 : a;
+}
+
+function reduceFrac(num, den) {
+  if (den < 0) { den = -den; num = -num; }
+  const g = gcd(num, den);
+  return [num / g, den / g];
+}
+
+function addFrac(a, b) { // a,b = [n,d]
+  return reduceFrac(a[0] * b[1] + b[0] * a[1], a[1] * b[1]);
+}
+function subFrac(a, b) {
+  return reduceFrac(a[0] * b[1] - b[0] * a[1], a[1] * b[1]);
+}
+function mulFrac(a, b) {
+  return reduceFrac(a[0] * b[0], a[1] * b[1]);
+}
+
+function fracToTex(num, den) {
+  const [n, d] = reduceFrac(num, den);
+  if (d === 1) return `${n}`;
+  return `\\frac{${n}}{${d}}`;
+}
+
+// ---- parsing helpers ----
+function parseExactRational(raw) {
+  if (raw == null) return { ok:false, msg:'Please enter an answer.' };
+  const s0 = raw.trim();
+  if (!s0) return { ok:false, msg:'Please enter an answer.' };
+  const s = s0.replace(/\s+/g, '');
+
+  const fm = s.match(/^([+-]?\d+)\/([+-]?\d+)$/);
+  if (fm) {
+    const a = parseInt(fm[1], 10);
+    const b = parseInt(fm[2], 10);
+    if (b === 0) return { ok:false, msg:'Denominator cannot be 0.' };
+    const [n, d] = reduceFrac(a, b);
+    return { ok:true, num:n, den:d };
+  }
+
+  if (/^[+-]?\d+$/.test(s)) {
+    const a = parseInt(s, 10);
+    return { ok:true, num:a, den:1 };
+  }
+
+  const dm = s.match(/^([+-]?)(\d*)\.(\d+)$/);
+  if (dm) {
+    const sign = dm[1] === '-' ? -1 : 1;
+    const intPart = dm[2] ? parseInt(dm[2], 10) : 0;
+    const fracPartStr = dm[3];
+    const k = fracPartStr.length;
+    const den = Math.pow(10, k);
+    const fracPart = parseInt(fracPartStr, 10);
+    const num = sign * (intPart * den + fracPart);
+    const [n, d] = reduceFrac(num, den);
+    return { ok:true, num:n, den:d };
+  }
+
+  return { ok:false, msg:'Use an integer, a fraction like 3/7, or a terminating decimal like 2.5.' };
+}
+
+function typeset(elements = []) {
+  if (!window.MathJax) return;
+  if (MathJax.typesetPromise) {
+    if (elements.length > 0) MathJax.typesetPromise(elements);
+    else MathJax.typesetPromise();
+  } else if (MathJax.typeset) {
+    if (elements.length > 0) MathJax.typeset(elements);
+    else MathJax.typeset();
+  }
+}
+
+// ---- UI helpers ----
+function resetUIForNewProblem() {
+  feedback.textContent = '';
+  feedback.style.color = 'black';
+
+  hintArea.innerHTML = '';
+  hintSteps = [];
+  hintIndex = 0;
+
+  answerArea.innerHTML = '';
+  answerArea.style.display = 'none';
+
+  hintBtn.style.display = 'none';
+  checkBtn.style.display = 'none';
+}
+
+function setFeedback(msg, color) {
+  feedback.textContent = msg;
+  feedback.style.color = color;
+}
+
+function addHintStep(html) {
+  const d = document.createElement('div');
+  d.classList.add('hint-step');
+  d.style.textAlign = 'center';
+  d.style.marginTop = '0.35em';
+  d.innerHTML = html;
+  hintArea.appendChild(d);
+  typeset([d]);
+}
+
+function makeAnswerRows() {
+  const wrap = document.createElement('div');
+  wrap.style.display = 'flex';
+  wrap.style.justifyContent = 'center';
+  wrap.style.alignItems = 'center';
+  wrap.style.gap = '0.6em';
+  wrap.style.flexWrap = 'wrap';
+  wrap.style.margin = '0.35em 0';
+
+  const baseLabel = document.createElement('span');
+  baseLabel.textContent = 'Base:';
+
+  const baseInp = document.createElement('input');
+  baseInp.type = 'text';
+  baseInp.id = 'ans-base';
+  baseInp.style.width = '140px';
+  baseInp.style.fontSize = '1rem';
+
+  const expLabel = document.createElement('span');
+  expLabel.textContent = 'Exponent:';
+
+  const expInp = document.createElement('input');
+  expInp.type = 'text';
+  expInp.id = 'ans-exp';
+  expInp.style.width = '140px';
+  expInp.style.fontSize = '1rem';
+
+  // visual cue: base ^ exponent
+  const caret = document.createElement('span');
+  caret.textContent = '^';
+  caret.style.fontWeight = '800';
+  caret.style.margin = '0 0.2em';
+
+  wrap.appendChild(baseLabel);
+  wrap.appendChild(baseInp);
+  wrap.appendChild(caret);
+  wrap.appendChild(expLabel);
+  wrap.appendChild(expInp);
+
+  return wrap;
+}
+
+function buildAnswerUI() {
+  answerArea.innerHTML = '';
+  answerArea.style.display = 'block';
+  answerArea.appendChild(makeAnswerRows());
+  hintBtn.style.display = 'inline-block';
+  checkBtn.style.display = 'inline-block';
+}
+
+
+// -----------------------------
+// Type (1) generator
+// -----------------------------
+function weightedPick(options) {
+  // options = [{val, w}, ...]
+  const total = options.reduce((s, o) => s + o.w, 0);
+  let r = Math.random() * total;
+  for (const o of options) {
+    r -= o.w;
+    if (r <= 0) return o.val;
+  }
+  return options[options.length - 1].val;
+}
+
+function randExponentFrac(maxZ, allowFrac, allowNeg) {
+  // returns { frac:[n,d], tex, isRadical:boolean, z?:number }
+  let neg = allowNeg && (Math.random() < 0.30);
+  const makeFrac = allowFrac && (Math.random() < 0.30);
+
+  if (!makeFrac) {
+    // small-ish integer exponent
+    let n = randInt(1, 6);
+    if (neg) n = -n;
+    return { frac: [n, 1], tex: `${n}`, isRadical: false };
+  }
+
+  const z = randInt(2, maxZ);
+  let n = 1;
+  let d = z;
+  if (neg) n = -1;
+  const tex = (n < 0) ? `-\\frac{1}{${d}}` : `\\frac{1}{${d}}`;
+  const isRadical = Math.random() < 0.50;
+  return { frac: [n, d], tex, isRadical, z: d };
+}
+
+function factorTex(x, k, expObj) {
+  const val = Math.pow(x, k);
+  const baseTex = `${val}`;
+
+  // Radical only when exponent is ±1/z
+  if (expObj.isRadical && expObj.frac[0] !== 0 && Math.abs(expObj.frac[0]) === 1 && expObj.frac[1] !== 1) {
+    const z = expObj.frac[1];
+    if (expObj.frac[0] > 0) {
+      return `\\sqrt[${z}]{${baseTex}}`;
+    } else {
+      return `\\frac{1}{\\sqrt[${z}]{${baseTex}}}`;
+    }
+  }
+
+  // If exponent is 1, just base
+  if (expObj.frac[0] === 1 && expObj.frac[1] === 1) return baseTex;
+  return `${baseTex}^{${expObj.tex}}`;
+}
+
+function buildType1Once() {
+  const x = randInt(2, 9);
+  const allowCube = (x <= 5);
+  const kOptions = allowCube
+    ? [{ val: 1, w: 0.80 }, { val: 2, w: 0.15 }, { val: 3, w: 0.05 }]
+    : [{ val: 1, w: 0.80 }, { val: 2, w: 0.20 }];
+
+  const opCount = (Math.random() < 0.55) ? 2 : 3; // 2 or 3 terms
+  const ops = [];
+  for (let i = 0; i < opCount - 1; i++) {
+    ops.push(Math.random() < 0.5 ? '·' : '÷');
+  }
+
+  const maxZ = 50;
+
+  // Build terms
+  const terms = [];
+  // Also accumulate overall exponent in x: rational [n,d]
+  let totalExp = [0, 1];
+
+  function termContribution(term) { // returns exp rational
+    // sum of factors (num - den), then multiplied by outer power
+    let inner = [0, 1];
+    for (const f of term.factors) {
+      const kp = mulFrac([f.k, 1], f.p); // k * p
+      inner = f.inDen ? subFrac(inner, kp) : addFrac(inner, kp);
+    }
+    if (term.outer) {
+      inner = mulFrac(inner, term.outer);
+    }
+    return inner;
+  }
+
+  for (let ti = 0; ti < opCount; ti++) {
+    const isFracTerm = (Math.random() < 0.50);
+    const factorCount = randInt(1, 3);
+
+    const factors = [];
+    for (let j = 0; j < factorCount; j++) {
+      const k = weightedPick(kOptions);
+      const expObj = randExponentFrac(maxZ, true, true);
+      const p = reduceFrac(expObj.frac[0], expObj.frac[1]); // [n,d]
+      let inDen = false;
+      if (isFracTerm) inDen = (Math.random() < 0.50);
+      factors.push({
+        k,
+        p,
+        expObj,
+        inDen,
+        tex: null
+      });
+    }
+
+    // outer power on the entire term (30% chance)
+    let outer = null;
+    let outerObj = null;
+    if (Math.random() < 0.30) {
+      outerObj = randExponentFrac(maxZ, true, true);
+      outer = reduceFrac(outerObj.frac[0], outerObj.frac[1]);
+    }
+
+    const term = { isFracTerm, factors, outer, outerObj };
+    terms.push(term);
+  }
+
+  // Build TeX and compute exponent
+  const termTexes = terms.map((t) => {
+    // make factor tex
+    const num = [];
+    const den = [];
+    for (const f of t.factors) {
+      const tex = factorTex(x, f.k, f.expObj);
+      f.tex = tex;
+      (f.inDen ? den : num).push(tex);
+    }
+    const mult = (arr) => arr.length === 0 ? '1' : arr.join('\\cdot ');
+    let innerTex = '';
+    if (t.isFracTerm) {
+      innerTex = `\\frac{${mult(num)}}{${mult(den)}}`;
+    } else {
+      innerTex = mult(num.concat(den.length ? den.map(d => `\\frac{1}{${d}}`) : []));
+      // if not a fraction term but some were placed in denominator by logic (shouldn't), we convert them; safe.
+    }
+
+    // wrap in parentheses for safety (bulky)
+    innerTex = `\\left(${innerTex}\\right)`;
+
+    if (t.outer) {
+      const oTex = (t.outerObj.isRadical && Math.abs(t.outerObj.frac[0]) === 1 && t.outerObj.frac[1] !== 1)
+        ? (t.outerObj.frac[0] > 0 ? `\\frac{1}{${t.outerObj.frac[1]}}` : `-\\frac{1}{${t.outerObj.frac[1]}}`)
+        : t.outerObj.tex;
+
+      return `\\left(${innerTex}\\right)^{${oTex}}`;
+    }
+    return innerTex;
+  });
+
+  // compute total exponent with ops
+  const contribs = terms.map(termContribution);
+  totalExp = contribs[0];
+  for (let i = 1; i < contribs.length; i++) {
+    if (ops[i - 1] === '·') totalExp = addFrac(totalExp, contribs[i]);
+    else totalExp = subFrac(totalExp, contribs[i]);
+  }
+
+  // Total exponent on x (may be fractional)
+  const [tn0, td0] = totalExp;
+  const [tn, td] = reduceFrac(tn0, td0);
+  const aTex = fracToTex(tn, td);
+
+  // Build expression TeX with operators
+  let expr = termTexes[0];
+  for (let i = 1; i < termTexes.length; i++) {
+    const op = ops[i - 1] === '·' ? '\\cdot' : '\\div';
+    expr += `\\ ${op}\\ ${termTexes[i]}`;
+  }
+
+  // Build rewrite expression where each base is shown as (x^k)
+  const rewriteTerms = terms.map((t) => {
+    const num = [];
+    const den = [];
+    for (const f of t.factors) {
+      const basePowTex = `\\left(${x}^{${f.k}}\\right)`;
+      // rebuild exponent display same as original (radical won't apply here; keep exponent tex)
+      let fTex = basePowTex;
+      // if radical in original and exponent is ±1/z, use power form in rewrite
+      const eTex = f.expObj.tex;
+      if (!(f.expObj.frac[0] === 1 && f.expObj.frac[1] === 1)) {
+        fTex = `${basePowTex}^{${eTex}}`;
+      }
+      (f.inDen ? den : num).push(fTex);
+    }
+    const mult = (arr) => arr.length === 0 ? '1' : arr.join('\\cdot ');
+    let innerTex = t.isFracTerm ? `\\frac{${mult(num)}}{${mult(den)}}` : mult(num);
+    innerTex = `\\left(${innerTex}\\right)`;
+    if (t.outer) {
+      const oTex = t.outerObj.tex;
+      return `\\left(${innerTex}\\right)^{${oTex}}`;
+    }
+    return innerTex;
+  });
+
+  let rewriteExpr = rewriteTerms[0];
+  for (let i = 1; i < rewriteTerms.length; i++) {
+    const op = ops[i - 1] === '·' ? '\\cdot' : '\\div';
+    rewriteExpr += `\\ ${op}\\ ${rewriteTerms[i]}`;
+  }
+
+  return {
+    type: 1,
+    x,
+    exprTex: expr,
+    rewriteExprTex: rewriteExpr,
+    expATex: aTex,
+    ans: [tn, td],
+    ops,
+    contribs
+  };
+}
+
+function genType1() {
+  for (let tries = 0; tries < 4000; tries++) {
+    const p = buildType1Once();
+    if (!p) continue;
+
+    current = p;
+
+    questionText.innerHTML = String.raw`Simplify:
+\[
+  ${p.exprTex}
+\]`;
+
+    // For Hint 2: simplify each large term to a single power of x, then rebuild the whole expression
+    const termPows = p.contribs.map(fr => {
+      const n = fr[0], d = fr[1];
+      if (n === 0) return `1`;
+      const eTex = fracToTex(n, d);
+      // Keep it as x^{...} (even if ... = 1) for consistency
+      return `${p.x}^{${eTex}}`;
+    });
+
+    let simplifiedLine = termPows[0];
+    for (let i = 1; i < termPows.length; i++) {
+      const op = (p.ops[i - 1] === '·') ? String.raw`\cdot` : String.raw`\div`;
+      simplifiedLine += String.raw`\ ${op}\ ${termPows[i]}`;
+    }
+
+    hintSteps = [
+      String.raw`\[
+= ${p.rewriteExprTex}
+\]`,
+      String.raw`\[
+= ${simplifiedLine}
+\]`,
+      String.raw`\[
+= ${p.x}^{${p.expATex}}
+\]`
+    ];
+
+    return;
+  }
+
+  // If we somehow fail, show a simple fallback
+  current = {
+    type: 1,
+    x: 2,
+    exprTex: `\\left(4^2\\right)\\div\\left(2\\right)`,
+    rewriteExprTex: `\\left(\\left(2^2\\right)^2\\right)\\div\\left(2\\right)`,
+    expATex: `3`,
+    ans: [3, 1]
+  };
+  questionText.innerHTML = String.raw`Simplify:
+  \[
+    ${current.exprTex}
+  \]`;
+
+  // fallback simplified line is already just one term ÷ one term, so show x^{exp} directly
+  hintSteps = [
+    String.raw`\[
+= ${current.rewriteExprTex}
+\]`,
+    String.raw`\[
+= ${current.x}^{${current.expATex}}
+\]`,
+    String.raw`\[
+= ${current.x}^{${current.expATex}}
+\]`
+  ];
+}
+
+// -----------------------------
+// Answer checking
+// -----------------------------
+function isPowerOf(n, base) {
+  // returns k such that n = base^k for integer k>=0, or null
+  if (n === 1) return 0;
+  if (n <= 0) return null;
+  let k = 0;
+  while (n % base === 0) {
+    n = n / base;
+    k++;
+  }
+  return (n === 1) ? k : null;
+}
+
+function baseAsPowerOfX(baseFrac, x) {
+  // baseFrac = {num, den} reduced; requires num>0, den>0
+  const kn = isPowerOf(Math.abs(baseFrac.num), x);
+  const kd = isPowerOf(baseFrac.den, x);
+  if (kn === null || kd === null) return null;
+  // allow negative power if denominator has more x than numerator, etc.
+  return kn - kd;
+}
+
+function checkAnswer() {
+  if (!current) return;
+
+  const baseInp = document.getElementById('ans-base');
+  const expInp = document.getElementById('ans-exp');
+
+  const baseParsed = parseExactRational(baseInp.value);
+  if (!baseParsed.ok) {
+    setFeedback("Base: " + baseParsed.msg, 'crimson');
+    return;
+  }
+  if (baseParsed.num === 0) {
+    setFeedback("Base cannot be 0.", 'crimson');
+    return;
+  }
+  // For fractional exponents we need a positive base.
+  if (baseParsed.num < 0) {
+    setFeedback("Base must be positive.", 'crimson');
+    return;
+  }
+
+  const expParsed = parseExactRational(expInp.value);
+  if (!expParsed.ok) {
+    setFeedback("Exponent: " + expParsed.msg, 'crimson');
+    return;
+  }
+
+  const kBase = baseAsPowerOfX({ num: baseParsed.num, den: baseParsed.den }, current.x);
+  if (kBase === null) {
+    setFeedback(`Your base must be a power of ${current.x} (e.g. ${current.x}, ${current.x}^2, 1/${current.x}, ...).`, 'crimson');
+    return;
+  }
+
+  // user total exponent on x is (kBase) * (expParsed)
+  const userExp = reduceFrac(kBase * expParsed.num, expParsed.den);
+  const userN = userExp[0], userD = userExp[1];
+
+  const [an, ad] = current.ans;
+  const ok = (userN === an && userD === ad);
+
+  setFeedback(ok ? 'Correct!' : 'Not quite.', ok ? 'green' : 'crimson');
+}
+
+// -----------------------------
+// Hint button
+// -----------------------------
+function showNextHint() {
+  if (!hintSteps || hintSteps.length === 0) return;
+  if (hintIndex >= hintSteps.length) return;
+  addHintStep(hintSteps[hintIndex]);
+  hintIndex++;
+}
+
+// -----------------------------
+// Start
+// -----------------------------
+startBtn.addEventListener('click', () => {
+  playSound('click-sound');
+  questionText.textContent = '';
+  resetUIForNewProblem();
+  current = null;
+
+  // For now: Type (1) only
+  genType1();
+
+  buildAnswerUI();
+  typeset();
+});
+
+checkBtn.addEventListener('click', () => {
+  playSound('click-sound');
+  checkAnswer();
+});
+
+hintBtn.addEventListener('click', () => {
+  playSound('click-sound');
+  showNextHint();
+});
+</script>
+
+
+
+
+  <audio id="click-sound" src="button.mp3" preload="auto"></audio>
+  <audio id="set-sound" src="set2.mp3" preload="auto"></audio>
+
+</body>
+</html>

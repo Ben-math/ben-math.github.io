@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -346,7 +347,7 @@ fetch("/nav.html")
     function parenPolynomialTex(poly) {
       const tex = polynomialToTex(poly);
       if (combineLikeTerms(poly).length <= 1 && !tex.startsWith('-')) return tex;
-      return `\left(${tex}\right)`;
+      return `\\left(${tex}\\right)`;
     }
 
     function linearFactorTex(root) {
@@ -355,7 +356,7 @@ fetch("/nav.html")
     }
 
     function rationalFunctionTex(num, den) {
-      return `\frac{${polynomialToTex(num)}}{${polynomialToTex(den)}}`;
+      return `\\frac{${polynomialToTex(num)}}{${polynomialToTex(den)}}`;
     }
 
     function randomPolynomial() {
@@ -373,16 +374,16 @@ fetch("/nav.html")
       const d1 = randomPolynomial();
       const n2 = randomPolynomial();
       const d2 = randomPolynomial();
-      const operation = randomChoice(['\cdot', '\div']);
-      const finalNumerator = operation === '\cdot' ? multiplyPolynomials(n1, n2) : multiplyPolynomials(n1, d2);
-      const finalDenominator = operation === '\cdot' ? multiplyPolynomials(d1, d2) : multiplyPolynomials(d1, n2);
+      const operation = randomChoice(['\\cdot', '\\div']);
+      const finalNumerator = operation === '\\cdot' ? multiplyPolynomials(n1, n2) : multiplyPolynomials(n1, d2);
+      const finalDenominator = operation === '\\cdot' ? multiplyPolynomials(d1, d2) : multiplyPolynomials(d1, n2);
 
       const hints = [];
-      if (operation === '\cdot') {
-        hints.push(`= \frac{\left(${polynomialToTex(n1)}\right)\left(${polynomialToTex(n2)}\right)}{\left(${polynomialToTex(d1)}\right)\left(${polynomialToTex(d2)}\right)}`);
+      if (operation === '\\cdot') {
+        hints.push(`= \\frac{\\left(${polynomialToTex(n1)}\\right)\\left(${polynomialToTex(n2)}\\right)}{\\left(${polynomialToTex(d1)}\\right)\\left(${polynomialToTex(d2)}\\right)}`);
       } else {
-        hints.push(`= ${rationalFunctionTex(n1, d1)}\cdot ${rationalFunctionTex(d2, n2)}`);
-        hints.push(`= \frac{\left(${polynomialToTex(n1)}\right)\left(${polynomialToTex(d2)}\right)}{\left(${polynomialToTex(d1)}\right)\left(${polynomialToTex(n2)}\right)}`);
+        hints.push(`= ${rationalFunctionTex(n1, d1)}\\cdot ${rationalFunctionTex(d2, n2)}`);
+        hints.push(`= \\frac{\\left(${polynomialToTex(n1)}\\right)\\left(${polynomialToTex(d2)}\\right)}{\\left(${polynomialToTex(d1)}\\right)\\left(${polynomialToTex(n2)}\\right)}`);
       }
       hints.push(`= ${rationalFunctionTex(finalNumerator, finalDenominator)}`);
 
@@ -450,12 +451,12 @@ fetch("/nav.html")
 
       const opTex = operation === '+' ? '+' : '-';
       const questionTex = `${rationalFunctionTex(firstNum, firstDen)} ${opTex} ${rationalFunctionTex(displayedSecondNum, secondDen)}`;
-      const commonDenHint = `= \frac{\left(${polynomialToTex(firstNum)}\right)${linearFactorTex(m)}}{${linearFactorTex(n)}${linearFactorTex(m)}} ${opTex} \frac{\left(${polynomialToTex(displayedSecondNum)}\right)${linearFactorTex(n)}}{${linearFactorTex(m)}${linearFactorTex(n)}}`;
-      const addedHint = `= \frac{${polynomialToTex(combinedNumerator)}}{${polynomialToTex(commonDenExpanded)}}`;
+      const commonDenHint = `= \\frac{\\left(${polynomialToTex(firstNum)}\\right)${linearFactorTex(m)}}{${linearFactorTex(n)}${linearFactorTex(m)}} ${opTex} \\frac{\\left(${polynomialToTex(displayedSecondNum)}\\right)${linearFactorTex(n)}}{${linearFactorTex(m)}${linearFactorTex(n)}}`;
+      const addedHint = `= \\frac{${polynomialToTex(combinedNumerator)}}{${polynomialToTex(commonDenExpanded)}}`;
       const factorA = A === 1 ? '' : (A === -1 ? '-' : `${A}`);
-      const factorOutHint = `= \frac{${factorA}\left(${polynomialToTex(factoredOutNumerator)}\right)}{${linearFactorTex(n)}${linearFactorTex(m)}}`;
-      const factorQuadraticHint = `= \frac{${factorA}${linearFactorTex(n)}${linearFactorTex(-q)}}{${linearFactorTex(n)}${linearFactorTex(m)}}`;
-      const cancelHint = `= \frac{${polynomialToTex(finalNumerator)}}{${polynomialToTex(finalDenominator)}},\quad x\neq ${-n}`;
+      const factorOutHint = `= \\frac{${factorA}\\left(${polynomialToTex(factoredOutNumerator)}\\right)}{${linearFactorTex(n)}${linearFactorTex(m)}}`;
+      const factorQuadraticHint = `= \\frac{${factorA}${linearFactorTex(n)}${linearFactorTex(-q)}}{${linearFactorTex(n)}${linearFactorTex(m)}}`;
+      const cancelHint = `= \\frac{${polynomialToTex(finalNumerator)}}{${polynomialToTex(finalDenominator)}},\\quad x\\neq ${-n}`;
 
       return {
         type: 2,
@@ -484,7 +485,7 @@ fetch("/nav.html")
 
     function appendMathHint(tex) {
       const block = createHintStepBlock();
-      block.innerHTML = `\[${tex}\]`;
+      block.innerHTML = `\\[${tex}\\]`;
       return typesetElement(block);
     }
 
@@ -539,7 +540,7 @@ fetch("/nav.html")
       }
 
       currentProblem = generateFractionProblem();
-      questionText.innerHTML = `Simplify: \[${currentProblem.questionTex}\]`;
+      questionText.innerHTML = `Simplify: \\[${currentProblem.questionTex}\\]`;
       setupAnswerEditor();
       hintBtn.disabled = false;
       checkBtn.style.display = 'none';

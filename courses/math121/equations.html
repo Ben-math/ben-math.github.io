@@ -3,6 +3,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -413,9 +414,9 @@ fetch("/nav.html")
     function displayHintStep(operation) {
       const block = createHintStepBlock();
       block.innerHTML = `
-        \[
-          \implies ${equationToTex(operation.before)}
-        \]
+        \\[
+          \\implies ${equationToTex(operation.before)}
+        \\]
       `;
       return typesetElement(block);
     }
@@ -423,9 +424,9 @@ fetch("/nav.html")
     function displayMoveToZeroHint(productOperation) {
       const block = createHintStepBlock();
       block.innerHTML = `
-        \[
-          \implies ${equationToTex(currentProblem.zeroEquation)}
-        \]
+        \\[
+          \\implies ${equationToTex(currentProblem.zeroEquation)}
+        \\]
       `;
       return typesetElement(block);
     }
@@ -433,12 +434,12 @@ fetch("/nav.html")
     function displayFactorQuadraticHint() {
       const block = createHintStepBlock();
       block.innerHTML = `
-        \[
-          \implies ${currentProblem.factoredTex}
-        \]
-        \[
-          \implies x = ${currentProblem.solution} \quad \text{or} \quad x = ${currentProblem.otherRoot}
-        \]
+        \\[
+          \\implies ${currentProblem.factoredTex}
+        \\]
+        \\[
+          \\implies x = ${currentProblem.solution} \\quad \\text{or} \\quad x = ${currentProblem.otherRoot}
+        \\]
       `;
       return typesetElement(block);
     }

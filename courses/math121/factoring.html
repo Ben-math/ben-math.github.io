@@ -73,9 +73,15 @@ fetch("/nav.html")
     </script>
   </header>
   <main>
-    <p>This activity concerns factoring polynomials. You will be given an expanded polynomial and asked to rewrite it in factored form.</p>
+    <p>In this activity we'll review the basics of factoring.  Although there are strategies for factoring far more complicated expressions, we will 
+    concern ourselves only with those that can be factored by factoring out common terms, and then factoring a monic quadratic (a quadratic whose lead 
+    coefficient is one).</p>
 
-    <p>Each problem is generated from an expression of the form \(ax^b(x-n)(x-m)\). The hints first identify the constant factor, then the common power of \(x\), then the remaining quadratic factors. The final hint shows a graph and labels the roots.</p>
+    <p>Consider the polynomial \[6x^4 - 18x^3 - 324x^2\]The first thing we notice is that every term is divisible by 6, so we factor that out: 
+    \[=6(x^4-3x^3-54x^2\]Then, every term contains a power of \(x\) of at least 2.  So we factor out \(x^2\): \[=6x^2(x^2-3x-54\] Finally, we factor 
+    the quadratic.  The strategy involves coming up with two numbers whose product is the constant term, and whose sum is the coefficient on the linear 
+    term.  That is, we are looking for integers \(n\) and \(m\) such that \[n+m = -3 \hspace{2cm} \text{ and } \hspace{2cm} nm = -54\]  We find that 
+    \(n = -9, \hspace{1cm} m = 6\] works, so our final factored form is \[=6x^2(x-9)(x+6)\]  Now you try:</p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

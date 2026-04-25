@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -289,19 +290,19 @@ fetch("/nav.html")
 
     function displayConstantHint() {
       const block = createHintStepBlock();
-      block.innerHTML = `\[${polynomialToTex(currentProblem.expanded)} = ${currentProblem.a}(${polynomialToTex(currentProblem.partiallyFactoredConstant)})\]`;
+      block.innerHTML = `\\[${polynomialToTex(currentProblem.expanded)} = ${currentProblem.a}(${polynomialToTex(currentProblem.partiallyFactoredConstant)})\\]`;
       return typesetElement(block);
     }
 
     function displayPowerHint() {
       const block = createHintStepBlock();
-      block.innerHTML = `\[${currentProblem.a}(${polynomialToTex(currentProblem.partiallyFactoredConstant)}) = ${monomialFactorTex(currentProblem.a, currentProblem.b)}(${polynomialToTex(currentProblem.quadraticExpanded)})\]`;
+      block.innerHTML = `\\[${currentProblem.a}(${polynomialToTex(currentProblem.partiallyFactoredConstant)}) = ${monomialFactorTex(currentProblem.a, currentProblem.b)}(${polynomialToTex(currentProblem.quadraticExpanded)})\\]`;
       return typesetElement(block);
     }
 
     function displayQuadraticHint() {
       const block = createHintStepBlock();
-      block.innerHTML = `\[${monomialFactorTex(currentProblem.a, currentProblem.b)}(${polynomialToTex(currentProblem.quadraticExpanded)}) = ${factoredTex(currentProblem)}\]`;
+      block.innerHTML = `\\[${monomialFactorTex(currentProblem.a, currentProblem.b)}(${polynomialToTex(currentProblem.quadraticExpanded)}) = ${factoredTex(currentProblem)}\\]`;
       return typesetElement(block);
     }
 
@@ -393,12 +394,9 @@ fetch("/nav.html")
         ctx.arc(cx, cy, 6, 0, 2 * Math.PI);
         ctx.fill();
         ctx.fillStyle = 'black';
-        ctx.fillText(`x = ${root}`, cx, cy + 26);
+        ctx.fillText(`(${root}, 0)`, cx, cy + 26);
       });
 
-      ctx.fillStyle = 'black';
-      ctx.font = '20px Arial';
-      ctx.fillText('Roots of the function', canvas.width / 2, 20);
     }
 
     async function advanceHint() {
@@ -589,14 +587,18 @@ fetch("/nav.html")
           let j = i;
           while (j < input.length && input[j] !== '(') j++;
           const piece = input.slice(i, j);
+          if (!piece) return null;
           const parsed = parsePolynomialInput(piece);
           if (!parsed) return null;
           factors.push(parsed);
           i = j;
         }
       }
-      if (!factors.length) return null;
-      return factors.reduce((product, factor) => multiplyPolynomials(product, factor));
+
+      // Require the fully factored structure: monomial factor and two linear factors.
+      // This prevents an expanded polynomial from being accepted merely because it is algebraically equal.
+      if (factors.length !== 3) return null;
+      return factors;
     }
 
     function checkUserAnswer() {
@@ -604,8 +606,8 @@ fetch("/nav.html")
       if (sound) { sound.currentTime = 0; sound.play(); }
       const editor = document.getElementById('polynomial-answer-editor');
       if (!editor || !currentProblem) return;
-      const userPolynomial = parseFactoredInput(editorToString(editor));
-      const correct = userPolynomial && polynomialsAreEqual(userPolynomial, currentProblem.expanded);
+      const userFactors = parseFactoredInput(editorToString(editor));
+      const correct = factorsMatchExpected(userFactors, currentProblem);
       feedbackText.textContent = correct ? 'Correct!' : 'Incorrect, try again.';
       feedbackText.style.color = correct ? 'green' : 'red';
     }

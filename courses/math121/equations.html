@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -265,7 +266,7 @@ fetch("/nav.html")
       if (operation.type === 'subtract') return `Add ${operandTex(operation.operand)} to both sides.`;
       if (operation.type === 'multiply') return `Divide both sides by ${operandTex(operation.operand)}.`;
       if (operation.type === 'divide') return `Multiply both sides by ${operandTex(operation.operand)}.`;
-      if (operation.type === 'product') return `Factor the quadratic expression and use the matching factor to return to the previous equation.`;
+      if (operation.type === 'product') return `Subtract the right-hand side from both sides, so that one side is zero.`;
       return '';
     }
 
@@ -326,19 +327,9 @@ fetch("/nav.html")
       return after;
     }
 
-    function randomAddSubtractOperation(operandType) {
+    function randomOperationWithOperand(operandType) {
       return {
-        type: randomChoice(['add', 'subtract']),
-        operand: {
-          type: operandType,
-          value: randomNonzeroInteger(-10, 10)
-        }
-      };
-    }
-
-    function randomMultiplyDivideOperation(operandType) {
-      return {
-        type: randomChoice(['multiply', 'divide']),
+        type: randomChoice(['add', 'subtract', 'multiply', 'divide']),
         operand: {
           type: operandType,
           value: randomNonzeroInteger(-10, 10)
@@ -362,29 +353,37 @@ fetch("/nav.html")
         right: polynomialFromConstant(solution)
       };
 
-      const operations = [{
+      const productOperation = {
         type: 'product',
         n: randomNonzeroInteger(-12, 12),
         m: randomNonzeroInteger(-12, 12)
-      }];
+      };
 
       const remainingOperations = shuffleArray([
-        randomAddSubtractOperation('constant'),
-        randomAddSubtractOperation('xPower'),
-        randomMultiplyDivideOperation('constant'),
-        randomMultiplyDivideOperation('xPower')
+        randomOperationWithOperand('constant'),
+        randomOperationWithOperand('xPower')
       ]);
 
-      operations.push(...remainingOperations);
+      const operations = [productOperation, ...remainingOperations];
 
       operations.forEach(operation => {
         equation = applyOperation(equation, operation);
       });
 
+      const zeroLeft = subtractPolynomials(productOperation.after.left, productOperation.after.right);
+      const zeroRight = polynomialFromConstant(0);
+
+      const otherRoot = productOperation.n + productOperation.m - solution;
+      const zeroEquation = { left: zeroLeft, right: zeroRight };
+      const factoredTex = `(x ${signedNumberTex(solution)})(x ${signedNumberTex(otherRoot)}) = 0`;
+
       return {
         solution,
+        otherRoot,
         operations,
-        finalEquation: equation
+        finalEquation: equation,
+        zeroEquation,
+        factoredTex
       };
     }
 
@@ -414,6 +413,37 @@ fetch("/nav.html")
       return typesetElement(block);
     }
 
+    function displayMoveToZeroHint(productOperation) {
+      const block = createHintStepBlock();
+      block.innerHTML = `
+        <div style="font-style: italic; margin-bottom: 0.15em;">Subtract the right-hand side from both sides, so that one side is zero.</div>
+        \\[
+          ${equationToTex(productOperation.after)}
+        \\]
+        \\[
+          ${equationToTex(currentProblem.zeroEquation)}
+        \\]
+      `;
+      return typesetElement(block);
+    }
+
+    function displayFactorQuadraticHint() {
+      const block = createHintStepBlock();
+      block.innerHTML = `
+        <div style="font-style: italic; margin-bottom: 0.15em;">Factor the quadratic, then use the zero product property.</div>
+        \\[
+          ${equationToTex(currentProblem.zeroEquation)}
+        \\]
+        \\[
+          ${currentProblem.factoredTex}
+        \\]
+        \\[
+          x = ${currentProblem.solution} \\quad \\text{or} \\quad x = ${currentProblem.otherRoot}
+        \\]
+      `;
+      return typesetElement(block);
+    }
+
     async function advanceHint() {
       if (!currentProblem || hintIsTypesetting) return;
 
@@ -423,16 +453,22 @@ fetch("/nav.html")
         sound.play();
       }
 
-      const reversedOperations = [...currentProblem.operations].reverse();
-      if (hintStep >= reversedOperations.length) return;
-
       hintIsTypesetting = true;
       hintBtn.disabled = true;
-      await displayHintStep(reversedOperations[hintStep]);
+
+      const secondAndThirdOperations = currentProblem.operations.slice(1).reverse();
+      if (hintStep < 2) {
+        await displayHintStep(secondAndThirdOperations[hintStep]);
+      } else if (hintStep === 2) {
+        await displayMoveToZeroHint(currentProblem.operations[0]);
+      } else if (hintStep === 3) {
+        await displayFactorQuadraticHint();
+      }
+
       hintStep++;
       hintIsTypesetting = false;
 
-      if (hintStep >= reversedOperations.length) hintBtn.disabled = true;
+      if (hintStep >= 4) hintBtn.disabled = true;
       else hintBtn.disabled = false;
     }
 
@@ -538,7 +574,7 @@ fetch("/nav.html")
       if (!editor || !currentProblem) return;
 
       const userAnswer = parseIntegerAnswer(editorToString(editor));
-      const correct = userAnswer === currentProblem.solution;
+      const correct = userAnswer === currentProblem.solution || userAnswer === currentProblem.otherRoot;
 
       feedbackText.textContent = correct ? 'Correct!' : 'Incorrect, try again.';
       feedbackText.style.color = correct ? 'green' : 'red';

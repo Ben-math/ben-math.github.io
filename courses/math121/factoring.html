@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -599,6 +600,31 @@ fetch("/nav.html")
       // This prevents an expanded polynomial from being accepted merely because it is algebraically equal.
       if (factors.length !== 3) return null;
       return factors;
+    }
+
+    function polynomialFactorSignature(polynomial) {
+      const combined = combineLikeTerms(polynomial);
+      return combined.terms
+        .map(term => `${term.coefficient}:${monomialKey(term)}`)
+        .sort()
+        .join('|');
+    }
+
+    function expectedFactorSignatures(problem) {
+      return [
+        polynomialFactorSignature(problem.monomial),
+        polynomialFactorSignature(problem.factorN),
+        polynomialFactorSignature(problem.factorM)
+      ].sort();
+    }
+
+    function factorsMatchExpected(userFactors, problem) {
+      if (!userFactors || userFactors.length !== 3) return false;
+
+      const userSignatures = userFactors.map(polynomialFactorSignature).sort();
+      const expectedSignatures = expectedFactorSignatures(problem);
+
+      return userSignatures.every((sig, i) => sig === expectedSignatures[i]);
     }
 
     function checkUserAnswer() {

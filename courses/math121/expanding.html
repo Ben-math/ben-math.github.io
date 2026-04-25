@@ -1,6 +1,7 @@
 
 
 
+
  <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -859,12 +860,33 @@ fetch("/nav.html")
     }
 
     function placeCaretAfterNode(node) {
+      const parent = node.parentNode;
+      let afterNode = node.nextSibling;
+
+      // Browsers can be fussy about placing a visible caret directly after an inline
+      // contenteditable <sup>.  Put the caret inside a real text node after it.
+      if (!afterNode || afterNode.nodeType !== Node.TEXT_NODE) {
+        afterNode = document.createTextNode('​');
+        parent.insertBefore(afterNode, node.nextSibling);
+      } else if (afterNode.textContent.length === 0) {
+        afterNode.textContent = '​';
+      }
+
       const range = document.createRange();
-      range.setStartAfter(node);
+      range.setStart(afterNode, afterNode.textContent.length);
       range.collapse(true);
       const selection = window.getSelection();
       selection.removeAllRanges();
       selection.addRange(range);
+    }
+
+    function getContainingExponentEntry(node) {
+      let current = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+      while (current && current !== document) {
+        if (current.matches && current.matches('sup.exponent-entry')) return current;
+        current = current.parentElement;
+      }
+      return null;
     }
 
     function selectionIsAtEndOfNode(node) {
@@ -873,7 +895,11 @@ fetch("/nav.html")
       const range = selection.getRangeAt(0);
       const testRange = document.createRange();
       testRange.selectNodeContents(node);
-      testRange.setStart(range.startContainer, range.startOffset);
+      try {
+        testRange.setStart(range.startContainer, range.startOffset);
+      } catch (error) {
+        return false;
+      }
       return testRange.toString().length === 0;
     }
 
@@ -913,11 +939,10 @@ fetch("/nav.html")
           const selection = window.getSelection();
           if (selection.rangeCount && selection.isCollapsed) {
             const range = selection.getRangeAt(0);
-            const container = range.startContainer;
-            const parent = container.nodeType === Node.TEXT_NODE ? container.parentElement : container;
-            if (parent && parent.matches && parent.matches('sup.exponent-entry') && selectionIsAtEndOfNode(parent)) {
+            const exponentBox = getContainingExponentEntry(range.startContainer);
+            if (exponentBox && selectionIsAtEndOfNode(exponentBox)) {
               event.preventDefault();
-              placeCaretAfterNode(parent);
+              placeCaretAfterNode(exponentBox);
               return;
             }
           }
@@ -971,6 +996,7 @@ fetch("/nav.html")
     function parsePolynomialInput(rawInput) {
       let input = rawInput
         .replace(/\u00a0/g, '')
+        .replace(/\u200b/g, '')
         .replace(/−/g, '-')
         .replace(/\s+/g, '')
         .replace(/\*/g, '');

@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -704,23 +705,56 @@ fetch("/nav.html")
       }
 
       let yValues = samples.map(p => p.y).concat([problem.graphY, 0]);
-      let yMin = Math.min(...yValues);
-      let yMax = Math.max(...yValues);
 
-      // The full polynomial/absolute-value graph can become enormous over the chosen
-      // x-window, which makes the interesting crossing points visually collapse into
-      // a nearly horizontal line.  Clip the viewing window toward the solution level
-      // instead of trying to show every large y-value.
-      let yRange = Math.max(1, yMax - yMin);
-      const maxVisibleYRange = problem.type === 3 ? 50 : 35;
-      if (yRange > maxVisibleYRange) {
-        const center = (Math.min(problem.graphY, 0) + Math.max(problem.graphY, 0)) / 2;
-        yMin = Math.min(problem.graphY, 0, center - maxVisibleYRange / 2);
-        yMax = Math.max(problem.graphY, 0, center + maxVisibleYRange / 2);
+      // Use a compromise vertical window: ignore only the most extreme tail values,
+      // but still show substantially more of the curve than the previous tight clip.
+      // This keeps roots/crossings readable without making the green/red split look
+      // detached from the plotted function.
+      const sortedYValues = yValues.slice().sort((a, b) => a - b);
+      const lowerIndex = Math.floor(sortedYValues.length * 0.04);
+      const upperIndex = Math.ceil(sortedYValues.length * 0.96) - 1;
+      let yMin = sortedYValues[Math.max(0, lowerIndex)];
+      let yMax = sortedYValues[Math.min(sortedYValues.length - 1, upperIndex)];
+
+      const mustInclude = [problem.graphY, 0];
+      if (problem.type === 1 || problem.type === 2) {
+        problem.bounds.forEach(x => mustInclude.push(problem.evaluator(x)));
+        // For absolute value and square problems, show enough of the surrounding
+        // V/parabola to make the shape clear, but not the whole far-away tail.
+        const boundSpan = Math.max(1, Math.abs(problem.bounds[1] - problem.bounds[0]));
+        const localXs = [
+          problem.bounds[0] - boundSpan,
+          problem.bounds[0],
+          (problem.bounds[0] + problem.bounds[1]) / 2,
+          problem.bounds[1],
+          problem.bounds[1] + boundSpan
+        ];
+        localXs.forEach(x => mustInclude.push(problem.evaluator(x)));
       } else {
-        yMin -= 0.12 * yRange;
-        yMax += 0.12 * yRange;
+        [0, problem.n, problem.m].forEach(x => mustInclude.push(problem.evaluator(x)));
       }
+      yMin = Math.min(yMin, ...mustInclude);
+      yMax = Math.max(yMax, ...mustInclude);
+
+      let yRange = Math.max(1, yMax - yMin);
+      const softMaxVisibleYRange = problem.type === 3 ? 260 : 120;
+      if (yRange > softMaxVisibleYRange) {
+        const anchorLow = Math.min(...mustInclude);
+        const anchorHigh = Math.max(...mustInclude);
+        const anchorMid = (anchorLow + anchorHigh) / 2;
+        const compressedMin = anchorMid - softMaxVisibleYRange / 2;
+        const compressedMax = anchorMid + softMaxVisibleYRange / 2;
+        yMin = Math.max(yMin, Math.min(anchorLow, compressedMin));
+        yMax = Math.min(yMax, Math.max(anchorHigh, compressedMax));
+        if (yMax - yMin < 1) {
+          yMin = anchorMid - 1;
+          yMax = anchorMid + 1;
+        }
+      }
+
+      yRange = Math.max(1, yMax - yMin);
+      yMin -= 0.12 * yRange;
+      yMax += 0.12 * yRange;
       if (problem.type !== 3) yMin = Math.min(yMin, -1);
       if (Math.abs(yMax - yMin) < 1e-9) { yMin -= 1; yMax += 1; }
 

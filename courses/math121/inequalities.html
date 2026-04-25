@@ -88,29 +88,36 @@ fetch("/nav.html")
     particular attention.  We need to consider the sign of the factors for various values of \(x\) to determine the sign of their product.  A sign chart 
     is helpful in this regard.</p>
 
-    <p>Suppose we want to solve the inequality \[3x^4+6x^3-45x^2 < 0\]  We factor the left-hand side as much as possible (see 
+    <p>Suppose we want to solve the inequality \[3x^4+6x^3-45x^2 > 0\]  We factor the left-hand side as much as possible (see 
       <a href="https://ben-math.github.io/courses/math121/factoring.html">Factoring Activity</a> for a review of 
-    factoring): \[\implies 3x^2(x^2+2x-15) < 0 \implies 3x^2(x+5)(x-3) < 0\]
-    The factor \(3x^2 = 0\) when \(x = 0\), and changes sign on either side of it.  Similarly, the factor \(x+5 = 0\) when \(x = -5\), and changes sign 
-    on either side of it, and the factor \(x-3 = 0\) when \(x = 3\), and changes sign on either side of it.  So, we can think of \(0\), \(-5\), and \(3\) 
-    as the "points of interest", or as the locations at which we "chop up" the real line.  So we want to consider the sign of each factor in the intervals 
-    \((-\infty,-5)\), \((-5,0)\), \((0,3)\), and \((3, \infty)\).  We use a sign chart to record the sign of each factor in each of these intervals:
+    factoring): \[\implies 3x^2(x^2+2x-15) < 0 \implies 3x^2(x+5)(x-3) > 0\]
+    The factor \(3x^2 = 0\) when \(x = 0\), and is positive on either side of it, since anything squared is positive.  Similarly, the factor \(x+5 = 0\) 
+    when \(x = -5\), but this time changes sign on either side of it, and the factor \(x-3 = 0\) when \(x = 3\), and changes sign on either side of it.  So, 
+    we can think of \(-5\) and \(3\) as the "points of interest", or as the locations at which we "chop up" the real line.  So we want to consider the sign 
+    of each factor in the intervals \((-\infty,-5)\), \((-5,3)\), and \((3, \infty)\).  We use a sign chart to record the sign of each factor in each of 
+    these intervals:
     \[
-\begin{array}{|c|c|c|c|c|}
+\begin{array}{|c|c|c|c|}
 \hline
- & x-3 & 3x^2 & x+5 & 3x^2(x+5)(x-3) \\
+ & x-3 & x+5 & 3x^2(x+5)(x-3) \\
 \hline
-(-\infty,-5) & - & - & - & - \\
+(-\infty,-5) & - & - & + \\
 \hline
-(-5,0) & - & - & + & + \\
+(-5,3) & - & + & - \\
 \hline
-(0,3) & - & + & + & - \\
-\hline
-(3, \infty) & + & + & + & + \\
+(3, \infty) & + & + & + \\
 \hline
 \end{array}
 \]
-    So, \(3x^4+6x^3-45x^2 < 0\) when \(x \in (-\infty,-5) \cup (0,3)\).</p>
+    So, \(3x^4+6x^3-45x^2 > 0\) when \(x \in (-\infty,-5) \cup (3, \infty)\).</p>
+
+    <p>A side note on filling in the above sign chart: we pick "test values" in each interval to determine the sign of each factor.  For instance, for the 
+    row corresponding to the interval \(-5,3\), we pick a value in the interval, say \(1\), and plug it into each factor to determine its sign in that 
+    interval: \(1-3=-2\), and \(1+5=6\).  We don't have to worry about \(3x^2\) because it doesn't impact the sign of the product of the factors, always 
+    being positive.  Making a sign chart can seem like a very time-consuming undertaking.  However, once you have a little practice making them, you 
+    notice a pattern: if you organize the factors on the top from "most negative" to "most positive" from left-to-right, and similarly organize the 
+    intervals from "most negative" to "most positive" from the top down, then the positive and negative entries in the cells will follow a triangular 
+    pattern that is easy to fill in without having to check each cell manually.</p>
 
 
     <div class="button-container">

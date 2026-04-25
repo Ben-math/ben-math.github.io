@@ -1,5 +1,6 @@
 
 
+
  <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -725,9 +726,9 @@ fetch("/nav.html")
       const cellWidth = Math.max(220, 720 / cols);
       const cellHeight = Math.max(80, 230 / rows);
       const marginLeft = 120;
-      const marginTop = 38;
+      const marginTop = 62;
       canvas.width = Math.max(900, marginLeft * 2 + cols * cellWidth + 120);
-      canvas.height = Math.max(240, marginTop * 2 + rows * cellHeight + 30);
+      canvas.height = Math.max(270, marginTop * 2 + rows * cellHeight + 40);
       canvas.style.maxWidth = '100%';
       canvas.style.background = 'white';
       canvas.style.display = 'block';
@@ -764,7 +765,7 @@ fetch("/nav.html")
         drawTermOnCanvas(ctx, term, marginLeft - 62, marginTop + r * cellHeight + cellHeight / 2, { omitLeadingPlus: true });
       });
       rightPoly.terms.forEach((term, c) => {
-        drawTermOnCanvas(ctx, term, marginLeft + c * cellWidth + cellWidth / 2, marginTop - 25, { omitLeadingPlus: true });
+        drawTermOnCanvas(ctx, term, marginLeft + c * cellWidth + cellWidth / 2, marginTop - 20, { omitLeadingPlus: true });
       });
     }
 
@@ -857,6 +858,25 @@ fetch("/nav.html")
       selection.addRange(range);
     }
 
+    function placeCaretAfterNode(node) {
+      const range = document.createRange();
+      range.setStartAfter(node);
+      range.collapse(true);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    function selectionIsAtEndOfNode(node) {
+      const selection = window.getSelection();
+      if (!selection.rangeCount || !selection.isCollapsed) return false;
+      const range = selection.getRangeAt(0);
+      const testRange = document.createRange();
+      testRange.selectNodeContents(node);
+      testRange.setStart(range.startContainer, range.startOffset);
+      return testRange.toString().length === 0;
+    }
+
     function insertExponentEntry() {
       const selection = window.getSelection();
       if (!selection.rangeCount) return;
@@ -887,6 +907,20 @@ fetch("/nav.html")
           event.preventDefault();
           insertExponentEntry();
           return;
+        }
+
+        if (event.key === 'ArrowRight') {
+          const selection = window.getSelection();
+          if (selection.rangeCount && selection.isCollapsed) {
+            const range = selection.getRangeAt(0);
+            const container = range.startContainer;
+            const parent = container.nodeType === Node.TEXT_NODE ? container.parentElement : container;
+            if (parent && parent.matches && parent.matches('sup.exponent-entry') && selectionIsAtEndOfNode(parent)) {
+              event.preventDefault();
+              placeCaretAfterNode(parent);
+              return;
+            }
+          }
         }
 
         if (event.key === 'Enter') {

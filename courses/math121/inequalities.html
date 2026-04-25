@@ -3,6 +3,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -119,6 +120,27 @@
 
     .fraction-denominator {
       padding-top: 0.05em;
+    }
+
+
+    .fraction-button-display {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 0.9;
+      min-width: 1.1em;
+      vertical-align: middle;
+    }
+
+    .fraction-button-display .fraction-button-top {
+      display: block;
+      border-bottom: 1.5px solid currentColor;
+      padding: 0 0.18em 0.04em;
+    }
+
+    .fraction-button-display .fraction-button-bottom {
+      display: block;
+      padding: 0.04em 0.18em 0;
     }
   </style>
 </head>
@@ -965,19 +987,22 @@ fetch("/nav.html")
       if (!currentProblem) return;
 
       if (currentProblem.symbol === '=') {
+        const equalityBoxCount = currentProblem.type === 3 ? 3 : 2;
+        const equalityEditors = Array.from({ length: equalityBoxCount }, (_, index) => `
+            ${index === 0 ? '' : '<span style="font-weight: bold; margin: 0 0.5em;">or</span>'}
+            <span id="equation-answer-editor-${index + 1}" class="polynomial-answer-editor math-answer-editor" contenteditable="true" role="textbox" aria-label="Value ${index + 1} of x" style="min-width: 110px;"></span>
+        `).join('');
         finalAnswerDiv.innerHTML = `
           <div class="answer-line">
             <label style="font-weight: bold; margin-right: 0.5em;">x = </label>
-            <span id="equation-answer-editor-1" class="polynomial-answer-editor math-answer-editor" contenteditable="true" role="textbox" aria-label="First value of x" style="min-width: 110px;"></span>
-            <span style="font-weight: bold; margin: 0 0.5em;">or</span>
-            <span id="equation-answer-editor-2" class="polynomial-answer-editor math-answer-editor" contenteditable="true" role="textbox" aria-label="Second value of x" style="min-width: 110px;"></span>
+            ${equalityEditors}
           </div>
           ${answerToolbarHtml(false)}
         `;
       } else {
         finalAnswerDiv.innerHTML = `
           <div class="answer-line">
-            <label style="font-weight: bold; margin-right: 0.5em;">x \(\in\)</label>
+            <label style="font-weight: bold; margin-right: 0.5em;">x ∈</label>
             <span id="interval-answer-editor" class="polynomial-answer-editor interval-answer-editor math-answer-editor" contenteditable="true" role="textbox" aria-label="Interval notation answer"></span>
           </div>
           ${answerToolbarHtml(true)}
@@ -1000,7 +1025,7 @@ fetch("/nav.html")
           <button type="button" class="math-symbol-button" data-insert-text="∞">∞</button>
           <button type="button" class="math-symbol-button" data-insert-text="-∞">−∞</button>
           <button type="button" class="math-symbol-button" data-insert-radical="true">√</button>
-          <button type="button" class="math-symbol-button" data-insert-fraction="true">a⁄b</button>
+          <button type="button" class="math-symbol-button" data-insert-fraction="true"><span class="fraction-button-display"><span class="fraction-button-top">a</span><span class="fraction-button-bottom">b</span></span></button>
         </div>
       `;
     }
@@ -1042,6 +1067,14 @@ fetch("/nav.html")
         if (specialBox) {
           event.preventDefault();
           placeCaretAfterNode(specialBox.wrapper);
+          return;
+        }
+      }
+      if (event.key === 'ArrowLeft') {
+        const specialBox = getContainingSpecialEntry(getSelectionStartNode());
+        if (specialBox) {
+          event.preventDefault();
+          placeCaretBeforeNode(specialBox.wrapper);
           return;
         }
       }
@@ -1160,6 +1193,23 @@ fetch("/nav.html")
       selection.removeAllRanges();
       selection.addRange(range);
       element.focus();
+    }
+
+    function placeCaretBeforeNode(node) {
+      const parent = node.parentNode;
+      let beforeNode = node.previousSibling;
+      if (!beforeNode || beforeNode.nodeType !== Node.TEXT_NODE) {
+        beforeNode = document.createTextNode('​');
+        parent.insertBefore(beforeNode, node);
+      } else if (beforeNode.textContent.length === 0) {
+        beforeNode.textContent = '​';
+      }
+      placeCaretInTextNode(beforeNode, beforeNode.textContent.length);
+      const editor = closestMathEditor(parent);
+      if (editor) {
+        activeMathEditor = editor;
+        editor.focus();
+      }
     }
 
     function placeCaretAfterNode(node) {

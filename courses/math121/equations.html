@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -325,16 +326,33 @@ fetch("/nav.html")
       return after;
     }
 
-    function randomOperand() {
-      if (Math.random() < 0.70) {
-        return { type: 'constant', value: randomNonzeroInteger(-10, 10) };
-      }
-      return { type: 'xPower', value: randomNonzeroInteger(-10, 10) };
+    function randomAddSubtractOperation(operandType) {
+      return {
+        type: randomChoice(['add', 'subtract']),
+        operand: {
+          type: operandType,
+          value: randomNonzeroInteger(-10, 10)
+        }
+      };
     }
 
-    function randomStandardOperation() {
-      const type = randomChoice(['add', 'subtract', 'multiply', 'divide']);
-      return { type, operand: randomOperand() };
+    function randomMultiplyDivideOperation(operandType) {
+      return {
+        type: randomChoice(['multiply', 'divide']),
+        operand: {
+          type: operandType,
+          value: randomNonzeroInteger(-10, 10)
+        }
+      };
+    }
+
+    function shuffleArray(items) {
+      const shuffled = [...items];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = randomInteger(0, i);
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
     }
 
     function generateEquationProblem() {
@@ -343,22 +361,21 @@ fetch("/nav.html")
         left: polynomialFromXPower(1),
         right: polynomialFromConstant(solution)
       };
-      const operations = [];
 
-      const useProductFirst = Math.random() < 0.30;
-      const totalOperations = randomInteger(3, 6);
+      const operations = [{
+        type: 'product',
+        n: randomNonzeroInteger(-12, 12),
+        m: randomNonzeroInteger(-12, 12)
+      }];
 
-      if (useProductFirst) {
-        operations.push({
-          type: 'product',
-          n: randomNonzeroInteger(-12, 12),
-          m: randomNonzeroInteger(-12, 12)
-        });
-      }
+      const remainingOperations = shuffleArray([
+        randomAddSubtractOperation('constant'),
+        randomAddSubtractOperation('xPower'),
+        randomMultiplyDivideOperation('constant'),
+        randomMultiplyDivideOperation('xPower')
+      ]);
 
-      while (operations.length < totalOperations) {
-        operations.push(randomStandardOperation());
-      }
+      operations.push(...remainingOperations);
 
       operations.forEach(operation => {
         equation = applyOperation(equation, operation);

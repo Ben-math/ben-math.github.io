@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -233,6 +234,7 @@ fetch("/nav.html")
     let hintStep = 0;
     let mathJaxTypesetPromise = Promise.resolve();
     let hintIsTypesetting = false;
+    let activeMathEditor = null;
 
     function typesetElement(element) {
       if (!window.MathJax || !MathJax.typesetPromise) {
@@ -316,6 +318,22 @@ fetch("/nav.html")
       return combineLikeTerms([makeTerm(a, 1), makeTerm(c, 0)]);
     }
 
+    function polynomialDegree(poly) {
+      const combined = combineLikeTerms(poly);
+      return combined.length ? combined[0].power : -Infinity;
+    }
+
+    function polynomialsEqual(a, b) {
+      const A = combineLikeTerms(a);
+      const B = combineLikeTerms(b);
+      if (A.length !== B.length) return false;
+      return A.every((term, i) => term.power === B[i].power && term.coefficient === B[i].coefficient);
+    }
+
+    function evaluatePolynomial(poly, x) {
+      return combineLikeTerms(poly).reduce((sum, term) => sum + term.coefficient * Math.pow(x, term.power), 0);
+    }
+
     function termToTex(term, options = {}) {
       const { omitLeadingPlus = false, forceSign = false } = options;
       const coefficient = term.coefficient;
@@ -343,12 +361,6 @@ fetch("/nav.html")
         omitLeadingPlus: index === 0,
         forceSign: index > 0
       })).join(' ');
-    }
-
-    function parenPolynomialTex(poly) {
-      const tex = polynomialToTex(poly);
-      if (combineLikeTerms(poly).length <= 1 && !tex.startsWith('-')) return tex;
-      return `\\left(${tex}\\right)`;
     }
 
     function linearFactorTex(root) {
@@ -387,11 +399,14 @@ fetch("/nav.html")
         hints.push(`= \\frac{\\left(${polynomialToTex(n1)}\\right)\\left(${polynomialToTex(d2)}\\right)}{\\left(${polynomialToTex(d1)}\\right)\\left(${polynomialToTex(n2)}\\right)}`);
       }
       hints.push(`= ${rationalFunctionTex(finalNumerator, finalDenominator)}`);
+      hints.push({ graph: true });
 
       return {
         type: 1,
         questionTex: `${rationalFunctionTex(n1, d1)} ${operation} ${rationalFunctionTex(n2, d2)}`,
         hints,
+        finalNumerator,
+        finalDenominator,
         finalTex: rationalFunctionTex(finalNumerator, finalDenominator)
       };
     }
@@ -463,7 +478,10 @@ fetch("/nav.html")
         type: 2,
         ...params,
         questionTex,
-        hints: [commonDenHint, addedHint, factorOutHint, factorQuadraticHint, cancelHint],
+        hints: [commonDenHint, addedHint, factorOutHint, factorQuadraticHint, cancelHint, { graph: true }],
+        finalNumerator,
+        finalDenominator,
+        restrictionValue: -n,
         finalTex: cancelHint
       };
     }
@@ -472,9 +490,9 @@ fetch("/nav.html")
       return weightedProblemType() === 1 ? generateType1Problem() : generateType2Problem();
     }
 
-    function createHintStepBlock() {
+    function createHintStepBlock(extraClass = '') {
       const block = document.createElement('div');
-      block.className = 'hint-step-block';
+      block.className = `hint-step-block ${extraClass}`.trim();
       block.style.textAlign = 'center';
       block.style.margin = '0.5em auto';
       block.style.padding = '0';
@@ -490,22 +508,117 @@ fetch("/nav.html")
       return typesetElement(block);
     }
 
+    function appendGraphHint() {
+      const block = createHintStepBlock('graph-hint-block');
+      const canvas = document.createElement('canvas');
+      canvas.width = 760;
+      canvas.height = 460;
+      canvas.style.maxWidth = '100%';
+      canvas.style.border = '1px solid #ccc';
+      canvas.style.borderRadius = '8px';
+      canvas.style.background = 'white';
+      block.appendChild(canvas);
+      drawRationalGraph(canvas, currentProblem.finalNumerator, currentProblem.finalDenominator);
+      return Promise.resolve();
+    }
+
+    function drawRationalGraph(canvas, numerator, denominator) {
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      const pad = 50;
+      const xMin = -10;
+      const xMax = 10;
+      const samples = [];
+      for (let i = 0; i <= 1200; i++) {
+        const x = xMin + (xMax - xMin) * i / 1200;
+        const den = evaluatePolynomial(denominator, x);
+        if (Math.abs(den) < 1e-5) {
+          samples.push({ x, y: NaN, break: true });
+        } else {
+          const y = evaluatePolynomial(numerator, x) / den;
+          samples.push({ x, y: Number.isFinite(y) ? y : NaN });
+        }
+      }
+      const finiteY = samples.map(p => p.y).filter(Number.isFinite).sort((a, b) => a - b);
+      let yMin = -10;
+      let yMax = 10;
+      if (finiteY.length) {
+        yMin = finiteY[Math.floor(finiteY.length * 0.05)];
+        yMax = finiteY[Math.ceil(finiteY.length * 0.95) - 1];
+        yMin = Math.min(yMin, 0);
+        yMax = Math.max(yMax, 0);
+        if (Math.abs(yMax - yMin) < 1) { yMin -= 5; yMax += 5; }
+        const range = yMax - yMin;
+        yMin -= 0.15 * range;
+        yMax += 0.15 * range;
+      }
+      function sx(x) { return pad + (x - xMin) / (xMax - xMin) * (w - 2 * pad); }
+      function sy(y) { return h - pad - (y - yMin) / (yMax - yMin) * (h - 2 * pad); }
+      ctx.clearRect(0, 0, w, h);
+      ctx.strokeStyle = '#ddd';
+      ctx.lineWidth = 1;
+      ctx.fillStyle = '#333';
+      ctx.font = '14px sans-serif';
+      for (let x = xMin; x <= xMax; x++) {
+        const X = sx(x);
+        ctx.beginPath(); ctx.moveTo(X, pad); ctx.lineTo(X, h - pad); ctx.stroke();
+        if (x !== 0 && x % 2 === 0 && yMin <= 0 && yMax >= 0) ctx.fillText(String(x), X - 5, sy(0) + 18);
+      }
+      const yStep = niceStep((yMax - yMin) / 8);
+      for (let y = Math.ceil(yMin / yStep) * yStep; y <= yMax; y += yStep) {
+        const Y = sy(y);
+        ctx.beginPath(); ctx.moveTo(pad, Y); ctx.lineTo(w - pad, Y); ctx.stroke();
+        if (Math.abs(y) > 1e-9 && xMin <= 0 && xMax >= 0) ctx.fillText(String(Math.round(y * 100) / 100), sx(0) + 6, Y + 4);
+      }
+      ctx.strokeStyle = '#555';
+      ctx.lineWidth = 2;
+      if (yMin <= 0 && yMax >= 0) { ctx.beginPath(); ctx.moveTo(pad, sy(0)); ctx.lineTo(w - pad, sy(0)); ctx.stroke(); }
+      if (xMin <= 0 && xMax >= 0) { ctx.beginPath(); ctx.moveTo(sx(0), pad); ctx.lineTo(sx(0), h - pad); ctx.stroke(); }
+      ctx.fillText('x', w - pad + 15, yMin <= 0 && yMax >= 0 ? sy(0) + 4 : h - pad + 18);
+      ctx.fillText('y', xMin <= 0 && xMax >= 0 ? sx(0) + 6 : pad - 18, pad - 12);
+
+      ctx.strokeStyle = '#c22';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      let drawing = false;
+      let previousY = null;
+      samples.forEach(point => {
+        if (!Number.isFinite(point.y) || point.y < yMin || point.y > yMax || (previousY !== null && Math.abs(point.y - previousY) > (yMax - yMin) * 0.45)) {
+          drawing = false;
+          previousY = Number.isFinite(point.y) ? point.y : null;
+          return;
+        }
+        const X = sx(point.x);
+        const Y = sy(point.y);
+        if (!drawing) { ctx.moveTo(X, Y); drawing = true; }
+        else ctx.lineTo(X, Y);
+        previousY = point.y;
+      });
+      ctx.stroke();
+    }
+
+    function niceStep(rawStep) {
+      const exponent = Math.floor(Math.log10(Math.max(rawStep, 1e-9)));
+      const base = rawStep / Math.pow(10, exponent);
+      let niceBase = 1;
+      if (base > 5) niceBase = 10;
+      else if (base > 2) niceBase = 5;
+      else if (base > 1) niceBase = 2;
+      return niceBase * Math.pow(10, exponent);
+    }
+
     async function advanceHint() {
       if (!currentProblem || hintIsTypesetting) return;
-
       const sound = document.getElementById('click-sound');
-      if (sound) {
-        sound.currentTime = 0;
-        sound.play();
-      }
-
+      if (sound) { sound.currentTime = 0; sound.play(); }
       hintIsTypesetting = true;
       hintBtn.disabled = true;
-
       if (hintStep < currentProblem.hints.length) {
-        await appendMathHint(currentProblem.hints[hintStep]);
+        const hint = currentProblem.hints[hintStep];
+        if (hint && hint.graph) await appendGraphHint();
+        else await appendMathHint(hint);
       }
-
       hintStep++;
       hintIsTypesetting = false;
       hintBtn.disabled = hintStep >= currentProblem.hints.length;
@@ -513,12 +626,321 @@ fetch("/nav.html")
 
     function setupAnswerEditor() {
       const finalAnswerDiv = document.getElementById('final-answer-input');
-      finalAnswerDiv.innerHTML = '<p style="font-style: italic;">Answer input will be added after the problem generator and hints are finalized.</p>';
+      if (!currentProblem) return;
+      if (currentProblem.type === 1) {
+        finalAnswerDiv.innerHTML = `
+          <div class="answer-line">
+            <span style="font-weight: bold; margin-right: 0.5em;">Answer:</span>
+            <span id="answer-editor-main" class="polynomial-answer-editor math-answer-editor" contenteditable="true" role="textbox" aria-label="Simplified fraction answer" style="min-width: 420px;"></span>
+          </div>
+          ${answerToolbarHtml()}
+        `;
+      } else {
+        finalAnswerDiv.innerHTML = `
+          <div class="answer-line">
+            <span id="answer-editor-main" class="polynomial-answer-editor math-answer-editor" contenteditable="true" role="textbox" aria-label="Simplified fraction answer" style="min-width: 420px;"></span>
+            <span style="font-weight: bold; margin: 0 0.45em;">for \(x \neq\)</span>
+            <span id="restriction-editor" class="polynomial-answer-editor math-answer-editor" contenteditable="true" role="textbox" aria-label="Restriction value" style="min-width: 90px;"></span>
+          </div>
+          ${answerToolbarHtml()}
+        `;
+      }
+      setupMathAnswerEditors(finalAnswerDiv);
+      const firstEditor = finalAnswerDiv.querySelector('.math-answer-editor');
+      if (firstEditor) {
+        activeMathEditor = firstEditor;
+        firstEditor.focus();
+      }
+      typesetElement(finalAnswerDiv);
+    }
+
+    function answerToolbarHtml() {
+      return `
+        <div class="answer-toolbar" aria-label="Math input buttons">
+          <button type="button" class="math-symbol-button" data-insert-text="∞">∞</button>
+          <button type="button" class="math-symbol-button" data-insert-text="-∞">−∞</button>
+          <button type="button" class="math-symbol-button" data-insert-fraction="true"><span class="fraction-button-display"><span class="fraction-button-top">a</span><span class="fraction-button-bottom">b</span></span></button>
+        </div>
+      `;
+    }
+
+    function setupMathAnswerEditors(container) {
+      const editors = Array.from(container.querySelectorAll('.math-answer-editor'));
+      editors.forEach(editor => {
+        editor.addEventListener('focus', () => { activeMathEditor = editor; });
+        editor.addEventListener('click', () => { activeMathEditor = editor; });
+        editor.addEventListener('keydown', handleMathEditorKeydown);
+      });
+      container.querySelectorAll('.math-symbol-button').forEach(button => {
+        button.addEventListener('mousedown', event => event.preventDefault());
+        button.addEventListener('click', () => {
+          const editor = activeMathEditor || editors[0];
+          if (!editor) return;
+          editor.focus();
+          if (button.dataset.insertText !== undefined) insertTextAtSelection(button.dataset.insertText, editor);
+          else if (button.dataset.insertFraction) insertFractionAtSelection(editor);
+        });
+      });
+    }
+
+    function handleMathEditorKeydown(event) {
+      activeMathEditor = event.currentTarget;
+      if (event.key === '^') {
+        event.preventDefault();
+        insertExponentAtSelection(activeMathEditor);
+        return;
+      }
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        return;
+      }
+      if (event.key === 'ArrowRight') {
+        const specialBox = getContainingSpecialEntry(getSelectionStartNode());
+        if (specialBox) { event.preventDefault(); placeCaretAfterNode(specialBox.wrapper); return; }
+      }
+      if (event.key === 'ArrowLeft') {
+        const specialBox = getContainingSpecialEntry(getSelectionStartNode());
+        if (specialBox) { event.preventDefault(); placeCaretBeforeNode(specialBox.wrapper); return; }
+      }
+      if (event.key === 'Backspace') {
+        const specialBox = getContainingSpecialEntry(getSelectionStartNode());
+        if (specialBox && isCaretAtStartOfElement(specialBox.entry) && specialBox.entry.textContent.length === 0) {
+          event.preventDefault();
+          const replacement = document.createTextNode('\u200b');
+          specialBox.wrapper.parentNode.insertBefore(replacement, specialBox.wrapper);
+          specialBox.wrapper.remove();
+          placeCaretInTextNode(replacement, replacement.textContent.length);
+        }
+      }
+    }
+
+    function ensureSelectionInsideEditor(editor) {
+      const selection = window.getSelection();
+      if (selection.rangeCount && editor.contains(selection.anchorNode)) return selection.getRangeAt(0);
+      const range = document.createRange();
+      range.selectNodeContents(editor);
+      range.collapse(false);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      return range;
+    }
+
+    function insertTextAtSelection(text, editor) {
+      const range = ensureSelectionInsideEditor(editor);
+      range.deleteContents();
+      const node = document.createTextNode(text);
+      range.insertNode(node);
+      placeCaretInTextNode(node, node.textContent.length);
+    }
+
+    function insertExponentAtSelection(editor) {
+      const range = ensureSelectionInsideEditor(editor);
+      range.deleteContents();
+      const exponent = document.createElement('sup');
+      exponent.className = 'exponent-entry special-entry';
+      exponent.contentEditable = 'true';
+      exponent.setAttribute('data-special-entry', 'exponent');
+      exponent.innerHTML = '';
+      range.insertNode(exponent);
+      placeCaretInside(exponent);
+    }
+
+    function insertFractionAtSelection(editor) {
+      const range = ensureSelectionInsideEditor(editor);
+      range.deleteContents();
+      const wrapper = document.createElement('span');
+      wrapper.className = 'fraction-entry special-wrapper';
+      wrapper.setAttribute('data-special-wrapper', 'fraction');
+      wrapper.innerHTML = '<span class="fraction-numerator special-entry" contenteditable="true" data-special-entry="fraction-numerator"></span><span class="fraction-denominator special-entry" contenteditable="true" data-special-entry="fraction-denominator"></span>';
+      range.insertNode(wrapper);
+      placeCaretInside(wrapper.querySelector('.fraction-numerator'));
+    }
+
+    function getSelectionStartNode() {
+      const selection = window.getSelection();
+      return selection.rangeCount ? selection.getRangeAt(0).startContainer : null;
+    }
+
+    function closestMathEditor(node) {
+      let current = node && (node.nodeType === Node.TEXT_NODE ? node.parentElement : node);
+      while (current && current !== document) {
+        if (current.classList && current.classList.contains('math-answer-editor')) return current;
+        current = current.parentElement;
+      }
+      return null;
+    }
+
+    function getContainingSpecialEntry(node) {
+      let current = node && (node.nodeType === Node.TEXT_NODE ? node.parentElement : node);
+      while (current && current !== document) {
+        if (current.classList && current.classList.contains('special-entry')) {
+          let wrapper = current;
+          while (wrapper && wrapper !== document && !(wrapper.classList && wrapper.classList.contains('special-wrapper'))) {
+            if (wrapper.classList && wrapper.classList.contains('exponent-entry')) break;
+            wrapper = wrapper.parentElement;
+          }
+          return { entry: current, wrapper: wrapper || current };
+        }
+        current = current.parentElement;
+      }
+      return null;
+    }
+
+    function isCaretAtStartOfElement(element) {
+      const selection = window.getSelection();
+      if (!selection.rangeCount || !selection.isCollapsed) return false;
+      const range = selection.getRangeAt(0).cloneRange();
+      const prefix = range.cloneRange();
+      prefix.selectNodeContents(element);
+      prefix.setEnd(range.startContainer, range.startOffset);
+      return prefix.toString().length === 0;
+    }
+
+    function placeCaretInside(element) {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      range.collapse(false);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      element.focus();
+    }
+
+    function placeCaretBeforeNode(node) {
+      const parent = node.parentNode;
+      let beforeNode = node.previousSibling;
+      if (!beforeNode || beforeNode.nodeType !== Node.TEXT_NODE) {
+        beforeNode = document.createTextNode('\u200b');
+        parent.insertBefore(beforeNode, node);
+      } else if (beforeNode.textContent.length === 0) beforeNode.textContent = '\u200b';
+      placeCaretInTextNode(beforeNode, beforeNode.textContent.length);
+      const editor = closestMathEditor(parent);
+      if (editor) { activeMathEditor = editor; editor.focus(); }
+    }
+
+    function placeCaretAfterNode(node) {
+      const parent = node.parentNode;
+      let afterNode = node.nextSibling;
+      if (!afterNode || afterNode.nodeType !== Node.TEXT_NODE) {
+        afterNode = document.createTextNode('\u200b');
+        parent.insertBefore(afterNode, node.nextSibling);
+      } else if (afterNode.textContent.length === 0) afterNode.textContent = '\u200b';
+      placeCaretInTextNode(afterNode, afterNode.textContent.length);
+      const editor = closestMathEditor(parent);
+      if (editor) { activeMathEditor = editor; editor.focus(); }
+    }
+
+    function placeCaretInTextNode(node, offset) {
+      const range = document.createRange();
+      range.setStart(node, offset);
+      range.collapse(true);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    function editorToPlainText(editor) {
+      function walk(node) {
+        if (node.nodeType === Node.TEXT_NODE) return node.textContent.replace(/\u200b/g, '');
+        if (node.nodeType !== Node.ELEMENT_NODE) return '';
+        if (node.matches && node.matches('sup.exponent-entry')) return `^(${node.textContent.trim()})`;
+        if (node.matches && node.matches('.fraction-entry')) return `(${walk(node.querySelector('.fraction-numerator'))})/(${walk(node.querySelector('.fraction-denominator'))})`;
+        return Array.from(node.childNodes).map(walk).join('');
+      }
+      return Array.from(editor.childNodes).map(walk).join('').trim();
+    }
+
+    function parseUserPolynomial(raw) {
+      let text = raw.replace(/\u200b/g, '').replace(/−/g, '-').replace(/\s+/g, '');
+      if (!text) return null;
+      while (text.startsWith('(') && text.endsWith(')') && matchingOuterParens(text)) text = text.slice(1, -1);
+      text = text.replace(/\^\(([-+]?\d+)\)/g, '^$1');
+      text = text.replace(/-/g, '+-');
+      if (text.startsWith('+')) text = text.slice(1);
+      const parts = text.split('+').filter(Boolean);
+      const terms = [];
+      for (const part of parts) {
+        let m;
+        if ((m = part.match(/^([+-]?\d*)x(?:\^(\d+))?$/))) {
+          let coeffText = m[1];
+          let coeff = coeffText === '' || coeffText === '+' ? 1 : (coeffText === '-' ? -1 : parseInt(coeffText, 10));
+          let power = m[2] ? parseInt(m[2], 10) : 1;
+          if (!Number.isFinite(coeff) || !Number.isFinite(power) || power < 0) return null;
+          terms.push(makeTerm(coeff, power));
+        } else if ((m = part.match(/^([+-]?\d+)$/))) {
+          terms.push(makeTerm(parseInt(m[1], 10), 0));
+        } else {
+          return null;
+        }
+      }
+      return combineLikeTerms(terms);
+    }
+
+    function matchingOuterParens(text) {
+      let depth = 0;
+      for (let i = 0; i < text.length; i++) {
+        if (text[i] === '(') depth++;
+        else if (text[i] === ')') depth--;
+        if (depth === 0 && i < text.length - 1) return false;
+      }
+      return depth === 0;
+    }
+
+    function splitTopLevelFraction(text) {
+      text = text.replace(/\u200b/g, '').replace(/\s+/g, '');
+      let depth = 0;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (ch === '(') depth++;
+        else if (ch === ')') depth--;
+        else if (ch === '/' && depth === 0) return [text.slice(0, i), text.slice(i + 1)];
+      }
+      if (text.startsWith('(') && text.endsWith(')')) {
+        depth = 0;
+        for (let i = 0; i < text.length; i++) {
+          const ch = text[i];
+          if (ch === '(') depth++;
+          else if (ch === ')') depth--;
+          else if (ch === '/' && depth === 0) return [text.slice(0, i), text.slice(i + 1)];
+        }
+      }
+      return [text, '1'];
+    }
+
+    function parseUserRational(raw) {
+      const split = splitTopLevelFraction(raw);
+      if (!split) return null;
+      const num = parseUserPolynomial(split[0]);
+      const den = parseUserPolynomial(split[1]);
+      if (!num || !den || combineLikeTerms(den).length === 0) return null;
+      return { numerator: num, denominator: den };
+    }
+
+    function rationalEquivalent(user, expectedNum, expectedDen) {
+      const left = multiplyPolynomials(user.numerator, expectedDen);
+      const right = multiplyPolynomials(expectedNum, user.denominator);
+      return polynomialsEqual(left, right);
+    }
+
+    function parseIntegerText(raw) {
+      const text = raw.replace(/\u200b/g, '').replace(/−/g, '-').replace(/\s+/g, '');
+      return /^[-+]?\d+$/.test(text) ? parseInt(text, 10) : NaN;
     }
 
     function checkUserAnswer() {
-      feedbackText.textContent = 'Answer checking has not been added yet.';
-      feedbackText.style.color = '#555';
+      const sound = document.getElementById('click-sound');
+      if (sound) { sound.currentTime = 0; sound.play(); }
+      if (!currentProblem) return;
+      const mainEditor = document.getElementById('answer-editor-main');
+      const userRational = mainEditor ? parseUserRational(editorToPlainText(mainEditor)) : null;
+      let correct = !!userRational && rationalEquivalent(userRational, currentProblem.finalNumerator, currentProblem.finalDenominator);
+      if (correct && currentProblem.type === 2) {
+        const restrictionEditor = document.getElementById('restriction-editor');
+        const restriction = restrictionEditor ? parseIntegerText(editorToPlainText(restrictionEditor)) : NaN;
+        correct = restriction === currentProblem.restrictionValue;
+      }
+      feedbackText.textContent = correct ? 'Correct!' : 'Incorrect, try again.';
+      feedbackText.style.color = correct ? 'green' : 'red';
     }
 
     function clearOldActivityState() {
@@ -533,18 +955,13 @@ fetch("/nav.html")
 
     startBtn.addEventListener('click', () => {
       clearOldActivityState();
-
       const sound = document.getElementById('click-sound');
-      if (sound) {
-        sound.currentTime = 0;
-        sound.play();
-      }
-
+      if (sound) { sound.currentTime = 0; sound.play(); }
       currentProblem = generateFractionProblem();
       questionText.innerHTML = `Simplify: \\[${currentProblem.questionTex}\\]`;
       setupAnswerEditor();
       hintBtn.disabled = false;
-      checkBtn.style.display = 'none';
+      checkBtn.style.display = 'inline-block';
       typesetElement(questionText);
     });
 

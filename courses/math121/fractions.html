@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -518,11 +519,11 @@ fetch("/nav.html")
       canvas.style.borderRadius = '8px';
       canvas.style.background = 'white';
       block.appendChild(canvas);
-      drawRationalGraph(canvas, currentProblem.finalNumerator, currentProblem.finalDenominator);
+      drawRationalGraph(canvas, currentProblem.finalNumerator, currentProblem.finalDenominator, currentProblem);
       return Promise.resolve();
     }
 
-    function drawRationalGraph(canvas, numerator, denominator) {
+    function drawRationalGraph(canvas, numerator, denominator, problem = null) {
       const ctx = canvas.getContext('2d');
       const w = canvas.width;
       const h = canvas.height;
@@ -596,6 +597,41 @@ fetch("/nav.html")
         previousY = point.y;
       });
       ctx.stroke();
+
+      if (problem && problem.type === 2 && Number.isFinite(problem.restrictionValue)) {
+        const holeX = problem.restrictionValue;
+        const holeDen = evaluatePolynomial(denominator, holeX);
+        const holeY = Math.abs(holeDen) > 1e-9 ? evaluatePolynomial(numerator, holeX) / holeDen : NaN;
+        if (Number.isFinite(holeY) && holeX >= xMin && holeX <= xMax && holeY >= yMin && holeY <= yMax) {
+          const X = sx(holeX);
+          const Y = sy(holeY);
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(X, Y, 6, 0, 2 * Math.PI);
+          ctx.fillStyle = 'white';
+          ctx.fill();
+          ctx.strokeStyle = '#c22';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+          ctx.fillStyle = '#333';
+          ctx.font = '14px sans-serif';
+          ctx.fillText(`hole at x = ${holeX}`, X + 10, Y - 10);
+          ctx.restore();
+        } else if (holeX >= xMin && holeX <= xMax) {
+          ctx.save();
+          ctx.strokeStyle = '#c22';
+          ctx.setLineDash([5, 5]);
+          ctx.beginPath();
+          ctx.moveTo(sx(holeX), pad);
+          ctx.lineTo(sx(holeX), h - pad);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.fillStyle = '#333';
+          ctx.font = '14px sans-serif';
+          ctx.fillText(`hole at x = ${holeX}`, sx(holeX) + 8, pad + 18);
+          ctx.restore();
+        }
+      }
     }
 
     function niceStep(rawStep) {
@@ -639,7 +675,7 @@ fetch("/nav.html")
         finalAnswerDiv.innerHTML = `
           <div class="answer-line">
             <span id="answer-editor-main" class="polynomial-answer-editor math-answer-editor" contenteditable="true" role="textbox" aria-label="Simplified fraction answer" style="min-width: 420px;"></span>
-            <span style="font-weight: bold; margin: 0 0.45em;">for \(x \neq\)</span>
+            <span style="font-weight: bold; margin: 0 0.45em;">for x ≠</span>
             <span id="restriction-editor" class="polynomial-answer-editor math-answer-editor" contenteditable="true" role="textbox" aria-label="Restriction value" style="min-width: 90px;"></span>
           </div>
           ${answerToolbarHtml()}

@@ -1,10 +1,3 @@
-
-
-
-
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -176,44 +169,13 @@ fetch("/nav.html")
   </header>
 
   <main>
-    <p>Inequalities are challenging to work with, as some of their properties are counterintuitive.  Like with equalities, we can add/subtract anything 
-    from both sides while maintaining the truth of the inequality: \[x > y \implies x + a = y + a\]  However, if we multiply or divide by a negative 
-    number, or take the reciprocal, the inequality's direction is reversed: 
-    \[x > y \implies -x < -y \hspace{1cm} \text{ and } \hspace{1cm} x > y > 0 \implies \frac{1}{x} < \frac{1}{y}\] 
-    Dealing with squares is also more complicated.  It is helpful to think of these problems in terms of distance:
-    \[x^2 = 4 \implies x = -2 \text{ or } x = 2 \implies \text{dist}(x,0) = 2\]
-    \[x^2 > 4 \implies x > 2 \text{ or } x < -2 \implies \text{dist}(x,0) > 2\]
-    \[x^2 < 4 \implies x < 2 \text{ and } x > -2 \implies \text{dist}(x,0) < 2\]
-    The example involving \(x^2\) closely resembles dealing with (in)equalities involving absolute value: 
-    \[|x-n| = m \implies x-n = m \text{ or } x-n = -m \implies \text{dist}(x,n) = m\]
-    \[|x-n| > m \implies x-n > m \text{ or } x-n < -m \implies \text{dist}(x,n) > m\]
-    \[|x-n| < m \implies x-n < m \text{ and } x-n > -m \implies \text{dist}(x,n) < m\]
-    Finally, inequalities involving a product of factors on one side and zero on the other occur frequently in the study of calculus, and so we pay them 
-    particular attention.  We need to consider the sign of the factors for various values of \(x\) to determine the sign of their product.  A sign chart 
-    is helpful in this regard.</p>
+    <p>We begin with a quick review on working with fractions.  Multiplication and division are the easiest: to multiply two fractions, you multiply 
+    their numerators together, and their denominators together: \[\frac{a}{b} \cdot \frac{c}{d} = \frac{ac}{bd}\] And to divide by a fraction, you 
+    invert and then multiply: \[\frac{a}{b} \div \frac{c}{d} = \frac{a}{b} \cdot \frac{d}{c} = \frac{ad}{bc}\] When dividing a non-fraction by a 
+    fraction, note that you can simply place the dividend over 1: \[a \div \frac{b}{c} = \frac{a}{1} \div \frac{b}{c} = \frac{a}{1} \cdot \frac{c}{b} 
+    = \frac{ac}{b}\]</p>
 
-    <p>Suppose we want to solve the inequality \[3x^4+6x^3-45x^2 > 0\]  We factor the left-hand side as much as possible (see 
-      <a href="https://ben-math.github.io/courses/math121/factoring.html">Factoring Activity</a> for a review of 
-    factoring): \[\implies 3x^2(x^2+2x-15) < 0 \implies 3x^2(x+5)(x-3) > 0\]
-    The factor \(3x^2 = 0\) when \(x = 0\), and is positive on either side of it, since anything squared is positive.  Similarly, the factor \(x+5 = 0\) 
-    when \(x = -5\), but this time changes sign on either side of it, and the factor \(x-3 = 0\) when \(x = 3\), and changes sign on either side of it.  So, 
-    we can think of \(-5\) and \(3\) as the "points of interest", or as the locations at which we "chop up" the real line.  So we want to consider the sign 
-    of each factor in the intervals \((-\infty,-5)\), \((-5,3)\), and \((3, \infty)\).  We use a sign chart to record the sign of each factor in each of 
-    these intervals:
-    \[
-\begin{array}{|c|c|c|c|}
-\hline
- & x-3 & x+5 & 3x^2(x+5)(x-3) \\
-\hline
-(-\infty,-5) & - & - & + \\
-\hline
-(-5,3) & - & + & - \\
-\hline
-(3, \infty) & + & + & + \\
-\hline
-\end{array}
-\]
-    So, \(3x^4+6x^3-45x^2 > 0\) when \(x \in (-\infty,-5) \cup (3, \infty)\).</p>
+    
 
     <p>A side note on filling in the above sign chart: we pick "test values" in each interval to determine the sign of each factor.  For instance, for the 
     row corresponding to the interval \((-5,3)\), we pick a value in the interval, say \(1\), and plug it into each factor to determine its sign in that 

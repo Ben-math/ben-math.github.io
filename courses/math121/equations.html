@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -141,71 +142,186 @@ fetch("/nav.html")
       return items[randomInteger(0, items.length - 1)];
     }
 
-    function parenthesize(tex) {
-      return `\\left(${tex}\\right)`;
+    function makeTerm(coefficient, power = 0) {
+      return { coefficient, power };
+    }
+
+    function clonePolynomial(poly) {
+      return poly.map(term => ({ coefficient: term.coefficient, power: term.power }));
+    }
+
+    function combineLikeTerms(poly) {
+      const byPower = new Map();
+      poly.forEach(term => {
+        byPower.set(term.power, (byPower.get(term.power) || 0) + term.coefficient);
+      });
+      return Array.from(byPower.entries())
+        .map(([power, coefficient]) => ({ power: Number(power), coefficient }))
+        .filter(term => term.coefficient !== 0)
+        .sort((a, b) => b.power - a.power);
+    }
+
+    function addPolynomials(a, b) {
+      return combineLikeTerms([...a, ...b]);
+    }
+
+    function scalePolynomial(poly, scalar) {
+      return combineLikeTerms(poly.map(term => ({ coefficient: term.coefficient * scalar, power: term.power })));
+    }
+
+    function subtractPolynomials(a, b) {
+      return addPolynomials(a, scalePolynomial(b, -1));
+    }
+
+    function multiplyPolynomials(a, b) {
+      const terms = [];
+      a.forEach(termA => {
+        b.forEach(termB => {
+          terms.push({
+            coefficient: termA.coefficient * termB.coefficient,
+            power: termA.power + termB.power
+          });
+        });
+      });
+      return combineLikeTerms(terms);
+    }
+
+    function dividePolynomialByConstant(poly, divisor) {
+      return combineLikeTerms(poly.map(term => ({ coefficient: term.coefficient / divisor, power: term.power })));
+    }
+
+    function polynomialFromConstant(c) {
+      return c === 0 ? [] : [makeTerm(c, 0)];
+    }
+
+    function polynomialFromXPower(k) {
+      return [makeTerm(1, k)];
+    }
+
+    function operandPolynomial(operand) {
+      if (operand.type === 'constant') return polynomialFromConstant(operand.value);
+      return polynomialFromXPower(operand.value);
+    }
+
+    function numberTex(n) {
+      if (Number.isInteger(n)) return `${n}`;
+      const rounded = Math.round(n * 1000) / 1000;
+      return `${rounded}`;
+    }
+
+    function termToTex(term, options = {}) {
+      const { omitLeadingPlus = false, forceSign = false } = options;
+      const coefficient = term.coefficient;
+      const absCoefficient = Math.abs(coefficient);
+      const power = term.power;
+
+      let variablePart = '';
+      if (power === 1) variablePart = 'x';
+      else if (power !== 0) variablePart = `x^{${power}}`;
+
+      let body;
+      if (variablePart === '') body = numberTex(absCoefficient);
+      else if (absCoefficient === 1) body = variablePart;
+      else body = `${numberTex(absCoefficient)}${variablePart}`;
+
+      if (coefficient < 0) return `- ${body}`;
+      if (forceSign || !omitLeadingPlus) return `+ ${body}`;
+      return body;
+    }
+
+    function polynomialToTex(poly) {
+      const combined = combineLikeTerms(poly);
+      if (!combined.length) return '0';
+      return combined.map((term, index) => termToTex(term, {
+        omitLeadingPlus: index === 0,
+        forceSign: index > 0
+      })).join(' ');
     }
 
     function signedNumberTex(n) {
       return n < 0 ? `+ ${Math.abs(n)}` : `- ${n}`;
     }
 
-    function constantTex(c) {
-      return c < 0 ? `(${c})` : `${c}`;
-    }
-
-    function xPowerTex(k) {
-      if (k === 1) return 'x';
-      return `x^{${k}}`;
-    }
-
     function operandTex(operand) {
-      if (operand.type === 'constant') return constantTex(operand.value);
-      return xPowerTex(operand.value);
+      return polynomialToTex(operandPolynomial(operand));
     }
 
-    function multiplyTex(left, right) {
-      return `${parenthesize(left)}${parenthesize(right)}`;
+    function equationToTex(equation) {
+      return `${polynomialToTex(equation.left)} = ${polynomialToTex(equation.right)}`;
+    }
+
+    function operationDescription(operation) {
+      if (operation.type === 'add') return `Add ${operandTex(operation.operand)} to both sides.`;
+      if (operation.type === 'subtract') return `Subtract ${operandTex(operation.operand)} from both sides.`;
+      if (operation.type === 'multiply') return `Multiply both sides by ${operandTex(operation.operand)}.`;
+      if (operation.type === 'divide') return `Divide both sides by ${operandTex(operation.operand)}.`;
+      if (operation.type === 'product') return `Replace each side \(E\) with \((E ${signedNumberTex(operation.n)})(E ${signedNumberTex(operation.m)})\), then expand.`;
+      return '';
+    }
+
+    function inverseInstruction(operation) {
+      if (operation.type === 'add') return `Subtract ${operandTex(operation.operand)} from both sides.`;
+      if (operation.type === 'subtract') return `Add ${operandTex(operation.operand)} to both sides.`;
+      if (operation.type === 'multiply') return `Divide both sides by ${operandTex(operation.operand)}.`;
+      if (operation.type === 'divide') return `Multiply both sides by ${operandTex(operation.operand)}.`;
+      if (operation.type === 'product') return `Factor the quadratic expression and use the matching factor to return to the previous equation.`;
+      return '';
     }
 
     function applyOperation(equation, operation) {
-      const before = { left: equation.left, right: equation.right };
-      const op = operandTex(operation.operand || { type: 'constant', value: 1 });
+      const before = {
+        left: clonePolynomial(equation.left),
+        right: clonePolynomial(equation.right)
+      };
 
       let after;
       if (operation.type === 'add') {
+        const operand = operandPolynomial(operation.operand);
         after = {
-          left: `${parenthesize(equation.left)} + ${op}`,
-          right: `${parenthesize(equation.right)} + ${op}`
+          left: addPolynomials(equation.left, operand),
+          right: addPolynomials(equation.right, operand)
         };
       } else if (operation.type === 'subtract') {
+        const operand = operandPolynomial(operation.operand);
         after = {
-          left: `${parenthesize(equation.left)} - ${op}`,
-          right: `${parenthesize(equation.right)} - ${op}`
+          left: subtractPolynomials(equation.left, operand),
+          right: subtractPolynomials(equation.right, operand)
         };
       } else if (operation.type === 'multiply') {
+        const operand = operandPolynomial(operation.operand);
         after = {
-          left: `${parenthesize(equation.left)}${parenthesize(op)}`,
-          right: `${parenthesize(equation.right)}${parenthesize(op)}`
+          left: multiplyPolynomials(equation.left, operand),
+          right: multiplyPolynomials(equation.right, operand)
         };
       } else if (operation.type === 'divide') {
-        after = {
-          left: `\\frac{${equation.left}}{${op}}`,
-          right: `\\frac{${equation.right}}{${op}}`
-        };
-      } else if (operation.type === 'square') {
-        after = {
-          left: `${parenthesize(equation.left)}^2`,
-          right: `${parenthesize(equation.right)}^2`
-        };
+        if (operation.operand.type === 'constant') {
+          after = {
+            left: dividePolynomialByConstant(equation.left, operation.operand.value),
+            right: dividePolynomialByConstant(equation.right, operation.operand.value)
+          };
+        } else {
+          // Dividing by x^k is implemented by multiplying by x^{-k}, so it remains a polynomial-like expression.
+          const divisor = polynomialFromXPower(-operation.operand.value);
+          after = {
+            left: multiplyPolynomials(equation.left, divisor),
+            right: multiplyPolynomials(equation.right, divisor)
+          };
+        }
       } else if (operation.type === 'product') {
+        function productJumble(poly) {
+          const first = addPolynomials(poly, polynomialFromConstant(-operation.n));
+          const second = addPolynomials(poly, polynomialFromConstant(-operation.m));
+          return multiplyPolynomials(first, second);
+        }
         after = {
-          left: `${parenthesize(`${parenthesize(equation.left)} ${signedNumberTex(operation.n)}`)}${parenthesize(`${parenthesize(equation.left)} ${signedNumberTex(operation.m)}`)}`,
-          right: `${parenthesize(`${parenthesize(equation.right)} ${signedNumberTex(operation.n)}`)}${parenthesize(`${parenthesize(equation.right)} ${signedNumberTex(operation.m)}`)}`
+          left: productJumble(equation.left),
+          right: productJumble(equation.right)
         };
       }
 
       operation.before = before;
       operation.after = after;
+      operation.forwardDescription = operationDescription(operation);
       return after;
     }
 
@@ -217,24 +333,16 @@ fetch("/nav.html")
     }
 
     function randomStandardOperation() {
-      const type = randomChoice(['add', 'subtract', 'multiply', 'divide', 'square']);
-      if (type === 'square') return { type };
+      const type = randomChoice(['add', 'subtract', 'multiply', 'divide']);
       return { type, operand: randomOperand() };
-    }
-
-    function inverseInstruction(operation) {
-      if (operation.type === 'add') return `Subtract ${operandTex(operation.operand)} from both sides.`;
-      if (operation.type === 'subtract') return `Add ${operandTex(operation.operand)} to both sides.`;
-      if (operation.type === 'multiply') return `Divide both sides by ${operandTex(operation.operand)}.`;
-      if (operation.type === 'divide') return `Multiply both sides by ${operandTex(operation.operand)}.`;
-      if (operation.type === 'square') return `Take the appropriate square root.`;
-      if (operation.type === 'product') return `Undo the product jumble.`;
-      return '';
     }
 
     function generateEquationProblem() {
       const solution = randomNonzeroInteger(-10, 10);
-      let equation = { left: 'x', right: `${solution}` };
+      let equation = {
+        left: polynomialFromXPower(1),
+        right: polynomialFromConstant(solution)
+      };
       const operations = [];
 
       const useProductFirst = Math.random() < 0.30;
@@ -261,10 +369,6 @@ fetch("/nav.html")
         operations,
         finalEquation: equation
       };
-    }
-
-    function equationToTex(equation) {
-      return `${equation.left} = ${equation.right}`;
     }
 
     function createHintStepBlock() {

@@ -4,6 +4,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1250,11 +1251,238 @@ fetch("/nav.html")
       return Array.from(editor.childNodes).map(walk).join('').trim();
     }
 
-    function checkUserAnswer() {
+    function normalizeAnswerText(text) {
+      return text
+        .replace(/\u200b/g, '')
+        .replace(/−/g, '-')
+        .replace(/–/g, '-')
+        .replace(/\s+/g, '')
+        .replace(/\\infty/g, '∞')
+        .replace(/infinity/gi, '∞')
+        .replace(/inf/gi, '∞')
+        .replace(/oo/gi, '∞')
+        .replace(/\\cup/g, '∪')
+        .replace(/\\cap/g, '∩')
+        .replace(/U/g, '∪')
+        .replace(/∪+/g, '∪')
+        .replace(/∩+/g, '∩');
+    }
+
+    function evaluateNumericAnswer(raw) {
+      const text = normalizeAnswerText(raw)
+        .replace(/^x=/i, '')
+        .replace(/sqrt\(/g, 'Math.sqrt(')
+        .replace(/√\(/g, 'Math.sqrt(')
+        .replace(/√([0-9.]+)/g, 'Math.sqrt($1)')
+        .replace(/\^/g, '**');
+
+      if (!text || /[^0-9+\-*/().,Mathsqrt]/.test(text)) return NaN;
+      try {
+        const value = Function(`"use strict"; return (${text});`)();
+        return Number.isFinite(value) ? value : NaN;
+      } catch (error) {
+        return NaN;
+      }
+    }
+
+    function expectedEqualityValues(problem) {
+      if (problem.type === 3) return Array.from(new Set([0, problem.n, problem.m])).sort((a, b) => a - b);
+      return Array.from(new Set(problem.bounds.map(x => Number(x.toFixed(12))))).sort((a, b) => a - b);
+    }
+
+    function arraysNearlyEqualAsSets(userValues, expectedValues) {
+      const eps = 1e-7;
+      if (userValues.length !== expectedValues.length) return false;
+      const used = new Array(userValues.length).fill(false);
+      return expectedValues.every(expected => {
+        const index = userValues.findIndex((value, i) => !used[i] && Math.abs(value - expected) < eps);
+        if (index === -1) return false;
+        used[index] = true;
+        return true;
+      });
+    }
+
+    function checkEqualityAnswer() {
       const editors = Array.from(document.querySelectorAll('.math-answer-editor'));
-      const answerText = editors.map(editorToPlainText).join(' or ');
-      feedbackText.textContent = answerText ? `Answer checking has not been added yet. You entered: ${answerText}` : 'Enter an answer first.';
-      feedbackText.style.color = '#555';
+      const userValues = editors.map(editor => evaluateNumericAnswer(editorToPlainText(editor)));
+      if (userValues.some(value => !Number.isFinite(value))) return false;
+      return arraysNearlyEqualAsSets(userValues, expectedEqualityValues(currentProblem));
+    }
+
+    function splitTopLevelSetExpression(text) {
+      const pieces = [];
+      let current = '';
+      let depth = 0;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (ch === '(' || ch === '[' || ch === '{') depth++;
+        else if (ch === ')' || ch === ']' || ch === '}') depth = Math.max(0, depth - 1);
+
+        if ((ch === '∪' || ch === '∩') && depth === 0) {
+          pieces.push({ type: 'set', value: current });
+          pieces.push({ type: 'op', value: ch });
+          current = '';
+        } else {
+          current += ch;
+        }
+      }
+      pieces.push({ type: 'set', value: current });
+      return pieces.filter(piece => piece.type === 'op' || piece.value.length > 0);
+    }
+
+    function splitIntervalEndpoints(body) {
+      let depth = 0;
+      for (let i = 0; i < body.length; i++) {
+        const ch = body[i];
+        if (ch === '(' || ch === '[' || ch === '{') depth++;
+        else if (ch === ')' || ch === ']' || ch === '}') depth = Math.max(0, depth - 1);
+        else if (ch === ',' && depth === 0) return [body.slice(0, i), body.slice(i + 1)];
+      }
+      return null;
+    }
+
+    function parseEndpoint(text) {
+      text = normalizeAnswerText(text);
+      if (text === '∞' || text === '+∞') return Infinity;
+      if (text === '-∞') return -Infinity;
+      return evaluateNumericAnswer(text);
+    }
+
+    function parseIntervalSet(text) {
+      text = normalizeAnswerText(text);
+      if (!text || text === '∅' || text === '{}') return [];
+      if (!(text[0] === '(' || text[0] === '[') || !(text[text.length - 1] === ')' || text[text.length - 1] === ']')) return null;
+
+      const leftClosed = text[0] === '[';
+      const rightClosed = text[text.length - 1] === ']';
+      const endpoints = splitIntervalEndpoints(text.slice(1, -1));
+      if (!endpoints) return null;
+      const left = parseEndpoint(endpoints[0]);
+      const right = parseEndpoint(endpoints[1]);
+      if (!Number.isFinite(left) && left !== -Infinity) return null;
+      if (!Number.isFinite(right) && right !== Infinity) return null;
+      if (!(left < right)) return [];
+      return [{ left, right, leftClosed, rightClosed }];
+    }
+
+    function pointSetFromSingleValue(value) {
+      return [{ left: value, right: value, leftClosed: true, rightClosed: true }];
+    }
+
+    function parseBasicSet(text) {
+      text = normalizeAnswerText(text);
+      if (!text || text === '∅') return [];
+      if (text[0] === '{' && text[text.length - 1] === '}') {
+        const body = text.slice(1, -1);
+        if (!body) return [];
+        return body.split(',').map(part => {
+          const value = evaluateNumericAnswer(part);
+          return Number.isFinite(value) ? pointSetFromSingleValue(value)[0] : null;
+        }).filter(Boolean);
+      }
+      return parseIntervalSet(text);
+    }
+
+    function intervalContainsPoint(interval, x) {
+      const eps = 1e-9;
+      const leftGood = interval.leftClosed ? x >= interval.left - eps : x > interval.left + eps;
+      const rightGood = interval.rightClosed ? x <= interval.right + eps : x < interval.right - eps;
+      return leftGood && rightGood;
+    }
+
+    function setContainsPoint(intervals, x) {
+      return intervals.some(interval => intervalContainsPoint(interval, x));
+    }
+
+    function intervalIntersection(a, b) {
+      const left = Math.max(a.left, b.left);
+      const right = Math.min(a.right, b.right);
+      let leftClosed;
+      if (a.left > b.left) leftClosed = a.leftClosed;
+      else if (b.left > a.left) leftClosed = b.leftClosed;
+      else leftClosed = a.leftClosed && b.leftClosed;
+      let rightClosed;
+      if (a.right < b.right) rightClosed = a.rightClosed;
+      else if (b.right < a.right) rightClosed = b.rightClosed;
+      else rightClosed = a.rightClosed && b.rightClosed;
+      if (left < right || (Math.abs(left - right) < 1e-10 && leftClosed && rightClosed)) {
+        return { left, right, leftClosed, rightClosed };
+      }
+      return null;
+    }
+
+    function intersectSets(a, b) {
+      const result = [];
+      a.forEach(intervalA => {
+        b.forEach(intervalB => {
+          const intersection = intervalIntersection(intervalA, intervalB);
+          if (intersection) result.push(intersection);
+        });
+      });
+      return result;
+    }
+
+    function parseSetExpression(text) {
+      const pieces = splitTopLevelSetExpression(text);
+      if (!pieces.length || pieces[0].type !== 'set') return null;
+      let result = parseBasicSet(pieces[0].value);
+      if (result === null) return null;
+      for (let i = 1; i < pieces.length; i += 2) {
+        if (!pieces[i] || !pieces[i + 1] || pieces[i].type !== 'op' || pieces[i + 1].type !== 'set') return null;
+        const nextSet = parseBasicSet(pieces[i + 1].value);
+        if (nextSet === null) return null;
+        if (pieces[i].value === '∪') result = result.concat(nextSet);
+        else result = intersectSets(result, nextSet);
+      }
+      return result;
+    }
+
+    function expectedMembership(x) {
+      if (!currentProblem) return false;
+      if (currentProblem.symbol === '=') {
+        return expectedEqualityValues(currentProblem).some(value => Math.abs(value - x) < 1e-7);
+      }
+      if (currentProblem.type === 3) return compare(currentProblem.zeroEvaluator(x), 0, currentProblem.symbol);
+      return compare(currentProblem.evaluator(x), currentProblem.graphY, currentProblem.symbol);
+    }
+
+    function candidateTestPoints(problem) {
+      const points = new Set();
+      function add(x) { if (Number.isFinite(x)) points.add(Number(x.toFixed(8))); }
+      [-20, -10, -5, -2, -1, -0.5, 0, 0.5, 1, 2, 5, 10, 20].forEach(add);
+      const cuts = problem.type === 3 ? Array.from(new Set([0, problem.n, problem.m])).sort((a, b) => a - b) : problem.bounds;
+      cuts.forEach(cut => {
+        add(cut);
+        add(cut - 0.001);
+        add(cut + 0.001);
+        add(cut - 0.25);
+        add(cut + 0.25);
+        add(cut - 1);
+        add(cut + 1);
+      });
+      for (let i = 0; i < cuts.length - 1; i++) add((cuts[i] + cuts[i + 1]) / 2);
+      return Array.from(points).sort((a, b) => a - b);
+    }
+
+    function checkIntervalAnswer() {
+      const editor = document.getElementById('interval-answer-editor');
+      if (!editor) return false;
+      const userSet = parseSetExpression(editorToPlainText(editor));
+      if (userSet === null) return false;
+      return candidateTestPoints(currentProblem).every(x => setContainsPoint(userSet, x) === expectedMembership(x));
+    }
+
+    function checkUserAnswer() {
+      const sound = document.getElementById('click-sound');
+      if (sound) {
+        sound.currentTime = 0;
+        sound.play();
+      }
+
+      if (!currentProblem) return;
+      const correct = currentProblem.symbol === '=' ? checkEqualityAnswer() : checkIntervalAnswer();
+      feedbackText.textContent = correct ? 'Correct!' : 'Incorrect, try again.';
+      feedbackText.style.color = correct ? 'green' : 'red';
     }
 
     function clearOldActivityState() {

@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -146,6 +147,7 @@ fetch("/nav.html")
   </main>
 
   <script>
+
     const hintBtn = document.getElementById('hint-btn');
     const hintArea = document.getElementById('hint-area');
     const startBtn = document.getElementById('start-btn');
@@ -157,6 +159,8 @@ fetch("/nav.html")
     let hintStep = 0;
     let mathJaxTypesetPromise = Promise.resolve();
     let hintIsTypesetting = false;
+
+    const inequalitySymbols = ['>', '<', '\\geq', '\\leq', '='];
 
     function typesetElement(element) {
       if (!window.MathJax || !MathJax.typesetPromise) {
@@ -180,22 +184,19 @@ fetch("/nav.html")
       return n;
     }
 
-    function randomNontrivialInteger(min, max) {
-      let n;
-      do { n = randomInteger(min, max); } while (n === -1 || n === 0 || n === 1);
-      return n;
-    }
-
     function randomChoice(items) {
       return items[randomInteger(0, items.length - 1)];
     }
 
-    function makeTerm(coefficient, power = 0) {
-      return { coefficient, power };
+    function weightedProblemType() {
+      const r = Math.random();
+      if (r < 0.25) return 1;
+      if (r < 0.50) return 2;
+      return 3;
     }
 
-    function clonePolynomial(poly) {
-      return poly.map(term => ({ coefficient: term.coefficient, power: term.power }));
+    function makeTerm(coefficient, power = 0) {
+      return { coefficient, power };
     }
 
     function combineLikeTerms(poly) {
@@ -205,20 +206,12 @@ fetch("/nav.html")
       });
       return Array.from(byPower.entries())
         .map(([power, coefficient]) => ({ power: Number(power), coefficient }))
-        .filter(term => term.coefficient !== 0)
+        .filter(term => Math.abs(term.coefficient) > 1e-12)
         .sort((a, b) => b.power - a.power);
     }
 
     function addPolynomials(a, b) {
       return combineLikeTerms([...a, ...b]);
-    }
-
-    function scalePolynomial(poly, scalar) {
-      return combineLikeTerms(poly.map(term => ({ coefficient: term.coefficient * scalar, power: term.power })));
-    }
-
-    function subtractPolynomials(a, b) {
-      return addPolynomials(a, scalePolynomial(b, -1));
     }
 
     function multiplyPolynomials(a, b) {
@@ -234,10 +227,6 @@ fetch("/nav.html")
       return combineLikeTerms(terms);
     }
 
-    function dividePolynomialByConstant(poly, divisor) {
-      return combineLikeTerms(poly.map(term => ({ coefficient: term.coefficient / divisor, power: term.power })));
-    }
-
     function polynomialFromConstant(c) {
       return c === 0 ? [] : [makeTerm(c, 0)];
     }
@@ -246,9 +235,33 @@ fetch("/nav.html")
       return [makeTerm(1, k)];
     }
 
-    function operandPolynomial(operand) {
-      if (operand.type === 'constant') return polynomialFromConstant(operand.value);
-      return polynomialFromXPower(operand.value);
+    function polynomialFromLinearRoot(root) {
+      return combineLikeTerms([makeTerm(1, 1), makeTerm(-root, 0)]);
+    }
+
+    function numberTex(n) {
+      if (Object.is(n, -0)) n = 0;
+      const roundedInteger = Math.round(n);
+      if (Math.abs(n - roundedInteger) < 1e-10) return `${roundedInteger}`;
+
+      const sign = n < 0 ? -1 : 1;
+      let x = Math.abs(n);
+      let bestNumerator = 0;
+      let bestDenominator = 1;
+      let bestError = Infinity;
+      for (let denominator = 1; denominator <= 1000; denominator++) {
+        const numerator = Math.round(x * denominator);
+        const error = Math.abs(x - numerator / denominator);
+        if (error < bestError) {
+          bestError = error;
+          bestNumerator = numerator;
+          bestDenominator = denominator;
+        }
+      }
+      const divisor = gcd(bestNumerator, bestDenominator);
+      bestNumerator = sign * bestNumerator / divisor;
+      bestDenominator = bestDenominator / divisor;
+      return bestDenominator === 1 ? `${bestNumerator}` : `\\frac{${bestNumerator}}{${bestDenominator}}`;
     }
 
     function gcd(a, b) {
@@ -260,51 +273,6 @@ fetch("/nav.html")
         a = temp;
       }
       return a || 1;
-    }
-
-    function rationalApproximation(value, maxDenominator = 10000) {
-      if (Number.isInteger(value)) return { numerator: value, denominator: 1 };
-
-      const sign = value < 0 ? -1 : 1;
-      let x = Math.abs(value);
-      let lowerNumerator = 0, lowerDenominator = 1;
-      let upperNumerator = 1, upperDenominator = 0;
-
-      while (true) {
-        const middleNumerator = lowerNumerator + upperNumerator;
-        const middleDenominator = lowerDenominator + upperDenominator;
-
-        if (middleDenominator > maxDenominator) break;
-
-        if (middleNumerator / middleDenominator < x) {
-          lowerNumerator = middleNumerator;
-          lowerDenominator = middleDenominator;
-        } else {
-          upperNumerator = middleNumerator;
-          upperDenominator = middleDenominator;
-        }
-      }
-
-      const lowerError = Math.abs(x - lowerNumerator / lowerDenominator);
-      const upperError = Math.abs(x - upperNumerator / upperDenominator);
-      let numerator = lowerError <= upperError ? lowerNumerator : upperNumerator;
-      let denominator = lowerError <= upperError ? lowerDenominator : upperDenominator;
-
-      const divisor = gcd(numerator, denominator);
-      numerator = sign * numerator / divisor;
-      denominator = denominator / divisor;
-
-      return { numerator, denominator };
-    }
-
-    function numberTex(n) {
-      const roundedInteger = Math.round(n);
-      if (Math.abs(n - roundedInteger) < 1e-10) return `${roundedInteger}`;
-
-      const fraction = rationalApproximation(n);
-      if (fraction.denominator === 1) return `${fraction.numerator}`;
-
-      return `\\frac{${fraction.numerator}}{${fraction.denominator}}`;
     }
 
     function termToTex(term, options = {}) {
@@ -319,7 +287,7 @@ fetch("/nav.html")
 
       let body;
       if (variablePart === '') body = numberTex(absCoefficient);
-      else if (absCoefficient === 1) body = variablePart;
+      else if (Math.abs(absCoefficient - 1) < 1e-10) body = variablePart;
       else body = `${numberTex(absCoefficient)}${variablePart}`;
 
       if (coefficient < 0) return `- ${body}`;
@@ -336,166 +304,243 @@ fetch("/nav.html")
       })).join(' ');
     }
 
-    function signedNumberTex(n) {
-      return n < 0 ? `+ ${Math.abs(n)}` : `- ${n}`;
+    function linearTex(a, b) {
+      const terms = [];
+      if (a !== 0) terms.push(makeTerm(a, 1));
+      if (b !== 0) terms.push(makeTerm(-b, 0));
+      return polynomialToTex(terms);
     }
 
-    function operandTex(operand) {
-      return polynomialToTex(operandPolynomial(operand));
+    function absLinearTex(a, b) {
+      return `\\left|${linearTex(a, b)}\\right|`;
     }
 
-    function equationToTex(equation) {
-      return `${polynomialToTex(equation.left)} = ${polynomialToTex(equation.right)}`;
+    function squareLinearTex(a, b) {
+      return `\\left(${linearTex(a, b)}\\right)^2`;
     }
 
-    function operationDescription(operation) {
-      if (operation.type === 'add') return `Add ${operandTex(operation.operand)} to both sides.`;
-      if (operation.type === 'subtract') return `Subtract ${operandTex(operation.operand)} from both sides.`;
-      if (operation.type === 'multiply') return `Multiply both sides by ${operandTex(operation.operand)}.`;
-      if (operation.type === 'divide') return `Divide both sides by ${operandTex(operation.operand)}.`;
-      if (operation.type === 'product') return `Replace each side \(E\) with \((E ${signedNumberTex(operation.n)})(E ${signedNumberTex(operation.m)})\), then expand.`;
-      return '';
+    function flipSymbol(symbol) {
+      if (symbol === '>') return '<';
+      if (symbol === '<') return '>';
+      if (symbol === '\\geq') return '\\leq';
+      if (symbol === '\\leq') return '\\geq';
+      return '=';
     }
 
-    function inverseInstruction(operation) {
-      if (operation.type === 'add') return `Subtract ${operandTex(operation.operand)} from both sides.`;
-      if (operation.type === 'subtract') return `Add ${operandTex(operation.operand)} to both sides.`;
-      if (operation.type === 'multiply') return `Divide both sides by ${operandTex(operation.operand)}.`;
-      if (operation.type === 'divide') return `Multiply both sides by ${operandTex(operation.operand)}.`;
-      if (operation.type === 'product') return `Subtract the right-hand side from both sides, so that one side is zero.`;
-      return '';
+    function oppositeSymbolForAbsolute(symbol) {
+      if (symbol === '>') return '<';
+      if (symbol === '<') return '>';
+      if (symbol === '\\geq') return '\\leq';
+      if (symbol === '\\leq') return '\\geq';
+      return '=';
     }
 
-    function applyOperation(equation, operation) {
-      const before = {
-        left: clonePolynomial(equation.left),
-        right: clonePolynomial(equation.right)
-      };
+    function connectorForMagnitude(symbol) {
+      return (symbol === '<' || symbol === '\\leq') ? '\\text{ and }' : '\\text{ or }';
+    }
 
-      let after;
-      if (operation.type === 'add') {
-        const operand = operandPolynomial(operation.operand);
-        after = {
-          left: addPolynomials(equation.left, operand),
-          right: addPolynomials(equation.right, operand)
-        };
-      } else if (operation.type === 'subtract') {
-        const operand = operandPolynomial(operation.operand);
-        after = {
-          left: subtractPolynomials(equation.left, operand),
-          right: subtractPolynomials(equation.right, operand)
-        };
-      } else if (operation.type === 'multiply') {
-        const operand = operandPolynomial(operation.operand);
-        after = {
-          left: multiplyPolynomials(equation.left, operand),
-          right: multiplyPolynomials(equation.right, operand)
-        };
-      } else if (operation.type === 'divide') {
-        if (operation.operand.type === 'constant') {
-          after = {
-            left: dividePolynomialByConstant(equation.left, operation.operand.value),
-            right: dividePolynomialByConstant(equation.right, operation.operand.value)
-          };
-        } else {
-          // Dividing by x^k is implemented by multiplying by x^{-k}, so it remains a polynomial-like expression.
-          const divisor = polynomialFromXPower(-operation.operand.value);
-          after = {
-            left: multiplyPolynomials(equation.left, divisor),
-            right: multiplyPolynomials(equation.right, divisor)
-          };
+    function isInclusive(symbol) {
+      return symbol === '\\geq' || symbol === '\\leq' || symbol === '=';
+    }
+
+    function radicalTex(n) {
+      if (n === 0) return '0';
+      if (n === 1) return '1';
+      return `\\sqrt{${n}}`;
+    }
+
+    function simplifyRadical(n) {
+      if (n === 0) return { outside: 0, inside: 1 };
+      let outside = 1;
+      let inside = n;
+      for (let k = Math.floor(Math.sqrt(n)); k >= 2; k--) {
+        const square = k * k;
+        if (inside % square === 0) {
+          outside *= k;
+          inside /= square;
+          break;
         }
-      } else if (operation.type === 'product') {
-        function productJumble(poly) {
-          const first = addPolynomials(poly, polynomialFromConstant(-operation.n));
-          const second = addPolynomials(poly, polynomialFromConstant(-operation.m));
-          return multiplyPolynomials(first, second);
+      }
+      return { outside, inside };
+    }
+
+    function scaledRadicalTex(sign, radicand, denominator = 1, shift = 0) {
+      if (radicand === 0) return numberTex(shift);
+      const simp = simplifyRadical(radicand);
+      const radical = simp.inside === 1 ? `${simp.outside}` : `${simp.outside === 1 ? '' : simp.outside}\\sqrt{${simp.inside}}`;
+      const signedRadical = sign < 0 ? `-${radical}` : radical;
+      const frac = denominator === 1 ? signedRadical : `\\frac{${signedRadical}}{${denominator}}`;
+      if (shift === 0) return frac;
+      return denominator === 1 ? `${numberTex(shift)} ${sign < 0 ? '-' : '+'} ${radical}` : `\\frac{${numberTex(shift * denominator)} ${sign < 0 ? '-' : '+'} ${radical}}{${denominator}}`;
+    }
+
+    function boundValuesForMagnitude(a, b, n) {
+      const lowerRaw = (b - n) / a;
+      const upperRaw = (b + n) / a;
+      return [Math.min(lowerRaw, upperRaw), Math.max(lowerRaw, upperRaw)];
+    }
+
+    function intervalNotationFromBounds(left, right, symbol, valuesAreApprox = false) {
+      if (Math.abs(left - right) < 1e-10) {
+        const point = numberTex(left);
+        if (symbol === '=') return `\left\{${point}\right\}`;
+        if (symbol === '<') return '\varnothing';
+        if (symbol === '\leq') return `\left\{${point}\right\}`;
+        if (symbol === '>') return `(-\infty, ${point}) \cup (${point}, \infty)`;
+        if (symbol === '\geq') return `(-\infty, \infty)`;
+      }
+      if (symbol === '=') return `\left\{${numberTex(left)}, ${numberTex(right)}\right\}`;
+      const inclusive = isInclusive(symbol);
+      const leftTex = valuesAreApprox ? numberTex(left) : numberTex(left);
+      const rightTex = valuesAreApprox ? numberTex(right) : numberTex(right);
+      if (symbol === '<' || symbol === '\leq') {
+        return `${inclusive ? '[' : '('}${leftTex}, ${rightTex}${inclusive ? ']' : ')'}`;
+      }
+      return `(-\infty, ${leftTex}${inclusive ? ']' : ')'} \cup ${inclusive ? '[' : '('}${rightTex}, \infty)`;
+    }
+
+    function intervalNotationFromTexBounds(left, right, symbol) {
+      if (Math.abs(left.value - right.value) < 1e-10) {
+        if (symbol === '=') return `\left\{${left.tex}\right\}`;
+        if (symbol === '<') return '\varnothing';
+        if (symbol === '\leq') return `\left\{${left.tex}\right\}`;
+        if (symbol === '>') return `(-\infty, ${left.tex}) \cup (${left.tex}, \infty)`;
+        if (symbol === '\geq') return `(-\infty, \infty)`;
+      }
+      if (symbol === '=') return `\left\{${left.tex}, ${right.tex}\right\}`;
+      const inclusive = isInclusive(symbol);
+      if (symbol === '<' || symbol === '\leq') return `${inclusive ? '[' : '('}${left.tex}, ${right.tex}${inclusive ? ']' : ')'}`;
+      return `(-\infty, ${left.tex}${inclusive ? ']' : ')'} \cup ${inclusive ? '[' : '('}${right.tex}, \infty)`;
+    }
+
+    function intervalNotationFromRoots(roots, symbol, evaluator) {
+      const uniqueRoots = Array.from(new Set(roots)).sort((a, b) => a - b);
+      const cuts = [-Infinity, ...uniqueRoots, Infinity];
+      const pieces = [];
+      for (let i = 0; i < cuts.length - 1; i++) {
+        const left = cuts[i];
+        const right = cuts[i + 1];
+        let test;
+        if (left === -Infinity) test = right - 1;
+        else if (right === Infinity) test = left + 1;
+        else test = (left + right) / 2;
+
+        const value = evaluator(test);
+        const good = compare(value, 0, symbol);
+        if (good) {
+          const leftBracket = left === -Infinity ? '(' : (isInclusive(symbol) ? '[' : '(');
+          const rightBracket = right === Infinity ? ')' : (isInclusive(symbol) ? ']' : ')');
+          pieces.push(`${leftBracket}${left === -Infinity ? '-\\infty' : numberTex(left)}, ${right === Infinity ? '\\infty' : numberTex(right)}${rightBracket}`);
         }
-        after = {
-          left: productJumble(equation.left),
-          right: productJumble(equation.right)
-        };
       }
 
-      operation.before = before;
-      operation.after = after;
-      operation.forwardDescription = operationDescription(operation);
-      return after;
-    }
-
-    function randomOperationWithOperand(operandType) {
-      return {
-        type: randomChoice(['add', 'subtract', 'multiply', 'divide']),
-        operand: {
-          type: operandType,
-          value: randomNonzeroInteger(-10, 10)
-        }
-      };
-    }
-
-    function randomConstantMultiplyDivideOperation() {
-      return {
-        type: randomChoice(['multiply', 'divide']),
-        operand: {
-          type: 'constant',
-          value: randomNontrivialInteger(-10, 10)
-        }
-      };
-    }
-
-    function shuffleArray(items) {
-      const shuffled = [...items];
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = randomInteger(0, i);
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      if (symbol === '=') {
+        return `\\left\\{${uniqueRoots.map(numberTex).join(', ')}\\right\\}`;
       }
-      return shuffled;
+      return pieces.length ? pieces.join(' \\cup ') : '\\varnothing';
     }
 
-    function generateEquationProblem() {
-      const solution = randomNonzeroInteger(-10, 10);
-      let equation = {
-        left: polynomialFromXPower(1),
-        right: polynomialFromConstant(solution)
-      };
+    function compare(value, threshold, symbol) {
+      const eps = 1e-9;
+      if (symbol === '>') return value > threshold + eps;
+      if (symbol === '<') return value < threshold - eps;
+      if (symbol === '\\geq') return value >= threshold - eps;
+      if (symbol === '\\leq') return value <= threshold + eps;
+      return Math.abs(value - threshold) < eps;
+    }
 
-      const productOperation = {
-        type: 'product',
-        n: randomNonzeroInteger(-12, 12),
-        m: randomNonzeroInteger(-12, 12)
-      };
-
-      const remainingOperations = shuffleArray([
-        randomConstantMultiplyDivideOperation(),
-        randomOperationWithOperand('xPower')
-      ]);
-
-      const operations = [productOperation, ...remainingOperations];
-
-      operations.forEach(operation => {
-        equation = applyOperation(equation, operation);
-      });
-
-      const zeroLeft = subtractPolynomials(productOperation.after.left, productOperation.after.right);
-      const zeroRight = polynomialFromConstant(0);
-
-      const otherRoot = productOperation.n + productOperation.m - solution;
-      const zeroEquation = { left: zeroLeft, right: zeroRight };
-      const factoredTex = `(x ${signedNumberTex(solution)})(x ${signedNumberTex(otherRoot)}) = 0`;
+    function generateType1Problem() {
+      const a = randomNonzeroInteger(-10, 10);
+      const b = randomInteger(-10, 10);
+      const n = randomInteger(0, 10);
+      const symbol = randomChoice(inequalitySymbols);
+      const [left, right] = boundValuesForMagnitude(a, b, n);
 
       return {
-        solution,
-        otherRoot,
-        operations,
-        finalEquation: equation,
-        zeroEquation,
-        factoredTex
+        type: 1,
+        a, b, n, symbol,
+        questionTex: `${absLinearTex(a, b)} ${symbol} ${n}`,
+        solutionTex: intervalNotationFromBounds(left, right, symbol),
+        evaluator: x => Math.abs(a * x - b),
+        graphY: n,
+        bounds: [left, right]
       };
     }
 
-    function createHintStepBlock() {
+    function generateType2Problem() {
+      const a = randomNonzeroInteger(-10, 10);
+      const b = randomInteger(-10, 10);
+      const n = randomInteger(0, 10);
+      const symbol = randomChoice(inequalitySymbols);
+      const root = Math.sqrt(n);
+      const numericBounds = boundValuesForMagnitude(a, b, root);
+      const candidates = [
+        {
+          value: (b + root) / a,
+          tex: scaledRadicalTex(a > 0 ? 1 : -1, n, Math.abs(a), b / a)
+        },
+        {
+          value: (b - root) / a,
+          tex: scaledRadicalTex(a > 0 ? -1 : 1, n, Math.abs(a), b / a)
+        }
+      ].sort((u, v) => u.value - v.value);
+
+      return {
+        type: 2,
+        a, b, n, symbol,
+        questionTex: `${squareLinearTex(a, b)} ${symbol} ${n}`,
+        solutionTex: intervalNotationFromTexBounds(candidates[0], candidates[1], symbol),
+        evaluator: x => Math.pow(a * x - b, 2),
+        graphY: n,
+        bounds: numericBounds
+      };
+    }
+
+    function generateType3Problem() {
+      const a = randomNonzeroInteger(-10, 10);
+      const b = randomInteger(1, 5);
+      const n = randomNonzeroInteger(-10, 10);
+      let m;
+      do { m = randomNonzeroInteger(-10, 10); } while (m === n);
+      const p = randomInteger(-4, 4);
+      const symbol = randomChoice(inequalitySymbols);
+
+      let poly = polynomialFromConstant(a);
+      poly = multiplyPolynomials(poly, polynomialFromXPower(b));
+      poly = multiplyPolynomials(poly, polynomialFromLinearRoot(n));
+      poly = multiplyPolynomials(poly, polynomialFromLinearRoot(m));
+      const shifted = addPolynomials(poly, polynomialFromConstant(p));
+      const roots = [0, n, m].sort((x, y) => x - y);
+
+      return {
+        type: 3,
+        a, b, n, m, p, symbol,
+        poly,
+        shifted,
+        roots,
+        questionTex: `${polynomialToTex(shifted)} ${symbol} ${p}`,
+        zeroTex: `${polynomialToTex(poly)} ${symbol} 0`,
+        solutionTex: intervalNotationFromRoots(roots, symbol, x => evaluateType3(a, b, n, m, x)),
+        evaluator: x => evaluateType3(a, b, n, m, x) + p,
+        zeroEvaluator: x => evaluateType3(a, b, n, m, x),
+        graphY: p
+      };
+    }
+
+    function evaluateType3(a, b, n, m, x) {
+      return a * Math.pow(x, b) * (x - n) * (x - m);
+    }
+
+    function generateInequalityProblem() {
+      const type = weightedProblemType();
+      if (type === 1) return generateType1Problem();
+      if (type === 2) return generateType2Problem();
+      return generateType3Problem();
+    }
+
+    function createHintStepBlock(extraClass = '') {
       const block = document.createElement('div');
-      block.className = 'hint-step-block';
+      block.className = `hint-step-block ${extraClass}`.trim();
       block.style.textAlign = 'center';
       block.style.margin = '0.5em auto';
       block.style.padding = '0';
@@ -505,37 +550,251 @@ fetch("/nav.html")
       return block;
     }
 
-    function displayHintStep(operation) {
+    function appendMathHint(tex) {
       const block = createHintStepBlock();
-      block.innerHTML = `
-        \\[
-          \\implies ${equationToTex(operation.before)}
-        \\]
-      `;
+      block.innerHTML = `\\[${tex}\\]`;
       return typesetElement(block);
     }
 
-    function displayMoveToZeroHint(productOperation) {
-      const block = createHintStepBlock();
-      block.innerHTML = `
-        \\[
-          \\implies ${equationToTex(currentProblem.zeroEquation)}
-        \\]
-      `;
-      return typesetElement(block);
+    function displayMagnitudeHint(problem, useRadical) {
+      const { a, b, n, symbol } = problem;
+      const expr = linearTex(a, b);
+      const right = useRadical ? radicalTex(n) : numberTex(n);
+      const negativeRight = useRadical ? `-${radicalTex(n)}` : numberTex(-n);
+      const opposite = oppositeSymbolForAbsolute(symbol);
+      const connector = connectorForMagnitude(symbol);
+      return appendMathHint(`\\implies ${expr} ${symbol} ${right} ${connector} ${expr} ${opposite} ${negativeRight}`);
     }
 
-    function displayFactorQuadraticHint() {
-      const block = createHintStepBlock();
-      block.innerHTML = `
-        \\[
-          \\implies ${currentProblem.factoredTex}
-        \\]
-        \\[
-          \\implies x = ${currentProblem.solution} \\quad \\text{or} \\quad x = ${currentProblem.otherRoot}
-        \\]
-      `;
-      return typesetElement(block);
+    function displayAddBHint(problem, useRadical) {
+      const { a, b, n, symbol } = problem;
+      const ax = linearTex(a, 0);
+      const rightPositive = useRadical ? scaledRadicalTex(1, n, 1, b) : numberTex(n + b);
+      const rightNegative = useRadical ? scaledRadicalTex(-1, n, 1, b) : numberTex(-n + b);
+      const opposite = oppositeSymbolForAbsolute(symbol);
+      const connector = connectorForMagnitude(symbol);
+      return appendMathHint(`\\implies ${ax} ${symbol} ${rightPositive} ${connector} ${ax} ${opposite} ${rightNegative}`);
+    }
+
+    function displayDivideByAHint(problem, useRadical) {
+      const { a, b, n, symbol } = problem;
+      const denominator = Math.abs(a);
+      let firstSymbol = a < 0 ? flipSymbol(symbol) : symbol;
+      let secondSymbol = a < 0 ? flipSymbol(oppositeSymbolForAbsolute(symbol)) : oppositeSymbolForAbsolute(symbol);
+      let firstValue = useRadical ? scaledRadicalTex(a > 0 ? 1 : -1, n, denominator, b / a) : numberTex((n + b) / a);
+      let secondValue = useRadical ? scaledRadicalTex(a > 0 ? -1 : 1, n, denominator, b / a) : numberTex((-n + b) / a);
+      const connector = connectorForMagnitude(symbol);
+      return appendMathHint(`\\implies x ${firstSymbol} ${firstValue} ${connector} x ${secondSymbol} ${secondValue}`);
+    }
+
+    function displayIntervalHint(problem) {
+      return appendMathHint(`\\implies x \\in ${problem.solutionTex}`);
+    }
+
+    function type3FactorOutATex(problem) {
+      const inside = multiplyPolynomials(
+        multiplyPolynomials(polynomialFromXPower(problem.b), polynomialFromLinearRoot(problem.n)),
+        polynomialFromLinearRoot(problem.m)
+      );
+      if (problem.a === 1) return `${polynomialToTex(problem.poly)} ${problem.symbol} 0`;
+      if (problem.a === -1) return `-\\left(${polynomialToTex(inside)}\\right) ${problem.symbol} 0`;
+      return `${problem.a}\\left(${polynomialToTex(inside)}\\right) ${problem.symbol} 0`;
+    }
+
+    function type3FactorOutXTex(problem) {
+      const quadratic = multiplyPolynomials(polynomialFromLinearRoot(problem.n), polynomialFromLinearRoot(problem.m));
+      const xPower = problem.b === 1 ? 'x' : `x^{${problem.b}}`;
+      if (problem.a === 1) return `${xPower}\\left(${polynomialToTex(quadratic)}\\right) ${problem.symbol} 0`;
+      if (problem.a === -1) return `-${xPower}\\left(${polynomialToTex(quadratic)}\\right) ${problem.symbol} 0`;
+      return `${problem.a}${xPower}\\left(${polynomialToTex(quadratic)}\\right) ${problem.symbol} 0`;
+    }
+
+    function linearFactorTex(root) {
+      if (root === 0) return 'x';
+      return `(x ${root < 0 ? '+' : '-'} ${Math.abs(root)})`;
+    }
+
+    function type3FullyFactoredTex(problem) {
+      const xPower = problem.b === 1 ? 'x' : `x^{${problem.b}}`;
+      const aPart = problem.a === 1 ? '' : (problem.a === -1 ? '-' : `${problem.a}`);
+      return `${aPart}${xPower}${linearFactorTex(problem.n)}${linearFactorTex(problem.m)} ${problem.symbol} 0`;
+    }
+
+    function signOfTex(value) {
+      return value > 0 ? '+' : '-';
+    }
+
+    function intervalLabel(left, right) {
+      return `(${left === -Infinity ? '-\\infty' : numberTex(left)}, ${right === Infinity ? '\\infty' : numberTex(right)})`;
+    }
+
+    function makeSignChartTex(problem) {
+      const sorted = Array.from(new Set([0, problem.n, problem.m])).sort((a, b) => a - b);
+      const cuts = [-Infinity, ...sorted, Infinity];
+      const intervals = [];
+      for (let i = 0; i < cuts.length - 1; i++) intervals.push([cuts[i], cuts[i + 1]]);
+
+      const factors = [
+        { label: problem.a === 1 ? '' : `${problem.a}`, value: x => problem.a },
+        { label: problem.b === 1 ? 'x' : `x^{${problem.b}}`, value: x => Math.pow(x, problem.b) },
+        { label: linearFactorTex(problem.n), value: x => x - problem.n },
+        { label: linearFactorTex(problem.m), value: x => x - problem.m },
+        { label: type3FullyFactoredTex({...problem, symbol: ''}).trim(), value: x => (problem.zeroEvaluator || problem.evaluator)(x) }
+      ].filter(f => f.label !== '');
+
+      const columnSpec = '|c|' + factors.map(() => 'c|').join('');
+      let tex = `\\begin{array}{${columnSpec}}\\hline\n`;
+      tex += ` & ${factors.map(f => f.label).join(' & ')} \\\\ \n\\hline\n`;
+      intervals.forEach(([left, right]) => {
+        let test;
+        if (left === -Infinity) test = right - 1;
+        else if (right === Infinity) test = left + 1;
+        else test = (left + right) / 2;
+        tex += `${intervalLabel(left, right)} & ${factors.map(f => signOfTex(f.value(test))).join(' & ')} \\\\ \n\\hline\n`;
+      });
+      tex += '\\end{array}';
+      return tex;
+    }
+
+    async function displayType3Hint(problem, step) {
+      if (step === 0) return appendMathHint(`\\implies ${problem.zeroTex}`);
+      if (step === 1) return appendMathHint(`\\implies ${type3FactorOutATex(problem)}`);
+      if (step === 2) return appendMathHint(`\\implies ${type3FactorOutXTex(problem)}`);
+      if (step === 3) return appendMathHint(`\\implies ${type3FullyFactoredTex(problem)}`);
+      if (step === 4) return appendMathHint(makeSignChartTex(problem));
+      if (step === 5) return displayIntervalHint(problem);
+      if (step === 6) return displayGraphHint(problem);
+    }
+
+    async function displayGraphHint(problem) {
+      const block = createHintStepBlock('graph-hint-block');
+      const canvas = document.createElement('canvas');
+      canvas.width = 760;
+      canvas.height = 460;
+      canvas.style.maxWidth = '100%';
+      canvas.style.border = '1px solid #ccc';
+      canvas.style.borderRadius = '8px';
+      canvas.style.background = 'white';
+      block.appendChild(canvas);
+      drawProblemGraph(canvas, problem);
+      return Promise.resolve();
+    }
+
+    function drawProblemGraph(canvas, problem) {
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      const pad = 50;
+
+      const importantXs = problem.type === 3 ? [0, problem.n, problem.m] : problem.bounds;
+      const minImportant = Math.min(...importantXs);
+      const maxImportant = Math.max(...importantXs);
+      let xMin = Math.floor(minImportant - 4);
+      let xMax = Math.ceil(maxImportant + 4);
+      if (xMin === xMax) { xMin -= 5; xMax += 5; }
+      xMin = Math.min(xMin, -10);
+      xMax = Math.max(xMax, 10);
+
+      const samples = [];
+      for (let i = 0; i <= 800; i++) {
+        const x = xMin + (xMax - xMin) * i / 800;
+        const y = problem.evaluator(x);
+        if (Number.isFinite(y)) samples.push({ x, y });
+      }
+
+      const yValues = samples.map(p => p.y).concat([problem.graphY, 0]);
+      let yMin = Math.min(...yValues);
+      let yMax = Math.max(...yValues);
+      const yRange = Math.max(1, yMax - yMin);
+      yMin -= 0.12 * yRange;
+      yMax += 0.12 * yRange;
+      if (problem.type !== 3) yMin = Math.min(yMin, -1);
+
+      function sx(x) { return pad + (x - xMin) / (xMax - xMin) * (w - 2 * pad); }
+      function sy(y) { return h - pad - (y - yMin) / (yMax - yMin) * (h - 2 * pad); }
+
+      ctx.clearRect(0, 0, w, h);
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = '#ddd';
+      ctx.fillStyle = '#333';
+      ctx.font = '14px sans-serif';
+
+      for (let x = Math.ceil(xMin); x <= Math.floor(xMax); x++) {
+        const X = sx(x);
+        ctx.beginPath(); ctx.moveTo(X, pad); ctx.lineTo(X, h - pad); ctx.stroke();
+        if (x !== 0) ctx.fillText(String(x), X - 5, sy(0) + 18);
+      }
+
+      const yStep = niceStep((yMax - yMin) / 8);
+      for (let y = Math.ceil(yMin / yStep) * yStep; y <= yMax; y += yStep) {
+        const Y = sy(y);
+        ctx.beginPath(); ctx.moveTo(pad, Y); ctx.lineTo(w - pad, Y); ctx.stroke();
+        if (Math.abs(y) > 1e-9) ctx.fillText(numberForGraphLabel(y), sx(0) + 6, Y + 4);
+      }
+
+      ctx.strokeStyle = '#555';
+      ctx.lineWidth = 2;
+      if (yMin <= 0 && yMax >= 0) { ctx.beginPath(); ctx.moveTo(pad, sy(0)); ctx.lineTo(w - pad, sy(0)); ctx.stroke(); }
+      if (xMin <= 0 && xMax >= 0) { ctx.beginPath(); ctx.moveTo(sx(0), pad); ctx.lineTo(sx(0), h - pad); ctx.stroke(); }
+      ctx.fillText('x', w - pad + 15, sy(0) + 4);
+      ctx.fillText('y', sx(0) + 6, pad - 12);
+
+      ctx.strokeStyle = 'black';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 6]);
+      ctx.beginPath(); ctx.moveTo(pad, sy(problem.graphY)); ctx.lineTo(w - pad, sy(problem.graphY)); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillText(`y = ${problem.graphY}`, w - pad - 70, sy(problem.graphY) - 8);
+
+      drawCurve(ctx, samples, sx, sy, '#c22', 3, () => true);
+      if (problem.symbol === '=') drawEqualitySolution(ctx, problem, samples, sx, sy);
+      else drawCurve(ctx, samples, sx, sy, '#198754', 5, point => compare(point.y, problem.graphY, problem.symbol));
+    }
+
+    function drawCurve(ctx, samples, sx, sy, strokeStyle, lineWidth, includePoint) {
+      ctx.strokeStyle = strokeStyle;
+      ctx.lineWidth = lineWidth;
+      ctx.beginPath();
+      let drawing = false;
+      samples.forEach(point => {
+        if (!includePoint(point)) { drawing = false; return; }
+        const X = sx(point.x), Y = sy(point.y);
+        if (!drawing) { ctx.moveTo(X, Y); drawing = true; }
+        else ctx.lineTo(X, Y);
+      });
+      ctx.stroke();
+    }
+
+    function drawEqualitySolution(ctx, problem, samples, sx, sy) {
+      let xs = [];
+      if (problem.type === 1 || problem.type === 2) xs = Array.from(new Set(problem.bounds.map(x => Number(x.toFixed(10)))));
+      else xs = Array.from(new Set([0, problem.n, problem.m])).sort((a, b) => a - b);
+
+      ctx.fillStyle = '#198754';
+      ctx.strokeStyle = '#198754';
+      ctx.font = '14px sans-serif';
+      xs.forEach(x => {
+        const y = problem.evaluator(x);
+        ctx.beginPath();
+        ctx.arc(sx(x), sy(y), 6, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.fillText(`(${numberForGraphLabel(x)}, ${numberForGraphLabel(y)})`, sx(x) + 8, sy(y) - 8);
+      });
+    }
+
+    function niceStep(rawStep) {
+      const exponent = Math.floor(Math.log10(rawStep));
+      const base = rawStep / Math.pow(10, exponent);
+      let niceBase = 1;
+      if (base > 5) niceBase = 10;
+      else if (base > 2) niceBase = 5;
+      else if (base > 1) niceBase = 2;
+      return niceBase * Math.pow(10, exponent);
+    }
+
+    function numberForGraphLabel(n) {
+      if (Math.abs(n - Math.round(n)) < 1e-8) return String(Math.round(n));
+      return String(Math.round(n * 100) / 100);
     }
 
     async function advanceHint() {
@@ -550,148 +809,37 @@ fetch("/nav.html")
       hintIsTypesetting = true;
       hintBtn.disabled = true;
 
-      const secondAndThirdOperations = currentProblem.operations.slice(1).reverse();
-      if (hintStep < 2) {
-        await displayHintStep(secondAndThirdOperations[hintStep]);
-      } else if (hintStep === 2) {
-        await displayMoveToZeroHint(currentProblem.operations[0]);
-      } else if (hintStep === 3) {
-        await displayFactorQuadraticHint();
+      if (currentProblem.type === 1) {
+        if (hintStep === 0) await displayMagnitudeHint(currentProblem, false);
+        else if (hintStep === 1) await displayAddBHint(currentProblem, false);
+        else if (hintStep === 2) await displayDivideByAHint(currentProblem, false);
+        else if (hintStep === 3) await displayIntervalHint(currentProblem);
+        else if (hintStep === 4) await displayGraphHint(currentProblem);
+      } else if (currentProblem.type === 2) {
+        if (hintStep === 0) await displayMagnitudeHint(currentProblem, true);
+        else if (hintStep === 1) await displayAddBHint(currentProblem, true);
+        else if (hintStep === 2) await displayDivideByAHint(currentProblem, true);
+        else if (hintStep === 3) await displayIntervalHint(currentProblem);
+        else if (hintStep === 4) await displayGraphHint(currentProblem);
+      } else {
+        await displayType3Hint(currentProblem, hintStep);
       }
 
       hintStep++;
       hintIsTypesetting = false;
 
-      if (hintStep >= 4) hintBtn.disabled = true;
-      else hintBtn.disabled = false;
-    }
-
-    function placeCaretInside(element) {
-      const range = document.createRange();
-      range.selectNodeContents(element);
-      range.collapse(false);
-      const selection = window.getSelection();
-      selection.removeAllRanges();
-      selection.addRange(range);
-    }
-
-    function insertExponentEntry() {
-      const selection = window.getSelection();
-      if (!selection.rangeCount) return;
-      const range = selection.getRangeAt(0);
-      range.deleteContents();
-      const exponent = document.createElement('sup');
-      exponent.className = 'exponent-entry';
-      exponent.contentEditable = 'true';
-      exponent.setAttribute('data-exponent-entry', 'true');
-      exponent.innerHTML = '';
-      range.insertNode(exponent);
-      placeCaretInside(exponent);
-    }
-
-    function getContainingExponentEntry(node) {
-      let current = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
-      while (current && current !== document) {
-        if (current.matches && current.matches('sup.exponent-entry')) return current;
-        current = current.parentElement;
-      }
-      return null;
-    }
-
-    function placeCaretAfterNode(node) {
-      const parent = node.parentNode;
-      let afterNode = node.nextSibling;
-      if (!afterNode || afterNode.nodeType !== Node.TEXT_NODE) {
-        afterNode = document.createTextNode('\u200b');
-        parent.insertBefore(afterNode, node.nextSibling);
-      } else if (afterNode.textContent.length === 0) {
-        afterNode.textContent = '\u200b';
-      }
-      const range = document.createRange();
-      range.setStart(afterNode, afterNode.textContent.length);
-      range.collapse(true);
-      const selection = window.getSelection();
-      selection.removeAllRanges();
-      selection.addRange(range);
+      const maxHints = currentProblem.type === 3 ? 7 : 5;
+      hintBtn.disabled = hintStep >= maxHints;
     }
 
     function setupAnswerEditor() {
       const finalAnswerDiv = document.getElementById('final-answer-input');
-      finalAnswerDiv.innerHTML = `
-        <label style="font-weight: bold; margin-right: 0.5em;">x = </label>
-        <span id="equation-answer-editor-1" class="polynomial-answer-editor" contenteditable="true" role="textbox" aria-label="First value of x" style="min-width: 90px;"></span>
-        <span style="font-weight: bold; margin: 0 0.5em;">or</span>
-        <span id="equation-answer-editor-2" class="polynomial-answer-editor" contenteditable="true" role="textbox" aria-label="Second value of x" style="min-width: 90px;"></span>
-      `;
-
-      const editors = [
-        document.getElementById('equation-answer-editor-1'),
-        document.getElementById('equation-answer-editor-2')
-      ];
-
-      editors.forEach(editor => {
-        editor.addEventListener('keydown', event => {
-          if (event.key === '^') { event.preventDefault(); insertExponentEntry(); return; }
-          if (event.key === 'ArrowRight') {
-            const selection = window.getSelection();
-            if (selection.rangeCount && selection.isCollapsed) {
-              const exponentBox = getContainingExponentEntry(selection.getRangeAt(0).startContainer);
-              if (exponentBox) { event.preventDefault(); placeCaretAfterNode(exponentBox); return; }
-            }
-          }
-          if (event.key === 'Enter') { event.preventDefault(); return; }
-        });
-      });
-
-      editors[0].focus();
-    }
-
-    function editorToString(editor) {
-      function walk(node) {
-        if (node.nodeType === Node.TEXT_NODE) return node.textContent;
-        if (node.nodeType !== Node.ELEMENT_NODE) return '';
-        if (node.matches && node.matches('sup.exponent-entry')) return `^${node.textContent.trim()}`;
-        return Array.from(node.childNodes).map(walk).join('');
-      }
-      return Array.from(editor.childNodes).map(walk).join('').replace(/\u200b/g, '');
-    }
-
-    function parseIntegerAnswer(raw) {
-      const input = raw
-        .replace(/\u00a0/g, '')
-        .replace(/\u200b/g, '')
-        .replace(/−/g, '-')
-        .replace(/\s+/g, '')
-        .replace(/^x=/i, '');
-      if (!/^-?\d+$/.test(input)) return null;
-      return parseInt(input, 10);
+      finalAnswerDiv.innerHTML = '<p style="font-style: italic;">Answer input will be added after the problem generator and hints are finalized.</p>';
     }
 
     function checkUserAnswer() {
-      const sound = document.getElementById('click-sound');
-      if (sound) {
-        sound.currentTime = 0;
-        sound.play();
-      }
-
-      const editor1 = document.getElementById('equation-answer-editor-1');
-      const editor2 = document.getElementById('equation-answer-editor-2');
-      if (!editor1 || !editor2 || !currentProblem) return;
-
-      const userAnswers = [
-        parseIntegerAnswer(editorToString(editor1)),
-        parseIntegerAnswer(editorToString(editor2))
-      ];
-
-      const expectedAnswers = [currentProblem.solution, currentProblem.otherRoot];
-
-      const correct =
-        userAnswers.every(answer => answer !== null) &&
-        userAnswers[0] !== userAnswers[1] &&
-        expectedAnswers.every(answer => userAnswers.includes(answer));
-
-      feedbackText.textContent = correct ? 'Correct!' : 'Incorrect, try again.';
-      feedbackText.style.color = correct ? 'green' : 'red';
+      feedbackText.textContent = 'Answer checking has not been added yet.';
+      feedbackText.style.color = '#555';
     }
 
     function clearOldActivityState() {
@@ -713,10 +861,9 @@ fetch("/nav.html")
         sound.play();
       }
 
-      currentProblem = generateEquationProblem();
-      questionText.innerHTML = `Solve for \\(x\\): \\[${equationToTex(currentProblem.finalEquation)}\\]`;
+      currentProblem = generateInequalityProblem();
+      questionText.innerHTML = `Solve for \\(x\\): \\[${currentProblem.questionTex}\\]`;
       setupAnswerEditor();
-      checkBtn.style.display = 'inline-block';
       hintBtn.disabled = false;
       typesetElement(questionText);
     });

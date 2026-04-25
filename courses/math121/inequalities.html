@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -42,6 +43,82 @@
       padding: 0 0.08em;
       border-bottom: 1px solid #777;
       line-height: 1;
+    }
+
+
+    .answer-toolbar {
+      margin-top: 0.65em;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4em;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .math-symbol-button {
+      border: 2px solid #555;
+      border-radius: 8px;
+      background: white;
+      padding: 0.25em 0.6em;
+      font-size: 1.05em;
+      cursor: pointer;
+    }
+
+    .math-symbol-button:hover {
+      background: #f2f2f2;
+    }
+
+    .interval-answer-editor {
+      min-width: 420px;
+    }
+
+    .math-radical {
+      display: inline-flex;
+      align-items: flex-start;
+      vertical-align: middle;
+      margin: 0 0.08em;
+    }
+
+    .radical-symbol {
+      font-size: 1.25em;
+      line-height: 1;
+      padding-top: 0.06em;
+    }
+
+    .radical-entry {
+      display: inline-block;
+      min-width: 1.2em;
+      min-height: 1.1em;
+      border-top: 2px solid #222;
+      padding: 0 0.12em;
+      line-height: 1.15;
+    }
+
+    .fraction-entry {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: stretch;
+      vertical-align: middle;
+      min-width: 1.4em;
+      margin: 0 0.08em;
+      text-align: center;
+      line-height: 1.05;
+    }
+
+    .fraction-numerator,
+    .fraction-denominator {
+      display: block;
+      min-width: 1.2em;
+      min-height: 1em;
+      padding: 0 0.15em;
+    }
+
+    .fraction-numerator {
+      border-bottom: 2px solid #222;
+    }
+
+    .fraction-denominator {
+      padding-top: 0.05em;
     }
   </style>
 </head>
@@ -642,7 +719,7 @@ fetch("/nav.html")
         { label: problem.b === 1 ? 'x' : `x^{${problem.b}}`, value: x => Math.pow(x, problem.b) },
         { label: linearFactorTex(problem.n), value: x => x - problem.n },
         { label: linearFactorTex(problem.m), value: x => x - problem.m },
-        { label: type3FullyFactoredTex({...problem, symbol: ''}).trim(), value: x => (problem.zeroEvaluator || problem.evaluator)(x) }
+        { label: type3FullyFactoredTex({...problem, symbol: ''}).replace(/\s*0\s*$/, '').trim(), value: x => (problem.zeroEvaluator || problem.evaluator)(x) }
       ].filter(f => f.label !== '');
 
       const columnSpec = '|c|' + factors.map(() => 'c|').join('');
@@ -881,13 +958,252 @@ fetch("/nav.html")
       hintBtn.disabled = hintStep >= maxHints;
     }
 
+    let activeMathEditor = null;
+
     function setupAnswerEditor() {
       const finalAnswerDiv = document.getElementById('final-answer-input');
-      finalAnswerDiv.innerHTML = '<p style="font-style: italic;">Answer input will be added after the problem generator and hints are finalized.</p>';
+      if (!currentProblem) return;
+
+      if (currentProblem.symbol === '=') {
+        finalAnswerDiv.innerHTML = `
+          <div class="answer-line">
+            <label style="font-weight: bold; margin-right: 0.5em;">x = </label>
+            <span id="equation-answer-editor-1" class="polynomial-answer-editor math-answer-editor" contenteditable="true" role="textbox" aria-label="First value of x" style="min-width: 110px;"></span>
+            <span style="font-weight: bold; margin: 0 0.5em;">or</span>
+            <span id="equation-answer-editor-2" class="polynomial-answer-editor math-answer-editor" contenteditable="true" role="textbox" aria-label="Second value of x" style="min-width: 110px;"></span>
+          </div>
+          ${answerToolbarHtml(false)}
+        `;
+      } else {
+        finalAnswerDiv.innerHTML = `
+          <div class="answer-line">
+            <label style="font-weight: bold; margin-right: 0.5em;">x \(\in\)</label>
+            <span id="interval-answer-editor" class="polynomial-answer-editor interval-answer-editor math-answer-editor" contenteditable="true" role="textbox" aria-label="Interval notation answer"></span>
+          </div>
+          ${answerToolbarHtml(true)}
+        `;
+      }
+
+      setupMathAnswerEditors(finalAnswerDiv);
+      const firstEditor = finalAnswerDiv.querySelector('.math-answer-editor');
+      if (firstEditor) {
+        activeMathEditor = firstEditor;
+        firstEditor.focus();
+      }
+      typesetElement(finalAnswerDiv);
+    }
+
+    function answerToolbarHtml(includeSetButtons) {
+      return `
+        <div class="answer-toolbar" aria-label="Math input buttons">
+          ${includeSetButtons ? '<button type="button" class="math-symbol-button" data-insert-text=" ∪ ">∪</button><button type="button" class="math-symbol-button" data-insert-text=" ∩ ">∩</button>' : ''}
+          <button type="button" class="math-symbol-button" data-insert-text="∞">∞</button>
+          <button type="button" class="math-symbol-button" data-insert-text="-∞">−∞</button>
+          <button type="button" class="math-symbol-button" data-insert-radical="true">√</button>
+          <button type="button" class="math-symbol-button" data-insert-fraction="true">a⁄b</button>
+        </div>
+      `;
+    }
+
+    function setupMathAnswerEditors(container) {
+      const editors = Array.from(container.querySelectorAll('.math-answer-editor'));
+      editors.forEach(editor => {
+        editor.addEventListener('focus', () => { activeMathEditor = editor; });
+        editor.addEventListener('click', () => { activeMathEditor = editor; });
+        editor.addEventListener('keydown', handleMathEditorKeydown);
+      });
+
+      container.querySelectorAll('.math-symbol-button').forEach(button => {
+        button.addEventListener('mousedown', event => event.preventDefault());
+        button.addEventListener('click', () => {
+          const editor = activeMathEditor || editors[0];
+          if (!editor) return;
+          editor.focus();
+          if (button.dataset.insertText !== undefined) insertTextAtSelection(button.dataset.insertText, editor);
+          else if (button.dataset.insertRadical) insertRadicalAtSelection(editor);
+          else if (button.dataset.insertFraction) insertFractionAtSelection(editor);
+        });
+      });
+    }
+
+    function handleMathEditorKeydown(event) {
+      activeMathEditor = event.currentTarget;
+      if (event.key === '^') {
+        event.preventDefault();
+        insertExponentAtSelection(activeMathEditor);
+        return;
+      }
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        return;
+      }
+      if (event.key === 'ArrowRight') {
+        const specialBox = getContainingSpecialEntry(getSelectionStartNode());
+        if (specialBox) {
+          event.preventDefault();
+          placeCaretAfterNode(specialBox.wrapper);
+          return;
+        }
+      }
+      if (event.key === 'Backspace') {
+        const specialBox = getContainingSpecialEntry(getSelectionStartNode());
+        if (specialBox && isCaretAtStartOfElement(specialBox.entry) && specialBox.entry.textContent.length === 0) {
+          event.preventDefault();
+          const editor = closestMathEditor(specialBox.wrapper);
+          const replacement = document.createTextNode('\u200b');
+          specialBox.wrapper.parentNode.insertBefore(replacement, specialBox.wrapper);
+          specialBox.wrapper.remove();
+          placeCaretInTextNode(replacement, replacement.textContent.length);
+          activeMathEditor = editor;
+        }
+      }
+    }
+
+    function ensureSelectionInsideEditor(editor) {
+      const selection = window.getSelection();
+      if (selection.rangeCount && editor.contains(selection.anchorNode)) return selection.getRangeAt(0);
+      const range = document.createRange();
+      range.selectNodeContents(editor);
+      range.collapse(false);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      return range;
+    }
+
+    function insertTextAtSelection(text, editor) {
+      const range = ensureSelectionInsideEditor(editor);
+      range.deleteContents();
+      const node = document.createTextNode(text);
+      range.insertNode(node);
+      placeCaretInTextNode(node, node.textContent.length);
+    }
+
+    function insertExponentAtSelection(editor) {
+      const range = ensureSelectionInsideEditor(editor);
+      range.deleteContents();
+      const exponent = document.createElement('sup');
+      exponent.className = 'exponent-entry special-entry';
+      exponent.contentEditable = 'true';
+      exponent.setAttribute('data-special-entry', 'exponent');
+      exponent.innerHTML = '';
+      range.insertNode(exponent);
+      placeCaretInside(exponent);
+    }
+
+    function insertRadicalAtSelection(editor) {
+      const range = ensureSelectionInsideEditor(editor);
+      range.deleteContents();
+      const wrapper = document.createElement('span');
+      wrapper.className = 'math-radical special-wrapper';
+      wrapper.setAttribute('data-special-wrapper', 'radical');
+      wrapper.innerHTML = '<span class="radical-symbol">√</span><span class="radical-entry special-entry" contenteditable="true" data-special-entry="radical"></span>';
+      range.insertNode(wrapper);
+      placeCaretInside(wrapper.querySelector('.radical-entry'));
+    }
+
+    function insertFractionAtSelection(editor) {
+      const range = ensureSelectionInsideEditor(editor);
+      range.deleteContents();
+      const wrapper = document.createElement('span');
+      wrapper.className = 'fraction-entry special-wrapper';
+      wrapper.setAttribute('data-special-wrapper', 'fraction');
+      wrapper.innerHTML = '<span class="fraction-numerator special-entry" contenteditable="true" data-special-entry="fraction-numerator"></span><span class="fraction-denominator special-entry" contenteditable="true" data-special-entry="fraction-denominator"></span>';
+      range.insertNode(wrapper);
+      placeCaretInside(wrapper.querySelector('.fraction-numerator'));
+    }
+
+    function getSelectionStartNode() {
+      const selection = window.getSelection();
+      return selection.rangeCount ? selection.getRangeAt(0).startContainer : null;
+    }
+
+    function closestMathEditor(node) {
+      let current = node && (node.nodeType === Node.TEXT_NODE ? node.parentElement : node);
+      while (current && current !== document) {
+        if (current.classList && current.classList.contains('math-answer-editor')) return current;
+        current = current.parentElement;
+      }
+      return null;
+    }
+
+    function getContainingSpecialEntry(node) {
+      let current = node && (node.nodeType === Node.TEXT_NODE ? node.parentElement : node);
+      while (current && current !== document) {
+        if (current.classList && current.classList.contains('special-entry')) {
+          let wrapper = current;
+          while (wrapper && wrapper !== document && !(wrapper.classList && wrapper.classList.contains('special-wrapper'))) {
+            if (wrapper.classList && wrapper.classList.contains('exponent-entry')) break;
+            wrapper = wrapper.parentElement;
+          }
+          return { entry: current, wrapper: wrapper || current };
+        }
+        current = current.parentElement;
+      }
+      return null;
+    }
+
+    function isCaretAtStartOfElement(element) {
+      const selection = window.getSelection();
+      if (!selection.rangeCount || !selection.isCollapsed) return false;
+      const range = selection.getRangeAt(0).cloneRange();
+      const prefix = range.cloneRange();
+      prefix.selectNodeContents(element);
+      prefix.setEnd(range.startContainer, range.startOffset);
+      return prefix.toString().length === 0;
+    }
+
+    function placeCaretInside(element) {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      range.collapse(false);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      element.focus();
+    }
+
+    function placeCaretAfterNode(node) {
+      const parent = node.parentNode;
+      let afterNode = node.nextSibling;
+      if (!afterNode || afterNode.nodeType !== Node.TEXT_NODE) {
+        afterNode = document.createTextNode('\u200b');
+        parent.insertBefore(afterNode, node.nextSibling);
+      } else if (afterNode.textContent.length === 0) {
+        afterNode.textContent = '\u200b';
+      }
+      placeCaretInTextNode(afterNode, afterNode.textContent.length);
+      const editor = closestMathEditor(parent);
+      if (editor) {
+        activeMathEditor = editor;
+        editor.focus();
+      }
+    }
+
+    function placeCaretInTextNode(node, offset) {
+      const range = document.createRange();
+      range.setStart(node, offset);
+      range.collapse(true);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    function editorToPlainText(editor) {
+      function walk(node) {
+        if (node.nodeType === Node.TEXT_NODE) return node.textContent.replace(/\u200b/g, '');
+        if (node.nodeType !== Node.ELEMENT_NODE) return '';
+        if (node.matches && node.matches('sup.exponent-entry')) return `^(${node.textContent.trim()})`;
+        if (node.matches && node.matches('.math-radical')) return `sqrt(${walk(node.querySelector('.radical-entry'))})`;
+        if (node.matches && node.matches('.fraction-entry')) return `(${walk(node.querySelector('.fraction-numerator'))})/(${walk(node.querySelector('.fraction-denominator'))})`;
+        return Array.from(node.childNodes).map(walk).join('');
+      }
+      return Array.from(editor.childNodes).map(walk).join('').trim();
     }
 
     function checkUserAnswer() {
-      feedbackText.textContent = 'Answer checking has not been added yet.';
+      const editors = Array.from(document.querySelectorAll('.math-answer-editor'));
+      const answerText = editors.map(editorToPlainText).join(' or ');
+      feedbackText.textContent = answerText ? `Answer checking has not been added yet. You entered: ${answerText}` : 'Enter an answer first.';
       feedbackText.style.color = '#555';
     }
 
@@ -913,6 +1229,7 @@ fetch("/nav.html")
       currentProblem = generateInequalityProblem();
       questionText.innerHTML = `Solve for \\(x\\): \\[${currentProblem.questionTex}\\]`;
       setupAnswerEditor();
+      checkBtn.style.display = 'inline-block';
       hintBtn.disabled = false;
       typesetElement(questionText);
     });

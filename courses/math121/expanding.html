@@ -42,88 +42,31 @@ fetch("/nav.html")
   </header>
   <main>
 
-    <p><i>Note that in the following, the diagrams are not drawn to scale.</i></p>
+    <p>This activity concerns expanding out products.  For a refresher on the basics (the distributive property of multiplication over adddition), see
+    <a href="https://ben-math.github.io/courses/math131/multiplication.html">Multiplication Activity</a>, which does not involve variables.</p>
 
-    <p>The distributive property of multiplication over addition, \[A \cdot (B + C) = 
-      {\color{green}AB} + {\color{orange}AC}\] has a natural interpretation as a sum 
-      of areas:</p>
-
-    <figure style="text-align: center;">
-      <img src="fig5.png" alt="A(B + C) = AB + AC" style="display: inline-block;">
-    </figure>
-
-    <p>This property and its geometric interpretation generalize to arbitrarily large products.  For instance, we have the well-known FOIL (first, 
-    inside, outside, last) product, \[(A + B) \cdot (C + D) = {\color{red}AC} + {\color{blue}AD} + {\color{orange}BC} + {\color{green}BD}\]</p>
+    <p>We will extend our applications of the distibutive property to products of polynomials: sums of terms containing constants and variables, which 
+    may be raised to powers.  Our strategy will be the same as for multiplying multi-digit numbers: a FOIL/rainbow, where each term in the first 
+    multiplicand is paired with each term in the second multiplicand.  So for instance, in a product of a binomial (a polynomial with 2 terms) and a 
+    trinomial (a polynomial with 3 terms), there are 6 total pairs of terms to multiply:</p>
 
     <figure style="text-align: center;">
-      <img src="fig6.png" alt="(A + B)(C + D) = AC + AD + BC + BD" style="display: inline-block;">
+      <img src="fig17.png" alt="Product of a binomial and trinomial" style="display: inline-block;">
     </figure>
+
+    <p>Observe that the exponent laws apply when multiplying two terms both of which contain a power of the same variable.  In the above, multiplying 
+     \(-7y\) by \(yz^5\), we added the exponents on the \(y\)s - namely \(1+1 = 2\) - to get the exponent on \(y\) in the product, \(-7y^2z^5\). </p>
+
       
-      <p>For an even larger example, consider \[(A + B + C) \cdot (D + E + F) = {\color{red}AD} + {\color{orange}AE} + {\color{yellow}AF} + 
-        {\color{blue}BD} + {\color{green}BE} + {\color{purple}BF} + {\color{pink}CD} + {\color{brown}CE} + {\color{grey}CF}\]</p>
+      <p>Note that \((x + y)^2 \neq x^2 + y^2\), that is, whereas \((xy)^2 = x^2y^2\), we don't have a corresponding exponent law when an exponent is 
+      applied to a sum/difference.  Instead, we must take the product of the polynomial with itself: potentially multiple times, if it is raised to 
+      an exponent higher than 2.  See below an example of a binomial raised to the power 4, where we must compute a product 3 times.  At each iteration, 
+      we combine <b>like terms</b>: terms which have identical powers of variables, so we add/subtract their coefficients when combining them.</p>
     
     <figure style="text-align: center;">
-      <img src="fig7.png" alt="(A + B + C)(D + E + F) = AD + AE + AF + BD + BE + BF + CD + CE + CF" style="display: inline-block;">
+      <img src="fig18.png" alt="(xz^6 + 6)^4" style="display: inline-block;">
     </figure>
     
-    <p>Consider the implications of this property for breaking down a difficult multiplication problem: we can break the two multiplicand decimal numbers 
-      down into sums of their respective place values, and then use the distributive law to instead compute a sum of simpler products.  This is called 
-    the <i>partial product</i> method, and has the same natural interpretation in terms of areas.  For instance, consider the problem</p>
-
-    <div style="text-align: center;">
-    <p>\(\begin{aligned}249 \cdot 63 = (200 + 40 + 9) \cdot (60 + 3) & = {\color{red}200 \cdot 60} + {\color{orange}200 \cdot 3} + 
-      {\color{yellow}40 \cdot 60} + {\color{green}40 \cdot 3} + {\color{blue}9 \cdot 60} + {\color{purple}9 \cdot 3}\\ & = {\color{red}12000} + 
-      {\color{orange}600} + {\color{yellow}2400} + {\color{green}120} + {\color{blue}540} + {\color{purple}27}\\ & = 15687 \end{aligned}\)</p>
-    </div>
-
-    <figure style="text-align: center;">
-      <img src="fig8.png" alt="(200 + 40 + 9)(60 + 3) = 200(60) + 200(3) + 40(60) + 40(3) + 9(60) + 9(3)" style="display: inline-block;">
-    </figure>
-
-   <p>Observe that this method of computing a product reduces it to products where all we need are the single-digit multiplication table for the 
-   given base, and to count the number of zeroes in each multiplicand, leading one to wonder why in grade school we ever bother to learn multiplication 
-   tables beyond ten ¯\\(ツ)/¯.  See below the multiplication tables for base-ten and base-five.</p>
-
-   <div style="display: flex; justify-content: space-between; gap: 20px; text-align: center;">
-      <div style="flex: 1;">
-        Base-ten multiplication table
-        \[
-        \begin{array}{|c|cccccccccc|}
-        \hline
-        \times & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 \\
-        \hline
-        0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-        1 & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 \\
-        2 & 0 & 2 & 4 & 6 & 8 & 10 & 12 & 14 & 16 & 18 \\
-        3 & 0 & 3 & 6 & 9 & 12 & 15 & 18 & 21 & 24 & 27 \\
-        4 & 0 & 4 & 8 & 12 & 16 & 20 & 24 & 28 & 32 & 36 \\
-        5 & 0 & 5 & 10 & 15 & 20 & 25 & 30 & 35 & 40 & 45 \\
-        6 & 0 & 6 & 12 & 18 & 24 & 30 & 36 & 42 & 48 & 54 \\
-        7 & 0 & 7 & 14 & 21 & 28 & 35 & 42 & 49 & 56 & 63 \\
-        8 & 0 & 8 & 16 & 24 & 32 & 40 & 48 & 56 & 64 & 72 \\
-        9 & 0 & 9 & 18 & 27 & 36 & 45 & 54 & 63 & 72 & 81 \\
-        \hline
-        \end{array}
-        \]
-      </div>
-    
-      <div style="flex: 1;">
-        Base-five multiplication table
-        \[
-        \begin{array}{|c|ccccc|}
-        \hline
-        \times & 0 & 1 & 2 & 3 & 4 \\
-        \hline
-        0 & 0 & 0 & 0 & 0 & 0 \\
-        1 & 0 & 1 & 2 & 3 & 4 \\
-        2 & 0 & 2 & 4 & 11 & 13 \\
-        3 & 0 & 3 & 11 & 14 & 22 \\
-        4 & 0 & 4 & 13 & 22 & 31 \\
-        \hline
-        \end{array}
-        \]
-      </div>
-    </div>
 
     <div id="rule-select" class="styled-checkbox-group">
       <label><input type="checkbox" class="styled-checkbox" id="baseten"> Base-Ten</label>

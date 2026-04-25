@@ -1,4 +1,5 @@
 
+
  <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -270,6 +271,20 @@ fetch("/nav.html")
         type: 'product',
         factors: [firstPolynomial, secondPolynomial]
       };
+    }
+
+    function isMonomialTimesBinomial(problem) {
+      if (!problem || problem.type !== 'product' || !problem.factors || problem.factors.length !== 2) return false;
+      const termCounts = problem.factors.map(poly => poly.numberOfTerms).sort((a, b) => a - b);
+      return termCounts[0] === 1 && termCounts[1] === 2;
+    }
+
+    function generateExpansionProblemWithDifficultyFilter() {
+      let problem;
+      do {
+        problem = generateExpansionProblem();
+      } while (isMonomialTimesBinomial(problem) && Math.random() < 0.70);
+      return problem;
     }
 
     function normalizeProblem(problem) {
@@ -702,7 +717,7 @@ fetch("/nav.html")
 
     function displayAreaModelPicture(leftPoly, rightPoly, remainingFactors = []) {
       const block = createHintStepBlock('Area model');
-      block.style.marginTop = '0.65em';
+      block.style.marginTop = '1.15em';
       block.style.marginBottom = '-0.75em';
       const canvas = document.createElement('canvas');
       const rows = leftPoly.terms.length;
@@ -1031,13 +1046,13 @@ fetch("/nav.html")
         sound.play();
       }
 
-      currentProblem = normalizeProblem(generateExpansionProblem());
+      currentProblem = normalizeProblem(generateExpansionProblemWithDifficultyFilter());
       currentLeftPolynomial = currentProblem.factors[0];
       currentRightPolynomial = currentProblem.factors[1] || null;
       currentProductPolynomial = null;
       currentFinalPolynomial = multiplyAllFactors(currentProblem.factors);
 
-      questionText.innerHTML = `Expand \[${problemToTex(currentProblem)}\]`;
+      questionText.innerHTML = `Expand \\[${problemToTex(currentProblem)}\\]`;
       setupPolynomialAnswerEditor();
       checkBtn.style.display = 'inline-block';
       hintBtn.disabled = currentProblem.done;

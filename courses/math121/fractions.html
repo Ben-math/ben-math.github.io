@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -189,9 +190,10 @@ fetch("/nav.html")
     variables, this is relatively simple: \[\frac{24}{36} = \frac{12}{18} = \frac{6}{9} = \frac{2}{3}\]  This is because we can divide the numerator and 
     denominator <b>by any nonzero number</b> and obtain an equivalent fraction.  That nonzero requirement has to be given some more careful thought when 
     we are cancelling factors containing variables.  For instance, when cancelling the factor \(x-2\) from the following, we require the 
-    assumption that \(x \neq 2\): \[\frac{x^2-5x+6}{x-2} = \frac{(x-2)(x-3)}{x-2} = x-3, \text{ for } x \neq 2\]  In the following activity, 
-    simplify the expression to a single fraction in lowest form (except in the multiplication/division problems, which are too randomized to implement
-      the reducing to lowest form part of the problem), including any restrictions on the variable resulting from cancelling.  This activity 
+    assumption that \(x \neq 2\): \[\frac{x^2-5x+6}{x-2} = \frac{(x-2)(x-3)}{x-2} = x-3, \text{ for } x \neq 2\]  There are two types of problem in this 
+    activity.  In the ones involving multiplication/division, just combine into a single fraction and expand the numerator and denominator fully (do not 
+    reduce to lowest form, this one was too difficult to implement with the randomization).  In the addition/subtraction activity, combine the two 
+    fractions into a single fraction in lowest form, including any restrictions on \(x\) resulting from cancellation.  This activity 
     incorporates expanding, factoring, and exponent laws: see the relevant precalculus activities (linked from the course homepage:
       <a href="https://ben-math.github.io/courses/math121/index.html">MATH 121</a>) to review if necessary.</p>
 
@@ -615,7 +617,7 @@ fetch("/nav.html")
           ctx.stroke();
           ctx.fillStyle = '#333';
           ctx.font = '14px sans-serif';
-          ctx.fillText(`hole at x = ${holeX}`, X + 10, Y - 10);
+          
           ctx.restore();
         } else if (holeX >= xMin && holeX <= xMax) {
           ctx.save();
@@ -628,7 +630,7 @@ fetch("/nav.html")
           ctx.setLineDash([]);
           ctx.fillStyle = '#333';
           ctx.font = '14px sans-serif';
-          ctx.fillText(`hole at x = ${holeX}`, sx(holeX) + 8, pad + 18);
+          
           ctx.restore();
         }
       }

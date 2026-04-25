@@ -10,6 +10,7 @@
 
 
 
+
  <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -541,7 +542,7 @@ fetch("/nav.html")
           ctx.textBaseline = 'alphabetic';
           const exponentText = `${piece.power}`;
           const exponentWidth = ctx.measureText(exponentText).width;
-          ctx.fillText(exponentText, x + exponentWidth / 2, centerY - 19);
+          ctx.fillText(exponentText, x + exponentWidth / 2, centerY - 10);
           x += exponentWidth;
           ctx.restore();
         }
@@ -570,7 +571,7 @@ fetch("/nav.html")
         ctx.save();
         ctx.font = 'bold 22px Arial';
         ctx.textBaseline = 'alphabetic';
-        ctx.fillText(`${options.power}`, endX + 22, y - 30);
+        ctx.fillText(`${options.power}`, endX + 22, y - 20);
         ctx.restore();
         return { termPositions, startX, endX: endX + 35 };
       }
@@ -616,7 +617,7 @@ fetch("/nav.html")
         ctx.save();
         ctx.font = 'bold 22px Arial';
         ctx.textBaseline = 'alphabetic';
-        ctx.fillText(`${options.power}`, closeParenX + 24, y - 30);
+        ctx.fillText(`${options.power}`, closeParenX + 24, y - 20);
         ctx.restore();
         endX += 36;
       }

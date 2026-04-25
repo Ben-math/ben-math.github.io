@@ -4,6 +4,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -142,6 +143,12 @@ fetch("/nav.html")
       return n;
     }
 
+    function randomNontrivialInteger(min, max) {
+      let n;
+      do { n = randomInteger(min, max); } while (n === -1 || n === 0 || n === 1);
+      return n;
+    }
+
     function randomChoice(items) {
       return items[randomInteger(0, items.length - 1)];
     }
@@ -207,10 +214,60 @@ fetch("/nav.html")
       return polynomialFromXPower(operand.value);
     }
 
+    function gcd(a, b) {
+      a = Math.abs(a);
+      b = Math.abs(b);
+      while (b !== 0) {
+        const temp = b;
+        b = a % b;
+        a = temp;
+      }
+      return a || 1;
+    }
+
+    function rationalApproximation(value, maxDenominator = 10000) {
+      if (Number.isInteger(value)) return { numerator: value, denominator: 1 };
+
+      const sign = value < 0 ? -1 : 1;
+      let x = Math.abs(value);
+      let lowerNumerator = 0, lowerDenominator = 1;
+      let upperNumerator = 1, upperDenominator = 0;
+
+      while (true) {
+        const middleNumerator = lowerNumerator + upperNumerator;
+        const middleDenominator = lowerDenominator + upperDenominator;
+
+        if (middleDenominator > maxDenominator) break;
+
+        if (middleNumerator / middleDenominator < x) {
+          lowerNumerator = middleNumerator;
+          lowerDenominator = middleDenominator;
+        } else {
+          upperNumerator = middleNumerator;
+          upperDenominator = middleDenominator;
+        }
+      }
+
+      const lowerError = Math.abs(x - lowerNumerator / lowerDenominator);
+      const upperError = Math.abs(x - upperNumerator / upperDenominator);
+      let numerator = lowerError <= upperError ? lowerNumerator : upperNumerator;
+      let denominator = lowerError <= upperError ? lowerDenominator : upperDenominator;
+
+      const divisor = gcd(numerator, denominator);
+      numerator = sign * numerator / divisor;
+      denominator = denominator / divisor;
+
+      return { numerator, denominator };
+    }
+
     function numberTex(n) {
-      if (Number.isInteger(n)) return `${n}`;
-      const rounded = Math.round(n * 1000) / 1000;
-      return `${rounded}`;
+      const roundedInteger = Math.round(n);
+      if (Math.abs(n - roundedInteger) < 1e-10) return `${roundedInteger}`;
+
+      const fraction = rationalApproximation(n);
+      if (fraction.denominator === 1) return `${fraction.numerator}`;
+
+      return `\\frac{${fraction.numerator}}{${fraction.denominator}}`;
     }
 
     function termToTex(term, options = {}) {
@@ -344,7 +401,7 @@ fetch("/nav.html")
         type: randomChoice(['multiply', 'divide']),
         operand: {
           type: 'constant',
-          value: randomNonzeroInteger(-10, 10)
+          value: randomNontrivialInteger(-10, 10)
         }
       };
     }

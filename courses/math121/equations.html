@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -337,6 +338,16 @@ fetch("/nav.html")
       };
     }
 
+    function randomConstantMultiplyDivideOperation() {
+      return {
+        type: randomChoice(['multiply', 'divide']),
+        operand: {
+          type: 'constant',
+          value: randomNonzeroInteger(-10, 10)
+        }
+      };
+    }
+
     function shuffleArray(items) {
       const shuffled = [...items];
       for (let i = shuffled.length - 1; i > 0; i--) {
@@ -360,7 +371,7 @@ fetch("/nav.html")
       };
 
       const remainingOperations = shuffleArray([
-        randomOperationWithOperand('constant'),
+        randomConstantMultiplyDivideOperation(),
         randomOperationWithOperand('xPower')
       ]);
 
@@ -402,13 +413,9 @@ fetch("/nav.html")
     function displayHintStep(operation) {
       const block = createHintStepBlock();
       block.innerHTML = `
-        <div style="font-style: italic; margin-bottom: 0.15em;">${inverseInstruction(operation)}</div>
-        \\[
-          ${equationToTex(operation.after)}
-        \\]
-        \\[
-          ${equationToTex(operation.before)}
-        \\]
+        \[
+          \implies ${equationToTex(operation.before)}
+        \]
       `;
       return typesetElement(block);
     }
@@ -416,13 +423,9 @@ fetch("/nav.html")
     function displayMoveToZeroHint(productOperation) {
       const block = createHintStepBlock();
       block.innerHTML = `
-        <div style="font-style: italic; margin-bottom: 0.15em;">Subtract the right-hand side from both sides, so that one side is zero.</div>
-        \\[
-          ${equationToTex(productOperation.after)}
-        \\]
-        \\[
-          ${equationToTex(currentProblem.zeroEquation)}
-        \\]
+        \[
+          \implies ${equationToTex(currentProblem.zeroEquation)}
+        \]
       `;
       return typesetElement(block);
     }
@@ -430,16 +433,12 @@ fetch("/nav.html")
     function displayFactorQuadraticHint() {
       const block = createHintStepBlock();
       block.innerHTML = `
-        <div style="font-style: italic; margin-bottom: 0.15em;">Factor the quadratic, then use the zero product property.</div>
-        \\[
-          ${equationToTex(currentProblem.zeroEquation)}
-        \\]
-        \\[
-          ${currentProblem.factoredTex}
-        \\]
-        \\[
-          x = ${currentProblem.solution} \\quad \\text{or} \\quad x = ${currentProblem.otherRoot}
-        \\]
+        \[
+          \implies ${currentProblem.factoredTex}
+        \]
+        \[
+          \implies x = ${currentProblem.solution} \quad \text{or} \quad x = ${currentProblem.otherRoot}
+        \]
       `;
       return typesetElement(block);
     }

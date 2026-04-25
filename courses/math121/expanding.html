@@ -1,3 +1,4 @@
+
  <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,6 +11,36 @@
   <script id="MathJax-script" async
     src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
   </script>
+
+  <style>
+    .polynomial-answer-editor {
+      display: inline-block;
+      min-width: 360px;
+      min-height: 1.8em;
+      padding: 0.35em 0.55em;
+      border: 2px solid #555;
+      border-radius: 8px;
+      background: white;
+      font-size: 1.25em;
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    .polynomial-answer-editor:focus {
+      outline: 3px solid rgba(80, 140, 255, 0.35);
+    }
+
+    .exponent-entry {
+      font-size: 0.7em;
+      vertical-align: super;
+      display: inline-block;
+      min-width: 0.7em;
+      min-height: 1em;
+      padding: 0 0.08em;
+      border-bottom: 1px solid #777;
+      line-height: 1;
+    }
+  </style>
 </head>
 <body>
   <header>
@@ -68,11 +99,6 @@ fetch("/nav.html")
     </figure>
     
 
-    <div id="rule-select" class="styled-checkbox-group">
-      <label><input type="checkbox" class="styled-checkbox" id="baseten"> Base-Ten</label>
-      <label><input type="checkbox" class="styled-checkbox" id="basefive"> Base-Five</label>
-    </div>
-    
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>
@@ -84,20 +110,20 @@ fetch("/nav.html")
     <div id="final-answer-input" style="text-align: center; margin-top: 1em;"></div>
 
     <div class="button-container">
+      <button id="check-btn" class="rubber-button" style="display: none;">Check Answer</button>
+    </div>
+
+    <div class="button-container">
+      <div id="feedbackText" class="center-feedback"></div>
+    </div>
+
+    <div class="button-container">
       <button id="hint-btn" class="rubber-button">Hint</button>
     </div>
     
     <div id="hint-area" class="math" style="margin-top: 1em;"></div>
 
     <div id="my-activity" style="display: none;"></div>
-
-    <div class="button-container">
-      <button id="check-btn" class="rubber-button" style="display: none;">Check Answer</button>
-    </div>
-    
-    <div class="button-container">
-      <div id="feedbackText" class="center-feedback"></div>
-    </div>
 
 
 
@@ -106,23 +132,6 @@ fetch("/nav.html")
   </main>
 
   <script>
-
-    const ruleCheckboxes = {
-      baseten: document.getElementById('baseten'),
-      basefive: document.getElementById('basefive'),
-    };
-    
-    Object.values(ruleCheckboxes).forEach(box => {
-      box.addEventListener('change', () => {
-        // Mutual exclusion for base-ten and base-five
-        if (box.id === 'baseten' && box.checked) {
-          ruleCheckboxes.basefive.checked = false;
-        }
-        if (box.id === 'basefive' && box.checked) {
-          ruleCheckboxes.baseten.checked = false;
-        }
-      });
-    });
 
     let a, b;
 
@@ -152,6 +161,7 @@ fetch("/nav.html")
     let currentLeftPolynomial = null;
     let currentRightPolynomial = null;
     let currentProductPolynomial = null;
+    let currentFinalPolynomial = null;
     let currentProblem = null;
     let hintStep = 0;
 
@@ -343,6 +353,33 @@ fetch("/nav.html")
 
     function multiplyPolynomials(polyA, polyB) {
       return combineLikeTerms(multiplyPolynomialsUncombined(polyA, polyB));
+    }
+
+    function multiplyAllFactors(factors) {
+      let product = clonePolynomial(factors[0]);
+      for (let i = 1; i < factors.length; i++) {
+        product = multiplyPolynomials(product, factors[i]);
+      }
+      return product;
+    }
+
+    function polynomialToCanonicalMap(polynomial) {
+      const combined = combineLikeTerms(polynomial);
+      const map = new Map();
+      combined.terms.forEach(term => {
+        if (term.coefficient !== 0) map.set(monomialKey(term), term.coefficient);
+      });
+      return map;
+    }
+
+    function polynomialsAreEqual(polyA, polyB) {
+      const mapA = polynomialToCanonicalMap(polyA);
+      const mapB = polynomialToCanonicalMap(polyB);
+      if (mapA.size !== mapB.size) return false;
+      for (const [key, coefficient] of mapA.entries()) {
+        if (mapB.get(key) !== coefficient) return false;
+      }
+      return true;
     }
 
     function expandedProductTerms(polyA, polyB) {
@@ -558,7 +595,7 @@ fetch("/nav.html")
     function displayMultiplicationPicture(leftPoly, rightPoly, remainingFactors = []) {
       const block = createHintStepBlock('Pair the terms');
       block.style.marginTop = '-0.6em';
-      block.style.marginBottom = '0.45em';
+      block.style.marginBottom = '0.75em';
       const canvas = document.createElement('canvas');
       canvas.width = 1700;
       canvas.height = 315;
@@ -665,7 +702,7 @@ fetch("/nav.html")
 
     function displayAreaModelPicture(leftPoly, rightPoly, remainingFactors = []) {
       const block = createHintStepBlock('Area model');
-      block.style.marginTop = '0.45em';
+      block.style.marginTop = '0.65em';
       block.style.marginBottom = '-0.75em';
       const canvas = document.createElement('canvas');
       const rows = leftPoly.terms.length;
@@ -796,6 +833,181 @@ fetch("/nav.html")
       }
     }
 
+    function placeCaretInside(element) {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      range.collapse(false);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    function insertExponentEntry() {
+      const selection = window.getSelection();
+      if (!selection.rangeCount) return;
+
+      const range = selection.getRangeAt(0);
+      range.deleteContents();
+
+      const exponent = document.createElement('sup');
+      exponent.className = 'exponent-entry';
+      exponent.contentEditable = 'true';
+      exponent.setAttribute('data-exponent-entry', 'true');
+      exponent.innerHTML = '';
+
+      range.insertNode(exponent);
+      placeCaretInside(exponent);
+    }
+
+    function setupPolynomialAnswerEditor() {
+      const finalAnswerDiv = document.getElementById('final-answer-input');
+      finalAnswerDiv.innerHTML = `
+        <label for="polynomial-answer-editor" style="font-weight: bold; margin-right: 0.5em;">Answer:</label>
+        <span id="polynomial-answer-editor" class="polynomial-answer-editor" contenteditable="true" role="textbox" aria-label="Polynomial answer"></span>
+      `;
+
+      const editor = document.getElementById('polynomial-answer-editor');
+      editor.addEventListener('keydown', event => {
+        if (event.key === '^') {
+          event.preventDefault();
+          insertExponentEntry();
+          return;
+        }
+
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          return;
+        }
+
+        if (event.key === 'Backspace') {
+          const selection = window.getSelection();
+          if (!selection.rangeCount || !selection.isCollapsed) return;
+          const range = selection.getRangeAt(0);
+          const container = range.startContainer;
+          const parent = container.nodeType === Node.TEXT_NODE ? container.parentElement : container;
+
+          if (parent && parent.matches && parent.matches('sup.exponent-entry') && parent.textContent.length === 0) {
+            event.preventDefault();
+            const previousSibling = parent.previousSibling;
+            const exponentParent = parent.parentNode;
+            parent.remove();
+            const newRange = document.createRange();
+            if (previousSibling) {
+              newRange.setStartAfter(previousSibling);
+            } else {
+              newRange.setStart(exponentParent, 0);
+            }
+            newRange.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(newRange);
+          }
+        }
+      });
+
+      editor.focus();
+    }
+
+    function polynomialEditorToString(editor) {
+      function walk(node) {
+        if (node.nodeType === Node.TEXT_NODE) return node.textContent;
+        if (node.nodeType !== Node.ELEMENT_NODE) return '';
+        if (node.matches && node.matches('sup.exponent-entry')) {
+          return `^{${node.textContent.trim()}}`;
+        }
+        return Array.from(node.childNodes).map(walk).join('');
+      }
+      return Array.from(editor.childNodes).map(walk).join('');
+    }
+
+    function parsePolynomialInput(rawInput) {
+      let input = rawInput
+        .replace(/\u00a0/g, '')
+        .replace(/−/g, '-')
+        .replace(/\s+/g, '')
+        .replace(/\*/g, '');
+
+      if (!input) return null;
+      if (!/^[+-]/.test(input)) input = '+' + input;
+
+      const termStrings = input.match(/[+-][^+-]+/g);
+      if (!termStrings || termStrings.join('') !== input) return null;
+
+      const terms = [];
+      for (const termString of termStrings) {
+        const sign = termString[0] === '-' ? -1 : 1;
+        let body = termString.slice(1);
+        if (!body) return null;
+
+        const coefficientMatch = body.match(/^\d+/);
+        let coefficient = 1;
+        if (coefficientMatch) {
+          coefficient = parseInt(coefficientMatch[0], 10);
+          body = body.slice(coefficientMatch[0].length);
+        }
+
+        const powers = { x: 0, y: 0, z: 0 };
+
+        if (body === '') {
+          terms.push({ coefficient: sign * coefficient, powers });
+          continue;
+        }
+
+        let index = 0;
+        while (index < body.length) {
+          const variable = body[index];
+          if (!['x', 'y', 'z'].includes(variable)) return null;
+          index++;
+
+          let power = 1;
+          if (body[index] === '^') {
+            index++;
+            if (body[index] === '{') {
+              index++;
+              const closeBrace = body.indexOf('}', index);
+              if (closeBrace === -1) return null;
+              const exponentText = body.slice(index, closeBrace);
+              if (!/^\d+$/.test(exponentText)) return null;
+              power = parseInt(exponentText, 10);
+              index = closeBrace + 1;
+            } else {
+              const exponentMatch = body.slice(index).match(/^\d+/);
+              if (!exponentMatch) return null;
+              power = parseInt(exponentMatch[0], 10);
+              index += exponentMatch[0].length;
+            }
+          }
+
+          powers[variable] += power;
+        }
+
+        terms.push({ coefficient: sign * coefficient, powers });
+      }
+
+      return combineLikeTerms({ numberOfTerms: terms.length, terms });
+    }
+
+    function checkUserAnswer() {
+      const sound = document.getElementById('click-sound');
+      if (sound) {
+        sound.currentTime = 0;
+        sound.play();
+      }
+
+      const editor = document.getElementById('polynomial-answer-editor');
+      if (!editor || !currentFinalPolynomial) return;
+
+      const userPolynomial = parsePolynomialInput(polynomialEditorToString(editor));
+      const correct = userPolynomial && polynomialsAreEqual(userPolynomial, currentFinalPolynomial);
+
+      if (correct) {
+        feedbackText.textContent = 'Correct!';
+        feedbackText.style.color = 'green';
+      } else {
+        feedbackText.textContent = 'Incorrect, try again.';
+        feedbackText.style.color = 'red';
+      }
+    }
+
     function clearOldActivityState() {
       const feedback = document.getElementById('feedbackText');
       feedback.textContent = '';
@@ -823,8 +1035,11 @@ fetch("/nav.html")
       currentLeftPolynomial = currentProblem.factors[0];
       currentRightPolynomial = currentProblem.factors[1] || null;
       currentProductPolynomial = null;
+      currentFinalPolynomial = multiplyAllFactors(currentProblem.factors);
 
-      questionText.innerHTML = `Expand \\[${problemToTex(currentProblem)}\\]`;
+      questionText.innerHTML = `Expand \[${problemToTex(currentProblem)}\]`;
+      setupPolynomialAnswerEditor();
+      checkBtn.style.display = 'inline-block';
       hintBtn.disabled = currentProblem.done;
       if (window.MathJax) MathJax.typeset([questionText]);
     });
@@ -841,25 +1056,7 @@ fetch("/nav.html")
     const checkBtn = document.getElementById('check-btn');
     const feedbackText = document.getElementById('feedbackText');
     
-    checkBtn.addEventListener('click', () => {
-      // Play click sound
-      const sound = document.getElementById('click-sound');
-      if (sound) {
-        sound.currentTime = 0;
-        sound.play();
-      }
-    
-      let correct = true;
-    
-      // Give feedback
-      if (correct) {
-        feedbackText.textContent = "Correct!";
-        feedbackText.style.color = "green";
-      } else {
-        feedbackText.textContent = "Incorrect. Try again!";
-        feedbackText.style.color = "red";
-      }
-    });
+    checkBtn.addEventListener('click', checkUserAnswer);
 
     let partialStepCompleted = false;
 

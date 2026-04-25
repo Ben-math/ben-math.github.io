@@ -2,6 +2,7 @@
 
 
 
+
  <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -167,6 +168,22 @@ fetch("/nav.html")
     let currentFinalPolynomial = null;
     let currentProblem = null;
     let hintStep = 0;
+    let mathJaxTypesetPromise = Promise.resolve();
+    let hintIsTypesetting = false;
+
+    function typesetElement(element) {
+      if (!window.MathJax || !MathJax.typesetPromise) {
+        if (window.MathJax && MathJax.typeset) MathJax.typeset([element]);
+        return Promise.resolve();
+      }
+
+      mathJaxTypesetPromise = mathJaxTypesetPromise
+        .then(() => MathJax.typesetPromise([element]))
+        .catch(error => {
+          console.error('MathJax typesetting failed:', error);
+        });
+      return mathJaxTypesetPromise;
+    }
 
     function weightedChoice(choices) {
       const totalWeight = choices.reduce((sum, choice) => sum + choice.weight, 0);
@@ -795,14 +812,14 @@ fetch("/nav.html")
         block.appendChild(combinedLine);
       }
 
-      if (window.MathJax) MathJax.typeset([block]);
+      return typesetElement(block);
     }
 
     function displayCombinedStep(uncombinedProduct, remainingFactors = []) {
       return combineLikeTerms(uncombinedProduct);
     }
-    function advanceHint() {
-      if (!currentProblem || currentProblem.done) return;
+    async function advanceHint() {
+      if (!currentProblem || currentProblem.done || hintIsTypesetting) return;
 
       const sound = document.getElementById('click-sound');
       if (sound) {
@@ -829,8 +846,12 @@ fetch("/nav.html")
       if (currentProblem.phase === 'distributed') {
         const uncombined = multiplyPolynomialsUncombined(leftPoly, rightPoly);
         currentProblem.uncombinedProduct = uncombined;
-        displayDistributedStep(leftPoly, rightPoly, remainingFactors);
+        hintIsTypesetting = true;
+        hintBtn.disabled = true;
+        await displayDistributedStep(leftPoly, rightPoly, remainingFactors);
         currentProblem.phase = 'combined';
+        hintIsTypesetting = false;
+        if (!currentProblem.done) hintBtn.disabled = false;
         return;
       }
 
@@ -1116,7 +1137,7 @@ fetch("/nav.html")
       setupPolynomialAnswerEditor();
       checkBtn.style.display = 'inline-block';
       hintBtn.disabled = currentProblem.done;
-      if (window.MathJax) MathJax.typeset([questionText]);
+      typesetElement(questionText);
     });
 
     hintBtn.addEventListener('click', advanceHint);

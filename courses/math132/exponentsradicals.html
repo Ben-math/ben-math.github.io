@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -324,9 +325,10 @@ function randExponentFrac(maxZ, allowFrac, allowNeg) {
   return { frac: [n, d], tex, isRadical, z: d };
 }
 
-function factorTex(x, k, expObj) {
-  const val = Math.pow(x, k);
-  const baseTex = `${val}`;
+function factorTex(baseInfo, k, expObj) {
+  const baseTex = baseInfo.isVariable
+    ? (k === 1 ? baseInfo.tex : `${baseInfo.tex}^{${k}}`)
+    : `${Math.pow(baseInfo.value, k)}`;
 
   // Radical only when exponent is ±1/z
   if (expObj.isRadical && expObj.frac[0] !== 0 && Math.abs(expObj.frac[0]) === 1 && expObj.frac[1] !== 1) {
@@ -340,12 +342,18 @@ function factorTex(x, k, expObj) {
 
   // If exponent is 1, just base
   if (expObj.frac[0] === 1 && expObj.frac[1] === 1) return baseTex;
-  return `${baseTex}^{${expObj.tex}}`;
+  const powerBaseTex = baseInfo.isVariable && k !== 1 ? `\\left(${baseTex}\\right)` : baseTex;
+  return `${powerBaseTex}^{${expObj.tex}}`;
 }
 
 function buildType1Once() {
-  const x = randInt(2, 9);
-  const allowCube = (x <= 5);
+  const useVariableBase = Math.random() < 0.20;
+  const variableBase = choice(['a', 'b', 'c', 'x', 'y', 'z']);
+  const x = useVariableBase ? null : randInt(2, 9);
+  const baseInfo = useVariableBase
+    ? { isVariable: true, symbol: variableBase, tex: variableBase }
+    : { isVariable: false, value: x, tex: `${x}` };
+  const allowCube = useVariableBase || (x <= 5);
   const kOptions = allowCube
     ? [{ val: 1, w: 0.80 }, { val: 2, w: 0.15 }, { val: 3, w: 0.05 }]
     : [{ val: 1, w: 0.80 }, { val: 2, w: 0.20 }];
@@ -414,7 +422,7 @@ function buildType1Once() {
     const num = [];
     const den = [];
     for (const f of t.factors) {
-      const tex = factorTex(x, f.k, f.expObj);
+      const tex = factorTex(baseInfo, f.k, f.expObj);
       f.tex = tex;
       (f.inDen ? den : num).push(tex);
     }
@@ -465,7 +473,9 @@ function buildType1Once() {
     const num = [];
     const den = [];
     for (const f of t.factors) {
-      const basePowTex = `\\left(${x}^{${f.k}}\\right)`;
+      const basePowTex = baseInfo.isVariable
+        ? (f.k === 1 ? baseInfo.tex : `\\left(${baseInfo.tex}^{${f.k}}\\right)`)
+        : `\\left(${x}^{${f.k}}\\right)`;
       // rebuild exponent display same as original (radical won't apply here; keep exponent tex)
       let fTex = basePowTex;
       // if radical in original and exponent is ±1/z, use power form in rewrite
@@ -494,6 +504,8 @@ function buildType1Once() {
   return {
     type: 1,
     x,
+    baseInfo,
+    answerBase: baseInfo.isVariable ? baseInfo.symbol : String(x),
     exprTex: expr,
     rewriteExprTex: rewriteExpr,
     expATex: aTex,
@@ -521,7 +533,7 @@ function genType1() {
       if (n === 0) return `1`;
       const eTex = fracToTex(n, d);
       // Keep it as x^{...} (even if ... = 1) for consistency
-      return `${p.x}^{${eTex}}`;
+      return `${p.answerBase}^{${eTex}}`;
     });
 
     let simplifiedLine = termPows[0];
@@ -538,7 +550,7 @@ function genType1() {
 = ${simplifiedLine}
 \]`,
       String.raw`\[
-= ${p.x}^{${p.expATex}}
+= ${p.answerBase}^{${p.expATex}}
 \]`
     ];
 
@@ -549,6 +561,8 @@ function genType1() {
   current = {
     type: 1,
     x: 2,
+    baseInfo: { isVariable: false, value: 2, tex: '2' },
+    answerBase: '2',
     exprTex: `\\left(4^2\\right)\\div\\left(2\\right)`,
     rewriteExprTex: `\\left(\\left(2^2\\right)^2\\right)\\div\\left(2\\right)`,
     expATex: `3`,
@@ -565,10 +579,10 @@ function genType1() {
 = ${current.rewriteExprTex}
 \]`,
     String.raw`\[
-= ${current.x}^{${current.expATex}}
+= ${current.answerBase}^{${current.expATex}}
 \]`,
     String.raw`\[
-= ${current.x}^{${current.expATex}}
+= ${current.answerBase}^{${current.expATex}}
 \]`
   ];
 }
@@ -597,24 +611,30 @@ function baseAsPowerOfX(baseFrac, x) {
   return kn - kd;
 }
 
+
+function parseBaseAnswer(raw) {
+  if (raw == null) return { ok:false, msg:'Please enter a base.' };
+  const s = raw.trim().replace(/\s+/g, '');
+  if (!s) return { ok:false, msg:'Please enter a base.' };
+
+  if (current && current.baseInfo && current.baseInfo.isVariable) {
+    return /^[abcxyz]$/.test(s)
+      ? { ok:true, variable:s }
+      : { ok:false, msg:'For this problem, enter the variable base only (a, b, c, x, y, or z).' };
+  }
+
+  return parseExactRational(s);
+}
+
 function checkAnswer() {
   if (!current) return;
 
   const baseInp = document.getElementById('ans-base');
   const expInp = document.getElementById('ans-exp');
 
-  const baseParsed = parseExactRational(baseInp.value);
+  const baseParsed = parseBaseAnswer(baseInp.value);
   if (!baseParsed.ok) {
     setFeedback("Base: " + baseParsed.msg, 'crimson');
-    return;
-  }
-  if (baseParsed.num === 0) {
-    setFeedback("Base cannot be 0.", 'crimson');
-    return;
-  }
-  // For fractional exponents we need a positive base.
-  if (baseParsed.num < 0) {
-    setFeedback("Base must be positive.", 'crimson');
     return;
   }
 
@@ -624,13 +644,32 @@ function checkAnswer() {
     return;
   }
 
-  const kBase = baseAsPowerOfX({ num: baseParsed.num, den: baseParsed.den }, current.x);
-  if (kBase === null) {
-    setFeedback(`Your base must be a power of ${current.x} (e.g. ${current.x}, ${current.x}^2, 1/${current.x}, ...).`, 'crimson');
-    return;
+  let kBase;
+  if (current.baseInfo && current.baseInfo.isVariable) {
+    if (baseParsed.variable !== current.baseInfo.symbol) {
+      setFeedback(`Your base should be ${current.baseInfo.symbol}.`, 'crimson');
+      return;
+    }
+    kBase = 1;
+  } else {
+    if (baseParsed.num === 0) {
+      setFeedback("Base cannot be 0.", 'crimson');
+      return;
+    }
+    // For fractional exponents we need a positive base.
+    if (baseParsed.num < 0) {
+      setFeedback("Base must be positive.", 'crimson');
+      return;
+    }
+
+    kBase = baseAsPowerOfX({ num: baseParsed.num, den: baseParsed.den }, current.x);
+    if (kBase === null) {
+      setFeedback(`Your base must be a power of ${current.x} (e.g. ${current.x}, ${current.x}^2, 1/${current.x}, ...).`, 'crimson');
+      return;
+    }
   }
 
-  // user total exponent on x is (kBase) * (expParsed)
+  // user total exponent on the generated base is (kBase) * (expParsed)
   const userExp = reduceFrac(kBase * expParsed.num, expParsed.den);
   const userN = userExp[0], userD = userExp[1];
 

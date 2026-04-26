@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -286,7 +287,7 @@ fetch("/nav.html")
       const g = gcd(num, den);
       num /= g;
       den /= g;
-      return den === 1 ? `${num}` : `\frac{${num}}{${den}}`;
+      return den === 1 ? `${num}` : `\\frac{${num}}{${den}}`;
     }
 
     function radicalTex(n) {
@@ -303,24 +304,24 @@ fetch("/nav.html")
         }
       }
       if (inside === 1) return `${outside}`;
-      return outside === 1 ? `\sqrt{${inside}}` : `${outside}\sqrt{${inside}}`;
+      return outside === 1 ? `\\sqrt{${inside}}` : `${outside}\\sqrt{${inside}}`;
     }
 
     function texProduct(aTex, bTex) {
       if (aTex === '1') return bTex;
       if (bTex === '1') return aTex;
-      return `${aTex}${bTex.startsWith('\sqrt') ? '' : '\cdot '}${bTex}`;
+      return `${aTex}${bTex.startsWith('\\sqrt') ? '' : '\\cdot '}${bTex}`;
     }
 
     function texDivide(aTex, bTex) {
-      return bTex === '1' ? aTex : `\frac{${aTex}}{${bTex}}`;
+      return bTex === '1' ? aTex : `\\frac{${aTex}}{${bTex}}`;
     }
 
     function angleTex(angleKey) {
       return {
-        pi6: '\frac{\pi}{6}',
-        pi4: '\frac{\pi}{4}',
-        pi3: '\frac{\pi}{3}'
+        pi6: '\\frac{\\pi}{6}',
+        pi4: '\\frac{\\pi}{4}',
+        pi3: '\\frac{\\pi}{3}'
       }[angleKey];
     }
 
@@ -335,19 +336,19 @@ fetch("/nav.html")
     function trigValue(angleKey, trigName) {
       const values = {
         pi6: {
-          sin: { tex: '\frac{1}{2}', numTex: '1', denTex: '2' },
-          cos: { tex: '\frac{\sqrt{3}}{2}', numTex: '\sqrt{3}', denTex: '2' },
-          tan: { tex: '\frac{1}{\sqrt{3}}', numTex: '1', denTex: '\sqrt{3}' }
+          sin: { tex: '\\frac{1}{2}', numTex: '1', denTex: '2' },
+          cos: { tex: '\\frac{\\sqrt{3}}{2}', numTex: '\\sqrt{3}', denTex: '2' },
+          tan: { tex: '\\frac{1}{\\sqrt{3}}', numTex: '1', denTex: '\\sqrt{3}' }
         },
         pi4: {
-          sin: { tex: '\frac{1}{\sqrt{2}}', numTex: '1', denTex: '\sqrt{2}' },
-          cos: { tex: '\frac{1}{\sqrt{2}}', numTex: '1', denTex: '\sqrt{2}' },
+          sin: { tex: '\\frac{1}{\\sqrt{2}}', numTex: '1', denTex: '\\sqrt{2}' },
+          cos: { tex: '\\frac{1}{\\sqrt{2}}', numTex: '1', denTex: '\\sqrt{2}' },
           tan: { tex: '1', numTex: '1', denTex: '1' }
         },
         pi3: {
-          sin: { tex: '\frac{\sqrt{3}}{2}', numTex: '\sqrt{3}', denTex: '2' },
-          cos: { tex: '\frac{1}{2}', numTex: '1', denTex: '2' },
-          tan: { tex: '\sqrt{3}', numTex: '\sqrt{3}', denTex: '1' }
+          sin: { tex: '\\frac{\\sqrt{3}}{2}', numTex: '\\sqrt{3}', denTex: '2' },
+          cos: { tex: '\\frac{1}{2}', numTex: '1', denTex: '2' },
+          tan: { tex: '\\sqrt{3}', numTex: '\\sqrt{3}', denTex: '1' }
         }
       };
       return values[angleKey][trigName];
@@ -357,12 +358,12 @@ fetch("/nav.html")
       const angleKey = randomChoice(['pi6', 'pi4', 'pi3']);
       const knownLength = randomInteger(2, 12);
       const setups = [
-        { trig: 'sin', known: 'hyp', unknown: 'opp', formula: '\sin(\theta)=\frac{\text{opp}}{\text{hyp}}' },
-        { trig: 'sin', known: 'opp', unknown: 'hyp', formula: '\sin(\theta)=\frac{\text{opp}}{\text{hyp}}' },
-        { trig: 'cos', known: 'hyp', unknown: 'adj', formula: '\cos(\theta)=\frac{\text{adj}}{\text{hyp}}' },
-        { trig: 'cos', known: 'adj', unknown: 'hyp', formula: '\cos(\theta)=\frac{\text{adj}}{\text{hyp}}' },
-        { trig: 'tan', known: 'adj', unknown: 'opp', formula: '\tan(\theta)=\frac{\text{opp}}{\text{adj}}' },
-        { trig: 'tan', known: 'opp', unknown: 'adj', formula: '\tan(\theta)=\frac{\text{opp}}{\text{adj}}' }
+        { trig: 'sin', known: 'hyp', unknown: 'opp', formula: '\\sin(\\theta)=\\frac{\\text{opp}}{\\text{hyp}}' },
+        { trig: 'sin', known: 'opp', unknown: 'hyp', formula: '\\sin(\\theta)=\\frac{\\text{opp}}{\\text{hyp}}' },
+        { trig: 'cos', known: 'hyp', unknown: 'adj', formula: '\\cos(\\theta)=\\frac{\\text{adj}}{\\text{hyp}}' },
+        { trig: 'cos', known: 'adj', unknown: 'hyp', formula: '\\cos(\\theta)=\\frac{\\text{adj}}{\\text{hyp}}' },
+        { trig: 'tan', known: 'adj', unknown: 'opp', formula: '\\tan(\\theta)=\\frac{\\text{opp}}{\\text{adj}}' },
+        { trig: 'tan', known: 'opp', unknown: 'adj', formula: '\\tan(\\theta)=\\frac{\\text{opp}}{\\text{adj}}' }
       ];
       const setup = randomChoice(setups);
       const tVal = trigValue(angleKey, setup.trig);
@@ -373,32 +374,32 @@ fetch("/nav.html")
 
       if (setup.trig === 'sin') {
         if (setup.known === 'hyp') {
-          substituted = `\sin\left(${theta}\right)=\frac{x}{${knownLength}}`;
-          evaluated = `${tVal.tex}=\frac{x}{${knownLength}}`;
+          substituted = `\\sin\\left(${theta}\\right)=\\frac{x}{${knownLength}}`;
+          evaluated = `${tVal.tex}=\\frac{x}{${knownLength}}`;
           solved = `x=${texDivide(texProduct(String(knownLength), tVal.numTex), tVal.denTex)}`;
         } else {
-          substituted = `\sin\left(${theta}\right)=\frac{${knownLength}}{x}`;
-          evaluated = `${tVal.tex}=\frac{${knownLength}}{x}`;
+          substituted = `\\sin\\left(${theta}\\right)=\\frac{${knownLength}}{x}`;
+          evaluated = `${tVal.tex}=\\frac{${knownLength}}{x}`;
           solved = `x=${texDivide(texProduct(String(knownLength), tVal.denTex), tVal.numTex)}`;
         }
       } else if (setup.trig === 'cos') {
         if (setup.known === 'hyp') {
-          substituted = `\cos\left(${theta}\right)=\frac{x}{${knownLength}}`;
-          evaluated = `${tVal.tex}=\frac{x}{${knownLength}}`;
+          substituted = `\\cos\\left(${theta}\\right)=\\frac{x}{${knownLength}}`;
+          evaluated = `${tVal.tex}=\\frac{x}{${knownLength}}`;
           solved = `x=${texDivide(texProduct(String(knownLength), tVal.numTex), tVal.denTex)}`;
         } else {
-          substituted = `\cos\left(${theta}\right)=\frac{${knownLength}}{x}`;
-          evaluated = `${tVal.tex}=\frac{${knownLength}}{x}`;
+          substituted = `\\cos\\left(${theta}\\right)=\\frac{${knownLength}}{x}`;
+          evaluated = `${tVal.tex}=\\frac{${knownLength}}{x}`;
           solved = `x=${texDivide(texProduct(String(knownLength), tVal.denTex), tVal.numTex)}`;
         }
       } else {
         if (setup.known === 'adj') {
-          substituted = `\tan\left(${theta}\right)=\frac{x}{${knownLength}}`;
-          evaluated = `${tVal.tex}=\frac{x}{${knownLength}}`;
+          substituted = `\\tan\\left(${theta}\\right)=\\frac{x}{${knownLength}}`;
+          evaluated = `${tVal.tex}=\\frac{x}{${knownLength}}`;
           solved = `x=${texDivide(texProduct(String(knownLength), tVal.numTex), tVal.denTex)}`;
         } else {
-          substituted = `\tan\left(${theta}\right)=\frac{${knownLength}}{x}`;
-          evaluated = `${tVal.tex}=\frac{${knownLength}}{x}`;
+          substituted = `\\tan\\left(${theta}\\right)=\\frac{${knownLength}}{x}`;
+          evaluated = `${tVal.tex}=\\frac{${knownLength}}{x}`;
           solved = `x=${texDivide(texProduct(String(knownLength), tVal.denTex), tVal.numTex)}`;
         }
       }
@@ -429,21 +430,21 @@ fetch("/nav.html")
           `${a}^{2}+${b}^{2}=x^{2}`,
           `${a*a}+${b*b}=x^{2}`,
           `${a*a+b*b}=x^{2}`,
-          `x=\sqrt{${a*a+b*b}}=${radicalTex(a*a+b*b)}`
+          `x=\\sqrt{${a*a+b*b}}=${radicalTex(a*a+b*b)}`
         ];
       } else if (missing === 'legA') {
         hints = [
           `x^{2}+${b}^{2}=${c}^{2}`,
           `x^{2}+${b*b}=${c*c}`,
           `x^{2}=${c*c}-${b*b}=${c*c-b*b}`,
-          `x=\sqrt{${c*c-b*b}}=${radicalTex(c*c-b*b)}`
+          `x=\\sqrt{${c*c-b*b}}=${radicalTex(c*c-b*b)}`
         ];
       } else {
         hints = [
           `${a}^{2}+x^{2}=${c}^{2}`,
           `${a*a}+x^{2}=${c*c}`,
           `x^{2}=${c*c}-${a*a}=${c*c-a*a}`,
-          `x=\sqrt{${c*c-a*a}}=${radicalTex(c*c-a*a)}`
+          `x=\\sqrt{${c*c-a*a}}=${radicalTex(c*c-a*a)}`
         ];
       }
 
@@ -467,7 +468,7 @@ fetch("/nav.html")
 
     function appendMathHint(tex) {
       const block = createHintStepBlock();
-      block.innerHTML = `\[${tex}\]`;
+      block.innerHTML = `\\[${tex}\\]`;
       return typesetElement(block);
     }
 
@@ -525,7 +526,7 @@ fetch("/nav.html")
     function displayProblem() {
       questionText.innerHTML = `
         <div class="generated-question-block">
-          <div class="question-row">\(${currentProblem.questionTex}\)</div>
+          <div class="question-row">\\(${currentProblem.questionTex}\\)</div>
           <canvas id="triangle-canvas" class="triangle-canvas" width="650" height="390"></canvas>
         </div>
       `;

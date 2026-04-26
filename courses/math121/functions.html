@@ -223,7 +223,8 @@ fetch("/nav.html")
     3, since that would give a zero denominator).  Then since \(f\) can't take negative inputs, the domain of \(h\) is the subset of 
     \(\mathbb{R} \setminus \{3\}\) for which \(f(x) = \frac{1}{x-3}\) is nonnegative, namely \((3,\infty)\).</p> 
       
-    <p>In the following activity, you will be asked to either compose two functions, or decompose a function to determine its domain and range.</p>
+    <p>In the following activity, you will be asked to either compose two functions, or decompose a function to determine its domain and range. 
+    User input would be somewhat difficult to handle for this one, so press the Hint button after you've solved it to check your answer.</p>
 
 
 
@@ -528,7 +529,7 @@ const hintBtn = document.getElementById('hint-btn');
     }
     function setupAnswerEditor() {
       const finalAnswerDiv = document.getElementById('final-answer-input');
-      finalAnswerDiv.innerHTML = '<p style="font-style: italic;">Answer input will be added after the problem generator and hints are finalized.</p>';
+      finalAnswerDiv.innerHTML = '';
     }
     function clearOldActivityState() {
       feedbackText.textContent = '';

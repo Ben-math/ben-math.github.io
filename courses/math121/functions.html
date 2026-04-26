@@ -1,3 +1,6 @@
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -451,7 +454,7 @@ const hintBtn = document.getElementById('hint-btn');
       const innerName = order === 'fg' ? 'g' : 'f';
       return {
         type: 1,
-        questionTex: `f(x)=${f.applyTex('x')}\\qquad g(x)=${g.applyTex('x')}\\\\[1.2em]\\text{Find }${target}.\\[1.2em]`,
+        questionTex: `f(x)=${f.applyTex('x')}\\qquad g(x)=${g.applyTex('x')}\\\\[1.2em]\\text{Find }${target}.`,
         hints: [
           `= ${outerName}\\left(${innerName}(x)\\right)`,
           `= ${outerName}\\left(${inner.applyTex('x')}\\right)`,
@@ -468,7 +471,7 @@ const hintBtn = document.getElementById('hint-btn');
           `f(x)=${f.applyTex('x')}\\qquad g(x)=${g.applyTex('x')}`,
           `\\operatorname{Dom}(g)=${g.domainTex}`,
           `\\operatorname{Dom}(h)=${domainHintForComposition(f, g)}`,
-          `\\operatorname{Range}(h) ${rangeHintForComposition(f, g)}`
+          `\\operatorname{Range}(h)=${rangeHintForComposition(f, g)}`
         ]
       };
     }

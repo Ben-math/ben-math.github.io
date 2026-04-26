@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -154,6 +155,17 @@
       border: 1px solid #ccc;
       border-radius: 8px;
       background: white;
+    }
+
+    .single-answer-line {
+      text-align: center;
+      margin-top: 1em;
+      font-size: 1.1em;
+    }
+
+    .numeric-answer-editor {
+      min-width: 150px;
+      text-align: center;
     }
   </style>
 </head>
@@ -354,6 +366,15 @@ fetch("/nav.html")
       return values[angleKey][trigName];
     }
 
+    function numericTrigValue(angleKey, trigName) {
+      const values = {
+        pi6: { sin: 1 / 2, cos: Math.sqrt(3) / 2, tan: 1 / Math.sqrt(3) },
+        pi4: { sin: 1 / Math.sqrt(2), cos: 1 / Math.sqrt(2), tan: 1 },
+        pi3: { sin: Math.sqrt(3) / 2, cos: 1 / 2, tan: Math.sqrt(3) }
+      };
+      return values[angleKey][trigName];
+    }
+
     function generateType1Problem() {
       const angleKey = randomChoice(['pi6', 'pi4', 'pi3']);
       const knownLength = randomInteger(2, 12);
@@ -371,36 +392,43 @@ fetch("/nav.html")
       let substituted;
       let evaluated;
       let solved;
+      let answerValue;
 
       if (setup.trig === 'sin') {
         if (setup.known === 'hyp') {
           substituted = `\\sin\\left(${theta}\\right)=\\frac{x}{${knownLength}}`;
           evaluated = `${tVal.tex}=\\frac{x}{${knownLength}}`;
           solved = `x=${texDivide(texProduct(String(knownLength), tVal.numTex), tVal.denTex)}`;
+          answerValue = knownLength * numericTrigValue(angleKey, setup.trig);
         } else {
           substituted = `\\sin\\left(${theta}\\right)=\\frac{${knownLength}}{x}`;
           evaluated = `${tVal.tex}=\\frac{${knownLength}}{x}`;
           solved = `x=${texDivide(texProduct(String(knownLength), tVal.denTex), tVal.numTex)}`;
+          answerValue = knownLength / numericTrigValue(angleKey, setup.trig);
         }
       } else if (setup.trig === 'cos') {
         if (setup.known === 'hyp') {
           substituted = `\\cos\\left(${theta}\\right)=\\frac{x}{${knownLength}}`;
           evaluated = `${tVal.tex}=\\frac{x}{${knownLength}}`;
           solved = `x=${texDivide(texProduct(String(knownLength), tVal.numTex), tVal.denTex)}`;
+          answerValue = knownLength * numericTrigValue(angleKey, setup.trig);
         } else {
           substituted = `\\cos\\left(${theta}\\right)=\\frac{${knownLength}}{x}`;
           evaluated = `${tVal.tex}=\\frac{${knownLength}}{x}`;
           solved = `x=${texDivide(texProduct(String(knownLength), tVal.denTex), tVal.numTex)}`;
+          answerValue = knownLength / numericTrigValue(angleKey, setup.trig);
         }
       } else {
         if (setup.known === 'adj') {
           substituted = `\\tan\\left(${theta}\\right)=\\frac{x}{${knownLength}}`;
           evaluated = `${tVal.tex}=\\frac{x}{${knownLength}}`;
           solved = `x=${texDivide(texProduct(String(knownLength), tVal.numTex), tVal.denTex)}`;
+          answerValue = knownLength * numericTrigValue(angleKey, setup.trig);
         } else {
           substituted = `\\tan\\left(${theta}\\right)=\\frac{${knownLength}}{x}`;
           evaluated = `${tVal.tex}=\\frac{${knownLength}}{x}`;
           solved = `x=${texDivide(texProduct(String(knownLength), tVal.denTex), tVal.numTex)}`;
+          answerValue = knownLength / numericTrigValue(angleKey, setup.trig);
         }
       }
 
@@ -412,6 +440,7 @@ fetch("/nav.html")
         knownRole: setup.known,
         unknownRole: setup.unknown,
         questionTex: 'Find the missing side length x.',
+        answerValue,
         hints: [setup.formula, substituted, evaluated, solved]
       };
     }
@@ -448,7 +477,8 @@ fetch("/nav.html")
         ];
       }
 
-      return { type: 2, legA, legB, hyp, questionTex: 'Find the missing side length x.', hints };
+      const answerValue = missing === 'legA' ? a : (missing === 'legB' ? b : c);
+      return { type: 2, legA, legB, hyp, questionTex: 'Find the missing side length x.', answerValue, hints };
     }
 
     function generateTrigBasicsProblem() {
@@ -526,7 +556,7 @@ fetch("/nav.html")
     function displayProblem() {
       questionText.innerHTML = `
         <div class="generated-question-block">
-          <div class="question-row">\\(${currentProblem.questionTex}\\)</div>
+          <div class="question-row">${currentProblem.questionTex}</div>
           <canvas id="triangle-canvas" class="triangle-canvas" width="650" height="390"></canvas>
         </div>
       `;
@@ -549,6 +579,211 @@ fetch("/nav.html")
       hintBtn.disabled = hintStep >= currentProblem.hints.length;
     }
 
+
+    let activeAnswerEditor = null;
+
+    function setupAnswerEditor() {
+      const finalAnswerDiv = document.getElementById('final-answer-input');
+      finalAnswerDiv.innerHTML = `
+        <div class="single-answer-line">
+          <label style="font-weight: bold; margin-right: 0.4em;">x = </label>
+          <span id="answer-editor" class="polynomial-answer-editor numeric-answer-editor math-answer-editor" contenteditable="true" role="textbox" aria-label="Answer"></span>
+        </div>
+        <div class="answer-toolbar" aria-label="Math input buttons">
+          <button type="button" class="math-symbol-button" data-insert-radical="true">√</button>
+          <button type="button" class="math-symbol-button" data-insert-fraction="true">
+            <span class="fraction-button-display"><span class="fraction-button-top">a</span><span class="fraction-button-bottom">b</span></span>
+          </button>
+        </div>
+      `;
+
+      activeAnswerEditor = document.getElementById('answer-editor');
+      activeAnswerEditor.focus();
+      activeAnswerEditor.addEventListener('focus', () => { activeAnswerEditor = document.getElementById('answer-editor'); });
+      activeAnswerEditor.addEventListener('keydown', handleAnswerKeydown);
+
+      finalAnswerDiv.querySelectorAll('.math-symbol-button').forEach(button => {
+        button.addEventListener('mousedown', event => event.preventDefault());
+        button.addEventListener('click', () => {
+          const editor = activeAnswerEditor || document.getElementById('answer-editor');
+          editor.focus();
+          if (button.dataset.insertRadical) insertRadicalAtSelection(editor);
+          if (button.dataset.insertFraction) insertFractionAtSelection(editor);
+        });
+      });
+    }
+
+    function ensureSelectionInsideEditor(editor) {
+      const selection = window.getSelection();
+      if (selection.rangeCount && editor.contains(selection.anchorNode)) return selection.getRangeAt(0);
+      const range = document.createRange();
+      range.selectNodeContents(editor);
+      range.collapse(false);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      return range;
+    }
+
+    function insertRadicalAtSelection(editor) {
+      const range = ensureSelectionInsideEditor(editor);
+      range.deleteContents();
+      const wrapper = document.createElement('span');
+      wrapper.className = 'math-radical special-wrapper';
+      wrapper.innerHTML = '<span class="radical-symbol">√</span><span class="radical-entry special-entry" contenteditable="true"></span>';
+      range.insertNode(wrapper);
+      placeCaretInside(wrapper.querySelector('.radical-entry'));
+    }
+
+    function insertFractionAtSelection(editor) {
+      const range = ensureSelectionInsideEditor(editor);
+      range.deleteContents();
+      const wrapper = document.createElement('span');
+      wrapper.className = 'fraction-entry special-wrapper';
+      wrapper.innerHTML = '<span class="fraction-numerator special-entry" contenteditable="true"></span><span class="fraction-denominator special-entry" contenteditable="true"></span>';
+      range.insertNode(wrapper);
+      placeCaretInside(wrapper.querySelector('.fraction-numerator'));
+    }
+
+    function handleAnswerKeydown(event) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        return;
+      }
+
+      const special = getContainingSpecialEntry(getSelectionStartNode());
+      if (event.key === 'ArrowRight' && special) {
+        event.preventDefault();
+        placeCaretAfterNode(special.wrapper);
+      } else if (event.key === 'ArrowLeft' && special) {
+        event.preventDefault();
+        placeCaretBeforeNode(special.wrapper);
+      } else if (event.key === 'Backspace' && special && isCaretAtStartOfElement(special.entry) && special.entry.textContent.length === 0) {
+        event.preventDefault();
+        const replacement = document.createTextNode('\u200b');
+        special.wrapper.parentNode.insertBefore(replacement, special.wrapper);
+        special.wrapper.remove();
+        placeCaretInTextNode(replacement, replacement.textContent.length);
+      }
+    }
+
+    function getSelectionStartNode() {
+      const selection = window.getSelection();
+      return selection.rangeCount ? selection.getRangeAt(0).startContainer : null;
+    }
+
+    function getContainingSpecialEntry(node) {
+      let current = node && (node.nodeType === Node.TEXT_NODE ? node.parentElement : node);
+      while (current && current !== document) {
+        if (current.classList && current.classList.contains('special-entry')) {
+          let wrapper = current;
+          while (wrapper && wrapper !== document && !(wrapper.classList && wrapper.classList.contains('special-wrapper'))) {
+            wrapper = wrapper.parentElement;
+          }
+          return { entry: current, wrapper: wrapper || current };
+        }
+        current = current.parentElement;
+      }
+      return null;
+    }
+
+    function isCaretAtStartOfElement(element) {
+      const selection = window.getSelection();
+      if (!selection.rangeCount || !selection.isCollapsed) return false;
+      const range = selection.getRangeAt(0).cloneRange();
+      const prefix = range.cloneRange();
+      prefix.selectNodeContents(element);
+      prefix.setEnd(range.startContainer, range.startOffset);
+      return prefix.toString().length === 0;
+    }
+
+    function placeCaretInside(element) {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      range.collapse(false);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      element.focus();
+    }
+
+    function placeCaretBeforeNode(node) {
+      const parent = node.parentNode;
+      let beforeNode = node.previousSibling;
+      if (!beforeNode || beforeNode.nodeType !== Node.TEXT_NODE) {
+        beforeNode = document.createTextNode('\u200b');
+        parent.insertBefore(beforeNode, node);
+      }
+      placeCaretInTextNode(beforeNode, beforeNode.textContent.length);
+    }
+
+    function placeCaretAfterNode(node) {
+      const parent = node.parentNode;
+      let afterNode = node.nextSibling;
+      if (!afterNode || afterNode.nodeType !== Node.TEXT_NODE) {
+        afterNode = document.createTextNode('\u200b');
+        parent.insertBefore(afterNode, node.nextSibling);
+      }
+      placeCaretInTextNode(afterNode, afterNode.textContent.length);
+    }
+
+    function placeCaretInTextNode(node, offset) {
+      const range = document.createRange();
+      range.setStart(node, offset);
+      range.collapse(true);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    function editorToExpression(editor) {
+      function walk(node) {
+        if (node.nodeType === Node.TEXT_NODE) return node.textContent.replace(/\u200b/g, '');
+        if (node.nodeType !== Node.ELEMENT_NODE) return '';
+        if (node.matches && node.matches('.math-radical')) {
+          return `sqrt(${walk(node.querySelector('.radical-entry'))})`;
+        }
+        if (node.matches && node.matches('.fraction-entry')) {
+          return `((${walk(node.querySelector('.fraction-numerator'))})/(${walk(node.querySelector('.fraction-denominator'))}))`;
+        }
+        return Array.from(node.childNodes).map(walk).join('');
+      }
+      return Array.from(editor.childNodes).map(walk).join('').trim();
+    }
+
+    function evaluateAnswerExpression(raw) {
+      const expression = raw
+        .replace(/\u200b/g, '')
+        .replace(/−/g, '-')
+        .replace(/√\s*\(/g, 'sqrt(')
+        .replace(/√\s*([0-9.]+)/g, 'sqrt($1)')
+        .replace(/\s+/g, '')
+        .replace(/\^/g, '**')
+        .replace(/sqrt/g, 'Math.sqrt');
+
+      if (!expression || /[^0-9+\-*/().Mathsqrt]/.test(expression)) return NaN;
+      try {
+        const value = Function(`"use strict"; return (${expression});`)();
+        return Number.isFinite(value) ? value : NaN;
+      } catch (error) {
+        return NaN;
+      }
+    }
+
+    function checkUserAnswer() {
+      const sound = document.getElementById('click-sound');
+      if (sound) {
+        sound.currentTime = 0;
+        sound.play();
+      }
+
+      const editor = document.getElementById('answer-editor');
+      const userValue = evaluateAnswerExpression(editorToExpression(editor));
+      const correct = Number.isFinite(userValue) && Math.abs(userValue - currentProblem.answerValue) < 1e-7;
+
+      feedbackText.textContent = correct ? 'Correct!' : 'Incorrect, try again.';
+      feedbackText.style.color = correct ? 'green' : 'red';
+    }
+
     function clearOldActivityState() {
       feedbackText.textContent = '';
       document.getElementById('final-answer-input').innerHTML = '';
@@ -569,11 +804,13 @@ fetch("/nav.html")
       }
       currentProblem = generateTrigBasicsProblem();
       displayProblem();
-      checkBtn.style.display = 'none';
+      setupAnswerEditor();
+      checkBtn.style.display = 'inline-block';
       hintBtn.disabled = false;
     });
 
     hintBtn.addEventListener('click', advanceHint);
+    checkBtn.addEventListener('click', checkUserAnswer);
   </script>
 
 

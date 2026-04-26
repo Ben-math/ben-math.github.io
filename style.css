@@ -88,19 +88,27 @@ main {
 }
 
 
-.dropdown-content-sub {
+.dropdown-content-sub,
+.dropdown-content-sub-sub {
   left: 100%;
   top: 0;
 }
 
+.dropdown-sub,
+.dropdown-sub-sub {
+  position: relative;
+}
+
 .dropdown-content li,
-.dropdown-content-sub li {
+.dropdown-content-sub li,
+.dropdown-content-sub-sub li {
   white-space: nowrap;
   margin: 0.25em 0;
 }
 
 .dropdown-content a,
-.dropdown-content-sub a {
+.dropdown-content-sub a,
+.dropdown-content-sub-sub a {
   display: block;
   padding: 0.5em 1em;
   background-color: #ffde59;
@@ -109,12 +117,14 @@ main {
 }
 
 .dropdown-content a:hover,
-.dropdown-content-sub a:hover {
+.dropdown-content-sub a:hover,
+.dropdown-content-sub-sub a:hover {
   background-color: #ffe97a;
 }
 
 .dropdown:hover > .dropdown-content,
-.dropdown-sub:hover > .dropdown-content-sub {
+.dropdown-sub:hover > .dropdown-content-sub,
+.dropdown-sub-sub:hover > .dropdown-content-sub-sub {
   display: block;
 }
 

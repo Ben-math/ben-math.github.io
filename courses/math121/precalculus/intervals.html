@@ -173,6 +173,28 @@ fetch("/nav.html")
 
     <p>We can answer this question in a few ways:</p>
 
+    <ul>
+      <li>In English: "When \(x\) is greater than or equal to zero" or "When \(x\) is at least zero"</li>
+      <li>Using inequality symbols: "When \(x \geq 0\)"</li>
+      <li>In interval notation: "For \(x \in [0,\infty)\)"</li>
+    </ul>
+
+    <p>Which of these you use is largely a matter of preference: the goal is communication, so however you can communicate your solution most clearly 
+    is ideal.  Some things to consider:</p>
+
+    <ul>
+      <li>English sometimes has multiple ways of expressing the same thing: some people like this, some don't.  We just saw above an example: both 
+      "greater than or equal to" and "at least" are both represented by the inequality symbol \(\geq\), and likewise, "less than or equal to" and 
+      "at most" are both represented by the inequality symbol \(\leq\)</li>
+      <li>Inequality symbols are great when the interval you're describing is relatively simple.  However as things get more complicated, you may 
+      find yourself having difficulty.  To describe using inequalities \[\text{The set of \(x\) between 3 and 5 (inclusive) or smaller than \(-2\)}\], one 
+      could say \[x < -2 \text{ or } (x \geq 3 \text{ and } x \leq 5)\], which could be written more simply as \[x < -2 \text{ or } 3 \leq x \leq 5\] 
+      Note that both English and the inequality symbols relied on the logical operators "or" and "and".</li>
+      <li>Interval notation is often the neatest.  In place of the logical operators "or" and "and", we have the set operations \(\cup\) (union) and 
+      \(\cap\) (intersection).  The example above could be written as \[(-\infty,-2) \cup ([3,\infty) \cap (-\infty,5])\] or more simply as 
+      \[(-\infty,-2) \cup [3,5]\]</li>
+    </ul>
+
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

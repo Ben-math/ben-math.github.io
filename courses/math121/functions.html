@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -454,6 +455,73 @@ const hintBtn = document.getElementById('hint-btn');
       if (outer.kind === 'rational') return `\\left\\{x\\in\\operatorname{Dom}(g): g(x)\\text{ does not make the denominator of }f\\text{ equal }0\\right\\}`;
       return `\\left\\{x\\in\\operatorname{Dom}(g): g(x)\\neq \\frac{\\pi}{2}+k\\pi,\\ k\\in\\mathbb{Z}\\right\\}`;
     }
+
+    function sortedUniqueNumbers(values) {
+      return Array.from(new Set(values.filter(Number.isFinite).map(v => Number(v.toFixed(10))))).sort((a, b) => a - b);
+    }
+
+    function intervalTexFromLinearInequality(coef, constant, relation) {
+      // Solve coef*x + constant >= 0 or <= 0.
+      if (coef === 0) {
+        const good = relation === '>=' ? constant >= 0 : constant <= 0;
+        return good ? '\\mathbb{R}' : '\\varnothing';
+      }
+      const cutoff = -constant / coef;
+      const cutoffTex = numberTex(cutoff);
+      const greater = relation === '>=' ? coef > 0 : coef < 0;
+      return greater ? `[${cutoffTex}, \\infty)` : `(-\\infty, ${cutoffTex}]`;
+    }
+
+    function exactDomainForComposition(outer, inner) {
+      // Starts with Dom(g), then applies the outer function's input restrictions.
+      // These cover the common generated cases exactly; genuinely difficult rational
+      // preimage cases are represented with the defining set rather than a fake simplification.
+      if (outer.kind === 'quadratic') return inner.domainTex;
+      if (outer.kind === 'trigonometric' && outer.params.trig !== '\\tan') return inner.domainTex;
+
+      if (outer.kind === 'root') {
+        const d = outer.params.d;
+        const p = outer.params.p;
+
+        // f(g(x)) = sqrt(d*g(x)-p). Need d*g(x)-p >= 0.
+        if (inner.kind === 'quadratic') {
+          return `\\left\\{x\\in\\mathbb{R}: ${d}\\left(${inner.applyTex('x')}\\right) ${p >= 0 ? '-' : '+'} ${Math.abs(p)}\\geq 0\\right\\}`;
+        }
+
+        if (inner.kind === 'root') {
+          // g(x) >= 0. If d > 0 and p <= 0, outer condition is automatic.
+          // Otherwise keep the exact defining condition.
+          if (d > 0 && p <= 0) return inner.domainTex;
+          return `\\left\\{x\\in ${inner.domainTex}: ${d}\\left(${inner.applyTex('x')}\\right) ${p >= 0 ? '-' : '+'} ${Math.abs(p)}\\geq 0\\right\\}`;
+        }
+
+        if (inner.kind === 'trigonometric') {
+          return `\\left\\{x\\in\\mathbb{R}: ${d}\\left(${inner.applyTex('x')}\\right) ${p >= 0 ? '-' : '+'} ${Math.abs(p)}\\geq 0\\right\\}`;
+        }
+
+        if (inner.kind === 'rational') {
+          return `\\left\\{x\\in ${inner.domainTex}: ${d}\\left(${inner.applyTex('x')}\\right) ${p >= 0 ? '-' : '+'} ${Math.abs(p)}\\geq 0\\right\\}`;
+        }
+      }
+
+      if (outer.kind === 'rational') {
+        const forbiddenInputs = outer.params.denominatorRoots || [];
+
+        if (inner.kind === 'quadratic') {
+          return `\\left\\{x\\in\\mathbb{R}: ${inner.applyTex('x')}\\notin\\left\\{${forbiddenInputs.map(numberTex).join(', ')}\\right\\}\\right\\}`;
+        }
+
+        if (inner.kind === 'root' || inner.kind === 'rational') {
+          return `\\left\\{x\\in ${inner.domainTex}: ${inner.applyTex('x')}\\notin\\left\\{${forbiddenInputs.map(numberTex).join(', ')}\\right\\}\\right\\}`;
+        }
+
+        if (inner.kind === 'trigonometric') {
+          return `\\left\\{x\\in\\mathbb{R}: ${inner.applyTex('x')}\\notin\\left\\{${forbiddenInputs.map(numberTex).join(', ')}\\right\\}\\right\\}`;
+        }
+      }
+
+      return domainHintForComposition(outer, inner);
+    }
     function rangeHintForComposition(outer, inner) {
       if (outer.kind === 'trigonometric' && outer.params.trig !== '\\tan') return outer.rangeTex;
       return numericRangeOfFunction(x => outer.evaluate(inner.evaluate(x)));
@@ -495,7 +563,7 @@ const hintBtn = document.getElementById('hint-btn');
         hints: [
           `f(x)=${f.applyTex('x')}\\qquad g(x)=${g.applyTex('x')}`,
           `\\operatorname{Dom}(g)=${g.domainTex}`,
-          `\\operatorname{Dom}(h)=${domainHintForComposition(f, g)}`,
+          `\\operatorname{Dom}(h)=${domainHintForComposition(f, g)} = ${exactDomainForComposition(f, g)}`,
           `\\operatorname{Range}(h)=${rangeHintForComposition(f, g)}`
         ]
       };

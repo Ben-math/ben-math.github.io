@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -173,6 +174,24 @@
     .interval-clear-button {
       margin-left: 0.5em;
     }
+
+
+    .restricted-answer-editor {
+      display: inline-block;
+      min-width: 460px;
+      min-height: 1.8em;
+      padding: 0.35em 0.55em;
+      border: 2px solid #555;
+      border-radius: 8px;
+      background: white;
+      font-size: 1.25em;
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    .restricted-answer-editor:focus {
+      outline: 3px solid rgba(80, 140, 255, 0.35);
+    }
   </style>
 </head>
 <body>
@@ -283,6 +302,7 @@ fetch("/nav.html")
     let pendingIntervalStart = null;
     let placedIntervals = [];
     let type1Canvas = null;
+    let activeType2Editor = null;
 
     function typesetElement(element) {
       if (!window.MathJax || !MathJax.typesetPromise) {
@@ -942,11 +962,298 @@ fetch("/nav.html")
 
     function checkCurrentAnswer() {
       if (!currentProblem) return;
-      if (currentProblem.type === 1) {
-        const correct = checkType1Answer();
-        feedbackText.textContent = correct ? 'Correct!' : 'Incorrect, try again.';
-        feedbackText.style.color = correct ? 'green' : 'red';
+      let correct = false;
+      if (currentProblem.type === 1) correct = checkType1Answer();
+      else if (currentProblem.type === 2) correct = checkType2Answer();
+      feedbackText.textContent = correct ? 'Correct!' : 'Incorrect, try again.';
+      feedbackText.style.color = correct ? 'green' : 'red';
+    }
+
+
+    function showType2Input(problem) {
+      finalAnswerInput.innerHTML = `
+        <div class="answer-line">
+          <label style="font-weight: bold; margin-right: 0.5em;">Answer:</label>
+          <span id="type2-answer-editor" class="restricted-answer-editor" contenteditable="true" role="textbox" aria-label="Interval or inequality answer"></span>
+        </div>
+        <div class="answer-toolbar" aria-label="Math input buttons">
+          <button type="button" class="math-symbol-button" data-insert-text=" ∪ ">∪</button>
+          <button type="button" class="math-symbol-button" data-insert-text=" ∩ ">∩</button>
+          <button type="button" class="math-symbol-button" data-insert-text=" or ">or</button>
+          <button type="button" class="math-symbol-button" data-insert-text=" and ">and</button>
+          <button type="button" class="math-symbol-button" data-insert-text="∞">∞</button>
+          <button type="button" class="math-symbol-button" data-insert-text="-∞">−∞</button>
+          <button type="button" class="math-symbol-button" data-insert-text="≥">≥</button>
+          <button type="button" class="math-symbol-button" data-insert-text="≤">≤</button>
+        </div>
+      `;
+
+      const editor = document.getElementById('type2-answer-editor');
+      activeType2Editor = editor;
+      editor.focus();
+      editor.addEventListener('focus', () => { activeType2Editor = editor; });
+      editor.addEventListener('click', () => { activeType2Editor = editor; });
+      editor.addEventListener('keydown', handleRestrictedType2Keydown);
+      editor.addEventListener('paste', handleRestrictedType2Paste);
+      editor.addEventListener('input', sanitizeType2Editor);
+
+      finalAnswerInput.querySelectorAll('.math-symbol-button').forEach(button => {
+        button.addEventListener('mousedown', event => event.preventDefault());
+        button.addEventListener('click', () => {
+          activeType2Editor = editor;
+          editor.focus();
+          insertTextIntoType2Editor(button.dataset.insertText || '');
+        });
+      });
+    }
+
+    function isAllowedType2Character(ch) {
+      return /[0-9\[\]\(\),<>\-\s]/.test(ch) || ch === '∞' || ch === '∪' || ch === '∩' || ch === '≥' || ch === '≤';
+    }
+
+    function sanitizeType2Text(text) {
+      return text
+        .replace(/−/g, '-')
+        .replace(/>=/g, '≥')
+        .replace(/<=/g, '≤')
+        .replace(/\binfinity\b/gi, '∞')
+        .replace(/\binfty\b/gi, '∞')
+        .replace(/\binf\b/gi, '∞')
+        .replace(/\bcup\b/gi, '∪')
+        .replace(/\bcap\b/gi, '∩')
+        .replace(/\bor\b/gi, ' or ')
+        .replace(/\band\b/gi, ' and ')
+        .split('')
+        .filter(ch => isAllowedType2Character(ch) || /[AaNnDdOoRr]/.test(ch))
+        .join('')
+        .replace(/[^0-9\[\]\(\),<>\-\s∞∪∩≥≤AaNnDdOoRr]/g, '');
+    }
+
+    function sanitizeType2Editor() {
+      const editor = document.getElementById('type2-answer-editor');
+      if (!editor) return;
+      const clean = sanitizeType2Text(editor.textContent);
+      if (editor.textContent !== clean) {
+        editor.textContent = clean;
+        placeCaretAtEnd(editor);
       }
+    }
+
+    function handleRestrictedType2Keydown(event) {
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      const allowedControlKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Tab'];
+      if (allowedControlKeys.includes(event.key)) return;
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        return;
+      }
+      if (event.key.length === 1 && isAllowedType2Character(event.key)) return;
+      event.preventDefault();
+    }
+
+    function handleRestrictedType2Paste(event) {
+      event.preventDefault();
+      const text = sanitizeType2Text((event.clipboardData || window.clipboardData).getData('text'));
+      insertTextIntoType2Editor(text);
+    }
+
+    function insertTextIntoType2Editor(text) {
+      const editor = activeType2Editor || document.getElementById('type2-answer-editor');
+      if (!editor) return;
+      const selection = window.getSelection();
+      let range;
+      if (selection.rangeCount && editor.contains(selection.anchorNode)) {
+        range = selection.getRangeAt(0);
+      } else {
+        range = document.createRange();
+        range.selectNodeContents(editor);
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+      range.deleteContents();
+      const node = document.createTextNode(text);
+      range.insertNode(node);
+      range.setStartAfter(node);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      sanitizeType2Editor();
+    }
+
+    function placeCaretAtEnd(element) {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      range.collapse(false);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    function normalizeType2AnswerText(text) {
+      return text
+        .replace(/\u200b/g, '')
+        .replace(/−/g, '-')
+        .replace(/\\infty/g, '∞')
+        .replace(/infinity/gi, '∞')
+        .replace(/inf/gi, '∞')
+        .replace(/>=/g, '≥')
+        .replace(/<=/g, '≤')
+        .replace(/\\geq/g, '≥')
+        .replace(/\\leq/g, '≤')
+        .replace(/\\cup/g, '∪')
+        .replace(/\\cap/g, '∩')
+        .replace(/\bOR\b/g, 'or')
+        .replace(/\bAND\b/g, 'and')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function splitTopLevelByOperators(text) {
+      const pieces = [];
+      let current = '';
+      let depth = 0;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (ch === '(' || ch === '[') depth++;
+        else if (ch === ')' || ch === ']') depth = Math.max(0, depth - 1);
+
+        const rest = text.slice(i);
+        const wordOr = /^\s+or\s+/i.exec(rest);
+        const wordAnd = /^\s+and\s+/i.exec(rest);
+        if (depth === 0 && (ch === '∪' || ch === '∩')) {
+          pieces.push({ type: 'set', value: current.trim() });
+          pieces.push({ type: 'op', value: ch === '∪' ? 'or' : 'and' });
+          current = '';
+        } else if (depth === 0 && wordOr) {
+          pieces.push({ type: 'set', value: current.trim() });
+          pieces.push({ type: 'op', value: 'or' });
+          current = '';
+          i += wordOr[0].length - 1;
+        } else if (depth === 0 && wordAnd) {
+          pieces.push({ type: 'set', value: current.trim() });
+          pieces.push({ type: 'op', value: 'and' });
+          current = '';
+          i += wordAnd[0].length - 1;
+        } else {
+          current += ch;
+        }
+      }
+      pieces.push({ type: 'set', value: current.trim() });
+      return pieces.filter(piece => piece.type === 'op' || piece.value.length > 0);
+    }
+
+    function parseType2Endpoint(text) {
+      const t = text.trim().replace(/^\+/, '');
+      if (t === '∞') return Infinity;
+      if (t === '-∞') return -Infinity;
+      if (/^-?\d+$/.test(t)) return Number(t);
+      return NaN;
+    }
+
+    function parseType2Interval(text) {
+      const t = normalizeType2AnswerText(text).replace(/\s+/g, '');
+      if (!t) return null;
+      if (!(t[0] === '(' || t[0] === '[') || !(t[t.length - 1] === ')' || t[t.length - 1] === ']')) return null;
+      const body = t.slice(1, -1);
+      const commaIndex = body.indexOf(',');
+      if (commaIndex === -1 || body.indexOf(',', commaIndex + 1) !== -1) return null;
+      const left = parseType2Endpoint(body.slice(0, commaIndex));
+      const right = parseType2Endpoint(body.slice(commaIndex + 1));
+      if ((Number.isNaN(left) && left !== -Infinity) || (Number.isNaN(right) && right !== Infinity)) return null;
+      if (!(left < right)) return null;
+      return [{
+        left,
+        right,
+        leftClosed: left === -Infinity ? false : t[0] === '[',
+        rightClosed: right === Infinity ? false : t[t.length - 1] === ']'
+      }];
+    }
+
+    function parseType2Inequality(text) {
+      const t = normalizeType2AnswerText(text).replace(/\s+/g, '');
+      if (!t || !t.includes('x')) return null;
+      const endpoint = '(-?∞|-?\d+)';
+      const op = '(<|>|≤|≥)';
+      let m = new RegExp(`^x${op}${endpoint}$`).exec(t);
+      if (m) {
+        const value = parseType2Endpoint(m[2]);
+        if (Number.isNaN(value)) return null;
+        if (m[1] === '<' || m[1] === '≤') {
+          return [{ left: -Infinity, right: value, leftClosed: false, rightClosed: m[1] === '≤' && value !== Infinity }];
+        }
+        return [{ left: value, right: Infinity, leftClosed: m[1] === '≥' && value !== -Infinity, rightClosed: false }];
+      }
+
+      m = new RegExp(`^${endpoint}${op}x${op}${endpoint}$`).exec(t);
+      if (m) {
+        const left = parseType2Endpoint(m[1]);
+        const right = parseType2Endpoint(m[4]);
+        if (Number.isNaN(left) || Number.isNaN(right) || !(left < right)) return null;
+        const leftOp = m[2];
+        const rightOp = m[3];
+        if (!['<', '≤'].includes(leftOp) || !['<', '≤'].includes(rightOp)) return null;
+        return [{
+          left,
+          right,
+          leftClosed: left !== -Infinity && leftOp === '≤',
+          rightClosed: right !== Infinity && rightOp === '≤'
+        }];
+      }
+      return null;
+    }
+
+    function parseType2BasicSet(text) {
+      return parseType2Interval(text) || parseType2Inequality(text);
+    }
+
+    function intervalIntersection(a, b) {
+      const left = Math.max(a.left, b.left);
+      const right = Math.min(a.right, b.right);
+      let leftClosed;
+      if (a.left > b.left) leftClosed = a.leftClosed;
+      else if (b.left > a.left) leftClosed = b.leftClosed;
+      else leftClosed = a.leftClosed && b.leftClosed;
+      let rightClosed;
+      if (a.right < b.right) rightClosed = a.rightClosed;
+      else if (b.right < a.right) rightClosed = b.rightClosed;
+      else rightClosed = a.rightClosed && b.rightClosed;
+      if (left < right || (left === right && leftClosed && rightClosed)) return { left, right, leftClosed, rightClosed };
+      return null;
+    }
+
+    function intersectIntervalSets(a, b) {
+      const result = [];
+      a.forEach(intervalA => {
+        b.forEach(intervalB => {
+          const intersection = intervalIntersection(intervalA, intervalB);
+          if (intersection) result.push(intersection);
+        });
+      });
+      return mergeIntervals(result);
+    }
+
+    function parseType2SetExpression(text) {
+      const pieces = splitTopLevelByOperators(normalizeType2AnswerText(text));
+      if (!pieces.length || pieces[0].type !== 'set') return null;
+      let result = parseType2BasicSet(pieces[0].value);
+      if (result === null) return null;
+      for (let i = 1; i < pieces.length; i += 2) {
+        if (!pieces[i] || !pieces[i + 1] || pieces[i].type !== 'op' || pieces[i + 1].type !== 'set') return null;
+        const nextSet = parseType2BasicSet(pieces[i + 1].value);
+        if (nextSet === null) return null;
+        result = pieces[i].value === 'or' ? mergeIntervals(result.concat(nextSet)) : intersectIntervalSets(result, nextSet);
+      }
+      return mergeIntervals(result);
+    }
+
+    function checkType2Answer() {
+      if (!currentProblem || currentProblem.type !== 2) return false;
+      const editor = document.getElementById('type2-answer-editor');
+      if (!editor) return false;
+      const userIntervals = parseType2SetExpression(editor.textContent);
+      if (userIntervals === null) return false;
+      return intervalsExactlyMatch(userIntervals, currentProblem.intervals);
     }
 
     function showType2Graph(problem) {
@@ -979,6 +1286,8 @@ fetch("/nav.html")
         checkBtn.style.display = 'inline-block';
       } else if (currentProblem.type === 2) {
         showType2Graph(currentProblem);
+        showType2Input(currentProblem);
+        checkBtn.style.display = 'inline-block';
       }
       hintBtn.disabled = false;
       typesetElement(questionText);

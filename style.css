@@ -73,7 +73,8 @@ main {
 }
 
 .dropdown-content,
-.dropdown-content-sub {
+.dropdown-content-sub,
+.dropdown-content-sub-sub {
   display: none;
   position: absolute;
   background: #ffffff;

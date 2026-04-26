@@ -3,6 +3,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -981,6 +982,7 @@ fetch("/nav.html")
           <button type="button" class="math-symbol-button" data-insert-text=" ∩ ">∩</button>
           <button type="button" class="math-symbol-button" data-insert-text=" or ">or</button>
           <button type="button" class="math-symbol-button" data-insert-text=" and ">and</button>
+          <button type="button" class="math-symbol-button" data-insert-text="x">x</button>
           <button type="button" class="math-symbol-button" data-insert-text="∞">∞</button>
           <button type="button" class="math-symbol-button" data-insert-text="-∞">−∞</button>
           <button type="button" class="math-symbol-button" data-insert-text="≥">≥</button>
@@ -1008,7 +1010,7 @@ fetch("/nav.html")
     }
 
     function isAllowedType2Character(ch) {
-      return /[0-9\[\]\(\),<>\-\s]/.test(ch) || ch === '∞' || ch === '∪' || ch === '∩' || ch === '≥' || ch === '≤';
+      return /[0-9x\[\]\(\),<>\-\s]/.test(ch) || ch === '∞' || ch === '∪' || ch === '∩' || ch === '≥' || ch === '≤';
     }
 
     function sanitizeType2Text(text) {
@@ -1024,9 +1026,9 @@ fetch("/nav.html")
         .replace(/\bor\b/gi, ' or ')
         .replace(/\band\b/gi, ' and ')
         .split('')
-        .filter(ch => isAllowedType2Character(ch) || /[AaNnDdOoRr]/.test(ch))
+        .filter(ch => isAllowedType2Character(ch) || /[AaNnDdOoRrXx]/.test(ch))
         .join('')
-        .replace(/[^0-9\[\]\(\),<>\-\s∞∪∩≥≤AaNnDdOoRr]/g, '');
+        .replace(/[^0-9x\[\]\(\),<>\-\s∞∪∩≥≤AaNnDdOoRr]/g, '');
     }
 
     function sanitizeType2Editor() {

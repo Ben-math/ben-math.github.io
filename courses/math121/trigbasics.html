@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -233,6 +234,7 @@ fetch("/nav.html")
   </main>
 
 
+
   <script>
     const hintBtn = document.getElementById('hint-btn');
     const hintArea = document.getElementById('hint-area');
@@ -257,29 +259,48 @@ fetch("/nav.html")
       return mathJaxTypesetPromise;
     }
 
-    function randomInteger(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
-    function randomChoice(items) { return items[randomInteger(0, items.length - 1)]; }
+    function randomInteger(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function randomChoice(items) {
+      return items[randomInteger(0, items.length - 1)];
+    }
 
     function gcd(a, b) {
-      a = Math.abs(a); b = Math.abs(b);
-      while (b !== 0) { const t = b; b = a % b; a = t; }
+      a = Math.abs(a);
+      b = Math.abs(b);
+      while (b !== 0) {
+        const t = b;
+        b = a % b;
+        a = t;
+      }
       return a || 1;
     }
 
     function fracTex(num, den) {
-      if (den < 0) { num = -num; den = -den; }
+      if (den < 0) {
+        num = -num;
+        den = -den;
+      }
       const g = gcd(num, den);
-      num /= g; den /= g;
+      num /= g;
+      den /= g;
       return den === 1 ? `${num}` : `\frac{${num}}{${den}}`;
     }
 
     function radicalTex(n) {
       if (n === 0) return '0';
       if (n === 1) return '1';
-      let outside = 1, inside = n;
+      let outside = 1;
+      let inside = n;
       for (let k = Math.floor(Math.sqrt(inside)); k >= 2; k--) {
         const sq = k * k;
-        if (inside % sq === 0) { outside = k; inside = inside / sq; break; }
+        if (inside % sq === 0) {
+          outside = k;
+          inside = inside / sq;
+          break;
+        }
       }
       if (inside === 1) return `${outside}`;
       return outside === 1 ? `\sqrt{${inside}}` : `${outside}\sqrt{${inside}}`;
@@ -296,11 +317,19 @@ fetch("/nav.html")
     }
 
     function angleTex(angleKey) {
-      return { pi6: '\frac{\pi}{6}', pi4: '\frac{\pi}{4}', pi3: '\frac{\pi}{3}' }[angleKey];
+      return {
+        pi6: '\frac{\pi}{6}',
+        pi4: '\frac{\pi}{4}',
+        pi3: '\frac{\pi}{3}'
+      }[angleKey];
     }
 
-    function anglePlain(angleKey) {
-      return { pi6: 'π/6', pi4: 'π/4', pi3: 'π/3' }[angleKey];
+    function angleCanvasLabel(angleKey) {
+      return {
+        pi6: 'π/6',
+        pi4: 'π/4',
+        pi3: 'π/3'
+      }[angleKey];
     }
 
     function trigValue(angleKey, trigName) {
@@ -338,7 +367,9 @@ fetch("/nav.html")
       const setup = randomChoice(setups);
       const tVal = trigValue(angleKey, setup.trig);
       const theta = angleTex(angleKey);
-      let substituted, evaluated, solved;
+      let substituted;
+      let evaluated;
+      let solved;
 
       if (setup.trig === 'sin') {
         if (setup.known === 'hyp') {
@@ -373,28 +404,49 @@ fetch("/nav.html")
       }
 
       return {
-        type: 1, angleKey, anglePlain: anglePlain(angleKey), knownLength,
-        knownRole: setup.known, unknownRole: setup.unknown,
+        type: 1,
+        angleKey,
+        angleLabel: angleCanvasLabel(angleKey),
+        knownLength,
+        knownRole: setup.known,
+        unknownRole: setup.unknown,
         questionTex: 'Find the missing side length x.',
         hints: [setup.formula, substituted, evaluated, solved]
       };
     }
 
     function generateType2Problem() {
-      const triples = [[3,4,5],[5,12,13],[6,8,10],[7,24,25],[8,15,17],[9,12,15],[10,24,26],[12,16,20],[12,35,37]];
+      const triples = [[3,4,5], [5,12,13], [6,8,10], [7,24,25], [8,15,17], [9,12,15], [10,24,26], [12,16,20], [12,35,37]];
       const [a, b, c] = randomChoice(triples);
       const missing = randomChoice(['legA', 'legB', 'hyp']);
       const legA = missing === 'legA' ? 'x' : a;
       const legB = missing === 'legB' ? 'x' : b;
       const hyp = missing === 'hyp' ? 'x' : c;
       let hints;
+
       if (missing === 'hyp') {
-        hints = [`${a}^{2}+${b}^{2}=x^{2}`, `${a*a}+${b*b}=x^{2}`, `${a*a+b*b}=x^{2}`, `x=\sqrt{${a*a+b*b}}=${radicalTex(a*a+b*b)}`];
+        hints = [
+          `${a}^{2}+${b}^{2}=x^{2}`,
+          `${a*a}+${b*b}=x^{2}`,
+          `${a*a+b*b}=x^{2}`,
+          `x=\sqrt{${a*a+b*b}}=${radicalTex(a*a+b*b)}`
+        ];
       } else if (missing === 'legA') {
-        hints = [`x^{2}+${b}^{2}=${c}^{2}`, `x^{2}+${b*b}=${c*c}`, `x^{2}=${c*c}-${b*b}=${c*c-b*b}`, `x=\sqrt{${c*c-b*b}}=${radicalTex(c*c-b*b)}`];
+        hints = [
+          `x^{2}+${b}^{2}=${c}^{2}`,
+          `x^{2}+${b*b}=${c*c}`,
+          `x^{2}=${c*c}-${b*b}=${c*c-b*b}`,
+          `x=\sqrt{${c*c-b*b}}=${radicalTex(c*c-b*b)}`
+        ];
       } else {
-        hints = [`${a}^{2}+x^{2}=${c}^{2}`, `${a*a}+x^{2}=${c*c}`, `x^{2}=${c*c}-${a*a}=${c*c-a*a}`, `x=\sqrt{${c*c-a*a}}=${radicalTex(c*c-a*a)}`];
+        hints = [
+          `${a}^{2}+x^{2}=${c}^{2}`,
+          `${a*a}+x^{2}=${c*c}`,
+          `x^{2}=${c*c}-${a*a}=${c*c-a*a}`,
+          `x=\sqrt{${c*c-a*a}}=${radicalTex(c*c-a*a)}`
+        ];
       }
+
       return { type: 2, legA, legB, hyp, questionTex: 'Find the missing side length x.', hints };
     }
 
@@ -421,22 +473,48 @@ fetch("/nav.html")
 
     function drawTriangle(canvas, problem) {
       const ctx = canvas.getContext('2d');
-      const A = { x: 125, y: 325 }, B = { x: 525, y: 325 }, C = { x: 525, y: 95 };
+      const A = { x: 125, y: 325 };
+      const B = { x: 525, y: 325 };
+      const C = { x: 525, y: 95 };
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.strokeStyle = '#222'; ctx.lineWidth = 4;
-      ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.lineTo(C.x,C.y); ctx.closePath(); ctx.stroke();
+      ctx.strokeStyle = '#222';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(A.x, A.y);
+      ctx.lineTo(B.x, B.y);
+      ctx.lineTo(C.x, C.y);
+      ctx.closePath();
+      ctx.stroke();
+
       ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(B.x-28,B.y); ctx.lineTo(B.x-28,B.y-28); ctx.lineTo(B.x,B.y-28); ctx.stroke();
-      ctx.fillStyle = '#333'; ctx.font = '20px sans-serif'; ctx.fillText('θ', A.x + 45, A.y - 18);
+      ctx.beginPath();
+      ctx.moveTo(B.x - 28, B.y);
+      ctx.lineTo(B.x - 28, B.y - 28);
+      ctx.lineTo(B.x, B.y - 28);
+      ctx.stroke();
+
+      ctx.fillStyle = '#333';
       ctx.font = '21px sans-serif';
-      function label(text, x, y) { if (text !== '') ctx.fillText(String(text), x, y); }
+      function label(text, x, y) {
+        if (text !== '') ctx.fillText(String(text), x, y);
+      }
 
       if (problem.type === 1) {
+        ctx.save();
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(A.x, A.y, 48, -0.52, 0, false);
+        ctx.stroke();
+        ctx.font = '19px sans-serif';
+        ctx.fillText(problem.angleLabel, A.x + 55, A.y - 18);
+        ctx.restore();
+
+        ctx.font = '21px sans-serif';
         label(problem.knownRole === 'adj' ? problem.knownLength : (problem.unknownRole === 'adj' ? 'x' : ''), 310, 358);
         label(problem.knownRole === 'opp' ? problem.knownLength : (problem.unknownRole === 'opp' ? 'x' : ''), 545, 215);
         label(problem.knownRole === 'hyp' ? problem.knownLength : (problem.unknownRole === 'hyp' ? 'x' : ''), 300, 190);
-        ctx.font = '18px sans-serif';
-        label(`θ = ${problem.anglePlain}`, A.x + 22, A.y - 55);
       } else {
         label(problem.legA, 310, 358);
         label(problem.legB, 545, 215);
@@ -458,7 +536,10 @@ fetch("/nav.html")
     async function advanceHint() {
       if (!currentProblem || hintIsTypesetting) return;
       const sound = document.getElementById('click-sound');
-      if (sound) { sound.currentTime = 0; sound.play(); }
+      if (sound) {
+        sound.currentTime = 0;
+        sound.play();
+      }
       hintIsTypesetting = true;
       hintBtn.disabled = true;
       if (hintStep < currentProblem.hints.length) await appendMathHint(currentProblem.hints[hintStep]);
@@ -481,7 +562,10 @@ fetch("/nav.html")
     startBtn.addEventListener('click', () => {
       clearOldActivityState();
       const sound = document.getElementById('click-sound');
-      if (sound) { sound.currentTime = 0; sound.play(); }
+      if (sound) {
+        sound.currentTime = 0;
+        sound.play();
+      }
       currentProblem = generateTrigBasicsProblem();
       displayProblem();
       checkBtn.style.display = 'none';

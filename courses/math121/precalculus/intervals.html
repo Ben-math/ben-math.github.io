@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -339,8 +340,8 @@ fetch("/nav.html")
       let left = randomInteger(-10, 9);
       let right = randomInteger(left + 1, 10);
 
-      if (!leftClosed && Math.random() < 0.25) left = -Infinity;
-      if (!rightClosed && Math.random() < 0.25) right = Infinity;
+      if (!leftClosed && Math.random() < 0.40) left = -Infinity;
+      if (!rightClosed && Math.random() < 0.40) right = Infinity;
 
       if (left === -Infinity) leftClosed = false;
       if (right === Infinity) rightClosed = false;
@@ -524,14 +525,38 @@ fetch("/nav.html")
         const endX = interval.right === Infinity ? w - 20 : sx(interval.right);
 
         ctx.strokeStyle = '#198754';
+        ctx.fillStyle = '#198754';
         ctx.lineWidth = 9;
-        ctx.beginPath();
-        ctx.moveTo(startX, y);
-        ctx.lineTo(endX, y);
-        ctx.stroke();
 
-        if (interval.left !== -Infinity) drawEndpointDot(ctx, sx(interval.left), y, interval.leftClosed);
-        if (interval.right !== Infinity) drawEndpointDot(ctx, sx(interval.right), y, interval.rightClosed);
+        if (interval.left === -Infinity && interval.right === Infinity) {
+          ctx.beginPath();
+          ctx.moveTo(startX, y);
+          ctx.lineTo(endX, y);
+          ctx.stroke();
+          drawArrow(ctx, sx(-10), y, 20, y);
+          drawArrow(ctx, sx(10), y, w - 20, y);
+        } else if (interval.left === -Infinity) {
+          ctx.beginPath();
+          ctx.moveTo(sx(interval.right), y);
+          ctx.lineTo(sx(-10), y);
+          ctx.stroke();
+          drawArrow(ctx, sx(-10), y, 20, y);
+          drawEndpointDot(ctx, sx(interval.right), y, interval.rightClosed);
+        } else if (interval.right === Infinity) {
+          ctx.beginPath();
+          ctx.moveTo(sx(interval.left), y);
+          ctx.lineTo(sx(10), y);
+          ctx.stroke();
+          drawArrow(ctx, sx(10), y, w - 20, y);
+          drawEndpointDot(ctx, sx(interval.left), y, interval.leftClosed);
+        } else {
+          ctx.beginPath();
+          ctx.moveTo(startX, y);
+          ctx.lineTo(endX, y);
+          ctx.stroke();
+          drawEndpointDot(ctx, sx(interval.left), y, interval.leftClosed);
+          drawEndpointDot(ctx, sx(interval.right), y, interval.rightClosed);
+        }
       });
     }
 

@@ -169,29 +169,7 @@ fetch("/nav.html")
   </header>
 
   <main>
-    <p>We begin with a quick review on working with fractions.  Multiplication and division are the easiest: to multiply two fractions, you multiply 
-    their numerators together, and their denominators together: \[\frac{a}{b} \cdot \frac{c}{d} = \frac{ac}{bd}\] And to divide by a fraction, you 
-    invert and then multiply: \[\frac{a}{b} \div \frac{c}{d} = \frac{a}{b} \cdot \frac{d}{c} = \frac{ad}{bc}\] When dividing a non-fraction by a 
-    fraction, note that you can simply place the dividend over 1: \[a \div \frac{b}{c} = \frac{a}{1} \div \frac{b}{c} = \frac{a}{1} \cdot \frac{c}{b} 
-    = \frac{ac}{b}\]  The most common mistake I see made in multiplying fractions is attempting to "distribute" over a product, leading to duplication 
-    which shouldn't be happening: \[\frac{6x^2 \cdot y}{y} \cdot \frac{y^2}{x} \neq \frac{6x^2y^2 \cdot y^3}{yx}\]  To review the distributive property of 
-    multiplication <b>over addition</b>, see here: <a href="https://ben-math.github.io/courses/math131/multiplication.html">Multiplication Activity</a>.  
-    For example, we <i>do</i> distribute the second numerator over the <b>sum (or difference)</b> in the first numerator: \[\frac{x^2 + 3 - y}{z} \cdot 
-      \frac{3x}{y} = \frac{3x^3 + 9x + 3xy}{zy}\]  Addition and subtraction of fractions is somewhat more difficult, as we need to give them a 
-    <b>common denominator</b> first, and then add/subtract the numerators (the denominator stays the same): \[\frac{a}{b} + \frac{c}{b} = \frac{a+c}{b}\] 
-    We multiply the top and bottom of each fraction by the <i>other fraction's denominator</i> to get them to common denominators: 
-      \[\frac{a}{b} - \frac{c}{d} = \frac{ad}{bd} - \frac{cb}{db} = \frac{ad - cb}{bd}\]  Finally, let us consider reducing fractions to 
-    <b>lowest form</b>: that is, where the greatest common divisor of the numerator and denominator is 1.  When it comes to fractions not involving 
-    variables, this is relatively simple: \[\frac{24}{36} = \frac{12}{18} = \frac{6}{9} = \frac{2}{3}\]  This is because we can divide the numerator and 
-    denominator <b>by any nonzero number</b> and obtain an equivalent fraction.  That nonzero requirement has to be given some more careful thought when 
-    we are cancelling factors containing variables.  For instance, when cancelling the factor \(x-2\) from the following, we require the 
-    assumption that \(x \neq 2\): \[\frac{x^2-5x+6}{x-2} = \frac{(x-2)(x-3)}{x-2} = x-3, \text{ for } x \neq 2\]  There are two types of problem in this 
-    activity.  In the ones involving multiplication/division, just combine into a single fraction and expand the numerator and denominator fully (do not 
-    reduce to lowest form, this one was too difficult to implement with the randomization).  In the addition/subtraction activity, combine the two 
-    fractions into a single fraction in lowest form, including any restrictions on \(x\) resulting from cancellation.  This activity 
-    incorporates expanding, factoring, and exponent laws: see the relevant precalculus activities (linked from the course homepage:
-      <a href="https://ben-math.github.io/courses/math121/index.html">MATH 121</a>) to review if necessary.</p>
-
+    <p>Placeholder page</p>
 
 
 
@@ -221,6 +199,7 @@ fetch("/nav.html")
   </main>
 
   <script>
+
     const hintBtn = document.getElementById('hint-btn');
     const hintArea = document.getElementById('hint-area');
     const startBtn = document.getElementById('start-btn');
@@ -232,13 +211,15 @@ fetch("/nav.html")
     let hintStep = 0;
     let mathJaxTypesetPromise = Promise.resolve();
     let hintIsTypesetting = false;
-    let activeMathEditor = null;
+
+    const inequalitySymbols = ['>', '<', '\\geq', '\\leq', '='];
 
     function typesetElement(element) {
       if (!window.MathJax || !MathJax.typesetPromise) {
         if (window.MathJax && MathJax.typeset) MathJax.typeset([element]);
         return Promise.resolve();
       }
+
       mathJaxTypesetPromise = mathJaxTypesetPromise
         .then(() => MathJax.typesetPromise([element]))
         .catch(error => console.error('MathJax typesetting failed:', error));
@@ -260,7 +241,10 @@ fetch("/nav.html")
     }
 
     function weightedProblemType() {
-      return Math.random() < 0.25 ? 1 : 2;
+      const r = Math.random();
+      if (r < 0.25) return 1;
+      if (r < 0.50) return 2;
+      return 3;
     }
 
     function makeTerm(coefficient, power = 0) {
@@ -270,25 +254,16 @@ fetch("/nav.html")
     function combineLikeTerms(poly) {
       const byPower = new Map();
       poly.forEach(term => {
-        if (term.coefficient === 0) return;
         byPower.set(term.power, (byPower.get(term.power) || 0) + term.coefficient);
       });
       return Array.from(byPower.entries())
         .map(([power, coefficient]) => ({ power: Number(power), coefficient }))
-        .filter(term => term.coefficient !== 0)
+        .filter(term => Math.abs(term.coefficient) > 1e-12)
         .sort((a, b) => b.power - a.power);
     }
 
     function addPolynomials(a, b) {
       return combineLikeTerms([...a, ...b]);
-    }
-
-    function scalePolynomial(poly, scalar) {
-      return combineLikeTerms(poly.map(term => ({ coefficient: term.coefficient * scalar, power: term.power })));
-    }
-
-    function subtractPolynomials(a, b) {
-      return addPolynomials(a, scalePolynomial(b, -1));
     }
 
     function multiplyPolynomials(a, b) {
@@ -308,28 +283,48 @@ fetch("/nav.html")
       return c === 0 ? [] : [makeTerm(c, 0)];
     }
 
+    function polynomialFromXPower(k) {
+      return [makeTerm(1, k)];
+    }
+
     function polynomialFromLinearRoot(root) {
-      return combineLikeTerms([makeTerm(1, 1), makeTerm(root, 0)]);
+      return combineLikeTerms([makeTerm(1, 1), makeTerm(-root, 0)]);
     }
 
-    function polynomialFromAxPlusC(a, c) {
-      return combineLikeTerms([makeTerm(a, 1), makeTerm(c, 0)]);
+    function numberTex(n) {
+      if (Object.is(n, -0)) n = 0;
+      const roundedInteger = Math.round(n);
+      if (Math.abs(n - roundedInteger) < 1e-10) return `${roundedInteger}`;
+
+      const sign = n < 0 ? -1 : 1;
+      let x = Math.abs(n);
+      let bestNumerator = 0;
+      let bestDenominator = 1;
+      let bestError = Infinity;
+      for (let denominator = 1; denominator <= 1000; denominator++) {
+        const numerator = Math.round(x * denominator);
+        const error = Math.abs(x - numerator / denominator);
+        if (error < bestError) {
+          bestError = error;
+          bestNumerator = numerator;
+          bestDenominator = denominator;
+        }
+      }
+      const divisor = gcd(bestNumerator, bestDenominator);
+      bestNumerator = sign * bestNumerator / divisor;
+      bestDenominator = bestDenominator / divisor;
+      return bestDenominator === 1 ? `${bestNumerator}` : `\\frac{${bestNumerator}}{${bestDenominator}}`;
     }
 
-    function polynomialDegree(poly) {
-      const combined = combineLikeTerms(poly);
-      return combined.length ? combined[0].power : -Infinity;
-    }
-
-    function polynomialsEqual(a, b) {
-      const A = combineLikeTerms(a);
-      const B = combineLikeTerms(b);
-      if (A.length !== B.length) return false;
-      return A.every((term, i) => term.power === B[i].power && term.coefficient === B[i].coefficient);
-    }
-
-    function evaluatePolynomial(poly, x) {
-      return combineLikeTerms(poly).reduce((sum, term) => sum + term.coefficient * Math.pow(x, term.power), 0);
+    function gcd(a, b) {
+      a = Math.abs(a);
+      b = Math.abs(b);
+      while (b !== 0) {
+        const temp = b;
+        b = a % b;
+        a = temp;
+      }
+      return a || 1;
     }
 
     function termToTex(term, options = {}) {
@@ -343,9 +338,9 @@ fetch("/nav.html")
       else if (power !== 0) variablePart = `x^{${power}}`;
 
       let body;
-      if (variablePart === '') body = `${absCoefficient}`;
-      else if (absCoefficient === 1) body = variablePart;
-      else body = `${absCoefficient}${variablePart}`;
+      if (variablePart === '') body = numberTex(absCoefficient);
+      else if (Math.abs(absCoefficient - 1) < 1e-10) body = variablePart;
+      else body = `${numberTex(absCoefficient)}${variablePart}`;
 
       if (coefficient < 0) return `- ${body}`;
       if (forceSign || !omitLeadingPlus) return `+ ${body}`;
@@ -361,131 +356,238 @@ fetch("/nav.html")
       })).join(' ');
     }
 
-    function linearFactorTex(root) {
-      if (root === 0) return 'x';
-      return `(x ${root < 0 ? '- ' + Math.abs(root) : '+ ' + root})`;
+    function linearTex(a, b) {
+      const terms = [];
+      if (a !== 0) terms.push(makeTerm(a, 1));
+      if (b !== 0) terms.push(makeTerm(-b, 0));
+      return polynomialToTex(terms);
     }
 
-    function rationalFunctionTex(num, den) {
-      return `\\frac{${polynomialToTex(num)}}{${polynomialToTex(den)}}`;
+    function absLinearTex(a, b) {
+      return `\\left|${linearTex(a, b)}\\right|`;
     }
 
-    function randomPolynomial() {
-      const termCount = randomInteger(1, 3);
-      const powers = [];
-      while (powers.length < termCount) {
-        const p = randomInteger(0, 6);
-        if (!powers.includes(p)) powers.push(p);
+    function squareLinearTex(a, b) {
+      return `\\left(${linearTex(a, b)}\\right)^2`;
+    }
+
+    function flipSymbol(symbol) {
+      if (symbol === '>') return '<';
+      if (symbol === '<') return '>';
+      if (symbol === '\\geq') return '\\leq';
+      if (symbol === '\\leq') return '\\geq';
+      return '=';
+    }
+
+    function oppositeSymbolForAbsolute(symbol) {
+      if (symbol === '>') return '<';
+      if (symbol === '<') return '>';
+      if (symbol === '\\geq') return '\\leq';
+      if (symbol === '\\leq') return '\\geq';
+      return '=';
+    }
+
+    function connectorForMagnitude(symbol) {
+      return (symbol === '<' || symbol === '\\leq') ? '\\text{ and }' : '\\text{ or }';
+    }
+
+    function isInclusive(symbol) {
+      return symbol === '\\geq' || symbol === '\\leq' || symbol === '=';
+    }
+
+    function radicalTex(n) {
+      if (n === 0) return '0';
+      if (n === 1) return '1';
+      return `\\sqrt{${n}}`;
+    }
+
+    function simplifyRadical(n) {
+      if (n === 0) return { outside: 0, inside: 1 };
+      let outside = 1;
+      let inside = n;
+      for (let k = Math.floor(Math.sqrt(n)); k >= 2; k--) {
+        const square = k * k;
+        if (inside % square === 0) {
+          outside *= k;
+          inside /= square;
+          break;
+        }
       }
-      return combineLikeTerms(powers.map(power => makeTerm(randomNonzeroInteger(-8, 8), power)));
+      return { outside, inside };
+    }
+
+    function scaledRadicalTex(sign, radicand, denominator = 1, shift = 0) {
+      if (radicand === 0) return numberTex(shift);
+      const simp = simplifyRadical(radicand);
+      const radical = simp.inside === 1 ? `${simp.outside}` : `${simp.outside === 1 ? '' : simp.outside}\\sqrt{${simp.inside}}`;
+      const signedRadical = sign < 0 ? `-${radical}` : radical;
+      const frac = denominator === 1 ? signedRadical : `\\frac{${signedRadical}}{${denominator}}`;
+      if (shift === 0) return frac;
+      return denominator === 1 ? `${numberTex(shift)} ${sign < 0 ? '-' : '+'} ${radical}` : `\\frac{${numberTex(shift * denominator)} ${sign < 0 ? '-' : '+'} ${radical}}{${denominator}}`;
+    }
+
+    function boundValuesForMagnitude(a, b, n) {
+      const lowerRaw = (b - n) / a;
+      const upperRaw = (b + n) / a;
+      return [Math.min(lowerRaw, upperRaw), Math.max(lowerRaw, upperRaw)];
+    }
+
+    function intervalNotationFromBounds(left, right, symbol, valuesAreApprox = false) {
+      if (Math.abs(left - right) < 1e-10) {
+        const point = numberTex(left);
+        if (symbol === '=') return `\\left\\{${point}\\right\\}`;
+        if (symbol === '<') return '\\varnothing';
+        if (symbol === '\\leq') return `\\left\\{${point}\\right\\}`;
+        if (symbol === '>') return `(-\\infty, ${point}) \\cup (${point}, \\infty)`;
+        if (symbol === '\\geq') return `(-\\infty, \\infty)`;
+      }
+      if (symbol === '=') return `\\left\\{${numberTex(left)}, ${numberTex(right)}\\right\\}`;
+      const inclusive = isInclusive(symbol);
+      const leftTex = numberTex(left);
+      const rightTex = numberTex(right);
+      if (symbol === '<' || symbol === '\\leq') {
+        return `${inclusive ? '[' : '('}${leftTex}, ${rightTex}${inclusive ? ']' : ')'}`;
+      }
+      return `(-\\infty, ${leftTex}${inclusive ? ']' : ')'} \\cup ${inclusive ? '[' : '('}${rightTex}, \\infty)`;
+    }
+
+    function intervalNotationFromTexBounds(left, right, symbol) {
+      if (Math.abs(left.value - right.value) < 1e-10) {
+        if (symbol === '=') return `\\left\\{${left.tex}\\right\\}`;
+        if (symbol === '<') return '\\varnothing';
+        if (symbol === '\\leq') return `\\left\\{${left.tex}\\right\\}`;
+        if (symbol === '>') return `(-\\infty, ${left.tex}) \\cup (${left.tex}, \\infty)`;
+        if (symbol === '\\geq') return `(-\\infty, \\infty)`;
+      }
+      if (symbol === '=') return `\\left\\{${left.tex}, ${right.tex}\\right\\}`;
+      const inclusive = isInclusive(symbol);
+      if (symbol === '<' || symbol === '\\leq') return `${inclusive ? '[' : '('}${left.tex}, ${right.tex}${inclusive ? ']' : ')'}`;
+      return `(-\\infty, ${left.tex}${inclusive ? ']' : ')'} \\cup ${inclusive ? '[' : '('}${right.tex}, \\infty)`;
+    }
+
+    function intervalNotationFromRoots(roots, symbol, evaluator) {
+      const uniqueRoots = Array.from(new Set(roots)).sort((a, b) => a - b);
+      const cuts = [-Infinity, ...uniqueRoots, Infinity];
+      const pieces = [];
+      for (let i = 0; i < cuts.length - 1; i++) {
+        const left = cuts[i];
+        const right = cuts[i + 1];
+        let test;
+        if (left === -Infinity) test = right - 1;
+        else if (right === Infinity) test = left + 1;
+        else test = (left + right) / 2;
+
+        const value = evaluator(test);
+        const good = compare(value, 0, symbol);
+        if (good) {
+          const leftBracket = left === -Infinity ? '(' : (isInclusive(symbol) ? '[' : '(');
+          const rightBracket = right === Infinity ? ')' : (isInclusive(symbol) ? ']' : ')');
+          pieces.push(`${leftBracket}${left === -Infinity ? '-\\infty' : numberTex(left)}, ${right === Infinity ? '\\infty' : numberTex(right)}${rightBracket}`);
+        }
+      }
+
+      if (symbol === '=') {
+        return `\\left\\{${uniqueRoots.map(numberTex).join(', ')}\\right\\}`;
+      }
+      return pieces.length ? pieces.join(' \\cup ') : '\\varnothing';
+    }
+
+    function compare(value, threshold, symbol) {
+      const eps = 1e-9;
+      if (symbol === '>') return value > threshold + eps;
+      if (symbol === '<') return value < threshold - eps;
+      if (symbol === '\\geq') return value >= threshold - eps;
+      if (symbol === '\\leq') return value <= threshold + eps;
+      return Math.abs(value - threshold) < eps;
     }
 
     function generateType1Problem() {
-      const n1 = randomPolynomial();
-      const d1 = randomPolynomial();
-      const n2 = randomPolynomial();
-      const d2 = randomPolynomial();
-      const operation = randomChoice(['\\cdot', '\\div']);
-      const finalNumerator = operation === '\\cdot' ? multiplyPolynomials(n1, n2) : multiplyPolynomials(n1, d2);
-      const finalDenominator = operation === '\\cdot' ? multiplyPolynomials(d1, d2) : multiplyPolynomials(d1, n2);
-
-      const hints = [];
-      if (operation === '\\cdot') {
-        hints.push(`= \\frac{\\left(${polynomialToTex(n1)}\\right)\\left(${polynomialToTex(n2)}\\right)}{\\left(${polynomialToTex(d1)}\\right)\\left(${polynomialToTex(d2)}\\right)}`);
-      } else {
-        hints.push(`= ${rationalFunctionTex(n1, d1)}\\cdot ${rationalFunctionTex(d2, n2)}`);
-        hints.push(`= \\frac{\\left(${polynomialToTex(n1)}\\right)\\left(${polynomialToTex(d2)}\\right)}{\\left(${polynomialToTex(d1)}\\right)\\left(${polynomialToTex(n2)}\\right)}`);
-      }
-      hints.push(`= ${rationalFunctionTex(finalNumerator, finalDenominator)}`);
-      hints.push({ graph: true });
+      const a = randomNonzeroInteger(-10, 10);
+      const b = randomInteger(-10, 10);
+      const symbol = randomChoice(inequalitySymbols);
+      const n = symbol === '=' ? randomInteger(0, 10) : randomInteger(1, 10);
+      const [left, right] = boundValuesForMagnitude(a, b, n);
 
       return {
         type: 1,
-        questionTex: `${rationalFunctionTex(n1, d1)} ${operation} ${rationalFunctionTex(n2, d2)}`,
-        hints,
-        finalNumerator,
-        finalDenominator,
-        finalTex: rationalFunctionTex(finalNumerator, finalDenominator)
+        a, b, n, symbol,
+        questionTex: `${absLinearTex(a, b)} ${symbol} ${n}`,
+        solutionTex: intervalNotationFromBounds(left, right, symbol),
+        evaluator: x => Math.abs(a * x - b),
+        graphY: n,
+        bounds: [left, right]
       };
-    }
-
-    function findType2Parameters() {
-      for (let tries = 0; tries < 20000; tries++) {
-        const a = randomNonzeroInteger(-5, 5);
-        const b = randomNonzeroInteger(-5, 5);
-        const sum = a + b;
-        if (sum === 0) continue;
-        const m = randomNonzeroInteger(-7, 7);
-        const n = randomNonzeroInteger(-7, 7);
-        if (m === n) continue;
-        const q = randomNonzeroInteger(-7, 7);
-        if (q === n) continue;
-
-        const U = sum * (q - n) - a * m - b * n;
-        const V = -sum * q * n;
-        const numeratorForC = V - U * n;
-        const denominatorForC = m - n;
-        if (numeratorForC % denominatorForC !== 0) continue;
-        const c = numeratorForC / denominatorForC;
-        const d = U - c;
-        if (c === 0 || d === 0) continue;
-        if (Math.abs(c) > 18 || Math.abs(d) > 18) continue;
-
-        const operation = randomChoice(['+', '-']);
-        return { a, b, c, d, m, n, q, operation };
-      }
-      return { a: 2, b: 1, c: -1, d: 1, m: 3, n: 1, q: -2, operation: '+' };
     }
 
     function generateType2Problem() {
-      const params = findType2Parameters();
-      const { a, b, c, d, m, n, q, operation } = params;
-      const A = a + b;
-
-      const firstNum = polynomialFromAxPlusC(a, c);
-      const firstDen = polynomialFromLinearRoot(n);
-      const effectiveSecondNum = polynomialFromAxPlusC(b, d);
-      const displayedSecondNum = operation === '+' ? effectiveSecondNum : scalePolynomial(effectiveSecondNum, -1);
-      const secondDen = polynomialFromLinearRoot(m);
-      const commonDenExpanded = multiplyPolynomials(firstDen, secondDen);
-
-      const firstExpandedNum = multiplyPolynomials(firstNum, secondDen);
-      const displayedSecondExpandedNum = multiplyPolynomials(displayedSecondNum, firstDen);
-      const combinedNumerator = operation === '+'
-        ? addPolynomials(firstExpandedNum, displayedSecondExpandedNum)
-        : subtractPolynomials(firstExpandedNum, displayedSecondExpandedNum);
-
-      const factoredOutNumerator = combineLikeTerms([
-        makeTerm(1, 2),
-        makeTerm(q - n, 1),
-        makeTerm(-q * n, 0)
-      ]);
-      const finalNumerator = polynomialFromAxPlusC(A, -A * q);
-      const finalDenominator = secondDen;
-
-      const opTex = operation === '+' ? '+' : '-';
-      const questionTex = `${rationalFunctionTex(firstNum, firstDen)} ${opTex} ${rationalFunctionTex(displayedSecondNum, secondDen)}`;
-      const commonDenHint = `= \\frac{\\left(${polynomialToTex(firstNum)}\\right)${linearFactorTex(m)}}{${linearFactorTex(n)}${linearFactorTex(m)}} ${opTex} \\frac{\\left(${polynomialToTex(displayedSecondNum)}\\right)${linearFactorTex(n)}}{${linearFactorTex(m)}${linearFactorTex(n)}}`;
-      const addedHint = `= \\frac{${polynomialToTex(combinedNumerator)}}{${polynomialToTex(commonDenExpanded)}}`;
-      const factorA = A === 1 ? '' : (A === -1 ? '-' : `${A}`);
-      const factorOutHint = `= \\frac{${factorA}\\left(${polynomialToTex(factoredOutNumerator)}\\right)}{${linearFactorTex(n)}${linearFactorTex(m)}}`;
-      const factorQuadraticHint = `= \\frac{${factorA}${linearFactorTex(n)}${linearFactorTex(-q)}}{${linearFactorTex(n)}${linearFactorTex(m)}}`;
-      const cancelHint = `= \\frac{${polynomialToTex(finalNumerator)}}{${polynomialToTex(finalDenominator)}},\\quad x\\neq ${-n}`;
+      const a = randomNonzeroInteger(-10, 10);
+      const b = randomInteger(-10, 10);
+      const symbol = randomChoice(inequalitySymbols);
+      const n = symbol === '=' ? randomInteger(0, 10) : randomInteger(1, 10);
+      const root = Math.sqrt(n);
+      const numericBounds = boundValuesForMagnitude(a, b, root);
+      const candidates = [
+        {
+          value: (b + root) / a,
+          tex: scaledRadicalTex(a > 0 ? 1 : -1, n, Math.abs(a), b / a)
+        },
+        {
+          value: (b - root) / a,
+          tex: scaledRadicalTex(a > 0 ? -1 : 1, n, Math.abs(a), b / a)
+        }
+      ].sort((u, v) => u.value - v.value);
 
       return {
         type: 2,
-        ...params,
-        questionTex,
-        hints: [commonDenHint, addedHint, factorOutHint, factorQuadraticHint, cancelHint, { graph: true }],
-        finalNumerator,
-        finalDenominator,
-        restrictionValue: -n,
-        finalTex: cancelHint
+        a, b, n, symbol,
+        questionTex: `${squareLinearTex(a, b)} ${symbol} ${n}`,
+        solutionTex: intervalNotationFromTexBounds(candidates[0], candidates[1], symbol),
+        evaluator: x => Math.pow(a * x - b, 2),
+        graphY: n,
+        bounds: numericBounds
       };
     }
 
-    function generateFractionProblem() {
-      return weightedProblemType() === 1 ? generateType1Problem() : generateType2Problem();
+    function generateType3Problem() {
+      const a = randomNonzeroInteger(-10, 10);
+      const b = randomInteger(1, 3);
+      const n = randomNonzeroInteger(-10, 10);
+      let m;
+      do { m = randomNonzeroInteger(-10, 10); } while (m === n);
+      const p = randomInteger(-4, 4);
+      const symbol = randomChoice(inequalitySymbols);
+
+      let poly = polynomialFromConstant(a);
+      poly = multiplyPolynomials(poly, polynomialFromXPower(b));
+      poly = multiplyPolynomials(poly, polynomialFromLinearRoot(n));
+      poly = multiplyPolynomials(poly, polynomialFromLinearRoot(m));
+      const shifted = addPolynomials(poly, polynomialFromConstant(p));
+      const roots = [0, n, m].sort((x, y) => x - y);
+
+      return {
+        type: 3,
+        a, b, n, m, p, symbol,
+        poly,
+        shifted,
+        roots,
+        questionTex: `${polynomialToTex(shifted)} ${symbol} ${p}`,
+        zeroTex: `${polynomialToTex(poly)} ${symbol} 0`,
+        solutionTex: intervalNotationFromRoots(roots, symbol, x => evaluateType3(a, b, n, m, x)),
+        evaluator: x => evaluateType3(a, b, n, m, x) + p,
+        zeroEvaluator: x => evaluateType3(a, b, n, m, x),
+        graphY: p
+      };
+    }
+
+    function evaluateType3(a, b, n, m, x) {
+      return a * Math.pow(x, b) * (x - n) * (x - m);
+    }
+
+    function generateInequalityProblem() {
+      const type = weightedProblemType();
+      if (type === 1) return generateType1Problem();
+      if (type === 2) return generateType2Problem();
+      return generateType3Problem();
     }
 
     function createHintStepBlock(extraClass = '') {
@@ -506,7 +608,117 @@ fetch("/nav.html")
       return typesetElement(block);
     }
 
-    function appendGraphHint() {
+    function displayMagnitudeHint(problem, useRadical) {
+      const { a, b, n, symbol } = problem;
+      const expr = linearTex(a, b);
+      const right = useRadical ? radicalTex(n) : numberTex(n);
+      const negativeRight = useRadical ? `-${radicalTex(n)}` : numberTex(-n);
+      const opposite = oppositeSymbolForAbsolute(symbol);
+      const connector = connectorForMagnitude(symbol);
+      return appendMathHint(`\\implies ${expr} ${symbol} ${right} ${connector} ${expr} ${opposite} ${negativeRight}`);
+    }
+
+    function displayAddBHint(problem, useRadical) {
+      const { a, b, n, symbol } = problem;
+      const ax = linearTex(a, 0);
+      const rightPositive = useRadical ? scaledRadicalTex(1, n, 1, b) : numberTex(n + b);
+      const rightNegative = useRadical ? scaledRadicalTex(-1, n, 1, b) : numberTex(-n + b);
+      const opposite = oppositeSymbolForAbsolute(symbol);
+      const connector = connectorForMagnitude(symbol);
+      return appendMathHint(`\\implies ${ax} ${symbol} ${rightPositive} ${connector} ${ax} ${opposite} ${rightNegative}`);
+    }
+
+    function displayDivideByAHint(problem, useRadical) {
+      const { a, b, n, symbol } = problem;
+      const denominator = Math.abs(a);
+      let firstSymbol = a < 0 ? flipSymbol(symbol) : symbol;
+      let secondSymbol = a < 0 ? flipSymbol(oppositeSymbolForAbsolute(symbol)) : oppositeSymbolForAbsolute(symbol);
+      let firstValue = useRadical ? scaledRadicalTex(a > 0 ? 1 : -1, n, denominator, b / a) : numberTex((n + b) / a);
+      let secondValue = useRadical ? scaledRadicalTex(a > 0 ? -1 : 1, n, denominator, b / a) : numberTex((-n + b) / a);
+      const connector = connectorForMagnitude(symbol);
+      return appendMathHint(`\\implies x ${firstSymbol} ${firstValue} ${connector} x ${secondSymbol} ${secondValue}`);
+    }
+
+    function displayIntervalHint(problem) {
+      return appendMathHint(`\\implies x \\in ${problem.solutionTex}`);
+    }
+
+    function type3FactorOutATex(problem) {
+      const inside = multiplyPolynomials(
+        multiplyPolynomials(polynomialFromXPower(problem.b), polynomialFromLinearRoot(problem.n)),
+        polynomialFromLinearRoot(problem.m)
+      );
+      if (problem.a === 1) return `${polynomialToTex(problem.poly)} ${problem.symbol} 0`;
+      if (problem.a === -1) return `-\\left(${polynomialToTex(inside)}\\right) ${problem.symbol} 0`;
+      return `${problem.a}\\left(${polynomialToTex(inside)}\\right) ${problem.symbol} 0`;
+    }
+
+    function type3FactorOutXTex(problem) {
+      const quadratic = multiplyPolynomials(polynomialFromLinearRoot(problem.n), polynomialFromLinearRoot(problem.m));
+      const xPower = problem.b === 1 ? 'x' : `x^{${problem.b}}`;
+      if (problem.a === 1) return `${xPower}\\left(${polynomialToTex(quadratic)}\\right) ${problem.symbol} 0`;
+      if (problem.a === -1) return `-${xPower}\\left(${polynomialToTex(quadratic)}\\right) ${problem.symbol} 0`;
+      return `${problem.a}${xPower}\\left(${polynomialToTex(quadratic)}\\right) ${problem.symbol} 0`;
+    }
+
+    function linearFactorTex(root) {
+      if (root === 0) return 'x';
+      return `(x ${root < 0 ? '+' : '-'} ${Math.abs(root)})`;
+    }
+
+    function type3FullyFactoredTex(problem) {
+      const xPower = problem.b === 1 ? 'x' : `x^{${problem.b}}`;
+      const aPart = problem.a === 1 ? '' : (problem.a === -1 ? '-' : `${problem.a}`);
+      return `${aPart}${xPower}${linearFactorTex(problem.n)}${linearFactorTex(problem.m)} ${problem.symbol} 0`;
+    }
+
+    function signOfTex(value) {
+      return value > 0 ? '+' : '-';
+    }
+
+    function intervalLabel(left, right) {
+      return `(${left === -Infinity ? '-\\infty' : numberTex(left)}, ${right === Infinity ? '\\infty' : numberTex(right)})`;
+    }
+
+    function makeSignChartTex(problem) {
+      const sorted = Array.from(new Set([0, problem.n, problem.m])).sort((a, b) => a - b);
+      const cuts = [-Infinity, ...sorted, Infinity];
+      const intervals = [];
+      for (let i = 0; i < cuts.length - 1; i++) intervals.push([cuts[i], cuts[i + 1]]);
+
+      const factors = [
+        { label: problem.a === 1 ? '' : `${problem.a}`, value: x => problem.a },
+        { label: problem.b === 1 ? 'x' : `x^{${problem.b}}`, value: x => Math.pow(x, problem.b) },
+        { label: linearFactorTex(problem.n), value: x => x - problem.n },
+        { label: linearFactorTex(problem.m), value: x => x - problem.m },
+        { label: type3FullyFactoredTex({...problem, symbol: ''}).replace(/\s*0\s*$/, '').trim(), value: x => (problem.zeroEvaluator || problem.evaluator)(x) }
+      ].filter(f => f.label !== '');
+
+      const columnSpec = '|c|' + factors.map(() => 'c|').join('');
+      let tex = `\\begin{array}{${columnSpec}}\\hline\n`;
+      tex += ` & ${factors.map(f => f.label).join(' & ')} \\\\ \n\\hline\n`;
+      intervals.forEach(([left, right]) => {
+        let test;
+        if (left === -Infinity) test = right - 1;
+        else if (right === Infinity) test = left + 1;
+        else test = (left + right) / 2;
+        tex += `${intervalLabel(left, right)} & ${factors.map(f => signOfTex(f.value(test))).join(' & ')} \\\\ \n\\hline\n`;
+      });
+      tex += '\\end{array}';
+      return tex;
+    }
+
+    async function displayType3Hint(problem, step) {
+      if (step === 0) return appendMathHint(`\\implies ${problem.zeroTex}`);
+      if (step === 1) return appendMathHint(`\\implies ${type3FactorOutATex(problem)}`);
+      if (step === 2) return appendMathHint(`\\implies ${type3FactorOutXTex(problem)}`);
+      if (step === 3) return appendMathHint(`\\implies ${type3FullyFactoredTex(problem)}`);
+      if (step === 4) return appendMathHint(makeSignChartTex(problem));
+      if (step === 5) return displayIntervalHint(problem);
+      if (step === 6) return displayGraphHint(problem);
+    }
+
+    async function displayGraphHint(problem) {
       const block = createHintStepBlock('graph-hint-block');
       const canvas = document.createElement('canvas');
       canvas.width = 760;
@@ -516,123 +728,160 @@ fetch("/nav.html")
       canvas.style.borderRadius = '8px';
       canvas.style.background = 'white';
       block.appendChild(canvas);
-      drawRationalGraph(canvas, currentProblem.finalNumerator, currentProblem.finalDenominator, currentProblem);
+      drawProblemGraph(canvas, problem);
       return Promise.resolve();
     }
 
-    function drawRationalGraph(canvas, numerator, denominator, problem = null) {
+    function drawProblemGraph(canvas, problem) {
       const ctx = canvas.getContext('2d');
       const w = canvas.width;
       const h = canvas.height;
       const pad = 50;
-      const xMin = -10;
-      const xMax = 10;
+
+      const importantXs = problem.type === 3 ? [0, problem.n, problem.m] : problem.bounds;
+      const minImportant = Math.min(...importantXs);
+      const maxImportant = Math.max(...importantXs);
+      let xMin = Math.floor(minImportant - 4);
+      let xMax = Math.ceil(maxImportant + 4);
+      if (xMin === xMax) { xMin -= 5; xMax += 5; }
+      xMin = Math.min(xMin, -10);
+      xMax = Math.max(xMax, 10);
+
       const samples = [];
-      for (let i = 0; i <= 1200; i++) {
-        const x = xMin + (xMax - xMin) * i / 1200;
-        const den = evaluatePolynomial(denominator, x);
-        if (Math.abs(den) < 1e-5) {
-          samples.push({ x, y: NaN, break: true });
-        } else {
-          const y = evaluatePolynomial(numerator, x) / den;
-          samples.push({ x, y: Number.isFinite(y) ? y : NaN });
+      for (let i = 0; i <= 800; i++) {
+        const x = xMin + (xMax - xMin) * i / 800;
+        const y = problem.evaluator(x);
+        if (Number.isFinite(y)) samples.push({ x, y });
+      }
+
+      let yValues = samples.map(p => p.y).concat([problem.graphY, 0]);
+
+      // Use a compromise vertical window: ignore only the most extreme tail values,
+      // but still show substantially more of the curve than the previous tight clip.
+      // This keeps roots/crossings readable without making the green/red split look
+      // detached from the plotted function.
+      const sortedYValues = yValues.slice().sort((a, b) => a - b);
+      const lowerIndex = Math.floor(sortedYValues.length * 0.04);
+      const upperIndex = Math.ceil(sortedYValues.length * 0.96) - 1;
+      let yMin = sortedYValues[Math.max(0, lowerIndex)];
+      let yMax = sortedYValues[Math.min(sortedYValues.length - 1, upperIndex)];
+
+      const mustInclude = [problem.graphY, 0];
+      if (problem.type === 1 || problem.type === 2) {
+        problem.bounds.forEach(x => mustInclude.push(problem.evaluator(x)));
+        // For absolute value and square problems, show enough of the surrounding
+        // V/parabola to make the shape clear, but not the whole far-away tail.
+        const boundSpan = Math.max(1, Math.abs(problem.bounds[1] - problem.bounds[0]));
+        const localXs = [
+          problem.bounds[0] - boundSpan,
+          problem.bounds[0],
+          (problem.bounds[0] + problem.bounds[1]) / 2,
+          problem.bounds[1],
+          problem.bounds[1] + boundSpan
+        ];
+        localXs.forEach(x => mustInclude.push(problem.evaluator(x)));
+      } else {
+        [0, problem.n, problem.m].forEach(x => mustInclude.push(problem.evaluator(x)));
+      }
+      yMin = Math.min(yMin, ...mustInclude);
+      yMax = Math.max(yMax, ...mustInclude);
+
+      let yRange = Math.max(1, yMax - yMin);
+      const softMaxVisibleYRange = problem.type === 3 ? 260 : 120;
+      if (yRange > softMaxVisibleYRange) {
+        const anchorLow = Math.min(...mustInclude);
+        const anchorHigh = Math.max(...mustInclude);
+        const anchorMid = (anchorLow + anchorHigh) / 2;
+        const compressedMin = anchorMid - softMaxVisibleYRange / 2;
+        const compressedMax = anchorMid + softMaxVisibleYRange / 2;
+        yMin = Math.max(yMin, Math.min(anchorLow, compressedMin));
+        yMax = Math.min(yMax, Math.max(anchorHigh, compressedMax));
+        if (yMax - yMin < 1) {
+          yMin = anchorMid - 1;
+          yMax = anchorMid + 1;
         }
       }
-      const finiteY = samples.map(p => p.y).filter(Number.isFinite).sort((a, b) => a - b);
-      let yMin = -10;
-      let yMax = 10;
-      if (finiteY.length) {
-        yMin = finiteY[Math.floor(finiteY.length * 0.05)];
-        yMax = finiteY[Math.ceil(finiteY.length * 0.95) - 1];
-        yMin = Math.min(yMin, 0);
-        yMax = Math.max(yMax, 0);
-        if (Math.abs(yMax - yMin) < 1) { yMin -= 5; yMax += 5; }
-        const range = yMax - yMin;
-        yMin -= 0.15 * range;
-        yMax += 0.15 * range;
-      }
+
+      yRange = Math.max(1, yMax - yMin);
+      yMin -= 0.12 * yRange;
+      yMax += 0.12 * yRange;
+      if (problem.type !== 3) yMin = Math.min(yMin, -1);
+      if (Math.abs(yMax - yMin) < 1e-9) { yMin -= 1; yMax += 1; }
+
       function sx(x) { return pad + (x - xMin) / (xMax - xMin) * (w - 2 * pad); }
       function sy(y) { return h - pad - (y - yMin) / (yMax - yMin) * (h - 2 * pad); }
+
       ctx.clearRect(0, 0, w, h);
-      ctx.strokeStyle = '#ddd';
       ctx.lineWidth = 1;
+      ctx.strokeStyle = '#ddd';
       ctx.fillStyle = '#333';
       ctx.font = '14px sans-serif';
-      for (let x = xMin; x <= xMax; x++) {
+
+      for (let x = Math.ceil(xMin); x <= Math.floor(xMax); x++) {
         const X = sx(x);
         ctx.beginPath(); ctx.moveTo(X, pad); ctx.lineTo(X, h - pad); ctx.stroke();
-        if (x !== 0 && x % 2 === 0 && yMin <= 0 && yMax >= 0) ctx.fillText(String(x), X - 5, sy(0) + 18);
+        if (x !== 0) ctx.fillText(String(x), X - 5, sy(0) + 18);
       }
+
       const yStep = niceStep((yMax - yMin) / 8);
       for (let y = Math.ceil(yMin / yStep) * yStep; y <= yMax; y += yStep) {
         const Y = sy(y);
         ctx.beginPath(); ctx.moveTo(pad, Y); ctx.lineTo(w - pad, Y); ctx.stroke();
-        if (Math.abs(y) > 1e-9 && xMin <= 0 && xMax >= 0) ctx.fillText(String(Math.round(y * 100) / 100), sx(0) + 6, Y + 4);
+        if (Math.abs(y) > 1e-9) ctx.fillText(numberForGraphLabel(y), sx(0) + 6, Y + 4);
       }
+
       ctx.strokeStyle = '#555';
       ctx.lineWidth = 2;
       if (yMin <= 0 && yMax >= 0) { ctx.beginPath(); ctx.moveTo(pad, sy(0)); ctx.lineTo(w - pad, sy(0)); ctx.stroke(); }
       if (xMin <= 0 && xMax >= 0) { ctx.beginPath(); ctx.moveTo(sx(0), pad); ctx.lineTo(sx(0), h - pad); ctx.stroke(); }
-      ctx.fillText('x', w - pad + 15, yMin <= 0 && yMax >= 0 ? sy(0) + 4 : h - pad + 18);
-      ctx.fillText('y', xMin <= 0 && xMax >= 0 ? sx(0) + 6 : pad - 18, pad - 12);
+      ctx.fillText('x', w - pad + 15, sy(0) + 4);
+      ctx.fillText('y', sx(0) + 6, pad - 12);
 
-      ctx.strokeStyle = '#c22';
-      ctx.lineWidth = 3;
+      ctx.strokeStyle = 'black';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 6]);
+      ctx.beginPath(); ctx.moveTo(pad, sy(problem.graphY)); ctx.lineTo(w - pad, sy(problem.graphY)); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillText(`y = ${problem.graphY}`, w - pad - 70, sy(problem.graphY) - 8);
+
+      drawCurve(ctx, samples, sx, sy, '#c22', 3, () => true);
+      if (problem.symbol === '=') drawEqualitySolution(ctx, problem, samples, sx, sy);
+      else drawCurve(ctx, samples, sx, sy, '#198754', 5, point => compare(point.y, problem.graphY, problem.symbol));
+    }
+
+    function drawCurve(ctx, samples, sx, sy, strokeStyle, lineWidth, includePoint) {
+      ctx.strokeStyle = strokeStyle;
+      ctx.lineWidth = lineWidth;
       ctx.beginPath();
       let drawing = false;
-      let previousY = null;
       samples.forEach(point => {
-        if (!Number.isFinite(point.y) || point.y < yMin || point.y > yMax || (previousY !== null && Math.abs(point.y - previousY) > (yMax - yMin) * 0.45)) {
-          drawing = false;
-          previousY = Number.isFinite(point.y) ? point.y : null;
-          return;
-        }
-        const X = sx(point.x);
-        const Y = sy(point.y);
+        if (!includePoint(point)) { drawing = false; return; }
+        const X = sx(point.x), Y = sy(point.y);
         if (!drawing) { ctx.moveTo(X, Y); drawing = true; }
         else ctx.lineTo(X, Y);
-        previousY = point.y;
       });
       ctx.stroke();
+    }
 
-      if (problem && problem.type === 2 && Number.isFinite(problem.restrictionValue)) {
-        const holeX = problem.restrictionValue;
-        const holeDen = evaluatePolynomial(denominator, holeX);
-        const holeY = Math.abs(holeDen) > 1e-9 ? evaluatePolynomial(numerator, holeX) / holeDen : NaN;
-        if (Number.isFinite(holeY) && holeX >= xMin && holeX <= xMax && holeY >= yMin && holeY <= yMax) {
-          const X = sx(holeX);
-          const Y = sy(holeY);
-          ctx.save();
-          ctx.beginPath();
-          ctx.arc(X, Y, 6, 0, 2 * Math.PI);
-          ctx.fillStyle = 'white';
-          ctx.fill();
-          ctx.strokeStyle = '#c22';
-          ctx.lineWidth = 3;
-          ctx.stroke();
-          ctx.fillStyle = '#333';
-          ctx.font = '14px sans-serif';
-          
-          ctx.restore();
-        } else if (holeX >= xMin && holeX <= xMax) {
-          ctx.save();
-          ctx.strokeStyle = '#c22';
-          ctx.setLineDash([5, 5]);
-          ctx.beginPath();
-          ctx.moveTo(sx(holeX), pad);
-          ctx.lineTo(sx(holeX), h - pad);
-          ctx.stroke();
-          ctx.setLineDash([]);
-          ctx.fillStyle = '#333';
-          ctx.font = '14px sans-serif';
-          
-          ctx.restore();
-        }
-      }
+    function drawEqualitySolution(ctx, problem, samples, sx, sy) {
+      let xs = [];
+      if (problem.type === 1 || problem.type === 2) xs = Array.from(new Set(problem.bounds.map(x => Number(x.toFixed(10)))));
+      else xs = Array.from(new Set([0, problem.n, problem.m])).sort((a, b) => a - b);
+
+      ctx.fillStyle = '#198754';
+      ctx.strokeStyle = '#198754';
+      ctx.font = '14px sans-serif';
+      xs.forEach(x => {
+        const y = problem.evaluator(x);
+        ctx.beginPath();
+        ctx.arc(sx(x), sy(y), 6, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.fillText(`(${numberForGraphLabel(x)}, ${numberForGraphLabel(y)})`, sx(x) + 8, sy(y) - 8);
+      });
     }
 
     function niceStep(rawStep) {
-      const exponent = Math.floor(Math.log10(Math.max(rawStep, 1e-9)));
+      const exponent = Math.floor(Math.log10(rawStep));
       const base = rawStep / Math.pow(10, exponent);
       let niceBase = 1;
       if (base > 5) niceBase = 10;
@@ -641,43 +890,75 @@ fetch("/nav.html")
       return niceBase * Math.pow(10, exponent);
     }
 
+    function numberForGraphLabel(n) {
+      if (Math.abs(n - Math.round(n)) < 1e-8) return String(Math.round(n));
+      return String(Math.round(n * 100) / 100);
+    }
+
     async function advanceHint() {
       if (!currentProblem || hintIsTypesetting) return;
+
       const sound = document.getElementById('click-sound');
-      if (sound) { sound.currentTime = 0; sound.play(); }
+      if (sound) {
+        sound.currentTime = 0;
+        sound.play();
+      }
+
       hintIsTypesetting = true;
       hintBtn.disabled = true;
-      if (hintStep < currentProblem.hints.length) {
-        const hint = currentProblem.hints[hintStep];
-        if (hint && hint.graph) await appendGraphHint();
-        else await appendMathHint(hint);
+
+      if (currentProblem.type === 1) {
+        if (hintStep === 0) await displayMagnitudeHint(currentProblem, false);
+        else if (hintStep === 1) await displayAddBHint(currentProblem, false);
+        else if (hintStep === 2) await displayDivideByAHint(currentProblem, false);
+        else if (hintStep === 3) await displayIntervalHint(currentProblem);
+        else if (hintStep === 4) await displayGraphHint(currentProblem);
+      } else if (currentProblem.type === 2) {
+        if (hintStep === 0) await displayMagnitudeHint(currentProblem, true);
+        else if (hintStep === 1) await displayAddBHint(currentProblem, true);
+        else if (hintStep === 2) await displayDivideByAHint(currentProblem, true);
+        else if (hintStep === 3) await displayIntervalHint(currentProblem);
+        else if (hintStep === 4) await displayGraphHint(currentProblem);
+      } else {
+        await displayType3Hint(currentProblem, hintStep);
       }
+
       hintStep++;
       hintIsTypesetting = false;
-      hintBtn.disabled = hintStep >= currentProblem.hints.length;
+
+      const maxHints = currentProblem.type === 3 ? 7 : 5;
+      hintBtn.disabled = hintStep >= maxHints;
     }
+
+    let activeMathEditor = null;
 
     function setupAnswerEditor() {
       const finalAnswerDiv = document.getElementById('final-answer-input');
       if (!currentProblem) return;
-      if (currentProblem.type === 1) {
+
+      if (currentProblem.symbol === '=') {
+        const equalityBoxCount = currentProblem.type === 3 ? 3 : 2;
+        const equalityEditors = Array.from({ length: equalityBoxCount }, (_, index) => `
+            ${index === 0 ? '' : '<span style="font-weight: bold; margin: 0 0.5em;">or</span>'}
+            <span id="equation-answer-editor-${index + 1}" class="polynomial-answer-editor math-answer-editor" contenteditable="true" role="textbox" aria-label="Value ${index + 1} of x" style="min-width: 110px;"></span>
+        `).join('');
         finalAnswerDiv.innerHTML = `
           <div class="answer-line">
-            <span style="font-weight: bold; margin-right: 0.5em;">Answer:</span>
-            <span id="answer-editor-main" class="polynomial-answer-editor math-answer-editor" contenteditable="true" role="textbox" aria-label="Simplified fraction answer" style="min-width: 420px;"></span>
+            <label style="font-weight: bold; margin-right: 0.5em;">x = </label>
+            ${equalityEditors}
           </div>
-          ${answerToolbarHtml()}
+          ${answerToolbarHtml(false)}
         `;
       } else {
         finalAnswerDiv.innerHTML = `
           <div class="answer-line">
-            <span id="answer-editor-main" class="polynomial-answer-editor math-answer-editor" contenteditable="true" role="textbox" aria-label="Simplified fraction answer" style="min-width: 420px;"></span>
-            <span style="font-weight: bold; margin: 0 0.45em;">for x ≠</span>
-            <span id="restriction-editor" class="polynomial-answer-editor math-answer-editor" contenteditable="true" role="textbox" aria-label="Restriction value" style="min-width: 90px;"></span>
+            <label style="font-weight: bold; margin-right: 0.5em;">x ∈</label>
+            <span id="interval-answer-editor" class="polynomial-answer-editor interval-answer-editor math-answer-editor" contenteditable="true" role="textbox" aria-label="Interval notation answer"></span>
           </div>
-          ${answerToolbarHtml()}
+          ${answerToolbarHtml(true)}
         `;
       }
+
       setupMathAnswerEditors(finalAnswerDiv);
       const firstEditor = finalAnswerDiv.querySelector('.math-answer-editor');
       if (firstEditor) {
@@ -687,11 +968,13 @@ fetch("/nav.html")
       typesetElement(finalAnswerDiv);
     }
 
-    function answerToolbarHtml() {
+    function answerToolbarHtml(includeSetButtons) {
       return `
         <div class="answer-toolbar" aria-label="Math input buttons">
+          ${includeSetButtons ? '<button type="button" class="math-symbol-button" data-insert-text=" ∪ ">∪</button><button type="button" class="math-symbol-button" data-insert-text=" ∩ ">∩</button>' : ''}
           <button type="button" class="math-symbol-button" data-insert-text="∞">∞</button>
           <button type="button" class="math-symbol-button" data-insert-text="-∞">−∞</button>
+          <button type="button" class="math-symbol-button" data-insert-radical="true">√</button>
           <button type="button" class="math-symbol-button" data-insert-fraction="true"><span class="fraction-button-display"><span class="fraction-button-top">a</span><span class="fraction-button-bottom">b</span></span></button>
         </div>
       `;
@@ -704,6 +987,7 @@ fetch("/nav.html")
         editor.addEventListener('click', () => { activeMathEditor = editor; });
         editor.addEventListener('keydown', handleMathEditorKeydown);
       });
+
       container.querySelectorAll('.math-symbol-button').forEach(button => {
         button.addEventListener('mousedown', event => event.preventDefault());
         button.addEventListener('click', () => {
@@ -711,6 +995,7 @@ fetch("/nav.html")
           if (!editor) return;
           editor.focus();
           if (button.dataset.insertText !== undefined) insertTextAtSelection(button.dataset.insertText, editor);
+          else if (button.dataset.insertRadical) insertRadicalAtSelection(editor);
           else if (button.dataset.insertFraction) insertFractionAtSelection(editor);
         });
       });
@@ -729,20 +1014,30 @@ fetch("/nav.html")
       }
       if (event.key === 'ArrowRight') {
         const specialBox = getContainingSpecialEntry(getSelectionStartNode());
-        if (specialBox) { event.preventDefault(); placeCaretAfterNode(specialBox.wrapper); return; }
+        if (specialBox) {
+          event.preventDefault();
+          placeCaretAfterNode(specialBox.wrapper);
+          return;
+        }
       }
       if (event.key === 'ArrowLeft') {
         const specialBox = getContainingSpecialEntry(getSelectionStartNode());
-        if (specialBox) { event.preventDefault(); placeCaretBeforeNode(specialBox.wrapper); return; }
+        if (specialBox) {
+          event.preventDefault();
+          placeCaretBeforeNode(specialBox.wrapper);
+          return;
+        }
       }
       if (event.key === 'Backspace') {
         const specialBox = getContainingSpecialEntry(getSelectionStartNode());
         if (specialBox && isCaretAtStartOfElement(specialBox.entry) && specialBox.entry.textContent.length === 0) {
           event.preventDefault();
+          const editor = closestMathEditor(specialBox.wrapper);
           const replacement = document.createTextNode('\u200b');
           specialBox.wrapper.parentNode.insertBefore(replacement, specialBox.wrapper);
           specialBox.wrapper.remove();
           placeCaretInTextNode(replacement, replacement.textContent.length);
+          activeMathEditor = editor;
         }
       }
     }
@@ -776,6 +1071,17 @@ fetch("/nav.html")
       exponent.innerHTML = '';
       range.insertNode(exponent);
       placeCaretInside(exponent);
+    }
+
+    function insertRadicalAtSelection(editor) {
+      const range = ensureSelectionInsideEditor(editor);
+      range.deleteContents();
+      const wrapper = document.createElement('span');
+      wrapper.className = 'math-radical special-wrapper';
+      wrapper.setAttribute('data-special-wrapper', 'radical');
+      wrapper.innerHTML = '<span class="radical-symbol">√</span><span class="radical-entry special-entry" contenteditable="true" data-special-entry="radical"></span>';
+      range.insertNode(wrapper);
+      placeCaretInside(wrapper.querySelector('.radical-entry'));
     }
 
     function insertFractionAtSelection(editor) {
@@ -843,12 +1149,17 @@ fetch("/nav.html")
       const parent = node.parentNode;
       let beforeNode = node.previousSibling;
       if (!beforeNode || beforeNode.nodeType !== Node.TEXT_NODE) {
-        beforeNode = document.createTextNode('\u200b');
+        beforeNode = document.createTextNode('​');
         parent.insertBefore(beforeNode, node);
-      } else if (beforeNode.textContent.length === 0) beforeNode.textContent = '\u200b';
+      } else if (beforeNode.textContent.length === 0) {
+        beforeNode.textContent = '​';
+      }
       placeCaretInTextNode(beforeNode, beforeNode.textContent.length);
       const editor = closestMathEditor(parent);
-      if (editor) { activeMathEditor = editor; editor.focus(); }
+      if (editor) {
+        activeMathEditor = editor;
+        editor.focus();
+      }
     }
 
     function placeCaretAfterNode(node) {
@@ -857,10 +1168,15 @@ fetch("/nav.html")
       if (!afterNode || afterNode.nodeType !== Node.TEXT_NODE) {
         afterNode = document.createTextNode('\u200b');
         parent.insertBefore(afterNode, node.nextSibling);
-      } else if (afterNode.textContent.length === 0) afterNode.textContent = '\u200b';
+      } else if (afterNode.textContent.length === 0) {
+        afterNode.textContent = '\u200b';
+      }
       placeCaretInTextNode(afterNode, afterNode.textContent.length);
       const editor = closestMathEditor(parent);
-      if (editor) { activeMathEditor = editor; editor.focus(); }
+      if (editor) {
+        activeMathEditor = editor;
+        editor.focus();
+      }
     }
 
     function placeCaretInTextNode(node, offset) {
@@ -877,101 +1193,243 @@ fetch("/nav.html")
         if (node.nodeType === Node.TEXT_NODE) return node.textContent.replace(/\u200b/g, '');
         if (node.nodeType !== Node.ELEMENT_NODE) return '';
         if (node.matches && node.matches('sup.exponent-entry')) return `^(${node.textContent.trim()})`;
+        if (node.matches && node.matches('.math-radical')) return `sqrt(${walk(node.querySelector('.radical-entry'))})`;
         if (node.matches && node.matches('.fraction-entry')) return `(${walk(node.querySelector('.fraction-numerator'))})/(${walk(node.querySelector('.fraction-denominator'))})`;
         return Array.from(node.childNodes).map(walk).join('');
       }
       return Array.from(editor.childNodes).map(walk).join('').trim();
     }
 
-    function parseUserPolynomial(raw) {
-      let text = raw.replace(/\u200b/g, '').replace(/−/g, '-').replace(/\s+/g, '');
-      if (!text) return null;
-      while (text.startsWith('(') && text.endsWith(')') && matchingOuterParens(text)) text = text.slice(1, -1);
-      text = text.replace(/\^\(([-+]?\d+)\)/g, '^$1');
-      text = text.replace(/-/g, '+-');
-      if (text.startsWith('+')) text = text.slice(1);
-      const parts = text.split('+').filter(Boolean);
-      const terms = [];
-      for (const part of parts) {
-        let m;
-        if ((m = part.match(/^([+-]?\d*)x(?:\^(\d+))?$/))) {
-          let coeffText = m[1];
-          let coeff = coeffText === '' || coeffText === '+' ? 1 : (coeffText === '-' ? -1 : parseInt(coeffText, 10));
-          let power = m[2] ? parseInt(m[2], 10) : 1;
-          if (!Number.isFinite(coeff) || !Number.isFinite(power) || power < 0) return null;
-          terms.push(makeTerm(coeff, power));
-        } else if ((m = part.match(/^([+-]?\d+)$/))) {
-          terms.push(makeTerm(parseInt(m[1], 10), 0));
-        } else {
-          return null;
-        }
-      }
-      return combineLikeTerms(terms);
+    function normalizeAnswerText(text) {
+      return text
+        .replace(/\u200b/g, '')
+        .replace(/−/g, '-')
+        .replace(/–/g, '-')
+        .replace(/\s+/g, '')
+        .replace(/\\infty/g, '∞')
+        .replace(/infinity/gi, '∞')
+        .replace(/inf/gi, '∞')
+        .replace(/oo/gi, '∞')
+        .replace(/\\cup/g, '∪')
+        .replace(/\\cap/g, '∩')
+        .replace(/U/g, '∪')
+        .replace(/∪+/g, '∪')
+        .replace(/∩+/g, '∩');
     }
 
-    function matchingOuterParens(text) {
-      let depth = 0;
-      for (let i = 0; i < text.length; i++) {
-        if (text[i] === '(') depth++;
-        else if (text[i] === ')') depth--;
-        if (depth === 0 && i < text.length - 1) return false;
+    function evaluateNumericAnswer(raw) {
+      const text = normalizeAnswerText(raw)
+        .replace(/^x=/i, '')
+        .replace(/sqrt\(/g, 'Math.sqrt(')
+        .replace(/√\(/g, 'Math.sqrt(')
+        .replace(/√([0-9.]+)/g, 'Math.sqrt($1)')
+        .replace(/\^/g, '**');
+
+      if (!text || /[^0-9+\-*/().,Mathsqrt]/.test(text)) return NaN;
+      try {
+        const value = Function(`"use strict"; return (${text});`)();
+        return Number.isFinite(value) ? value : NaN;
+      } catch (error) {
+        return NaN;
       }
-      return depth === 0;
     }
 
-    function splitTopLevelFraction(text) {
-      text = text.replace(/\u200b/g, '').replace(/\s+/g, '');
+    function expectedEqualityValues(problem) {
+      if (problem.type === 3) return Array.from(new Set([0, problem.n, problem.m])).sort((a, b) => a - b);
+      return Array.from(new Set(problem.bounds.map(x => Number(x.toFixed(12))))).sort((a, b) => a - b);
+    }
+
+    function arraysNearlyEqualAsSets(userValues, expectedValues) {
+      const eps = 1e-7;
+      if (userValues.length !== expectedValues.length) return false;
+      const used = new Array(userValues.length).fill(false);
+      return expectedValues.every(expected => {
+        const index = userValues.findIndex((value, i) => !used[i] && Math.abs(value - expected) < eps);
+        if (index === -1) return false;
+        used[index] = true;
+        return true;
+      });
+    }
+
+    function checkEqualityAnswer() {
+      const editors = Array.from(document.querySelectorAll('.math-answer-editor'));
+      const userValues = editors.map(editor => evaluateNumericAnswer(editorToPlainText(editor)));
+      if (userValues.some(value => !Number.isFinite(value))) return false;
+      return arraysNearlyEqualAsSets(userValues, expectedEqualityValues(currentProblem));
+    }
+
+    function splitTopLevelSetExpression(text) {
+      const pieces = [];
+      let current = '';
       let depth = 0;
       for (let i = 0; i < text.length; i++) {
         const ch = text[i];
-        if (ch === '(') depth++;
-        else if (ch === ')') depth--;
-        else if (ch === '/' && depth === 0) return [text.slice(0, i), text.slice(i + 1)];
-      }
-      if (text.startsWith('(') && text.endsWith(')')) {
-        depth = 0;
-        for (let i = 0; i < text.length; i++) {
-          const ch = text[i];
-          if (ch === '(') depth++;
-          else if (ch === ')') depth--;
-          else if (ch === '/' && depth === 0) return [text.slice(0, i), text.slice(i + 1)];
+        if (ch === '(' || ch === '[' || ch === '{') depth++;
+        else if (ch === ')' || ch === ']' || ch === '}') depth = Math.max(0, depth - 1);
+
+        if ((ch === '∪' || ch === '∩') && depth === 0) {
+          pieces.push({ type: 'set', value: current });
+          pieces.push({ type: 'op', value: ch });
+          current = '';
+        } else {
+          current += ch;
         }
       }
-      return [text, '1'];
+      pieces.push({ type: 'set', value: current });
+      return pieces.filter(piece => piece.type === 'op' || piece.value.length > 0);
     }
 
-    function parseUserRational(raw) {
-      const split = splitTopLevelFraction(raw);
-      if (!split) return null;
-      const num = parseUserPolynomial(split[0]);
-      const den = parseUserPolynomial(split[1]);
-      if (!num || !den || combineLikeTerms(den).length === 0) return null;
-      return { numerator: num, denominator: den };
+    function splitIntervalEndpoints(body) {
+      let depth = 0;
+      for (let i = 0; i < body.length; i++) {
+        const ch = body[i];
+        if (ch === '(' || ch === '[' || ch === '{') depth++;
+        else if (ch === ')' || ch === ']' || ch === '}') depth = Math.max(0, depth - 1);
+        else if (ch === ',' && depth === 0) return [body.slice(0, i), body.slice(i + 1)];
+      }
+      return null;
     }
 
-    function rationalEquivalent(user, expectedNum, expectedDen) {
-      const left = multiplyPolynomials(user.numerator, expectedDen);
-      const right = multiplyPolynomials(expectedNum, user.denominator);
-      return polynomialsEqual(left, right);
+    function parseEndpoint(text) {
+      text = normalizeAnswerText(text);
+      if (text === '∞' || text === '+∞') return Infinity;
+      if (text === '-∞') return -Infinity;
+      return evaluateNumericAnswer(text);
     }
 
-    function parseIntegerText(raw) {
-      const text = raw.replace(/\u200b/g, '').replace(/−/g, '-').replace(/\s+/g, '');
-      return /^[-+]?\d+$/.test(text) ? parseInt(text, 10) : NaN;
+    function parseIntervalSet(text) {
+      text = normalizeAnswerText(text);
+      if (!text || text === '∅' || text === '{}') return [];
+      if (!(text[0] === '(' || text[0] === '[') || !(text[text.length - 1] === ')' || text[text.length - 1] === ']')) return null;
+
+      const leftClosed = text[0] === '[';
+      const rightClosed = text[text.length - 1] === ']';
+      const endpoints = splitIntervalEndpoints(text.slice(1, -1));
+      if (!endpoints) return null;
+      const left = parseEndpoint(endpoints[0]);
+      const right = parseEndpoint(endpoints[1]);
+      if (!Number.isFinite(left) && left !== -Infinity) return null;
+      if (!Number.isFinite(right) && right !== Infinity) return null;
+      if (!(left < right)) return [];
+      return [{ left, right, leftClosed, rightClosed }];
+    }
+
+    function pointSetFromSingleValue(value) {
+      return [{ left: value, right: value, leftClosed: true, rightClosed: true }];
+    }
+
+    function parseBasicSet(text) {
+      text = normalizeAnswerText(text);
+      if (!text || text === '∅') return [];
+      if (text[0] === '{' && text[text.length - 1] === '}') {
+        const body = text.slice(1, -1);
+        if (!body) return [];
+        return body.split(',').map(part => {
+          const value = evaluateNumericAnswer(part);
+          return Number.isFinite(value) ? pointSetFromSingleValue(value)[0] : null;
+        }).filter(Boolean);
+      }
+      return parseIntervalSet(text);
+    }
+
+    function intervalContainsPoint(interval, x) {
+      const eps = 1e-9;
+      const leftGood = interval.leftClosed ? x >= interval.left - eps : x > interval.left + eps;
+      const rightGood = interval.rightClosed ? x <= interval.right + eps : x < interval.right - eps;
+      return leftGood && rightGood;
+    }
+
+    function setContainsPoint(intervals, x) {
+      return intervals.some(interval => intervalContainsPoint(interval, x));
+    }
+
+    function intervalIntersection(a, b) {
+      const left = Math.max(a.left, b.left);
+      const right = Math.min(a.right, b.right);
+      let leftClosed;
+      if (a.left > b.left) leftClosed = a.leftClosed;
+      else if (b.left > a.left) leftClosed = b.leftClosed;
+      else leftClosed = a.leftClosed && b.leftClosed;
+      let rightClosed;
+      if (a.right < b.right) rightClosed = a.rightClosed;
+      else if (b.right < a.right) rightClosed = b.rightClosed;
+      else rightClosed = a.rightClosed && b.rightClosed;
+      if (left < right || (Math.abs(left - right) < 1e-10 && leftClosed && rightClosed)) {
+        return { left, right, leftClosed, rightClosed };
+      }
+      return null;
+    }
+
+    function intersectSets(a, b) {
+      const result = [];
+      a.forEach(intervalA => {
+        b.forEach(intervalB => {
+          const intersection = intervalIntersection(intervalA, intervalB);
+          if (intersection) result.push(intersection);
+        });
+      });
+      return result;
+    }
+
+    function parseSetExpression(text) {
+      const pieces = splitTopLevelSetExpression(text);
+      if (!pieces.length || pieces[0].type !== 'set') return null;
+      let result = parseBasicSet(pieces[0].value);
+      if (result === null) return null;
+      for (let i = 1; i < pieces.length; i += 2) {
+        if (!pieces[i] || !pieces[i + 1] || pieces[i].type !== 'op' || pieces[i + 1].type !== 'set') return null;
+        const nextSet = parseBasicSet(pieces[i + 1].value);
+        if (nextSet === null) return null;
+        if (pieces[i].value === '∪') result = result.concat(nextSet);
+        else result = intersectSets(result, nextSet);
+      }
+      return result;
+    }
+
+    function expectedMembership(x) {
+      if (!currentProblem) return false;
+      if (currentProblem.symbol === '=') {
+        return expectedEqualityValues(currentProblem).some(value => Math.abs(value - x) < 1e-7);
+      }
+      if (currentProblem.type === 3) return compare(currentProblem.zeroEvaluator(x), 0, currentProblem.symbol);
+      return compare(currentProblem.evaluator(x), currentProblem.graphY, currentProblem.symbol);
+    }
+
+    function candidateTestPoints(problem) {
+      const points = new Set();
+      function add(x) { if (Number.isFinite(x)) points.add(Number(x.toFixed(8))); }
+      [-20, -10, -5, -2, -1, -0.5, 0, 0.5, 1, 2, 5, 10, 20].forEach(add);
+      const cuts = problem.type === 3 ? Array.from(new Set([0, problem.n, problem.m])).sort((a, b) => a - b) : problem.bounds;
+      cuts.forEach(cut => {
+        add(cut);
+        add(cut - 0.001);
+        add(cut + 0.001);
+        add(cut - 0.25);
+        add(cut + 0.25);
+        add(cut - 1);
+        add(cut + 1);
+      });
+      for (let i = 0; i < cuts.length - 1; i++) add((cuts[i] + cuts[i + 1]) / 2);
+      return Array.from(points).sort((a, b) => a - b);
+    }
+
+    function checkIntervalAnswer() {
+      const editor = document.getElementById('interval-answer-editor');
+      if (!editor) return false;
+      const userSet = parseSetExpression(editorToPlainText(editor));
+      if (userSet === null) return false;
+      return candidateTestPoints(currentProblem).every(x => setContainsPoint(userSet, x) === expectedMembership(x));
     }
 
     function checkUserAnswer() {
       const sound = document.getElementById('click-sound');
-      if (sound) { sound.currentTime = 0; sound.play(); }
-      if (!currentProblem) return;
-      const mainEditor = document.getElementById('answer-editor-main');
-      const userRational = mainEditor ? parseUserRational(editorToPlainText(mainEditor)) : null;
-      let correct = !!userRational && rationalEquivalent(userRational, currentProblem.finalNumerator, currentProblem.finalDenominator);
-      if (correct && currentProblem.type === 2) {
-        const restrictionEditor = document.getElementById('restriction-editor');
-        const restriction = restrictionEditor ? parseIntegerText(editorToPlainText(restrictionEditor)) : NaN;
-        correct = restriction === currentProblem.restrictionValue;
+      if (sound) {
+        sound.currentTime = 0;
+        sound.play();
       }
+
+      if (!currentProblem) return;
+      const correct = currentProblem.symbol === '=' ? checkEqualityAnswer() : checkIntervalAnswer();
       feedbackText.textContent = correct ? 'Correct!' : 'Incorrect, try again.';
       feedbackText.style.color = correct ? 'green' : 'red';
     }
@@ -988,20 +1446,24 @@ fetch("/nav.html")
 
     startBtn.addEventListener('click', () => {
       clearOldActivityState();
+
       const sound = document.getElementById('click-sound');
-      if (sound) { sound.currentTime = 0; sound.play(); }
-      currentProblem = generateFractionProblem();
-      questionText.innerHTML = `Simplify: \\[${currentProblem.questionTex}\\]`;
+      if (sound) {
+        sound.currentTime = 0;
+        sound.play();
+      }
+
+      currentProblem = generateInequalityProblem();
+      questionText.innerHTML = `Solve for \\(x\\): \\[${currentProblem.questionTex}\\]`;
       setupAnswerEditor();
-      hintBtn.disabled = false;
       checkBtn.style.display = 'inline-block';
+      hintBtn.disabled = false;
       typesetElement(questionText);
     });
 
     hintBtn.addEventListener('click', advanceHint);
     checkBtn.addEventListener('click', checkUserAnswer);
   </script>
-
 
   <audio id="click-sound" src="button.mp3" preload="auto"></audio>
   <audio id="set-sound" src="set2.mp3" preload="auto"></audio>

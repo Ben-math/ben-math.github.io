@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -139,6 +140,39 @@
       display: block;
       padding: 0.04em 0.18em 0;
     }
+
+
+    .interval-tool-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.75em;
+      margin: 0.75em 0;
+      flex-wrap: wrap;
+    }
+
+    .interval-tool-button {
+      border: 3px solid #1a1a4b;
+      border-radius: 0.75em;
+      background: #ffde59;
+      padding: 0.35em 0.55em;
+      cursor: pointer;
+      box-shadow: 2px 2px 0 #1a1a4b;
+    }
+
+    .interval-tool-button.selected {
+      background: #ffb347;
+      transform: translateY(2px);
+      box-shadow: 1px 1px 0 #1a1a4b;
+    }
+
+    .interval-tool-button svg {
+      display: block;
+    }
+
+    .interval-clear-button {
+      margin-left: 0.5em;
+    }
   </style>
 </head>
 <body>
@@ -245,6 +279,10 @@ fetch("/nav.html")
 
     let currentProblem = null;
     let mathJaxTypesetPromise = Promise.resolve();
+    let selectedIntervalTool = 'closed';
+    let pendingIntervalStart = null;
+    let placedIntervals = [];
+    let type1Canvas = null;
 
     function typesetElement(element) {
       if (!window.MathJax || !MathJax.typesetPromise) {
@@ -447,6 +485,9 @@ fetch("/nav.html")
       activityDiv.style.display = 'none';
       checkBtn.style.display = 'none';
       hintBtn.disabled = true;
+      pendingIntervalStart = null;
+      placedIntervals = [];
+      type1Canvas = null;
     }
 
     function drawArrow(ctx, fromX, fromY, toX, toY) {
@@ -582,6 +623,332 @@ fetch("/nav.html")
       });
     }
 
+
+    function type1LeftClosedForTool(tool) {
+      if (tool === 'closed') return true;
+      if (tool === 'open') return false;
+      return false; // half-open starts open and ends closed
+    }
+
+    function type1RightClosedForTool(tool) {
+      if (tool === 'closed') return true;
+      if (tool === 'open') return false;
+      return true; // half-open starts open and ends closed
+    }
+
+    function setupIntervalToolButtons() {
+      document.querySelectorAll('.interval-tool-button').forEach(button => {
+        button.classList.toggle('selected', button.dataset.intervalTool === selectedIntervalTool);
+        button.addEventListener('click', () => {
+          selectedIntervalTool = button.dataset.intervalTool;
+          pendingIntervalStart = null;
+          document.querySelectorAll('.interval-tool-button').forEach(other => {
+            other.classList.toggle('selected', other === button);
+          });
+          redrawType1Canvas();
+        });
+      });
+
+      const clearButton = document.getElementById('clear-intervals-btn');
+      if (clearButton) {
+        clearButton.addEventListener('click', () => {
+          pendingIntervalStart = null;
+          placedIntervals = [];
+          feedbackText.textContent = '';
+          redrawType1Canvas();
+        });
+      }
+    }
+
+    function intervalToolButtonHtml(tool, label) {
+      const leftClosed = type1LeftClosedForTool(tool);
+      const rightClosed = type1RightClosedForTool(tool);
+      const leftDot = leftClosed
+        ? '<circle cx="18" cy="20" r="6" fill="#198754" stroke="#198754" stroke-width="3"></circle>'
+        : '<circle cx="18" cy="20" r="6" fill="white" stroke="#198754" stroke-width="3"></circle>';
+      const rightDot = rightClosed
+        ? '<circle cx="82" cy="20" r="6" fill="#198754" stroke="#198754" stroke-width="3"></circle>'
+        : '<circle cx="82" cy="20" r="6" fill="white" stroke="#198754" stroke-width="3"></circle>';
+      return `
+        <button type="button" class="interval-tool-button${tool === selectedIntervalTool ? ' selected' : ''}" data-interval-tool="${tool}" aria-label="${label}">
+          <svg width="100" height="40" viewBox="0 0 100 40" aria-hidden="true">
+            <line x1="18" y1="20" x2="82" y2="20" stroke="#198754" stroke-width="7" stroke-linecap="round"></line>
+            ${leftDot}${rightDot}
+          </svg>
+        </button>`;
+    }
+
+    function showType1Input(problem) {
+      selectedIntervalTool = 'closed';
+      pendingIntervalStart = null;
+      placedIntervals = [];
+      activityDiv.style.display = 'block';
+      activityDiv.style.textAlign = 'center';
+      activityDiv.innerHTML = `
+        <div class="interval-tool-row">
+          ${intervalToolButtonHtml('closed', 'Closed interval')}
+          ${intervalToolButtonHtml('half-open', 'Half-open interval')}
+          ${intervalToolButtonHtml('open', 'Open interval')}
+          <button id="clear-intervals-btn" type="button" class="rubber-button interval-clear-button">Clear</button>
+        </div>
+        <canvas id="type1-interval-number-line" width="900" height="170" style="max-width: 100%; background: white; border: 2px solid #1a1a4b; border-radius: 1em;"></canvas>`;
+      type1Canvas = document.getElementById('type1-interval-number-line');
+      setupIntervalToolButtons();
+      setupType1CanvasEvents();
+      redrawType1Canvas();
+    }
+
+    function type1Geometry(canvas) {
+      const w = canvas.width;
+      const y = 95;
+      const leftPad = 70;
+      const rightPad = 70;
+      const lineStart = leftPad;
+      const lineEnd = w - rightPad;
+      return { w, y, leftPad, rightPad, lineStart, lineEnd };
+    }
+
+    function sxForType1(value) {
+      const g = type1Geometry(type1Canvas);
+      if (value === -Infinity) return 20;
+      if (value === Infinity) return g.w - 20;
+      return g.lineStart + (value + 10) / 20 * (g.lineEnd - g.lineStart);
+    }
+
+    function snapPointerToEndpoint(canvas, event) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const x = (event.clientX - rect.left) * scaleX;
+      const g = type1Geometry(canvas);
+      if (x < g.lineStart - 22) return -Infinity;
+      if (x > g.lineEnd + 22) return Infinity;
+      const raw = -10 + (x - g.lineStart) / (g.lineEnd - g.lineStart) * 20;
+      return Math.max(-10, Math.min(10, Math.round(raw)));
+    }
+
+    function setupType1CanvasEvents() {
+      if (!type1Canvas) return;
+      type1Canvas.addEventListener('mousemove', event => {
+        type1Canvas.hoverEndpoint = snapPointerToEndpoint(type1Canvas, event);
+        redrawType1Canvas();
+      });
+      type1Canvas.addEventListener('mouseleave', () => {
+        type1Canvas.hoverEndpoint = null;
+        redrawType1Canvas();
+      });
+      type1Canvas.addEventListener('click', event => {
+        const endpoint = snapPointerToEndpoint(type1Canvas, event);
+        if (pendingIntervalStart === null) {
+          pendingIntervalStart = endpoint;
+        } else {
+          placeUserInterval(pendingIntervalStart, endpoint);
+          pendingIntervalStart = null;
+          feedbackText.textContent = '';
+        }
+        type1Canvas.hoverEndpoint = endpoint;
+        redrawType1Canvas();
+      });
+    }
+
+    function placeUserInterval(a, b) {
+      if (a === b) return;
+      let left = a < b ? a : b;
+      let right = a < b ? b : a;
+      if (left === Infinity || right === -Infinity) return;
+      const forward = a < b;
+      const startClosed = type1LeftClosedForTool(selectedIntervalTool);
+      const endClosed = type1RightClosedForTool(selectedIntervalTool);
+      let leftClosed = forward ? startClosed : endClosed;
+      let rightClosed = forward ? endClosed : startClosed;
+      if (left === -Infinity) leftClosed = false;
+      if (right === Infinity) rightClosed = false;
+      placedIntervals.push({ left, right, leftClosed, rightClosed });
+      placedIntervals = mergeIntervals(placedIntervals);
+    }
+
+    function intervalsOverlapOrTouchForMerge(a, b) {
+      if (a.right < b.left) return false;
+      if (b.right < a.left) return false;
+      if (a.right === b.left) return a.rightClosed || b.leftClosed;
+      if (b.right === a.left) return b.rightClosed || a.leftClosed;
+      return true;
+    }
+
+    function mergeTwoIntervals(a, b) {
+      const left = Math.min(a.left, b.left);
+      const right = Math.max(a.right, b.right);
+      let leftClosed;
+      if (a.left < b.left) leftClosed = a.leftClosed;
+      else if (b.left < a.left) leftClosed = b.leftClosed;
+      else leftClosed = a.leftClosed || b.leftClosed;
+
+      let rightClosed;
+      if (a.right > b.right) rightClosed = a.rightClosed;
+      else if (b.right > a.right) rightClosed = b.rightClosed;
+      else rightClosed = a.rightClosed || b.rightClosed;
+
+      return {
+        left,
+        right,
+        leftClosed: left === -Infinity ? false : leftClosed,
+        rightClosed: right === Infinity ? false : rightClosed
+      };
+    }
+
+    function mergeIntervals(intervals) {
+      const sorted = intervals.slice().sort((a, b) => a.left - b.left || a.right - b.right);
+      const result = [];
+      sorted.forEach(interval => {
+        if (!result.length) {
+          result.push({ ...interval });
+          return;
+        }
+        const last = result[result.length - 1];
+        if (intervalsOverlapOrTouchForMerge(last, interval)) {
+          result[result.length - 1] = mergeTwoIntervals(last, interval);
+        } else {
+          result.push({ ...interval });
+        }
+      });
+      return result;
+    }
+
+    function drawEmptyIntervalAxis(ctx, canvas) {
+      const { w, y, lineStart, lineEnd } = type1Geometry(canvas);
+      function sx(value) { return lineStart + (value + 10) / 20 * (lineEnd - lineStart); }
+      ctx.strokeStyle = 'black';
+      ctx.fillStyle = 'black';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(sx(-10), y);
+      ctx.lineTo(sx(10), y);
+      ctx.stroke();
+      drawArrow(ctx, sx(-10), y, 20, y);
+      drawArrow(ctx, sx(10), y, w - 20, y);
+
+      ctx.font = '16px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      for (let n = -10; n <= 10; n++) {
+        const x = sx(n);
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x, y - 8);
+        ctx.lineTo(x, y + 8);
+        ctx.stroke();
+        ctx.fillStyle = 'black';
+        ctx.fillText(String(n), x, y + 14);
+      }
+    }
+
+    function drawIntervalSegment(ctx, interval, alpha = 1) {
+      if (!type1Canvas) return;
+      const g = type1Geometry(type1Canvas);
+      const y = g.y;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = '#198754';
+      ctx.fillStyle = '#198754';
+      ctx.lineWidth = 9;
+      if (interval.left === -Infinity && interval.right === Infinity) {
+        drawThickIntervalArrow(ctx, sxForType1(10), y, 20, y);
+        drawThickIntervalArrow(ctx, sxForType1(-10), y, g.w - 20, y);
+      } else if (interval.left === -Infinity) {
+        drawThickIntervalArrow(ctx, sxForType1(interval.right), y, 20, y);
+        drawEndpointDot(ctx, sxForType1(interval.right), y, interval.rightClosed);
+      } else if (interval.right === Infinity) {
+        drawThickIntervalArrow(ctx, sxForType1(interval.left), y, g.w - 20, y);
+        drawEndpointDot(ctx, sxForType1(interval.left), y, interval.leftClosed);
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(sxForType1(interval.left), y);
+        ctx.lineTo(sxForType1(interval.right), y);
+        ctx.stroke();
+        drawEndpointDot(ctx, sxForType1(interval.left), y, interval.leftClosed);
+        drawEndpointDot(ctx, sxForType1(interval.right), y, interval.rightClosed);
+      }
+      ctx.restore();
+    }
+
+    function drawPreviewDot(ctx, endpoint, closed, alpha) {
+      if (!type1Canvas || endpoint === null) return;
+      const g = type1Geometry(type1Canvas);
+      const y = g.y;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      if (endpoint === -Infinity) {
+        drawThickIntervalArrow(ctx, sxForType1(-8.8), y, 20, y);
+      } else if (endpoint === Infinity) {
+        drawThickIntervalArrow(ctx, sxForType1(8.8), y, g.w - 20, y);
+      } else {
+        drawEndpointDot(ctx, sxForType1(endpoint), y, closed);
+      }
+      ctx.restore();
+    }
+
+    function previewIntervalFromPending(hoverEndpoint) {
+      if (pendingIntervalStart === null || hoverEndpoint === null || pendingIntervalStart === hoverEndpoint) return null;
+      const a = pendingIntervalStart;
+      const b = hoverEndpoint;
+      let left = a < b ? a : b;
+      let right = a < b ? b : a;
+      const forward = a < b;
+      const startClosed = type1LeftClosedForTool(selectedIntervalTool);
+      const endClosed = type1RightClosedForTool(selectedIntervalTool);
+      let leftClosed = forward ? startClosed : endClosed;
+      let rightClosed = forward ? endClosed : startClosed;
+      if (left === -Infinity) leftClosed = false;
+      if (right === Infinity) rightClosed = false;
+      return { left, right, leftClosed, rightClosed };
+    }
+
+    function redrawType1Canvas() {
+      if (!type1Canvas) return;
+      const ctx = type1Canvas.getContext('2d');
+      ctx.clearRect(0, 0, type1Canvas.width, type1Canvas.height);
+      ctx.lineCap = 'round';
+      drawEmptyIntervalAxis(ctx, type1Canvas);
+      placedIntervals.forEach(interval => drawIntervalSegment(ctx, interval, 1));
+
+      const hoverEndpoint = type1Canvas.hoverEndpoint;
+      if (pendingIntervalStart !== null) {
+        drawPreviewDot(ctx, pendingIntervalStart, type1LeftClosedForTool(selectedIntervalTool), 1);
+        const preview = previewIntervalFromPending(hoverEndpoint);
+        if (preview) drawIntervalSegment(ctx, preview, 0.45);
+      } else if (hoverEndpoint !== null && hoverEndpoint !== undefined) {
+        drawPreviewDot(ctx, hoverEndpoint, type1LeftClosedForTool(selectedIntervalTool), 0.45);
+      }
+    }
+
+    function intervalsExactlyMatch(a, b) {
+      if (a.length !== b.length) return false;
+      const normalizedA = mergeIntervals(a).sort((u, v) => u.left - v.left || u.right - v.right);
+      const normalizedB = mergeIntervals(b).sort((u, v) => u.left - v.left || u.right - v.right);
+      if (normalizedA.length !== normalizedB.length) return false;
+      return normalizedA.every((interval, index) => {
+        const expected = normalizedB[index];
+        return interval.left === expected.left &&
+               interval.right === expected.right &&
+               interval.leftClosed === expected.leftClosed &&
+               interval.rightClosed === expected.rightClosed;
+      });
+    }
+
+    function checkType1Answer() {
+      if (!currentProblem || currentProblem.type !== 1) return false;
+      return intervalsExactlyMatch(placedIntervals, currentProblem.intervals);
+    }
+
+    function checkCurrentAnswer() {
+      if (!currentProblem) return;
+      if (currentProblem.type === 1) {
+        const correct = checkType1Answer();
+        feedbackText.textContent = correct ? 'Correct!' : 'Incorrect, try again.';
+        feedbackText.style.color = correct ? 'green' : 'red';
+      }
+    }
+
     function showType2Graph(problem) {
       activityDiv.style.display = 'block';
       activityDiv.style.textAlign = 'center';
@@ -607,12 +974,18 @@ fetch("/nav.html")
 
       currentProblem = generateIntervalProblem();
       questionText.innerHTML = currentProblem.statementHtml;
-      if (currentProblem.type === 2) showType2Graph(currentProblem);
+      if (currentProblem.type === 1) {
+        showType1Input(currentProblem);
+        checkBtn.style.display = 'inline-block';
+      } else if (currentProblem.type === 2) {
+        showType2Graph(currentProblem);
+      }
       hintBtn.disabled = false;
       typesetElement(questionText);
     });
 
     hintBtn.addEventListener('click', showHint);
+    checkBtn.addEventListener('click', checkCurrentAnswer);
 
   </script>
 

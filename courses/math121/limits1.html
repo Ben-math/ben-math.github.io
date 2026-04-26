@@ -169,7 +169,13 @@ fetch("/nav.html")
   </header>
 
   <main>
-    <p>Placeholder text</p>
+    <p>Evaluating a limit \[\lim_{x \to n}f(x)\] generally boils down to getting \(f(x)\) into a form where \(n\) is in its domain, and then doing 
+    direct substitution.  Here we will consider a few common maneuvers we can make to accomplish this: factoring, rationalizing, and combining 
+    fractions.</p>
+
+    <p>First we consider a simple problem which can be solved by factoring and cancelling: \[\lim_{x \to -3}\frac{x^2-2x-15}{x+3}\] 
+    Unfortunately \(-3\) is not in the domain right now: but we can factor the numerator and try cancelling: \[=\lim_{x \to -3} 
+    \frac{(x+3)(x-5)}{x+3} = \lim_{x \to -3}(x-5)\] Now that \(-3\) is in the domain, we can do direct substitution: \[= -3-5 = -8\]</p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

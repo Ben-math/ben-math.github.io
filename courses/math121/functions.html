@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -386,7 +387,7 @@ const hintBtn = document.getElementById('hint-btn');
       };
     }
     function makeTrigFunction() {
-      const trig = randomChoice(['\\sin', '\\cos', '\\tan']);
+      const trig = randomChoice(['\\sin', '\\cos']);
       const k = randomNonzeroInteger(-8, 8);
       const absK = Math.abs(k);
       return {
@@ -430,7 +431,7 @@ const hintBtn = document.getElementById('hint-btn');
       ys.sort((a, b) => a - b);
       const low = ys[Math.floor(ys.length * 0.01)];
       const high = ys[Math.ceil(ys.length * 0.99) - 1];
-      return `\\text{approximately }[${numberTex(Number(low.toFixed(3)))}, ${numberTex(Number(high.toFixed(3)))}]`;
+      return `\\approx [${numberTex(Number(low.toFixed(3)))}, ${numberTex(Number(high.toFixed(3)))}]`;
     }
     function domainHintForComposition(outer, inner) {
       if (outer.kind === 'quadratic') return `\\operatorname{Dom}(g)=${inner.domainTex}`;
@@ -453,7 +454,7 @@ const hintBtn = document.getElementById('hint-btn');
       const innerName = order === 'fg' ? 'g' : 'f';
       return {
         type: 1,
-        questionTex: `f(x)=${f.applyTex('x')}\\qquad g(x)=${g.applyTex('x')}\\\\[0.4em]\\text{Find }${target}.`,
+        questionTex: `f(x)=${f.applyTex('x')}\\qquad g(x)=${g.applyTex('x')}\\\\[1.2em]\\text{Find }${target}.`,
         hints: [
           `= ${outerName}\\left(${innerName}(x)\\right)`,
           `= ${outerName}\\left(${inner.applyTex('x')}\\right)`,
@@ -465,10 +466,10 @@ const hintBtn = document.getElementById('hint-btn');
       const [f, g] = chooseTwoFunctions();
       return {
         type: 2,
-        questionTex: `h(x)=${composeTex(f, g)}\\\\[0.4em]h(x)=(f\\circ g)(x).\\ \\text{Find }f(x),\\ g(x),\\ \\operatorname{Dom}(h),\\ \\operatorname{Range}(h).`,
+        questionTex: `h(x)=${composeTex(f, g)}\\\\[1.2em]h(x)=(f\\circ g)(x).\\\\[1.2em]\\text{Find }f(x),\\ g(x),\\ \\operatorname{Dom}(h),\\ \\operatorname{Range}(h).`,
         hints: [
           `f(x)=${f.applyTex('x')}\\qquad g(x)=${g.applyTex('x')}`,
-          `\\operatorname{Range}(g)=${g.rangeTex}`,
+          `\\operatorname{Dom}(g)=${g.domainTex}`,
           `\\operatorname{Dom}(h)=${domainHintForComposition(f, g)}`,
           `\\operatorname{Range}(h)=${rangeHintForComposition(f, g)}`
         ]

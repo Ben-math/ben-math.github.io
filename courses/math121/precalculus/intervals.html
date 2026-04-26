@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1111,7 +1112,10 @@ fetch("/nav.html")
     }
 
     function splitTopLevelByOperators(text) {
-      const normalized = normalizeType2AnswerText(text).replace(/\s+/g, '').trim();
+      const normalized = normalizeType2AnswerText(text)
+        .replace(/\text\s*\{\s*or\s*\}/gi, 'or')
+        .replace(/\text\s*\{\s*and\s*\}/gi, 'and')
+        .trim();
       const pieces = [];
       let current = '';
       let depth = 0;
@@ -1122,16 +1126,19 @@ fetch("/nav.html")
         else if (ch === ')' || ch === ']') depth = Math.max(0, depth - 1);
 
         const rest = normalized.slice(i).toLowerCase();
+        const atWordOr = rest.startsWith('or') && !/[a-z]/i.test(normalized[i - 1] || '') && !/[a-z]/i.test(normalized[i + 2] || '');
+        const atWordAnd = rest.startsWith('and') && !/[a-z]/i.test(normalized[i - 1] || '') && !/[a-z]/i.test(normalized[i + 3] || '');
+
         if (depth === 0 && (ch === '∪' || ch === '∩')) {
           pieces.push({ type: 'set', value: current.trim() });
           pieces.push({ type: 'op', value: ch === '∪' ? 'or' : 'and' });
           current = '';
-        } else if (depth === 0 && rest.startsWith('or')) {
+        } else if (depth === 0 && atWordOr) {
           pieces.push({ type: 'set', value: current.trim() });
           pieces.push({ type: 'op', value: 'or' });
           current = '';
           i += 1;
-        } else if (depth === 0 && rest.startsWith('and')) {
+        } else if (depth === 0 && atWordAnd) {
           pieces.push({ type: 'set', value: current.trim() });
           pieces.push({ type: 'op', value: 'and' });
           current = '';
@@ -1175,48 +1182,59 @@ fetch("/nav.html")
       const t = normalizeType2AnswerText(text)
         .replace(/\s+/g, '')
         .replace(/≤/g, '<=')
-        .replace(/≥/g, '>=');
+        .replace(/≥/g, '>=')
+        .toLowerCase();
       if (!t || !t.includes('x')) return null;
 
-      const token = '(-?∞|-?\d+|x)';
-      const op = '(<=|>=|<|>)';
-      const single = new RegExp(`^${token}${op}${token}$`).exec(t);
+      const tokenPattern = /x|-?∞|-?\d+|<=|>=|<|>/g;
+      const tokens = t.match(tokenPattern);
+      if (!tokens || tokens.join('') !== t || tokens.length < 3 || tokens.length % 2 === 0) return null;
+
+      function isComparison(op) {
+        return op === '<' || op === '<=' || op === '>' || op === '>=';
+      }
+
+      for (let i = 1; i < tokens.length; i += 2) {
+        if (!isComparison(tokens[i])) return null;
+      }
+      for (let i = 0; i < tokens.length; i += 2) {
+        if (!/^x$|-?∞|-?\d+$/.test(tokens[i])) return null;
+      }
 
       function relationToInterval(leftExpr, operator, rightExpr) {
         const leftIsX = leftExpr === 'x';
         const rightIsX = rightExpr === 'x';
         if (leftIsX === rightIsX) return null;
-        const value = parseType2Endpoint(leftIsX ? rightExpr : leftExpr);
-        if (Number.isNaN(value)) return null;
 
         if (leftIsX) {
+          const value = parseType2Endpoint(rightExpr);
+          if (Number.isNaN(value)) return null;
           if (operator === '<' || operator === '<=') {
-            if (value === Infinity) return null; // x < infinity is not a meaningful finite interval here
+            if (value === Infinity) return [{ left: -Infinity, right: Infinity, leftClosed: false, rightClosed: false }];
             return [{ left: -Infinity, right: value, leftClosed: false, rightClosed: operator === '<=' }];
           }
-          if (value === -Infinity) return null; // x > -infinity is not a meaningful finite interval here
+          if (value === -Infinity) return [{ left: -Infinity, right: Infinity, leftClosed: false, rightClosed: false }];
           return [{ left: value, right: Infinity, leftClosed: operator === '>=', rightClosed: false }];
         }
 
+        const value = parseType2Endpoint(leftExpr);
+        if (Number.isNaN(value)) return null;
         if (operator === '<' || operator === '<=') {
-          if (value === -Infinity) return null; // -infinity < x is whole-line noise
+          if (value === -Infinity) return [{ left: -Infinity, right: Infinity, leftClosed: false, rightClosed: false }];
           return [{ left: value, right: Infinity, leftClosed: operator === '<=', rightClosed: false }];
         }
-        if (value === Infinity) return null; // infinity > x is whole-line noise
+        if (value === Infinity) return [{ left: -Infinity, right: Infinity, leftClosed: false, rightClosed: false }];
         return [{ left: -Infinity, right: value, leftClosed: false, rightClosed: operator === '>=' }];
       }
 
-      if (single) return relationToInterval(single[1], single[2], single[3]);
-
-      const chained = new RegExp(`^${token}${op}x${op}${token}$`).exec(t);
-      if (chained) {
-        const leftRelation = relationToInterval(chained[1], chained[2], 'x');
-        const rightRelation = relationToInterval('x', chained[3], chained[4]);
-        if (!leftRelation || !rightRelation) return null;
-        return intersectIntervalSets(leftRelation, rightRelation);
+      let result = [{ left: -Infinity, right: Infinity, leftClosed: false, rightClosed: false }];
+      for (let i = 0; i < tokens.length - 2; i += 2) {
+        const relation = relationToInterval(tokens[i], tokens[i + 1], tokens[i + 2]);
+        if (!relation) return null;
+        result = intersectIntervalSets(result, relation);
+        if (!result.length) return [];
       }
-
-      return null;
+      return mergeIntervals(result).filter(interval => !(interval.left === -Infinity && interval.right === Infinity));
     }
 
     function parseType2BasicSet(text) {
@@ -1282,7 +1300,7 @@ fetch("/nav.html")
 
     function showHint() {
       if (!currentProblem) return;
-      hintArea.innerHTML = `<p style="text-align: center;"><strong>Stored answer for testing:</strong> \\[${currentProblem.solutionTex}\\]</p>`;
+      hintArea.innerHTML = `<p style="text-align: center;">\\[${currentProblem.solutionTex}\\]</p>`;
       typesetElement(hintArea);
     }
 

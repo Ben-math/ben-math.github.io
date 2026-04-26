@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -138,6 +139,21 @@
     .fraction-button-display .fraction-button-bottom {
       display: block;
       padding: 0.04em 0.18em 0;
+    }
+
+    .generated-question-block {
+      text-align: center;
+      line-height: 1.7;
+      margin-top: 0.8em;
+      margin-bottom: 0.8em;
+    }
+
+    .generated-question-block .question-row {
+      margin: 0.85em 0;
+    }
+
+    .generated-question-block .function-row {
+      margin-bottom: 1.1em;
     }
   </style>
 </head>
@@ -454,7 +470,12 @@ const hintBtn = document.getElementById('hint-btn');
       const innerName = order === 'fg' ? 'g' : 'f';
       return {
         type: 1,
-        questionTex: `f(x)=${f.applyTex('x')}\\qquad g(x)=${g.applyTex('x')}\\\\[1.2em]\\text{Find }${target}.`,
+        questionHtml: `
+          <div class="generated-question-block">
+            <div class="question-row function-row">\\(f(x)=${f.applyTex('x')}\\qquad g(x)=${g.applyTex('x')}\\)</div>
+            <div class="question-row">\\(\\text{Find }${target}.\\)</div>
+          </div>
+        `,
         hints: [
           `= ${outerName}\\left(${innerName}(x)\\right)`,
           `= ${outerName}\\left(${inner.applyTex('x')}\\right)`,
@@ -466,7 +487,13 @@ const hintBtn = document.getElementById('hint-btn');
       const [f, g] = chooseTwoFunctions();
       return {
         type: 2,
-        questionTex: `h(x)=${composeTex(f, g)}\\\\[1.2em]h(x)=(f\\circ g)(x).\\\\[1.2em]\\text{Find }f(x),\\ g(x),\\ \\operatorname{Dom}(h),\\ \\operatorname{Range}(h).`,
+        questionHtml: `
+          <div class="generated-question-block">
+            <div class="question-row">\\(h(x)=${composeTex(f, g)}\\)</div>
+            <div class="question-row">\\(h(x)=(f\\circ g)(x).\\)</div>
+            <div class="question-row">\\(\\text{Find }f(x),\\ g(x),\\ \\operatorname{Dom}(h),\\ \\operatorname{Range}(h).\\)</div>
+          </div>
+        `,
         hints: [
           `f(x)=${f.applyTex('x')}\\qquad g(x)=${g.applyTex('x')}`,
           `\\operatorname{Dom}(g)=${g.domainTex}`,
@@ -521,7 +548,7 @@ const hintBtn = document.getElementById('hint-btn');
       const sound = document.getElementById('click-sound');
       if (sound) { sound.currentTime = 0; sound.play(); }
       currentProblem = generateFunctionProblem();
-      questionText.innerHTML = `\\[${currentProblem.questionTex}\\]`;
+      questionText.innerHTML = currentProblem.questionHtml || `\\[${currentProblem.questionTex}\\]`;
       setupAnswerEditor();
       checkBtn.style.display = 'none';
       hintBtn.disabled = false;

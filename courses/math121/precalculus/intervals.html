@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -463,6 +464,39 @@ fetch("/nav.html")
       ctx.fill();
     }
 
+    function drawThickIntervalArrow(ctx, fromX, fromY, toX, toY) {
+      const headLength = 22;
+      const headWidth = 24;
+      const angle = Math.atan2(toY - fromY, toX - fromX);
+      const shaftEndX = toX - headLength * Math.cos(angle);
+      const shaftEndY = toY - headLength * Math.sin(angle);
+
+      ctx.save();
+      ctx.strokeStyle = '#198754';
+      ctx.fillStyle = '#198754';
+      ctx.lineWidth = 9;
+      ctx.lineCap = 'round';
+
+      ctx.beginPath();
+      ctx.moveTo(fromX, fromY);
+      ctx.lineTo(shaftEndX, shaftEndY);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(toX, toY);
+      ctx.lineTo(
+        shaftEndX + (headWidth / 2) * Math.sin(angle),
+        shaftEndY - (headWidth / 2) * Math.cos(angle)
+      );
+      ctx.lineTo(
+        shaftEndX - (headWidth / 2) * Math.sin(angle),
+        shaftEndY + (headWidth / 2) * Math.cos(angle)
+      );
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
     function drawEndpointDot(ctx, x, y, closed) {
       ctx.beginPath();
       ctx.arc(x, y, 7, 0, 2 * Math.PI);
@@ -529,25 +563,13 @@ fetch("/nav.html")
         ctx.lineWidth = 9;
 
         if (interval.left === -Infinity && interval.right === Infinity) {
-          ctx.beginPath();
-          ctx.moveTo(startX, y);
-          ctx.lineTo(endX, y);
-          ctx.stroke();
-          drawArrow(ctx, sx(-10), y, 20, y);
-          drawArrow(ctx, sx(10), y, w - 20, y);
+          drawThickIntervalArrow(ctx, sx(10), y, 20, y);
+          drawThickIntervalArrow(ctx, sx(-10), y, w - 20, y);
         } else if (interval.left === -Infinity) {
-          ctx.beginPath();
-          ctx.moveTo(sx(interval.right), y);
-          ctx.lineTo(sx(-10), y);
-          ctx.stroke();
-          drawArrow(ctx, sx(-10), y, 20, y);
+          drawThickIntervalArrow(ctx, sx(interval.right), y, 20, y);
           drawEndpointDot(ctx, sx(interval.right), y, interval.rightClosed);
         } else if (interval.right === Infinity) {
-          ctx.beginPath();
-          ctx.moveTo(sx(interval.left), y);
-          ctx.lineTo(sx(10), y);
-          ctx.stroke();
-          drawArrow(ctx, sx(10), y, w - 20, y);
+          drawThickIntervalArrow(ctx, sx(interval.left), y, w - 20, y);
           drawEndpointDot(ctx, sx(interval.left), y, interval.leftClosed);
         } else {
           ctx.beginPath();

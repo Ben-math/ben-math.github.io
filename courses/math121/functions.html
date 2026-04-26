@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -143,29 +144,291 @@
     <h1>Functions Activity</h1>
     <div id="nav-placeholder"></div>
     <script>
-fetch("/nav.html")
-  .then(response => response.text())
-  .then(html => {
-    document.getElementById("nav-placeholder").innerHTML = html;
+    const hintBtn = document.getElementById('hint-btn');
+    const hintArea = document.getElementById('hint-area');
+    const startBtn = document.getElementById('start-btn');
+    const questionText = document.getElementById('question-text');
+    const checkBtn = document.getElementById('check-btn');
+    const feedbackText = document.getElementById('feedbackText');
 
-    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
-    const navLinks = document.querySelectorAll("#nav-placeholder a");
-    navLinks.forEach(link => {
-      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
-      if (linkPath === currentPath) {
-        link.classList.add("active");
+    let currentProblem = null;
+    let hintStep = 0;
+    let mathJaxTypesetPromise = Promise.resolve();
+    let hintIsTypesetting = false;
+
+    function typesetElement(element) {
+      if (!window.MathJax || !MathJax.typesetPromise) {
+        if (window.MathJax && MathJax.typeset) MathJax.typeset([element]);
+        return Promise.resolve();
       }
-    });
+      mathJaxTypesetPromise = mathJaxTypesetPromise
+        .then(() => MathJax.typesetPromise([element]))
+        .catch(error => console.error('MathJax typesetting failed:', error));
+      return mathJaxTypesetPromise;
+    }
 
-    const s = document.createElement("script");
-    s.src = "/mascot.js";
-    s.defer = true;
-    document.body.appendChild(s);
-  })
-  .catch(err => {
-    console.error("Failed to load nav:", err);
-  });
-    </script>
+    function randomInteger(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+    function randomNonzeroInteger(min, max) { let n; do { n = randomInteger(min, max); } while (n === 0); return n; }
+    function randomChoice(items) { return items[randomInteger(0, items.length - 1)]; }
+    function shuffle(items) {
+      const arr = items.slice();
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = randomInteger(0, i);
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+    function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b !== 0) { const t = b; b = a % b; a = t; } return a || 1; }
+    function fracTex(num, den) {
+      if (den < 0) { num = -num; den = -den; }
+      const g = gcd(num, den); num /= g; den /= g;
+      return den === 1 ? `${num}` : `\\frac{${num}}{${den}}`;
+    }
+    function numberTex(n) {
+      if (Object.is(n, -0)) n = 0;
+      if (Number.isInteger(n)) return `${n}`;
+      const sign = n < 0 ? -1 : 1;
+      const abs = Math.abs(n);
+      let bestN = 0, bestD = 1, bestErr = Infinity;
+      for (let d = 1; d <= 1000; d++) {
+        const numerator = Math.round(abs * d);
+        const err = Math.abs(abs - numerator / d);
+        if (err < bestErr) { bestErr = err; bestN = numerator; bestD = d; }
+      }
+      return fracTex(sign * bestN, bestD);
+    }
+    function polynomialTex(terms) {
+      const clean = terms.filter(t => t.coef !== 0);
+      if (!clean.length) return '0';
+      return clean.map((t, i) => {
+        const abs = Math.abs(t.coef);
+        const body = t.tex ? (abs === 1 ? t.tex : `${abs}${t.tex}`) : `${abs}`;
+        if (i === 0) return t.coef < 0 ? `- ${body}` : body;
+        return t.coef < 0 ? `- ${body}` : `+ ${body}`;
+      }).join(' ');
+    }
+    function wrapIfNeeded(tex) {
+      if (/^[a-zA-Z]$/.test(tex) || /^-?\\d+$/.test(tex)) return tex;
+      return `\\left(${tex}\\right)`;
+    }
+    function linearFactorTex(root) {
+      if (root === 0) return 'x';
+      return `\\left(x ${root < 0 ? '+' : '-'} ${Math.abs(root)}\\right)`;
+    }
+    function linearFactorInTex(inputTex, root) {
+      const x = wrapIfNeeded(inputTex);
+      if (root === 0) return x;
+      return `\\left(${x} ${root < 0 ? '+' : '-'} ${Math.abs(root)}\\right)`;
+    }
+    function realExceptTex(values) {
+      const unique = Array.from(new Set(values)).sort((a, b) => a - b);
+      if (!unique.length) return '\\mathbb{R}';
+      return `\\mathbb{R}\\setminus\\left\\{${unique.map(numberTex).join(', ')}\\right\\}`;
+    }
+    function randomRationalFactors() {
+      const degree = Math.random() < 0.5 ? 1 : 2;
+      const roots = [];
+      while (roots.length < degree) {
+        const root = randomInteger(-8, 8);
+        if (!roots.includes(root)) roots.push(root);
+      }
+      return roots;
+    }
+    function productFactorsTex(roots, inputTex = 'x') {
+      return roots.map(r => inputTex === 'x' ? linearFactorTex(r) : linearFactorInTex(inputTex, r)).join('');
+    }
+    function productFactorsValue(roots, x) { return roots.reduce((prod, r) => prod * (x - r), 1); }
+
+    function makeQuadraticFunction() {
+      const a = randomNonzeroInteger(-8, 8);
+      const b = randomNonzeroInteger(-8, 8);
+      const c = randomNonzeroInteger(-8, 8);
+      const vertexYTex = fracTex(4 * a * c - b * b, 4 * a);
+      return {
+        kind: 'quadratic',
+        applyTex(input) {
+          const u = wrapIfNeeded(input);
+          return polynomialTex([{ coef: a, tex: `${u}^{2}` }, { coef: b, tex: u }, { coef: c, tex: '' }]);
+        },
+        evaluate(x) { return a * x * x + b * x + c; },
+        domainTex: '\\mathbb{R}',
+        rangeTex: a > 0 ? `[${vertexYTex}, \\infty)` : `(-\\infty, ${vertexYTex}]`,
+        params: { a, b, c }
+      };
+    }
+    function makeRationalFunction() {
+      const numeratorRoots = randomRationalFactors();
+      let denominatorRoots;
+      do { denominatorRoots = randomRationalFactors(); }
+      while (denominatorRoots.length === numeratorRoots.length && denominatorRoots.every((r, i) => r === numeratorRoots[i]));
+      return {
+        kind: 'rational',
+        applyTex(input) { return `\\frac{${productFactorsTex(numeratorRoots, input)}}{${productFactorsTex(denominatorRoots, input)}}`; },
+        evaluate(x) { const den = productFactorsValue(denominatorRoots, x); if (Math.abs(den) < 1e-9) return NaN; return productFactorsValue(numeratorRoots, x) / den; },
+        domainTex: realExceptTex(denominatorRoots),
+        rangeTex: '\\text{depends on the rational expression; inspect asymptotes/holes}',
+        params: { numeratorRoots, denominatorRoots }
+      };
+    }
+    function makeRootFunction() {
+      const d = randomNonzeroInteger(-8, 8);
+      const p = randomInteger(-8, 8);
+      const cutoff = fracTex(p, d);
+      return {
+        kind: 'root',
+        applyTex(input) {
+          const u = wrapIfNeeded(input);
+          return `\\sqrt{${polynomialTex([{ coef: d, tex: u }, { coef: -p, tex: '' }])}}`;
+        },
+        evaluate(x) { const inside = d * x - p; return inside >= -1e-9 ? Math.sqrt(Math.max(0, inside)) : NaN; },
+        domainTex: d > 0 ? `[${cutoff}, \\infty)` : `(-\\infty, ${cutoff}]`,
+        rangeTex: '[0, \\infty)',
+        params: { d, p }
+      };
+    }
+    function makeTrigFunction() {
+      const trig = randomChoice(['\\sin', '\\cos', '\\tan']);
+      const k = randomNonzeroInteger(-8, 8);
+      const absK = Math.abs(k);
+      return {
+        kind: 'trigonometric',
+        applyTex(input) {
+          const u = wrapIfNeeded(input);
+          const trigPart = `${trig}\\left(${u}\\right)`;
+          if (k === 1) return trigPart;
+          if (k === -1) return `-${trigPart}`;
+          return `${k}${trigPart}`;
+        },
+        evaluate(x) {
+          if (trig === '\\sin') return k * Math.sin(x);
+          if (trig === '\\cos') return k * Math.cos(x);
+          if (Math.abs(Math.cos(x)) < 1e-7) return NaN;
+          return k * Math.tan(x);
+        },
+        domainTex: trig === '\\tan' ? `\\mathbb{R}\\setminus\\left\\{\\frac{\\pi}{2}+k\\pi:k\\in\\mathbb{Z}\\right\\}` : '\\mathbb{R}',
+        rangeTex: trig === '\\tan' ? '\\mathbb{R}' : `[${-absK}, ${absK}]`,
+        params: { trig, k }
+      };
+    }
+    function makeFunctionOfKind(kind) {
+      if (kind === 'quadratic') return makeQuadraticFunction();
+      if (kind === 'rational') return makeRationalFunction();
+      if (kind === 'root') return makeRootFunction();
+      return makeTrigFunction();
+    }
+    function chooseTwoFunctions() {
+      return shuffle(['quadratic', 'rational', 'root', 'trigonometric']).slice(0, 2).map(makeFunctionOfKind);
+    }
+    function composeTex(outer, inner) { return outer.applyTex(inner.applyTex('x')); }
+    function numericRangeOfFunction(fn, minX = -20, maxX = 20, samples = 5000) {
+      const ys = [];
+      for (let i = 0; i <= samples; i++) {
+        const x = minX + (maxX - minX) * i / samples;
+        const y = fn(x);
+        if (Number.isFinite(y) && Math.abs(y) < 1e6) ys.push(y);
+      }
+      if (!ys.length) return '\\varnothing';
+      ys.sort((a, b) => a - b);
+      const low = ys[Math.floor(ys.length * 0.01)];
+      const high = ys[Math.ceil(ys.length * 0.99) - 1];
+      return `\\text{approximately }[${numberTex(Number(low.toFixed(3)))}, ${numberTex(Number(high.toFixed(3)))}]`;
+    }
+    function domainHintForComposition(outer, inner) {
+      if (outer.kind === 'quadratic') return `\\operatorname{Dom}(g)=${inner.domainTex}`;
+      if (outer.kind === 'trigonometric' && outer.params.trig !== '\\tan') return `\\operatorname{Dom}(g)=${inner.domainTex}`;
+      if (outer.kind === 'root') return `\\left\\{x\\in\\operatorname{Dom}(g): ${outer.params.d}g(x) ${outer.params.p >= 0 ? '-' : '+'} ${Math.abs(outer.params.p)}\\geq 0\\right\\}`;
+      if (outer.kind === 'rational') return `\\left\\{x\\in\\operatorname{Dom}(g): g(x)\\text{ does not make the denominator of }f\\text{ equal }0\\right\\}`;
+      return `\\left\\{x\\in\\operatorname{Dom}(g): g(x)\\neq \\frac{\\pi}{2}+k\\pi,\\ k\\in\\mathbb{Z}\\right\\}`;
+    }
+    function rangeHintForComposition(outer, inner) {
+      if (outer.kind === 'trigonometric' && outer.params.trig !== '\\tan') return outer.rangeTex;
+      return numericRangeOfFunction(x => outer.evaluate(inner.evaluate(x)));
+    }
+    function generateType1Problem() {
+      const [f, g] = chooseTwoFunctions();
+      const order = Math.random() < 0.5 ? 'fg' : 'gf';
+      const outer = order === 'fg' ? f : g;
+      const inner = order === 'fg' ? g : f;
+      const target = order === 'fg' ? '(f\\circ g)(x)' : '(g\\circ f)(x)';
+      const outerName = order === 'fg' ? 'f' : 'g';
+      const innerName = order === 'fg' ? 'g' : 'f';
+      return {
+        type: 1,
+        questionTex: `f(x)=${f.applyTex('x')}\\qquad g(x)=${g.applyTex('x')}\\\\[0.4em]\\text{Find }${target}.`,
+        hints: [
+          `= ${outerName}\\left(${innerName}(x)\\right)`,
+          `= ${outerName}\\left(${inner.applyTex('x')}\\right)`,
+          `= ${outer.applyTex(inner.applyTex('x'))}`
+        ]
+      };
+    }
+    function generateType2Problem() {
+      const [f, g] = chooseTwoFunctions();
+      return {
+        type: 2,
+        questionTex: `h(x)=${composeTex(f, g)}\\\\[0.4em]h(x)=(f\\circ g)(x).\\ \\text{Find }f(x),\\ g(x),\\ \\operatorname{Dom}(h),\\ \\operatorname{Range}(h).`,
+        hints: [
+          `f(x)=${f.applyTex('x')}\\qquad g(x)=${g.applyTex('x')}`,
+          `\\operatorname{Range}(g)=${g.rangeTex}`,
+          `\\operatorname{Dom}(h)=${domainHintForComposition(f, g)}`,
+          `\\operatorname{Range}(h)=${rangeHintForComposition(f, g)}`
+        ]
+      };
+    }
+    function generateFunctionProblem() { return Math.random() < 0.5 ? generateType1Problem() : generateType2Problem(); }
+    function createHintStepBlock(extraClass = '') {
+      const block = document.createElement('div');
+      block.className = `hint-step-block ${extraClass}`.trim();
+      block.style.textAlign = 'center';
+      block.style.margin = '0.5em auto';
+      block.style.padding = '0';
+      block.style.maxWidth = '100%';
+      block.style.overflowX = 'auto';
+      hintArea.appendChild(block);
+      return block;
+    }
+    function appendMathHint(tex) {
+      const block = createHintStepBlock();
+      block.innerHTML = `\\[${tex}\\]`;
+      return typesetElement(block);
+    }
+    async function advanceHint() {
+      if (!currentProblem || hintIsTypesetting) return;
+      const sound = document.getElementById('click-sound');
+      if (sound) { sound.currentTime = 0; sound.play(); }
+      hintIsTypesetting = true;
+      hintBtn.disabled = true;
+      if (hintStep < currentProblem.hints.length) await appendMathHint(currentProblem.hints[hintStep]);
+      hintStep++;
+      hintIsTypesetting = false;
+      hintBtn.disabled = hintStep >= currentProblem.hints.length;
+    }
+    function setupAnswerEditor() {
+      const finalAnswerDiv = document.getElementById('final-answer-input');
+      finalAnswerDiv.innerHTML = '<p style="font-style: italic;">Answer input will be added after the problem generator and hints are finalized.</p>';
+    }
+    function clearOldActivityState() {
+      feedbackText.textContent = '';
+      document.getElementById('final-answer-input').innerHTML = '';
+      hintArea.innerHTML = '';
+      hintStep = 0;
+      hintBtn.disabled = true;
+      checkBtn.style.display = 'none';
+      hintIsTypesetting = false;
+    }
+    startBtn.addEventListener('click', () => {
+      clearOldActivityState();
+      const sound = document.getElementById('click-sound');
+      if (sound) { sound.currentTime = 0; sound.play(); }
+      currentProblem = generateFunctionProblem();
+      questionText.innerHTML = `\\[${currentProblem.questionTex}\\]`;
+      setupAnswerEditor();
+      checkBtn.style.display = 'none';
+      hintBtn.disabled = false;
+      typesetElement(questionText);
+    });
+    hintBtn.addEventListener('click', advanceHint);
+  </script>
   </header>
 
   <main>

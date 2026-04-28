@@ -1,0 +1,839 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta charset="UTF-8" />
+  <title>Limits II</title>
+  <link rel="stylesheet" href="/style.css" />
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+
+  <style>
+    .polynomial-answer-editor {
+      display: inline-block;
+      min-width: 260px;
+      min-height: 1.8em;
+      padding: 0.35em 0.55em;
+      border: 2px solid #555;
+      border-radius: 8px;
+      background: white;
+      font-size: 1.25em;
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    .polynomial-answer-editor:focus {
+      outline: 3px solid rgba(80, 140, 255, 0.35);
+    }
+
+    .exponent-entry {
+      font-size: 0.7em;
+      vertical-align: super;
+      display: inline-block;
+      min-width: 0.7em;
+      min-height: 1em;
+      padding: 0 0.08em;
+      border-bottom: 1px solid #777;
+      line-height: 1;
+    }
+
+
+    .answer-toolbar {
+      margin-top: 0.65em;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4em;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .math-symbol-button {
+      border: 2px solid #555;
+      border-radius: 8px;
+      background: white;
+      padding: 0.25em 0.6em;
+      font-size: 1.05em;
+      cursor: pointer;
+    }
+
+    .math-symbol-button:hover {
+      background: #f2f2f2;
+    }
+
+    .interval-answer-editor {
+      min-width: 420px;
+    }
+
+    .math-radical {
+      display: inline-flex;
+      align-items: flex-start;
+      vertical-align: middle;
+      margin: 0 0.08em;
+    }
+
+    .radical-symbol {
+      font-size: 1.25em;
+      line-height: 1;
+      padding-top: 0.06em;
+    }
+
+    .radical-entry {
+      display: inline-block;
+      min-width: 1.2em;
+      min-height: 1.1em;
+      border-top: 2px solid #222;
+      padding: 0 0.12em;
+      line-height: 1.15;
+    }
+
+    .fraction-entry {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: stretch;
+      vertical-align: middle;
+      min-width: 1.4em;
+      margin: 0 0.08em;
+      text-align: center;
+      line-height: 1.05;
+    }
+
+    .fraction-numerator,
+    .fraction-denominator {
+      display: block;
+      min-width: 1.2em;
+      min-height: 1em;
+      padding: 0 0.15em;
+    }
+
+    .fraction-numerator {
+      border-bottom: 2px solid #222;
+    }
+
+    .fraction-denominator {
+      padding-top: 0.05em;
+    }
+
+
+    .fraction-button-display {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 0.9;
+      min-width: 1.1em;
+      vertical-align: middle;
+    }
+
+    .fraction-button-display .fraction-button-top {
+      display: block;
+      border-bottom: 1.5px solid currentColor;
+      padding: 0 0.18em 0.04em;
+    }
+
+    .fraction-button-display .fraction-button-bottom {
+      display: block;
+      padding: 0.04em 0.18em 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Limits II</h1>
+    <div id="nav-placeholder"></div>
+    <script>
+fetch("/nav.html")
+  .then(response => response.text())
+  .then(html => {
+    document.getElementById("nav-placeholder").innerHTML = html;
+
+    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+    const navLinks = document.querySelectorAll("#nav-placeholder a");
+    navLinks.forEach(link => {
+      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+      if (linkPath === currentPath) {
+        link.classList.add("active");
+      }
+    });
+
+    const s = document.createElement("script");
+    s.src = "/mascot.js";
+    s.defer = true;
+    document.body.appendChild(s);
+  })
+  .catch(err => {
+    console.error("Failed to load nav:", err);
+  });
+    </script>
+  </header>
+
+  <main>
+    <p>Placeholder text</p>
+
+    <div class="button-container">
+      <button id="start-btn" class="rubber-button">Start!</button>
+    </div>
+
+    <p id="question-text"></p>
+
+    <div id="final-answer-input" style="text-align: center; margin-top: 1em;"></div>
+
+    <div class="button-container">
+      <button id="check-btn" class="rubber-button" style="display: none;">Check Answer</button>
+    </div>
+
+    <div class="button-container">
+      <div id="feedbackText" class="center-feedback"></div>
+    </div>
+
+    <div class="button-container">
+      <button id="hint-btn" class="rubber-button">Hint</button>
+    </div>
+
+    <div id="hint-area" class="math" style="margin-top: 1em;"></div>
+
+    <div id="my-activity" style="display: none;"></div>
+  </main>
+
+  <script>
+    const hintBtn = document.getElementById('hint-btn');
+    const hintArea = document.getElementById('hint-area');
+    const startBtn = document.getElementById('start-btn');
+    const questionText = document.getElementById('question-text');
+    const checkBtn = document.getElementById('check-btn');
+    const feedbackText = document.getElementById('feedbackText');
+    const finalAnswerInput = document.getElementById('final-answer-input');
+
+    let currentProblem = null;
+    let hintStep = 0;
+    let mathJaxTypesetPromise = Promise.resolve();
+    let hintIsTypesetting = false;
+    let activeMathEditor = null;
+
+    function typesetElement(element) {
+      if (!window.MathJax || !MathJax.typesetPromise) {
+        if (window.MathJax && MathJax.typeset) MathJax.typeset([element]);
+        return Promise.resolve();
+      }
+      mathJaxTypesetPromise = mathJaxTypesetPromise
+        .then(() => MathJax.typesetPromise([element]))
+        .catch(error => console.error('MathJax typesetting failed:', error));
+      return mathJaxTypesetPromise;
+    }
+
+    function randomInteger(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function randomNonzeroInteger(min, max) {
+      let n;
+      do { n = randomInteger(min, max); } while (n === 0);
+      return n;
+    }
+
+    function randomPositiveInteger(min, max) {
+      return randomInteger(Math.max(1, min), max);
+    }
+
+    function randomChoice(items) {
+      return items[randomInteger(0, items.length - 1)];
+    }
+
+    function gcd(a, b) {
+      a = Math.abs(Math.round(a));
+      b = Math.abs(Math.round(b));
+      while (b !== 0) {
+        const t = b;
+        b = a % b;
+        a = t;
+      }
+      return a || 1;
+    }
+
+    function numberTex(value) {
+      if (Object.is(value, -0)) value = 0;
+      if (!Number.isFinite(value)) return value > 0 ? '\\infty' : '-\\infty';
+      const rounded = Math.round(value);
+      if (Math.abs(value - rounded) < 1e-10) return `${rounded}`;
+
+      const sign = value < 0 ? -1 : 1;
+      let bestNum = 0;
+      let bestDen = 1;
+      let bestErr = Infinity;
+      const abs = Math.abs(value);
+      for (let den = 1; den <= 1000; den++) {
+        const num = Math.round(abs * den);
+        const err = Math.abs(abs - num / den);
+        if (err < bestErr) {
+          bestErr = err;
+          bestNum = num;
+          bestDen = den;
+        }
+      }
+      const d = gcd(bestNum, bestDen);
+      bestNum = sign * bestNum / d;
+      bestDen = bestDen / d;
+      return bestDen === 1 ? `${bestNum}` : `\\frac{${bestNum}}{${bestDen}}`;
+    }
+
+    function exactFraction(num, den = 1) {
+      if (den < 0) { num = -num; den = -den; }
+      if (num === 0) return { num: 0, den: 1 };
+      const d = gcd(num, den);
+      return { num: num / d, den: den / d };
+    }
+
+    function fractionToNumber(frac) {
+      return frac.num / frac.den;
+    }
+
+    function fractionToTex(frac) {
+      const f = exactFraction(frac.num, frac.den);
+      if (f.den === 1) return `${f.num}`;
+      return `\\frac{${f.num}}{${f.den}}`;
+    }
+
+    function makeTerm(coefficient, power = 0) {
+      return { coefficient, power };
+    }
+
+    function combineLikeTerms(poly) {
+      const byPower = new Map();
+      poly.forEach(term => {
+        if (term.coefficient === 0) return;
+        byPower.set(term.power, (byPower.get(term.power) || 0) + term.coefficient);
+      });
+      return Array.from(byPower.entries())
+        .map(([power, coefficient]) => ({ power: Number(power), coefficient }))
+        .filter(term => term.coefficient !== 0)
+        .sort((a, b) => b.power - a.power);
+    }
+
+    function addPolynomials(a, b) {
+      return combineLikeTerms([...a, ...b]);
+    }
+
+    function scalePolynomial(poly, scalar) {
+      return combineLikeTerms(poly.map(term => ({ coefficient: term.coefficient * scalar, power: term.power })));
+    }
+
+    function subtractPolynomials(a, b) {
+      return addPolynomials(a, scalePolynomial(b, -1));
+    }
+
+    function multiplyPolynomials(a, b) {
+      const terms = [];
+      a.forEach(A => {
+        b.forEach(B => {
+          terms.push({ coefficient: A.coefficient * B.coefficient, power: A.power + B.power });
+        });
+      });
+      return combineLikeTerms(terms);
+    }
+
+    function polynomialFromConstant(c) {
+      return c === 0 ? [] : [makeTerm(c, 0)];
+    }
+
+    function polynomialFromAxPlusC(a, c) {
+      return combineLikeTerms([makeTerm(a, 1), makeTerm(c, 0)]);
+    }
+
+    function polynomialFromRoot(root) {
+      return combineLikeTerms([makeTerm(1, 1), makeTerm(-root, 0)]);
+    }
+
+    function polynomialFromPlusRoot(root) {
+      return combineLikeTerms([makeTerm(1, 1), makeTerm(root, 0)]);
+    }
+
+    function evaluatePolynomial(poly, x) {
+      return combineLikeTerms(poly).reduce((sum, term) => sum + term.coefficient * Math.pow(x, term.power), 0);
+    }
+
+    function termToTex(term, options = {}) {
+      const { omitLeadingPlus = false, forceSign = false } = options;
+      const coefficient = term.coefficient;
+      const absCoefficient = Math.abs(coefficient);
+      const power = term.power;
+
+      let variablePart = '';
+      if (power === 1) variablePart = 'x';
+      else if (power !== 0) variablePart = `x^{${power}}`;
+
+      let body;
+      if (variablePart === '') body = `${absCoefficient}`;
+      else if (absCoefficient === 1) body = variablePart;
+      else body = `${absCoefficient}${variablePart}`;
+
+      if (coefficient < 0) return `- ${body}`;
+      if (forceSign || !omitLeadingPlus) return `+ ${body}`;
+      return body;
+    }
+
+    function polynomialToTex(poly) {
+      const combined = combineLikeTerms(poly);
+      if (!combined.length) return '0';
+      return combined.map((term, index) => termToTex(term, {
+        omitLeadingPlus: index === 0,
+        forceSign: index > 0
+      })).join(' ');
+    }
+
+    function linearFactorTex(root) {
+      if (root === 0) return 'x';
+      return `(x ${root < 0 ? '+ ' + Math.abs(root) : '- ' + root})`;
+    }
+
+    function plusLinearFactorTex(root) {
+      if (root === 0) return 'x';
+      return `(x ${root < 0 ? '- ' + Math.abs(root) : '+ ' + root})`;
+    }
+
+    function rationalFunctionTex(num, den) {
+      return `\\frac{${polynomialToTex(num)}}{${polynomialToTex(den)}}`;
+    }
+
+    function denominatorXPlusTex(n) {
+      if (n === 0) return 'x';
+      return `x ${n < 0 ? '- ' + Math.abs(n) : '+ ' + n}`;
+    }
+
+    function radicandLinearTex(a, c) {
+      return polynomialToTex(polynomialFromAxPlusC(a, c));
+    }
+
+    function radicandQuadraticTex(c) {
+      return polynomialToTex(combineLikeTerms([makeTerm(1, 2), makeTerm(c, 0)]));
+    }
+
+    function generateType1LimitProblem() {
+      const n = randomInteger(-10, 10);
+      const m = randomInteger(-10, 10);
+      const numerator = multiplyPolynomials(polynomialFromRoot(n), polynomialFromRoot(m));
+      const denominator = polynomialFromRoot(n);
+      const simplified = polynomialFromRoot(m);
+      const answer = exactFraction(n - m, 1);
+
+      return {
+        type: 1,
+        n, m,
+        questionTex: `\\lim_{x \\to ${numberTex(n)}}\\frac{${polynomialToTex(numerator)}}{${polynomialToTex(denominator)}}`,
+        answer,
+        hints: [
+          `= \\lim_{x \\to ${numberTex(n)}}\\frac{${linearFactorTex(n)}${linearFactorTex(m)}}{${linearFactorTex(n)}}`,
+          `= \\lim_{x \\to ${numberTex(n)}}\\left(${polynomialToTex(simplified)}\\right)`,
+          `= ${numberTex(n)} ${m < 0 ? '+ ' + Math.abs(m) : '- ' + m}`,
+          `= ${fractionToTex(answer)}`
+        ]
+      };
+    }
+
+    function generateType2LimitProblem() {
+      const n = randomInteger(-10, 10);
+      const m = randomPositiveInteger(1, 10);
+      const c = m * m - n * n;
+      const answer = exactFraction(0, 1);
+      const rad = radicandQuadraticTex(c);
+
+      return {
+        type: 2,
+        n, m,
+        questionTex: `\\lim_{x \\to ${numberTex(n)}}\\frac{\\sqrt{${rad}} - ${m}}{${denominatorXPlusTex(n)}}`,
+        answer,
+        hints: [
+          `= \\lim_{x \\to ${numberTex(n)}}\\frac{\\sqrt{${rad}} - ${m}}{${denominatorXPlusTex(n)}}\\cdot\\frac{\\sqrt{${rad}} + ${m}}{\\sqrt{${rad}} + ${m}}`,
+          `= \\lim_{x \\to ${numberTex(n)}}\\frac{${polynomialToTex(combineLikeTerms([makeTerm(1,2), makeTerm(-n*n,0)]))}}{${denominatorXPlusTex(n)}\\left(\\sqrt{${rad}} + ${m}\\right)}`,
+          `= \\lim_{x \\to ${numberTex(n)}}\\frac{${linearFactorTex(n)}${plusLinearFactorTex(n)}}{${plusLinearFactorTex(n)}\\left(\\sqrt{${rad}} + ${m}\\right)}`,
+          `= \\lim_{x \\to ${numberTex(n)}}\\frac{${polynomialToTex(polynomialFromRoot(n))}}{\\sqrt{${rad}} + ${m}}`,
+          `= ${fractionToTex(answer)}`
+        ]
+      };
+    }
+
+    function generateType3LimitProblem() {
+      const a = randomNonzeroInteger(-10, 10);
+      const n = randomInteger(-10, 10);
+      const m = randomPositiveInteger(1, 10);
+      const c = m * m - a * n;
+      const answer = exactFraction(a, 2 * m);
+      const rad = radicandLinearTex(a, c);
+
+      return {
+        type: 3,
+        a, n, m,
+        questionTex: `\\lim_{x \\to ${numberTex(n)}}\\frac{\\sqrt{${rad}} - ${m}}{${polynomialToTex(polynomialFromRoot(n))}}`,
+        answer,
+        hints: [
+          `= \\lim_{x \\to ${numberTex(n)}}\\frac{\\sqrt{${rad}} - ${m}}{${polynomialToTex(polynomialFromRoot(n))}}\\cdot\\frac{\\sqrt{${rad}} + ${m}}{\\sqrt{${rad}} + ${m}}`,
+          `= \\lim_{x \\to ${numberTex(n)}}\\frac{${polynomialToTex(polynomialFromAxPlusC(a, -a*n))}}{${linearFactorTex(n)}\\left(\\sqrt{${rad}} + ${m}\\right)}`,
+          `= \\lim_{x \\to ${numberTex(n)}}\\frac{${a === 1 ? '' : a === -1 ? '-' : a}${linearFactorTex(n)}}{${linearFactorTex(n)}\\left(\\sqrt{${rad}} + ${m}\\right)}`,
+          `= \\lim_{x \\to ${numberTex(n)}}\\frac{${a}}{\\sqrt{${rad}} + ${m}}`,
+          `= \\frac{${a}}{${m}+${m}} = ${fractionToTex(answer)}`
+        ]
+      };
+    }
+
+    function findType4Parameters() {
+      for (let tries = 0; tries < 20000; tries++) {
+        const a = randomNonzeroInteger(-5, 5);
+        const b = randomNonzeroInteger(-5, 5);
+        const sum = a + b;
+        if (sum === 0) continue;
+
+        const oldN = randomNonzeroInteger(-7, 7);
+        const oldM = randomNonzeroInteger(-7, 7);
+        if (oldM === oldN) continue;
+
+        const q = randomNonzeroInteger(-7, 7);
+        if (q === oldN) continue;
+
+        const U = sum * (q - oldN) - a * oldM - b * oldN;
+        const V = -sum * q * oldN;
+        const numeratorForC = V - U * oldN;
+        const denominatorForC = oldM - oldN;
+        if (numeratorForC % denominatorForC !== 0) continue;
+
+        const c = numeratorForC / denominatorForC;
+        const d = U - c;
+        if (c === 0 || d === 0) continue;
+        if (Math.abs(c) > 18 || Math.abs(d) > 18) continue;
+
+        const operation = randomChoice(['+', '-']);
+        const limitValue = -oldN;
+        const otherRoot = -oldM;
+        if (limitValue === otherRoot) continue;
+
+        return { a, b, c, d, oldM, oldN, q, operation, limitValue };
+      }
+      return { a: 2, b: 1, c: -1, d: 1, oldM: 3, oldN: 1, q: -2, operation: '+', limitValue: -1 };
+    }
+
+    function generateType4LimitProblem() {
+      const p = findType4Parameters();
+      const { a, b, c, d, oldM, oldN, q, operation, limitValue } = p;
+      const A = a + b;
+
+      const firstNum = polynomialFromAxPlusC(a, c);
+      const firstDen = polynomialFromPlusRoot(oldN);
+      const effectiveSecondNum = polynomialFromAxPlusC(b, d);
+      const displayedSecondNum = operation === '+' ? effectiveSecondNum : scalePolynomial(effectiveSecondNum, -1);
+      const secondDen = polynomialFromPlusRoot(oldM);
+      const commonDenExpanded = multiplyPolynomials(firstDen, secondDen);
+
+      const firstExpandedNum = multiplyPolynomials(firstNum, secondDen);
+      const displayedSecondExpandedNum = multiplyPolynomials(displayedSecondNum, firstDen);
+      const combinedNumerator = operation === '+'
+        ? addPolynomials(firstExpandedNum, displayedSecondExpandedNum)
+        : subtractPolynomials(firstExpandedNum, displayedSecondExpandedNum);
+
+      const factoredOutNumerator = combineLikeTerms([
+        makeTerm(1, 2),
+        makeTerm(q - oldN, 1),
+        makeTerm(-q * oldN, 0)
+      ]);
+      const finalNumerator = polynomialFromAxPlusC(A, -A * q);
+      const finalDenominator = secondDen;
+      const finalNumeratorAtLimit = evaluatePolynomial(finalNumerator, limitValue);
+      const finalDenominatorAtLimit = evaluatePolynomial(finalDenominator, limitValue);
+      const answer = exactFraction(finalNumeratorAtLimit, finalDenominatorAtLimit);
+
+      const opTex = operation === '+' ? '+' : '-';
+      const questionTex = `\\lim_{x \\to ${numberTex(limitValue)}}\\left(${rationalFunctionTex(firstNum, firstDen)} ${opTex} ${rationalFunctionTex(displayedSecondNum, secondDen)}\\right)`;
+      const commonDenHint = `= \\lim_{x \\to ${numberTex(limitValue)}}\\left(\\frac{\\left(${polynomialToTex(firstNum)}\\right)${plusLinearFactorTex(oldM)}}{${plusLinearFactorTex(oldN)}${plusLinearFactorTex(oldM)}} ${opTex} \\frac{\\left(${polynomialToTex(displayedSecondNum)}\\right)${plusLinearFactorTex(oldN)}}{${plusLinearFactorTex(oldM)}${plusLinearFactorTex(oldN)}}\\right)`;
+      const addedHint = `= \\lim_{x \\to ${numberTex(limitValue)}}\\frac{${polynomialToTex(combinedNumerator)}}{${polynomialToTex(commonDenExpanded)}}`;
+      const factorA = A === 1 ? '' : (A === -1 ? '-' : `${A}`);
+      const factorOutHint = `= \\lim_{x \\to ${numberTex(limitValue)}}\\frac{${factorA}\\left(${polynomialToTex(factoredOutNumerator)}\\right)}{${plusLinearFactorTex(oldN)}${plusLinearFactorTex(oldM)}}`;
+      const factorQuadraticHint = `= \\lim_{x \\to ${numberTex(limitValue)}}\\frac{${factorA}${plusLinearFactorTex(oldN)}${plusLinearFactorTex(-q)}}{${plusLinearFactorTex(oldN)}${plusLinearFactorTex(oldM)}}`;
+      const cancelHint = `= \\lim_{x \\to ${numberTex(limitValue)}}\\frac{${polynomialToTex(finalNumerator)}}{${polynomialToTex(finalDenominator)}}`;
+      const substituteHint = `= ${fractionToTex(answer)}`;
+
+      return {
+        type: 4,
+        ...p,
+        questionTex,
+        answer,
+        hints: [commonDenHint, addedHint, factorOutHint, factorQuadraticHint, cancelHint, substituteHint]
+      };
+    }
+
+    function generateLimitProblem() {
+      const r = Math.random();
+      if (r < 0.25) return generateType1LimitProblem();
+      if (r < 0.50) return generateType2LimitProblem();
+      if (r < 0.75) return generateType3LimitProblem();
+      return generateType4LimitProblem();
+    }
+
+    function createHintStepBlock(extraClass = '') {
+      const block = document.createElement('div');
+      block.className = `hint-step-block ${extraClass}`.trim();
+      block.style.textAlign = 'center';
+      block.style.margin = '0.5em auto';
+      block.style.padding = '0';
+      block.style.maxWidth = '100%';
+      block.style.overflowX = 'auto';
+      hintArea.appendChild(block);
+      return block;
+    }
+
+    function appendMathHint(tex) {
+      const block = createHintStepBlock();
+      block.innerHTML = `\\[${tex}\\]`;
+      return typesetElement(block);
+    }
+
+    async function advanceHint() {
+      if (!currentProblem || hintIsTypesetting) return;
+      const sound = document.getElementById('click-sound');
+      if (sound) { sound.currentTime = 0; sound.play(); }
+
+      hintIsTypesetting = true;
+      hintBtn.disabled = true;
+
+      if (hintStep < currentProblem.hints.length) {
+        await appendMathHint(currentProblem.hints[hintStep]);
+      }
+
+      hintStep++;
+      hintIsTypesetting = false;
+      hintBtn.disabled = hintStep >= currentProblem.hints.length;
+    }
+
+    function setupAnswerEditor() {
+      finalAnswerInput.innerHTML = `
+        <div class="answer-line">
+          <label style="font-weight: bold; margin-right: 0.5em;">Limit =</label>
+          <span id="answer-editor-main" class="polynomial-answer-editor math-answer-editor" contenteditable="true" role="textbox" aria-label="Limit value answer" style="min-width: 130px;"></span>
+        </div>
+        <div class="answer-toolbar" aria-label="Math input buttons">
+          <button type="button" class="math-symbol-button" data-insert-text="/">/</button>
+          <button type="button" class="math-symbol-button" data-insert-fraction="true"><span class="fraction-button-display"><span class="fraction-button-top">a</span><span class="fraction-button-bottom">b</span></span></button>
+        </div>
+      `;
+
+      const editor = document.getElementById('answer-editor-main');
+      activeMathEditor = editor;
+      editor.focus();
+      editor.addEventListener('focus', () => { activeMathEditor = editor; });
+      editor.addEventListener('click', () => { activeMathEditor = editor; });
+      editor.addEventListener('keydown', handleMathEditorKeydown);
+
+      finalAnswerInput.querySelectorAll('.math-symbol-button').forEach(button => {
+        button.addEventListener('mousedown', event => event.preventDefault());
+        button.addEventListener('click', () => {
+          const target = activeMathEditor || editor;
+          target.focus();
+          if (button.dataset.insertText !== undefined) insertTextAtSelection(button.dataset.insertText, target);
+          else if (button.dataset.insertFraction) insertFractionAtSelection(target);
+        });
+      });
+    }
+
+    function handleMathEditorKeydown(event) {
+      activeMathEditor = event.currentTarget;
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        return;
+      }
+      if (event.key === 'ArrowRight') {
+        const specialBox = getContainingSpecialEntry(getSelectionStartNode());
+        if (specialBox) {
+          event.preventDefault();
+          placeCaretAfterNode(specialBox.wrapper);
+        }
+      }
+      if (event.key === 'ArrowLeft') {
+        const specialBox = getContainingSpecialEntry(getSelectionStartNode());
+        if (specialBox) {
+          event.preventDefault();
+          placeCaretBeforeNode(specialBox.wrapper);
+        }
+      }
+    }
+
+    function ensureSelectionInsideEditor(editor) {
+      const selection = window.getSelection();
+      if (selection.rangeCount && editor.contains(selection.anchorNode)) return selection.getRangeAt(0);
+      const range = document.createRange();
+      range.selectNodeContents(editor);
+      range.collapse(false);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      return range;
+    }
+
+    function insertTextAtSelection(text, editor) {
+      const range = ensureSelectionInsideEditor(editor);
+      range.deleteContents();
+      const node = document.createTextNode(text);
+      range.insertNode(node);
+      placeCaretInTextNode(node, node.textContent.length);
+    }
+
+    function insertFractionAtSelection(editor) {
+      const range = ensureSelectionInsideEditor(editor);
+      range.deleteContents();
+      const wrapper = document.createElement('span');
+      wrapper.className = 'fraction-entry special-wrapper';
+      wrapper.setAttribute('data-special-wrapper', 'fraction');
+      wrapper.innerHTML = '<span class="fraction-numerator special-entry" contenteditable="true" data-special-entry="fraction-numerator"></span><span class="fraction-denominator special-entry" contenteditable="true" data-special-entry="fraction-denominator"></span>';
+      range.insertNode(wrapper);
+      placeCaretInside(wrapper.querySelector('.fraction-numerator'));
+    }
+
+    function getSelectionStartNode() {
+      const selection = window.getSelection();
+      return selection.rangeCount ? selection.getRangeAt(0).startContainer : null;
+    }
+
+    function closestMathEditor(node) {
+      let current = node && (node.nodeType === Node.TEXT_NODE ? node.parentElement : node);
+      while (current && current !== document) {
+        if (current.classList && current.classList.contains('math-answer-editor')) return current;
+        current = current.parentElement;
+      }
+      return null;
+    }
+
+    function getContainingSpecialEntry(node) {
+      let current = node && (node.nodeType === Node.TEXT_NODE ? node.parentElement : node);
+      while (current && current !== document) {
+        if (current.classList && current.classList.contains('special-entry')) {
+          let wrapper = current;
+          while (wrapper && wrapper !== document && !(wrapper.classList && wrapper.classList.contains('special-wrapper'))) {
+            wrapper = wrapper.parentElement;
+          }
+          return { entry: current, wrapper: wrapper || current };
+        }
+        current = current.parentElement;
+      }
+      return null;
+    }
+
+    function placeCaretInside(element) {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      range.collapse(false);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      element.focus();
+    }
+
+    function placeCaretBeforeNode(node) {
+      const parent = node.parentNode;
+      let beforeNode = node.previousSibling;
+      if (!beforeNode || beforeNode.nodeType !== Node.TEXT_NODE) {
+        beforeNode = document.createTextNode('​');
+        parent.insertBefore(beforeNode, node);
+      } else if (beforeNode.textContent.length === 0) {
+        beforeNode.textContent = '​';
+      }
+      placeCaretInTextNode(beforeNode, beforeNode.textContent.length);
+      const editor = closestMathEditor(parent);
+      if (editor) {
+        activeMathEditor = editor;
+        editor.focus();
+      }
+    }
+
+    function placeCaretAfterNode(node) {
+      const parent = node.parentNode;
+      let afterNode = node.nextSibling;
+      if (!afterNode || afterNode.nodeType !== Node.TEXT_NODE) {
+        afterNode = document.createTextNode('\u200b');
+        parent.insertBefore(afterNode, node.nextSibling);
+      } else if (afterNode.textContent.length === 0) {
+        afterNode.textContent = '\u200b';
+      }
+      placeCaretInTextNode(afterNode, afterNode.textContent.length);
+      const editor = closestMathEditor(parent);
+      if (editor) {
+        activeMathEditor = editor;
+        editor.focus();
+      }
+    }
+
+    function placeCaretInTextNode(node, offset) {
+      const range = document.createRange();
+      range.setStart(node, offset);
+      range.collapse(true);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    function editorToPlainText(editor) {
+      function walk(node) {
+        if (node.nodeType === Node.TEXT_NODE) return node.textContent.replace(/\u200b/g, '');
+        if (node.nodeType !== Node.ELEMENT_NODE) return '';
+        if (node.matches && node.matches('.fraction-entry')) return `(${walk(node.querySelector('.fraction-numerator'))})/(${walk(node.querySelector('.fraction-denominator'))})`;
+        return Array.from(node.childNodes).map(walk).join('');
+      }
+      return Array.from(editor.childNodes).map(walk).join('').trim();
+    }
+
+    function evaluateNumericAnswer(raw) {
+      const text = raw
+        .replace(/\u200b/g, '')
+        .replace(/−/g, '-')
+        .replace(/\s+/g, '')
+        .replace(/^=/, '');
+      if (!text || /[^0-9+\-*/().]/.test(text)) return NaN;
+      try {
+        const value = Function(`"use strict"; return (${text});`)();
+        return Number.isFinite(value) ? value : NaN;
+      } catch (error) {
+        return NaN;
+      }
+    }
+
+    function checkUserAnswer() {
+      if (!currentProblem) return;
+      const editor = document.getElementById('answer-editor-main');
+      const userValue = evaluateNumericAnswer(editorToPlainText(editor));
+      const expected = fractionToNumber(currentProblem.answer);
+      const correct = Number.isFinite(userValue) && Math.abs(userValue - expected) < 1e-8;
+      feedbackText.textContent = correct ? 'Correct!' : 'Incorrect, try again.';
+      feedbackText.style.color = correct ? 'green' : 'red';
+    }
+
+    function clearOldActivityState() {
+      feedbackText.textContent = '';
+      finalAnswerInput.innerHTML = '';
+      hintArea.innerHTML = '';
+      hintStep = 0;
+      hintBtn.disabled = true;
+      checkBtn.style.display = 'none';
+      hintIsTypesetting = false;
+    }
+
+    startBtn.addEventListener('click', () => {
+      clearOldActivityState();
+
+      const sound = document.getElementById('click-sound');
+      if (sound) {
+        sound.currentTime = 0;
+        sound.play();
+      }
+
+      currentProblem = generateLimitProblem();
+      questionText.innerHTML = `Evaluate: \\[${currentProblem.questionTex}\\]`;
+      setupAnswerEditor();
+      checkBtn.style.display = 'inline-block';
+      hintBtn.disabled = false;
+      typesetElement(questionText);
+    });
+
+    hintBtn.addEventListener('click', advanceHint);
+    checkBtn.addEventListener('click', checkUserAnswer);
+  </script>
+
+  <audio id="click-sound" src="button.mp3" preload="auto"></audio>
+  <audio id="set-sound" src="set2.mp3" preload="auto"></audio>
+
+</body>
+</html>

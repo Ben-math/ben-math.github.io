@@ -511,7 +511,7 @@ fetch("/nav.html")
         if (index === 0 && piScale && term.power === degreeOfPolynomial(poly)) {
           const scale = exactFraction(piScale.num * absCoeff, piScale.den);
           const piCoeff = scale.num === scale.den ? '\\pi' : scale.den === 1 ? `${scale.num}\\pi` : `\\frac{${scale.num}\\pi}{${scale.den}}`;
-          body = variablePart ? `${piCoeff}${variablePart}` : piCoeff;
+          body = variablePart ? `${piCoeff}\\,${variablePart}` : piCoeff;
         } else if (!variablePart) body = `${absCoeff}`;
         else if (absCoeff === 1) body = variablePart;
         else body = `${absCoeff}${variablePart}`;

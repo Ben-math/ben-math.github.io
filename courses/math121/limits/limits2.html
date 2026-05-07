@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -631,6 +632,120 @@ fetch("/nav.html")
       return { kind: 'finite', value: { decimal: value }, tex: numberTex(value) };
     }
 
+    function leadingTermTex(poly) {
+      const combined = combineLikeTerms(poly);
+      if (!combined.length) return '0';
+      return termToTex(combined[0], { omitLeadingPlus: true });
+    }
+
+    function answerEquationTex(entry) {
+      return `${entry.labelTex}=${answerObjectToTex(entry.answer)}`;
+    }
+
+    function answerListTex(entries) {
+      return entries.map(answerEquationTex).join(',\\quad ');
+    }
+
+    function signTex(value) {
+      return value > 0 ? '\\text{positive}' : value < 0 ? '\\text{negative}' : '0';
+    }
+
+    function signedInfinityTex(value) {
+      return value > 0 ? '\\infty' : '-\\infty';
+    }
+
+    function reciprocalSideTex(coefficient, side) {
+      if (side === 'right') return signedInfinityTex(coefficient);
+      return signedInfinityTex(-coefficient);
+    }
+
+    function type1Hints(n, numerator, denominatorDegree, otherRoot, numeratorAtN, otherFactorAtN, answers) {
+      const localDenominatorTex = denominatorDegree === 1
+        ? linearFactorTex(n)
+        : `${linearFactorTex(n)}${linearFactorTex(otherRoot)}`;
+      const localFactorTex = denominatorDegree === 1 ? '1' : `${numberTex(otherFactorAtN)}`;
+      const reducedLocalCoefficient = exactFraction(numeratorAtN, otherFactorAtN);
+      return [
+        `\\text{The denominator has the factor }${linearFactorTex(n)}\\text{, so }x=${numberTex(n)}\\text{ is a vertical-asymptote candidate.}`,
+        `\\text{Near }x=${numberTex(n)}\\text{,}\\quad f(x)\\sim\\frac{${numberTex(numeratorAtN)}}{${localFactorTex}${linearFactorTex(n)}}=\\frac{${fractionToTex(reducedLocalCoefficient)}}{${linearFactorTex(n)}}.`,
+        `\\text{As }x\\to ${numberTex(n)}^+\\text{, }${linearFactorTex(n)}\\to 0^+\\text{, so }f(x)\\to ${answerObjectToTex(answers[0].answer)}.`,
+        `\\text{As }x\\to ${numberTex(n)}^-\\text{, }${linearFactorTex(n)}\\to 0^-\\text{, so }f(x)\\to ${answerObjectToTex(answers[1].answer)}.`,
+        `${answerListTex(answers)}`
+      ];
+    }
+
+    function type2Hints(poly, answers) {
+      const degree = degreeOfPolynomial(poly);
+      const lead = leadingCoefficient(poly);
+      return [
+        `\\text{For a polynomial, the end behaviour is determined by the leading term.}`,
+        `\\text{The leading term is }${leadingTermTex(poly)}\\text{, so the degree is }${degree}\\text{ and the leading coefficient is }${lead}.`,
+        degree % 2 === 0
+          ? `\\text{The degree is even, so both ends have the same sign as the leading coefficient.}`
+          : `\\text{The degree is odd, so the two ends go in opposite directions.}`,
+        `${answerListTex(answers)}`
+      ];
+    }
+
+    function rationalComparisonHint(num, den) {
+      const numDegree = degreeOfPolynomial(num);
+      const denDegree = degreeOfPolynomial(den);
+      if (numDegree < denDegree) return `\\deg(\\text{numerator})<\\deg(\\text{denominator})\\text{, so the rational function approaches }0.`;
+      if (numDegree === denDegree) return `\\deg(\\text{numerator})=\\deg(\\text{denominator})\\text{, so the limit is the ratio of leading coefficients.}`;
+      return `\\deg(\\text{numerator})>\\deg(\\text{denominator})\\text{, so the function grows like a power of }x.`;
+    }
+
+    function type3Hints(numerator, denominator, answers) {
+      const numDegree = degreeOfPolynomial(numerator);
+      const denDegree = degreeOfPolynomial(denominator);
+      const numLead = leadingCoefficient(numerator);
+      const denLead = leadingCoefficient(denominator);
+      return [
+        `\\text{Compare the leading terms: numerator }${leadingTermTex(numerator)}\\text{ and denominator }${leadingTermTex(denominator)}.`,
+        `\\deg(\\text{numerator})=${numDegree},\\quad \\deg(\\text{denominator})=${denDegree}.`,
+        rationalComparisonHint(numerator, denominator),
+        numDegree === denDegree
+          ? `\\frac{${numLead}}{${denLead}}=${fractionToTex(exactFraction(numLead, denLead))}.`
+          : `\\text{Check the sign separately for }x\\to -\\infty\\text{ and }x\\to \\infty.`,
+        `${answerListTex(answers)}`
+      ];
+    }
+
+    function type4Hints(trigName, numerator, denominator, piScale, leftInner, rightInner, answers) {
+      const innerName = `g(x)`;
+      const hints = [
+        `\\text{Work from the inside out.  First study }${innerName}=\\frac{${polynomialToTexWithPi(numerator, piScale)}}{${polynomialToTex(denominator)}}.`,
+        `\\text{For the inner rational function: }${rationalComparisonHint(numerator, denominator)}`
+      ];
+      if (piScale) {
+        hints.push(`\\lim_{x\\to -\\infty}g(x)=\\lim_{x\\to \\infty}g(x)=${piMultipleToTex(piScale)}.`);
+        hints.push(`\\text{Now apply the outer function: }\\${trigName}\\left(${piMultipleToTex(piScale)}\\right).`);
+      } else {
+        hints.push(`\\lim_{x\\to -\\infty}g(x)=${answerObjectToTex(leftInner)},\\quad \\lim_{x\\to \\infty}g(x)=${answerObjectToTex(rightInner)}.`);
+        if (leftInner.kind === 'finite' || rightInner.kind === 'finite') {
+          hints.push(`\\text{When }g(x)\\to 0\\text{, }\\${trigName}(g(x))\\to \\${trigName}(0)=0.`);
+        } else {
+          hints.push(`\\text{Since the inside grows without bound, the trigonometric function oscillates and the limit does not exist.}`);
+        }
+      }
+      hints.push(`${answerListTex(answers)}`);
+      return hints;
+    }
+
+    function type5Hints(baseTex, numerator, denominator, answers) {
+      const numMaxPositive = numerator.reduce((best, term) => term.power > best.power ? term : best, numerator[0]);
+      const denMaxPositive = denominator.reduce((best, term) => term.power > best.power ? term : best, denominator[0]);
+      const numMaxNegative = numerator.reduce((best, term) => term.power < best.power ? term : best, numerator[0]);
+      const denMaxNegative = denominator.reduce((best, term) => term.power < best.power ? term : best, denominator[0]);
+      return [
+        `\\text{For }x\\to \\infty\\text{, compare the largest exponents of }${baseTex}^{kx}\\text{ in the numerator and denominator.}`,
+        `x\\to \\infty:\\quad \\text{numerator dominant exponent }${numMaxPositive.power}x,\\quad \\text{denominator dominant exponent }${denMaxPositive.power}x.`,
+        `\\text{For }x\\to -\\infty\\text{, the most negative exponent dominates, since }${baseTex}^{kx}\\text{ grows when }k<0.`,
+        `x\\to -\\infty:\\quad \\text{numerator dominant exponent }${numMaxNegative.power}x,\\quad \\text{denominator dominant exponent }${denMaxNegative.power}x.`,
+        `${answerListTex(answers)}`
+      ];
+    }
+
     function generateType1LimitProblem() {
       const n = randomInteger(-10, 10);
       const denominatorDegree = randomChoice([1, 2]);
@@ -664,43 +779,46 @@ fetch("/nav.html")
       const right = signMultiplier > 0 ? { kind: 'infinity' } : { kind: 'negativeInfinity' };
       const left = signMultiplier > 0 ? { kind: 'negativeInfinity' } : { kind: 'infinity' };
       const twoSided = right.kind === left.kind ? right : { kind: 'dne' };
+      const answers = [
+        { labelTex: `\\lim_{x \\to ${numberTex(n)}^+}f(x)`, answer: right },
+        { labelTex: `\\lim_{x \\to ${numberTex(n)}^-}f(x)`, answer: left },
+        { labelTex: `\\lim_{x \\to ${numberTex(n)}}f(x)`, answer: twoSided }
+      ];
 
       return {
         type: 1,
         questionTex: `f(x)=${rationalFunctionTex(numerator, denominator)}.\\quad \\text{Evaluate }\\lim_{x \\to ${numberTex(n)}^+}f(x),\\; \\lim_{x \\to ${numberTex(n)}^-}f(x),\\; \\text{and }\\lim_{x \\to ${numberTex(n)}}f(x).`,
-        answers: [
-          { labelTex: `\\lim_{x \\to ${numberTex(n)}^+}f(x)`, answer: right },
-          { labelTex: `\\lim_{x \\to ${numberTex(n)}^-}f(x)`, answer: left },
-          { labelTex: `\\lim_{x \\to ${numberTex(n)}}f(x)`, answer: twoSided }
-        ],
-        hints: []
+        answers,
+        hints: type1Hints(n, numerator, denominatorDegree, otherRoot, numeratorAtN, otherFactorAtN, answers)
       };
     }
 
     function generateType2LimitProblem() {
       const poly = randomPolynomialType2();
+      const answers = [
+        { labelTex: '\\lim_{x \\to -\\infty}f(x)', answer: { kind: polynomialEndBehaviour(poly, 'negative') } },
+        { labelTex: '\\lim_{x \\to \\infty}f(x)', answer: { kind: polynomialEndBehaviour(poly, 'positive') } }
+      ];
       return {
         type: 2,
         questionTex: `f(x)=${polynomialToTex(poly)}.\\quad \\text{Evaluate }\\lim_{x \\to -\\infty}f(x)\\;\\text{and}\\;\\lim_{x \\to \\infty}f(x).`,
-        answers: [
-          { labelTex: '\\lim_{x \\to -\\infty}f(x)', answer: { kind: polynomialEndBehaviour(poly, 'negative') } },
-          { labelTex: '\\lim_{x \\to \\infty}f(x)', answer: { kind: polynomialEndBehaviour(poly, 'positive') } }
-        ],
-        hints: []
+        answers,
+        hints: type2Hints(poly, answers)
       };
     }
 
     function generateType3LimitProblem() {
       const rational = generateDegreeMatchedRational();
       const { numerator, denominator } = rational;
+      const answers = [
+        { labelTex: '\\lim_{x \\to -\\infty}f(x)', answer: rationalEndBehaviour(numerator, denominator, 'negative') },
+        { labelTex: '\\lim_{x \\to \\infty}f(x)', answer: rationalEndBehaviour(numerator, denominator, 'positive') }
+      ];
       return {
         type: 3,
         questionTex: `f(x)=${rationalFunctionTex(numerator, denominator)}.\\quad \\text{Evaluate }\\lim_{x \\to -\\infty}f(x)\\;\\text{and}\\;\\lim_{x \\to \\infty}f(x).`,
-        answers: [
-          { labelTex: '\\lim_{x \\to -\\infty}f(x)', answer: rationalEndBehaviour(numerator, denominator, 'negative') },
-          { labelTex: '\\lim_{x \\to \\infty}f(x)', answer: rationalEndBehaviour(numerator, denominator, 'positive') }
-        ],
-        hints: []
+        answers,
+        hints: type3Hints(numerator, denominator, answers)
       };
     }
 
@@ -759,14 +877,16 @@ fetch("/nav.html")
         return { kind: 'oscillates', tex: '\\text{DNE}' };
       }
 
+      const answers = [
+        { labelTex: '\\lim_{x \\to -\\infty}f(x)', answer: outerAnswer(leftInner) },
+        { labelTex: '\\lim_{x \\to \\infty}f(x)', answer: outerAnswer(rightInner) }
+      ];
+
       return {
         type: 4,
         questionTex: `f(x)=\\${trigName}\\left(${innerTex}\\right).\\quad \\text{Evaluate }\\lim_{x \\to -\\infty}f(x)\\;\\text{and}\\;\\lim_{x \\to \\infty}f(x).`,
-        answers: [
-          { labelTex: '\\lim_{x \\to -\\infty}f(x)', answer: outerAnswer(leftInner) },
-          { labelTex: '\\lim_{x \\to \\infty}f(x)', answer: outerAnswer(rightInner) }
-        ],
-        hints: []
+        answers,
+        hints: type4Hints(trigName, numerator, denominator, piScale, leftInner, rightInner, answers)
       };
     }
 
@@ -831,14 +951,15 @@ fetch("/nav.html")
       }
       const numerator = randomExponentialExpressionExactDegree(numDegree);
       const denominator = randomExponentialExpressionExactDegree(denDegree);
+      const answers = [
+        { labelTex: '\\lim_{x \\to -\\infty}f(x)', answer: exponentialEndBehaviour(numerator, denominator, 'negative') },
+        { labelTex: '\\lim_{x \\to \\infty}f(x)', answer: exponentialEndBehaviour(numerator, denominator, 'positive') }
+      ];
       return {
         type: 5,
         questionTex: `f(x)=\\frac{${exponentialExpressionToTex(numerator, baseTex)}}{${exponentialExpressionToTex(denominator, baseTex)}}.\\quad \\text{Evaluate }\\lim_{x \\to -\\infty}f(x)\\;\\text{and}\\;\\lim_{x \\to \\infty}f(x).`,
-        answers: [
-          { labelTex: '\\lim_{x \\to -\\infty}f(x)', answer: exponentialEndBehaviour(numerator, denominator, 'negative') },
-          { labelTex: '\\lim_{x \\to \\infty}f(x)', answer: exponentialEndBehaviour(numerator, denominator, 'positive') }
-        ],
-        hints: []
+        answers,
+        hints: type5Hints(baseTex, numerator, denominator, answers)
       };
     }
 

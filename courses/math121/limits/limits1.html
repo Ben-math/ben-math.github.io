@@ -510,7 +510,7 @@ fetch("/nav.html")
         const q = randomNonzeroInteger(-7, 7);
         if (q === oldN) continue;
 
-        const U = sum * (q - oldN) - a * oldM - b * oldN;
+        const U = sum * (oldN - q) - a * oldM - b * oldN;
         const V = -sum * q * oldN;
         const numeratorForC = V - U * oldN;
         const denominatorForC = oldM - oldN;
@@ -551,7 +551,7 @@ fetch("/nav.html")
 
       const factoredOutNumerator = combineLikeTerms([
         makeTerm(1, 2),
-        makeTerm(q - oldN, 1),
+        makeTerm(oldN - q, 1),
         makeTerm(-q * oldN, 0)
       ]);
       const finalNumerator = polynomialFromAxPlusC(A, -A * q);

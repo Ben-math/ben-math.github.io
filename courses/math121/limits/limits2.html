@@ -179,7 +179,30 @@ fetch("/nav.html")
     still interested in the behaviour of the function <i>near</i> \(x = 2\).  We consider the left- and right-hand limits.  Observe that as \(x\) 
     approaches 2 from the left, \(x-2\) becomes a very small negative value.  That is, \[\lim_{x \to 2^-}\frac{1}{x-2} = -\infty\]  Similarly, as \(x\) 
     approaches 2 from the right, \(x-2\) becomes a very small positive value, so \[\lim_{x \to 2^+}\frac{1}{x-2} = \infty\] Since the two one-sided 
-    limits are not equal to one another, we simply say that the two sided limit \(\lim_{x \to 2}\frac{1}{x-2}\) does not exist.</p>
+    limits are not equal to one another, we simply say that the two sided limit \(\lim_{x \to 2}\frac{1}{x-2}\) does not exist.  Visually:</p>
+
+    <p>If either of the one- or two-sided limits of a function \(f(x)\) approach \(\pm\infty\) at \(x = a\), then we say that \(f(x)\) has a 
+    <i>vertical asymptote</i> at the line \(x = a\).</p>
+
+    <p>We are also interested in the <i>end behaviour</i> of functions: that is, the limit as \(x \to \pm\infty\) (as we go all the way to the left or 
+    right).  There are a number of possibilities.  If \[\lim_{x \to -\infty}f(x) = L \hspace{3mm} \text{ or } \hspace{3mm} \lim_{x \to \infty}f(x) = L\] 
+    for some constant \(L\), then we say that \(f(x)\) has a <i>horizontal asymptote</i> at the line \(y = L\).  For example, consider the function 
+    \[f(x) = \frac{6x^4 - 9}{2x^4 + 1000x^3 + 3000}\] At a glance, one might be tempted to say that the very large constant term and cubic coefficient 
+    in the denominator would "win" the contest between numerator and denominator, and thus in the limit as \(x \to \infty\), that the function approaches 
+    the \(y = 0\) line.  However, one would be mistaken.  Generally, evaluating limits as \(x \to \pm\infty\) involves determining which term 
+    "dominates".  In the preceding example, as \(x\) becomes very large, the degree 4 terms dramatically outpace all others, and so they are the 
+    determining factor in the end behaviour.  We can verify this directly by dividing all terms in the fraction by the highest power of \(x\) in the 
+    lowest degree out of the numerator/denominator (in this case they are both degree 4 polynomials, so we are dividing by \(x^4\).  If one had been 
+    degree 4 and one degree 2, we would divide by \(x^2\)): \[\lim_{x \to \infty}\frac{6x^4 - 9}{2x^4 + 1000x^3 + 3000} = \lim_{x \to \infty}
+    \frac{\frac{6x^4}{x^4} - \frac{9}{x^4}}{\frac{2x^4}{x^4} + \frac{1000x^3}{x^4} + \frac{3000}{x^4}} = \lim_{x \to \infty}
+    \frac{6 - \frac{9}{x^4}}{2 + \frac{1000}{x} + \frac{3000}{x^4}}\]  We can see that every term in the fraction approaches zero as \(x \to \infty\) 
+    with the exception of the two constant terms, so \[= \frac{6 - 0}{2 + 0 + 0} = \frac{6}{2} = 3\] and so we have a horizontal asymptote at the line 
+    \(y = 3\).  Experimenting with this technique on a variety of different degree numerators/denominators in a rational function, one can discover the 
+    following result (where \(f(x)\) has lead term \(ax^n\) and \(g(x)\) has lead term \(bx^m\): \[\lim_{x \to \infty}h(x) = \begin{cases}
+        0 & \text{if } n < m\\
+        \frac{a}{b} & \text{if } n = m\\
+        \lim_{x \to \infty}\frac{a}{b}x^{n-m} & \text{if } n > m
+    \end{cases}\]</p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

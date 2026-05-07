@@ -212,6 +212,18 @@ fetch("/nav.html")
     -\infty \hspace{2mm} \text{if } a > 0 \hspace{1cm} \text{ and } \hspace{1cm} \lim_{x \to \infty}f(x) = -\infty \hspace{2mm} \text{ and } 
     \lim_{x \to -\infty}f(x) = \infty \hspace{2mm} \text{if } a < 0 \] </p>
 
+    <p>We end with a couple more challenging examples.  First, the same strategy we applied to a ratio of two polynomials could also be applied to a 
+    fraction whose numerator and denominator contains the powers of <i>anything</i>, not just \(x\) (so long as the base is the same).  For example, 
+    another "which will win: numerator or denominator?" problem: \[\lim_{x \to \infty}\frac{2 \cdot 5^{-6x} - 3 \cdot 5^{4x}}{6 \cdot 5^{3x}} = 
+    \lim_{x \to \infty}\frac{\frac{2 \cdot 5^{-6x}}{5^{3x}} - \frac{3 \cdot 5^{4x}}{5^{3x}}}{\frac{6 \cdot5^{3x}}{5^{3x}}} = \lim_{x \to \infty}
+    \frac{2 \cdot 5^{-9x} - 3 \cdot 5^x}{6}\] We see that as \(x \to \infty\), \(2 \cdot 5^{-9x} \to 0\) and \(-3 \cdot 5^x \to -\infty\), so the limit 
+    \[= -\infty\]</p>
+
+    <p>Finally, what if we have a composition of functions?  We evaluate the limit from the inside-out.  Consider: \[\lim_{x \to \infty} 
+    \sin\left(\frac{2\pi x^8 + x^2 - 9}{12x^8 - 3x^6}\right)\] Using the theorem stated earlier, since the numerator and denominator have the same 
+    degree, we know \[\lim_{x \to \infty}\frac{2\pi x^8 + x^2 - 9}{12x^8 - 3x^6} = \frac{2\pi}{12} = \frac{\pi}{6}\]  So \[\lim_{x \to \infty} 
+    \sin\left(\frac{2\pi x^8 + x^2 - 9}{12x^8 - 3x^6}\right) = \sin\left(\frac{\pi}{6}\right) = \frac{1}{2}\]  Now you try!</p>
+
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>

@@ -172,10 +172,14 @@ fetch("/nav.html")
   <main>
     <p>We next consider limits involving infinity. The first case we are interested in is when the particular way in which the limit doesn't exist is that 
     the values become arbitrarily large (in either the positive/negative direction), in which case we write \[\lim_{x \to n}f(x) = \pm\infty\] In the second 
-    case, we are looking at the end behaviour of a function: \[\lim_{x \to \pm\infty}f(x)\] (does the function become arbitrarily large/small?  Does it 
-    approach a particular value?)</p>
+    case, we are looking at the end behaviour of a function: \[\lim_{x \to \pm\infty}f(x)\] There are a number of things that can happen here: the function 
+    may become arbitrarily large/small (approach \(\pm\infty\)) or it may approach a particular value (this will correspond to a horizontal asymptote).</p>
 
-    <p>For example, in trying to evaluate \[\lim_{x \to 2}\frac{1}{x-2}\] we see no opportunity to cancel the \(x-2\) from the denominator.</p>
+    <p>For example, in trying to evaluate \[\lim_{x \to 2}\frac{1}{x-2}\] we see no opportunity to cancel the \(x-2\) from the denominator.  But we are 
+    still interested in the behaviour of the function <i>near</i> \(x = 2\).  We consider the left- and right-hand limits.  Observe that as \(x\) 
+    approaches 2 from the left, \(x-2\) becomes a very small negative value.  That is, \[\lim_{x \to 2^-}\frac{1}{x-2} = -\infty\]  Similarly, as \(x\) 
+    approaches 2 from the right, \(x-2\) becomes a very small positive value, so \[\lim_{x \to 2^+}\frac{1}{x-2} = \infty\] Since the two one-sided 
+    limits are not equal to one another, we simply say that the two sided limit \(\lim_{x \to 2}\frac{1}{x-2}\) does not exist.</p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

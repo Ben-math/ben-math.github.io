@@ -199,10 +199,19 @@ fetch("/nav.html")
     with the exception of the two constant terms, so \[= \frac{6 - 0}{2 + 0 + 0} = \frac{6}{2} = 3\] and so we have a horizontal asymptote at the line 
     \(y = 3\).  Experimenting with this technique on a variety of different degree numerators/denominators in a rational function, one can discover the 
     following result (where \(f(x)\) has lead term \(ax^n\) and \(g(x)\) has lead term \(bx^m\): \[\lim_{x \to \infty}h(x) = \begin{cases}
-        0 & \text{if } n < m\\
-        \frac{a}{b} & \text{if } n = m\\
-        \lim_{x \to \infty}\frac{a}{b}x^{n-m} & \text{if } n > m
-    \end{cases}\]</p>
+    0 & \text{if } n < m\\  \frac{a}{b} & \text{if } n = m\\  \lim_{x \to \infty}\frac{a}{b}x^{n-m} & \text{if } n > m \end{cases}\]  That is, if the 
+    degree of the numerator is less than the degree of the denominator, we have a horizontal asymptote at \(y=0\); if the degrees are equal, then there 
+    is a horizontal asymptote at the ratio of the coefficients, \(y=\frac{a}{b}\); and finally if the degree of the numerator is greater than that of 
+    the denominator, the limit approaches \(\pm\infty\).  In the last case, we have to be careful in determining the sign: it will be dependent on whether 
+    the difference of the degrees is an even or odd number (try experimenting with it to discover this).</p>
+
+    <p>For a simpler example, consider the end behaviour of a polynomial.  It will be determined by two things: the sign and parity (even or odd) of the 
+    lead coefficient.  Even degree polynomials have identical end behaviour in both directions: \[\lim_{x \to \pm\infty}f(x) = \infty \hspace{2mm} \text{if 
+    lead coefficient positive} \hspace{3mm} \text{ and } \lim_{x \to \pm\infty}f(x) = -\infty \hspace{2mm} \text{if lead coefficient negative}\] Odd degree 
+    polynomials have oppositive end behaviour in each direction: \[\lim_{x \to \infty}f(x) = \infty \hspace{2mm} \text{ and } \lim_{x \to -\infty}f(x) = 
+    -\infty \hspace{2mm} \text{if lead coefficient positive}\] and \[\lim_{x \to \infty}f(x) = -\infty \hspace{2mm} \text{ and } \lim_{x \to -\infty}f(x) = 
+    \infty \hspace{2mm} \text{if lead coefficient negative}\]
+    (\(\lim_</p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

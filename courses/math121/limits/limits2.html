@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -461,162 +462,392 @@ fetch("/nav.html")
       return polynomialToTex(combineLikeTerms([makeTerm(1, 2), makeTerm(c, 0)]));
     }
 
+    function degreeOfPolynomial(poly) {
+      const combined = combineLikeTerms(poly);
+      return combined.length ? combined[0].power : -Infinity;
+    }
+
+    function leadingCoefficient(poly) {
+      const combined = combineLikeTerms(poly);
+      return combined.length ? combined[0].coefficient : 0;
+    }
+
+    function hasRoot(poly, root) {
+      return Math.abs(evaluatePolynomial(poly, root)) < 1e-10;
+    }
+
+    function multiplyByScalarCoefficient(poly, scalarTex, scalarValue = 1) {
+      return {
+        poly,
+        scalarTex,
+        scalarValue
+      };
+    }
+
+    function coefficientToTex(coefficient, isLeading, variablePart) {
+      const sign = coefficient < 0 ? '-' : (isLeading ? '' : '+');
+      const absCoefficient = Math.abs(coefficient);
+      let body = '';
+      if (!variablePart) body = `${absCoefficient}`;
+      else if (absCoefficient === 1) body = variablePart;
+      else body = `${absCoefficient}${variablePart}`;
+      if (sign === '-') return isLeading ? `-${body}` : `- ${body}`;
+      if (sign === '+') return `+ ${body}`;
+      return body;
+    }
+
+    function polynomialToTexWithPi(poly, piScale) {
+      const combined = combineLikeTerms(poly);
+      if (!combined.length) return '0';
+      return combined.map((term, index) => {
+        const coeff = term.coefficient;
+        const absCoeff = Math.abs(coeff);
+        let variablePart = '';
+        if (term.power === 1) variablePart = 'x';
+        else if (term.power !== 0) variablePart = `x^{${term.power}}`;
+
+        let body;
+        if (index === 0 && piScale && term.power === degreeOfPolynomial(poly)) {
+          const scale = exactFraction(piScale.num * absCoeff, piScale.den);
+          const piCoeff = scale.num === scale.den ? '\\pi' : scale.den === 1 ? `${scale.num}\\pi` : `\\frac{${scale.num}\\pi}{${scale.den}}`;
+          body = variablePart ? `${piCoeff}${variablePart}` : piCoeff;
+        } else if (!variablePart) body = `${absCoeff}`;
+        else if (absCoeff === 1) body = variablePart;
+        else body = `${absCoeff}${variablePart}`;
+
+        if (coeff < 0) return index === 0 ? `-${body}` : `- ${body}`;
+        return index === 0 ? body : `+ ${body}`;
+      }).join(' ');
+    }
+
+    function randomPolynomialExactDegree(degree, minTerms = 1, maxTerms = Math.min(5, degree + 1)) {
+      const possiblePowers = Array.from({ length: degree + 1 }, (_, i) => i);
+      const chosenPowers = [degree];
+      const remaining = possiblePowers.filter(power => power !== degree);
+      const termCount = Math.min(randomInteger(minTerms, maxTerms), degree + 1);
+      while (chosenPowers.length < termCount && remaining.length) {
+        const index = randomInteger(0, remaining.length - 1);
+        chosenPowers.push(remaining.splice(index, 1)[0]);
+      }
+      return combineLikeTerms(chosenPowers.map(power => makeTerm(randomNonzeroInteger(-10, 10), power)));
+    }
+
+    function randomPolynomialType2() {
+      const degree = randomInteger(1, 10);
+      return randomPolynomialExactDegree(degree, 1, Math.min(5, degree + 1));
+    }
+
+    function randomPolynomialForDegreeComparison(targetDegree) {
+      return randomPolynomialExactDegree(targetDegree, 1, Math.min(5, targetDegree + 1));
+    }
+
+    function generateDegreeMatchedRational() {
+      const relation = randomChoice(['greater', 'equal', 'less']);
+      let numDegree, denDegree;
+      if (relation === 'greater') {
+        denDegree = randomInteger(1, 8);
+        numDegree = randomInteger(denDegree + 1, 10);
+      } else if (relation === 'less') {
+        numDegree = randomInteger(1, 8);
+        denDegree = randomInteger(numDegree + 1, 10);
+      } else {
+        numDegree = denDegree = randomInteger(1, 10);
+      }
+      return {
+        relation,
+        numerator: randomPolynomialForDegreeComparison(numDegree),
+        denominator: randomPolynomialForDegreeComparison(denDegree)
+      };
+    }
+
+    function polynomialEndBehaviour(poly, direction) {
+      const degree = degreeOfPolynomial(poly);
+      const lead = leadingCoefficient(poly);
+      const signAtInfinity = direction === 'positive' ? 1 : (degree % 2 === 0 ? 1 : -1);
+      const sign = Math.sign(lead) * signAtInfinity;
+      return sign > 0 ? 'infinity' : 'negativeInfinity';
+    }
+
+    function rationalEndBehaviour(num, den, direction) {
+      const numDegree = degreeOfPolynomial(num);
+      const denDegree = degreeOfPolynomial(den);
+      const numLead = leadingCoefficient(num);
+      const denLead = leadingCoefficient(den);
+      if (numDegree < denDegree) return { kind: 'finite', value: exactFraction(0, 1), tex: '0' };
+      if (numDegree === denDegree) {
+        const value = exactFraction(numLead, denLead);
+        return { kind: 'finite', value, tex: fractionToTex(value) };
+      }
+      const degreeDifference = numDegree - denDegree;
+      const signAtInfinity = direction === 'positive' ? 1 : (degreeDifference % 2 === 0 ? 1 : -1);
+      const sign = Math.sign(numLead / denLead) * signAtInfinity;
+      return { kind: sign > 0 ? 'infinity' : 'negativeInfinity', tex: sign > 0 ? '\\infty' : '-\\infty' };
+    }
+
+    function answerObjectToTex(answer) {
+      if (answer.kind === 'infinity') return '\\infty';
+      if (answer.kind === 'negativeInfinity') return '-\\infty';
+      if (answer.kind === 'dne') return '\\text{DNE}';
+      if (answer.kind === 'oscillates') return '\\text{DNE}';
+      if (answer.kind === 'finite') return answer.tex || fractionToTex(answer.value);
+      return `${answer}`;
+    }
+
+    function numericAnswer(frac) {
+      return frac.num / frac.den;
+    }
+
+    function piMultipleToTex(frac) {
+      const f = exactFraction(frac.num, frac.den);
+      if (f.num === 0) return '0';
+      const sign = f.num < 0 ? '-' : '';
+      const absNum = Math.abs(f.num);
+      if (f.den === 1) return `${sign}${absNum === 1 ? '' : absNum}\\pi`;
+      return `${sign}\\frac{${absNum === 1 ? '' : absNum}\\pi}{${f.den}}`;
+    }
+
+    function trigExactAnswer(trigName, piMultiple) {
+      const f = exactFraction(piMultiple.num, piMultiple.den);
+      const angle = Math.PI * f.num / f.den;
+      let value = trigName === 'sin' ? Math.sin(angle) : trigName === 'cos' ? Math.cos(angle) : Math.tan(angle);
+      if (Math.abs(value) > 1e12 || !Number.isFinite(value)) return { kind: 'undefined', tex: '\\text{undefined}' };
+      value = Math.round(value * 1e12) / 1e12;
+      const special = [
+        { v: -Math.sqrt(3), tex: '-\\sqrt{3}' },
+        { v: -1, tex: '-1' },
+        { v: -Math.sqrt(3) / 2, tex: '-\\frac{\\sqrt{3}}{2}' },
+        { v: -Math.sqrt(2) / 2, tex: '-\\frac{\\sqrt{2}}{2}' },
+        { v: -0.5, tex: '-\\frac{1}{2}' },
+        { v: 0, tex: '0' },
+        { v: 0.5, tex: '\\frac{1}{2}' },
+        { v: Math.sqrt(2) / 2, tex: '\\frac{\\sqrt{2}}{2}' },
+        { v: Math.sqrt(3) / 2, tex: '\\frac{\\sqrt{3}}{2}' },
+        { v: 1, tex: '1' },
+        { v: Math.sqrt(3), tex: '\\sqrt{3}' }
+      ];
+      const match = special.find(item => Math.abs(value - item.v) < 1e-9);
+      if (match) return { kind: 'finite', value: { decimal: value }, tex: match.tex };
+      return { kind: 'finite', value: { decimal: value }, tex: numberTex(value) };
+    }
+
     function generateType1LimitProblem() {
       const n = randomInteger(-10, 10);
-      const m = randomInteger(-10, 10);
-      const numerator = multiplyPolynomials(polynomialFromRoot(n), polynomialFromRoot(m));
-      const denominator = polynomialFromRoot(n);
-      const simplified = polynomialFromRoot(m);
-      const answer = exactFraction(n - m, 1);
+      const denominatorDegree = randomChoice([1, 2]);
+      let numeratorDegree = randomInteger(0, 2);
+      let numerator;
+      if (numeratorDegree === 0) {
+        numerator = polynomialFromConstant(randomNonzeroInteger(-10, 10));
+      } else if (numeratorDegree === 1) {
+        let r;
+        do { r = randomInteger(-10, 10); } while (r === n);
+        numerator = polynomialFromRoot(r);
+      } else {
+        let r, s;
+        do { r = randomInteger(-10, 10); } while (r === n);
+        do { s = randomInteger(-10, 10); } while (s === n);
+        numerator = multiplyPolynomials(polynomialFromRoot(r), polynomialFromRoot(s));
+      }
+
+      let denominator;
+      let otherRoot = null;
+      if (denominatorDegree === 1) {
+        denominator = polynomialFromRoot(n);
+      } else {
+        do { otherRoot = randomInteger(-10, 10); } while (otherRoot === n);
+        denominator = multiplyPolynomials(polynomialFromRoot(n), polynomialFromRoot(otherRoot));
+      }
+
+      const numeratorAtN = evaluatePolynomial(numerator, n);
+      const otherFactorAtN = denominatorDegree === 1 ? 1 : n - otherRoot;
+      const signMultiplier = Math.sign(numeratorAtN / otherFactorAtN);
+      const right = signMultiplier > 0 ? { kind: 'infinity' } : { kind: 'negativeInfinity' };
+      const left = signMultiplier > 0 ? { kind: 'negativeInfinity' } : { kind: 'infinity' };
+      const twoSided = right.kind === left.kind ? right : { kind: 'dne' };
 
       return {
         type: 1,
-        n, m,
-        questionTex: `\\lim_{x \\to ${numberTex(n)}}\\frac{${polynomialToTex(numerator)}}{${polynomialToTex(denominator)}}`,
-        answer,
-        hints: [
-          `= \\lim_{x \\to ${numberTex(n)}}\\frac{${linearFactorTex(n)}${linearFactorTex(m)}}{${linearFactorTex(n)}}`,
-          `= \\lim_{x \\to ${numberTex(n)}}\\left(${polynomialToTex(simplified)}\\right)`,
-          `= ${numberTex(n)} ${m < 0 ? '+ ' + Math.abs(m) : '- ' + m}`,
-          `= ${fractionToTex(answer)}`
-        ]
+        questionTex: `f(x)=${rationalFunctionTex(numerator, denominator)}.\\quad \\text{Evaluate }\\lim_{x \\to ${numberTex(n)}^+}f(x),\\; \\lim_{x \\to ${numberTex(n)}^-}f(x),\\; \\text{and }\\lim_{x \\to ${numberTex(n)}}f(x).`,
+        answers: [
+          { labelTex: `\\lim_{x \\to ${numberTex(n)}^+}f(x)`, answer: right },
+          { labelTex: `\\lim_{x \\to ${numberTex(n)}^-}f(x)`, answer: left },
+          { labelTex: `\\lim_{x \\to ${numberTex(n)}}f(x)`, answer: twoSided }
+        ],
+        hints: []
       };
     }
 
     function generateType2LimitProblem() {
-      const n = randomInteger(-10, 10);
-      const m = randomPositiveInteger(1, 10);
-      const c = m * m - n * n;
-      const answer = exactFraction(0, 1);
-      const rad = radicandQuadraticTex(c);
-
+      const poly = randomPolynomialType2();
       return {
         type: 2,
-        n, m,
-        questionTex: `\\lim_{x \\to ${numberTex(n)}}\\frac{\\sqrt{${rad}} - ${m}}{${denominatorXPlusTex(n)}}`,
-        answer,
-        hints: [
-          `= \\lim_{x \\to ${numberTex(n)}}\\frac{\\sqrt{${rad}} - ${m}}{${denominatorXPlusTex(n)}}\\cdot\\frac{\\sqrt{${rad}} + ${m}}{\\sqrt{${rad}} + ${m}}`,
-          `= \\lim_{x \\to ${numberTex(n)}}\\frac{${polynomialToTex(combineLikeTerms([makeTerm(1,2), makeTerm(-n*n,0)]))}}{${denominatorXPlusTex(n)}\\left(\\sqrt{${rad}} + ${m}\\right)}`,
-          `= \\lim_{x \\to ${numberTex(n)}}\\frac{${linearFactorTex(n)}${plusLinearFactorTex(n)}}{${plusLinearFactorTex(n)}\\left(\\sqrt{${rad}} + ${m}\\right)}`,
-          `= \\lim_{x \\to ${numberTex(n)}}\\frac{${polynomialToTex(polynomialFromRoot(n))}}{\\sqrt{${rad}} + ${m}}`,
-          `= ${fractionToTex(answer)}`
-        ]
+        questionTex: `f(x)=${polynomialToTex(poly)}.\\quad \\text{Evaluate }\\lim_{x \\to -\\infty}f(x)\\;\\text{and}\\;\\lim_{x \\to \\infty}f(x).`,
+        answers: [
+          { labelTex: '\\lim_{x \\to -\\infty}f(x)', answer: { kind: polynomialEndBehaviour(poly, 'negative') } },
+          { labelTex: '\\lim_{x \\to \\infty}f(x)', answer: { kind: polynomialEndBehaviour(poly, 'positive') } }
+        ],
+        hints: []
       };
     }
 
     function generateType3LimitProblem() {
-      const a = randomNonzeroInteger(-10, 10);
-      const n = randomInteger(-10, 10);
-      const m = randomPositiveInteger(1, 10);
-      const c = m * m - a * n;
-      const answer = exactFraction(a, 2 * m);
-      const rad = radicandLinearTex(a, c);
-
+      const rational = generateDegreeMatchedRational();
+      const { numerator, denominator } = rational;
       return {
         type: 3,
-        a, n, m,
-        questionTex: `\\lim_{x \\to ${numberTex(n)}}\\frac{\\sqrt{${rad}} - ${m}}{${polynomialToTex(polynomialFromRoot(n))}}`,
-        answer,
-        hints: [
-          `= \\lim_{x \\to ${numberTex(n)}}\\frac{\\sqrt{${rad}} - ${m}}{${polynomialToTex(polynomialFromRoot(n))}}\\cdot\\frac{\\sqrt{${rad}} + ${m}}{\\sqrt{${rad}} + ${m}}`,
-          `= \\lim_{x \\to ${numberTex(n)}}\\frac{${polynomialToTex(polynomialFromAxPlusC(a, -a*n))}}{${linearFactorTex(n)}\\left(\\sqrt{${rad}} + ${m}\\right)}`,
-          `= \\lim_{x \\to ${numberTex(n)}}\\frac{${a === 1 ? '' : a === -1 ? '-' : a}${linearFactorTex(n)}}{${linearFactorTex(n)}\\left(\\sqrt{${rad}} + ${m}\\right)}`,
-          `= \\lim_{x \\to ${numberTex(n)}}\\frac{${a}}{\\sqrt{${rad}} + ${m}}`,
-          `= \\frac{${a}}{${m}+${m}} = ${fractionToTex(answer)}`
-        ]
+        questionTex: `f(x)=${rationalFunctionTex(numerator, denominator)}.\\quad \\text{Evaluate }\\lim_{x \\to -\\infty}f(x)\\;\\text{and}\\;\\lim_{x \\to \\infty}f(x).`,
+        answers: [
+          { labelTex: '\\lim_{x \\to -\\infty}f(x)', answer: rationalEndBehaviour(numerator, denominator, 'negative') },
+          { labelTex: '\\lim_{x \\to \\infty}f(x)', answer: rationalEndBehaviour(numerator, denominator, 'positive') }
+        ],
+        hints: []
       };
     }
 
-    function findType4Parameters() {
-      for (let tries = 0; tries < 20000; tries++) {
-        const a = randomNonzeroInteger(-5, 5);
-        const b = randomNonzeroInteger(-5, 5);
-        const sum = a + b;
-        if (sum === 0) continue;
+    function generatePiRatio() {
+      const options = [
+        { num: 2, den: 1 },
+        { num: 1, den: 1 },
+        { num: randomNonzeroInteger(-6, 6), den: 2 },
+        { num: randomNonzeroInteger(-6, 6), den: 3 },
+        { num: randomNonzeroInteger(-6, 6), den: 4 },
+        { num: randomNonzeroInteger(-6, 6), den: 6 }
+      ];
+      return exactFraction(...Object.values(randomChoice(options)));
+    }
 
-        const oldN = randomNonzeroInteger(-7, 7);
-        const oldM = randomNonzeroInteger(-7, 7);
-        if (oldM === oldN) continue;
-
-        const q = randomNonzeroInteger(-7, 7);
-        if (q === oldN) continue;
-
-        const U = sum * (q - oldN) - a * oldM - b * oldN;
-        const V = -sum * q * oldN;
-        const numeratorForC = V - U * oldN;
-        const denominatorForC = oldM - oldN;
-        if (numeratorForC % denominatorForC !== 0) continue;
-
-        const c = numeratorForC / denominatorForC;
-        const d = U - c;
-        if (c === 0 || d === 0) continue;
-        if (Math.abs(c) > 18 || Math.abs(d) > 18) continue;
-
-        const operation = randomChoice(['+', '-']);
-        const limitValue = -oldN;
-        const otherRoot = -oldM;
-        if (limitValue === otherRoot) continue;
-
-        return { a, b, c, d, oldM, oldN, q, operation, limitValue };
+    function generateTrigRational() {
+      const relation = randomChoice(['greater', 'equal', 'less']);
+      let numDegree, denDegree, numerator, denominator, piScale = null;
+      if (relation === 'greater') {
+        denDegree = randomInteger(1, 8);
+        numDegree = randomInteger(denDegree + 1, 10);
+        numerator = randomPolynomialForDegreeComparison(numDegree);
+        denominator = randomPolynomialForDegreeComparison(denDegree);
+      } else if (relation === 'less') {
+        numDegree = randomInteger(1, 8);
+        denDegree = randomInteger(numDegree + 1, 10);
+        numerator = randomPolynomialForDegreeComparison(numDegree);
+        denominator = randomPolynomialForDegreeComparison(denDegree);
+      } else {
+        numDegree = denDegree = randomInteger(1, 10);
+        denominator = randomPolynomialForDegreeComparison(denDegree);
+        const denLead = leadingCoefficient(denominator);
+        piScale = generatePiRatio();
+        numerator = randomPolynomialForDegreeComparison(numDegree);
+        const currentLead = leadingCoefficient(numerator);
+        numerator = combineLikeTerms(numerator.map(term => term.power === numDegree ? makeTerm(denLead, term.power) : term));
       }
-      return { a: 2, b: 1, c: -1, d: 1, oldM: 3, oldN: 1, q: -2, operation: '+', limitValue: -1 };
+      return { relation, numerator, denominator, piScale };
     }
 
     function generateType4LimitProblem() {
-      const p = findType4Parameters();
-      const { a, b, c, d, oldM, oldN, q, operation, limitValue } = p;
-      const A = a + b;
+      const trigName = randomChoice(['sin', 'cos', 'tan']);
+      const rational = generateTrigRational();
+      const { numerator, denominator, piScale } = rational;
+      const numeratorTex = polynomialToTexWithPi(numerator, piScale);
+      const innerTex = `\\frac{${numeratorTex}}{${polynomialToTex(denominator)}}`;
+      let leftInner = rationalEndBehaviour(numerator, denominator, 'negative');
+      let rightInner = rationalEndBehaviour(numerator, denominator, 'positive');
+      if (piScale) {
+        leftInner = rightInner = { kind: 'piMultiple', multiple: piScale, tex: piMultipleToTex(piScale) };
+      }
 
-      const firstNum = polynomialFromAxPlusC(a, c);
-      const firstDen = polynomialFromPlusRoot(oldN);
-      const effectiveSecondNum = polynomialFromAxPlusC(b, d);
-      const displayedSecondNum = operation === '+' ? effectiveSecondNum : scalePolynomial(effectiveSecondNum, -1);
-      const secondDen = polynomialFromPlusRoot(oldM);
-      const commonDenExpanded = multiplyPolynomials(firstDen, secondDen);
-
-      const firstExpandedNum = multiplyPolynomials(firstNum, secondDen);
-      const displayedSecondExpandedNum = multiplyPolynomials(displayedSecondNum, firstDen);
-      const combinedNumerator = operation === '+'
-        ? addPolynomials(firstExpandedNum, displayedSecondExpandedNum)
-        : subtractPolynomials(firstExpandedNum, displayedSecondExpandedNum);
-
-      const factoredOutNumerator = combineLikeTerms([
-        makeTerm(1, 2),
-        makeTerm(q - oldN, 1),
-        makeTerm(-q * oldN, 0)
-      ]);
-      const finalNumerator = polynomialFromAxPlusC(A, -A * q);
-      const finalDenominator = secondDen;
-      const finalNumeratorAtLimit = evaluatePolynomial(finalNumerator, limitValue);
-      const finalDenominatorAtLimit = evaluatePolynomial(finalDenominator, limitValue);
-      const answer = exactFraction(finalNumeratorAtLimit, finalDenominatorAtLimit);
-
-      const opTex = operation === '+' ? '+' : '-';
-      const questionTex = `\\lim_{x \\to ${numberTex(limitValue)}}\\left(${rationalFunctionTex(firstNum, firstDen)} ${opTex} ${rationalFunctionTex(displayedSecondNum, secondDen)}\\right)`;
-      const commonDenHint = `= \\lim_{x \\to ${numberTex(limitValue)}}\\left(\\frac{\\left(${polynomialToTex(firstNum)}\\right)${plusLinearFactorTex(oldM)}}{${plusLinearFactorTex(oldN)}${plusLinearFactorTex(oldM)}} ${opTex} \\frac{\\left(${polynomialToTex(displayedSecondNum)}\\right)${plusLinearFactorTex(oldN)}}{${plusLinearFactorTex(oldM)}${plusLinearFactorTex(oldN)}}\\right)`;
-      const addedHint = `= \\lim_{x \\to ${numberTex(limitValue)}}\\frac{${polynomialToTex(combinedNumerator)}}{${polynomialToTex(commonDenExpanded)}}`;
-      const factorA = A === 1 ? '' : (A === -1 ? '-' : `${A}`);
-      const factorOutHint = `= \\lim_{x \\to ${numberTex(limitValue)}}\\frac{${factorA}\\left(${polynomialToTex(factoredOutNumerator)}\\right)}{${plusLinearFactorTex(oldN)}${plusLinearFactorTex(oldM)}}`;
-      const factorQuadraticHint = `= \\lim_{x \\to ${numberTex(limitValue)}}\\frac{${factorA}${plusLinearFactorTex(oldN)}${plusLinearFactorTex(-q)}}{${plusLinearFactorTex(oldN)}${plusLinearFactorTex(oldM)}}`;
-      const cancelHint = `= \\lim_{x \\to ${numberTex(limitValue)}}\\frac{${polynomialToTex(finalNumerator)}}{${polynomialToTex(finalDenominator)}}`;
-      const substituteHint = `= ${fractionToTex(answer)}`;
+      function outerAnswer(inner) {
+        if (inner.kind === 'finite' && inner.value && inner.value.num === 0) return trigExactAnswer(trigName, { num: 0, den: 1 });
+        if (inner.kind === 'piMultiple') return trigExactAnswer(trigName, inner.multiple);
+        return { kind: 'oscillates', tex: '\\text{DNE}' };
+      }
 
       return {
         type: 4,
-        ...p,
-        questionTex,
-        answer,
-        hints: [commonDenHint, addedHint, factorOutHint, factorQuadraticHint, cancelHint, substituteHint]
+        questionTex: `f(x)=\\${trigName}\\left(${innerTex}\\right).\\quad \\text{Evaluate }\\lim_{x \\to -\\infty}f(x)\\;\\text{and}\\;\\lim_{x \\to \\infty}f(x).`,
+        answers: [
+          { labelTex: '\\lim_{x \\to -\\infty}f(x)', answer: outerAnswer(leftInner) },
+          { labelTex: '\\lim_{x \\to \\infty}f(x)', answer: outerAnswer(rightInner) }
+        ],
+        hints: []
+      };
+    }
+
+    function exponentialTermToTex(term, baseTex) {
+      const coefficientTex = term.coefficient === 1 ? '' : term.coefficient === -1 ? '-' : `${term.coefficient}\\cdot `;
+      return `${coefficientTex}${baseTex}^{${term.power === 1 ? 'x' : `${term.power}x`}}`;
+    }
+
+    function exponentialExpressionToTex(terms, baseTex) {
+      const sorted = [...terms].sort((a, b) => b.power - a.power);
+      return sorted.map((term, index) => {
+        const absTerm = { ...term, coefficient: Math.abs(term.coefficient) };
+        const body = exponentialTermToTex(absTerm, baseTex);
+        if (term.coefficient < 0) return index === 0 ? `-${body}` : `- ${body}`;
+        return index === 0 ? body : `+ ${body}`;
+      }).join(' ');
+    }
+
+    function randomExponentialExpressionExactDegree(degree) {
+      const possiblePowers = [];
+      for (let k = -10; k <= 10; k++) if (k !== 0 && k !== degree) possiblePowers.push(k);
+      const termCount = randomInteger(1, 5);
+      const chosen = [degree];
+      while (chosen.length < termCount && possiblePowers.length) {
+        const index = randomInteger(0, possiblePowers.length - 1);
+        chosen.push(possiblePowers.splice(index, 1)[0]);
+      }
+      return chosen.map(power => ({ coefficient: randomNonzeroInteger(-10, 10), power }));
+    }
+
+    function exponentialEndBehaviour(numTerms, denTerms, direction) {
+      const transformPower = term => direction === 'positive' ? term.power : -term.power;
+      const numLead = numTerms.reduce((best, term) => transformPower(term) > transformPower(best) ? term : best, numTerms[0]);
+      const denLead = denTerms.reduce((best, term) => transformPower(term) > transformPower(best) ? term : best, denTerms[0]);
+      const numDegree = transformPower(numLead);
+      const denDegree = transformPower(denLead);
+      if (numDegree < denDegree) return { kind: 'finite', value: exactFraction(0, 1), tex: '0' };
+      if (numDegree === denDegree) {
+        const value = exactFraction(numLead.coefficient, denLead.coefficient);
+        return { kind: 'finite', value, tex: fractionToTex(value) };
+      }
+      const sign = Math.sign(numLead.coefficient / denLead.coefficient);
+      return { kind: sign > 0 ? 'infinity' : 'negativeInfinity' };
+    }
+
+    function generateType5LimitProblem() {
+      const baseTex = Math.random() < 0.6 ? `${randomInteger(2, 10)}` : 'e';
+      const relation = randomChoice(['greater', 'equal', 'less']);
+      let numDegree, denDegree;
+      const possibleDegrees = [];
+      for (let k = -10; k <= 10; k++) if (k !== 0) possibleDegrees.push(k);
+      if (relation === 'greater') {
+        const pairs = [];
+        possibleDegrees.forEach(a => possibleDegrees.forEach(b => { if (a > b) pairs.push([a, b]); }));
+        [numDegree, denDegree] = randomChoice(pairs);
+      } else if (relation === 'less') {
+        const pairs = [];
+        possibleDegrees.forEach(a => possibleDegrees.forEach(b => { if (a < b) pairs.push([a, b]); }));
+        [numDegree, denDegree] = randomChoice(pairs);
+      } else {
+        numDegree = denDegree = randomChoice(possibleDegrees);
+      }
+      const numerator = randomExponentialExpressionExactDegree(numDegree);
+      const denominator = randomExponentialExpressionExactDegree(denDegree);
+      return {
+        type: 5,
+        questionTex: `f(x)=\\frac{${exponentialExpressionToTex(numerator, baseTex)}}{${exponentialExpressionToTex(denominator, baseTex)}}.\\quad \\text{Evaluate }\\lim_{x \\to -\\infty}f(x)\\;\\text{and}\\;\\lim_{x \\to \\infty}f(x).`,
+        answers: [
+          { labelTex: '\\lim_{x \\to -\\infty}f(x)', answer: exponentialEndBehaviour(numerator, denominator, 'negative') },
+          { labelTex: '\\lim_{x \\to \\infty}f(x)', answer: exponentialEndBehaviour(numerator, denominator, 'positive') }
+        ],
+        hints: []
       };
     }
 
     function generateLimitProblem() {
       const r = Math.random();
-      if (r < 0.25) return generateType1LimitProblem();
-      if (r < 0.50) return generateType2LimitProblem();
-      if (r < 0.75) return generateType3LimitProblem();
-      return generateType4LimitProblem();
+      if (r < 0.30) return generateType1LimitProblem();
+      if (r < 0.40) return generateType2LimitProblem();
+      if (r < 0.70) return generateType3LimitProblem();
+      if (r < 0.90) return generateType4LimitProblem();
+      return generateType5LimitProblem();
     }
 
     function createHintStepBlock(extraClass = '') {
@@ -655,33 +886,40 @@ fetch("/nav.html")
     }
 
     function setupAnswerEditor() {
-      finalAnswerInput.innerHTML = `
-        <div class="answer-line">
-          <label style="font-weight: bold; margin-right: 0.5em;">Limit =</label>
-          <span id="answer-editor-main" class="polynomial-answer-editor math-answer-editor" contenteditable="true" role="textbox" aria-label="Limit value answer" style="min-width: 130px;"></span>
+      const answers = currentProblem && currentProblem.answers ? currentProblem.answers : [{ labelTex: 'Limit', answer: currentProblem.answer }];
+      finalAnswerInput.innerHTML = answers.map((entry, index) => `
+        <div class="answer-line" style="margin: 0.65em 0;">
+          <label style="font-weight: bold; margin-right: 0.5em;">\\(${entry.labelTex}=\\)</label>
+          <span id="answer-editor-${index}" class="polynomial-answer-editor math-answer-editor" contenteditable="true" role="textbox" aria-label="Limit value answer ${index + 1}" style="min-width: 130px;"></span>
         </div>
+      `).join('') + `
         <div class="answer-toolbar" aria-label="Math input buttons">
           <button type="button" class="math-symbol-button" data-insert-text="/">/</button>
+          <button type="button" class="math-symbol-button" data-insert-text="infty">∞</button>
+          <button type="button" class="math-symbol-button" data-insert-text="DNE">DNE</button>
           <button type="button" class="math-symbol-button" data-insert-fraction="true"><span class="fraction-button-display"><span class="fraction-button-top">a</span><span class="fraction-button-bottom">b</span></span></button>
         </div>
       `;
 
-      const editor = document.getElementById('answer-editor-main');
-      activeMathEditor = editor;
-      editor.focus();
-      editor.addEventListener('focus', () => { activeMathEditor = editor; });
-      editor.addEventListener('click', () => { activeMathEditor = editor; });
-      editor.addEventListener('keydown', handleMathEditorKeydown);
+      const editors = finalAnswerInput.querySelectorAll('.math-answer-editor');
+      activeMathEditor = editors[0];
+      editors.forEach(editor => {
+        editor.addEventListener('focus', () => { activeMathEditor = editor; });
+        editor.addEventListener('click', () => { activeMathEditor = editor; });
+        editor.addEventListener('keydown', handleMathEditorKeydown);
+      });
+      if (activeMathEditor) activeMathEditor.focus();
 
       finalAnswerInput.querySelectorAll('.math-symbol-button').forEach(button => {
         button.addEventListener('mousedown', event => event.preventDefault());
         button.addEventListener('click', () => {
-          const target = activeMathEditor || editor;
+          const target = activeMathEditor || editors[0];
           target.focus();
           if (button.dataset.insertText !== undefined) insertTextAtSelection(button.dataset.insertText, target);
           else if (button.dataset.insertFraction) insertFractionAtSelection(target);
         });
       });
+      typesetElement(finalAnswerInput);
     }
 
     function handleMathEditorKeydown(event) {
@@ -843,14 +1081,57 @@ fetch("/nav.html")
       }
     }
 
+    function normalizeAnswerText(raw) {
+      return raw
+        .replace(/\u200b/g, '')
+        .replace(/−/g, '-')
+        .replace(/∞/g, 'infty')
+        .replace(/\\infty/g, 'infty')
+        .replace(/\s+/g, '')
+        .replace(/^=/, '')
+        .toLowerCase();
+    }
+
+    function evaluateFlexibleNumericAnswer(raw) {
+      const text = normalizeAnswerText(raw)
+        .replace(/sqrt/g, 'Math.sqrt')
+        .replace(/pi/g, 'Math.PI');
+      if (!text || /[^0-9+\-*/().MathsqrtPI]/.test(text)) return NaN;
+      try {
+        const value = Function(`"use strict"; return (${text});`)();
+        return Number.isFinite(value) ? value : NaN;
+      } catch (error) {
+        return NaN;
+      }
+    }
+
+    function answerMatches(userRaw, expected) {
+      const text = normalizeAnswerText(userRaw);
+      if (expected.kind === 'infinity') return ['infty', '+infty', 'infinity', '+infinity'].includes(text);
+      if (expected.kind === 'negativeInfinity') return ['-infty', '-infinity'].includes(text);
+      if (expected.kind === 'dne' || expected.kind === 'oscillates') return ['dne', 'doesnotexist', 'undefined'].includes(text);
+      if (expected.kind === 'undefined') return ['undefined', 'dne', 'doesnotexist'].includes(text);
+      if (expected.kind === 'finite') {
+        const userValue = evaluateFlexibleNumericAnswer(userRaw);
+        const expectedValue = expected.value && expected.value.decimal !== undefined
+          ? expected.value.decimal
+          : fractionToNumber(expected.value);
+        return Number.isFinite(userValue) && Math.abs(userValue - expectedValue) < 1e-8;
+      }
+      const userValue = evaluateFlexibleNumericAnswer(userRaw);
+      const expectedValue = fractionToNumber(expected);
+      return Number.isFinite(userValue) && Math.abs(userValue - expectedValue) < 1e-8;
+    }
+
     function checkUserAnswer() {
       if (!currentProblem) return;
-      const editor = document.getElementById('answer-editor-main');
-      const userValue = evaluateNumericAnswer(editorToPlainText(editor));
-      const expected = fractionToNumber(currentProblem.answer);
-      const correct = Number.isFinite(userValue) && Math.abs(userValue - expected) < 1e-8;
-      feedbackText.textContent = correct ? 'Correct!' : 'Incorrect, try again.';
-      feedbackText.style.color = correct ? 'green' : 'red';
+      const answers = currentProblem.answers || [{ labelTex: 'Limit', answer: currentProblem.answer }];
+      const allCorrect = answers.every((entry, index) => {
+        const editor = document.getElementById(`answer-editor-${index}`);
+        return editor && answerMatches(editorToPlainText(editor), entry.answer);
+      });
+      feedbackText.textContent = allCorrect ? 'Correct!' : 'Incorrect, try again.';
+      feedbackText.style.color = allCorrect ? 'green' : 'red';
     }
 
     function clearOldActivityState() {
@@ -876,7 +1157,7 @@ fetch("/nav.html")
       questionText.innerHTML = `Evaluate: \\[${currentProblem.questionTex}\\]`;
       setupAnswerEditor();
       checkBtn.style.display = 'inline-block';
-      hintBtn.disabled = false;
+      hintBtn.disabled = !currentProblem.hints.length;
       typesetElement(questionText);
     });
 

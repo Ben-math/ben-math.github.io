@@ -3,6 +3,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -593,6 +594,7 @@ fetch("/nav.html")
       if (answer.kind === 'negativeInfinity') return '-\\infty';
       if (answer.kind === 'dne') return '\\text{DNE}';
       if (answer.kind === 'oscillates') return '\\text{DNE}';
+      if (answer.kind === 'undefined') return '\\text{DNE}';
       if (answer.kind === 'finite') return answer.tex || fractionToTex(answer.value);
       return `${answer}`;
     }
@@ -614,7 +616,7 @@ fetch("/nav.html")
       const f = exactFraction(piMultiple.num, piMultiple.den);
       const angle = Math.PI * f.num / f.den;
       let value = trigName === 'sin' ? Math.sin(angle) : trigName === 'cos' ? Math.cos(angle) : Math.tan(angle);
-      if (Math.abs(value) > 1e12 || !Number.isFinite(value)) return { kind: 'undefined', tex: '\\text{undefined}' };
+      if (Math.abs(value) > 1e12 || !Number.isFinite(value)) return { kind: 'dne', tex: '\\text{DNE}' };
       value = Math.round(value * 1e12) / 1e12;
       const special = [
         { v: -Math.sqrt(3), tex: '-\\sqrt{3}' },
@@ -668,7 +670,6 @@ fetch("/nav.html")
       const localFactorTex = denominatorDegree === 1 ? '1' : `${numberTex(otherFactorAtN)}`;
       const reducedLocalCoefficient = exactFraction(numeratorAtN, otherFactorAtN);
       return [
-        `\\text{The denominator has the factor }${linearFactorTex(n)}\\text{, so }x=${numberTex(n)}\\text{ is a vertical-asymptote candidate.}`,
         `\\text{Near }x=${numberTex(n)}\\text{,}\\quad f(x)\\sim\\frac{${numberTex(numeratorAtN)}}{${localFactorTex}${linearFactorTex(n)}}=\\frac{${fractionToTex(reducedLocalCoefficient)}}{${linearFactorTex(n)}}.`,
         `\\text{As }x\\to ${numberTex(n)}^+\\text{, }${linearFactorTex(n)}\\to 0^+\\text{, so }f(x)\\to ${answerObjectToTex(answers[0].answer)}.`,
         `\\text{As }x\\to ${numberTex(n)}^-\\text{, }${linearFactorTex(n)}\\to 0^-\\text{, so }f(x)\\to ${answerObjectToTex(answers[1].answer)}.`,
@@ -841,7 +842,11 @@ fetch("/nav.html")
       if ((leftInner.kind === 'finite' && leftInner.value && leftInner.value.num === 0) || (rightInner.kind === 'finite' && rightInner.value && rightInner.value.num === 0)) {
         hints.push(`\\text{Now apply the outer function: }\\${trigName}(0)=0.`);
       } else if (piScale) {
-        hints.push(`\\text{Now apply the outer function: }\\${trigName}\\left(${piMultipleToTex(piScale)}\\right).`);
+        if (answers.some(entry => entry.answer.kind === 'dne' || entry.answer.kind === 'undefined')) {
+          hints.push(`\\text{Now apply the outer function: }\\${trigName}\\left(${piMultipleToTex(piScale)}\\right)\\text{ is undefined, so the limits do not exist.}`);
+        } else {
+          hints.push(`\\text{Now apply the outer function: }\\${trigName}\\left(${piMultipleToTex(piScale)}\\right)=${answerObjectToTexExtended(answers[0].answer)}.`);
+        }
       } else {
         hints.push(`\\text{Since the inside grows without bound, the trigonometric function oscillates and the limit does not exist.}`);
       }
@@ -881,6 +886,40 @@ fetch("/nav.html")
       return `\\lim_{x\\to\\pm\\infty}f(x)=\\lim_{x\\to\\pm\\infty}${original}=\\lim_{x\\to\\pm\\infty}${unsimplified}=\\lim_{x\\to\\pm\\infty}${simplified}`;
     }
 
+    function exponentialLeadTermByPower(terms, power) {
+      return terms.find(term => term.power === power);
+    }
+
+    function exponentialDirectionComparisonHint(baseTex, numerator, denominator, divisorPower, direction) {
+      const shiftedNumerator = numerator.map(term => ({ ...term, shiftedPower: term.power - divisorPower }));
+      const shiftedDenominator = denominator.map(term => ({ ...term, shiftedPower: term.power - divisorPower }));
+      if (direction === 'positive') {
+        const numMax = Math.max(...shiftedNumerator.map(term => term.shiftedPower));
+        const denMax = Math.max(...shiftedDenominator.map(term => term.shiftedPower));
+        if (numMax > denMax) {
+          const term = shiftedNumerator.find(item => item.shiftedPower === numMax);
+          return `\\text{As }x\\to\\infty\\text{, the numerator has the growing dominant term }${exponentialDividedTermBody(term, divisorPower, baseTex)}\\text{, while the denominator is lower order.}`;
+        }
+        if (numMax === denMax) {
+          return `\\text{As }x\\to\\infty\\text{, the dominant remaining exponential degree is the same in numerator and denominator, so their coefficients determine the limit.}`;
+        }
+        const term = shiftedDenominator.find(item => item.shiftedPower === denMax);
+        return `\\text{As }x\\to\\infty\\text{, the denominator has the growing dominant term }${exponentialDividedTermBody(term, divisorPower, baseTex)}\\text{, while the numerator is lower order.}`;
+      }
+
+      const numMin = Math.min(...shiftedNumerator.map(term => term.shiftedPower));
+      const denMin = Math.min(...shiftedDenominator.map(term => term.shiftedPower));
+      if (numMin < denMin) {
+        const term = shiftedNumerator.find(item => item.shiftedPower === numMin);
+        return `\\text{As }x\\to-\\infty\\text{, the most negative remaining exponent grows fastest; in the numerator this is }${exponentialDividedTermBody(term, divisorPower, baseTex)}.`;
+      }
+      if (numMin === denMin) {
+        return `\\text{As }x\\to-\\infty\\text{, the most negative remaining exponent is the same in numerator and denominator, so their coefficients determine the limit.}`;
+      }
+      const term = shiftedDenominator.find(item => item.shiftedPower === denMin);
+      return `\\text{As }x\\to-\\infty\\text{, the most negative remaining exponent grows fastest; in the denominator this is }${exponentialDividedTermBody(term, divisorPower, baseTex)}.`;
+    }
+
     function type5Hints(baseTex, numerator, denominator, numDegree, denDegree, answers) {
       const divisorPower = Math.min(numDegree, denDegree);
       const hints = [];
@@ -892,16 +931,22 @@ fetch("/nav.html")
       hints.push(exponentialDivideEquationTex(numerator, denominator, divisorPower, baseTex));
 
       if (numDegree > denDegree) {
-        hints.push(`\\text{After division, the numerator still has a growing exponential term relative to the denominator.  Use its sign to determine whether the function goes to }\\infty\\text{ or }-\\infty.`);
+        const numLead = exponentialLeadTermByPower(numerator, numDegree).coefficient;
+        const denLead = exponentialLeadTermByPower(denominator, denDegree).coefficient;
+        hints.push(`\\text{For }x\\to\\infty\\text{, the term of exponential degree }${numDegree}\\text{ in the numerator dominates the constant term from degree }${denDegree}\\text{ in the denominator.}`);
+        hints.push(`\\text{The sign is determined by }\\frac{${numLead}}{${denLead}}\\text{, so }\\lim_{x\\to\\infty}f(x)=${answerObjectToTexExtended(answers[1].answer)}.`);
       } else if (numDegree === denDegree) {
-        const numLead = numerator.find(term => term.power === numDegree).coefficient;
-        const denLead = denominator.find(term => term.power === denDegree).coefficient;
-        hints.push(`\\text{Every term with smaller exponential degree becomes negligible compared with the constant terms from the leading exponentials.}`);
-        hints.push(`\\frac{${numLead}}{${denLead}}=${fractionToTex(exactFraction(numLead, denLead))}\\quad\\text{for the dominant-direction comparison.}`);
+        const numLead = exponentialLeadTermByPower(numerator, numDegree).coefficient;
+        const denLead = exponentialLeadTermByPower(denominator, denDegree).coefficient;
+        hints.push(`\\text{For }x\\to\\infty\\text{, every term with smaller exponential degree becomes negligible compared with the constant terms from the leading exponentials.}`);
+        hints.push(`\\lim_{x\\to\\infty}f(x)=\\frac{${numLead}}{${denLead}}=${fractionToTex(exactFraction(numLead, denLead))}.`);
       } else {
-        hints.push(`\\text{After division, the denominator still has a growing exponential term relative to the numerator, so the ratio approaches }0\\text{ in the dominant direction.}`);
+        hints.push(`\\text{For }x\\to\\infty\\text{, the denominator still has a growing exponential term after division, while the numerator stays finite.}`);
+        hints.push(`\\lim_{x\\to\\infty}f(x)=0.`);
       }
-      hints.push(`\\text{For }x\\to -\\infty\\text{, remember that the most negative exponent of }${baseTex}^{kx}\\text{ is the one that grows fastest.}`);
+
+      hints.push(exponentialDirectionComparisonHint(baseTex, numerator, denominator, divisorPower, 'negative'));
+      hints.push(`\\lim_{x\\to-\\infty}f(x)=${answerObjectToTexExtended(answers[0].answer)}.`);
       hints.push(`${answerListTexExtended(answers)}`);
       return hints;
     }
@@ -1067,8 +1112,8 @@ fetch("/nav.html")
 
     function randomExponentialExpressionExactDegree(degree) {
       const possiblePowers = [];
-      for (let k = -10; k <= 10; k++) if (k !== 0 && k !== degree) possiblePowers.push(k);
-      const termCount = randomInteger(1, 5);
+      for (let k = -10; k < degree; k++) if (k !== 0) possiblePowers.push(k);
+      const termCount = randomInteger(1, Math.min(5, possiblePowers.length + 1));
       const chosen = [degree];
       while (chosen.length < termCount && possiblePowers.length) {
         const index = randomInteger(0, possiblePowers.length - 1);

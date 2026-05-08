@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -688,63 +689,221 @@ fetch("/nav.html")
       ];
     }
 
-    function rationalComparisonHint(num, den) {
-      const numDegree = degreeOfPolynomial(num);
-      const denDegree = degreeOfPolynomial(den);
-      if (numDegree < denDegree) return `\\deg(\\text{numerator})<\\deg(\\text{denominator})\\text{, so the rational function approaches }0.`;
-      if (numDegree === denDegree) return `\\deg(\\text{numerator})=\\deg(\\text{denominator})\\text{, so the limit is the ratio of leading coefficients.}`;
-      return `\\deg(\\text{numerator})>\\deg(\\text{denominator})\\text{, so the function grows like a power of }x.`;
+    function xPowerTex(power) {
+      if (power === 0) return '1';
+      if (power === 1) return 'x';
+      return `x^{${power}}`;
     }
 
-    function type3Hints(numerator, denominator, answers) {
+    function exponentialPowerTex(baseTex, power) {
+      if (power === 0) return '1';
+      const exponentTex = power === 1 ? 'x' : `${power}x`;
+      return `${baseTex}^{${exponentTex}}`;
+    }
+
+    function signedBodyTex(body, coefficient, index) {
+      if (coefficient < 0) return index === 0 ? `-${body}` : `- ${body}`;
+      return index === 0 ? body : `+ ${body}`;
+    }
+
+    function plainMonomialBody(absCoefficient, power) {
+      const variablePart = xPowerTex(power);
+      if (power === 0) return `${absCoefficient}`;
+      if (absCoefficient === 1) return variablePart;
+      return `${absCoefficient}${variablePart}`;
+    }
+
+    function piCoefficientTexForScale(absCoefficient, piScale) {
+      const scale = exactFraction(piScale.num * absCoefficient, piScale.den);
+      if (scale.num === scale.den) return '\\pi';
+      if (scale.den === 1) return `${scale.num}\\pi`;
+      return `\\frac{${scale.num}\\pi}{${scale.den}}`;
+    }
+
+    function termBodyPossiblyPi(term, poly, piScale) {
+      const absCoefficient = Math.abs(term.coefficient);
+      const isPiLead = piScale && term.power === degreeOfPolynomial(poly);
+      if (!isPiLead) return plainMonomialBody(absCoefficient, term.power);
+      const piCoeff = piCoefficientTexForScale(absCoefficient, piScale);
+      if (term.power === 0) return piCoeff;
+      return `${piCoeff}\\,${xPowerTex(term.power)}`;
+    }
+
+    function termOverXPowerTex(term, divisorPower, index, poly = null, piScale = null) {
+      const body = termBodyPossiblyPi(term, poly || [term], piScale);
+      const divisor = xPowerTex(divisorPower);
+      return signedBodyTex(`\\frac{${body}}{${divisor}}`, term.coefficient, index);
+    }
+
+    function dividedTermBody(term, divisorPower, poly = null, piScale = null) {
+      const newPower = term.power - divisorPower;
+      const absCoefficient = Math.abs(term.coefficient);
+      const isPiLead = piScale && poly && term.power === degreeOfPolynomial(poly);
+      const coeffBody = isPiLead ? piCoefficientTexForScale(absCoefficient, piScale) : `${absCoefficient}`;
+
+      if (newPower > 0) {
+        if (!isPiLead) return plainMonomialBody(absCoefficient, newPower);
+        return `${coeffBody}\\,${xPowerTex(newPower)}`;
+      }
+      if (newPower === 0) return coeffBody;
+      const denominator = xPowerTex(-newPower);
+      return `\\frac{${coeffBody}}{${denominator}}`;
+    }
+
+    function dividedTermTex(term, divisorPower, index, poly = null, piScale = null) {
+      return signedBodyTex(dividedTermBody(term, divisorPower, poly, piScale), term.coefficient, index);
+    }
+
+    function dividedPolynomialUnsimplifiedTex(poly, divisorPower, piScale = null) {
+      return combineLikeTerms(poly).map((term, index) => termOverXPowerTex(term, divisorPower, index, poly, piScale)).join(' ');
+    }
+
+    function dividedPolynomialSimplifiedTex(poly, divisorPower, piScale = null) {
+      return combineLikeTerms(poly).map((term, index) => dividedTermTex(term, divisorPower, index, poly, piScale)).join(' ');
+    }
+
+    function polynomialToTexMaybePi(poly, piScale = null) {
+      return piScale ? polynomialToTexWithPi(poly, piScale) : polynomialToTex(poly);
+    }
+
+    function rationalDivideEquationTex(numerator, denominator, divisorPower, piScale = null, functionName = 'f') {
+      const original = `\\frac{${polynomialToTexMaybePi(numerator, piScale)}}{${polynomialToTex(denominator)}}`;
+      const unsimplified = `\\frac{${dividedPolynomialUnsimplifiedTex(numerator, divisorPower, piScale)}}{${dividedPolynomialUnsimplifiedTex(denominator, divisorPower)}}`;
+      const simplified = `\\frac{${dividedPolynomialSimplifiedTex(numerator, divisorPower, piScale)}}{${dividedPolynomialSimplifiedTex(denominator, divisorPower)}}`;
+      return `\\lim_{x\\to\\pm\\infty}${functionName}(x)=\\lim_{x\\to\\pm\\infty}${original}=\\lim_{x\\to\\pm\\infty}${unsimplified}=\\lim_{x\\to\\pm\\infty}${simplified}`;
+    }
+
+    function answerObjectToTexExtended(answer) {
+      if (answer.kind === 'piMultiple') return answer.tex || piMultipleToTex(answer.multiple);
+      return answerObjectToTex(answer);
+    }
+
+    function answerEquationTexExtended(entry) {
+      return `${entry.labelTex}=${answerObjectToTexExtended(entry.answer)}`;
+    }
+
+    function answerListTexExtended(entries) {
+      return entries.map(answerEquationTexExtended).join(',\\quad ');
+    }
+
+    function rationalDivisionHints(numerator, denominator, answers, options = {}) {
+      const { piScale = null, functionName = 'f', finalAnswers = true } = options;
       const numDegree = degreeOfPolynomial(numerator);
       const denDegree = degreeOfPolynomial(denominator);
+      const divisorPower = Math.min(numDegree, denDegree);
       const numLead = leadingCoefficient(numerator);
       const denLead = leadingCoefficient(denominator);
-      return [
-        `\\text{Compare the leading terms: numerator }${leadingTermTex(numerator)}\\text{ and denominator }${leadingTermTex(denominator)}.`,
-        `\\deg(\\text{numerator})=${numDegree},\\quad \\deg(\\text{denominator})=${denDegree}.`,
-        rationalComparisonHint(numerator, denominator),
-        numDegree === denDegree
-          ? `\\frac{${numLead}}{${denLead}}=${fractionToTex(exactFraction(numLead, denLead))}.`
-          : `\\text{Check the sign separately for }x\\to -\\infty\\text{ and }x\\to \\infty.`,
-        `${answerListTex(answers)}`
-      ];
-    }
+      const hints = [];
 
-    function type4Hints(trigName, numerator, denominator, piScale, leftInner, rightInner, answers) {
-      const innerName = `g(x)`;
-      const hints = [
-        `\\text{Work from the inside out.  First study }${innerName}=\\frac{${polynomialToTexWithPi(numerator, piScale)}}{${polynomialToTex(denominator)}}.`,
-        `\\text{For the inner rational function: }${rationalComparisonHint(numerator, denominator)}`
-      ];
-      if (piScale) {
-        hints.push(`\\lim_{x\\to -\\infty}g(x)=\\lim_{x\\to \\infty}g(x)=${piMultipleToTex(piScale)}.`);
-        hints.push(`\\text{Now apply the outer function: }\\${trigName}\\left(${piMultipleToTex(piScale)}\\right).`);
+      if (numDegree === denDegree) {
+        hints.push(`\\text{The degree of both the numerator and denominator is }${numDegree}\\text{, so we divide every term by }${xPowerTex(divisorPower)}.`);
       } else {
-        hints.push(`\\lim_{x\\to -\\infty}g(x)=${answerObjectToTex(leftInner)},\\quad \\lim_{x\\to \\infty}g(x)=${answerObjectToTex(rightInner)}.`);
-        if (leftInner.kind === 'finite' || rightInner.kind === 'finite') {
-          hints.push(`\\text{When }g(x)\\to 0\\text{, }\\${trigName}(g(x))\\to \\${trigName}(0)=0.`);
-        } else {
-          hints.push(`\\text{Since the inside grows without bound, the trigonometric function oscillates and the limit does not exist.}`);
-        }
+        hints.push(`\\text{The lowest degree of the numerator/denominator is }${divisorPower}\\text{, so we divide every term by }${xPowerTex(divisorPower)}.`);
       }
-      hints.push(`${answerListTex(answers)}`);
+      hints.push(rationalDivideEquationTex(numerator, denominator, divisorPower, piScale, functionName));
+
+      if (numDegree > denDegree) {
+        const dominantNumeratorTerm = dividedTermBody(combineLikeTerms(numerator)[0], divisorPower, numerator, piScale);
+        hints.push(`\\text{The lead term in the higher degree numerator, }${dominantNumeratorTerm}\\text{, dominates and determines the end behaviour.}`);
+        hints.push(`\\text{The dominant term in the denominator is }${denLead}\\text{, which is }${signTex(denLead)}.`);
+        const diff = numDegree - denDegree;
+        hints.push(diff % 2 === 0
+          ? `\\text{Since the remaining exponent is even, the two ends go in the same direction.}`
+          : `\\text{Since the remaining exponent is odd, the two ends go in opposite directions.}`);
+      } else if (numDegree === denDegree) {
+        const ratio = piScale ? piMultipleToTex(piScale) : fractionToTex(exactFraction(numLead, denLead));
+        hints.push(`\\text{Every term in the above limit approaches zero except the constants, so we have a horizontal asymptote at their ratio.}`);
+        hints.push(piScale
+          ? `\\frac{${numLead < 0 ? '-' : ''}${piCoefficientTexForScale(Math.abs(numLead), piScale)}}{${denLead}}=${ratio}`
+          : `\\frac{${numLead}}{${denLead}}=${ratio}`);
+      } else {
+        hints.push(`\\text{The numerator is finite and the denominator grows without bound, so we have a horizontal asymptote at }y=0.`);
+      }
+      if (finalAnswers) hints.push(`${answerListTexExtended(answers)}`);
       return hints;
     }
 
-    function type5Hints(baseTex, numerator, denominator, answers) {
-      const numMaxPositive = numerator.reduce((best, term) => term.power > best.power ? term : best, numerator[0]);
-      const denMaxPositive = denominator.reduce((best, term) => term.power > best.power ? term : best, denominator[0]);
-      const numMaxNegative = numerator.reduce((best, term) => term.power < best.power ? term : best, numerator[0]);
-      const denMaxNegative = denominator.reduce((best, term) => term.power < best.power ? term : best, denominator[0]);
-      return [
-        `\\text{For }x\\to \\infty\\text{, compare the largest exponents of }${baseTex}^{kx}\\text{ in the numerator and denominator.}`,
-        `x\\to \\infty:\\quad \\text{numerator dominant exponent }${numMaxPositive.power}x,\\quad \\text{denominator dominant exponent }${denMaxPositive.power}x.`,
-        `\\text{For }x\\to -\\infty\\text{, the most negative exponent dominates, since }${baseTex}^{kx}\\text{ grows when }k<0.`,
-        `x\\to -\\infty:\\quad \\text{numerator dominant exponent }${numMaxNegative.power}x,\\quad \\text{denominator dominant exponent }${denMaxNegative.power}x.`,
-        `${answerListTex(answers)}`
+    function type3Hints(numerator, denominator, answers) {
+      return rationalDivisionHints(numerator, denominator, answers);
+    }
+
+    function type4Hints(trigName, numerator, denominator, piScale, leftInner, rightInner, answers) {
+      const innerAnswers = [
+        { labelTex: '\\lim_{x \\to -\\infty}g(x)', answer: leftInner },
+        { labelTex: '\\lim_{x \\to \\infty}g(x)', answer: rightInner }
       ];
+      const hints = [
+        `\\text{Work from the inside out.  Let }g(x)=\\frac{${polynomialToTexMaybePi(numerator, piScale)}}{${polynomialToTex(denominator)}}.`
+      ];
+      hints.push(...rationalDivisionHints(numerator, denominator, innerAnswers, { piScale, functionName: 'g', finalAnswers: false }));
+      hints.push(`${answerListTexExtended(innerAnswers)}`);
+
+      if ((leftInner.kind === 'finite' && leftInner.value && leftInner.value.num === 0) || (rightInner.kind === 'finite' && rightInner.value && rightInner.value.num === 0)) {
+        hints.push(`\\text{Now apply the outer function: }\\${trigName}(0)=0.`);
+      } else if (piScale) {
+        hints.push(`\\text{Now apply the outer function: }\\${trigName}\\left(${piMultipleToTex(piScale)}\\right).`);
+      } else {
+        hints.push(`\\text{Since the inside grows without bound, the trigonometric function oscillates and the limit does not exist.}`);
+      }
+      hints.push(`${answerListTexExtended(answers)}`);
+      return hints;
+    }
+
+    function exponentialDividedTermBody(term, divisorPower, baseTex) {
+      const newPower = term.power - divisorPower;
+      const coeff = Math.abs(term.coefficient);
+      const coefficientTex = coeff === 1 ? '' : `${coeff}\\cdot `;
+      if (newPower === 0) return `${coeff}`;
+      return `${coefficientTex}${exponentialPowerTex(baseTex, newPower)}`;
+    }
+
+    function exponentialTermOverDivisorTex(term, divisorPower, baseTex, index) {
+      const body = exponentialTermToTex({ ...term, coefficient: Math.abs(term.coefficient) }, baseTex);
+      return signedBodyTex(`\\frac{${body}}{${exponentialPowerTex(baseTex, divisorPower)}}`, term.coefficient, index);
+    }
+
+    function exponentialDividedTermTex(term, divisorPower, baseTex, index) {
+      return signedBodyTex(exponentialDividedTermBody(term, divisorPower, baseTex), term.coefficient, index);
+    }
+
+    function exponentialDividedExpressionUnsimplifiedTex(terms, divisorPower, baseTex) {
+      return [...terms].sort((a, b) => b.power - a.power).map((term, index) => exponentialTermOverDivisorTex(term, divisorPower, baseTex, index)).join(' ');
+    }
+
+    function exponentialDividedExpressionSimplifiedTex(terms, divisorPower, baseTex) {
+      return [...terms].sort((a, b) => b.power - a.power).map((term, index) => exponentialDividedTermTex(term, divisorPower, baseTex, index)).join(' ');
+    }
+
+    function exponentialDivideEquationTex(numerator, denominator, divisorPower, baseTex) {
+      const original = `\\frac{${exponentialExpressionToTex(numerator, baseTex)}}{${exponentialExpressionToTex(denominator, baseTex)}}`;
+      const unsimplified = `\\frac{${exponentialDividedExpressionUnsimplifiedTex(numerator, divisorPower, baseTex)}}{${exponentialDividedExpressionUnsimplifiedTex(denominator, divisorPower, baseTex)}}`;
+      const simplified = `\\frac{${exponentialDividedExpressionSimplifiedTex(numerator, divisorPower, baseTex)}}{${exponentialDividedExpressionSimplifiedTex(denominator, divisorPower, baseTex)}}`;
+      return `\\lim_{x\\to\\pm\\infty}f(x)=\\lim_{x\\to\\pm\\infty}${original}=\\lim_{x\\to\\pm\\infty}${unsimplified}=\\lim_{x\\to\\pm\\infty}${simplified}`;
+    }
+
+    function type5Hints(baseTex, numerator, denominator, numDegree, denDegree, answers) {
+      const divisorPower = Math.min(numDegree, denDegree);
+      const hints = [];
+      if (numDegree === denDegree) {
+        hints.push(`\\text{The numerator and denominator have the same exponential degree }${numDegree}\\text{, so we divide every term by }${exponentialPowerTex(baseTex, divisorPower)}.`);
+      } else {
+        hints.push(`\\text{The lowest exponential degree of the numerator/denominator is }${divisorPower}\\text{, so we divide every term by }${exponentialPowerTex(baseTex, divisorPower)}.`);
+      }
+      hints.push(exponentialDivideEquationTex(numerator, denominator, divisorPower, baseTex));
+
+      if (numDegree > denDegree) {
+        hints.push(`\\text{After division, the numerator still has a growing exponential term relative to the denominator.  Use its sign to determine whether the function goes to }\\infty\\text{ or }-\\infty.`);
+      } else if (numDegree === denDegree) {
+        const numLead = numerator.find(term => term.power === numDegree).coefficient;
+        const denLead = denominator.find(term => term.power === denDegree).coefficient;
+        hints.push(`\\text{Every term with smaller exponential degree becomes negligible compared with the constant terms from the leading exponentials.}`);
+        hints.push(`\\frac{${numLead}}{${denLead}}=${fractionToTex(exactFraction(numLead, denLead))}\\quad\\text{for the dominant-direction comparison.}`);
+      } else {
+        hints.push(`\\text{After division, the denominator still has a growing exponential term relative to the numerator, so the ratio approaches }0\\text{ in the dominant direction.}`);
+      }
+      hints.push(`\\text{For }x\\to -\\infty\\text{, remember that the most negative exponent of }${baseTex}^{kx}\\text{ is the one that grows fastest.}`);
+      hints.push(`${answerListTexExtended(answers)}`);
+      return hints;
     }
 
     function generateType1LimitProblem() {
@@ -960,7 +1119,7 @@ fetch("/nav.html")
         type: 5,
         questionTex: `f(x)=\\frac{${exponentialExpressionToTex(numerator, baseTex)}}{${exponentialExpressionToTex(denominator, baseTex)}}.\\quad \\text{Evaluate }\\lim_{x \\to -\\infty}f(x)\\;\\text{and}\\;\\lim_{x \\to \\infty}f(x).`,
         answers,
-        hints: type5Hints(baseTex, numerator, denominator, answers)
+        hints: type5Hints(baseTex, numerator, denominator, numDegree, denDegree, answers)
       };
     }
 

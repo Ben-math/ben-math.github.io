@@ -5,6 +5,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -143,6 +144,87 @@
       display: block;
       padding: 0.04em 0.18em 0;
     }
+
+    .answer-group-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.1em;
+      justify-content: center;
+      align-items: flex-start;
+      margin-top: 0.8em;
+    }
+
+    .answer-group-card {
+      border: 2px solid #ddd;
+      border-radius: 12px;
+      padding: 0.7em 0.9em;
+      background: #fafafa;
+      min-width: 230px;
+    }
+
+    .answer-group-card-title {
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 0.5em;
+    }
+
+    .asymptote-entry-panel {
+      max-width: 620px;
+      margin: 1.1em auto 0;
+      padding: 0.85em;
+      border: 2px solid #ddd;
+      border-radius: 12px;
+      background: #fafafa;
+      text-align: left;
+    }
+
+    .asymptote-entry-box {
+      min-height: 54px;
+      border: 2px solid #bbb;
+      border-radius: 8px;
+      background: white;
+      padding: 0.35em;
+      margin: 0.55em 0;
+    }
+
+    .asymptote-entry-row {
+      display: flex;
+      align-items: center;
+      gap: 0.35em;
+      padding: 0.25em 0.35em;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .asymptote-entry-row.selected {
+      background: rgba(80, 140, 255, 0.18);
+    }
+
+    .asymptote-value-input {
+      width: 90px;
+      padding: 0.2em 0.35em;
+      border: 1.5px solid #777;
+      border-radius: 6px;
+      font-size: 1em;
+    }
+
+    .asymptote-control-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65em;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .asymptote-button {
+      border: 2px solid #555;
+      border-radius: 8px;
+      background: white;
+      padding: 0.18em 0.65em;
+      font-size: 1.15em;
+      cursor: pointer;
+    }
+
   </style>
 </head>
 <body>
@@ -1169,13 +1251,209 @@ fetch("/nav.html")
       };
     }
 
+
+    function polynomialFromRootsWithPower(coefficient, zeroPower, roots) {
+      let poly = polynomialFromConstant(coefficient);
+      for (let i = 0; i < zeroPower; i++) poly = multiplyPolynomials(poly, [makeTerm(1, 1)]);
+      roots.forEach(root => { poly = multiplyPolynomials(poly, polynomialFromRoot(root)); });
+      return poly;
+    }
+
+    function rootCountsFromData(zeroPower, roots) {
+      const counts = new Map();
+      if (zeroPower > 0) counts.set(0, zeroPower);
+      roots.forEach(root => counts.set(root, (counts.get(root) || 0) + 1));
+      return counts;
+    }
+
+    function subtractCancelledRootCounts(numCounts, denCounts) {
+      const reducedNum = new Map(numCounts);
+      const reducedDen = new Map(denCounts);
+      const allRoots = new Set([...reducedNum.keys(), ...reducedDen.keys()]);
+      allRoots.forEach(root => {
+        const cancel = Math.min(reducedNum.get(root) || 0, reducedDen.get(root) || 0);
+        if (cancel > 0) {
+          reducedNum.set(root, (reducedNum.get(root) || 0) - cancel);
+          reducedDen.set(root, (reducedDen.get(root) || 0) - cancel);
+        }
+        if ((reducedNum.get(root) || 0) === 0) reducedNum.delete(root);
+        if ((reducedDen.get(root) || 0) === 0) reducedDen.delete(root);
+      });
+      return { reducedNum, reducedDen };
+    }
+
+    function polynomialFromRootCounts(coefficient, counts) {
+      let poly = polynomialFromConstant(coefficient);
+      Array.from(counts.entries()).forEach(([root, count]) => {
+        for (let i = 0; i < count; i++) poly = multiplyPolynomials(poly, polynomialFromRoot(root));
+      });
+      return poly;
+    }
+
+    function evaluateRootCountProduct(counts, x, excludedRoot = null, excludedCount = 0) {
+      let value = 1;
+      counts.forEach((count, root) => {
+        const power = root === excludedRoot ? Math.max(0, count - excludedCount) : count;
+        value *= Math.pow(x - root, power);
+      });
+      return value;
+    }
+
+    function type6LimitAtPointTex(a, j, k, reducedNumCounts, reducedDenCounts) {
+      const denMultiplicity = reducedDenCounts.get(a) || 0;
+      if (denMultiplicity === 0) {
+        const numValue = j * evaluateRootCountProduct(reducedNumCounts, a);
+        const denValue = k * evaluateRootCountProduct(reducedDenCounts, a);
+        const value = exactFraction(numValue, denValue);
+        return {
+          right: { kind: 'finite', value, tex: fractionToTex(value) },
+          left: { kind: 'finite', value, tex: fractionToTex(value) },
+          twoSided: { kind: 'finite', value, tex: fractionToTex(value) }
+        };
+      }
+
+      const numBase = j * evaluateRootCountProduct(reducedNumCounts, a);
+      const denBase = k * evaluateRootCountProduct(reducedDenCounts, a, a, denMultiplicity);
+      const baseSign = Math.sign(numBase / denBase);
+      const rightSign = baseSign;
+      const leftSign = baseSign * (denMultiplicity % 2 === 0 ? 1 : -1);
+      const right = rightSign > 0 ? { kind: 'infinity' } : { kind: 'negativeInfinity' };
+      const left = leftSign > 0 ? { kind: 'infinity' } : { kind: 'negativeInfinity' };
+      const twoSided = right.kind === left.kind ? right : { kind: 'dne' };
+      return { right, left, twoSided };
+    }
+
+    function limitEntriesForPoint(a, j, k, reducedNumCounts, reducedDenCounts) {
+      const lims = type6LimitAtPointTex(a, j, k, reducedNumCounts, reducedDenCounts);
+      return [
+        { labelTex: `\\lim_{x \\to ${numberTex(a)}^+}f(x)`, answer: lims.right },
+        { labelTex: `\\lim_{x \\to ${numberTex(a)}^-}f(x)`, answer: lims.left },
+        { labelTex: `\\lim_{x \\to ${numberTex(a)}}f(x)`, answer: lims.twoSided }
+      ];
+    }
+
+    function uniqueAsymptotes(asymptotes) {
+      const seen = new Set();
+      return asymptotes.filter(item => {
+        const key = `${item.type}:${Math.round(item.value * 1e10) / 1e10}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+
+    function type6Hints(targets, reducedDenCounts, expectedAsymptotes, answers) {
+      const verticals = expectedAsymptotes.filter(a => a.type === 'vertical').map(a => `x=${numberTex(a.value)}`);
+      const horizontals = expectedAsymptotes.filter(a => a.type === 'horizontal').map(a => `y=${numberTex(a.value)}`);
+      const targetTex = targets.map(a => `x=${numberTex(a)}`).join(',\\; ');
+      const asymptoteParts = [];
+      if (verticals.length) asymptoteParts.push(`\\text{vertical: }${verticals.join(',\\; ')}`);
+      if (horizontals.length) asymptoteParts.push(`\\text{horizontal: }${horizontals.join(',\\; ')}`);
+      if (!asymptoteParts.length) asymptoteParts.push(`\\text{no asymptotes}`);
+      return [
+        `\\text{First factor the numerator and denominator.  Any common factors cancel and create holes, not vertical asymptotes.}`,
+        `\\text{Check one-sided behaviour at }${targetTex}\\text{ using the factors remaining in the denominator after cancellation.}`,
+        `\\text{The asymptotes are }${asymptoteParts.join('\\quad ')}.`,
+        `${answerListTexExtended(answers)}`
+      ];
+    }
+
+    function generateType6LimitProblem() {
+      const j = randomNonzeroInteger(-8, 8);
+      const k = randomNonzeroInteger(-8, 8);
+
+      let n, m;
+      const powerRoll = Math.random();
+      if (powerRoll < 0.50) {
+        n = 0;
+        m = 0;
+      } else if (powerRoll < 0.75) {
+        n = m = randomInteger(1, 7);
+      } else {
+        do {
+          n = randomInteger(0, 7);
+          m = randomInteger(0, 7);
+        } while (n === m);
+      }
+
+      let f, g;
+      do { f = randomInteger(-9, 9); } while (f === 0);
+      do { g = randomInteger(-9, 9); } while (g === 0 || g === f);
+
+      let b, c;
+      if (Math.random() < 0.50) {
+        const denominatorRootToCancel = randomChoice([f, g]);
+        if (Math.random() < 0.50) {
+          b = denominatorRootToCancel;
+          do { c = randomInteger(-9, 9); } while (c === 0);
+        } else {
+          c = denominatorRootToCancel;
+          do { b = randomInteger(-9, 9); } while (b === 0);
+        }
+      } else {
+        do { b = randomInteger(-9, 9); } while (b === 0 || b === f || b === g);
+        do { c = randomInteger(-9, 9); } while (c === 0 || c === f || c === g);
+      }
+
+      const numerator = polynomialFromRootsWithPower(j, n, [b, c]);
+      const denominator = polynomialFromRootsWithPower(k, m, [f, g]);
+
+      const numCounts = rootCountsFromData(n, [b, c]);
+      const denCounts = rootCountsFromData(m, [f, g]);
+      const { reducedNum, reducedDen } = subtractCancelledRootCounts(numCounts, denCounts);
+      const simplifiedNumerator = polynomialFromRootCounts(j, reducedNum);
+      const simplifiedDenominator = polynomialFromRootCounts(k, reducedDen);
+
+      const targets = [f, g];
+      if (m !== 0 && !targets.includes(0)) targets.push(0);
+
+      const answerGroups = targets.map(target => ({
+        titleTex: `x=${numberTex(target)}`,
+        entries: limitEntriesForPoint(target, j, k, reducedNum, reducedDen)
+      }));
+
+      const infinityEntries = [
+        { labelTex: '\\lim_{x \\to -\\infty}f(x)', answer: rationalEndBehaviour(simplifiedNumerator, simplifiedDenominator, 'negative') },
+        { labelTex: '\\lim_{x \\to \\infty}f(x)', answer: rationalEndBehaviour(simplifiedNumerator, simplifiedDenominator, 'positive') }
+      ];
+      answerGroups.push({ titleTex: `x\\to\\pm\\infty`, entries: infinityEntries });
+
+      const answers = answerGroups.flatMap(group => group.entries);
+
+      const expectedAsymptotes = [];
+      reducedDen.forEach((count, root) => {
+        if (count > 0) expectedAsymptotes.push({ type: 'vertical', value: root });
+      });
+      const numDegree = degreeOfPolynomial(simplifiedNumerator);
+      const denDegree = degreeOfPolynomial(simplifiedDenominator);
+      if (numDegree < denDegree) {
+        expectedAsymptotes.push({ type: 'horizontal', value: 0 });
+      } else if (numDegree === denDegree) {
+        expectedAsymptotes.push({ type: 'horizontal', value: leadingCoefficient(simplifiedNumerator) / leadingCoefficient(simplifiedDenominator) });
+      }
+
+      const expected = uniqueAsymptotes(expectedAsymptotes);
+      const questionTex = `f(x)=${rationalFunctionTex(numerator, denominator)}.\\quad \\text{Evaluate the one-sided and two-sided limits at }x=${numberTex(f)}\\text{ and }x=${numberTex(g)}${m !== 0 ? `\\text{, and at }x=0` : ''}\\text{; then evaluate the limits as }x\\to\\pm\\infty\\text{ and list all asymptotes.}`;
+
+      return {
+        type: 6,
+        questionTex,
+        answers,
+        answerGroups,
+        expectedAsymptotes: expected,
+        hints: type6Hints(targets, reducedDen, expected, answers)
+      };
+    }
+
+
     function generateLimitProblem() {
       const r = Math.random();
-      if (r < 0.30) return generateType1LimitProblem();
-      if (r < 0.40) return generateType2LimitProblem();
-      if (r < 0.70) return generateType3LimitProblem();
-      if (r < 0.90) return generateType4LimitProblem();
-      return generateType5LimitProblem();
+      if (r < 0.10) return generateType1LimitProblem();
+      if (r < 0.20) return generateType2LimitProblem();
+      if (r < 0.50) return generateType3LimitProblem();
+      if (r < 0.70) return generateType4LimitProblem();
+      if (r < 0.80) return generateType5LimitProblem();
+      return generateType6LimitProblem();
     }
 
     function createHintStepBlock(extraClass = '') {
@@ -1215,19 +1493,35 @@ fetch("/nav.html")
 
     function setupAnswerEditor() {
       const answers = currentProblem && currentProblem.answers ? currentProblem.answers : [{ labelTex: 'Limit', answer: currentProblem.answer }];
-      finalAnswerInput.innerHTML = answers.map((entry, index) => `
-        <div class="answer-line" style="margin: 0.65em 0;">
-          <label style="font-weight: bold; margin-right: 0.5em;">\\(${entry.labelTex}=\\)</label>
-          <span id="answer-editor-${index}" class="polynomial-answer-editor math-answer-editor" contenteditable="true" role="textbox" aria-label="Limit value answer ${index + 1}" style="min-width: 130px;"></span>
-        </div>
-      `).join('') + `
-        <div class="answer-toolbar" aria-label="Math input buttons">
-          <button type="button" class="math-symbol-button" data-insert-text="/">/</button>
-          <button type="button" class="math-symbol-button" data-insert-text="∞">∞</button>
-          <button type="button" class="math-symbol-button" data-insert-text="DNE">DNE</button>
-          <button type="button" class="math-symbol-button" data-insert-fraction="true"><span class="fraction-button-display"><span class="fraction-button-top">a</span><span class="fraction-button-bottom">b</span></span></button>
-        </div>
-      `;
+
+      if (currentProblem && currentProblem.answerGroups) {
+        let answerIndex = 0;
+        finalAnswerInput.innerHTML = `
+          <div class="answer-group-grid">
+            ${currentProblem.answerGroups.map(group => `
+              <div class="answer-group-card">
+                <div class="answer-group-card-title">\\(${group.titleTex}\\)</div>
+                ${group.entries.map(entry => {
+                  const id = answerIndex++;
+                  return `
+                    <div class="answer-line" style="margin: 0.55em 0;">
+                      <label style="font-weight: bold; margin-right: 0.5em;">\\(${entry.labelTex}=\\)</label>
+                      <span id="answer-editor-${id}" class="polynomial-answer-editor math-answer-editor" contenteditable="true" role="textbox" aria-label="Limit value answer ${id + 1}" style="min-width: 105px;"></span>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            `).join('')}
+          </div>
+        ` + answerToolbarHtml() + (currentProblem.expectedAsymptotes ? asymptoteInputHtml() : '');
+      } else {
+        finalAnswerInput.innerHTML = answers.map((entry, index) => `
+          <div class="answer-line" style="margin: 0.65em 0;">
+            <label style="font-weight: bold; margin-right: 0.5em;">\\(${entry.labelTex}=\\)</label>
+            <span id="answer-editor-${index}" class="polynomial-answer-editor math-answer-editor" contenteditable="true" role="textbox" aria-label="Limit value answer ${index + 1}" style="min-width: 130px;"></span>
+          </div>
+        `).join('') + answerToolbarHtml();
+      }
 
       const editors = finalAnswerInput.querySelectorAll('.math-answer-editor');
       activeMathEditor = editors[0];
@@ -1247,7 +1541,86 @@ fetch("/nav.html")
           else if (button.dataset.insertFraction) insertFractionAtSelection(target);
         });
       });
+
+      setupAsymptoteControls();
       typesetElement(finalAnswerInput);
+    }
+
+    function answerToolbarHtml() {
+      return `
+        <div class="answer-toolbar" aria-label="Math input buttons">
+          <button type="button" class="math-symbol-button" data-insert-text="/">/</button>
+          <button type="button" class="math-symbol-button" data-insert-text="∞">∞</button>
+          <button type="button" class="math-symbol-button" data-insert-text="DNE">DNE</button>
+          <button type="button" class="math-symbol-button" data-insert-fraction="true"><span class="fraction-button-display"><span class="fraction-button-top">a</span><span class="fraction-button-bottom">b</span></span></button>
+        </div>
+      `;
+    }
+
+    function asymptoteInputHtml() {
+      return `
+        <div class="asymptote-entry-panel">
+          <div style="font-weight: bold; text-align: center;">Asymptotes</div>
+          <div class="asymptote-control-row" style="margin-top: 0.45em;">
+            <label><input type="checkbox" id="vertical-asymptote-choice" checked> Vertical asymptote</label>
+            <label><input type="checkbox" id="horizontal-asymptote-choice"> Horizontal asymptote</label>
+          </div>
+          <div id="asymptote-entry-box" class="asymptote-entry-box"></div>
+          <div class="asymptote-control-row">
+            <button type="button" id="add-asymptote-btn" class="asymptote-button">+</button>
+            <button type="button" id="remove-asymptote-btn" class="asymptote-button">−</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function setupAsymptoteControls() {
+      const verticalChoice = document.getElementById('vertical-asymptote-choice');
+      const horizontalChoice = document.getElementById('horizontal-asymptote-choice');
+      const addBtn = document.getElementById('add-asymptote-btn');
+      const removeBtn = document.getElementById('remove-asymptote-btn');
+      const box = document.getElementById('asymptote-entry-box');
+      if (!verticalChoice || !horizontalChoice || !addBtn || !removeBtn || !box) return;
+
+      verticalChoice.addEventListener('change', () => {
+        if (verticalChoice.checked) horizontalChoice.checked = false;
+        if (!verticalChoice.checked && !horizontalChoice.checked) verticalChoice.checked = true;
+      });
+      horizontalChoice.addEventListener('change', () => {
+        if (horizontalChoice.checked) verticalChoice.checked = false;
+        if (!verticalChoice.checked && !horizontalChoice.checked) horizontalChoice.checked = true;
+      });
+
+      addBtn.addEventListener('click', () => {
+        const type = horizontalChoice.checked ? 'horizontal' : 'vertical';
+        addAsymptoteEntry(type);
+      });
+
+      removeBtn.addEventListener('click', () => {
+        const selected = box.querySelector('.asymptote-entry-row.selected');
+        if (selected) selected.remove();
+      });
+    }
+
+    function addAsymptoteEntry(type) {
+      const box = document.getElementById('asymptote-entry-box');
+      if (!box) return;
+      const row = document.createElement('div');
+      row.className = 'asymptote-entry-row';
+      row.dataset.type = type;
+      const label = type === 'horizontal' ? 'Horizontal asymptote at y =' : 'Vertical asymptote at x =';
+      row.innerHTML = `<span>${label}</span><input class="asymptote-value-input" type="text" inputmode="decimal" aria-label="${label} value">`;
+      row.addEventListener('click', () => {
+        box.querySelectorAll('.asymptote-entry-row').forEach(item => item.classList.remove('selected'));
+        row.classList.add('selected');
+      });
+      const input = row.querySelector('input');
+      input.addEventListener('input', () => {
+        input.value = input.value.replace(/[^0-9+\-.\/]/g, '');
+      });
+      box.appendChild(row);
+      row.classList.add('selected');
+      input.focus();
     }
 
     function handleMathEditorKeydown(event) {
@@ -1451,13 +1824,44 @@ fetch("/nav.html")
       return Number.isFinite(userValue) && Math.abs(userValue - expectedValue) < 1e-8;
     }
 
+    function collectAsymptoteEntries() {
+      const rows = document.querySelectorAll('.asymptote-entry-row');
+      return Array.from(rows).map(row => {
+        const input = row.querySelector('.asymptote-value-input');
+        return {
+          type: row.dataset.type,
+          value: evaluateFlexibleNumericAnswer(input ? input.value : '')
+        };
+      }).filter(item => Number.isFinite(item.value));
+    }
+
+    function asymptoteListsMatch(userEntries, expectedEntries) {
+      if (!expectedEntries) return true;
+      if (userEntries.length !== expectedEntries.length) return false;
+      const used = new Array(userEntries.length).fill(false);
+      return expectedEntries.every(expected => {
+        const index = userEntries.findIndex((user, i) =>
+          !used[i] &&
+          user.type === expected.type &&
+          Math.abs(user.value - expected.value) < 1e-8
+        );
+        if (index === -1) return false;
+        used[index] = true;
+        return true;
+      });
+    }
+
     function checkUserAnswer() {
       if (!currentProblem) return;
       const answers = currentProblem.answers || [{ labelTex: 'Limit', answer: currentProblem.answer }];
-      const allCorrect = answers.every((entry, index) => {
+      const allLimitsCorrect = answers.every((entry, index) => {
         const editor = document.getElementById(`answer-editor-${index}`);
         return editor && answerMatches(editorToPlainText(editor), entry.answer);
       });
+      const asymptotesCorrect = currentProblem.expectedAsymptotes
+        ? asymptoteListsMatch(collectAsymptoteEntries(), currentProblem.expectedAsymptotes)
+        : true;
+      const allCorrect = allLimitsCorrect && asymptotesCorrect;
       feedbackText.textContent = allCorrect ? 'Correct!' : 'Incorrect, try again.';
       feedbackText.style.color = allCorrect ? 'green' : 'red';
     }

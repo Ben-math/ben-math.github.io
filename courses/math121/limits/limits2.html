@@ -7,6 +7,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1363,6 +1364,21 @@ fetch("/nav.html")
       return pieces.join('\\cdot ');
     }
 
+    function signedNumericFactorTex(value) {
+      return value < 0 ? `(${numberTex(value)})` : numberTex(value);
+    }
+
+    function rootCountsSubstitutionTex(coefficient, counts, a, excludedRoot = null, excludedCount = 0) {
+      const pieces = [`${coefficient}`];
+      Array.from(counts.entries()).sort((left, right) => right[0] - left[0]).forEach(([root, count]) => {
+        const visibleCount = root === excludedRoot ? Math.max(0, count - excludedCount) : count;
+        for (let i = 0; i < visibleCount; i++) {
+          pieces.push(signedNumericFactorTex(a - root));
+        }
+      });
+      return pieces.join('\\cdot ');
+    }
+
     function type6PointHints(a, entries, j, k, reducedNumCounts, reducedDenCounts) {
       const denMultiplicity = reducedDenCounts.get(a) || 0;
       const hints = [];
@@ -1376,9 +1392,12 @@ fetch("/nav.html")
       const denBase = k * evaluateRootCountProduct(reducedDenCounts, a, a, denMultiplicity);
       const reducedLocalCoefficient = exactFraction(numBase, denBase);
       const localFactor = rootFactorPowerTex(a, denMultiplicity);
-      hints.push(`\\text{Near }x=${numberTex(a)}\\text{,}\\quad f(x)\\sim\\frac{${fractionToTex(reducedLocalCoefficient)}}{${localFactor}}.`);
-      hints.push(`\\text{As }x\\to ${numberTex(a)}^+\\text{, use the sign of }${localFactor}\\text{ to get }${entries[0].labelTex}=${answerObjectToTexExtended(entries[0].answer)}.`);
-      hints.push(`\\text{As }x\\to ${numberTex(a)}^-\\text{, use the sign of }${localFactor}\\text{ to get }${entries[1].labelTex}=${answerObjectToTexExtended(entries[1].answer)}.`);
+      const sideFactor = linearFactorTex(a);
+      const substitutedNumerator = rootCountsSubstitutionTex(j, reducedNumCounts, a);
+      const substitutedDenominator = rootCountsSubstitutionTex(k, reducedDenCounts, a, a, denMultiplicity);
+      hints.push(`\\text{Near }x=${numberTex(a)}\\text{,}\\quad f(x)\\sim\\frac{${substitutedNumerator}}{${substitutedDenominator}\\cdot ${localFactor}}=\\frac{${fractionToTex(reducedLocalCoefficient)}}{${localFactor}}.`);
+      hints.push(`\\text{As }x\\to ${numberTex(a)}^+\\text{, }${sideFactor}\\to 0^+\\text{, so }f(x)\\to ${answerObjectToTexExtended(entries[0].answer)}.`);
+      hints.push(`\\text{As }x\\to ${numberTex(a)}^-\\text{, }${sideFactor}\\to 0^-\\text{, so }f(x)\\to ${answerObjectToTexExtended(entries[1].answer)}.`);
       hints.push(`${answerListTexExtended(entries)}`);
       return hints;
     }

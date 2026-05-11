@@ -311,8 +311,7 @@ fetch("/nav.html")
     <p>Finally, what if we have a composition of functions?  We evaluate the limit from the inside-out.  Consider: \[\lim_{x \to \infty} 
     \sin\left(\frac{2\pi x^8 + x^2 - 9}{12x^8 - 3x^6}\right)\] Using the theorem stated earlier, since the numerator and denominator have the same 
     degree, we know \[\lim_{x \to \infty}\frac{2\pi x^8 + x^2 - 9}{12x^8 - 3x^6} = \frac{2\pi}{12} = \frac{\pi}{6}\]  So \[\lim_{x \to \infty} 
-    \sin\left(\frac{2\pi x^8 + x^2 - 9}{12x^8 - 3x^6}\right) = \sin\left(\frac{\pi}{6}\right) = \frac{1}{2}\]  Now you try!  (This is the activity I'm 
-    currently working on, which is why it still sucks)</p>
+    \sin\left(\frac{2\pi x^8 + x^2 - 9}{12x^8 - 3x^6}\right) = \sin\left(\frac{\pi}{6}\right) = \frac{1}{2}\]  Now you try!</p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
@@ -1004,35 +1003,39 @@ fetch("/nav.html")
       return `\\text{As }x\\to-\\infty\\text{, the most negative remaining exponent grows fastest; in the denominator this is }${exponentialDividedTermBody(term, divisorPower, baseTex)}.`;
     }
 
+    function exponentialDegreeDescriptionTex(power) {
+      if (power === 0) return '\\text{constant}';
+      return power === 1 ? 'x' : `${power}x`;
+    }
+
     function type5Hints(baseTex, numerator, denominator, numDegree, denDegree, answers) {
       const divisorPower = Math.min(numDegree, denDegree);
-      const numeratorShift = numDegree - divisorPower;
-      const denominatorShift = denDegree - divisorPower;
       const hints = [];
       if (numDegree === denDegree) {
-        hints.push(`\text{The numerator and denominator have the same exponential degree }${numDegree}\text{, so we divide every term by }${exponentialPowerTex(baseTex, divisorPower)}.`);
+        hints.push(`\\text{The numerator and denominator have the same exponential degree }${numDegree}\\text{, so we divide every term by }${exponentialPowerTex(baseTex, divisorPower)}.`);
       } else {
-        hints.push(`\text{The lowest exponential degree of the numerator/denominator is }${divisorPower}\text{, so we divide every term by }${exponentialPowerTex(baseTex, divisorPower)}.`);
+        hints.push(`\\text{The lowest exponential degree of the numerator/denominator is }${divisorPower}\\text{, so we divide every term by }${exponentialPowerTex(baseTex, divisorPower)}.`);
       }
       hints.push(exponentialDivideEquationTex(numerator, denominator, divisorPower, baseTex));
 
-      if (numDegree > denDegree) {
-        const numLead = exponentialLeadTermByPower(numerator, numDegree).coefficient;
-        const denLead = exponentialLeadTermByPower(denominator, denDegree).coefficient;
-        hints.push(`\text{For }x\to\infty\text{, the term of exponential degree }${numeratorShift}x\text{ in the numerator dominates the constant term in the denominator.}`);
-        hints.push(`\text{The sign is determined by }\frac{${numLead}}{${denLead}}\text{, so }\lim_{x\to\infty}f(x)=${answerObjectToTexExtended(answers[1].answer)}.`);
-      } else if (numDegree === denDegree) {
-        const numLead = exponentialLeadTermByPower(numerator, numDegree).coefficient;
-        const denLead = exponentialLeadTermByPower(denominator, denDegree).coefficient;
-        hints.push(`\text{For }x\to\infty\text{, every term with smaller exponential degree becomes negligible compared with the constant terms from the leading exponentials.}`);
-        hints.push(`\lim_{x\to\infty}f(x)=\frac{${numLead}}{${denLead}}=${fractionToTex(exactFraction(numLead, denLead))}.`);
+      const shiftedNumDegree = numDegree - divisorPower;
+      const shiftedDenDegree = denDegree - divisorPower;
+      const numLead = exponentialLeadTermByPower(numerator, numDegree).coefficient;
+      const denLead = exponentialLeadTermByPower(denominator, denDegree).coefficient;
+
+      if (shiftedNumDegree > shiftedDenDegree) {
+        hints.push(`\\text{For }x\\to\\infty\\text{, the term of exponential degree }${exponentialDegreeDescriptionTex(shiftedNumDegree)}\\text{ in the numerator dominates the constant term in the denominator.}`);
+        hints.push(`\\text{The sign is determined by }\\frac{${numLead}}{${denLead}}\\text{, so }\\lim_{x\\to\\infty}f(x)=${answerObjectToTexExtended(answers[1].answer)}.`);
+      } else if (shiftedNumDegree === shiftedDenDegree) {
+        hints.push(`\\text{For }x\\to\\infty\\text{, the dominant remaining exponential degree is the same in the numerator and denominator.}`);
+        hints.push(`\\lim_{x\\to\\infty}f(x)=\\frac{${numLead}}{${denLead}}=${fractionToTex(exactFraction(numLead, denLead))}.`);
       } else {
-        hints.push(`\text{For }x\to\infty\text{, the denominator still has a growing term of exponential degree }${denominatorShift}x\text{ after division, while the numerator stays finite.}`);
-        hints.push(`\lim_{x\to\infty}f(x)=0.`);
+        hints.push(`\\text{For }x\\to\\infty\\text{, the denominator has the growing exponential term of degree }${exponentialDegreeDescriptionTex(shiftedDenDegree)}\\text{, while the numerator is lower order.}`);
+        hints.push(`\\lim_{x\\to\\infty}f(x)=0.`);
       }
 
       hints.push(exponentialDirectionComparisonHint(baseTex, numerator, denominator, divisorPower, 'negative'));
-      hints.push(`\lim_{x\to-\infty}f(x)=${answerObjectToTexExtended(answers[0].answer)}.`);
+      hints.push(`\\lim_{x\\to-\\infty}f(x)=${answerObjectToTexExtended(answers[0].answer)}.`);
       hints.push(`${answerListTexExtended(answers)}`);
       return hints;
     }
@@ -1345,69 +1348,83 @@ fetch("/nav.html")
       });
     }
 
-    function rootFactorWithMultiplicityTex(root, count) {
-      if (count <= 0) return '';
-      const factor = root === 0 ? 'x' : linearFactorTex(root);
-      return count === 1 ? factor : `${factor}^{${count}}`;
+    function rootFactorPowerTex(root, count) {
+      const base = root === 0 ? 'x' : linearFactorTex(root);
+      return count === 1 ? base : `${base}^{${count}}`;
     }
 
-    function factorCountExpressionTex(coefficient, counts) {
-      const parts = [];
-      if (coefficient === -1) parts.push('-1');
-      else if (coefficient !== 1 || counts.size === 0) parts.push(`${coefficient}`);
-      Array.from(counts.entries())
-        .sort((a, b) => a[0] - b[0])
-        .forEach(([root, count]) => {
-          const factor = rootFactorWithMultiplicityTex(root, count);
-          if (factor) parts.push(factor);
-        });
-      return parts.length ? parts.join('') : '1';
+    function rootCountsFactorTex(coefficient, counts) {
+      const pieces = [];
+      if (coefficient === -1 && counts.size > 0) pieces.push('-1');
+      else if (coefficient !== 1 || counts.size === 0) pieces.push(`${coefficient}`);
+      Array.from(counts.entries()).sort((a, b) => b[0] - a[0]).forEach(([root, count]) => {
+        pieces.push(rootFactorPowerTex(root, count));
+      });
+      return pieces.join('\\cdot ');
     }
 
-    function type6LocalBehaviourHint(a, j, k, reducedNumCounts, reducedDenCounts, entries) {
+    function type6PointHints(a, entries, j, k, reducedNumCounts, reducedDenCounts) {
       const denMultiplicity = reducedDenCounts.get(a) || 0;
+      const hints = [];
       if (denMultiplicity === 0) {
-        return `\text{After cancellation, no factor }${linearFactorTex(a)}\text{ remains in the denominator, so the limits at }x=${numberTex(a)}\text{ are finite: }${answerListTexExtended(entries)}.`;
+        hints.push(`\\text{After cancellation, the denominator is nonzero at }x=${numberTex(a)}\\text{, so substitute }x=${numberTex(a)}.`);
+        hints.push(`${answerListTexExtended(entries)}`);
+        return hints;
       }
 
       const numBase = j * evaluateRootCountProduct(reducedNumCounts, a);
       const denBase = k * evaluateRootCountProduct(reducedDenCounts, a, a, denMultiplicity);
       const reducedLocalCoefficient = exactFraction(numBase, denBase);
-      const remainingFactor = denMultiplicity === 1 ? linearFactorTex(a) : `${linearFactorTex(a)}^{${denMultiplicity}}`;
-      return `\text{Near }x=${numberTex(a)}\text{ after cancellation,}\quad f(x)\sim\frac{${fractionToTex(reducedLocalCoefficient)}}{${remainingFactor}}.\quad ${answerListTexExtended(entries)}`;
+      const localFactor = rootFactorPowerTex(a, denMultiplicity);
+      hints.push(`\\text{Near }x=${numberTex(a)}\\text{,}\\quad f(x)\\sim\\frac{${fractionToTex(reducedLocalCoefficient)}}{${localFactor}}.`);
+      hints.push(`\\text{As }x\\to ${numberTex(a)}^+\\text{, use the sign of }${localFactor}\\text{ to get }${entries[0].labelTex}=${answerObjectToTexExtended(entries[0].answer)}.`);
+      hints.push(`\\text{As }x\\to ${numberTex(a)}^-\\text{, use the sign of }${localFactor}\\text{ to get }${entries[1].labelTex}=${answerObjectToTexExtended(entries[1].answer)}.`);
+      hints.push(`${answerListTexExtended(entries)}`);
+      return hints;
     }
 
-    function type6Hints(targets, j, k, numCounts, denCounts, reducedNumCounts, reducedDenCounts, simplifiedNumerator, simplifiedDenominator, expectedAsymptotes, answerGroups) {
-      const verticals = expectedAsymptotes.filter(a => a.type === 'vertical').map(a => `x=${numberTex(a.value)}`);
-      const horizontals = expectedAsymptotes.filter(a => a.type === 'horizontal').map(a => `y=${numberTex(a.value)}`);
-      const asymptoteParts = [];
-      if (verticals.length) asymptoteParts.push(`\text{vertical: }${verticals.join(',\; ')}`);
-      if (horizontals.length) asymptoteParts.push(`\text{horizontal: }${horizontals.join(',\; ')}`);
-      if (!asymptoteParts.length) asymptoteParts.push(`\text{no asymptotes}`);
+    function type6Hints(data) {
+      const {
+        targets,
+        expectedAsymptotes,
+        answerGroups,
+        j,
+        k,
+        numCounts,
+        denCounts,
+        reducedNum,
+        reducedDen,
+        simplifiedNumerator,
+        simplifiedDenominator
+      } = data;
 
-      const originalFactored = `\frac{${factorCountExpressionTex(j, numCounts)}}{${factorCountExpressionTex(k, denCounts)}}`;
-      const reducedFactored = `\frac{${factorCountExpressionTex(j, reducedNumCounts)}}{${factorCountExpressionTex(k, reducedDenCounts)}}`;
-      const finiteGroups = answerGroups.filter(group => group.titleTex !== 'x\\to\\pm\\infty');
-      const infinityGroup = answerGroups.find(group => group.titleTex === 'x\\to\\pm\\infty');
-      const hints = [
-        `\text{First factor the numerator and denominator.  Any common factors cancel and create holes, not vertical asymptotes.}`,
-        `f(x)=${originalFactored}=${reducedFactored}`
-      ];
+      const hints = [];
+      hints.push(`\\text{First factor the numerator and denominator.}`);
+      hints.push(`f(x)=\\frac{${rootCountsFactorTex(j, numCounts)}}{${rootCountsFactorTex(k, denCounts)}}=\\frac{${rootCountsFactorTex(j, reducedNum)}}{${rootCountsFactorTex(k, reducedDen)}}`);
 
+      const finiteGroups = answerGroups.filter(group => group.entries.length === 3);
       finiteGroups.forEach(group => {
-        const match = /x=([^}]*)/.test(group.titleTex) ? null : null;
-        const a = targets.find(target => group.titleTex === `x=${numberTex(target)}`);
-        if (a !== undefined) hints.push(type6LocalBehaviourHint(a, j, k, reducedNumCounts, reducedDenCounts, group.entries));
+        const targetMatch = group.titleTex.match(/x=([^}]*)/);
       });
 
+      targets.forEach((target, index) => {
+        const group = answerGroups[index];
+        hints.push(...type6PointHints(target, group.entries, j, k, reducedNum, reducedDen));
+      });
+
+      const infinityGroup = answerGroups.find(group => group.titleTex === 'x\\to\\pm\\infty');
       if (infinityGroup) {
         hints.push(...rationalDivisionHints(simplifiedNumerator, simplifiedDenominator, infinityGroup.entries, { finalAnswers: false }));
         hints.push(`${answerListTexExtended(infinityGroup.entries)}`);
       }
 
-      hints.push(`\text{The asymptotes are }${asymptoteParts.join('\quad ')}.`);
-      finiteGroups.forEach(group => hints.push(`${answerListTexExtended(group.entries)}`));
-      if (infinityGroup) hints.push(`${answerListTexExtended(infinityGroup.entries)}`);
+      const verticals = expectedAsymptotes.filter(a => a.type === 'vertical').map(a => `x=${numberTex(a.value)}`);
+      const horizontals = expectedAsymptotes.filter(a => a.type === 'horizontal').map(a => `y=${numberTex(a.value)}`);
+      const asymptoteParts = [];
+      if (verticals.length) asymptoteParts.push(`\\text{vertical: }${verticals.join(',\\; ')}`);
+      if (horizontals.length) asymptoteParts.push(`\\text{horizontal: }${horizontals.join(',\\; ')}`);
+      if (!asymptoteParts.length) asymptoteParts.push(`\\text{no asymptotes}`);
+      hints.push(`\\text{The asymptotes are }${asymptoteParts.join('\\quad ')}.`);
       return hints;
     }
 
@@ -1494,7 +1511,19 @@ fetch("/nav.html")
         answers,
         answerGroups,
         expectedAsymptotes: expected,
-        hints: type6Hints(targets, j, k, numCounts, denCounts, reducedNum, reducedDen, simplifiedNumerator, simplifiedDenominator, expected, answerGroups)
+        hints: type6Hints({
+          targets,
+          expectedAsymptotes: expected,
+          answerGroups,
+          j,
+          k,
+          numCounts,
+          denCounts,
+          reducedNum,
+          reducedDen,
+          simplifiedNumerator,
+          simplifiedDenominator
+        })
       };
     }
 

@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -465,7 +466,7 @@ fetch("/nav.html")
           equationType ? `\\text{Move every term to one side so the equation has the form }f(x)=0.` : `\\text{The goal is to show that }f\\text{ takes opposite signs at the two endpoints.}`,
           `f(${interval.cTex})=${numberTex(generated.left)}`,
           `f(${interval.dTex})=${numberTex(generated.right)}`,
-          `${generated.left < 0 ? `f(${interval.cTex})<0` : `f(${interval.cTex})>0`}\\quad\\text{and}\\quad${generated.right < 0 ? `f(${interval.dTex})<0` : `f(${interval.dTex})>0`}`,
+          `${generated.left < 0 ? `f(${interval.cTex})<0` : `f(${interval.cTex})>0`}\\quad\\text{and}\\quad ${generated.right < 0 ? `f(${interval.dTex})<0` : `f(${interval.dTex})>0`}`,
           `\\text{Since }f\\text{ is continuous and }0\\text{ lies between }${numberTex(smaller)}\\text{ and }${numberTex(larger)}\\text{, the IVT guarantees a ${rootOrSolution} in }[${interval.cTex},${interval.dTex}].`
         ],
         conclusionTex: `\\text{Since }f\\text{ is continuous on }[${interval.cTex},${interval.dTex}]\\text{ and }f(${interval.cTex})\\text{ and }f(${interval.dTex})\\text{ have opposite signs, the Intermediate Value Theorem guarantees a ${rootOrSolution} in }[${interval.cTex},${interval.dTex}].`
@@ -523,7 +524,7 @@ fetch("/nav.html")
     function setupAnswerEditor() {
       const zeroStepHtml = currentProblem.equationType ? `
         <div class="ivt-answer-line">
-          <label>Move all terms to one side: \(f(x)=\)</label>
+          <label>Move all terms to one side: \\(f(x)=\\)</label>
           <span id="function-editor" class="polynomial-answer-editor math-answer-editor function-answer-editor" contenteditable="true" role="textbox" aria-label="Rearranged function"></span>
         </div>
       ` : '';
@@ -533,7 +534,7 @@ fetch("/nav.html")
           ${zeroStepHtml}
           ${currentProblem.answers.map((entry, index) => `
             <div class="ivt-answer-line">
-              <label>\(${entry.labelTex}=\)</label>
+              <label>\\(${entry.labelTex}=\\)</label>
               <span id="answer-editor-${index}" class="polynomial-answer-editor math-answer-editor" contenteditable="true" role="textbox" aria-label="Endpoint value ${index + 1}" style="min-width: 140px;"></span>
             </div>
           `).join('')}

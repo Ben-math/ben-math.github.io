@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -73,8 +74,8 @@ fetch("/nav.html")
 
   <main>
     <p>In this activity, you are tasked with solving for the variable \(x\).  You may add/subtract/multiply/divide both sides of an equation by any 
-    nonzero constant or variable without changing its truth value.  Do this until you obtain a factorable quadratic on one side, and zero on the other.  
-    Then factoring that quadratic will yield two solutions for \(x\).  For example, suppose we want to solve \[x^5+4x^2-76x+360=x^5+440\] for \(x\).  
+    nonzero constant without changing its truth value.  If all terms contain a common power of \(x\), factor that power out rather than dividing by it.  
+    Do this until you obtain a product equal to zero.  For example, suppose we want to solve \[x^5+4x^2-76x+360=x^5+440\] for \(x\).  
     We start by subtracting \(x^5\) from both sides: \[\implies 4x^2-76x+360=440\]  Then dividing both sides by \(4\) yields 
       \[\implies x^2-19x+90=110\] Then subtracting \(110\) from both sides yields \[\implies x^2-19x-20=0\] and we can factor the quadratic to 
     \[\implies (x-20)(x+1)=0\] and so \[x = 20 \hspace{1cm} \text{or} \hspace{1cm} x = -1\]  Now you try it:</p>
@@ -204,6 +205,19 @@ fetch("/nav.html")
 
     function polynomialFromXPower(k) {
       return [makeTerm(1, k)];
+    }
+
+    function dividePolynomialByXPower(poly, power) {
+      return combineLikeTerms(poly.map(term => ({
+        coefficient: term.coefficient,
+        power: term.power - power
+      })));
+    }
+
+    function minimumPower(poly) {
+      const combined = combineLikeTerms(poly);
+      if (!combined.length) return 0;
+      return Math.min(...combined.map(term => term.power));
     }
 
     function operandPolynomial(operand) {
@@ -393,6 +407,16 @@ fetch("/nav.html")
       };
     }
 
+    function randomXPowerMultiplyOperation() {
+      return {
+        type: 'multiply',
+        operand: {
+          type: 'xPower',
+          value: randomInteger(1, 8)
+        }
+      };
+    }
+
     function randomConstantMultiplyDivideOperation() {
       return {
         type: randomChoice(['multiply', 'divide']),
@@ -425,23 +449,27 @@ fetch("/nav.html")
         m: randomNonzeroInteger(-12, 12)
       };
 
-      const remainingOperations = shuffleArray([
-        randomConstantMultiplyDivideOperation(),
-        randomOperationWithOperand('xPower')
-      ]);
-
-      const operations = [productOperation, ...remainingOperations];
+      const constantOperation = randomConstantMultiplyDivideOperation();
+      const xPowerOperation = randomXPowerMultiplyOperation();
+      const operations = [productOperation, constantOperation, xPowerOperation];
 
       operations.forEach(operation => {
         equation = applyOperation(equation, operation);
       });
 
-      const zeroLeft = subtractPolynomials(productOperation.after.left, productOperation.after.right);
+      const zeroLeft = subtractPolynomials(equation.left, equation.right);
       const zeroRight = polynomialFromConstant(0);
+      const commonXPower = Math.max(0, minimumPower(zeroLeft));
+      const factoredAfterX = dividePolynomialByXPower(zeroLeft, commonXPower);
 
       const otherRoot = productOperation.n + productOperation.m - solution;
       const zeroEquation = { left: zeroLeft, right: zeroRight };
-      const factoredTex = `(x ${signedNumberTex(solution)})(x ${signedNumberTex(otherRoot)}) = 0`;
+      const factoredXEquation = { left: factoredAfterX, right: zeroRight };
+      const leadingCoefficient = combineLikeTerms(factoredAfterX).find(term => term.power === 2)?.coefficient || 1;
+      const leadingFactorTex = leadingCoefficient === 1 ? '' : (leadingCoefficient === -1 ? '-' : numberTex(leadingCoefficient));
+      const xPowerTex = commonXPower === 1 ? 'x' : `x^{${commonXPower}}`;
+      const factoredTex = `${xPowerTex}${leadingFactorTex ? `\left(${leadingFactorTex}\right)` : ''}(x ${signedNumberTex(solution)})(x ${signedNumberTex(otherRoot)}) = 0`;
+      const expectedAnswers = Array.from(new Set([0, solution, otherRoot]));
 
       return {
         solution,
@@ -449,7 +477,10 @@ fetch("/nav.html")
         operations,
         finalEquation: equation,
         zeroEquation,
-        factoredTex
+        commonXPower,
+        factoredXEquation,
+        factoredTex,
+        expectedAnswers
       };
     }
 
@@ -510,19 +541,18 @@ fetch("/nav.html")
       hintIsTypesetting = true;
       hintBtn.disabled = true;
 
-      const secondAndThirdOperations = currentProblem.operations.slice(1).reverse();
-      if (hintStep < 2) {
-        await displayHintStep(secondAndThirdOperations[hintStep]);
+      if (hintStep === 0) {
+        await displayMoveToZeroHint();
+      } else if (hintStep === 1) {
+        await displayFactorCommonPowerHint();
       } else if (hintStep === 2) {
-        await displayMoveToZeroHint(currentProblem.operations[0]);
-      } else if (hintStep === 3) {
         await displayFactorQuadraticHint();
       }
 
       hintStep++;
       hintIsTypesetting = false;
 
-      if (hintStep >= 4) hintBtn.disabled = true;
+      if (hintStep >= 3) hintBtn.disabled = true;
       else hintBtn.disabled = false;
     }
 
@@ -577,17 +607,16 @@ fetch("/nav.html")
 
     function setupAnswerEditor() {
       const finalAnswerDiv = document.getElementById('final-answer-input');
-      finalAnswerDiv.innerHTML = `
-        <label style="font-weight: bold; margin-right: 0.5em;">x = </label>
-        <span id="equation-answer-editor-1" class="polynomial-answer-editor" contenteditable="true" role="textbox" aria-label="First value of x" style="min-width: 90px;"></span>
-        <span style="font-weight: bold; margin: 0 0.5em;">or</span>
-        <span id="equation-answer-editor-2" class="polynomial-answer-editor" contenteditable="true" role="textbox" aria-label="Second value of x" style="min-width: 90px;"></span>
-      `;
+      const answerCount = currentProblem?.expectedAnswers?.length || 2;
+      const answerBoxes = Array.from({ length: answerCount }, (_, index) => `
+        ${index === 0 ? '<label style="font-weight: bold; margin-right: 0.5em;">x = </label>' : '<span style="font-weight: bold; margin: 0 0.5em;">or</span>'}
+        <span id="equation-answer-editor-${index + 1}" class="polynomial-answer-editor" contenteditable="true" role="textbox" aria-label="Value ${index + 1} of x" style="min-width: 90px;"></span>
+      `).join('');
+      finalAnswerDiv.innerHTML = answerBoxes;
 
-      const editors = [
-        document.getElementById('equation-answer-editor-1'),
-        document.getElementById('equation-answer-editor-2')
-      ];
+      const editors = Array.from({ length: answerCount }, (_, index) =>
+        document.getElementById(`equation-answer-editor-${index + 1}`)
+      );
 
       editors.forEach(editor => {
         editor.addEventListener('keydown', event => {
@@ -634,20 +663,17 @@ fetch("/nav.html")
         sound.play();
       }
 
-      const editor1 = document.getElementById('equation-answer-editor-1');
-      const editor2 = document.getElementById('equation-answer-editor-2');
-      if (!editor1 || !editor2 || !currentProblem) return;
+      if (!currentProblem) return;
+      const expectedAnswers = currentProblem.expectedAnswers || [currentProblem.solution, currentProblem.otherRoot];
+      const editors = expectedAnswers.map((_, index) => document.getElementById(`equation-answer-editor-${index + 1}`));
+      if (editors.some(editor => !editor)) return;
 
-      const userAnswers = [
-        parseIntegerAnswer(editorToString(editor1)),
-        parseIntegerAnswer(editorToString(editor2))
-      ];
-
-      const expectedAnswers = [currentProblem.solution, currentProblem.otherRoot];
+      const userAnswers = editors.map(editor => parseIntegerAnswer(editorToString(editor)));
+      const uniqueUserAnswers = Array.from(new Set(userAnswers));
 
       const correct =
         userAnswers.every(answer => answer !== null) &&
-        userAnswers[0] !== userAnswers[1] &&
+        uniqueUserAnswers.length === expectedAnswers.length &&
         expectedAnswers.every(answer => userAnswers.includes(answer));
 
       feedbackText.textContent = correct ? 'Correct!' : 'Incorrect, try again.';

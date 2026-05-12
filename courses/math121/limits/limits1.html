@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -455,20 +456,22 @@ fetch("/nav.html")
       const n = randomInteger(-10, 10);
       const m = randomPositiveInteger(1, 10);
       const c = m * m - n * n;
-      const answer = exactFraction(0, 1);
+      const answer = exactFraction(n, m);
       const rad = radicandQuadraticTex(c);
+      const denominator = polynomialToTex(polynomialFromRoot(n));
+      const numeratorAfterRationalizing = polynomialToTex(combineLikeTerms([makeTerm(1, 2), makeTerm(-n * n, 0)]));
 
       return {
         type: 2,
         n, m,
-        questionTex: `\\lim_{x \\to ${numberTex(n)}}\\frac{\\sqrt{${rad}} - ${m}}{${denominatorXPlusTex(n)}}`,
+        questionTex: `\\lim_{x \\to ${numberTex(n)}}\\frac{\\sqrt{${rad}} - ${m}}{${denominator}}`,
         answer,
         hints: [
-          `= \\lim_{x \\to ${numberTex(n)}}\\frac{\\sqrt{${rad}} - ${m}}{${denominatorXPlusTex(n)}}\\cdot\\frac{\\sqrt{${rad}} + ${m}}{\\sqrt{${rad}} + ${m}}`,
-          `= \\lim_{x \\to ${numberTex(n)}}\\frac{${polynomialToTex(combineLikeTerms([makeTerm(1,2), makeTerm(-n*n,0)]))}}{${denominatorXPlusTex(n)}\\left(\\sqrt{${rad}} + ${m}\\right)}`,
-          `= \\lim_{x \\to ${numberTex(n)}}\\frac{${linearFactorTex(n)}${plusLinearFactorTex(n)}}{${plusLinearFactorTex(n)}\\left(\\sqrt{${rad}} + ${m}\\right)}`,
-          `= \\lim_{x \\to ${numberTex(n)}}\\frac{${polynomialToTex(polynomialFromRoot(n))}}{\\sqrt{${rad}} + ${m}}`,
-          `= ${fractionToTex(answer)}`
+          `= \\lim_{x \\to ${numberTex(n)}}\\frac{\\sqrt{${rad}} - ${m}}{${denominator}}\\cdot\\frac{\\sqrt{${rad}} + ${m}}{\\sqrt{${rad}} + ${m}}`,
+          `= \\lim_{x \\to ${numberTex(n)}}\\frac{${numeratorAfterRationalizing}}{${linearFactorTex(n)}\\left(\\sqrt{${rad}} + ${m}\\right)}`,
+          `= \\lim_{x \\to ${numberTex(n)}}\\frac{${linearFactorTex(n)}${plusLinearFactorTex(n)}}{${linearFactorTex(n)}\\left(\\sqrt{${rad}} + ${m}\\right)}`,
+          `= \\lim_{x \\to ${numberTex(n)}}\\frac{${polynomialToTex(polynomialFromPlusRoot(n))}}{\\sqrt{${rad}} + ${m}}`,
+          `= \\frac{${numberTex(n)} ${n < 0 ? '- ' + Math.abs(n) : '+ ' + n}}{${m}+${m}} = ${fractionToTex(answer)}`
         ]
       };
     }

@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1943,18 +1944,51 @@ fetch("/nav.html")
         ctx.beginPath(); ctx.moveTo(toPx(point.x), margin); ctx.lineTo(toPx(point.x), height - margin); ctx.stroke(); ctx.restore();
       });
 
+      function clippedBoundaryPoint(prev, current) {
+        if (!prev || !Number.isFinite(prev.y) || !Number.isFinite(current.y)) return null;
+        let boundary = null;
+        if (prev.y <= yMax && current.y > yMax) boundary = yMax;
+        else if (prev.y >= yMin && current.y < yMin) boundary = yMin;
+        else if (prev.y > yMax && current.y <= yMax) boundary = yMax;
+        else if (prev.y < yMin && current.y >= yMin) boundary = yMin;
+        if (boundary === null || Math.abs(current.y - prev.y) < 1e-12) return null;
+        const ratio = (boundary - prev.y) / (current.y - prev.y);
+        return { x: prev.x + (current.x - prev.x) * ratio, y: boundary };
+      }
+
       ctx.strokeStyle = '#111'; ctx.lineWidth = 3;
       problem.pieces.forEach(piece => {
-        const samples = 180;
+        const samples = 260;
+        const leftSingular = piece.leftEndpoint.kind === 'infinity';
+        const rightSingular = piece.rightEndpoint.kind === 'infinity';
+        const leftT = leftSingular ? 1 / samples : 0;
+        const rightT = rightSingular ? 1 - 1 / samples : 1;
         let started = false;
+        let previous = null;
         ctx.beginPath();
-        for (let i = 1; i < samples; i++) {
-          const t = i / samples;
+        for (let i = 0; i <= samples; i++) {
+          const rawT = i / samples;
+          const t = leftT + (rightT - leftT) * rawT;
           const x = piece.leftX + (piece.rightX - piece.leftX) * t;
           const y = evaluateVisualPiece(piece, x);
-          if (!Number.isFinite(y) || y < yMin - 30 || y > yMax + 30) { started = false; continue; }
-          const px = toPx(x), py = toPy(Math.max(yMin - 0.5, Math.min(yMax + 0.5, y)));
-          if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
+          const current = { x, y };
+          const inside = Number.isFinite(y) && y >= yMin && y <= yMax;
+
+          if (inside) {
+            if (!started) {
+              const boundary = clippedBoundaryPoint(previous, current);
+              if (boundary) ctx.moveTo(toPx(boundary.x), toPy(boundary.y));
+              else ctx.moveTo(toPx(x), toPy(y));
+              started = true;
+            }
+            ctx.lineTo(toPx(x), toPy(y));
+          } else if (started) {
+            const boundary = clippedBoundaryPoint(previous, current);
+            if (boundary) ctx.lineTo(toPx(boundary.x), toPy(boundary.y));
+            started = false;
+          }
+
+          previous = current;
         }
         ctx.stroke();
       });

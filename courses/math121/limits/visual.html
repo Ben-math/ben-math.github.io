@@ -303,8 +303,13 @@ fetch("/nav.html")
     <p>There are 4 points of interest: \(x \in \{-7, -4, -3, 6\}\).  We consider the two one-sided limits at each \(x\)-value, the two-sided limit, and 
     whether the function is continuous there.  \[\lim_{x \to -7^-}f(x) = -6, \hspace{1cm} \lim_{x \to -7^+}f(x) = -6, \hspace{1cm} \lim_{x \to -7}f(x) = 
     -6\]  (The two sided-limit exists since both one-sided limits are equal)  The function is not continuous at \(x = -6\) since \(\lim_{x \to -7}f(x) = 
-    -6 \neq 3 = f(-7).  \[\lim_{x \to -4^-}f(x) = 0, \hspace{1cm} \lim_{x \to -4^+}f(x) = 0, \hspace{1cm} \lim_{x \to -4}f(x) = 0\] and the function is 
-    continuous at \(x = -4\) since \(\lim_{x \to -4}f(x) = 0 = f(-4).</p>
+    -6 \neq 3 = f(-7)\).  \[\lim_{x \to -4^-}f(x) = 0, \hspace{1cm} \lim_{x \to -4^+}f(x) = 0, \hspace{1cm} \lim_{x \to -4}f(x) = 0\] and the function is 
+    continuous at \(x = -4\) since \(\lim_{x \to -4}f(x) = 0 = f(-4).  \[\lim_{x \to -3^-}f(x) = \infty, \hspace{1cm} \lim_{x \to -3^+}f(x) = 0\infty, 
+    \hspace{1cm} \lim_{x \to -3}f(x) = \infty\] however the function is not continuous at \(x = -3\) as it is not defined there (we have a vertical 
+    asymptote.  \[\lim_{x \to 6^-}f(x) = -7, \hspace{1cm} \lim_{x \to 6^+}f(x) = 1, \hspace{1cm} \lim_{x \to 6}f(x) \text{ does not exist}\] (The 
+    two-sided limit does not exist since the one-sided limits are not equal).</p>
+
+    <p>Now you try!</p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

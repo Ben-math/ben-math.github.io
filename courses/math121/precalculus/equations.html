@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -468,7 +469,8 @@ fetch("/nav.html")
       const leadingCoefficient = combineLikeTerms(factoredAfterX).find(term => term.power === 2)?.coefficient || 1;
       const leadingFactorTex = leadingCoefficient === 1 ? '' : (leadingCoefficient === -1 ? '-' : numberTex(leadingCoefficient));
       const xPowerTex = commonXPower === 1 ? 'x' : `x^{${commonXPower}}`;
-      const factoredTex = `${xPowerTex}${leadingFactorTex ? `\left(${leadingFactorTex}\right)` : ''}(x ${signedNumberTex(solution)})(x ${signedNumberTex(otherRoot)}) = 0`;
+      const commonPowerFactoredTex = `${xPowerTex}\\left(${polynomialToTex(factoredAfterX)}\\right) = 0`;
+      const factoredTex = `${xPowerTex}${leadingFactorTex ? `\\left(${leadingFactorTex}\\right)` : ''}(x ${signedNumberTex(solution)})(x ${signedNumberTex(otherRoot)}) = 0`;
       const expectedAnswers = Array.from(new Set([0, solution, otherRoot]));
 
       return {
@@ -479,6 +481,7 @@ fetch("/nav.html")
         zeroEquation,
         commonXPower,
         factoredXEquation,
+        commonPowerFactoredTex,
         factoredTex,
         expectedAnswers
       };
@@ -516,14 +519,27 @@ fetch("/nav.html")
       return typesetElement(block);
     }
 
+    function displayFactorCommonPowerHint() {
+      const block = createHintStepBlock();
+      block.innerHTML = `
+        \\[
+          \\implies ${currentProblem.commonPowerFactoredTex}
+        \\]
+      `;
+      return typesetElement(block);
+    }
+
     function displayFactorQuadraticHint() {
       const block = createHintStepBlock();
+      const solutionTex = currentProblem.expectedAnswers
+        .map(answer => `x = ${answer}`)
+        .join(' \\quad \\text{or} \\quad ');
       block.innerHTML = `
         \\[
           \\implies ${currentProblem.factoredTex}
         \\]
         \\[
-          \\implies x = ${currentProblem.solution} \\quad \\text{or} \\quad x = ${currentProblem.otherRoot}
+          \\implies ${solutionTex}
         \\]
       `;
       return typesetElement(block);

@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -217,6 +218,48 @@
       cursor: pointer;
     }
 
+
+    .visual-graph-wrap {
+      display: flex;
+      justify-content: center;
+      margin: 1em auto;
+    }
+
+    #visual-limit-canvas {
+      max-width: 100%;
+      border: 2px solid #ddd;
+      border-radius: 12px;
+      background: white;
+    }
+
+    .visual-limit-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(260px, 1fr));
+      max-width: 820px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .continuity-choice-row {
+      margin-top: 0.65em;
+      padding-top: 0.5em;
+      border-top: 1px solid #ddd;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .continuity-choice-row label {
+      font-weight: normal;
+      margin-left: 0.55em;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 760px) {
+      .visual-limit-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -256,7 +299,7 @@ fetch("/nav.html")
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>
 
-    <p id="question-text"></p>
+    <div id="question-text"></div>
 
     <div id="final-answer-input" style="text-align: center; margin-top: 1em;"></div>
 
@@ -1485,14 +1528,196 @@ fetch("/nav.html")
     }
 
 
+    function chooseDistinctIntegers(count, min, max) {
+      const values = [];
+      while (values.length < count) {
+        const value = randomInteger(min, max);
+        if (!values.includes(value)) values.push(value);
+      }
+      return values;
+    }
+
+    function chooseIntegerY(excluded = []) {
+      let value;
+      do { value = randomInteger(-7, 7); } while (excluded.includes(value));
+      return value;
+    }
+
+    function endpointFinite(y) {
+      return { kind: 'finite', y };
+    }
+
+    function endpointInfinity(sign) {
+      return { kind: 'infinity', sign };
+    }
+
+    function availablePieceKinds(leftEndpoint, rightEndpoint, previousKind = null) {
+      const kinds = ['linear', 'quadratic', 'sqrt'];
+      if (leftEndpoint.kind === 'finite' && rightEndpoint.kind === 'finite' && leftEndpoint.y === rightEndpoint.y) kinds.push('constant');
+      return kinds.filter(kind => kind !== previousKind);
+    }
+
+    function makeVisualPiece(leftX, rightX, leftEndpoint, rightEndpoint, previousKind) {
+      const candidates = availablePieceKinds(leftEndpoint, rightEndpoint, previousKind);
+      return {
+        leftX,
+        rightX,
+        leftEndpoint,
+        rightEndpoint,
+        kind: randomChoice(candidates.length ? candidates : ['linear'])
+      };
+    }
+
+    function evaluateVisualPiece(piece, x) {
+      const { leftX, rightX, leftEndpoint, rightEndpoint, kind } = piece;
+      const width = rightX - leftX;
+      const t = (x - leftX) / width;
+
+      if (leftEndpoint.kind === 'infinity') {
+        const anchorX = rightX;
+        const anchorY = rightEndpoint.y;
+        const scale = Math.max(1, Math.abs(width) / 2);
+        return anchorY + leftEndpoint.sign * scale * (1 / (x - leftX) - 1 / (anchorX - leftX));
+      }
+      if (rightEndpoint.kind === 'infinity') {
+        const anchorX = leftX;
+        const anchorY = leftEndpoint.y;
+        const scale = Math.max(1, Math.abs(width) / 2);
+        return anchorY + rightEndpoint.sign * scale * (1 / (rightX - x) - 1 / (rightX - anchorX));
+      }
+
+      const y0 = leftEndpoint.y;
+      const y1 = rightEndpoint.y;
+      if (kind === 'constant') return y0;
+      if (kind === 'sqrt') return y0 + (y1 - y0) * Math.sqrt(Math.max(0, Math.min(1, t)));
+      const linear = y0 + (y1 - y0) * t;
+      if (kind === 'quadratic') {
+        const bump = piece.bump === undefined ? 0 : piece.bump;
+        return linear + bump * t * (1 - t);
+      }
+      return linear;
+    }
+
+    function finiteAnswer(y) {
+      return { kind: 'finite', value: exactFraction(y, 1), tex: numberTex(y) };
+    }
+
+    function infinityAnswer(sign) {
+      return sign > 0 ? { kind: 'infinity' } : { kind: 'negativeInfinity' };
+    }
+
+    function makeVisualPoint(x, role) {
+      if (role === 'vertical') {
+        const leftSign = randomChoice([-1, 1]);
+        const rightSign = randomChoice([-1, 1]);
+        return {
+          x, role, leftSign, rightSign, pointKind: 'none',
+          leftLimit: infinityAnswer(leftSign),
+          rightLimit: infinityAnswer(rightSign),
+          twoSided: leftSign === rightSign ? infinityAnswer(leftSign) : { kind: 'dne' },
+          continuous: false
+        };
+      }
+
+      if (role === 'jump') {
+        const leftY = chooseIntegerY();
+        const rightY = chooseIntegerY([leftY]);
+        const closedSide = randomChoice(['left', 'right']);
+        return {
+          x, role, leftY, rightY, closedSide, pointY: closedSide === 'left' ? leftY : rightY,
+          leftLimit: finiteAnswer(leftY),
+          rightLimit: finiteAnswer(rightY),
+          twoSided: { kind: 'dne' },
+          continuous: false
+        };
+      }
+
+      if (role === 'hole') {
+        const limitY = chooseIntegerY();
+        const pointY = chooseIntegerY([limitY]);
+        return {
+          x, role, leftY: limitY, rightY: limitY, pointY,
+          leftLimit: finiteAnswer(limitY),
+          rightLimit: finiteAnswer(limitY),
+          twoSided: finiteAnswer(limitY),
+          continuous: false
+        };
+      }
+
+      const y = chooseIntegerY();
+      return {
+        x, role, leftY: y, rightY: y, pointY: y,
+        leftLimit: finiteAnswer(y),
+        rightLimit: finiteAnswer(y),
+        twoSided: finiteAnswer(y),
+        continuous: true
+      };
+    }
+
+    function endpointForRightOfPoint(point) {
+      if (!point) return endpointFinite(chooseIntegerY());
+      if (point.role === 'vertical') return endpointInfinity(point.rightSign);
+      return endpointFinite(point.rightY);
+    }
+
+    function endpointForLeftOfPoint(point) {
+      if (!point) return endpointFinite(chooseIntegerY());
+      if (point.role === 'vertical') return endpointInfinity(point.leftSign);
+      return endpointFinite(point.leftY);
+    }
+
+    function generateVisualLimitProblem() {
+      const roles = ['vertical', 'jump', 'hole', 'continuous'];
+      const xs = chooseDistinctIntegers(4, -8, 8);
+      const shuffledRoles = [...roles].sort(() => Math.random() - 0.5);
+      const points = xs.map((x, index) => makeVisualPoint(x, shuffledRoles[index])).sort((a, b) => a.x - b.x);
+
+      const boundaries = [-10, ...points.map(p => p.x), 10];
+      const pieces = [];
+      let previousKind = null;
+      for (let i = 0; i < boundaries.length - 1; i++) {
+        const leftPoint = i === 0 ? null : points[i - 1];
+        const rightPoint = i === points.length ? null : points[i];
+        const leftEndpoint = endpointForRightOfPoint(leftPoint);
+        const rightEndpoint = endpointForLeftOfPoint(rightPoint);
+        const piece = makeVisualPiece(boundaries[i], boundaries[i + 1], leftEndpoint, rightEndpoint, previousKind);
+        if (piece.kind === 'quadratic') piece.bump = randomChoice([-1, 1]) * randomInteger(2, 5);
+        pieces.push(piece);
+        previousKind = piece.kind;
+      }
+
+      const answerGroups = points.map(point => ({
+        titleTex: `x=${numberTex(point.x)}`,
+        point,
+        continuous: point.continuous,
+        entries: [
+          { labelTex: `\\lim_{x \\to ${numberTex(point.x)}^-}f(x)`, answer: point.leftLimit },
+          { labelTex: `\\lim_{x \\to ${numberTex(point.x)}^+}f(x)`, answer: point.rightLimit },
+          { labelTex: `\\lim_{x \\to ${numberTex(point.x)}}f(x)`, answer: point.twoSided }
+        ]
+      }));
+
+      const answers = answerGroups.flatMap(group => group.entries);
+      const hints = [
+        `\\text{For each marked }x\\text{-value, read the left-hand limit from the graph to the left and the right-hand limit from the graph to the right.}`,
+        `\\text{A two-sided limit exists only when the two one-sided limits agree.}`,
+        `\\text{The function is continuous at a point only when the two-sided limit exists and equals the closed dot value.}`
+      ];
+      answerGroups.forEach(group => {
+        const point = group.point;
+        const continuityTex = point.continuous ? '\\text{Yes}' : '\\text{No}';
+        hints.push(`${answerListTexExtended(group.entries)},\\quad \\text{Continuous? }${continuityTex}`);
+      });
+
+      return {
+        type: 'visual',
+        questionTex: `\\text{Use the graph of }f\\text{ to evaluate each limit and decide whether }f\\text{ is continuous at each marked }x\\text{-value.}`,
+        points, pieces, answerGroups, answers, hints
+      };
+    }
+
     function generateLimitProblem() {
-      const r = Math.random();
-      if (r < 0.10) return generateType1LimitProblem();
-      if (r < 0.20) return generateType2LimitProblem();
-      if (r < 0.50) return generateType3LimitProblem();
-      if (r < 0.70) return generateType4LimitProblem();
-      if (r < 0.80) return generateType5LimitProblem();
-      return generateType6LimitProblem();
+      return generateVisualLimitProblem();
     }
 
     function createHintStepBlock(extraClass = '') {
@@ -1535,10 +1760,11 @@ fetch("/nav.html")
 
       if (currentProblem && currentProblem.answerGroups) {
         let answerIndex = 0;
+        const isVisual = currentProblem.type === 'visual';
         finalAnswerInput.innerHTML = `
-          <div class="answer-group-grid">
-            ${currentProblem.answerGroups.map(group => `
-              <div class="answer-group-card">
+          <div class="answer-group-grid ${isVisual ? 'visual-limit-grid' : ''}">
+            ${currentProblem.answerGroups.map((group, groupIndex) => `
+              <div class="answer-group-card" data-group-index="${groupIndex}">
                 <div class="answer-group-card-title">\\(${group.titleTex}\\)</div>
                 ${group.entries.map(entry => {
                   const id = answerIndex++;
@@ -1549,10 +1775,17 @@ fetch("/nav.html")
                     </div>
                   `;
                 }).join('')}
+                ${isVisual ? `
+                  <div class="continuity-choice-row">
+                    Continuous?
+                    <label><input type="checkbox" class="continuous-choice" data-group-index="${groupIndex}" data-value="yes"> Yes</label>
+                    <label><input type="checkbox" class="continuous-choice" data-group-index="${groupIndex}" data-value="no"> No</label>
+                  </div>
+                ` : ''}
               </div>
             `).join('')}
           </div>
-        ` + answerToolbarHtml() + (currentProblem.expectedAsymptotes ? asymptoteInputHtml() : '');
+        ` + answerToolbarHtml() + (!isVisual && currentProblem.expectedAsymptotes ? asymptoteInputHtml() : '');
       } else {
         finalAnswerInput.innerHTML = answers.map((entry, index) => `
           <div class="answer-line" style="margin: 0.65em 0;">
@@ -1581,6 +1814,7 @@ fetch("/nav.html")
         });
       });
 
+      setupContinuityControls();
       setupAsymptoteControls();
       typesetElement(finalAnswerInput);
     }
@@ -1594,6 +1828,18 @@ fetch("/nav.html")
           <button type="button" class="math-symbol-button" data-insert-fraction="true"><span class="fraction-button-display"><span class="fraction-button-top">a</span><span class="fraction-button-bottom">b</span></span></button>
         </div>
       `;
+    }
+
+    function setupContinuityControls() {
+      finalAnswerInput.querySelectorAll('.continuous-choice').forEach(box => {
+        box.addEventListener('change', () => {
+          if (!box.checked) return;
+          const groupIndex = box.dataset.groupIndex;
+          finalAnswerInput.querySelectorAll(`.continuous-choice[data-group-index="${groupIndex}"]`).forEach(other => {
+            if (other !== box) other.checked = false;
+          });
+        });
+      });
     }
 
     function asymptoteInputHtml() {
@@ -1660,6 +1906,74 @@ fetch("/nav.html")
       box.appendChild(row);
       row.classList.add('selected');
       input.focus();
+    }
+
+    function renderVisualLimitGraph(problem) {
+      const canvas = document.getElementById('visual-limit-canvas');
+      if (!canvas || !problem || problem.type !== 'visual') return;
+      const ctx = canvas.getContext('2d');
+      const width = canvas.width, height = canvas.height, margin = 42;
+      const xMin = -10, xMax = 10, yMin = -10, yMax = 10;
+      const xScale = (width - 2 * margin) / (xMax - xMin);
+      const yScale = (height - 2 * margin) / (yMax - yMin);
+      const toPx = x => margin + (x - xMin) * xScale;
+      const toPy = y => height - margin - (y - yMin) * yScale;
+
+      ctx.clearRect(0, 0, width, height);
+      ctx.lineWidth = 1;
+      ctx.font = '12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.strokeStyle = '#e5e5e5';
+      for (let v = -10; v <= 10; v++) {
+        ctx.beginPath(); ctx.moveTo(toPx(v), margin); ctx.lineTo(toPx(v), height - margin); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(margin, toPy(v)); ctx.lineTo(width - margin, toPy(v)); ctx.stroke();
+      }
+      ctx.strokeStyle = '#333'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(margin, toPy(0)); ctx.lineTo(width - margin, toPy(0)); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(toPx(0), margin); ctx.lineTo(toPx(0), height - margin); ctx.stroke();
+      ctx.fillStyle = '#333';
+      for (let v = -10; v <= 10; v += 2) {
+        ctx.fillText(String(v), toPx(v), toPy(0) + 16);
+        if (v !== 0) ctx.fillText(String(v), toPx(0) - 18, toPy(v));
+      }
+
+      problem.points.filter(point => point.role === 'vertical').forEach(point => {
+        ctx.save(); ctx.strokeStyle = '#888'; ctx.setLineDash([7, 5]); ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(toPx(point.x), margin); ctx.lineTo(toPx(point.x), height - margin); ctx.stroke(); ctx.restore();
+      });
+
+      ctx.strokeStyle = '#111'; ctx.lineWidth = 3;
+      problem.pieces.forEach(piece => {
+        const samples = 180;
+        let started = false;
+        ctx.beginPath();
+        for (let i = 1; i < samples; i++) {
+          const t = i / samples;
+          const x = piece.leftX + (piece.rightX - piece.leftX) * t;
+          const y = evaluateVisualPiece(piece, x);
+          if (!Number.isFinite(y) || y < yMin - 30 || y > yMax + 30) { started = false; continue; }
+          const px = toPx(x), py = toPy(Math.max(yMin - 0.5, Math.min(yMax + 0.5, y)));
+          if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+      });
+
+      function drawOpenDot(x, y) {
+        ctx.save(); ctx.fillStyle = 'white'; ctx.strokeStyle = '#111'; ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.arc(toPx(x), toPy(y), 5.5, 0, 2 * Math.PI); ctx.fill(); ctx.stroke(); ctx.restore();
+      }
+      function drawClosedDot(x, y) {
+        ctx.save(); ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(toPx(x), toPy(y), 5.8, 0, 2 * Math.PI); ctx.fill(); ctx.restore();
+      }
+      problem.points.forEach(point => {
+        if (point.role === 'vertical') return;
+        if (point.role === 'jump') {
+          if (point.closedSide === 'left') { drawClosedDot(point.x, point.leftY); drawOpenDot(point.x, point.rightY); }
+          else { drawOpenDot(point.x, point.leftY); drawClosedDot(point.x, point.rightY); }
+        } else if (point.role === 'hole') { drawOpenDot(point.x, point.leftY); drawClosedDot(point.x, point.pointY); }
+        else drawClosedDot(point.x, point.pointY);
+      });
     }
 
     function handleMathEditorKeydown(event) {
@@ -1900,7 +2214,14 @@ fetch("/nav.html")
       const asymptotesCorrect = currentProblem.expectedAsymptotes
         ? asymptoteListsMatch(collectAsymptoteEntries(), currentProblem.expectedAsymptotes)
         : true;
-      const allCorrect = allLimitsCorrect && asymptotesCorrect;
+      const continuityCorrect = currentProblem.type === 'visual'
+        ? currentProblem.answerGroups.every((group, index) => {
+            const yes = document.querySelector(`.continuous-choice[data-group-index="${index}"][data-value="yes"]`);
+            const no = document.querySelector(`.continuous-choice[data-group-index="${index}"][data-value="no"]`);
+            return group.continuous ? !!(yes && yes.checked) : !!(no && no.checked);
+          })
+        : true;
+      const allCorrect = allLimitsCorrect && asymptotesCorrect && continuityCorrect;
       feedbackText.textContent = allCorrect ? 'Correct!' : 'Incorrect, try again.';
       feedbackText.style.color = allCorrect ? 'green' : 'red';
     }
@@ -1925,11 +2246,15 @@ fetch("/nav.html")
       }
 
       currentProblem = generateLimitProblem();
-      questionText.innerHTML = `Evaluate: \\[${currentProblem.questionTex}\\]`;
+      if (currentProblem.type === 'visual') {
+        questionText.innerHTML = `\\[${currentProblem.questionTex}\\]<div class="visual-graph-wrap"><canvas id="visual-limit-canvas" width="620" height="620" aria-label="Graph of f on the interval from -10 to 10"></canvas></div>`;
+      } else {
+        questionText.innerHTML = `Evaluate: \\[${currentProblem.questionTex}\\]`;
+      }
       setupAnswerEditor();
       checkBtn.style.display = 'inline-block';
       hintBtn.disabled = !currentProblem.hints.length;
-      typesetElement(questionText);
+      typesetElement(questionText).then(() => renderVisualLimitGraph(currentProblem));
     });
 
     hintBtn.addEventListener('click', advanceHint);

@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -170,7 +171,10 @@ fetch("/nav.html")
   </header>
 
   <main>
-    <p>Use the Intermediate Value Theorem to show that a root or solution exists.</p>
+    <p>In the following activity, use the Intermediate Value Theorem to show that a root or solution exists.  As the problems are randomly generated, 
+    there are often quantities you couldn't evaluate without a calculator (for instance, \(2\left(\frac{\pi}}{3}\right)\)).  When inputting your 
+    solution, you need only evaluate any exact values of trigonometric functions: you can leave anything else unsimplified, or you can use a 
+    calculator to get a decimal approximation to 4 places (but first evaluate the trig functions yourself - it's good practice!)</p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
@@ -323,6 +327,83 @@ fetch("/nav.html")
       }, 0);
     }
 
+
+    function endpointDescriptor(interval, side) {
+      const raw = interval[side];
+      const tex = interval[`${side}Tex`];
+      const value = interval[`${side}Value`];
+      if (raw && typeof raw === 'object' && raw.num !== undefined && raw.den !== undefined) return { ...raw, tex, value };
+      return { num: null, den: null, tex, value };
+    }
+
+    function signedTermPieces(pieces) {
+      const nonzero = pieces.filter(piece => piece.body && piece.body !== '0');
+      if (!nonzero.length) return '0';
+      return nonzero.map((piece, index) => {
+        const sign = piece.coeff < 0 ? '-' : '+';
+        if (index === 0) return piece.coeff < 0 ? `-${piece.body}` : piece.body;
+        return `${sign} ${piece.body}`;
+      }).join(' ');
+    }
+
+    function trigExactTex(fn, endpoint) {
+      if (endpoint.num === null || endpoint.den === null) return null;
+      const key = `${fn}:${endpoint.num}/${endpoint.den}`;
+      const values = {
+        'sin:-1/2': '-1', 'sin:-1/3': '-\\frac{\\sqrt{3}}{2}', 'sin:-1/4': '-\\frac{\\sqrt{2}}{2}', 'sin:-1/6': '-\\frac{1}{2}',
+        'sin:0/1': '0', 'sin:1/6': '\\frac{1}{2}', 'sin:1/4': '\\frac{\\sqrt{2}}{2}', 'sin:1/3': '\\frac{\\sqrt{3}}{2}', 'sin:1/2': '1',
+        'cos:-1/2': '0', 'cos:-1/3': '\\frac{1}{2}', 'cos:-1/4': '\\frac{\\sqrt{2}}{2}', 'cos:-1/6': '\\frac{\\sqrt{3}}{2}',
+        'cos:0/1': '1', 'cos:1/6': '\\frac{\\sqrt{3}}{2}', 'cos:1/4': '\\frac{\\sqrt{2}}{2}', 'cos:1/3': '\\frac{1}{2}', 'cos:1/2': '0',
+        'tan:-1/3': '-\\sqrt{3}', 'tan:-1/4': '-1', 'tan:-1/6': '-\\frac{\\sqrt{3}}{3}',
+        'tan:0/1': '0', 'tan:1/6': '\\frac{\\sqrt{3}}{3}', 'tan:1/4': '1', 'tan:1/3': '\\sqrt{3}'
+      };
+      return values[key] || null;
+    }
+
+    function polynomialSubstitutionBody(term, endpointTex) {
+      const abs = Math.abs(term.coeff);
+      if (term.power === 0) return numberTex(abs);
+      const xPart = term.power === 1 ? `\\left(${endpointTex}\\right)` : `\\left(${endpointTex}\\right)^{${term.power}}`;
+      return abs === 1 ? xPart : `${numberTex(abs)}${xPart}`;
+    }
+
+    function trigSubstitutionBody(term, endpointTex) {
+      const abs = Math.abs(term.coeff);
+      const trigPart = `\\${term.fn}\\left(${endpointTex}\\right)`;
+      return abs === 1 ? trigPart : `${numberTex(abs)}${trigPart}`;
+    }
+
+    function trigEvaluatedBody(term, endpoint) {
+      const abs = Math.abs(term.coeff);
+      const exact = trigExactTex(term.fn, endpoint);
+      if (exact === null) return trigSubstitutionBody(term, endpoint.tex);
+      if (exact === '0') return '0';
+      const exactIsNegative = exact.startsWith('-');
+      const cleanedExact = exactIsNegative ? exact.slice(1) : exact;
+      const body = abs === 1 ? cleanedExact : `${numberTex(abs)}\\left(${cleanedExact}\\right)`;
+      return { body, signMultiplier: exactIsNegative ? -1 : 1 };
+    }
+
+    function endpointSubstitutionTex(terms, endpoint) {
+      return signedTermPieces(terms.map(term => {
+        if (term.kind === 'poly') return { coeff: term.coeff, body: polynomialSubstitutionBody(term, endpoint.tex) };
+        return { coeff: term.coeff, body: trigSubstitutionBody(term, endpoint.tex) };
+      }));
+    }
+
+    function endpointTrigEvaluatedTex(terms, endpoint) {
+      return signedTermPieces(terms.map(term => {
+        if (term.kind === 'poly') return { coeff: term.coeff, body: polynomialSubstitutionBody(term, endpoint.tex) };
+        const evaluated = trigEvaluatedBody(term, endpoint);
+        if (typeof evaluated === 'string') return { coeff: term.coeff, body: evaluated };
+        return { coeff: term.coeff * evaluated.signMultiplier, body: evaluated.body };
+      }));
+    }
+
+    function endpointEvaluationHint(terms, endpoint, value) {
+      return `f(${endpoint.tex})=${endpointSubstitutionTex(terms, endpoint)}=${endpointTrigEvaluatedTex(terms, endpoint)}\\approx ${numberTex(Math.round(value * 10000) / 10000)}`;
+    }
+
     function finiteAnswer(value) {
       return { kind: 'finite', value, tex: numberTex(value) };
     }
@@ -437,6 +518,8 @@ fetch("/nav.html")
       const equationType = Math.random() < 0.50;
       const terms = generated.terms;
       const interval = generated.interval;
+      const leftEndpoint = endpointDescriptor(interval, 'c');
+      const rightEndpoint = endpointDescriptor(interval, 'd');
       const leftAnswer = finiteAnswer(generated.left);
       const rightAnswer = finiteAnswer(generated.right);
       const smaller = generated.left < generated.right ? generated.left : generated.right;
@@ -464,11 +547,13 @@ fetch("/nav.html")
         ],
         hints: [
           equationType ? `\\text{Move every term to one side so the equation has the form }f(x)=0.` : `\\text{The goal is to show that }f\\text{ takes opposite signs at the two endpoints.}`,
-          `f(${interval.cTex})=${numberTex(generated.left)}`,
-          `f(${interval.dTex})=${numberTex(generated.right)}`,
+          endpointEvaluationHint(terms, leftEndpoint, generated.left),
+          endpointEvaluationHint(terms, rightEndpoint, generated.right),
           `${generated.left < 0 ? `f(${interval.cTex})<0` : `f(${interval.cTex})>0`}\\quad\\text{and}\\quad ${generated.right < 0 ? `f(${interval.dTex})<0` : `f(${interval.dTex})>0`}`,
           `\\text{Since }f\\text{ is continuous and }0\\text{ lies between }${numberTex(smaller)}\\text{ and }${numberTex(larger)}\\text{, the IVT guarantees a ${rootOrSolution} in }[${interval.cTex},${interval.dTex}].`
         ],
+        conclusionLine1Tex: `\\text{Since }f\\text{ is continuous on }[${interval.cTex},${interval.dTex}]\\text{ and }f(${interval.cTex})\\text{ and }f(${interval.dTex})\\text{ have opposite signs,}`,
+        conclusionLine2Tex: `\\text{the Intermediate Value Theorem guarantees a ${rootOrSolution} in }[${interval.cTex},${interval.dTex}].`,
         conclusionTex: `\\text{Since }f\\text{ is continuous on }[${interval.cTex},${interval.dTex}]\\text{ and }f(${interval.cTex})\\text{ and }f(${interval.dTex})\\text{ have opposite signs, the Intermediate Value Theorem guarantees a ${rootOrSolution} in }[${interval.cTex},${interval.dTex}].`
       };
     }
@@ -509,7 +594,7 @@ fetch("/nav.html")
           <button type="button" class="math-symbol-button" data-insert-text="*">×</button>
           <button type="button" class="math-symbol-button" data-insert-text="/">/</button>
           <button type="button" class="math-symbol-button" data-insert-text="^">^</button>
-          <button type="button" class="math-symbol-button" data-insert-text="pi">π</button>
+          <button type="button" class="math-symbol-button" data-insert-text="π">π</button>
           <button type="button" class="math-symbol-button" data-insert-fraction="true"><span class="fraction-button-display"><span class="fraction-button-top">a</span><span class="fraction-button-bottom">b</span></span></button>
           <button type="button" class="math-symbol-button" data-insert-radical="true">√</button>
           ${includeFunctionButtons ? `
@@ -535,7 +620,7 @@ fetch("/nav.html")
           ${currentProblem.answers.map((entry, index) => `
             <div class="ivt-answer-line">
               <label>\\(${entry.labelTex}=\\)</label>
-              <span id="answer-editor-${index}" class="polynomial-answer-editor math-answer-editor" contenteditable="true" role="textbox" aria-label="Endpoint value ${index + 1}" style="min-width: 140px;"></span>
+              <span id="answer-editor-${index}" class="polynomial-answer-editor math-answer-editor endpoint-answer-editor" contenteditable="true" role="textbox" aria-label="Endpoint value ${index + 1}" style="min-width: 140px;"></span>
             </div>
           `).join('')}
           ${answerToolbarHtml(currentProblem.equationType)}
@@ -548,6 +633,7 @@ fetch("/nav.html")
         editor.addEventListener('focus', () => { activeMathEditor = editor; });
         editor.addEventListener('click', () => { activeMathEditor = editor; });
         editor.addEventListener('keydown', handleMathEditorKeydown);
+        editor.addEventListener('input', () => replaceTypedPi(editor));
       });
       if (activeMathEditor) activeMathEditor.focus();
 
@@ -556,7 +642,11 @@ fetch("/nav.html")
         button.addEventListener('click', () => {
           const target = activeMathEditor || editors[0];
           target.focus();
-          if (button.dataset.insertText !== undefined) insertTextAtSelection(button.dataset.insertText, target);
+          if (button.dataset.insertText !== undefined) {
+            const text = button.dataset.insertText;
+            if (target.classList.contains('endpoint-answer-editor') && /(sin|cos|tan)/.test(text)) return;
+            insertTextAtSelection(text, target);
+          }
           else if (button.dataset.insertFraction) insertFractionAtSelection(target);
           else if (button.dataset.insertRadical) insertRadicalAtSelection(target);
         });
@@ -565,11 +655,20 @@ fetch("/nav.html")
       typesetElement(finalAnswerInput);
     }
 
+    function replaceTypedPi(editor) {
+      function walk(node) {
+        if (node.nodeType === Node.TEXT_NODE && node.textContent.includes('pi')) node.textContent = node.textContent.replace(/pi/g, 'π');
+        else Array.from(node.childNodes || []).forEach(walk);
+      }
+      walk(editor);
+    }
+
     function handleMathEditorKeydown(event) {
       const allowedNavigation = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Tab', 'Enter'];
       if (allowedNavigation.includes(event.key) || event.ctrlKey || event.metaKey) return;
-      if (/^[0-9xX+\-*/^().,\s]$/.test(event.key)) return;
-      if (/^[a-zA-Zπ]$/.test(event.key)) return;
+      const isEndpointEditor = event.currentTarget.classList.contains('endpoint-answer-editor');
+      if (/^[0-9+\-*/^().,\sπ]$/.test(event.key)) return;
+      if (!isEndpointEditor && /^[a-zA-ZxX]$/.test(event.key)) return;
       event.preventDefault();
     }
 
@@ -680,6 +779,7 @@ fetch("/nav.html")
     }
 
     function numericAnswerMatches(raw, expected) {
+      if (/\b(sin|cos|tan)\b/i.test(raw)) return false;
       const userValue = evaluateUserExpression(raw, 0);
       return Number.isFinite(userValue) && Math.abs(userValue - expected.value) < 1e-8;
     }
@@ -706,7 +806,7 @@ fetch("/nav.html")
 
       const allCorrect = endpointsCorrect && zeroStepCorrect;
       if (allCorrect) {
-        feedbackText.innerHTML = `<div class="ivt-conclusion">\\[${currentProblem.conclusionTex}\\]</div>`;
+        feedbackText.innerHTML = `\\[${currentProblem.conclusionLine1Tex}\\]\\[${currentProblem.conclusionLine2Tex}\\]`;
         feedbackText.style.color = 'green';
         typesetElement(feedbackText);
       } else {
@@ -732,7 +832,7 @@ fetch("/nav.html")
       if (sound) { sound.currentTime = 0; sound.play(); }
 
       currentProblem = makeIVTProblem();
-      questionText.innerHTML = `\\[${currentProblem.questionTex}\\]`;
+      questionText.innerHTML = `\\[${currentProblem.questionTex}\\]<p style="text-align: center; margin-top: -0.5em;">Evaluate any exact trigonometric values; you don't need to simplify anything else.</p>`;
       setupAnswerEditor();
       checkBtn.style.display = 'inline-block';
       hintBtn.disabled = !currentProblem.hints.length;

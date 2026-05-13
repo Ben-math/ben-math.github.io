@@ -4,6 +4,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -410,7 +411,13 @@ fetch("/nav.html")
 
     function endpointNeedsDecimalApproximation(terms, endpoint) {
       const trigEvaluated = endpointTrigEvaluatedTex(terms, endpoint);
-      return /\\sqrt|\\pi/.test(trigEvaluated);
+      const hasRadicalFromTrigEvaluation = /\\sqrt/.test(trigEvaluated);
+      const hasPiFromPolynomialSubstitution =
+        endpoint.num !== null &&
+        endpoint.den !== null &&
+        endpoint.num !== 0 &&
+        terms.some(term => term.kind === 'poly' && term.power > 0 && term.coeff !== 0);
+      return hasRadicalFromTrigEvaluation || hasPiFromPolynomialSubstitution;
     }
 
     function endpointDisplayValue(terms, endpoint, value) {
@@ -575,7 +582,7 @@ fetch("/nav.html")
           equationType ? `\\text{Move every term to one side so the equation has the form }f(x)=0.` : `\\text{The goal is to show that }f\\text{ takes opposite signs at the two endpoints.}`,
           endpointEvaluationHint(terms, leftEndpoint, generated.left),
           endpointEvaluationHint(terms, rightEndpoint, generated.right),
-          `${generated.left < 0 ? `f(${interval.cTex})\\approx ${leftDisplayValue}<0` : `f(${interval.cTex})\\approx ${leftDisplayValue}>0`}\\quad\\text{and}\\quad ${generated.right < 0 ? `f(${interval.dTex})\\approx ${rightDisplayValue}<0` : `f(${interval.dTex})\\approx ${rightDisplayValue}>0`}`,
+          `${generated.left < 0 ? `f(${interval.cTex})<0` : `f(${interval.cTex})>0`}\quad\text{and}\quad ${generated.right < 0 ? `f(${interval.dTex})<0` : `f(${interval.dTex})>0`}`,
           `\\text{Since }f\\text{ is continuous and }0\\text{ lies between }${smallerDisplayValue}\\text{ and }${largerDisplayValue}\\text{, the IVT guarantees a ${rootOrSolution} in }[${interval.cTex},${interval.dTex}].`
         ],
         conclusionLine1Tex: `\\text{Since }f\\text{ is continuous on }[${interval.cTex},${interval.dTex}]\\text{ and }f(${interval.cTex})\\text{ and }f(${interval.dTex})\\text{ have opposite signs,}`,

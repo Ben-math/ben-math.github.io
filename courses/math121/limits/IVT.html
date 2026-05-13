@@ -3,6 +3,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -407,11 +408,19 @@ fetch("/nav.html")
       return Number(value).toFixed(places);
     }
 
+    function endpointNeedsDecimalApproximation(terms, endpoint) {
+      const trigEvaluated = endpointTrigEvaluatedTex(terms, endpoint);
+      return /\\sqrt|\\pi/.test(trigEvaluated);
+    }
+
+    function endpointDisplayValue(terms, endpoint, value) {
+      return endpointNeedsDecimalApproximation(terms, endpoint) ? decimalTex(value, 4) : numberTex(value);
+    }
+
     function endpointEvaluationHint(terms, endpoint, value) {
       const substituted = endpointSubstitutionTex(terms, endpoint);
       const trigEvaluated = endpointTrigEvaluatedTex(terms, endpoint);
-      const needsDecimalApproximation = /\\sqrt/.test(trigEvaluated);
-      const finalStep = needsDecimalApproximation
+      const finalStep = endpointNeedsDecimalApproximation(terms, endpoint)
         ? `\\approx ${decimalTex(value, 4)}`
         : `= ${numberTex(value)}`;
       return `f(${endpoint.tex})=${substituted}=${trigEvaluated}${finalStep}`;
@@ -535,8 +544,12 @@ fetch("/nav.html")
       const rightEndpoint = endpointDescriptor(interval, 'd');
       const leftAnswer = finiteAnswer(generated.left);
       const rightAnswer = finiteAnswer(generated.right);
+      const leftDisplayValue = endpointDisplayValue(terms, leftEndpoint, generated.left);
+      const rightDisplayValue = endpointDisplayValue(terms, rightEndpoint, generated.right);
       const smaller = generated.left < generated.right ? generated.left : generated.right;
       const larger = generated.left < generated.right ? generated.right : generated.left;
+      const smallerDisplayValue = generated.left < generated.right ? leftDisplayValue : rightDisplayValue;
+      const largerDisplayValue = generated.left < generated.right ? rightDisplayValue : leftDisplayValue;
       const rootOrSolution = equationType ? 'solution' : 'root';
 
       let questionTex, equationSplit = null;
@@ -562,8 +575,8 @@ fetch("/nav.html")
           equationType ? `\\text{Move every term to one side so the equation has the form }f(x)=0.` : `\\text{The goal is to show that }f\\text{ takes opposite signs at the two endpoints.}`,
           endpointEvaluationHint(terms, leftEndpoint, generated.left),
           endpointEvaluationHint(terms, rightEndpoint, generated.right),
-          `${generated.left < 0 ? `f(${interval.cTex})<0` : `f(${interval.cTex})>0`}\\quad\\text{and}\\quad ${generated.right < 0 ? `f(${interval.dTex})<0` : `f(${interval.dTex})>0`}`,
-          `\\text{Since }f\\text{ is continuous and }0\\text{ lies between }${numberTex(smaller)}\\text{ and }${numberTex(larger)}\\text{, the IVT guarantees a ${rootOrSolution} in }[${interval.cTex},${interval.dTex}].`
+          `${generated.left < 0 ? `f(${interval.cTex})\\approx ${leftDisplayValue}<0` : `f(${interval.cTex})\\approx ${leftDisplayValue}>0`}\\quad\\text{and}\\quad ${generated.right < 0 ? `f(${interval.dTex})\\approx ${rightDisplayValue}<0` : `f(${interval.dTex})\\approx ${rightDisplayValue}>0`}`,
+          `\\text{Since }f\\text{ is continuous and }0\\text{ lies between }${smallerDisplayValue}\\text{ and }${largerDisplayValue}\\text{, the IVT guarantees a ${rootOrSolution} in }[${interval.cTex},${interval.dTex}].`
         ],
         conclusionLine1Tex: `\\text{Since }f\\text{ is continuous on }[${interval.cTex},${interval.dTex}]\\text{ and }f(${interval.cTex})\\text{ and }f(${interval.dTex})\\text{ have opposite signs,}`,
         conclusionLine2Tex: `\\text{the Intermediate Value Theorem guarantees a ${rootOrSolution} in }[${interval.cTex},${interval.dTex}].`,

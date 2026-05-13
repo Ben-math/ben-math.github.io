@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -350,10 +351,10 @@ fetch("/nav.html")
       if (endpoint.num === null || endpoint.den === null) return null;
       const key = `${fn}:${endpoint.num}/${endpoint.den}`;
       const values = {
-        'sin:-1/2': '-1', 'sin:-1/3': '-\\frac{\\sqrt{3}}{2}', 'sin:-1/4': '-\\frac{\\sqrt{2}}{2}', 'sin:-1/6': '-\\frac{1}{2}',
-        'sin:0/1': '0', 'sin:1/6': '\\frac{1}{2}', 'sin:1/4': '\\frac{\\sqrt{2}}{2}', 'sin:1/3': '\\frac{\\sqrt{3}}{2}', 'sin:1/2': '1',
-        'cos:-1/2': '0', 'cos:-1/3': '\\frac{1}{2}', 'cos:-1/4': '\\frac{\\sqrt{2}}{2}', 'cos:-1/6': '\\frac{\\sqrt{3}}{2}',
-        'cos:0/1': '1', 'cos:1/6': '\\frac{\\sqrt{3}}{2}', 'cos:1/4': '\\frac{\\sqrt{2}}{2}', 'cos:1/3': '\\frac{1}{2}', 'cos:1/2': '0',
+        'sin:-1/2': '-1', 'sin:-1/3': '-\\frac{\\sqrt{3}}{2}', 'sin:-1/4': '-\\frac{1}{\\sqrt{2}}', 'sin:-1/6': '-\\frac{1}{2}',
+        'sin:0/1': '0', 'sin:1/6': '\\frac{1}{2}', 'sin:1/4': '\\frac{1}{\\sqrt{2}}', 'sin:1/3': '\\frac{\\sqrt{3}}{2}', 'sin:1/2': '1',
+        'cos:-1/2': '0', 'cos:-1/3': '\\frac{1}{2}', 'cos:-1/4': '\\frac{1}{\\sqrt{2}}', 'cos:-1/6': '\\frac{\\sqrt{3}}{2}',
+        'cos:0/1': '1', 'cos:1/6': '\\frac{\\sqrt{3}}{2}', 'cos:1/4': '\\frac{1}{\\sqrt{2}}', 'cos:1/3': '\\frac{1}{2}', 'cos:1/2': '0',
         'tan:-1/3': '-\\sqrt{3}', 'tan:-1/4': '-1', 'tan:-1/6': '-\\frac{\\sqrt{3}}{3}',
         'tan:0/1': '0', 'tan:1/6': '\\frac{\\sqrt{3}}{3}', 'tan:1/4': '1', 'tan:1/3': '\\sqrt{3}'
       };
@@ -400,8 +401,19 @@ fetch("/nav.html")
       }));
     }
 
+    function decimalTex(value, places = 4) {
+      if (Object.is(value, -0)) value = 0;
+      return Number(value).toFixed(places);
+    }
+
     function endpointEvaluationHint(terms, endpoint, value) {
-      return `f(${endpoint.tex})=${endpointSubstitutionTex(terms, endpoint)}=${endpointTrigEvaluatedTex(terms, endpoint)}\\approx ${numberTex(Math.round(value * 10000) / 10000)}`;
+      const substituted = endpointSubstitutionTex(terms, endpoint);
+      const trigEvaluated = endpointTrigEvaluatedTex(terms, endpoint);
+      const needsDecimalApproximation = /\\\\sqrt/.test(trigEvaluated);
+      const finalStep = needsDecimalApproximation
+        ? `\\\\approx ${decimalTex(value, 4)}`
+        : `= ${numberTex(value)}`;
+      return `f(${endpoint.tex})=${substituted}=${trigEvaluated}${finalStep}`;
     }
 
     function finiteAnswer(value) {
@@ -781,7 +793,7 @@ fetch("/nav.html")
     function numericAnswerMatches(raw, expected) {
       if (/\b(sin|cos|tan)\b/i.test(raw)) return false;
       const userValue = evaluateUserExpression(raw, 0);
-      return Number.isFinite(userValue) && Math.abs(userValue - expected.value) < 1e-8;
+      return Number.isFinite(userValue) && Math.abs(userValue - expected.value) <= 0.001;
     }
 
     function expressionEquivalentToTerms(raw, terms) {

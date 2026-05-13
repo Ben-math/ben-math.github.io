@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -409,9 +410,9 @@ fetch("/nav.html")
     function endpointEvaluationHint(terms, endpoint, value) {
       const substituted = endpointSubstitutionTex(terms, endpoint);
       const trigEvaluated = endpointTrigEvaluatedTex(terms, endpoint);
-      const needsDecimalApproximation = /\\\\sqrt/.test(trigEvaluated);
+      const needsDecimalApproximation = /\\sqrt/.test(trigEvaluated);
       const finalStep = needsDecimalApproximation
-        ? `\\\\approx ${decimalTex(value, 4)}`
+        ? `\\approx ${decimalTex(value, 4)}`
         : `= ${numberTex(value)}`;
       return `f(${endpoint.tex})=${substituted}=${trigEvaluated}${finalStep}`;
     }

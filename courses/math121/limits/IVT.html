@@ -168,12 +168,24 @@ fetch("/nav.html")
   </header>
 
   <main>
-    <p></p>
+    <p>This activity deals with the Intermediate Value Theorem.  This applies to functions which are continuous on an interval \([a,b]\). 
+    We are guaranteed that the function takes on every value between \(f(a)\) and \(f(b)\), somewhere in the interval \([a,b]\).  In particular, 
+    we can use this theorem to determine that a continuous function has a root in an interval, if it is negative at one endpoint and positive at the 
+    other.  We can also use it to determine whether an equation has a solution in an interval, by re-arranging it into a function, and proceeding as 
+    before to determine that it has a root in the interval.</p>
     
-    <p>In the following activity, use the Intermediate Value Theorem to show that a root or solution exists.  As the problems are randomly generated, 
+    <p>In the following, use the Intermediate Value Theorem to show that a root or solution exists.  As the problems are randomly generated, 
     there are often quantities you couldn't evaluate without a calculator (for instance, \(2 \cdot \frac{\pi}{3}\) ).  When inputting your 
     solution, you need only evaluate any exact values of trigonometric functions: you can leave anything else unsimplified, or you can use a 
     calculator to get a decimal approximation to 4 places (but first evaluate the trig functions yourself - it's good practice!)</p>
+
+    <p>For example, show that the equation \[2x = \cos(x)\] has a solution in the interval \([0,\frac{\pi}{3}]\), we first put all terms on one side to 
+    create a function: \[f(x) = \cos(x) - 2x\] and then evaluate \(f\) at both \(0\) and \(\frac{\pi}{3}\): \[f(0) = \cos(0) - 2(0) = 1 \hspace{1cm} 
+    \text{ and } \hspace{1cm} f(\frac{\pi}{3}) = \cos(\frac{\pi}{3}) - 2(\frac{\pi}{3}) = \frac{1}{2} - 2(\frac{\pi}{3}) \approx -1.5944\]  Note that 
+    in the activity either \( \frac{1}{2} - 2(\frac{\pi}{3})\) or \(-1.5994\) would be accepted as the value of \(f(\frac{\pi}{3})\).  Then since 
+    \(f(0) > 0\) and \(f(\frac{\pi}{3}) < 0\), the Intermediate Value Theorem guarantees \(f\) has a root in the interval \([0,\frac{\pi}{3}]\).</p>
+
+    <p>Now you try!</p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -255,6 +256,35 @@
       white-space: nowrap;
     }
 
+
+    .restricted-answer-editor {
+      display: inline-block;
+      min-width: 460px;
+      min-height: 1.8em;
+      padding: 0.35em 0.55em;
+      border: 2px solid #555;
+      border-radius: 8px;
+      background: white;
+      font-size: 1.25em;
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    .restricted-answer-editor:focus {
+      outline: 3px solid rgba(80, 140, 255, 0.35);
+    }
+
+    .visual-stage-feedback {
+      margin: 0.85em auto 0.5em;
+      text-align: center;
+      font-weight: bold;
+      color: green;
+    }
+
+    .locked-answer-stage {
+      opacity: 0.72;
+    }
+
     @media (max-width: 760px) {
       .visual-limit-grid {
         grid-template-columns: 1fr;
@@ -355,6 +385,8 @@ fetch("/nav.html")
     let mathJaxTypesetPromise = Promise.resolve();
     let hintIsTypesetting = false;
     let activeMathEditor = null;
+    let visualAnswerStage = 1;
+    let activeContinuityIntervalEditor = null;
 
     function typesetElement(element) {
       if (!window.MathJax || !MathJax.typesetPromise) {
@@ -1675,6 +1707,25 @@ fetch("/nav.html")
       };
     }
 
+
+    function visualContinuityIntervals(points) {
+      const discontinuities = points
+        .filter(point => !point.continuous)
+        .map(point => point.x)
+        .sort((a, b) => a - b);
+      const boundaries = [-Infinity, ...discontinuities, Infinity];
+      const intervals = [];
+      for (let i = 0; i < boundaries.length - 1; i++) {
+        intervals.push({
+          left: boundaries[i],
+          right: boundaries[i + 1],
+          leftClosed: false,
+          rightClosed: false
+        });
+      }
+      return intervals;
+    }
+
     function endpointForRightOfPoint(point) {
       if (!point) return endpointFinite(chooseIntegerY());
       if (point.role === 'vertical') return endpointInfinity(point.rightSign);
@@ -1733,7 +1784,8 @@ fetch("/nav.html")
       return {
         type: 'visual',
         questionTex: `\\text{Use the graph of }f\\text{ to evaluate each limit and decide whether }f\\text{ is continuous at each marked }x\\text{-value.}`,
-        points, pieces, answerGroups, answers, hints
+        points, pieces, answerGroups, answers, hints,
+        continuityIntervals: visualContinuityIntervals(points)
       };
     }
 
@@ -2258,8 +2310,256 @@ fetch("/nav.html")
       });
     }
 
+
+    function normalizeContinuityIntervalText(text) {
+      return text
+        .replace(/\u200b/g, '')
+        .replace(/−/g, '-')
+        .replace(/\\infty/g, '∞')
+        .replace(/infinity/gi, '∞')
+        .replace(/infty/gi, '∞')
+        .replace(/inf/gi, '∞')
+        .replace(/\\cup/g, '∪')
+        .replace(/cup/gi, '∪')
+        .replace(/\s+/g, '')
+        .trim();
+    }
+
+    function parseContinuityEndpoint(text) {
+      const t = text.trim().replace(/^\+/, '');
+      if (t === '∞') return Infinity;
+      if (t === '-∞') return -Infinity;
+      if (/^-?\d+$/.test(t)) return Number(t);
+      return NaN;
+    }
+
+    function parseContinuityInterval(text) {
+      const t = normalizeContinuityIntervalText(text);
+      if (!t || !'(['.includes(t[0]) || !')]'.includes(t[t.length - 1])) return null;
+      const body = t.slice(1, -1);
+      const commaIndex = body.indexOf(',');
+      if (commaIndex === -1 || body.indexOf(',', commaIndex + 1) !== -1) return null;
+      const left = parseContinuityEndpoint(body.slice(0, commaIndex));
+      const right = parseContinuityEndpoint(body.slice(commaIndex + 1));
+      if ((Number.isNaN(left) && left !== -Infinity) || (Number.isNaN(right) && right !== Infinity)) return null;
+      if (!(left < right)) return null;
+      return {
+        left,
+        right,
+        leftClosed: left === -Infinity ? false : t[0] === '[',
+        rightClosed: right === Infinity ? false : t[t.length - 1] === ']'
+      };
+    }
+
+    function intervalsCanMerge(a, b) {
+      if (a.right < b.left) return false;
+      if (b.right < a.left) return false;
+      if (a.right === b.left) return a.rightClosed || b.leftClosed;
+      if (b.right === a.left) return b.rightClosed || a.leftClosed;
+      return true;
+    }
+
+    function mergeContinuityIntervals(intervals) {
+      const sorted = intervals
+        .filter(interval => interval && interval.left < interval.right)
+        .sort((a, b) => a.left - b.left || a.right - b.right);
+      const merged = [];
+      sorted.forEach(interval => {
+        if (!merged.length || !intervalsCanMerge(merged[merged.length - 1], interval)) {
+          merged.push({ ...interval });
+          return;
+        }
+        const last = merged[merged.length - 1];
+        if (interval.right > last.right) {
+          last.right = interval.right;
+          last.rightClosed = interval.rightClosed;
+        } else if (interval.right === last.right) {
+          last.rightClosed = last.rightClosed || interval.rightClosed;
+        }
+      });
+      return merged;
+    }
+
+    function parseContinuityIntervalSet(text) {
+      const normalized = normalizeContinuityIntervalText(text);
+      if (!normalized) return null;
+      const pieces = normalized.split('∪').filter(piece => piece.length > 0);
+      if (!pieces.length) return null;
+      const intervals = pieces.map(parseContinuityInterval);
+      if (intervals.some(interval => interval === null)) return null;
+      return mergeContinuityIntervals(intervals);
+    }
+
+    function continuityIntervalsExactlyMatch(a, b) {
+      const normalizedA = mergeContinuityIntervals(a);
+      const normalizedB = mergeContinuityIntervals(b);
+      if (normalizedA.length !== normalizedB.length) return false;
+      return normalizedA.every((interval, index) => {
+        const expected = normalizedB[index];
+        return interval.left === expected.left &&
+               interval.right === expected.right &&
+               interval.leftClosed === expected.leftClosed &&
+               interval.rightClosed === expected.rightClosed;
+      });
+    }
+
+    function isAllowedContinuityIntervalCharacter(ch) {
+      return /[0-9\[\]\(\),\-\s]/.test(ch) || ch === '∞' || ch === '∪';
+    }
+
+    function sanitizeContinuityIntervalText(text) {
+      return text
+        .replace(/−/g, '-')
+        .replace(/\\infty/g, '∞')
+        .replace(/infinity/gi, '∞')
+        .replace(/infty/gi, '∞')
+        .replace(/inf/gi, '∞')
+        .replace(/\\cup/g, '∪')
+        .replace(/cup/gi, '∪')
+        .split('')
+        .filter(ch => isAllowedContinuityIntervalCharacter(ch))
+        .join('');
+    }
+
+    function placeCaretAtEnd(element) {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      range.collapse(false);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    function sanitizeContinuityIntervalEditor() {
+      const editor = document.getElementById('continuity-interval-editor');
+      if (!editor) return;
+      const clean = sanitizeContinuityIntervalText(editor.textContent);
+      if (editor.textContent !== clean) {
+        editor.textContent = clean;
+        placeCaretAtEnd(editor);
+      }
+    }
+
+    function handleContinuityIntervalKeydown(event) {
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      const allowedControlKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Tab'];
+      if (allowedControlKeys.includes(event.key)) return;
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        return;
+      }
+      if (event.key.length === 1 && isAllowedContinuityIntervalCharacter(event.key)) return;
+      event.preventDefault();
+    }
+
+    function handleContinuityIntervalPaste(event) {
+      event.preventDefault();
+      const text = sanitizeContinuityIntervalText((event.clipboardData || window.clipboardData).getData('text'));
+      insertTextIntoContinuityIntervalEditor(text);
+    }
+
+    function insertTextIntoContinuityIntervalEditor(text) {
+      const editor = activeContinuityIntervalEditor || document.getElementById('continuity-interval-editor');
+      if (!editor) return;
+      const selection = window.getSelection();
+      let range;
+      if (selection.rangeCount && editor.contains(selection.anchorNode)) {
+        range = selection.getRangeAt(0);
+      } else {
+        range = document.createRange();
+        range.selectNodeContents(editor);
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+      range.deleteContents();
+      const node = document.createTextNode(text);
+      range.insertNode(node);
+      range.setStartAfter(node);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      sanitizeContinuityIntervalEditor();
+    }
+
+    function setupContinuityIntervalControls() {
+      const editor = document.getElementById('continuity-interval-editor');
+      if (!editor) return;
+      activeContinuityIntervalEditor = editor;
+      editor.focus();
+      editor.addEventListener('focus', () => { activeContinuityIntervalEditor = editor; });
+      editor.addEventListener('click', () => { activeContinuityIntervalEditor = editor; });
+      editor.addEventListener('keydown', handleContinuityIntervalKeydown);
+      editor.addEventListener('paste', handleContinuityIntervalPaste);
+      editor.addEventListener('input', sanitizeContinuityIntervalEditor);
+      finalAnswerInput.querySelectorAll('.continuity-interval-button').forEach(button => {
+        button.addEventListener('mousedown', event => event.preventDefault());
+        button.addEventListener('click', () => {
+          activeContinuityIntervalEditor = editor;
+          editor.focus();
+          insertTextIntoContinuityIntervalEditor(button.dataset.insertText || '');
+        });
+      });
+    }
+
+    function continuityIntervalStageHtml() {
+      return `
+        <div id="visual-stage-one-correct" class="visual-stage-feedback">Correct!</div>
+        <div id="continuity-interval-stage" style="text-align: center; margin-top: 0.85em;">
+          <p style="font-weight: bold; margin-bottom: 0.55em;">Next, give the set on which the function is continuous in interval notation.</p>
+          <div class="answer-line">
+            <label style="font-weight: bold; margin-right: 0.5em;">Continuous on:</label>
+            <span id="continuity-interval-editor" class="restricted-answer-editor interval-answer-editor" contenteditable="true" role="textbox" aria-label="Continuity interval answer"></span>
+          </div>
+          <div class="answer-toolbar" aria-label="Interval notation input buttons">
+            <button type="button" class="math-symbol-button continuity-interval-button" data-insert-text="(">(</button>
+            <button type="button" class="math-symbol-button continuity-interval-button" data-insert-text=")">)</button>
+            <button type="button" class="math-symbol-button continuity-interval-button" data-insert-text="[">[</button>
+            <button type="button" class="math-symbol-button continuity-interval-button" data-insert-text="]">]</button>
+            <button type="button" class="math-symbol-button continuity-interval-button" data-insert-text=",">,</button>
+            <button type="button" class="math-symbol-button continuity-interval-button" data-insert-text=" ∪ ">∪</button>
+            <button type="button" class="math-symbol-button continuity-interval-button" data-insert-text="∞">∞</button>
+            <button type="button" class="math-symbol-button continuity-interval-button" data-insert-text="-∞">−∞</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function lockVisualStageOneInputs() {
+      finalAnswerInput.querySelectorAll('.math-answer-editor').forEach(editor => {
+        editor.contentEditable = 'false';
+        editor.classList.add('locked-answer-stage');
+      });
+      finalAnswerInput.querySelectorAll('.continuous-choice').forEach(box => { box.disabled = true; });
+      finalAnswerInput.querySelectorAll('.answer-toolbar').forEach(toolbar => toolbar.remove());
+    }
+
+    function showContinuityIntervalStage() {
+      visualAnswerStage = 2;
+      feedbackText.textContent = '';
+      lockVisualStageOneInputs();
+      finalAnswerInput.insertAdjacentHTML('beforeend', continuityIntervalStageHtml());
+      setupContinuityIntervalControls();
+    }
+
+    function checkContinuityIntervalStageAnswer() {
+      const editor = document.getElementById('continuity-interval-editor');
+      if (!editor || !currentProblem || !currentProblem.continuityIntervals) return false;
+      const userIntervals = parseContinuityIntervalSet(editor.textContent);
+      if (userIntervals === null) return false;
+      return continuityIntervalsExactlyMatch(userIntervals, currentProblem.continuityIntervals);
+    }
+
     function checkUserAnswer() {
       if (!currentProblem) return;
+
+      if (currentProblem.type === 'visual' && visualAnswerStage === 2) {
+        const intervalCorrect = checkContinuityIntervalStageAnswer();
+        feedbackText.textContent = intervalCorrect ? 'Correct!' : 'Incorrect, try again.';
+        feedbackText.style.color = intervalCorrect ? 'green' : 'red';
+        return;
+      }
+
       const answers = currentProblem.answers || [{ labelTex: 'Limit', answer: currentProblem.answer }];
       const allLimitsCorrect = answers.every((entry, index) => {
         const editor = document.getElementById(`answer-editor-${index}`);
@@ -2276,6 +2576,12 @@ fetch("/nav.html")
           })
         : true;
       const allCorrect = allLimitsCorrect && asymptotesCorrect && continuityCorrect;
+
+      if (currentProblem.type === 'visual' && allCorrect) {
+        showContinuityIntervalStage();
+        return;
+      }
+
       feedbackText.textContent = allCorrect ? 'Correct!' : 'Incorrect, try again.';
       feedbackText.style.color = allCorrect ? 'green' : 'red';
     }
@@ -2288,6 +2594,8 @@ fetch("/nav.html")
       hintBtn.disabled = true;
       checkBtn.style.display = 'none';
       hintIsTypesetting = false;
+      visualAnswerStage = 1;
+      activeContinuityIntervalEditor = null;
     }
 
     startBtn.addEventListener('click', () => {

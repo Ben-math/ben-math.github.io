@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -780,10 +781,14 @@ fetch("/nav.html")
         if (!domain.length) continue;
 
         const functionTex = terms.map((term, i) => coefficientTermTex(term.coeff, term.component.tex, i)).join(' ');
-        const hints = terms.map((term, i) =>
-          `\\text{Term ${i + 1}: }${term.component.tex}\\text{ is continuous on }${intervalsToTex(term.component.domain)}\\text{.}`
-        );
-        hints.push(`\\text{Intersect the term domains: }${intervalsToTex(domain)}.`);
+        const hints = terms.map((term, i) => ({
+          tex: `\\text{Term ${i + 1}: }${term.component.tex}\\text{ is continuous on }${intervalsToTex(term.component.domain)}\\text{.}`,
+          intervals: term.component.domain
+        }));
+        hints.push({
+          tex: `\\text{Intersect the term domains: }${intervalsToTex(domain)}.`,
+          intervals: domain
+        });
         return {
           functionTex,
           domain,
@@ -797,7 +802,10 @@ fetch("/nav.html")
         functionTex: fallback.tex,
         domain: ALL_REALS,
         solutionTex: intervalsToTex(ALL_REALS),
-        hints: [`\\text{This polynomial is continuous for all real numbers, so the answer is }${intervalsToTex(ALL_REALS)}.`]
+        hints: [{
+          tex: `\\text{This polynomial is continuous for all real numbers, so the answer is }${intervalsToTex(ALL_REALS)}.`,
+          intervals: ALL_REALS
+        }]
       };
     }
 
@@ -1091,15 +1099,17 @@ fetch("/nav.html")
     function appendMathHint(hint) {
       const block = createHintStepBlock();
       const tex = typeof hint === 'string' ? hint : hint.tex;
-      block.innerHTML = `\[${tex}\]`;
+      const mathDiv = document.createElement('div');
+      mathDiv.innerHTML = `\\[${tex}\\]`;
+      block.appendChild(mathDiv);
       const canvas = hint && typeof hint === 'object' && hint.intervals ? document.createElement('canvas') : null;
       if (canvas) {
-        canvas.width = 820;
-        canvas.height = 130;
+        canvas.width = 900;
+        canvas.height = 170;
         canvas.className = 'continuity-hint-number-line';
         block.appendChild(canvas);
       }
-      return typesetElement(block).then(() => {
+      return typesetElement(mathDiv).then(() => {
         if (canvas) drawContinuityIntervalNumberLine(canvas, hint.intervals);
       });
     }

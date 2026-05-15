@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1819,13 +1820,18 @@ fetch("/nav.html")
       hintIsTypesetting = true;
       hintBtn.disabled = true;
 
+      const stageTwoHintAvailable = currentProblem.type === 'visual' && visualAnswerStage === 2;
+      const totalAvailableHints = currentProblem.hints.length + (stageTwoHintAvailable ? 1 : 0);
+
       if (hintStep < currentProblem.hints.length) {
         await appendMathHint(currentProblem.hints[hintStep]);
+      } else if (stageTwoHintAvailable && hintStep === currentProblem.hints.length) {
+        await appendMathHint(continuityIntervalAnswerHint());
       }
 
       hintStep++;
       hintIsTypesetting = false;
-      hintBtn.disabled = hintStep >= currentProblem.hints.length;
+      hintBtn.disabled = hintStep >= totalAvailableHints;
     }
 
     function setupAnswerEditor() {
@@ -2380,6 +2386,27 @@ fetch("/nav.html")
       return merged;
     }
 
+    function continuityEndpointTex(value) {
+      if (value === Infinity) return '\\infty';
+      if (value === -Infinity) return '-\\infty';
+      return `${value}`;
+    }
+
+    function continuityIntervalToTex(interval) {
+      const leftBracket = interval.leftClosed ? '[' : '(';
+      const rightBracket = interval.rightClosed ? ']' : ')';
+      return `${leftBracket}${continuityEndpointTex(interval.left)},${continuityEndpointTex(interval.right)}${rightBracket}`;
+    }
+
+    function continuityIntervalsToTex(intervals) {
+      return intervals.map(continuityIntervalToTex).join(' \\cup ');
+    }
+
+    function continuityIntervalAnswerHint() {
+      if (!currentProblem || !currentProblem.continuityIntervals) return '\\text{No continuity interval answer is available.}';
+      return `\\text{The function is continuous on }${continuityIntervalsToTex(currentProblem.continuityIntervals)}.`;
+    }
+
     function parseContinuityIntervalSet(text) {
       const normalized = normalizeContinuityIntervalText(text);
       if (!normalized) return null;
@@ -2540,6 +2567,7 @@ fetch("/nav.html")
       lockVisualStageOneInputs();
       finalAnswerInput.insertAdjacentHTML('beforeend', continuityIntervalStageHtml());
       setupContinuityIntervalControls();
+      hintBtn.disabled = hintStep >= currentProblem.hints.length + 1;
     }
 
     function checkContinuityIntervalStageAnswer() {

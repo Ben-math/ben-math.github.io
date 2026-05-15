@@ -5,6 +5,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1114,11 +1115,11 @@ fetch("/nav.html")
         ctx.lineWidth = 8;
         if (interval.left === -Infinity && interval.right === Infinity) {
           ctx.beginPath();
-          ctx.moveTo(18, y);
-          ctx.lineTo(w - 18, y);
+          ctx.moveTo(sx(-10), y);
+          ctx.lineTo(sx(10), y);
           ctx.stroke();
-          drawContinuityThickIntervalArrow(ctx, leftPad + 40, y, 18, y);
-          drawContinuityThickIntervalArrow(ctx, w - rightPad - 40, y, w - 18, y);
+          drawContinuityThickIntervalArrow(ctx, sx(-10), y, 18, y);
+          drawContinuityThickIntervalArrow(ctx, sx(10), y, w - 18, y);
         } else if (interval.left === -Infinity) {
           drawContinuityThickIntervalArrow(ctx, sx(interval.right), y, 18, y);
           drawContinuityEndpointDot(ctx, sx(interval.right), y, interval.rightClosed);

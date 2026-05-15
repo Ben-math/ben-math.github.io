@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -392,9 +393,21 @@ fetch("/nav.html")
       return bestDen === 1 ? `${bestNum}` : `\\frac{${bestNum}}{${bestDen}}`;
     }
 
+    function piMultipleTexFromInteger(k) {
+      if (k === 0) return '0';
+      const sign = k < 0 ? '-' : '';
+      const absK = Math.abs(k);
+      if (absK === 1) return `${sign}\\frac{\\pi}{2}`;
+      if (absK === 2) return `${sign}\\pi`;
+      if (absK % 2 === 0) return `${sign}${absK / 2}\\pi`;
+      return `${sign}\\frac{${absK}\\pi}{2}`;
+    }
+
     function endpointTex(value) {
       if (value === Infinity) return '\\infty';
       if (value === -Infinity) return '-\\infty';
+      const halfPiMultiple = Math.round(value / (Math.PI / 2));
+      if (Math.abs(value - halfPiMultiple * Math.PI / 2) < 1e-9 && halfPiMultiple !== 0) return piMultipleTexFromInteger(halfPiMultiple);
       return numberTex(value);
     }
 
@@ -627,11 +640,11 @@ fetch("/nav.html")
       else domain = inner.domain; // e.g. an even root of an already-defined root expression is nonnegative where the inner root exists.
       return {
         kind: 'root',
-        tex: `\sqrt[${n}]{${inner.tex}}`,
+        tex: `\\sqrt[${n}]{${inner.tex}}`,
         domain,
         signData: null,
         restrictionText: even
-          ? `need ${inner.tex}\geq 0, and the inside must be defined`
+          ? `need ${inner.tex}\\geq 0, and the inside must be defined`
           : `odd roots allow negative inputs, so only the inside restrictions matter`
       };
     }
@@ -640,7 +653,7 @@ fetch("/nav.html")
       const fn = randomChoice(['sin', 'cos']);
       return {
         kind: 'trig',
-        tex: inner ? `\${fn}\left(${inner.tex}\right)` : `\${fn}(x)`,
+        tex: inner ? `\\${fn}\\left(${inner.tex}\\right)` : `\\${fn}(x)`,
         domain: inner ? inner.domain : ALL_REALS,
         signData: null,
         restrictionText: `${fn} is continuous everywhere; use the inside domain`
@@ -652,25 +665,20 @@ fetch("/nav.html")
       let n;
       do { n = randomInteger(2, 10); } while (n % 2 !== 0);
       const m = b * b;
-      const maxAngle = Math.pow(m, 1 / n);
-      const excluded = [];
-      for (let k = 0; ; k++) {
-        const angle = Math.PI / 2 + k * Math.PI;
-        if (angle > maxAngle + 1e-10) break;
-        const inside = m - Math.pow(angle, n);
-        if (inside < -1e-9) continue;
-        const root = Math.sqrt(Math.max(0, inside));
-        if (root < 1e-9) excluded.push(0);
-        else excluded.push(-root, root);
-      }
+
       const baseDomain = [{ left: -b, right: b, leftClosed: true, rightClosed: true }];
+      const excluded = [];
+      for (let k = -20; k <= 20; k++) {
+        const point = Math.PI / 2 + k * Math.PI;
+        if (point > -b + 1e-10 && point < b - 1e-10) excluded.push(point);
+      }
       const domain = removePointsFromIntervals(baseDomain, excluded);
       return {
         kind: 'tan',
-        tex: `\tan\left(\sqrt[${n}]{-x^{2}+${m}}\right)`,
+        tex: `\\tan\\left(\\sqrt[${n}]{-x^{2}+${m}}\\right)`,
         domain,
         signData: null,
-        restrictionText: `the even root restricts x to [-${b},${b}], and tangent is undefined when the inside equals \frac{\pi}{2}+k\pi`
+        restrictionText: `the even root restricts x to [-${b},${b}], and tangent is undefined at x=\\frac{\\pi}{2}+k\\pi within this interval`
       };
     }
 
@@ -769,6 +777,8 @@ fetch("/nav.html")
           <button type="button" class="math-symbol-button" data-insert-text="]">]</button>
           <button type="button" class="math-symbol-button" data-insert-text=",">,</button>
           <button type="button" class="math-symbol-button" data-insert-text="∪">∪</button>
+          <button type="button" class="math-symbol-button" data-insert-text="π">π</button>
+          <button type="button" class="math-symbol-button" data-insert-fraction="true"><span class="fraction-button-display"><span class="fraction-button-top">a</span><span class="fraction-button-bottom">b</span></span></button>
           <button type="button" class="math-symbol-button" data-insert-text="-∞">−∞</button>
           <button type="button" class="math-symbol-button" data-insert-text="∞">∞</button>
         </div>`;
@@ -789,7 +799,8 @@ fetch("/nav.html")
         button.addEventListener('mousedown', event => event.preventDefault());
         button.addEventListener('click', () => {
           activeIntervalEditor.focus();
-          insertTextAtSelection(button.dataset.insertText, activeIntervalEditor);
+          if (button.dataset.insertFraction) insertFractionAtSelection(activeIntervalEditor);
+          else insertTextAtSelection(button.dataset.insertText, activeIntervalEditor);
         });
       });
       typesetElement(finalAnswerInput);
@@ -799,7 +810,7 @@ fetch("/nav.html")
     function handleIntervalEditorKeydown(event) {
       const allowedNavigation = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Tab', 'Enter'];
       if (allowedNavigation.includes(event.key) || event.ctrlKey || event.metaKey) return;
-      if (/^[0-9,\[\]()\-+\s∞∪]$/.test(event.key)) return;
+      if (/^[0-9,\[\]()\-+\s∞∪π]$/.test(event.key)) return;
       event.preventDefault();
     }
 
@@ -821,15 +832,60 @@ fetch("/nav.html")
       selection.addRange(range);
     }
 
+    function insertFractionAtSelection(editor) {
+      const selection = window.getSelection();
+      let range;
+      if (selection.rangeCount && editor.contains(selection.getRangeAt(0).commonAncestorContainer)) range = selection.getRangeAt(0);
+      else {
+        range = document.createRange();
+        range.selectNodeContents(editor);
+        range.collapse(false);
+      }
+      range.deleteContents();
+      const wrapper = document.createElement('span');
+      wrapper.className = 'fraction-entry';
+      wrapper.innerHTML = '<span class="fraction-numerator" contenteditable="true"></span><span class="fraction-denominator" contenteditable="true"></span>';
+      range.insertNode(wrapper);
+      const numerator = wrapper.querySelector('.fraction-numerator');
+      const nextRange = document.createRange();
+      nextRange.selectNodeContents(numerator);
+      nextRange.collapse(false);
+      selection.removeAllRanges();
+      selection.addRange(nextRange);
+      numerator.focus();
+    }
+
     function editorToPlainText(editor) {
-      return (editor.textContent || '').replace(/\u200b/g, '').trim();
+      function walk(node) {
+        if (node.nodeType === Node.TEXT_NODE) return node.textContent.replace(/\u200b/g, '');
+        if (node.nodeType !== Node.ELEMENT_NODE) return '';
+        if (node.matches && node.matches('.fraction-entry')) {
+          return `((${walk(node.querySelector('.fraction-numerator'))})/(${walk(node.querySelector('.fraction-denominator'))}))`;
+        }
+        return Array.from(node.childNodes).map(walk).join('');
+      }
+      return Array.from(editor.childNodes).map(walk).join('').trim();
     }
 
     function parseEndpoint(raw) {
-      const s = raw.trim().toLowerCase().replace(/−/g, '-');
+      let s = raw.trim().toLowerCase().replace(/−/g, '-').replace(/\\pi/g, 'π').replace(/pi/g, 'π');
+      s = s.replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, '(($1)/($2))');
       if (s === '∞' || s === '+∞' || s === 'infty' || s === '+infty' || s === '\\infty' || s === 'infinity') return Infinity;
       if (s === '-∞' || s === '-infty' || s === '-\\infty' || s === '-infinity') return -Infinity;
       if (/^[+-]?\d+$/.test(s)) return Number(s);
+
+      let expr = s.replace(/\s+/g, '');
+      expr = expr.replace(/π/g, 'Math.PI');
+      expr = expr.replace(/(\d|\))(Math\.PI|\()/g, '$1*$2');
+      expr = expr.replace(/(Math\.PI)(\d|\()/g, '$1*$2');
+      if (/^[0-9+\-*/().MathPI]+$/.test(expr)) {
+        try {
+          const value = Function('"use strict"; return (' + expr + ');')();
+          return Number.isFinite(value) ? value : NaN;
+        } catch (e) {
+          return NaN;
+        }
+      }
       return NaN;
     }
 

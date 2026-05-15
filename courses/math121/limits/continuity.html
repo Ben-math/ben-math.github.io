@@ -260,12 +260,29 @@ fetch("/nav.html")
     <p>There are a number of continuity theorems which help us in this regard: the sum, difference, product, and quotient (provided the denominator is 
     nonzero), and composition of two continuous functions is itself continuous.  So even given an intimidatingly complicated-looking function, 
     determining continuity is really just a matter of searching for "problems": values of \(x\) which would give a zero denominator or a negative number 
-    under an even root are common examples.  Consider the function \[f(x) = \cos(x^3-7) - \sqrt[3]{\frac{3}{x+8}} + 
+    under an even root are common examples.  Consider the function \[f(x) = \cos(x^3-7) - \sqrt[3]{\frac{3}{x-9}} + 
     \sqrt[4]{\frac{3x^3-30x^2+63x}{x^2+2x-15}} \] Although you may already notice some \(x\) values which aren't in the domain of \(f\), a good 
-    methodical approach to take is to start be factoring as much as possible: \[f(x) = \cos(x^3-7) - \sqrt[3]{\frac{3}{x+8}} + 
+    methodical approach to take is to start by factoring as much as possible: \[f(x) = \cos(x^3-7) - \sqrt[3]{\frac{3}{x-9}} + 
     \sqrt[4]{\frac{3x(x-3)(x-7)}{(x-3)(x+5)}}\] The function is a sum/difference of 3 terms: we can number them from left-to-right and find the set on 
     which each term is continuous, and then take the intersection of these sets (i.e. what do they all have in common) to determine where they are all 
     continuous simultaneously, and thus \(f\) is continuous there.</p>
+
+    <p>The first term, \(\cos(x^3-7)\), is the easiest to deal with.  Both \(\cos\) and polynomials are continuous everywhere, and so their composition 
+    is also continuous everywhere on \(\mathbb{R}\).</p>
+
+    <p>The second term requires a bit more care.  The first thing we notice is the inner rational function, \(\frac{3}{x-9}\), is defined for all \(x\) 
+    except those which make its denominator zero: that is, \(x \neq 9\).  One is tempted to say that we also require \(\sqrt[3]{\frac{3}{x-9} \geq 0\), 
+    however negative numbers <i>are</i> in the domain of <i>odd</i> roots.  So \(x \neq 9\) is our only restriction.</p>
+
+    <p>The third term is most difficult.  The easiest part is once again that the inner rational function can't have a zero denominator, so 
+    \(x \neq -5, 3\).  Now that we have an even root, we require that the input be nonnegative, so \[\frac{3x(x-3)(x-7)}{(x-3)(x+5)} = 
+    \frac{3x(x-7)}{x+5} \geq 0 \implies x \in [-5,0] \cup (7,\infty)\]  (See the inequalities activity to review how the above was solved) Combining 
+    this with our earlier restriction that \(x \neq -5,3\), we obtain \(x \in (-5,0] \cup (7, \infty)\).</p>
+
+    <p>Finally, we take the intersection of the 3 sets we just found, getting the domain of \(f\) (and hence the set on which it is continuous): 
+    \[x \in (-5,0] \cup (7,9) \cup (9, \infty)\]</p>
+
+    <p>Now you try!</p>
 
 
     <div class="button-container">

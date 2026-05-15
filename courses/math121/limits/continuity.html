@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -216,6 +217,24 @@
       padding: 0.18em 0.65em;
       font-size: 1.15em;
       cursor: pointer;
+    }
+
+
+    .restricted-answer-editor {
+      display: inline-block;
+      min-width: 460px;
+      min-height: 1.8em;
+      padding: 0.35em 0.55em;
+      border: 2px solid #555;
+      border-radius: 8px;
+      background: white;
+      font-size: 1.25em;
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    .restricted-answer-editor:focus {
+      outline: 3px solid rgba(80, 140, 255, 0.35);
     }
 
   </style>
@@ -600,48 +619,99 @@ fetch("/nav.html")
 
     function makeRootComponent(inner = null) {
       const n = randomInteger(2, 10);
-      if (!inner) inner = Math.random() < 0.55 ? makePolynomialComponent() : makeRationalComponent();
+      if (!inner) inner = Math.random() < 0.50 ? makePolynomialComponent() : makeRationalComponent();
       const even = n % 2 === 0;
-      const domain = even ? nonnegativeSet(inner.signData, inner.domain) : inner.domain;
+      let domain;
+      if (!even) domain = inner.domain;
+      else if (inner.signData) domain = nonnegativeSet(inner.signData, inner.domain);
+      else domain = inner.domain; // e.g. an even root of an already-defined root expression is nonnegative where the inner root exists.
       return {
         kind: 'root',
-        tex: `\\sqrt[${n}]{${inner.tex}}`,
+        tex: `\sqrt[${n}]{${inner.tex}}`,
         domain,
         signData: null,
         restrictionText: even
-          ? `need ${inner.tex}\\geq 0, and the inside must be defined`
+          ? `need ${inner.tex}\geq 0, and the inside must be defined`
           : `odd roots allow negative inputs, so only the inside restrictions matter`
       };
     }
 
-    function makeTrigComponent(inner = null) {
-      const fn = randomChoice(['sin', 'cos']); // tan is avoided in generated answers because it usually creates infinitely many exclusions.
-      if (!inner && Math.random() < 0.45) inner = makePolynomialComponent();
+    function makeSinCosComponent(inner = null) {
+      const fn = randomChoice(['sin', 'cos']);
       return {
         kind: 'trig',
-        tex: inner ? `\\${fn}\\left(${inner.tex}\\right)` : `\\${fn}(x)`,
+        tex: inner ? `\${fn}\left(${inner.tex}\right)` : `\${fn}(x)`,
         domain: inner ? inner.domain : ALL_REALS,
         signData: null,
         restrictionText: `${fn} is continuous everywhere; use the inside domain`
       };
     }
 
+    function makeSpecialTanComponent() {
+      const b = randomInteger(2, 10);
+      let n;
+      do { n = randomInteger(2, 10); } while (n % 2 !== 0);
+      const m = b * b;
+      const maxAngle = Math.pow(m, 1 / n);
+      const excluded = [];
+      for (let k = 0; ; k++) {
+        const angle = Math.PI / 2 + k * Math.PI;
+        if (angle > maxAngle + 1e-10) break;
+        const inside = m - Math.pow(angle, n);
+        if (inside < -1e-9) continue;
+        const root = Math.sqrt(Math.max(0, inside));
+        if (root < 1e-9) excluded.push(0);
+        else excluded.push(-root, root);
+      }
+      const baseDomain = [{ left: -b, right: b, leftClosed: true, rightClosed: true }];
+      const domain = removePointsFromIntervals(baseDomain, excluded);
+      return {
+        kind: 'tan',
+        tex: `\tan\left(\sqrt[${n}]{-x^{2}+${m}}\right)`,
+        domain,
+        signData: null,
+        restrictionText: `the even root restricts x to [-${b},${b}], and tangent is undefined when the inside equals \frac{\pi}{2}+k\pi`
+      };
+    }
+
+    function makeTrigComponent(inner = null) {
+      return makeSinCosComponent(inner);
+    }
+
+    function makeWeightedComponent(options = {}) {
+      const { allowPolynomial = true, allowRational = true, allowRoot = true, allowSinCos = true, allowTan = true } = options;
+      const choices = [];
+      if (allowPolynomial) choices.push({ weight: 5, make: () => makePolynomialComponent() });
+      if (allowRoot) choices.push({ weight: 40, make: () => makeRootComponent() });
+      if (allowRational) choices.push({ weight: 40, make: () => makeRationalComponent() });
+      if (allowSinCos) choices.push({ weight: 5, make: () => makeSinCosComponent() });
+      if (allowTan) choices.push({ weight: 10, make: () => makeSpecialTanComponent() });
+      const total = choices.reduce((sum, item) => sum + item.weight, 0);
+      let r = Math.random() * total;
+      for (const item of choices) {
+        r -= item.weight;
+        if (r <= 0) return item.make();
+      }
+      return choices[choices.length - 1].make();
+    }
+
     function makeSingleComponent() {
-      const r = Math.random();
-      if (r < 0.20) return makePolynomialComponent();
-      if (r < 0.50) return makeRootComponent();
-      if (r < 0.80) return makeRationalComponent();
-      return makeTrigComponent();
+      return makeWeightedComponent();
     }
 
     function makeCompositionComponent() {
-      for (let attempt = 0; attempt < 200; attempt++) {
-        const innerRoll = Math.random();
-        const inner = innerRoll < 0.45 ? makePolynomialComponent() : innerRoll < 0.90 ? makeRationalComponent() : makeRootComponent();
+      for (let attempt = 0; attempt < 300; attempt++) {
         const outerRoll = Math.random();
         let outer;
-        if (outerRoll < 0.60) outer = makeRootComponent(inner);
-        else outer = makeTrigComponent(inner);
+        if (outerRoll < 40 / 55) {
+          const inner = makeWeightedComponent({ allowSinCos: false, allowTan: false });
+          outer = makeRootComponent(inner);
+        } else if (outerRoll < 45 / 55) {
+          const inner = makeWeightedComponent({ allowTan: false });
+          outer = makeSinCosComponent(inner);
+        } else {
+          outer = makeSpecialTanComponent();
+        }
         if (outer.domain.length) return outer;
       }
       return makeSingleComponent();
@@ -662,7 +732,7 @@ fetch("/nav.html")
         let domain = ALL_REALS;
         for (let i = 0; i < count; i++) {
           const coeff = randomNonzeroInteger(-30, 30);
-          const component = Math.random() < 0.50 ? makeCompositionComponent() : makeSingleComponent();
+          const component = Math.random() < 0.75 ? makeCompositionComponent() : makeSingleComponent();
           terms.push({ coeff, component });
           domain = intersectIntervals(domain, component.domain);
         }

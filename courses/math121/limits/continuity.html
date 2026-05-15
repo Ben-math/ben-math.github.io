@@ -3,6 +3,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1017,6 +1018,40 @@ fetch("/nav.html")
       ctx.fill();
     }
 
+
+    function drawContinuityThickIntervalArrow(ctx, fromX, fromY, toX, toY) {
+      const headLength = 22;
+      const headWidth = 24;
+      const angle = Math.atan2(toY - fromY, toX - fromX);
+      const shaftEndX = toX - headLength * Math.cos(angle);
+      const shaftEndY = toY - headLength * Math.sin(angle);
+
+      ctx.save();
+      ctx.strokeStyle = '#198754';
+      ctx.fillStyle = '#198754';
+      ctx.lineWidth = 8;
+      ctx.lineCap = 'round';
+
+      ctx.beginPath();
+      ctx.moveTo(fromX, fromY);
+      ctx.lineTo(shaftEndX, shaftEndY);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(toX, toY);
+      ctx.lineTo(
+        shaftEndX + (headWidth / 2) * Math.sin(angle),
+        shaftEndY - (headWidth / 2) * Math.cos(angle)
+      );
+      ctx.lineTo(
+        shaftEndX - (headWidth / 2) * Math.sin(angle),
+        shaftEndY + (headWidth / 2) * Math.cos(angle)
+      );
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
     function drawContinuityEndpointDot(ctx, x, y, closed) {
       ctx.beginPath();
       ctx.arc(x, y, 6, 0, 2 * Math.PI);
@@ -1077,13 +1112,13 @@ fetch("/nav.html")
         ctx.fillStyle = '#198754';
         ctx.lineWidth = 8;
         if (interval.left === -Infinity && interval.right === Infinity) {
-          drawContinuityArrow(ctx, sx(bounds.min + 1), y, 18, y);
-          drawContinuityArrow(ctx, sx(bounds.max - 1), y, w - 18, y);
+          drawContinuityThickIntervalArrow(ctx, sx(bounds.min + 1), y, 18, y);
+          drawContinuityThickIntervalArrow(ctx, sx(bounds.max - 1), y, w - 18, y);
         } else if (interval.left === -Infinity) {
-          drawContinuityArrow(ctx, sx(interval.right), y, 18, y);
+          drawContinuityThickIntervalArrow(ctx, sx(interval.right), y, 18, y);
           drawContinuityEndpointDot(ctx, sx(interval.right), y, interval.rightClosed);
         } else if (interval.right === Infinity) {
-          drawContinuityArrow(ctx, sx(interval.left), y, w - 18, y);
+          drawContinuityThickIntervalArrow(ctx, sx(interval.left), y, w - 18, y);
           drawContinuityEndpointDot(ctx, sx(interval.left), y, interval.leftClosed);
         } else {
           ctx.beginPath();

@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -236,6 +237,15 @@
 
     .restricted-answer-editor:focus {
       outline: 3px solid rgba(80, 140, 255, 0.35);
+    }
+
+    .continuity-hint-number-line {
+      display: block;
+      max-width: 100%;
+      margin: 0.35em auto 0.9em;
+      background: white;
+      border: 2px solid #ddd;
+      border-radius: 12px;
     }
 
   </style>
@@ -555,6 +565,27 @@ fetch("/nav.html")
       map.set(root, (map.get(root) || 0) + amount);
     }
 
+    function multiplyExpandedPolynomials(a, b) {
+      const out = [];
+      a.forEach(A => b.forEach(B => out.push({ coeff: A.coeff * B.coeff, power: A.power + B.power })));
+      const byPower = new Map();
+      out.forEach(term => byPower.set(term.power, (byPower.get(term.power) || 0) + term.coeff));
+      return Array.from(byPower.entries())
+        .map(([power, coeff]) => ({ power: Number(power), coeff }))
+        .filter(term => term.coeff !== 0)
+        .sort((a, b) => b.power - a.power);
+    }
+
+    function expandedPolynomialFromFactorCounts(coefficient, counts) {
+      let poly = [{ coeff: coefficient, power: 0 }];
+      Array.from(counts.entries()).forEach(([root, count]) => {
+        for (let i = 0; i < count; i++) {
+          poly = multiplyExpandedPolynomials(poly, [{ coeff: 1, power: 1 }, { coeff: -root, power: 0 }]);
+        }
+      });
+      return poly;
+    }
+
     function makeRationalComponent() {
       // Mirroring the structured rational type from Limits II: j x^n (x-b)(x-c) / k x^m (x-f)(x-g),
       // with occasional shared factors.
@@ -582,8 +613,10 @@ fetch("/nav.html")
       addCount(numCounts, b); addCount(numCounts, c);
       addCount(denCounts, f); addCount(denCounts, g);
 
-      const numTex = `${j}${factorCountsToTex(numCounts) || ''}`;
-      const denTex = `${k}${factorCountsToTex(denCounts) || ''}`;
+      const numeratorPoly = expandedPolynomialFromFactorCounts(j, numCounts);
+      const denominatorPoly = expandedPolynomialFromFactorCounts(k, denCounts);
+      const numTex = polynomialTex(numeratorPoly);
+      const denTex = polynomialTex(denominatorPoly);
       const denRoots = Array.from(denCounts.keys());
       const domain = removePointsFromIntervals(ALL_REALS, denRoots);
       return {
@@ -938,10 +971,137 @@ fetch("/nav.html")
       return block;
     }
 
-    function appendMathHint(tex) {
+    function finiteTickValuesForIntervals(intervals) {
+      const values = new Set();
+      intervals.forEach(interval => {
+        if (Number.isFinite(interval.left)) values.add(Math.round(interval.left));
+        if (Number.isFinite(interval.right)) values.add(Math.round(interval.right));
+      });
+      for (let n = -10; n <= 10; n++) values.add(n);
+      return Array.from(values).filter(Number.isFinite).sort((a, b) => a - b);
+    }
+
+    function intervalPlotBounds(intervals) {
+      const finite = [];
+      intervals.forEach(interval => {
+        if (Number.isFinite(interval.left)) finite.push(interval.left);
+        if (Number.isFinite(interval.right)) finite.push(interval.right);
+      });
+      if (!finite.length) return { min: -10, max: 10 };
+      let min = Math.min(-10, ...finite);
+      let max = Math.max(10, ...finite);
+      const padding = Math.max(1, 0.08 * (max - min || 1));
+      return { min: min - padding, max: max + padding };
+    }
+
+    function drawContinuityArrow(ctx, fromX, fromY, toX, toY) {
+      const headLength = 11;
+      const angle = Math.atan2(toY - fromY, toX - fromX);
+      ctx.beginPath();
+      ctx.moveTo(fromX, fromY);
+      ctx.lineTo(toX, toY);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(toX, toY);
+      ctx.lineTo(toX - headLength * Math.cos(angle - Math.PI / 6), toY - headLength * Math.sin(angle - Math.PI / 6));
+      ctx.lineTo(toX - headLength * Math.cos(angle + Math.PI / 6), toY - headLength * Math.sin(angle + Math.PI / 6));
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawContinuityEndpointDot(ctx, x, y, closed) {
+      ctx.beginPath();
+      ctx.arc(x, y, 6, 0, 2 * Math.PI);
+      if (closed) {
+        ctx.fillStyle = '#198754';
+        ctx.fill();
+      } else {
+        ctx.fillStyle = 'white';
+        ctx.fill();
+        ctx.strokeStyle = '#198754';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      }
+    }
+
+    function drawContinuityIntervalNumberLine(canvas, intervals) {
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const y = 75;
+      const leftPad = 55;
+      const rightPad = 55;
+      const bounds = intervalPlotBounds(intervals);
+      function sx(value) {
+        return leftPad + (value - bounds.min) / (bounds.max - bounds.min) * (w - leftPad - rightPad);
+      }
+      ctx.clearRect(0, 0, w, canvas.height);
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = 'black';
+      ctx.fillStyle = 'black';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(leftPad, y);
+      ctx.lineTo(w - rightPad, y);
+      ctx.stroke();
+      drawContinuityArrow(ctx, leftPad + 18, y, 18, y);
+      drawContinuityArrow(ctx, w - rightPad - 18, y, w - 18, y);
+
+      ctx.font = '14px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      finiteTickValuesForIntervals(intervals).forEach(value => {
+        if (value < bounds.min || value > bounds.max) return;
+        const x = sx(value);
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(x, y - 7);
+        ctx.lineTo(x, y + 7);
+        ctx.stroke();
+        ctx.fillStyle = 'black';
+        ctx.fillText(String(value), x, y + 13);
+      });
+
+      intervals.forEach(interval => {
+        const startX = interval.left === -Infinity ? 18 : sx(interval.left);
+        const endX = interval.right === Infinity ? w - 18 : sx(interval.right);
+        ctx.strokeStyle = '#198754';
+        ctx.fillStyle = '#198754';
+        ctx.lineWidth = 8;
+        if (interval.left === -Infinity && interval.right === Infinity) {
+          drawContinuityArrow(ctx, sx(bounds.min + 1), y, 18, y);
+          drawContinuityArrow(ctx, sx(bounds.max - 1), y, w - 18, y);
+        } else if (interval.left === -Infinity) {
+          drawContinuityArrow(ctx, sx(interval.right), y, 18, y);
+          drawContinuityEndpointDot(ctx, sx(interval.right), y, interval.rightClosed);
+        } else if (interval.right === Infinity) {
+          drawContinuityArrow(ctx, sx(interval.left), y, w - 18, y);
+          drawContinuityEndpointDot(ctx, sx(interval.left), y, interval.leftClosed);
+        } else {
+          ctx.beginPath();
+          ctx.moveTo(startX, y);
+          ctx.lineTo(endX, y);
+          ctx.stroke();
+          drawContinuityEndpointDot(ctx, sx(interval.left), y, interval.leftClosed);
+          drawContinuityEndpointDot(ctx, sx(interval.right), y, interval.rightClosed);
+        }
+      });
+    }
+
+    function appendMathHint(hint) {
       const block = createHintStepBlock();
-      block.innerHTML = `\\[${tex}\\]`;
-      return typesetElement(block);
+      const tex = typeof hint === 'string' ? hint : hint.tex;
+      block.innerHTML = `\[${tex}\]`;
+      const canvas = hint && typeof hint === 'object' && hint.intervals ? document.createElement('canvas') : null;
+      if (canvas) {
+        canvas.width = 820;
+        canvas.height = 130;
+        canvas.className = 'continuity-hint-number-line';
+        block.appendChild(canvas);
+      }
+      return typesetElement(block).then(() => {
+        if (canvas) drawContinuityIntervalNumberLine(canvas, hint.intervals);
+      });
     }
 
     async function advanceHint() {

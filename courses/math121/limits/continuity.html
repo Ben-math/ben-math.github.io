@@ -4,6 +4,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -747,7 +748,7 @@ fetch("/nav.html")
         const outerRoll = Math.random();
         let outer;
         if (outerRoll < 40 / 55) {
-          const inner = makeWeightedComponent({ allowSinCos: false, allowTan: false });
+          const inner = makeWeightedComponent({ allowRoot: false, allowSinCos: false, allowTan: false });
           outer = makeRootComponent(inner);
         } else if (outerRoll < 45 / 55) {
           const inner = makeWeightedComponent({ allowTan: false });
@@ -1112,8 +1113,12 @@ fetch("/nav.html")
         ctx.fillStyle = '#198754';
         ctx.lineWidth = 8;
         if (interval.left === -Infinity && interval.right === Infinity) {
-          drawContinuityThickIntervalArrow(ctx, sx(bounds.min + 1), y, 18, y);
-          drawContinuityThickIntervalArrow(ctx, sx(bounds.max - 1), y, w - 18, y);
+          ctx.beginPath();
+          ctx.moveTo(18, y);
+          ctx.lineTo(w - 18, y);
+          ctx.stroke();
+          drawContinuityThickIntervalArrow(ctx, leftPad + 40, y, 18, y);
+          drawContinuityThickIntervalArrow(ctx, w - rightPad - 40, y, w - 18, y);
         } else if (interval.left === -Infinity) {
           drawContinuityThickIntervalArrow(ctx, sx(interval.right), y, 18, y);
           drawContinuityEndpointDot(ctx, sx(interval.right), y, interval.rightClosed);

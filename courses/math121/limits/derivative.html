@@ -10,6 +10,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -461,6 +462,34 @@ fetch("/nav.html")
       return `${sign}\\frac{${topTex}}{2\\sqrt{${radicand}}}`;
     }
 
+    
+    function exactRootValueTex(radicand) {
+      if (!Number.isFinite(radicand) || radicand < 0) return null;
+      if (Math.abs(radicand - Math.round(radicand)) > 1e-10) return null;
+      radicand = Math.round(radicand);
+      const root = Math.round(Math.sqrt(radicand));
+      if (root * root === radicand) return `${root}`;
+      return `\sqrt{${radicand}}`;
+    }
+
+    function exactRootInterceptTex(numerator, radicand) {
+      if (!Number.isFinite(numerator) || !Number.isFinite(radicand) || radicand <= 0) return null;
+      if (Math.abs(numerator - Math.round(numerator)) > 1e-10 || Math.abs(radicand - Math.round(radicand)) > 1e-10) return null;
+      numerator = Math.round(numerator);
+      radicand = Math.round(radicand);
+      if (numerator === 0) return '0';
+      const root = Math.round(Math.sqrt(radicand));
+      if (root * root === radicand) return fractionTexFromIntegers(numerator, 2 * root);
+      const g = gcd(Math.abs(numerator), 2);
+      const reducedNum = numerator / g;
+      const reducedDenCoeff = 2 / g;
+      const sign = reducedNum < 0 ? '-' : '';
+      const absNum = Math.abs(reducedNum);
+      const topTex = absNum === 1 ? '1' : `${absNum}`;
+      const denTex = reducedDenCoeff === 1 ? `\sqrt{${radicand}}` : `${reducedDenCoeff}\sqrt{${radicand}}`;
+      return `${sign}\frac{${topTex}}{${denTex}}`;
+    }
+
     function coefficientTermTex(coeff, body, isFirst = false) {
       if (coeff === 0) return '';
       const sign = coeff < 0 ? '-' : (isFirst ? '' : '+');
@@ -535,6 +564,12 @@ fetch("/nav.html")
           derivativeTex: `\\frac{${a}}{2\\sqrt{${radTex}}}`,
           derivativeExpression: `(${a})/(2*sqrt(${a}*x+${b}))`,
           validAt: x => evaluateLinear(a, b, x) > 0,
+          valueTex: x => exactRootValueTex(evaluateLinear(a, b, x)) || decimalIfNeeded(Math.sqrt(evaluateLinear(a, b, x))),
+          derivativeAtTex: x => exactRootSlopeFractionTex(a, evaluateLinear(a, b, x)) || decimalIfNeeded(a / (2 * Math.sqrt(evaluateLinear(a, b, x)))),
+          interceptTex: x => {
+            const rad = evaluateLinear(a, b, x);
+            return exactRootInterceptTex(2 * rad - a * x, rad) || decimalIfNeeded(Math.sqrt(rad) - (a / (2 * Math.sqrt(rad))) * x);
+          },
           derivativeHints: [
             `f'(x)=\\lim_{h\\to 0}\\frac{\\sqrt{${a}(x+h)${b ? (b > 0 ? `+${b}` : `${b}`) : ''}}-\\sqrt{${radTex}}}{h}`,
             `\\text{Rationalize the numerator by multiplying by the conjugate.}`,
@@ -562,6 +597,13 @@ fetch("/nav.html")
         derivativeTex: `\\frac{${linearTex(2 * a, b)}}{2\\sqrt{${radTex}}}`,
         derivativeExpression: `(${2*a}*x+${b})/(2*sqrt(${a}*x*x+${b}*x+${c}))`,
         validAt: x => evaluateQuadratic(a, b, c, x) > 0,
+        valueTex: x => exactRootValueTex(evaluateQuadratic(a, b, c, x)) || decimalIfNeeded(Math.sqrt(evaluateQuadratic(a, b, c, x))),
+        derivativeAtTex: x => exactRootSlopeFractionTex(2 * a * x + b, evaluateQuadratic(a, b, c, x)) || decimalIfNeeded((2 * a * x + b) / (2 * Math.sqrt(evaluateQuadratic(a, b, c, x)))),
+        interceptTex: x => {
+          const rad = evaluateQuadratic(a, b, c, x);
+          const numerator = 2 * rad - (2 * a * x + b) * x;
+          return exactRootInterceptTex(numerator, rad) || decimalIfNeeded(Math.sqrt(rad) - ((2 * a * x + b) / (2 * Math.sqrt(rad))) * x);
+        },
         derivativeHints: [
           `f'(x)=\\lim_{h\\to 0}\\frac{\\sqrt{${substituteQuadraticTex(a,b,c,'x+h')}}-\\sqrt{${radTex}}}{h}`,
           `\\text{Rationalize the numerator by multiplying by the conjugate.}`,

@@ -8,6 +8,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -394,6 +395,20 @@ fetch("/nav.html")
       return { num: num / d, den: den / d };
     }
 
+
+    function fractionTexFromIntegers(num, den = 1) {
+      if (!Number.isFinite(num) || !Number.isFinite(den) || den === 0) return null;
+      if (Math.abs(num - Math.round(num)) > 1e-10 || Math.abs(den - Math.round(den)) > 1e-10) return null;
+      const f = frac(Math.round(num), Math.round(den));
+      return f.den === 1 ? `${f.num}` : `\frac{${f.num}}{${f.den}}`;
+    }
+
+    function signedSlopeInterceptTex(mTex, bTex, bValue) {
+      if (Math.abs(bValue) < 1e-10) return `${mTex}x`;
+      const cleanB = String(bTex).replace(/^-/,'');
+      return `${mTex}x ${bValue < 0 ? '-' : '+'} ${cleanB}`;
+    }
+
     function numberTex(value) {
       if (Object.is(value, -0)) value = 0;
       if (!Number.isFinite(value)) return value > 0 ? '\\infty' : '-\\infty';
@@ -578,6 +593,12 @@ fetch("/nav.html")
           derivativeTex: `\\frac{${-d * a}}{(${denTex})^{2}}`,
           derivativeExpression: `(${-d*a})/((${a}*x+${b})^2)`,
           validAt: x => Math.abs(evaluateLinear(a, b, x)) > 1e-9,
+          valueTex: x => fractionTexFromIntegers(d, evaluateLinear(a, b, x)) || decimalIfNeeded(d / evaluateLinear(a, b, x)),
+          derivativeAtTex: x => fractionTexFromIntegers(-d * a, Math.pow(evaluateLinear(a, b, x), 2)) || decimalIfNeeded(-d * a / Math.pow(evaluateLinear(a, b, x), 2)),
+          interceptTex: x => {
+            const den = evaluateLinear(a, b, x);
+            return fractionTexFromIntegers(d * den + d * a * x, den * den) || decimalIfNeeded(d / den - (-d * a / (den * den)) * x);
+          },
           derivativeHints: [
             `f'(x)=\\lim_{h\\to 0}\\frac{\\frac{${d}}{${a}(x+h)${b ? (b > 0 ? `+${b}` : `${b}`) : ''}}-\\frac{${d}}{${denTex}}}{h}`,
             `\\text{Combine the two fractions in the numerator, then cancel the common factor of }h.`,
@@ -585,7 +606,7 @@ fetch("/nav.html")
           ],
           slopeHints: x0 => [
             `f'(${x0})=\\frac{${-d * a}}{(${a}(${x0})${b ? (b > 0 ? `+${b}` : `${b}`) : ''})^{2}}`,
-            `f'(${x0})=${decimalIfNeeded(-d * a / Math.pow(evaluateLinear(a, b, x0), 2))}.`
+            `f'(${x0})=${fractionTexFromIntegers(-d * a, Math.pow(evaluateLinear(a, b, x0), 2)) || decimalIfNeeded(-d * a / Math.pow(evaluateLinear(a, b, x0), 2))}.`
           ]
         };
       }
@@ -601,6 +622,16 @@ fetch("/nav.html")
         derivativeTex: `\\frac{${-d}(${linearTex(2 * a, b)})}{(${denTex})^{2}}`,
         derivativeExpression: `(${-d})*(${2*a}*x+${b})/((${a}*x*x+${b}*x+${c})^2)`,
         validAt: x => Math.abs(evaluateQuadratic(a, b, c, x)) > 1e-9,
+        valueTex: x => fractionTexFromIntegers(d, evaluateQuadratic(a, b, c, x)) || decimalIfNeeded(d / evaluateQuadratic(a, b, c, x)),
+        derivativeAtTex: x => {
+          const den = evaluateQuadratic(a, b, c, x);
+          return fractionTexFromIntegers(-d * (2 * a * x + b), den * den) || decimalIfNeeded(-d * (2 * a * x + b) / Math.pow(den, 2));
+        },
+        interceptTex: x => {
+          const den = evaluateQuadratic(a, b, c, x);
+          const slopeNum = -d * (2 * a * x + b);
+          return fractionTexFromIntegers(d * den - slopeNum * x, den * den) || decimalIfNeeded(d / den - (slopeNum / (den * den)) * x);
+        },
         derivativeHints: [
           `f'(x)=\\lim_{h\\to 0}\\frac{\\frac{${d}}{${substituteQuadraticTex(a,b,c,'x+h')}}-\\frac{${d}}{${denTex}}}{h}`,
           `\\text{Combine the two fractions in the numerator, then cancel the common factor of }h.`,
@@ -608,7 +639,7 @@ fetch("/nav.html")
         ],
         slopeHints: x0 => [
           `f'(${x0})=\\frac{${-d}(${2 * a}(${x0})${b ? (b > 0 ? `+${b}` : `${b}`) : ''})}{(${substituteQuadraticTex(a,b,c,String(x0))})^{2}}`,
-          `f'(${x0})=${decimalIfNeeded(-d * (2 * a * x0 + b) / Math.pow(evaluateQuadratic(a, b, c, x0), 2))}.`
+          `f'(${x0})=${fractionTexFromIntegers(-d * (2 * a * x0 + b), Math.pow(evaluateQuadratic(a, b, c, x0), 2)) || decimalIfNeeded(-d * (2 * a * x0 + b) / Math.pow(evaluateQuadratic(a, b, c, x0), 2))}.`
         ]
       };
     }
@@ -638,6 +669,10 @@ fetch("/nav.html")
         const slope = fn.derivative(x0);
         const intercept = lineSlopeIntercept(slope, x0, y0);
         if (!Number.isFinite(y0) || !Number.isFinite(slope) || !Number.isFinite(intercept)) continue;
+        const y0Tex = fn.valueTex ? fn.valueTex(x0) : decimalIfNeeded(y0);
+        const slopeTex = fn.derivativeAtTex ? fn.derivativeAtTex(x0) : decimalIfNeeded(slope);
+        const interceptTex = fn.interceptTex ? fn.interceptTex(x0) : decimalIfNeeded(intercept);
+        const absInterceptTex = fn.interceptTex ? String(interceptTex).replace(/^-/,'') : decimalIfNeeded(Math.abs(intercept));
         const askDerivativeFunction = Math.random() < 0.5;
         const stages = [];
         if (askDerivativeFunction) {
@@ -655,7 +690,7 @@ fetch("/nav.html")
           promptTex: `\\text{Find the slope of the tangent line at }x=${x0}.`,
           labelTex: `m=`,
           expectedValue: slope,
-          expectedTex: decimalIfNeeded(slope),
+          expectedTex: slopeTex,
           hints: askDerivativeFunction
             ? [`\\text{Use the derivative function and substitute }x=${x0}.`].concat(fn.slopeHints(x0))
             : [`m=f'(${x0})=\\lim_{h\\to 0}\\frac{f(${x0}+h)-f(${x0})}{h}`].concat(fn.slopeHints(x0))

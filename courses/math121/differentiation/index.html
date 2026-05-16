@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta charset="UTF-8" />
+  <title>MATH 121 - Differentiation</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <h1>MATH 121 - Differentiation</h1>
+    <div id="nav-placeholder"></div>
+
+      <script>
+fetch("/nav.html")
+  .then(response => response.text())
+  .then(html => {
+    document.getElementById("nav-placeholder").innerHTML = html;
+
+    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+    const navLinks = document.querySelectorAll("#nav-placeholder a");
+    navLinks.forEach(link => {
+      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+      if (linkPath === currentPath) {
+        link.classList.add("active");
+      }
+    });
+
+    const s = document.createElement("script");
+    s.src = "/mascot.js";
+    s.defer = true;
+    document.body.appendChild(s);
+  })
+  .catch(err => {
+    console.error("Failed to load nav:", err);
+  });
+</script>
+
+
+      
+  </header>
+  <main>
+
+    <p>An elementary differentiation activity, using only the constant multiple, sum/difference, and power rules: 
+      <a href="https://ben-math.github.io/courses/math121/differentiation/polynomial.html">Polynomial Differentiation Activity </a></p>
+
+    <p>An activity combining various differentiation rules (without simplification): 
+      <a href="https://ben-math.github.io/courses/math121/differentiation/mixed.html">Mixed Differentiation Activity </a></p>
+  </main>
+</body>
+</html>

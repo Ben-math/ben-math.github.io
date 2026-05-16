@@ -7,6 +7,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -710,7 +711,7 @@ fetch("/nav.html")
       };
     }
 
-    function makeSpecialTanComponent() {
+    function makeTanComponent() {
       const b = randomInteger(2, 10);
       let n;
       do { n = randomInteger(2, 10); } while (n % 2 !== 0);
@@ -736,6 +737,35 @@ fetch("/nav.html")
       return makeSinCosComponent(inner);
     }
 
+    function isFiniteIntervalUnion(intervals) {
+      return intervals.length > 0 && intervals.every(interval =>
+        Number.isFinite(interval.left) && Number.isFinite(interval.right)
+      );
+    }
+
+    function tangentDiscontinuitiesInIntervals(intervals) {
+      const points = [];
+      intervals.forEach(interval => {
+        if (!Number.isFinite(interval.left) || !Number.isFinite(interval.right)) return;
+        const kMin = Math.ceil((interval.left - Math.PI / 2) / Math.PI) - 1;
+        const kMax = Math.floor((interval.right - Math.PI / 2) / Math.PI) + 1;
+        for (let k = kMin; k <= kMax; k++) {
+          const point = Math.PI / 2 + k * Math.PI;
+          if (point > interval.left - 1e-10 && point < interval.right + 1e-10) points.push(point);
+        }
+      });
+      return [...new Set(points.map(point => point.toFixed(12)))].map(Number).sort((a, b) => a - b);
+    }
+
+    function makeFiniteDomainComponent() {
+      for (let attempt = 0; attempt < 300; attempt++) {
+        const inner = makeWeightedComponent({ allowRoot: false, allowSinCos: false, allowTan: false });
+        const root = makeRootComponent(inner);
+        if (isFiniteIntervalUnion(root.domain)) return root;
+      }
+      return makeRootComponent(makePolynomialComponent());
+    }
+
     function makeWeightedComponent(options = {}) {
       const { allowPolynomial = true, allowRational = true, allowRoot = true, allowSinCos = true, allowTan = true } = options;
       const choices = [];
@@ -743,7 +773,7 @@ fetch("/nav.html")
       if (allowRoot) choices.push({ weight: 40, make: () => makeRootComponent() });
       if (allowRational) choices.push({ weight: 40, make: () => makeRationalComponent() });
       if (allowSinCos) choices.push({ weight: 5, make: () => makeSinCosComponent() });
-      if (allowTan) choices.push({ weight: 10, make: () => makeSpecialTanComponent() });
+      if (allowTan) choices.push({ weight: 10, make: () => makeTanComponent() });
       const total = choices.reduce((sum, item) => sum + item.weight, 0);
       let r = Math.random() * total;
       for (const item of choices) {
@@ -768,7 +798,7 @@ fetch("/nav.html")
           const inner = makeWeightedComponent({ allowTan: false });
           outer = makeSinCosComponent(inner);
         } else {
-          outer = makeSpecialTanComponent();
+          outer = makeTanComponent();
         }
         if (outer.domain.length) return outer;
       }
@@ -787,22 +817,62 @@ fetch("/nav.html")
       for (let attempt = 0; attempt < 500; attempt++) {
         const count = randomInteger(1, 3);
         const terms = [];
-        let domain = ALL_REALS;
+        let hasTan = false;
+
         for (let i = 0; i < count; i++) {
           const coeff = randomNonzeroInteger(-30, 30);
           const component = Math.random() < 0.75 ? makeCompositionComponent() : makeSingleComponent();
+          if (component.kind === 'tan') hasTan = true;
           terms.push({ coeff, component });
-          domain = intersectIntervals(domain, component.domain);
         }
+
+        if (hasTan) {
+          for (let i = 0; i < terms.length; i++) {
+            if (terms[i].component.kind === 'tan') continue;
+            let otherDomain = ALL_REALS;
+            terms.forEach((term, index) => {
+              if (index !== i && term.component.kind !== 'tan') otherDomain = intersectIntervals(otherDomain, term.component.domain);
+            });
+            const trialDomain = intersectIntervals(otherDomain, terms[i].component.domain);
+            if (!isFiniteIntervalUnion(trialDomain)) {
+              terms[i].component = makeFiniteDomainComponent();
+            }
+          }
+        }
+
+        let nonTanDomain = ALL_REALS;
+        terms.forEach(term => {
+          if (term.component.kind !== 'tan') nonTanDomain = intersectIntervals(nonTanDomain, term.component.domain);
+        });
+
+        if (hasTan && !isFiniteIntervalUnion(nonTanDomain)) continue;
+
+        let domain = nonTanDomain;
+        if (hasTan) domain = removePointsFromIntervals(nonTanDomain, tangentDiscontinuitiesInIntervals(nonTanDomain));
+        terms.forEach(term => {
+          if (term.component.kind !== 'tan') return;
+          term.component.domain = domain;
+          term.component.excludedPoints = tangentDiscontinuitiesInIntervals([{ left: -10, right: 10, leftClosed: true, rightClosed: true }]);
+        });
+
         if (!domain.length) continue;
 
         const functionTex = terms.map((term, i) => coefficientTermTex(term.coeff, term.component.tex, i)).join(' ');
-        const hints = terms.map((term, i) => ({
-          tex: `\\text{Term ${i + 1}: }${term.component.tex}\\text{ is continuous on }${intervalsToTex(term.component.domain)}\\text{.}`,
-          intervals: term.component.domain
-        }));
+        const hints = terms.map((term, i) => {
+          if (term.component.kind === 'tan') {
+            return {
+              tex: `\text{Term ${i + 1}: }${term.component.tex}\text{ is continuous on }${term.component.displayDomainTex}\text{.}`,
+              intervals: term.component.numberLineIntervals,
+              excludedPoints: term.component.excludedPoints
+            };
+          }
+          return {
+            tex: `\text{Term ${i + 1}: }${term.component.tex}\text{ is continuous on }${intervalsToTex(term.component.domain)}\text{.}`,
+            intervals: term.component.domain
+          };
+        });
         hints.push({
-          tex: `\\text{Intersect the term domains: }${intervalsToTex(domain)}.`,
+          tex: `\text{Intersect the term domains: }${intervalsToTex(domain)}.`,
           intervals: domain
         });
         return {
@@ -819,7 +889,7 @@ fetch("/nav.html")
         domain: ALL_REALS,
         solutionTex: intervalsToTex(ALL_REALS),
         hints: [{
-          tex: `\\text{This polynomial is continuous for all real numbers, so the answer is }${intervalsToTex(ALL_REALS)}.`,
+          tex: `\text{This polynomial is continuous for all real numbers, so the answer is }${intervalsToTex(ALL_REALS)}.`,
           intervals: ALL_REALS
         }]
       };
@@ -1082,6 +1152,22 @@ fetch("/nav.html")
       }
     }
 
+    function drawContinuityExcludedPoints(canvas, points) {
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const y = 75;
+      const leftPad = 55;
+      const rightPad = 55;
+      const bounds = { min: -10, max: 10 };
+      function sx(value) {
+        return leftPad + (value - bounds.min) / (bounds.max - bounds.min) * (w - leftPad - rightPad);
+      }
+      points.forEach(point => {
+        if (point < bounds.min || point > bounds.max) return;
+        drawContinuityEndpointDot(ctx, sx(point), y, false);
+      });
+    }
+
     function drawContinuityIntervalNumberLine(canvas, intervals) {
       const ctx = canvas.getContext('2d');
       const w = canvas.width;
@@ -1164,7 +1250,10 @@ fetch("/nav.html")
         block.appendChild(canvas);
       }
       return typesetElement(mathDiv).then(() => {
-        if (canvas) drawContinuityIntervalNumberLine(canvas, hint.intervals);
+        if (canvas) {
+          drawContinuityIntervalNumberLine(canvas, hint.intervals);
+          if (hint.excludedPoints) drawContinuityExcludedPoints(canvas, hint.excludedPoints);
+        }
       });
     }
 

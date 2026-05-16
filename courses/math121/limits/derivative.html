@@ -4,6 +4,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -620,7 +621,7 @@ fetch("/nav.html")
         });
         stages.push({
           kind: 'line',
-          promptTex: `\\text{Find the equation of the tangent line. Give your answer in the form }y=\\cdots.`,
+          promptTex: `\\text{Find the equation of the tangent line. Give your answer in the form }y=mx+b.`,
           labelTex: `y=`,
           expectedM: slope,
           expectedB: intercept,
@@ -636,9 +637,7 @@ fetch("/nav.html")
           x0, y0, slope, intercept,
           askDerivativeFunction,
           stages,
-          questionTex: askDerivativeFunction
-            ? `\\text{Let }f(x)=${fn.tex}.\\text{ First find }f'(x)\\text{, then find the slope and tangent line at }x=${x0}.`
-            : `\\text{Let }f(x)=${fn.tex}.\\text{ Find the slope of the tangent line at }x=${x0}\\text{, then find the equation of the tangent line.}`
+          questionTex: `f(x)=${fn.tex}`
         };
       }
       return generateDerivativeProblem();
@@ -808,12 +807,99 @@ fetch("/nav.html")
       return Array.from(editor.childNodes).map(walk).join('').trim();
     }
 
+    function closestMathWidget(node) {
+      if (!node) return null;
+      const element = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+      return element ? element.closest('.fraction-entry, .math-radical, .exponent-entry') : null;
+    }
+
+    function isSelectionAtEndOf(node) {
+      const selection = window.getSelection();
+      if (!selection.rangeCount) return false;
+      const range = selection.getRangeAt(0);
+      if (!range.collapsed) return false;
+      const testRange = document.createRange();
+      testRange.selectNodeContents(node);
+      testRange.setStart(range.startContainer, range.startOffset);
+      return testRange.toString().length === 0;
+    }
+
+    function moveCursorAfterElement(element) {
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.setStartAfter(element);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      const editor = getActiveEditor();
+      if (editor) editor.focus();
+    }
+
+    function moveCursorBeforeElement(element) {
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.setStartBefore(element);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      const editor = getActiveEditor();
+      if (editor) editor.focus();
+    }
+
+    function handleBackspaceDeleteWidget(event) {
+      const selection = window.getSelection();
+      if (!selection.rangeCount || !selection.getRangeAt(0).collapsed) return false;
+      const range = selection.getRangeAt(0);
+      if (range.startOffset !== 0) return false;
+      const container = range.startContainer;
+      const parent = container.nodeType === Node.TEXT_NODE ? container.parentNode : container;
+      if (!parent || !parent.previousSibling) return false;
+      const previous = parent.previousSibling;
+      if (previous.nodeType === Node.ELEMENT_NODE && previous.matches('.fraction-entry, .math-radical, .exponent-entry')) {
+        event.preventDefault();
+        previous.remove();
+        return true;
+      }
+      return false;
+    }
+
     function handleMathEditorKeydown(event) {
       if (event.key === '^') {
         event.preventDefault();
         insertExponentAtSelection(getActiveEditor());
         return;
       }
+      if (event.key === 'ArrowRight') {
+        const selection = window.getSelection();
+        if (selection.rangeCount) {
+          const widget = closestMathWidget(selection.getRangeAt(0).startContainer);
+          if (widget && isSelectionAtEndOf(widget)) {
+            event.preventDefault();
+            moveCursorAfterElement(widget);
+            return;
+          }
+        }
+      }
+      if (event.key === 'ArrowLeft') {
+        const selection = window.getSelection();
+        if (selection.rangeCount) {
+          const widget = closestMathWidget(selection.getRangeAt(0).startContainer);
+          if (widget) {
+            const range = selection.getRangeAt(0);
+            if (range.collapsed) {
+              const testRange = document.createRange();
+              testRange.selectNodeContents(widget);
+              testRange.setEnd(range.startContainer, range.startOffset);
+              if (testRange.toString().length === 0) {
+                event.preventDefault();
+                moveCursorBeforeElement(widget);
+                return;
+              }
+            }
+          }
+        }
+      }
+      if (event.key === 'Backspace' && handleBackspaceDeleteWidget(event)) return;
       if (event.key === 'Enter') event.preventDefault();
     }
 

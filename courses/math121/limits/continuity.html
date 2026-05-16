@@ -6,6 +6,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -542,7 +543,13 @@ fetch("/nav.html")
     }
 
     function linearPoly(a = randomNonzeroInteger(-9,9), b = randomInteger(-9,9)) {
-      return { kind: 'poly', degree: 1, roots: [-b / a], tex: polynomialTex([{ coeff: a, power: 1 }, { coeff: b, power: 0 }]) };
+      return {
+        kind: 'poly',
+        degree: 1,
+        coeff: a,
+        roots: [-b / a],
+        tex: polynomialTex([{ coeff: a, power: 1 }, { coeff: b, power: 0 }])
+      };
     }
 
     function quadraticPoly() {
@@ -551,7 +558,13 @@ fetch("/nav.html")
       const m = randomInteger(-9,9);
       const b = -a * (n + m);
       const c = a * n * m;
-      return { kind: 'poly', degree: 2, roots: [n, m], tex: polynomialTex([{ coeff: a, power: 2 }, { coeff: b, power: 1 }, { coeff: c, power: 0 }]) };
+      return {
+        kind: 'poly',
+        degree: 2,
+        coeff: a,
+        roots: [n, m],
+        tex: polynomialTex([{ coeff: a, power: 2 }, { coeff: b, power: 1 }, { coeff: c, power: 0 }])
+      };
     }
 
     function makePolynomialComponent() {
@@ -560,7 +573,7 @@ fetch("/nav.html")
         kind: 'polynomial',
         tex: p.tex,
         domain: ALL_REALS,
-        signData: { type: 'poly', coeff: 1, numRoots: p.roots, denRoots: [] },
+        signData: { type: 'poly', coeff: p.coeff, numRoots: p.roots, denRoots: [] },
         restrictionText: 'polynomials are continuous for all real numbers'
       };
     }

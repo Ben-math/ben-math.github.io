@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -703,13 +704,116 @@ fetch("/nav.html")
     function answerToolbarHtml() {
       return `
         <div class="answer-toolbar">
-          <button type="button" class="math-symbol-button" data-insert="x">x</button>
-          <button type="button" class="math-symbol-button" data-insert="^">^</button>
-          <button type="button" class="math-symbol-button" data-insert="sqrt(">√</button>
-          <button type="button" class="math-symbol-button" data-insert="/">/</button>
-          <button type="button" class="math-symbol-button" data-insert="(">(</button>
-          <button type="button" class="math-symbol-button" data-insert=")">)</button>
+          <button type="button" class="math-symbol-button" data-insert-text="x">x</button>
+          <button type="button" class="math-symbol-button" data-insert-exponent="true">x<sup>□</sup></button>
+          <button type="button" class="math-symbol-button" data-insert-radical="true">√</button>
+          <button type="button" class="math-symbol-button" data-insert-fraction="true"><span class="fraction-button-display"><span class="fraction-button-top">a</span><span class="fraction-button-bottom">b</span></span></button>
+          <button type="button" class="math-symbol-button" data-insert-text="/">/</button>
+          <button type="button" class="math-symbol-button" data-insert-text="(">(</button>
+          <button type="button" class="math-symbol-button" data-insert-text=")">)</button>
         </div>`;
+    }
+
+    function getActiveEditor() {
+      return document.getElementById(`answer-editor-${currentStageIndex}`);
+    }
+
+    function selectionRangeInEditor(editor) {
+      const selection = window.getSelection();
+      let range;
+      if (selection.rangeCount && editor.contains(selection.getRangeAt(0).commonAncestorContainer)) {
+        range = selection.getRangeAt(0);
+      } else {
+        range = document.createRange();
+        range.selectNodeContents(editor);
+        range.collapse(false);
+      }
+      return { selection, range };
+    }
+
+    function insertTextAtSelection(text, editor = getActiveEditor()) {
+      if (!editor) return;
+      const { selection, range } = selectionRangeInEditor(editor);
+      range.deleteContents();
+      const node = document.createTextNode(text);
+      range.insertNode(node);
+      range.setStartAfter(node);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      editor.focus();
+    }
+
+    function placeCursorInside(element) {
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      range.collapse(false);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      element.focus();
+    }
+
+    function insertExponentAtSelection(editor = getActiveEditor()) {
+      if (!editor) return;
+      const { selection, range } = selectionRangeInEditor(editor);
+      range.deleteContents();
+      const exponent = document.createElement('span');
+      exponent.className = 'exponent-entry';
+      exponent.contentEditable = 'true';
+      exponent.appendChild(document.createTextNode(''));
+      range.insertNode(exponent);
+      placeCursorInside(exponent);
+    }
+
+    function insertFractionAtSelection(editor = getActiveEditor()) {
+      if (!editor) return;
+      const { range } = selectionRangeInEditor(editor);
+      range.deleteContents();
+      const wrapper = document.createElement('span');
+      wrapper.className = 'fraction-entry';
+      wrapper.innerHTML = '<span class="fraction-numerator" contenteditable="true"></span><span class="fraction-denominator" contenteditable="true"></span>';
+      range.insertNode(wrapper);
+      placeCursorInside(wrapper.querySelector('.fraction-numerator'));
+    }
+
+    function insertRadicalAtSelection(editor = getActiveEditor()) {
+      if (!editor) return;
+      const { range } = selectionRangeInEditor(editor);
+      range.deleteContents();
+      const wrapper = document.createElement('span');
+      wrapper.className = 'math-radical';
+      wrapper.innerHTML = '<span class="radical-symbol">√</span><span class="radical-entry" contenteditable="true"></span>';
+      range.insertNode(wrapper);
+      placeCursorInside(wrapper.querySelector('.radical-entry'));
+    }
+
+    function editorToPlainText(editor) {
+      function walk(node) {
+        if (!node) return '';
+        if (node.nodeType === Node.TEXT_NODE) return node.textContent.replace(/​/g, '');
+        if (node.nodeType !== Node.ELEMENT_NODE) return '';
+        if (node.matches && node.matches('.fraction-entry')) {
+          return `((${walk(node.querySelector('.fraction-numerator'))})/(${walk(node.querySelector('.fraction-denominator'))}))`;
+        }
+        if (node.matches && node.matches('.math-radical')) {
+          return `sqrt(${walk(node.querySelector('.radical-entry'))})`;
+        }
+        if (node.matches && node.matches('.exponent-entry')) {
+          return `**(${Array.from(node.childNodes).map(walk).join('')})`;
+        }
+        return Array.from(node.childNodes).map(walk).join('');
+      }
+      return Array.from(editor.childNodes).map(walk).join('').trim();
+    }
+
+    function handleMathEditorKeydown(event) {
+      if (event.key === '^') {
+        event.preventDefault();
+        insertExponentAtSelection(getActiveEditor());
+        return;
+      }
+      if (event.key === 'Enter') event.preventDefault();
     }
 
     function renderStages() {
@@ -729,27 +833,29 @@ fetch("/nav.html")
       }).join('');
 
       currentProblem.stages.forEach((stage, index) => {
-        const input = document.getElementById(`answer-editor-${index}`);
-        if (input && stage.savedAnswer !== undefined) input.value = stage.savedAnswer;
+        const editor = document.getElementById(`answer-editor-${index}`);
+        if (editor && stage.savedAnswerHtml !== undefined) editor.innerHTML = stage.savedAnswerHtml;
+      });
+
+      finalAnswerInput.querySelectorAll('.polynomial-answer-editor').forEach(editor => {
+        editor.addEventListener('keydown', handleMathEditorKeydown);
       });
 
       finalAnswerInput.querySelectorAll('.math-symbol-button').forEach(button => {
         button.addEventListener('mousedown', event => event.preventDefault());
         button.addEventListener('click', () => {
-          const input = document.getElementById(`answer-editor-${currentStageIndex}`);
-          if (!input) return;
-          const insert = button.dataset.insert;
-          const start = input.selectionStart;
-          const end = input.selectionEnd;
-          input.value = input.value.slice(0, start) + insert + input.value.slice(end);
-          const next = start + insert.length;
-          input.focus();
-          input.setSelectionRange(next, next);
+          const editor = getActiveEditor();
+          if (!editor) return;
+          editor.focus();
+          if (button.dataset.insertExponent) insertExponentAtSelection(editor);
+          else if (button.dataset.insertFraction) insertFractionAtSelection(editor);
+          else if (button.dataset.insertRadical) insertRadicalAtSelection(editor);
+          else insertTextAtSelection(button.dataset.insertText || '', editor);
         });
       });
 
       typesetElement(finalAnswerInput);
-      const activeInput = document.getElementById(`answer-editor-${currentStageIndex}`);
+      const activeInput = getActiveEditor();
       if (activeInput) activeInput.focus();
     }
 
@@ -765,12 +871,13 @@ fetch("/nav.html")
       const stage = currentProblem.stages[currentStageIndex];
       const input = document.getElementById(`answer-editor-${currentStageIndex}`);
       if (!stage || !input) return;
-      if (!currentStageIsCorrect(stage, input.value)) {
+      const rawAnswer = editorToPlainText(input);
+      if (!currentStageIsCorrect(stage, rawAnswer)) {
         feedbackText.textContent = 'Incorrect, try again.';
         feedbackText.style.color = 'red';
         return;
       }
-      stage.savedAnswer = input.value;
+      stage.savedAnswerHtml = input.innerHTML;
       feedbackText.textContent = 'Correct!';
       feedbackText.style.color = 'green';
       currentStageIndex++;

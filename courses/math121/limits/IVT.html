@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,6 +27,17 @@
     }
 
     .polynomial-answer-editor:focus { outline: 3px solid rgba(80, 140, 255, 0.35); }
+
+    .exponent-entry {
+      font-size: 0.7em;
+      vertical-align: super;
+      display: inline-block;
+      min-width: 0.7em;
+      min-height: 1em;
+      padding: 0 0.08em;
+      border-bottom: 1px solid #777;
+      line-height: 1;
+    }
 
     .answer-toolbar {
       margin-top: 0.65em;
@@ -633,7 +645,7 @@ fetch("/nav.html")
           <button type="button" class="math-symbol-button" data-insert-text="-">−</button>
           <button type="button" class="math-symbol-button" data-insert-text="*">×</button>
           <button type="button" class="math-symbol-button" data-insert-text="/">/</button>
-          <button type="button" class="math-symbol-button" data-insert-text="^">^</button>
+          <button type="button" class="math-symbol-button" data-insert-exponent="true">x<sup>□</sup></button>
           <button type="button" class="math-symbol-button" data-insert-text="π">π</button>
           <button type="button" class="math-symbol-button" data-insert-fraction="true"><span class="fraction-button-display"><span class="fraction-button-top">a</span><span class="fraction-button-bottom">b</span></span></button>
           <button type="button" class="math-symbol-button" data-insert-radical="true">√</button>
@@ -675,18 +687,28 @@ fetch("/nav.html")
         editor.addEventListener('keydown', handleMathEditorKeydown);
         editor.addEventListener('input', () => replaceTypedPi(editor));
       });
+      finalAnswerInput.onfocusin = event => {
+        const editable = event.target.closest && event.target.closest('.special-entry, .math-answer-editor');
+        if (editable && editable.isContentEditable) activeMathEditor = editable;
+      };
+      finalAnswerInput.onmousedown = event => {
+        const editable = event.target.closest && event.target.closest('.special-entry, .math-answer-editor');
+        if (editable && editable.isContentEditable) activeMathEditor = editable;
+      };
       if (activeMathEditor) activeMathEditor.focus();
 
       finalAnswerInput.querySelectorAll('.math-symbol-button').forEach(button => {
         button.addEventListener('mousedown', event => event.preventDefault());
         button.addEventListener('click', () => {
-          const target = activeMathEditor || editors[0];
+          const target = getInsertionEditor() || activeMathEditor || editors[0];
           target.focus();
           if (button.dataset.insertText !== undefined) {
             const text = button.dataset.insertText;
-            if (target.classList.contains('endpoint-answer-editor') && /(sin|cos|tan)/.test(text)) return;
+            const outer = target.closest('.math-answer-editor') || target;
+            if (outer.classList.contains('endpoint-answer-editor') && /(sin|cos|tan)/.test(text)) return;
             insertTextAtSelection(text, target);
           }
+          else if (button.dataset.insertExponent) insertExponentAtSelection(target);
           else if (button.dataset.insertFraction) insertFractionAtSelection(target);
           else if (button.dataset.insertRadical) insertRadicalAtSelection(target);
         });
@@ -704,12 +726,153 @@ fetch("/nav.html")
     }
 
     function handleMathEditorKeydown(event) {
-      const allowedNavigation = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Tab', 'Enter'];
+      const editable = event.target.closest && event.target.closest('.special-entry, .math-answer-editor');
+      if (editable && editable.isContentEditable) activeMathEditor = editable;
+
+      if (event.key === '^') {
+        event.preventDefault();
+        insertExponentAtSelection(getInsertionEditor() || event.currentTarget);
+        return;
+      }
+
+      if (event.key === 'ArrowRight') {
+        const selection = window.getSelection();
+        if (selection.rangeCount) {
+          const widget = closestMathWidget(selection.getRangeAt(0).startContainer);
+          if (widget && visibleTextAfterCaretInside(widget) === '') {
+            event.preventDefault();
+            moveCursorAfterElement(widget);
+            return;
+          }
+        }
+      }
+
+      if (event.key === 'ArrowLeft') {
+        const selection = window.getSelection();
+        if (selection.rangeCount) {
+          const widget = closestMathWidget(selection.getRangeAt(0).startContainer);
+          if (widget && visibleTextBeforeCaretInside(widget) === '') {
+            event.preventDefault();
+            moveCursorBeforeElement(widget);
+            return;
+          }
+        }
+      }
+
+      if (event.key === 'Backspace' && handleBackspaceDeleteWidget(event)) return;
+      if (event.key === 'Enter') { event.preventDefault(); return; }
+
+      const allowedNavigation = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Tab'];
       if (allowedNavigation.includes(event.key) || event.ctrlKey || event.metaKey) return;
-      const isEndpointEditor = event.currentTarget.classList.contains('endpoint-answer-editor');
-      if (/^[0-9+\-*/^().,\sπ]$/.test(event.key)) return;
+      const outer = event.currentTarget.closest('.math-answer-editor') || event.currentTarget;
+      const isEndpointEditor = outer.classList.contains('endpoint-answer-editor');
+      if (/^[0-9+\-*/().,\sπ]$/.test(event.key)) return;
       if (!isEndpointEditor && /^[a-zA-ZxX]$/.test(event.key)) return;
       event.preventDefault();
+    }
+
+    function getInsertionEditor() {
+      const selection = window.getSelection();
+      if (selection.rangeCount) {
+        const range = selection.getRangeAt(0);
+        const container = range.commonAncestorContainer.nodeType === Node.TEXT_NODE
+          ? range.commonAncestorContainer.parentElement
+          : range.commonAncestorContainer;
+        const editable = container.closest && container.closest('.special-entry, .math-answer-editor');
+        if (editable && editable.isContentEditable) return editable;
+      }
+      return activeMathEditor;
+    }
+
+    function insertExponentAtSelection(editor) {
+      const range = getEditorRange(editor);
+      range.deleteContents();
+      const exponent = document.createElement('span');
+      exponent.className = 'exponent-entry special-wrapper special-entry';
+      exponent.setAttribute('data-special-wrapper', 'exponent');
+      exponent.setAttribute('data-special-entry', 'exponent');
+      exponent.contentEditable = 'true';
+      range.insertNode(exponent);
+      placeCaretInside(exponent);
+    }
+
+    function makeCaretSpacer() {
+      return document.createTextNode('\u200b');
+    }
+
+    function closestMathWidget(node) {
+      if (!node) return null;
+      const element = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+      return element ? element.closest('.fraction-entry, .math-radical, .exponent-entry') : null;
+    }
+
+    function visibleTextAfterCaretInside(element) {
+      const selection = window.getSelection();
+      if (!selection.rangeCount) return '';
+      const range = selection.getRangeAt(0);
+      if (!range.collapsed) return 'not-collapsed';
+      const testRange = document.createRange();
+      testRange.selectNodeContents(element);
+      try { testRange.setStart(range.startContainer, range.startOffset); } catch (e) { return 'outside'; }
+      return testRange.toString().replace(/\u200b/g, '');
+    }
+
+    function visibleTextBeforeCaretInside(element) {
+      const selection = window.getSelection();
+      if (!selection.rangeCount) return '';
+      const range = selection.getRangeAt(0);
+      if (!range.collapsed) return 'not-collapsed';
+      const testRange = document.createRange();
+      testRange.selectNodeContents(element);
+      try { testRange.setEnd(range.startContainer, range.startOffset); } catch (e) { return 'outside'; }
+      return testRange.toString().replace(/\u200b/g, '');
+    }
+
+    function moveCursorAfterElement(element) {
+      let next = element.nextSibling;
+      if (!next || next.nodeType !== Node.TEXT_NODE) {
+        next = makeCaretSpacer();
+        element.parentNode.insertBefore(next, element.nextSibling);
+      }
+      placeCaretInTextNode(next, next.textContent.length);
+      activeMathEditor = element.closest('.math-answer-editor') || activeMathEditor;
+    }
+
+    function moveCursorBeforeElement(element) {
+      let previous = element.previousSibling;
+      if (!previous || previous.nodeType !== Node.TEXT_NODE) {
+        previous = makeCaretSpacer();
+        element.parentNode.insertBefore(previous, element);
+      }
+      placeCaretInTextNode(previous, 0);
+      activeMathEditor = element.closest('.math-answer-editor') || activeMathEditor;
+    }
+
+    function previousNodeBeforeCaret(range) {
+      const container = range.startContainer;
+      const offset = range.startOffset;
+      if (container.nodeType === Node.TEXT_NODE) {
+        if (offset > 0 && container.textContent.slice(0, offset).replace(/\u200b/g, '').length > 0) return null;
+        return container.previousSibling;
+      }
+      if (offset > 0) return container.childNodes[offset - 1];
+      return container.previousSibling;
+    }
+
+    function handleBackspaceDeleteWidget(event) {
+      const selection = window.getSelection();
+      if (!selection.rangeCount || !selection.getRangeAt(0).collapsed) return false;
+      const range = selection.getRangeAt(0);
+      let previous = previousNodeBeforeCaret(range);
+      while (previous && previous.nodeType === Node.TEXT_NODE && previous.textContent.replace(/\u200b/g, '') === '') {
+        previous = previous.previousSibling;
+      }
+      if (previous && previous.nodeType === Node.ELEMENT_NODE && previous.matches('.fraction-entry, .math-radical, .exponent-entry')) {
+        event.preventDefault();
+        previous.remove();
+        return true;
+      }
+      return false;
     }
 
     function insertTextAtSelection(text, editor) {
@@ -762,6 +925,7 @@ fetch("/nav.html")
       const selection = window.getSelection();
       selection.removeAllRanges();
       selection.addRange(range);
+      activeMathEditor = element;
       element.focus();
     }
 
@@ -772,6 +936,8 @@ fetch("/nav.html")
       const selection = window.getSelection();
       selection.removeAllRanges();
       selection.addRange(range);
+      const outer = node.parentElement && node.parentElement.closest ? node.parentElement.closest('.math-answer-editor') : null;
+      if (outer) { activeMathEditor = outer; outer.focus(); }
     }
 
     function editorToPlainText(editor) {
@@ -780,6 +946,7 @@ fetch("/nav.html")
         if (node.nodeType !== Node.ELEMENT_NODE) return '';
         if (node.matches && node.matches('.fraction-entry')) return `((${walk(node.querySelector('.fraction-numerator'))})/(${walk(node.querySelector('.fraction-denominator'))}))`;
         if (node.matches && node.matches('.math-radical')) return `sqrt(${walk(node.querySelector('.radical-entry'))})`;
+        if (node.matches && node.matches('.exponent-entry')) return `**(${Array.from(node.childNodes).map(walk).join('')})`;
         return Array.from(node.childNodes).map(walk).join('');
       }
       return Array.from(editor.childNodes).map(walk).join('').trim();

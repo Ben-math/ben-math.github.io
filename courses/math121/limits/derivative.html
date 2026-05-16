@@ -5,6 +5,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -754,16 +755,38 @@ fetch("/nav.html")
       element.focus();
     }
 
+    function makeCaretSpacer() {
+      return document.createTextNode('\u200b');
+    }
+
+    function setCaretInNode(node, atEnd = true) {
+      const selection = window.getSelection();
+      const range = document.createRange();
+      if (node.nodeType === Node.TEXT_NODE) {
+        range.setStart(node, atEnd ? node.textContent.length : 0);
+      } else {
+        range.selectNodeContents(node);
+        range.collapse(!atEnd);
+      }
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      const editor = getActiveEditor();
+      if (editor) editor.focus();
+    }
+
     function insertExponentAtSelection(editor = getActiveEditor()) {
       if (!editor) return;
-      const { selection, range } = selectionRangeInEditor(editor);
+      const { range } = selectionRangeInEditor(editor);
       range.deleteContents();
       const exponent = document.createElement('span');
       exponent.className = 'exponent-entry';
       exponent.contentEditable = 'true';
-      exponent.appendChild(document.createTextNode(''));
+      exponent.appendChild(makeCaretSpacer());
+      const spacer = makeCaretSpacer();
+      range.insertNode(spacer);
       range.insertNode(exponent);
-      placeCursorInside(exponent);
+      setCaretInNode(exponent.firstChild, true);
     }
 
     function insertFractionAtSelection(editor = getActiveEditor()) {
@@ -772,9 +795,12 @@ fetch("/nav.html")
       range.deleteContents();
       const wrapper = document.createElement('span');
       wrapper.className = 'fraction-entry';
-      wrapper.innerHTML = '<span class="fraction-numerator" contenteditable="true"></span><span class="fraction-denominator" contenteditable="true"></span>';
+      wrapper.contentEditable = 'false';
+      wrapper.innerHTML = '<span class="fraction-numerator" contenteditable="true">\u200b</span><span class="fraction-denominator" contenteditable="true">\u200b</span>';
+      const spacer = makeCaretSpacer();
+      range.insertNode(spacer);
       range.insertNode(wrapper);
-      placeCursorInside(wrapper.querySelector('.fraction-numerator'));
+      setCaretInNode(wrapper.querySelector('.fraction-numerator').firstChild, true);
     }
 
     function insertRadicalAtSelection(editor = getActiveEditor()) {
@@ -783,15 +809,18 @@ fetch("/nav.html")
       range.deleteContents();
       const wrapper = document.createElement('span');
       wrapper.className = 'math-radical';
-      wrapper.innerHTML = '<span class="radical-symbol">√</span><span class="radical-entry" contenteditable="true"></span>';
+      wrapper.contentEditable = 'false';
+      wrapper.innerHTML = '<span class="radical-symbol">√</span><span class="radical-entry" contenteditable="true">\u200b</span>';
+      const spacer = makeCaretSpacer();
+      range.insertNode(spacer);
       range.insertNode(wrapper);
-      placeCursorInside(wrapper.querySelector('.radical-entry'));
+      setCaretInNode(wrapper.querySelector('.radical-entry').firstChild, true);
     }
 
     function editorToPlainText(editor) {
       function walk(node) {
         if (!node) return '';
-        if (node.nodeType === Node.TEXT_NODE) return node.textContent.replace(/​/g, '');
+        if (node.nodeType === Node.TEXT_NODE) return node.textContent.replace(/\u200b/g, '').replace(/​/g, '');
         if (node.nodeType !== Node.ELEMENT_NODE) return '';
         if (node.matches && node.matches('.fraction-entry')) {
           return `((${walk(node.querySelector('.fraction-numerator'))})/(${walk(node.querySelector('.fraction-denominator'))}))`;
@@ -804,7 +833,7 @@ fetch("/nav.html")
         }
         return Array.from(node.childNodes).map(walk).join('');
       }
-      return Array.from(editor.childNodes).map(walk).join('').trim();
+      return Array.from(editor.childNodes).map(walk).join('').replace(/\u200b/g, '').replace(/​/g, '').trim();
     }
 
     function closestMathWidget(node) {
@@ -813,49 +842,74 @@ fetch("/nav.html")
       return element ? element.closest('.fraction-entry, .math-radical, .exponent-entry') : null;
     }
 
-    function isSelectionAtEndOf(node) {
+    function visibleTextAfterCaretInside(element) {
       const selection = window.getSelection();
-      if (!selection.rangeCount) return false;
+      if (!selection.rangeCount) return '';
       const range = selection.getRangeAt(0);
-      if (!range.collapsed) return false;
+      if (!range.collapsed) return 'not-collapsed';
       const testRange = document.createRange();
-      testRange.selectNodeContents(node);
-      testRange.setStart(range.startContainer, range.startOffset);
-      return testRange.toString().length === 0;
+      testRange.selectNodeContents(element);
+      try {
+        testRange.setStart(range.startContainer, range.startOffset);
+      } catch (e) {
+        return 'outside';
+      }
+      return testRange.toString().replace(/\u200b/g, '').replace(/​/g, '');
+    }
+
+    function visibleTextBeforeCaretInside(element) {
+      const selection = window.getSelection();
+      if (!selection.rangeCount) return '';
+      const range = selection.getRangeAt(0);
+      if (!range.collapsed) return 'not-collapsed';
+      const testRange = document.createRange();
+      testRange.selectNodeContents(element);
+      try {
+        testRange.setEnd(range.startContainer, range.startOffset);
+      } catch (e) {
+        return 'outside';
+      }
+      return testRange.toString().replace(/\u200b/g, '').replace(/​/g, '');
     }
 
     function moveCursorAfterElement(element) {
-      const selection = window.getSelection();
-      const range = document.createRange();
-      range.setStartAfter(element);
-      range.collapse(true);
-      selection.removeAllRanges();
-      selection.addRange(range);
-      const editor = getActiveEditor();
-      if (editor) editor.focus();
+      let next = element.nextSibling;
+      if (!next || next.nodeType !== Node.TEXT_NODE) {
+        next = makeCaretSpacer();
+        element.parentNode.insertBefore(next, element.nextSibling);
+      }
+      setCaretInNode(next, true);
     }
 
     function moveCursorBeforeElement(element) {
-      const selection = window.getSelection();
-      const range = document.createRange();
-      range.setStartBefore(element);
-      range.collapse(true);
-      selection.removeAllRanges();
-      selection.addRange(range);
-      const editor = getActiveEditor();
-      if (editor) editor.focus();
+      let previous = element.previousSibling;
+      if (!previous || previous.nodeType !== Node.TEXT_NODE) {
+        previous = makeCaretSpacer();
+        element.parentNode.insertBefore(previous, element);
+      }
+      setCaretInNode(previous, false);
+    }
+
+    function previousNodeBeforeCaret(range) {
+      const container = range.startContainer;
+      const offset = range.startOffset;
+      if (container.nodeType === Node.TEXT_NODE) {
+        if (offset > 0 && container.textContent.slice(0, offset).replace(/\u200b/g, '').replace(/​/g, '').length > 0) return null;
+        return container.previousSibling;
+      }
+      if (offset > 0) return container.childNodes[offset - 1];
+      return container.previousSibling;
     }
 
     function handleBackspaceDeleteWidget(event) {
       const selection = window.getSelection();
       if (!selection.rangeCount || !selection.getRangeAt(0).collapsed) return false;
       const range = selection.getRangeAt(0);
-      if (range.startOffset !== 0) return false;
-      const container = range.startContainer;
-      const parent = container.nodeType === Node.TEXT_NODE ? container.parentNode : container;
-      if (!parent || !parent.previousSibling) return false;
-      const previous = parent.previousSibling;
-      if (previous.nodeType === Node.ELEMENT_NODE && previous.matches('.fraction-entry, .math-radical, .exponent-entry')) {
+      let previous = previousNodeBeforeCaret(range);
+      while (previous && previous.nodeType === Node.TEXT_NODE && previous.textContent.replace(/\u200b/g, '').replace(/​/g, '') === '') {
+        previous = previous.previousSibling;
+      }
+      if (previous && previous.nodeType === Node.ELEMENT_NODE && previous.matches('.fraction-entry, .math-radical, .exponent-entry')) {
         event.preventDefault();
         previous.remove();
         return true;
@@ -869,36 +923,31 @@ fetch("/nav.html")
         insertExponentAtSelection(getActiveEditor());
         return;
       }
+
       if (event.key === 'ArrowRight') {
         const selection = window.getSelection();
         if (selection.rangeCount) {
           const widget = closestMathWidget(selection.getRangeAt(0).startContainer);
-          if (widget && isSelectionAtEndOf(widget)) {
+          if (widget && visibleTextAfterCaretInside(widget) === '') {
             event.preventDefault();
             moveCursorAfterElement(widget);
             return;
           }
         }
       }
+
       if (event.key === 'ArrowLeft') {
         const selection = window.getSelection();
         if (selection.rangeCount) {
           const widget = closestMathWidget(selection.getRangeAt(0).startContainer);
-          if (widget) {
-            const range = selection.getRangeAt(0);
-            if (range.collapsed) {
-              const testRange = document.createRange();
-              testRange.selectNodeContents(widget);
-              testRange.setEnd(range.startContainer, range.startOffset);
-              if (testRange.toString().length === 0) {
-                event.preventDefault();
-                moveCursorBeforeElement(widget);
-                return;
-              }
-            }
+          if (widget && visibleTextBeforeCaretInside(widget) === '') {
+            event.preventDefault();
+            moveCursorBeforeElement(widget);
+            return;
           }
         }
       }
+
       if (event.key === 'Backspace' && handleBackspaceDeleteWidget(event)) return;
       if (event.key === 'Enter') event.preventDefault();
     }

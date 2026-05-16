@@ -1,18 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -325,9 +310,9 @@ fetch("/nav.html")
     =\lim_{h \to 0}\frac{2}{(\sqrt{2x+2h+5}+\sqrt{2x+5})} = \frac{2}{\sqrt{2x+5}+\sqrt{2x+5}} = \frac{2}{2\sqrt{2x+5}} = \frac{1}{\sqrt{2x+5}}\] 
     Then to find the slope of the tangent at \(x=2\): \[f'(2) = \frac{1}{\sqrt{2(2)+5}} = \frac{1}{\sqrt{9}} = \frac{1}{3}\] We have the slope of the 
     tangent line, \(\frac{1}{3}\), and a point on it, \((2,3)\), so we use the point-slope form of a line: \[y - y_1 = m(x - x_1) \implies 
-    y - 3 = \frac{1}{3}(x-2)\] (Which you could rearrange into the slope-intercept form if you prefer).</p>
+    y - 3 = \frac{1}{3}(x-2) \implies y = \frac{1}{3}x + \frac{7}{3}\] </p>
 
-    <p>Now you try!  (This activity is a work in progress)</p>
+    <p>Now you try!</p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
@@ -528,6 +513,174 @@ fetch("/nav.html")
     function evaluateQuadratic(a, b, c, x) { return a * x * x + b * x + c; }
     function evaluateLinear(a, b, x) { return a * x + b; }
 
+
+    function parensTex(tex) {
+      return `\\left(${tex}\\right)`;
+    }
+
+    function signedCoeffTex(n) {
+      if (n === 0) return '';
+      return n > 0 ? `+${n}` : `${n}`;
+    }
+
+    function linearSubTex(a, b, xTex) {
+      return `${a}${parensTex(xTex)}${b ? signedCoeffTex(b) : ''}`;
+    }
+
+    function quadraticSubTex(a, b, c, xTex) {
+      const pieces = [];
+      if (a) pieces.push(`${a}${parensTex(xTex)}^{2}`);
+      if (b) pieces.push(`${b > 0 && pieces.length ? '+' : ''}${b}${parensTex(xTex)}`);
+      if (c) pieces.push(`${c > 0 && pieces.length ? '+' : ''}${c}`);
+      return pieces.join('') || '0';
+    }
+
+    function limitAligned(lines) {
+      return `\\begin{aligned}${lines.join('\\\\')}\\end{aligned}`;
+    }
+
+    function quadraticDerivativeChainTex(a, b, c) {
+      const fx = polynomialTex(a, b, c);
+      const fxh = `${a}(x+h)^2${b ? signedCoeffTex(b) + '(x+h)' : ''}${c ? signedCoeffTex(c) : ''}`;
+      const expanded = `${a}x^2${2*a >= 0 ? '+' : ''}${2*a}xh${a >= 0 ? '+' : ''}${a}h^2${b ? signedCoeffTex(b) + 'x' + signedCoeffTex(b) + 'h' : ''}${c ? signedCoeffTex(c) : ''}`;
+      const afterSubtract = `${2*a}xh${a >= 0 ? '+' : ''}${a}h^2${b ? signedCoeffTex(b) + 'h' : ''}`;
+      const factored = `h(${linearTex(2*a, b)}${a >= 0 ? '+' : ''}${a}h)`;
+      return limitAligned([
+        `f'(x)=\\lim_{h\\to 0}\\frac{f(x+h)-f(x)}{h}`,
+        `=\\lim_{h\\to 0}\\frac{${fxh}-(${fx})}{h}`,
+        `=\\lim_{h\\to 0}\\frac{${expanded}-(${fx})}{h}`,
+        `=\\lim_{h\\to 0}\\frac{${afterSubtract}}{h}`,
+        `=\\lim_{h\\to 0}\\frac{${factored}}{h}`,
+        `=\\lim_{h\\to 0}(${linearTex(2*a, b)}${a >= 0 ? '+' : ''}${a}h)`,
+        `=${linearTex(2*a, b)}`
+      ]);
+    }
+
+    function quadraticSlopeChainTex(a, b, c, x0) {
+      const fx0h = `${a}(${x0}+h)^2${b ? signedCoeffTex(b) + `(${x0}+h)` : ''}${c ? signedCoeffTex(c) : ''}`;
+      const y0 = evaluateQuadratic(a, b, c, x0);
+      const slope = 2*a*x0 + b;
+      const h2 = a;
+      const linearH = slope;
+      const numerator = `${linearH}h${h2 >= 0 ? '+' : ''}${h2}h^2`;
+      return limitAligned([
+        `m=f'(${x0})=\\lim_{h\\to 0}\\frac{f(${x0}+h)-f(${x0})}{h}`,
+        `=\\lim_{h\\to 0}\\frac{${fx0h}-(${numberTex(y0)})}{h}`,
+        `=\\lim_{h\\to 0}\\frac{${numberTex(y0)}${linearH >= 0 ? '+' : ''}${linearH}h${h2 >= 0 ? '+' : ''}${h2}h^2-(${numberTex(y0)})}{h}`,
+        `=\\lim_{h\\to 0}\\frac{${numerator}}{h}`,
+        `=\\lim_{h\\to 0}(${linearH}${h2 >= 0 ? '+' : ''}${h2}h)`,
+        `=${numberTex(slope)}`
+      ]);
+    }
+
+    function rootLinearDerivativeChainTex(a, b) {
+      const rad = linearTex(a, b);
+      const radH = `${a}(x+h)${b ? signedCoeffTex(b) : ''}`;
+      return limitAligned([
+        `f'(x)=\\lim_{h\\to 0}\\frac{\\sqrt{${radH}}-\\sqrt{${rad}}}{h}`,
+        `=\\lim_{h\\to 0}\\frac{(\\sqrt{${radH}}-\\sqrt{${rad}})(\\sqrt{${radH}}+\\sqrt{${rad}})}{h(\\sqrt{${radH}}+\\sqrt{${rad}})}`,
+        `=\\lim_{h\\to 0}\\frac{${radH}-(${rad})}{h(\\sqrt{${radH}}+\\sqrt{${rad}})}`,
+        `=\\lim_{h\\to 0}\\frac{${a}h}{h(\\sqrt{${radH}}+\\sqrt{${rad}})}`,
+        `=\\lim_{h\\to 0}\\frac{${a}}{\\sqrt{${radH}}+\\sqrt{${rad}}}`,
+        `=\\frac{${a}}{2\\sqrt{${rad}}}`
+      ]);
+    }
+
+    function rootLinearSlopeChainTex(a, b, x0) {
+      const rad0 = evaluateLinear(a, b, x0);
+      const radH = `${a}(${x0}+h)${b ? signedCoeffTex(b) : ''}`;
+      const rad0Tex = numberTex(rad0);
+      const slopeTex = exactRootSlopeFractionTex(a, rad0) || decimalIfNeeded(a/(2*Math.sqrt(rad0)));
+      return limitAligned([
+        `m=f'(${x0})=\\lim_{h\\to 0}\\frac{\\sqrt{${radH}}-\\sqrt{${rad0Tex}}}{h}`,
+        `=\\lim_{h\\to 0}\\frac{(\\sqrt{${radH}}-\\sqrt{${rad0Tex}})(\\sqrt{${radH}}+\\sqrt{${rad0Tex}})}{h(\\sqrt{${radH}}+\\sqrt{${rad0Tex}})}`,
+        `=\\lim_{h\\to 0}\\frac{${radH}-${rad0Tex}}{h(\\sqrt{${radH}}+\\sqrt{${rad0Tex}})}`,
+        `=\\lim_{h\\to 0}\\frac{${a}h}{h(\\sqrt{${radH}}+\\sqrt{${rad0Tex}})}`,
+        `=\\lim_{h\\to 0}\\frac{${a}}{\\sqrt{${radH}}+\\sqrt{${rad0Tex}}}`,
+        `=${slopeTex}`
+      ]);
+    }
+
+    function rootQuadraticDerivativeChainTex(a, b, c) {
+      const rad = polynomialTex(a, b, c);
+      const radH = quadraticSubTex(a, b, c, 'x+h');
+      const diff = `h(${linearTex(2*a, b)}${a >= 0 ? '+' : ''}${a}h)`;
+      return limitAligned([
+        `f'(x)=\\lim_{h\\to 0}\\frac{\\sqrt{${radH}}-\\sqrt{${rad}}}{h}`,
+        `=\\lim_{h\\to 0}\\frac{(\\sqrt{${radH}}-\\sqrt{${rad}})(\\sqrt{${radH}}+\\sqrt{${rad}})}{h(\\sqrt{${radH}}+\\sqrt{${rad}})}`,
+        `=\\lim_{h\\to 0}\\frac{${radH}-(${rad})}{h(\\sqrt{${radH}}+\\sqrt{${rad}})}`,
+        `=\\lim_{h\\to 0}\\frac{${diff}}{h(\\sqrt{${radH}}+\\sqrt{${rad}})}`,
+        `=\\lim_{h\\to 0}\\frac{${linearTex(2*a, b)}${a >= 0 ? '+' : ''}${a}h}{\\sqrt{${radH}}+\\sqrt{${rad}}}`,
+        `=\\frac{${linearTex(2*a, b)}}{2\\sqrt{${rad}}}`
+      ]);
+    }
+
+    function rootQuadraticSlopeChainTex(a, b, c, x0) {
+      const radH = quadraticSubTex(a, b, c, `${x0}+h`);
+      const rad0 = evaluateQuadratic(a, b, c, x0);
+      const numeratorValue = 2*a*x0 + b;
+      const slopeTex = exactRootSlopeFractionTex(numeratorValue, rad0) || decimalIfNeeded(numeratorValue/(2*Math.sqrt(rad0)));
+      return limitAligned([
+        `m=f'(${x0})=\\lim_{h\\to 0}\\frac{\\sqrt{${radH}}-\\sqrt{${numberTex(rad0)}}}{h}`,
+        `=\\lim_{h\\to 0}\\frac{(\\sqrt{${radH}}-\\sqrt{${numberTex(rad0)}})(\\sqrt{${radH}}+\\sqrt{${numberTex(rad0)}})}{h(\\sqrt{${radH}}+\\sqrt{${numberTex(rad0)}})}`,
+        `=\\lim_{h\\to 0}\\frac{${radH}-${numberTex(rad0)}}{h(\\sqrt{${radH}}+\\sqrt{${numberTex(rad0)}})}`,
+        `=\\lim_{h\\to 0}\\frac{h(${numberTex(numeratorValue)}${a >= 0 ? '+' : ''}${a}h)}{h(\\sqrt{${radH}}+\\sqrt{${numberTex(rad0)}})}`,
+        `=\\lim_{h\\to 0}\\frac{${numberTex(numeratorValue)}${a >= 0 ? '+' : ''}${a}h}{\\sqrt{${radH}}+\\sqrt{${numberTex(rad0)}}}`,
+        `=${slopeTex}`
+      ]);
+    }
+
+    function rationalLinearDerivativeChainTex(d, a, b) {
+      const den = linearTex(a, b);
+      const denH = `${a}(x+h)${b ? signedCoeffTex(b) : ''}`;
+      return limitAligned([
+        `f'(x)=\\lim_{h\\to 0}\\frac{\\frac{${d}}{${denH}}-\\frac{${d}}{${den}}}{h}`,
+        `=\\lim_{h\\to 0}\\frac{${d}(${den})-${d}(${denH})}{h(${denH})(${den})}`,
+        `=\\lim_{h\\to 0}\\frac{${-d*a}h}{h(${denH})(${den})}`,
+        `=\\lim_{h\\to 0}\\frac{${-d*a}}{(${denH})(${den})}`,
+        `=\\frac{${-d*a}}{(${den})^{2}}`
+      ]);
+    }
+
+    function rationalLinearSlopeChainTex(d, a, b, x0) {
+      const den0 = evaluateLinear(a, b, x0);
+      const denH = `${a}(${x0}+h)${b ? signedCoeffTex(b) : ''}`;
+      const slopeTex = fractionTexFromIntegers(-d*a, den0*den0) || decimalIfNeeded(-d*a/(den0*den0));
+      return limitAligned([
+        `m=f'(${x0})=\\lim_{h\\to 0}\\frac{\\frac{${d}}{${denH}}-\\frac{${d}}{${den0}}}{h}`,
+        `=\\lim_{h\\to 0}\\frac{${d}(${den0})-${d}(${denH})}{h(${denH})(${den0})}`,
+        `=\\lim_{h\\to 0}\\frac{${-d*a}h}{h(${denH})(${den0})}`,
+        `=\\lim_{h\\to 0}\\frac{${-d*a}}{(${denH})(${den0})}`,
+        `=${slopeTex}`
+      ]);
+    }
+
+    function rationalQuadraticDerivativeChainTex(d, a, b, c) {
+      const den = polynomialTex(a, b, c);
+      const denH = quadraticSubTex(a, b, c, 'x+h');
+      return limitAligned([
+        `f'(x)=\\lim_{h\\to 0}\\frac{\\frac{${d}}{${denH}}-\\frac{${d}}{${den}}}{h}`,
+        `=\\lim_{h\\to 0}\\frac{${d}(${den})-${d}(${denH})}{h(${denH})(${den})}`,
+        `=\\lim_{h\\to 0}\\frac{${-d}h(${linearTex(2*a, b)}${a >= 0 ? '+' : ''}${a}h)}{h(${denH})(${den})}`,
+        `=\\lim_{h\\to 0}\\frac{${-d}(${linearTex(2*a, b)}${a >= 0 ? '+' : ''}${a}h)}{(${denH})(${den})}`,
+        `=\\frac{${-d}(${linearTex(2*a, b)})}{(${den})^{2}}`
+      ]);
+    }
+
+    function rationalQuadraticSlopeChainTex(d, a, b, c, x0) {
+      const den0 = evaluateQuadratic(a, b, c, x0);
+      const denH = quadraticSubTex(a, b, c, `${x0}+h`);
+      const lin = 2*a*x0 + b;
+      const slopeTex = fractionTexFromIntegers(-d*lin, den0*den0) || decimalIfNeeded(-d*lin/(den0*den0));
+      return limitAligned([
+        `m=f'(${x0})=\\lim_{h\\to 0}\\frac{\\frac{${d}}{${denH}}-\\frac{${d}}{${den0}}}{h}`,
+        `=\\lim_{h\\to 0}\\frac{${d}(${den0})-${d}(${denH})}{h(${denH})(${den0})}`,
+        `=\\lim_{h\\to 0}\\frac{${-d}h(${numberTex(lin)}${a >= 0 ? '+' : ''}${a}h)}{h(${denH})(${den0})}`,
+        `=\\lim_{h\\to 0}\\frac{${-d}(${numberTex(lin)}${a >= 0 ? '+' : ''}${a}h)}{(${denH})(${den0})}`,
+        `=${slopeTex}`
+      ]);
+    }
+
     function makeQuadraticFunction() {
       const a = randomNonzeroInteger(-9, 9);
       const b = randomInteger(-9, 9);
@@ -540,15 +693,8 @@ fetch("/nav.html")
         derivativeTex: `${linearTex(2 * a, b)}`,
         derivativeExpression: `${2 * a}*x+${b}`,
         validAt: () => true,
-        derivativeHints: [
-          `f'(x)=\\lim_{h\\to 0}\\frac{f(x+h)-f(x)}{h}`,
-          `f'(x)=\\lim_{h\\to 0}\\frac{${a}(x+h)^2${b ? (b > 0 ? `+${b}(x+h)` : `${b}(x+h)`) : ''}${c ? (c > 0 ? `+${c}` : `${c}`) : ''}-(${polynomialTex(a,b,c)})}{h}`,
-          `\\text{After expanding and cancelling, this simplifies to }f'(x)=${linearTex(2 * a, b)}.`
-        ],
-        slopeHints: x0 => [
-          `f'(${x0})=${linearTex(2 * a, b).replaceAll('x', `(${x0})`)}`,
-          `f'(${x0})=${decimalIfNeeded(2 * a * x0 + b)}.`
-        ]
+        derivativeHints: [quadraticDerivativeChainTex(a, b, c)],
+        slopeHints: x0 => [quadraticSlopeChainTex(a, b, c, x0)]
       };
     }
 
@@ -572,19 +718,8 @@ fetch("/nav.html")
             const rad = evaluateLinear(a, b, x);
             return exactRootInterceptTex(2 * rad - a * x, rad) || decimalIfNeeded(Math.sqrt(rad) - (a / (2 * Math.sqrt(rad))) * x);
           },
-          derivativeHints: [
-            `f'(x)=\\lim_{h\\to 0}\\frac{\\sqrt{${a}(x+h)${b ? (b > 0 ? `+${b}` : `${b}`) : ''}}-\\sqrt{${radTex}}}{h}`,
-            `\\text{Rationalize the numerator by multiplying by the conjugate.}`,
-            `f'(x)=\\frac{${a}}{2\\sqrt{${radTex}}}`
-          ],
-          slopeHints: x0 => {
-            const radicandValue = evaluateLinear(a, b, x0);
-            const exactSlopeTex = exactRootSlopeFractionTex(a, radicandValue) || decimalIfNeeded(a / (2 * Math.sqrt(radicandValue)));
-            return [
-              `f'(${x0})=\\frac{${a}}{2\\sqrt{${a}(${x0})${b ? (b > 0 ? `+${b}` : `${b}`) : ''}}}`,
-              `f'(${x0})=${exactSlopeTex}.`
-            ];
-          }
+          derivativeHints: [rootLinearDerivativeChainTex(a, b)],
+          slopeHints: x0 => [rootLinearSlopeChainTex(a, b, x0)]
         };
       }
       const a = randomNonzeroInteger(-9, 9);
@@ -606,20 +741,8 @@ fetch("/nav.html")
           const numerator = 2 * rad - (2 * a * x + b) * x;
           return exactRootInterceptTex(numerator, rad) || decimalIfNeeded(Math.sqrt(rad) - ((2 * a * x + b) / (2 * Math.sqrt(rad))) * x);
         },
-        derivativeHints: [
-          `f'(x)=\\lim_{h\\to 0}\\frac{\\sqrt{${substituteQuadraticTex(a,b,c,'x+h')}}-\\sqrt{${radTex}}}{h}`,
-          `\\text{Rationalize the numerator by multiplying by the conjugate.}`,
-          `f'(x)=\\frac{${linearTex(2 * a, b)}}{2\\sqrt{${radTex}}}`
-        ],
-        slopeHints: x0 => {
-          const numeratorValue = 2 * a * x0 + b;
-          const radicandValue = evaluateQuadratic(a, b, c, x0);
-          const exactSlopeTex = exactRootSlopeFractionTex(numeratorValue, radicandValue) || decimalIfNeeded(numeratorValue / (2 * Math.sqrt(radicandValue)));
-          return [
-            `f'(${x0})=\\frac{${2 * a}(${x0})${b ? (b > 0 ? `+${b}` : `${b}`) : ''}}{2\\sqrt{${substituteQuadraticTex(a,b,c,String(x0))}}}`,
-            `f'(${x0})=${exactSlopeTex}.`
-          ];
-        }
+        derivativeHints: [rootQuadraticDerivativeChainTex(a, b, c)],
+        slopeHints: x0 => [rootQuadraticSlopeChainTex(a, b, c, x0)]
       };
     }
 
@@ -644,15 +767,8 @@ fetch("/nav.html")
             const den = evaluateLinear(a, b, x);
             return fractionTexFromIntegers(d * den + d * a * x, den * den) || decimalIfNeeded(d / den - (-d * a / (den * den)) * x);
           },
-          derivativeHints: [
-            `f'(x)=\\lim_{h\\to 0}\\frac{\\frac{${d}}{${a}(x+h)${b ? (b > 0 ? `+${b}` : `${b}`) : ''}}-\\frac{${d}}{${denTex}}}{h}`,
-            `\\text{Combine the two fractions in the numerator, then cancel the common factor of }h.`,
-            `f'(x)=\\frac{${-d * a}}{(${denTex})^{2}}`
-          ],
-          slopeHints: x0 => [
-            `f'(${x0})=\\frac{${-d * a}}{(${a}(${x0})${b ? (b > 0 ? `+${b}` : `${b}`) : ''})^{2}}`,
-            `f'(${x0})=${fractionTexFromIntegers(-d * a, Math.pow(evaluateLinear(a, b, x0), 2)) || decimalIfNeeded(-d * a / Math.pow(evaluateLinear(a, b, x0), 2))}.`
-          ]
+          derivativeHints: [rationalLinearDerivativeChainTex(d, a, b)],
+          slopeHints: x0 => [rationalLinearSlopeChainTex(d, a, b, x0)]
         };
       }
       const a = randomNonzeroInteger(-9, 9);
@@ -677,15 +793,8 @@ fetch("/nav.html")
           const slopeNum = -d * (2 * a * x + b);
           return fractionTexFromIntegers(d * den - slopeNum * x, den * den) || decimalIfNeeded(d / den - (slopeNum / (den * den)) * x);
         },
-        derivativeHints: [
-          `f'(x)=\\lim_{h\\to 0}\\frac{\\frac{${d}}{${substituteQuadraticTex(a,b,c,'x+h')}}-\\frac{${d}}{${denTex}}}{h}`,
-          `\\text{Combine the two fractions in the numerator, then cancel the common factor of }h.`,
-          `f'(x)=\\frac{${-d}(${linearTex(2 * a, b)})}{(${denTex})^{2}}`
-        ],
-        slopeHints: x0 => [
-          `f'(${x0})=\\frac{${-d}(${2 * a}(${x0})${b ? (b > 0 ? `+${b}` : `${b}`) : ''})}{(${substituteQuadraticTex(a,b,c,String(x0))})^{2}}`,
-          `f'(${x0})=${fractionTexFromIntegers(-d * (2 * a * x0 + b), Math.pow(evaluateQuadratic(a, b, c, x0), 2)) || decimalIfNeeded(-d * (2 * a * x0 + b) / Math.pow(evaluateQuadratic(a, b, c, x0), 2))}.`
-        ]
+        derivativeHints: [rationalQuadraticDerivativeChainTex(d, a, b, c)],
+        slopeHints: x0 => [rationalQuadraticSlopeChainTex(d, a, b, c, x0)]
       };
     }
 
@@ -738,7 +847,7 @@ fetch("/nav.html")
           expectedTex: slopeTex,
           hints: askDerivativeFunction
             ? [`\\text{Use the derivative function and substitute }x=${x0}.`].concat(fn.slopeHints(x0))
-            : [`m=f'(${x0})=\\lim_{h\\to 0}\\frac{f(${x0}+h)-f(${x0})}{h}`].concat(fn.slopeHints(x0))
+            : fn.slopeHints(x0)
         });
         stages.push({
           kind: 'line',

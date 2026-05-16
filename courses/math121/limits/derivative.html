@@ -11,6 +11,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -469,7 +470,7 @@ fetch("/nav.html")
       radicand = Math.round(radicand);
       const root = Math.round(Math.sqrt(radicand));
       if (root * root === radicand) return `${root}`;
-      return `\sqrt{${radicand}}`;
+      return `\\sqrt{${radicand}}`;
     }
 
     function exactRootInterceptTex(numerator, radicand) {
@@ -486,8 +487,8 @@ fetch("/nav.html")
       const sign = reducedNum < 0 ? '-' : '';
       const absNum = Math.abs(reducedNum);
       const topTex = absNum === 1 ? '1' : `${absNum}`;
-      const denTex = reducedDenCoeff === 1 ? `\sqrt{${radicand}}` : `${reducedDenCoeff}\sqrt{${radicand}}`;
-      return `${sign}\frac{${topTex}}{${denTex}}`;
+      const denTex = reducedDenCoeff === 1 ? `\\sqrt{${radicand}}` : `${reducedDenCoeff}\\sqrt{${radicand}}`;
+      return `${sign}\\frac{${topTex}}{${denTex}}`;
     }
 
     function coefficientTermTex(coeff, body, isFirst = false) {

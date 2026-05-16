@@ -7,6 +7,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -416,6 +417,34 @@ fetch("/nav.html")
       return numberTex(value);
     }
 
+
+    function exactRootSlopeTex(numerator, radicand) {
+      if (!Number.isFinite(numerator) || !Number.isFinite(radicand) || radicand <= 0) return null;
+      if (Math.abs(numerator - Math.round(numerator)) > 1e-10 || Math.abs(radicand - Math.round(radicand)) > 1e-10) return null;
+      numerator = Math.round(numerator);
+      radicand = Math.round(radicand);
+      if (numerator === 0) return '0';
+      const denominatorCoeff = 2;
+      const sign = numerator < 0 ? '-' : '';
+      const absNum = Math.abs(numerator);
+      const numTex = absNum === 1 ? '' : `${absNum}`;
+      const numeratorTex = `${sign}${numTex}`;
+      const denominatorTex = denominatorCoeff === 1 ? `\\sqrt{${radicand}}` : `${denominatorCoeff}\\sqrt{${radicand}}`;
+      return `${numeratorTex}\\frac{1}{${denominatorTex}}`;
+    }
+
+    function exactRootSlopeFractionTex(numerator, radicand) {
+      if (!Number.isFinite(numerator) || !Number.isFinite(radicand) || radicand <= 0) return null;
+      if (Math.abs(numerator - Math.round(numerator)) > 1e-10 || Math.abs(radicand - Math.round(radicand)) > 1e-10) return null;
+      numerator = Math.round(numerator);
+      radicand = Math.round(radicand);
+      if (numerator === 0) return '0';
+      const sign = numerator < 0 ? '-' : '';
+      const absNum = Math.abs(numerator);
+      const topTex = absNum === 1 ? '1' : `${absNum}`;
+      return `${sign}\\frac{${topTex}}{2\\sqrt{${radicand}}}`;
+    }
+
     function coefficientTermTex(coeff, body, isFirst = false) {
       if (coeff === 0) return '';
       const sign = coeff < 0 ? '-' : (isFirst ? '' : '+');
@@ -495,10 +524,14 @@ fetch("/nav.html")
             `\\text{Rationalize the numerator by multiplying by the conjugate.}`,
             `f'(x)=\\frac{${a}}{2\\sqrt{${radTex}}}`
           ],
-          slopeHints: x0 => [
-            `f'(${x0})=\\frac{${a}}{2\\sqrt{${a}(${x0})${b ? (b > 0 ? `+${b}` : `${b}`) : ''}}}`,
-            `f'(${x0})=${decimalIfNeeded(a / (2 * Math.sqrt(evaluateLinear(a, b, x0))))}.`
-          ]
+          slopeHints: x0 => {
+            const radicandValue = evaluateLinear(a, b, x0);
+            const exactSlopeTex = exactRootSlopeFractionTex(a, radicandValue) || decimalIfNeeded(a / (2 * Math.sqrt(radicandValue)));
+            return [
+              `f'(${x0})=\\frac{${a}}{2\\sqrt{${a}(${x0})${b ? (b > 0 ? `+${b}` : `${b}`) : ''}}}`,
+              `f'(${x0})=${exactSlopeTex}.`
+            ];
+          }
         };
       }
       const a = randomNonzeroInteger(-9, 9);
@@ -518,10 +551,15 @@ fetch("/nav.html")
           `\\text{Rationalize the numerator by multiplying by the conjugate.}`,
           `f'(x)=\\frac{${linearTex(2 * a, b)}}{2\\sqrt{${radTex}}}`
         ],
-        slopeHints: x0 => [
-          `f'(${x0})=\\frac{${2 * a}(${x0})${b ? (b > 0 ? `+${b}` : `${b}`) : ''}}{2\\sqrt{${substituteQuadraticTex(a,b,c,String(x0))}}}`,
-          `f'(${x0})=${decimalIfNeeded((2 * a * x0 + b) / (2 * Math.sqrt(evaluateQuadratic(a, b, c, x0))))}.`
-        ]
+        slopeHints: x0 => {
+          const numeratorValue = 2 * a * x0 + b;
+          const radicandValue = evaluateQuadratic(a, b, c, x0);
+          const exactSlopeTex = exactRootSlopeFractionTex(numeratorValue, radicandValue) || decimalIfNeeded(numeratorValue / (2 * Math.sqrt(radicandValue)));
+          return [
+            `f'(${x0})=\\frac{${2 * a}(${x0})${b ? (b > 0 ? `+${b}` : `${b}`) : ''}}{2\\sqrt{${substituteQuadraticTex(a,b,c,String(x0))}}}`,
+            `f'(${x0})=${exactSlopeTex}.`
+          ];
+        }
       };
     }
 
@@ -651,6 +689,9 @@ fetch("/nav.html")
         .replace(/−/g, '-')
         .replace(/\s+/g, '')
         .replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, '(($1)/($2))')
+        .replace(/\\sqrt\{([^{}]+)\}/g, 'sqrt($1)')
+        .replace(/√\(/g, 'sqrt(')
+        .replace(/√([0-9.]+|x)/g, 'sqrt($1)')
         .replace(/\^/g, '**')
         .toLowerCase();
     }
@@ -659,8 +700,8 @@ fetch("/nav.html")
       let s = normalizeAnswerText(raw);
       if (s.startsWith('y=')) s = s.slice(2);
       s = s.replace(/sqrt/g, 'Math.sqrt').replace(/pi/g, 'Math.PI');
-      // insert common implicit multiplication: 2x, 2(x+1), x(x+1), )(x), 2sqrt(x), xsqrt(x)
-      s = s.replace(/(\d|x|\))(?=(x|Math\.sqrt|\())/g, '$1*');
+      // insert common implicit multiplication: 2x, 2(x+1), x(x+1), )(x), 2sqrt(x), xsqrt(x), 2pi
+      s = s.replace(/(\d|x|\))(?=(x|Math\.sqrt|Math\.PI|\())/g, '$1*');
       s = s.replace(/(x|\))(?=\d)/g, '$1*');
       return s;
     }

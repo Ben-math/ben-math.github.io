@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -839,15 +840,18 @@ fetch("/nav.html")
             hints: fn.derivativeHints.concat([`f'(x)=${fn.derivativeTex}`])
           });
         }
+        const slopeStageHints = askDerivativeFunction
+          ? [
+              `\\begin{aligned}m&=f'(${x0})\\\\&=${fn.derivativeTex.replaceAll('x', `(${x0})`)}\\\\&=${slopeTex}\\end{aligned}`
+            ]
+          : fn.slopeHints(x0);
         stages.push({
           kind: 'slope',
           promptTex: `\\text{Find the slope of the tangent line at }x=${x0}.`,
           labelTex: `m=`,
           expectedValue: slope,
           expectedTex: slopeTex,
-          hints: askDerivativeFunction
-            ? [`\\text{Use the derivative function and substitute }x=${x0}.`].concat(fn.slopeHints(x0))
-            : fn.slopeHints(x0)
+          hints: slopeStageHints
         });
         stages.push({
           kind: 'line',

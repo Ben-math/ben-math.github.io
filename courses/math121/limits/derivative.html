@@ -305,6 +305,11 @@ fetch("/nav.html")
     rationalizing, or combining fractions) to cancel the \(h\) from the denominator and then do direct substitution.
     </p>
 
+    <p>Suppose we want to find the equation of the tangent line to \(f(x) = \sqrt{2x+5}\) at the point \((2,3)\).  We can start by finding the general 
+    form of the derivative using the definition: \[f'(x) = \lim_{h \to 0}\frac{\sqrt{2(x+h)+5}-\sqrt{2x+5}}{h} = \lim_{h \to 0}
+    \frac{(\sqrt{2x+2h+5}-\sqrt{2x+5})(\sqrt{2x+2h+5}+\sqrt{2x+5})}{h(\sqrt{2x+2h+5}+\sqrt{2x+5})}
+    =\lim_{h \to 0}\frac{2x+2h+5-(2x+5)}{h(\sqrt{2x+2h+5}+\sqrt{2x+5})}\]</p>
+
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>

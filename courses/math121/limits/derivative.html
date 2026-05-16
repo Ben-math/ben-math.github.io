@@ -3,6 +3,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -826,7 +827,7 @@ fetch("/nav.html")
           <div class="derivative-stage-row" data-stage-index="${index}" style="margin: 0.85em auto; text-align: center;">
             <div style="margin-bottom: 0.35em;">\\[${stage.promptTex}\\]</div>
             <span>\\(${stage.labelTex}\\)</span>
-            <input id="answer-editor-${index}" class="polynomial-answer-editor" ${locked ? 'disabled' : ''} style="min-width: 320px;" autocomplete="off" />
+            <span id="answer-editor-${index}" class="polynomial-answer-editor" contenteditable="${locked ? 'false' : 'true'}" role="textbox" aria-label="Derivative answer" style="min-width: 320px;"></span>
             ${locked ? '<span style="color: green; margin-left: 0.5em; font-weight: bold;">Correct!</span>' : ''}
             ${active ? answerToolbarHtml() : ''}
           </div>`;

@@ -9,6 +9,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -400,7 +401,7 @@ fetch("/nav.html")
       if (!Number.isFinite(num) || !Number.isFinite(den) || den === 0) return null;
       if (Math.abs(num - Math.round(num)) > 1e-10 || Math.abs(den - Math.round(den)) > 1e-10) return null;
       const f = frac(Math.round(num), Math.round(den));
-      return f.den === 1 ? `${f.num}` : `\frac{${f.num}}{${f.den}}`;
+      return f.den === 1 ? `${f.num}` : `\\frac{${f.num}}{${f.den}}`;
     }
 
     function signedSlopeInterceptTex(mTex, bTex, bValue) {
@@ -701,11 +702,11 @@ fetch("/nav.html")
           labelTex: `y=`,
           expectedM: slope,
           expectedB: intercept,
-          expectedTex: `${decimalIfNeeded(slope)}x ${intercept < 0 ? '-' : '+'} ${decimalIfNeeded(Math.abs(intercept))}`,
+          expectedTex: signedSlopeInterceptTex(slopeTex, interceptTex, intercept),
           hints: [
             `\\text{The point on the curve is }(${x0},${decimalIfNeeded(y0)})\\text{ and the slope is }m=${decimalIfNeeded(slope)}.`,
-            `y-${decimalIfNeeded(y0)}=${decimalIfNeeded(slope)}(x-${x0})`,
-            `y=${decimalIfNeeded(slope)}x ${intercept < 0 ? '-' : '+'} ${decimalIfNeeded(Math.abs(intercept))}`
+            `y-${y0Tex}=${slopeTex}(x-${x0})`,
+            `y=${signedSlopeInterceptTex(slopeTex, interceptTex, intercept)}`
           ]
         });
         return {

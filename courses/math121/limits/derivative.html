@@ -294,9 +294,15 @@ fetch("/nav.html")
   </header>
 
   <main>
-    <p>The limit definition of the derivative, \[f'(x) = \lim_{h \to 0}\frac{f(x+h)-f(x)}{h}\] can be annoying to use.  We will restrict our attention 
-    to relatively "simple" functions' derivatives.  Once you learn differentiation rules, this definition becomes obsolete, as it is far more 
-    time-consuming to use.  Evaluating these limits will involve using the same techniques as in Limits I (such as factoring or rationalizing) to 
+    <p>The derivative of a function \(f(x)\) at a particular value \(x=a\), denoted by \(f'(a)\), is the slope of the tangent line to \(f\) at \(a\). 
+    It can be found using the limit definition \[f'(a) = \lim_{h \to 0}\frac{f(a+h)-f(a)}{h}\]  For example, to find the slope of the tangent line 
+    to the function \(f(x) = x^2\) at \(x = 3\), we compute \[f'(3) = \lim_{h \to 0}\frac{f(3+h)-f(3)}{h} = \lim_{h \to 0}\frac{(3+h)^2-3^2}{h} 
+    = \lim_{h \to 0}\frac{9 + 6h + h^2 - 9}{h} = \lim_{h \to 0}\frac{6h+h^2}{h} = \lim_{h \to 0}(6 + h) = 6 + 0 = 6\] It would be very time-consuming 
+    to perform this computation repeatedly if you wanted the slope of the tangent at different points on the same function, so we can instead view 
+    the derivative of a function as itself being a function, \[f'(x) = \lim_{h \to 0}\frac{f(x+h)-f(x)}{h}\] We will restrict our attention to relatively 
+    "simple" functions' derivatives.  Once you learn differentiation rules, this definition becomes obsolete, as they are far quicker to use.
+    Evaluating these limits will involve using the same techniques as in Limits I (such as factoring, rationalizing, or 
+    combining fractions) to cancel the \(h\) from the denominator and then do direct substitution.  The preceding definition 
     </p>
 
     <div class="button-container">

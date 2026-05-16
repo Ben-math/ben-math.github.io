@@ -12,6 +12,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -747,7 +748,7 @@ fetch("/nav.html")
           expectedB: intercept,
           expectedTex: signedSlopeInterceptTex(slopeTex, interceptTex, intercept),
           hints: [
-            `\\text{The point on the curve is }(${x0},${decimalIfNeeded(y0)})\\text{ and the slope is }m=${decimalIfNeeded(slope)}.`,
+            `\\text{The point on the curve is }(${x0},${y0Tex})\\text{ and the slope is }m=${slopeTex}.`,
             `y-${y0Tex}=${slopeTex}(x-${x0})`,
             `y=${signedSlopeInterceptTex(slopeTex, interceptTex, intercept)}`
           ]

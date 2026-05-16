@@ -6,6 +6,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -361,6 +362,7 @@ fetch("/nav.html")
     let hintStep = 0;
     let mathJaxTypesetPromise = Promise.resolve();
     let hintIsTypesetting = false;
+    let activeMathEditor = null;
 
     function typesetElement(element) {
       if (!window.MathJax || !MathJax.typesetPromise) {
@@ -719,102 +721,98 @@ fetch("/nav.html")
       return document.getElementById(`answer-editor-${currentStageIndex}`);
     }
 
-    function selectionRangeInEditor(editor) {
+    function getInsertionEditor() {
+      const outer = getActiveEditor();
+      if (!outer) return null;
+      if (activeMathEditor && outer.contains(activeMathEditor) && activeMathEditor.isContentEditable) return activeMathEditor;
+      return outer;
+    }
+
+    function getEditorRange(editor) {
       const selection = window.getSelection();
-      let range;
-      if (selection.rangeCount && editor.contains(selection.getRangeAt(0).commonAncestorContainer)) {
-        range = selection.getRangeAt(0);
-      } else {
-        range = document.createRange();
-        range.selectNodeContents(editor);
-        range.collapse(false);
+      if (selection.rangeCount) {
+        const range = selection.getRangeAt(0);
+        const container = range.commonAncestorContainer.nodeType === Node.TEXT_NODE
+          ? range.commonAncestorContainer.parentElement
+          : range.commonAncestorContainer;
+        if (editor.contains(container) || editor === container) return range;
       }
-      return { selection, range };
+      const range = document.createRange();
+      range.selectNodeContents(editor);
+      range.collapse(false);
+      return range;
     }
 
-    function insertTextAtSelection(text, editor = getActiveEditor()) {
-      if (!editor) return;
-      const { selection, range } = selectionRangeInEditor(editor);
-      range.deleteContents();
-      const node = document.createTextNode(text);
-      range.insertNode(node);
-      range.setStartAfter(node);
-      range.collapse(true);
-      selection.removeAllRanges();
-      selection.addRange(range);
-      editor.focus();
-    }
-
-    function placeCursorInside(element) {
-      const selection = window.getSelection();
+    function placeCaretInside(element) {
       const range = document.createRange();
       range.selectNodeContents(element);
       range.collapse(false);
+      const selection = window.getSelection();
       selection.removeAllRanges();
       selection.addRange(range);
+      activeMathEditor = element;
       element.focus();
+    }
+
+    function placeCaretInTextNode(node, offset) {
+      const range = document.createRange();
+      range.setStart(node, offset);
+      range.collapse(true);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      const outer = getActiveEditor();
+      if (outer) outer.focus();
     }
 
     function makeCaretSpacer() {
       return document.createTextNode('\u200b');
     }
 
-    function setCaretInNode(node, atEnd = true) {
-      const selection = window.getSelection();
-      const range = document.createRange();
-      if (node.nodeType === Node.TEXT_NODE) {
-        range.setStart(node, atEnd ? node.textContent.length : 0);
-      } else {
-        range.selectNodeContents(node);
-        range.collapse(!atEnd);
-      }
-      range.collapse(true);
-      selection.removeAllRanges();
-      selection.addRange(range);
-      const editor = getActiveEditor();
-      if (editor) editor.focus();
+    function insertTextAtSelection(text, editor = getInsertionEditor()) {
+      if (!editor) return;
+      const range = getEditorRange(editor);
+      range.deleteContents();
+      const node = document.createTextNode(text);
+      range.insertNode(node);
+      placeCaretInTextNode(node, node.textContent.length);
     }
 
-    function insertExponentAtSelection(editor = getActiveEditor()) {
+    function insertExponentAtSelection(editor = getInsertionEditor()) {
       if (!editor) return;
-      const { range } = selectionRangeInEditor(editor);
+      const range = getEditorRange(editor);
       range.deleteContents();
       const exponent = document.createElement('span');
-      exponent.className = 'exponent-entry';
+      exponent.className = 'exponent-entry special-wrapper special-entry';
+      exponent.setAttribute('data-special-wrapper', 'exponent');
+      exponent.setAttribute('data-special-entry', 'exponent');
       exponent.contentEditable = 'true';
-      exponent.appendChild(makeCaretSpacer());
-      const spacer = makeCaretSpacer();
-      range.insertNode(spacer);
       range.insertNode(exponent);
-      setCaretInNode(exponent.firstChild, true);
+      placeCaretInside(exponent);
     }
 
-    function insertFractionAtSelection(editor = getActiveEditor()) {
+    function insertFractionAtSelection(editor = getInsertionEditor()) {
       if (!editor) return;
-      const { range } = selectionRangeInEditor(editor);
+      const range = getEditorRange(editor);
       range.deleteContents();
       const wrapper = document.createElement('span');
-      wrapper.className = 'fraction-entry';
-      wrapper.contentEditable = 'false';
-      wrapper.innerHTML = '<span class="fraction-numerator" contenteditable="true">\u200b</span><span class="fraction-denominator" contenteditable="true">\u200b</span>';
-      const spacer = makeCaretSpacer();
-      range.insertNode(spacer);
+      wrapper.className = 'fraction-entry special-wrapper';
+      wrapper.setAttribute('data-special-wrapper', 'fraction');
+      wrapper.innerHTML = '<span class="fraction-numerator special-entry" contenteditable="true" data-special-entry="fraction-numerator"></span><span class="fraction-denominator special-entry" contenteditable="true" data-special-entry="fraction-denominator"></span>';
       range.insertNode(wrapper);
-      setCaretInNode(wrapper.querySelector('.fraction-numerator').firstChild, true);
+      placeCaretInside(wrapper.querySelector('.fraction-numerator'));
     }
 
-    function insertRadicalAtSelection(editor = getActiveEditor()) {
+    function insertRadicalAtSelection(editor = getInsertionEditor()) {
       if (!editor) return;
-      const { range } = selectionRangeInEditor(editor);
+      const range = getEditorRange(editor);
       range.deleteContents();
       const wrapper = document.createElement('span');
-      wrapper.className = 'math-radical';
-      wrapper.contentEditable = 'false';
-      wrapper.innerHTML = '<span class="radical-symbol">√</span><span class="radical-entry" contenteditable="true">\u200b</span>';
-      const spacer = makeCaretSpacer();
-      range.insertNode(spacer);
+      wrapper.className = 'math-radical special-wrapper';
+      wrapper.setAttribute('data-special-wrapper', 'radical');
+      wrapper.innerHTML = '<span class="radical-symbol">√</span><span class="radical-entry special-entry" contenteditable="true" data-special-entry="radical"></span>';
       range.insertNode(wrapper);
-      setCaretInNode(wrapper.querySelector('.radical-entry').firstChild, true);
+      placeCaretInside(wrapper.querySelector('.radical-entry'));
     }
 
     function editorToPlainText(editor) {
@@ -878,7 +876,9 @@ fetch("/nav.html")
         next = makeCaretSpacer();
         element.parentNode.insertBefore(next, element.nextSibling);
       }
-      setCaretInNode(next, true);
+      placeCaretInTextNode(next, next.textContent.length);
+      const outer = getActiveEditor();
+      activeMathEditor = outer && outer.contains(next) ? outer : null;
     }
 
     function moveCursorBeforeElement(element) {
@@ -887,7 +887,9 @@ fetch("/nav.html")
         previous = makeCaretSpacer();
         element.parentNode.insertBefore(previous, element);
       }
-      setCaretInNode(previous, false);
+      placeCaretInTextNode(previous, 0);
+      const outer = getActiveEditor();
+      activeMathEditor = outer && outer.contains(previous) ? outer : null;
     }
 
     function previousNodeBeforeCaret(range) {
@@ -918,9 +920,12 @@ fetch("/nav.html")
     }
 
     function handleMathEditorKeydown(event) {
+      const target = event.target.closest && event.target.closest('.polynomial-answer-editor, .special-entry');
+      if (target && target.isContentEditable) activeMathEditor = target;
+
       if (event.key === '^') {
         event.preventDefault();
-        insertExponentAtSelection(getActiveEditor());
+        insertExponentAtSelection(getInsertionEditor());
         return;
       }
 
@@ -973,16 +978,30 @@ fetch("/nav.html")
         if (editor && stage.savedAnswerHtml !== undefined) editor.innerHTML = stage.savedAnswerHtml;
       });
 
-      finalAnswerInput.querySelectorAll('.polynomial-answer-editor').forEach(editor => {
-        editor.addEventListener('keydown', handleMathEditorKeydown);
-      });
+      const activeInput = getActiveEditor();
+      activeMathEditor = activeInput;
+
+      finalAnswerInput.onfocusin = event => {
+        const editable = event.target.closest && event.target.closest('.special-entry, .polynomial-answer-editor');
+        const outer = getActiveEditor();
+        if (editable && outer && outer.contains(editable) && editable.isContentEditable) activeMathEditor = editable;
+      };
+      finalAnswerInput.onmousedown = event => {
+        const editable = event.target.closest && event.target.closest('.special-entry, .polynomial-answer-editor');
+        const outer = getActiveEditor();
+        if (editable && outer && outer.contains(editable) && editable.isContentEditable) activeMathEditor = editable;
+      };
+      finalAnswerInput.onkeydown = event => {
+        if (event.target.closest && event.target.closest('.polynomial-answer-editor, .special-entry')) {
+          handleMathEditorKeydown(event);
+        }
+      };
 
       finalAnswerInput.querySelectorAll('.math-symbol-button').forEach(button => {
         button.addEventListener('mousedown', event => event.preventDefault());
         button.addEventListener('click', () => {
-          const editor = getActiveEditor();
+          const editor = getInsertionEditor();
           if (!editor) return;
-          editor.focus();
           if (button.dataset.insertExponent) insertExponentAtSelection(editor);
           else if (button.dataset.insertFraction) insertFractionAtSelection(editor);
           else if (button.dataset.insertRadical) insertRadicalAtSelection(editor);
@@ -991,7 +1010,6 @@ fetch("/nav.html")
       });
 
       typesetElement(finalAnswerInput);
-      const activeInput = getActiveEditor();
       if (activeInput) activeInput.focus();
     }
 

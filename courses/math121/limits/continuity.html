@@ -8,6 +8,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -734,10 +735,10 @@ fetch("/nav.html")
         if (isBoundedNonemptyDomain(domain)) {
           return {
             kind: 'root',
-            tex: `\sqrt[${n}]{${inner.tex}}`,
+            tex: `\\sqrt[${n}]{${inner.tex}}`,
             domain,
             signData: null,
-            restrictionText: `need ${inner.tex}\geq 0, and the inside must be defined`
+            restrictionText: `need ${inner.tex}\\geq 0, and the inside must be defined`
           };
         }
       }
@@ -758,12 +759,12 @@ fetch("/nav.html")
     function makeSpecialTanComponent() {
       return {
         kind: 'tan',
-        tex: `\tan(x)`,
+        tex: `\\tan(x)`,
         domain: ALL_REALS,
         signData: null,
         isTanComponent: true,
         tanDisplayDomain: true,
-        restrictionText: `tangent is undefined at x=\frac{\pi}{2}+k\pi`
+        restrictionText: `tangent is undefined at x=\\frac{\\pi}{2}+k\\pi`
       };
     }
 
@@ -822,18 +823,18 @@ fetch("/nav.html")
       const hints = terms.map((term, i) => {
         if (term.component.isTanComponent) {
           return {
-            tex: `\text{Term ${i + 1}: }\tan(x)\text{ is continuous on }\mathbb{R}\setminus\left\{\frac{\pi}{2}+k\pi : k\in\mathbb{Z}\right\}.`,
+            tex: `\\text{Term ${i + 1}: }\\tan(x)\\text{ is continuous on }\\mathbb{R}\\setminus\\left\\{\\frac{\\pi}{2}+k\\pi : k\\in\\mathbb{Z}\\right\\}.`,
             intervals: ALL_REALS,
             showTangentHoles: true
           };
         }
         return {
-          tex: `\text{Term ${i + 1}: }${term.component.tex}\text{ is continuous on }${intervalsToTex(term.component.domain)}\text{.}`,
+          tex: `\\text{Term ${i + 1}: }${term.component.tex}\\text{ is continuous on }${intervalsToTex(term.component.domain)}\\text{.}`,
           intervals: term.component.domain
         };
       });
       hints.push({
-        tex: `\text{Intersect the term domains: }${intervalsToTex(domain)}.`,
+        tex: `\\text{Intersect the term domains: }${intervalsToTex(domain)}.`,
         intervals: domain
       });
       return hints;
@@ -906,7 +907,7 @@ fetch("/nav.html")
         domain: ALL_REALS,
         solutionTex: intervalsToTex(ALL_REALS),
         hints: [{
-          tex: `\text{This polynomial is continuous for all real numbers, so the answer is }${intervalsToTex(ALL_REALS)}.`,
+          tex: `\\text{This polynomial is continuous for all real numbers, so the answer is }${intervalsToTex(ALL_REALS)}.`,
           intervals: ALL_REALS
         }]
       };

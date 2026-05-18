@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -309,7 +310,7 @@ fetch("/nav.html")
     function \(f(x)\) over an interval \([a,b]\), we compute the slope of the <b>secant line</b>: a linear which passes through the points 
     \((a,f(a))\) and \((b,f(b))\).</p>
 
-    <p>This activity is under construction.</p>
+    <p>Press Start to generate a function and interval, then compute the average rate of change / slope of the secant line.</p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
@@ -809,65 +810,70 @@ fetch("/nav.html")
       return candidates.length ? randomChoice(candidates) : null;
     }
 
+    function chooseValidInterval(fn) {
+      const candidates = [];
+      for (let a = -9; a <= 8; a++) {
+        for (let b = a + 1; b <= 9; b++) {
+          const fa = fn.value(a);
+          const fb = fn.value(b);
+          if (fn.validAt(a) && fn.validAt(b) && Number.isFinite(fa) && Number.isFinite(fb)) {
+            candidates.push({ a, b, fa, fb });
+          }
+        }
+      }
+      return candidates.length ? randomChoice(candidates) : null;
+    }
+
+    function functionValueTex(fn, x) {
+      if (fn.valueTex) return fn.valueTex(x);
+      return decimalIfNeeded(fn.value(x));
+    }
+
+    function secantSlopeTex(fn, a, b, fa, fb, faTex, fbTex) {
+      if (Math.abs(fa - Math.round(fa)) < 1e-10 && Math.abs(fb - Math.round(fb)) < 1e-10) {
+        const exact = fractionTexFromIntegers(Math.round(fb - fa), b - a);
+        if (exact !== null) return exact;
+      }
+      return b - a === 1 ? `${fbTex}-(${faTex})` : `\frac{${fbTex}-(${faTex})}{${b-a}}`;
+    }
+
     function lineSlopeIntercept(m, x0, y0) { return y0 - m * x0; }
 
     function generateDerivativeProblem() {
       for (let attempt = 0; attempt < 400; attempt++) {
         const fn = makeFunction();
-        const x0 = chooseValidX0(fn);
-        if (x0 === null) continue;
-        const y0 = fn.value(x0);
-        const slope = fn.derivative(x0);
-        const intercept = lineSlopeIntercept(slope, x0, y0);
-        if (!Number.isFinite(y0) || !Number.isFinite(slope) || !Number.isFinite(intercept)) continue;
-        const y0Tex = fn.valueTex ? fn.valueTex(x0) : decimalIfNeeded(y0);
-        const slopeTex = fn.derivativeAtTex ? fn.derivativeAtTex(x0) : decimalIfNeeded(slope);
-        const interceptTex = fn.interceptTex ? fn.interceptTex(x0) : decimalIfNeeded(intercept);
-        const absInterceptTex = fn.interceptTex ? String(interceptTex).replace(/^-/,'') : decimalIfNeeded(Math.abs(intercept));
-        const askDerivativeFunction = Math.random() < 0.5;
-        const stages = [];
-        if (askDerivativeFunction) {
-          stages.push({
-            kind: 'derivative-function',
-            promptTex: `\\text{First find }f'(x).`,
-            labelTex: `f'(x)=`,
-            expectedExpression: fn.derivativeExpression,
-            expectedTex: fn.derivativeTex,
-            hints: fn.derivativeHints.concat([`f'(x)=${fn.derivativeTex}`])
-          });
-        }
-        const slopeStageHints = askDerivativeFunction
-          ? [
-              `\\begin{aligned}m&=f'(${x0})\\\\&=${fn.derivativeTex.replaceAll('x', `(${x0})`)}\\\\&=${slopeTex}\\end{aligned}`
-            ]
-          : fn.slopeHints(x0);
-        stages.push({
-          kind: 'slope',
-          promptTex: `\\text{Find the slope of the tangent line at }x=${x0}.`,
-          labelTex: `m=`,
-          expectedValue: slope,
-          expectedTex: slopeTex,
-          hints: slopeStageHints
-        });
-        stages.push({
-          kind: 'line',
-          promptTex: `\\text{Find the equation of the tangent line. Give your answer in the form }y=mx+b.`,
-          labelTex: `y=`,
-          expectedM: slope,
-          expectedB: intercept,
-          expectedTex: signedSlopeInterceptTex(slopeTex, interceptTex, intercept),
-          hints: [
-            `\\text{The point on the curve is }(${x0},${y0Tex})\\text{ and the slope is }m=${slopeTex}.`,
-            `y-${y0Tex}=${slopeTex}(x-${x0})`,
-            `y=${signedSlopeInterceptTex(slopeTex, interceptTex, intercept)}`
-          ]
-        });
+        const interval = chooseValidInterval(fn);
+        if (!interval) continue;
+        const { a, b, fa, fb } = interval;
+        const slope = (fb - fa) / (b - a);
+        if (!Number.isFinite(slope)) continue;
+        const faTex = functionValueTex(fn, a);
+        const fbTex = functionValueTex(fn, b);
+        const slopeTex = secantSlopeTex(fn, a, b, fa, fb, faTex, fbTex);
+        const intervalTex = `[${a},${b}]`;
+        const askAverageRate = Math.random() < 0.5;
+        const promptTex = askAverageRate
+          ? `\text{Find the average rate of change of the function } f(x)=${fn.tex} \text{ on the interval } ${intervalTex}.`
+          : `\text{Find the slope of the secant line on the interval } ${intervalTex} \text{ for the function } f(x)=${fn.tex}.`;
+        const labelTex = askAverageRate ? `\text{Average rate}= ` : `m_{\text{sec}}=`;
         return {
           functionTex: fn.tex,
-          x0, y0, slope, intercept,
-          askDerivativeFunction,
-          stages,
-          questionTex: `f(x)=${fn.tex}`
+          a,
+          b,
+          fa,
+          fb,
+          slope,
+          questionTex: promptTex,
+          stages: [{
+            kind: 'secant-slope',
+            promptTex: '',
+            labelTex,
+            expectedValue: slope,
+            expectedTex: slopeTex,
+            hints: [
+              `\text{The slope of the secant line on }[${a},${b}]\text{ is }\frac{f(${b})-f(${a})}{${b}-${a}}=\frac{${fbTex}-(${faTex})}{${b-a}}=${slopeTex}`
+            ]
+          }]
         };
       }
       return generateDerivativeProblem();
@@ -1195,9 +1201,9 @@ fetch("/nav.html")
         if (hidden) return '';
         return `
           <div class="derivative-stage-row" data-stage-index="${index}" style="margin: 0.85em auto; text-align: center;">
-            <div style="margin-bottom: 0.35em;">\\[${stage.promptTex}\\]</div>
+            ${stage.promptTex ? '<div style="margin-bottom: 0.35em;">\\[' + stage.promptTex + '\\]</div>' : ''}
             <span>\\(${stage.labelTex}\\)</span>
-            <span id="answer-editor-${index}" class="polynomial-answer-editor" contenteditable="${locked ? 'false' : 'true'}" role="textbox" aria-label="Derivative answer" style="min-width: 320px;"></span>
+            <span id="answer-editor-${index}" class="polynomial-answer-editor" contenteditable="${locked ? 'false' : 'true'}" role="textbox" aria-label="Answer" style="min-width: 320px;"></span>
             ${locked ? '<span style="color: green; margin-left: 0.5em; font-weight: bold;">Correct!</span>' : ''}
             ${active ? answerToolbarHtml() : ''}
           </div>`;
@@ -1244,6 +1250,7 @@ fetch("/nav.html")
     }
 
     function currentStageIsCorrect(stage, raw) {
+      if (stage.kind === 'secant-slope') return numericAnswerMatches(raw, stage.expectedValue);
       if (stage.kind === 'derivative-function') return expressionMatches(raw, stage.expectedExpression);
       if (stage.kind === 'slope') return numericAnswerMatches(raw, stage.expectedValue);
       if (stage.kind === 'line') return lineAnswerMatches(raw, stage.expectedM, stage.expectedB);

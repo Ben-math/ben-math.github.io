@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -834,7 +835,7 @@ fetch("/nav.html")
         const exact = fractionTexFromIntegers(Math.round(fb - fa), b - a);
         if (exact !== null) return exact;
       }
-      return b - a === 1 ? `${fbTex}-(${faTex})` : `\frac{${fbTex}-(${faTex})}{${b-a}}`;
+      return b - a === 1 ? `${fbTex}-(${faTex})` : `\\frac{${fbTex}-(${faTex})}{${b-a}}`;
     }
 
     function lineSlopeIntercept(m, x0, y0) { return y0 - m * x0; }
@@ -853,9 +854,9 @@ fetch("/nav.html")
         const intervalTex = `[${a},${b}]`;
         const askAverageRate = Math.random() < 0.5;
         const promptTex = askAverageRate
-          ? `\text{Find the average rate of change of the function } f(x)=${fn.tex} \text{ on the interval } ${intervalTex}.`
-          : `\text{Find the slope of the secant line on the interval } ${intervalTex} \text{ for the function } f(x)=${fn.tex}.`;
-        const labelTex = askAverageRate ? `\text{Average rate}= ` : `m_{\text{sec}}=`;
+          ? `\\text{Find the average rate of change of the function } f(x)=${fn.tex} \\text{ on the interval } ${intervalTex}.`
+          : `\\text{Find the slope of the secant line on the interval } ${intervalTex} \\text{ for the function } f(x)=${fn.tex}.`;
+        const labelTex = askAverageRate ? `\\text{Average rate}= ` : `m_{\\text{sec}}=`;
         return {
           functionTex: fn.tex,
           a,
@@ -871,7 +872,7 @@ fetch("/nav.html")
             expectedValue: slope,
             expectedTex: slopeTex,
             hints: [
-              `\text{The slope of the secant line on }[${a},${b}]\text{ is }\frac{f(${b})-f(${a})}{${b}-${a}}=\frac{${fbTex}-(${faTex})}{${b-a}}=${slopeTex}`
+              `\\text{The slope of the secant line on }[${a},${b}]\\text{ is }\\frac{f(${b})-f(${a})}{${b}-${a}}=\\frac{${fbTex}-(${faTex})}{${b-a}}=${slopeTex}`
             ]
           }]
         };

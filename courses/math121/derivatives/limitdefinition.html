@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -845,9 +846,12 @@ fetch("/nav.html")
               `\\begin{aligned}m&=f'(${x0})\\\\&=${fn.derivativeTex.replaceAll('x', `(${x0})`)}\\\\&=${slopeTex}\\end{aligned}`
             ]
           : fn.slopeHints(x0);
+        const askInstantaneousRate = Math.random() < 0.5;
         stages.push({
           kind: 'slope',
-          promptTex: `\\text{Find the slope of the tangent line at }x=${x0}.`,
+          promptTex: askInstantaneousRate
+            ? `\\text{Find the instantaneous rate of change of }f(x)\\text{ at }x=${x0}.`
+            : `\\text{Find the slope of the tangent line to }f(x)\\text{ at }x=${x0}.`,
           labelTex: `m=`,
           expectedValue: slope,
           expectedTex: slopeTex,
@@ -855,7 +859,7 @@ fetch("/nav.html")
         });
         stages.push({
           kind: 'line',
-          promptTex: `\\text{Find the equation of the tangent line. Give your answer in the form }y=mx+b.`,
+          promptTex: `\\text{Find the equation of the tangent line to }f(x)\\text{ at }x=${x0}. \\text{ Give your answer in the form }y=mx+b.`,
           labelTex: `y=`,
           expectedM: slope,
           expectedB: intercept,

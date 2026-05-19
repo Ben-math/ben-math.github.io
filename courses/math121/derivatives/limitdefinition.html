@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -398,6 +399,17 @@ fetch("/nav.html")
       if (Math.abs(bValue) < 1e-10) return `${mTex}x`;
       const cleanB = String(bTex).replace(/^-/,'');
       return `${mTex}x ${bValue < 0 ? '-' : '+'} ${cleanB}`;
+    }
+
+    function pointSlopeLeftSideTex(yValueTex, yValue) {
+      const cleanY = String(yValueTex).replace(/^-/,'');
+      if (Math.abs(yValue) < 1e-10) return 'y';
+      return `y ${yValue < 0 ? '+' : '-'} ${cleanY}`;
+    }
+
+    function pointSlopeXFactorTex(xValue) {
+      if (xValue === 0) return 'x';
+      return `x ${xValue < 0 ? '+' : '-'} ${Math.abs(xValue)}`;
     }
 
     function numberTex(value) {
@@ -866,7 +878,7 @@ fetch("/nav.html")
           expectedTex: signedSlopeInterceptTex(slopeTex, interceptTex, intercept),
           hints: [
             `\\text{The point on the curve is }(${x0},${y0Tex})\\text{ and the slope is }m=${slopeTex}.`,
-            `y-${y0Tex}=${slopeTex}(x-${x0})`,
+            `${pointSlopeLeftSideTex(y0Tex, y0)}=${slopeTex}(${pointSlopeXFactorTex(x0)})`,
             `y=${signedSlopeInterceptTex(slopeTex, interceptTex, intercept)}`
           ]
         });

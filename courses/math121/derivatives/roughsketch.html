@@ -1,0 +1,1360 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta charset="UTF-8" />
+  <title>(Rough) Derivative Sketching</title>
+  <link rel="stylesheet" href="/style.css" />
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+
+  <style>
+    .polynomial-answer-editor {
+      display: inline-block;
+      min-width: 260px;
+      min-height: 1.8em;
+      padding: 0.35em 0.55em;
+      border: 2px solid #555;
+      border-radius: 8px;
+      background: white;
+      font-size: 1.25em;
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    .polynomial-answer-editor:focus {
+      outline: 3px solid rgba(80, 140, 255, 0.35);
+    }
+
+    .exponent-entry {
+      font-size: 0.7em;
+      vertical-align: super;
+      display: inline-block;
+      min-width: 0.7em;
+      min-height: 1em;
+      padding: 0 0.08em;
+      border-bottom: 1px solid #777;
+      line-height: 1;
+    }
+
+
+    .answer-toolbar {
+      margin-top: 0.65em;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4em;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .math-symbol-button {
+      border: 2px solid #555;
+      border-radius: 8px;
+      background: white;
+      padding: 0.25em 0.6em;
+      font-size: 1.05em;
+      cursor: pointer;
+    }
+
+    .math-symbol-button:hover {
+      background: #f2f2f2;
+    }
+
+    .interval-answer-editor {
+      min-width: 420px;
+    }
+
+    .math-radical {
+      display: inline-flex;
+      align-items: flex-start;
+      vertical-align: middle;
+      margin: 0 0.08em;
+    }
+
+    .radical-symbol {
+      font-size: 1.25em;
+      line-height: 1;
+      padding-top: 0.06em;
+    }
+
+    .radical-entry {
+      display: inline-block;
+      min-width: 1.2em;
+      min-height: 1.1em;
+      border-top: 2px solid #222;
+      padding: 0 0.12em;
+      line-height: 1.15;
+    }
+
+    .fraction-entry {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: stretch;
+      vertical-align: middle;
+      min-width: 1.4em;
+      margin: 0 0.08em;
+      text-align: center;
+      line-height: 1.05;
+    }
+
+    .fraction-numerator,
+    .fraction-denominator {
+      display: block;
+      min-width: 1.2em;
+      min-height: 1em;
+      padding: 0 0.15em;
+    }
+
+    .fraction-numerator {
+      border-bottom: 2px solid #222;
+    }
+
+    .fraction-denominator {
+      padding-top: 0.05em;
+    }
+
+
+    .fraction-button-display {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 0.9;
+      min-width: 1.1em;
+      vertical-align: middle;
+    }
+
+    .fraction-button-display .fraction-button-top {
+      display: block;
+      border-bottom: 1.5px solid currentColor;
+      padding: 0 0.18em 0.04em;
+    }
+
+    .fraction-button-display .fraction-button-bottom {
+      display: block;
+      padding: 0.04em 0.18em 0;
+    }
+
+
+    .interval-tool-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.75em;
+      margin: 0.75em 0;
+      flex-wrap: wrap;
+    }
+
+    .interval-tool-button {
+      border: 3px solid #1a1a4b;
+      border-radius: 0.75em;
+      background: #ffde59;
+      padding: 0.35em 0.55em;
+      cursor: pointer;
+      box-shadow: 2px 2px 0 #1a1a4b;
+    }
+
+    .interval-tool-button.selected {
+      background: #ffb347;
+      transform: translateY(2px);
+      box-shadow: 1px 1px 0 #1a1a4b;
+    }
+
+    .interval-tool-button svg {
+      display: block;
+    }
+
+    .interval-clear-button {
+      margin-left: 0.5em;
+    }
+
+
+    .restricted-answer-editor {
+      display: inline-block;
+      min-width: 460px;
+      min-height: 1.8em;
+      padding: 0.35em 0.55em;
+      border: 2px solid #555;
+      border-radius: 8px;
+      background: white;
+      font-size: 1.25em;
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    .restricted-answer-editor:focus {
+      outline: 3px solid rgba(80, 140, 255, 0.35);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>(Rough) Derivative Sketching</h1>
+    <div id="nav-placeholder"></div>
+    <script>
+fetch("/nav.html")
+  .then(response => response.text())
+  .then(html => {
+    document.getElementById("nav-placeholder").innerHTML = html;
+
+    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+    const navLinks = document.querySelectorAll("#nav-placeholder a");
+    navLinks.forEach(link => {
+      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+      if (linkPath === currentPath) {
+        link.classList.add("active");
+      }
+    });
+
+    const s = document.createElement("script");
+    s.src = "/mascot.js";
+    s.defer = true;
+    document.body.appendChild(s);
+  })
+  .catch(err => {
+    console.error("Failed to load nav:", err);
+  });
+    </script>
+  </header>
+
+  <main>
+    <p>We often need to refer to ranges of values of a variable.  For instance, we might ask "For which values of \(x\) is \(\sqrt{x}\) defined?"</p>
+
+    <p>We can answer this question in a few ways:</p>
+
+    <ul>
+      <li>In English: "When \(x\) is greater than or equal to zero" or "When \(x\) is at least zero"</li>
+      <li>Using inequality symbols: "When \(x \geq 0\)"</li>
+      <li>In interval notation: "For \(x \in [0,\infty)\)"</li>
+    </ul>
+
+    <p>Which of these you use is largely a matter of preference: the goal is communication, so however you can communicate your solution most clearly 
+    is ideal.  Some things to consider:</p>
+
+    <ul>
+      <li>English sometimes has multiple ways of expressing the same thing: some people like this, some don't.  We just saw above an example: both 
+      "greater than or equal to" and "at least" are both represented by the inequality symbol \(\geq\), and likewise, "less than or equal to" and 
+      "at most" are both represented by the inequality symbol \(\leq\)</li>
+      <li>Inequality symbols are great when the interval you're describing is relatively simple.  However as things get more complicated, you may 
+      find yourself having difficulty.  To describe using inequalities \[\text{The set of \(x\) between 3 and 5 (inclusive) or smaller than \(-2\)}\] one 
+      could say \[x < -2 \text{ or } (x \geq 3 \text{ and } x \leq 5)\] which could be written more simply as \[x < -2 \text{ or } 3 \leq x \leq 5\] 
+      Note that both English and the inequality symbols relied on the logical operators "or" and "and".</li>
+      <li>Interval notation is often the neatest.  In place of the logical operators "or" and "and", we have the set operations \(\cup\) (union) and 
+      \(\cap\) (intersection).  The example above could be written as \[(-\infty,-2) \cup ([3,\infty) \cap (-\infty,5])\] or more simply as 
+      \[(-\infty,-2) \cup [3,5]\]</li>
+    </ul>
+
+    <p>If the preceding didn't make sense to you, worry not: we now formally define the symbols above, together with a picture example.</p>
+        
+    <p>In interval notation, we use round brackets to indicate that we include values up to <b>but not including</b> that endpoint.  In terms of 
+    inequalities, this corresponds to strict inequality symbols \(<\) and \(>\).  In a picture, we use an open dot (a circle which isn't filled in) 
+    to represent that the endpoint itself isn't included.</p>  
+    
+    <p>In interval notation, we use square brackets if we also include the endpoint, and in inequalities this corresponds to the less-than-or-equal-to 
+    and greater-than-or-equal-to symbols, \(\leq\) and \(\geq\). In a picture, we use a closed dot (a filled-in circle) to represent the inclusion of 
+    the endpoint.</p>
+
+    <p>In the case of positive or negative infinity, \(-\infty\) and \(\infty\), we always use round brackets in interval notation, and an arrow in a 
+    picture, to indicate that we continue indefinitely in that direction (since we can't actually reach that "endpoint", as infinity is not a number).</p>
+      
+    <p>The union operation, \(A \cup B\) means that we include elements in either set \(A\) or set \(B\), and the intersection operation, \(A \cap B\) 
+    means that we include elements which are in both the set \(A\) and the set \(B\) <i>simultaneously</i> (you can think of this as being where 
+    the two sets overlap).</p>
+
+    <figure style="text-align: center;">
+      <img src="fig19.png" alt="Intervals example" style="display: inline-block;">
+    </figure>
+
+    <p>In the above picture, in terms of inequalities, we have the set \[-8 < x < -6 \text{ or } -1 < x \leq 3 \text{ or } 7 \leq x\] or in interval 
+    notation, \[x \in (-8,-6) \cup (-1,3] \cup [7,\infty)\]</p>
+
+    <p>Now you try!  In the first type of activity, you will be provided with a description of intervals (in either English, via inequalities, or 
+    interval notation), and tasked with placing them on a number line.  In the second activity, you will be given a set of intervals on a number line, 
+    and tasked with describing them using either inequalities or interval notation.  The parser for inequalities isn't the greatest, so it may 
+    reject legitimately correct answers which aren't formulated precisely as expected.</p>
+
+
+    <div class="button-container">
+      <button id="start-btn" class="rubber-button">Start!</button>
+    </div>
+
+    <p id="question-text"></p>
+
+    <div id="final-answer-input" style="text-align: center; margin-top: 1em;"></div>
+
+    <div class="button-container">
+      <button id="check-btn" class="rubber-button" style="display: none;">Check Answer</button>
+    </div>
+
+    <div class="button-container">
+      <div id="feedbackText" class="center-feedback"></div>
+    </div>
+
+    <div class="button-container">
+      <button id="hint-btn" class="rubber-button">Hint</button>
+    </div>
+
+    <div id="hint-area" class="math" style="margin-top: 1em;"></div>
+
+    <div id="my-activity" style="display: none;"></div>
+  </main>
+
+  <script>
+
+    const hintBtn = document.getElementById('hint-btn');
+    const hintArea = document.getElementById('hint-area');
+    const startBtn = document.getElementById('start-btn');
+    const questionText = document.getElementById('question-text');
+    const checkBtn = document.getElementById('check-btn');
+    const feedbackText = document.getElementById('feedbackText');
+    const finalAnswerInput = document.getElementById('final-answer-input');
+    const activityDiv = document.getElementById('my-activity');
+
+    let currentProblem = null;
+    let mathJaxTypesetPromise = Promise.resolve();
+    let selectedIntervalTool = 'closed';
+    let pendingIntervalStart = null;
+    let placedIntervals = [];
+    let type1Canvas = null;
+    let activeType2Editor = null;
+
+    function typesetElement(element) {
+      if (!window.MathJax || !MathJax.typesetPromise) {
+        if (window.MathJax && MathJax.typeset) MathJax.typeset([element]);
+        return Promise.resolve();
+      }
+
+      mathJaxTypesetPromise = mathJaxTypesetPromise
+        .then(() => MathJax.typesetPromise([element]))
+        .catch(error => console.error('MathJax typesetting failed:', error));
+      return mathJaxTypesetPromise;
+    }
+
+    function randomInteger(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function randomChoice(items) {
+      return items[randomInteger(0, items.length - 1)];
+    }
+
+    function coinFlip() {
+      return Math.random() < 0.5;
+    }
+
+    function endpointTex(value) {
+      if (value === Infinity) return '\\infty';
+      if (value === -Infinity) return '-\\infty';
+      return String(value);
+    }
+
+    function endpointPlain(value) {
+      if (value === Infinity) return '∞';
+      if (value === -Infinity) return '-∞';
+      return String(value);
+    }
+
+    function intervalToTex(interval) {
+      const leftBracket = interval.leftClosed ? '[' : '(';
+      const rightBracket = interval.rightClosed ? ']' : ')';
+      return `${leftBracket}${endpointTex(interval.left)}, ${endpointTex(interval.right)}${rightBracket}`;
+    }
+
+    function intervalsToTex(intervals) {
+      return intervals.map(intervalToTex).join(' \\cup ');
+    }
+
+    function oneSidedInequalityTex(interval) {
+      if (interval.left === -Infinity) {
+        return `x ${interval.rightClosed ? '\\leq' : '<'} ${endpointTex(interval.right)}`;
+      }
+      if (interval.right === Infinity) {
+        return `x ${interval.leftClosed ? '\\geq' : '>'} ${endpointTex(interval.left)}`;
+      }
+      return `${endpointTex(interval.left)} ${interval.leftClosed ? '\\leq' : '<'} x ${interval.rightClosed ? '\\leq' : '<'} ${endpointTex(interval.right)}`;
+    }
+
+    function intervalsToInequalityTex(intervals) {
+      return intervals.map(oneSidedInequalityTex).join(' \\text{ or } ');
+    }
+
+    function endpointEnglish(value) {
+      if (value === Infinity) return 'infinity';
+      if (value === -Infinity) return 'negative infinity';
+      return String(value);
+    }
+
+    function intervalToEnglish(interval) {
+      if (interval.left === -Infinity) {
+        return interval.rightClosed
+          ? `all numbers less than or equal to ${endpointEnglish(interval.right)}`
+          : `all numbers less than ${endpointEnglish(interval.right)}`;
+      }
+      if (interval.right === Infinity) {
+        return interval.leftClosed
+          ? `all numbers greater than or equal to ${endpointEnglish(interval.left)}`
+          : `all numbers greater than ${endpointEnglish(interval.left)}`;
+      }
+
+      const leftPhrase = interval.leftClosed ? 'greater than or equal to' : 'greater than';
+      const rightPhrase = interval.rightClosed ? 'less than or equal to' : 'less than';
+      return `all numbers ${leftPhrase} ${endpointEnglish(interval.left)} and ${rightPhrase} ${endpointEnglish(interval.right)}`;
+    }
+
+    function intervalsToEnglish(intervals) {
+      if (intervals.length === 1) return intervalToEnglish(intervals[0]);
+      if (intervals.length === 2) return `${intervalToEnglish(intervals[0])}, or ${intervalToEnglish(intervals[1])}`;
+      return `${intervalToEnglish(intervals[0])}, ${intervalToEnglish(intervals[1])}, or ${intervalToEnglish(intervals[2])}`;
+    }
+
+    function generateRandomInterval() {
+      let leftClosed = coinFlip();
+      let rightClosed = coinFlip();
+      let left = randomInteger(-10, 9);
+      let right = randomInteger(left + 1, 10);
+
+      if (!leftClosed && Math.random() < 0.40) left = -Infinity;
+      if (!rightClosed && Math.random() < 0.40) right = Infinity;
+
+      if (left === -Infinity) leftClosed = false;
+      if (right === Infinity) rightClosed = false;
+
+      return { left, right, leftClosed, rightClosed };
+    }
+
+    function intervalsTouchOrOverlap(a, b) {
+      return !(a.right < b.left || b.right < a.left);
+    }
+
+    function hasRepeatedEndpoint(candidate, intervals) {
+      return intervals.some(interval =>
+        candidate.left === interval.left ||
+        candidate.left === interval.right ||
+        candidate.right === interval.left ||
+        candidate.right === interval.right
+      );
+    }
+
+    function isTrivialWholeLineInterval(interval) {
+      return interval.left === -Infinity && interval.right === Infinity;
+    }
+
+    function isCompatibleInterval(candidate, intervals) {
+      return !isTrivialWholeLineInterval(candidate) &&
+             intervals.every(interval => !intervalsTouchOrOverlap(candidate, interval)) &&
+             !hasRepeatedEndpoint(candidate, intervals);
+    }
+
+    function generateIntervalUnion() {
+      const intervalCount = randomInteger(1, 3);
+      const intervals = [];
+      let attempts = 0;
+
+      while (intervals.length < intervalCount && attempts < 5000) {
+        attempts++;
+        const candidate = generateRandomInterval();
+        if (isCompatibleInterval(candidate, intervals)) intervals.push(candidate);
+      }
+
+      // Extremely unlikely fallback: build finite disjoint intervals from sorted endpoints.
+      if (intervals.length < intervalCount) {
+        intervals.length = 0;
+        const endpoints = [];
+        while (endpoints.length < 2 * intervalCount) {
+          const value = randomInteger(-10, 10);
+          if (!endpoints.includes(value)) endpoints.push(value);
+        }
+        endpoints.sort((a, b) => a - b);
+        for (let i = 0; i < intervalCount; i++) {
+          intervals.push({
+            left: endpoints[2 * i],
+            right: endpoints[2 * i + 1],
+            leftClosed: coinFlip(),
+            rightClosed: coinFlip()
+          });
+        }
+      }
+
+      intervals.sort((a, b) => a.left - b.left);
+      return intervals;
+    }
+
+    function makeType1Problem(intervals) {
+      const format = randomChoice(['english', 'inequality', 'interval']);
+      let statementHtml;
+
+      if (format === 'english') {
+        statementHtml = `<p><strong>Describe this set on the number line:</strong></p><p>${intervalsToEnglish(intervals)}.</p>`;
+      } else if (format === 'inequality') {
+        statementHtml = `<p><strong>Place this set on the number line:</strong></p><p>\\[${intervalsToInequalityTex(intervals)}\\]</p>`;
+      } else {
+        statementHtml = `<p><strong>Place this set on the number line:</strong></p><p>\\[${intervalsToTex(intervals)}\\]</p>`;
+      }
+
+      return {
+        type: 1,
+        format,
+        intervals,
+        statementHtml,
+        solutionTex: intervalsToTex(intervals)
+      };
+    }
+
+    function makeType2Problem(intervals) {
+      const requestedFormat = randomChoice(['inequality', 'interval']);
+      return {
+        type: 2,
+        requestedFormat,
+        intervals,
+        statementHtml: `<p><strong>Describe the intervals shown on the number line using ${requestedFormat === 'interval' ? 'interval notation' : 'inequalities'}.</strong></p>`,
+        solutionTex: requestedFormat === 'interval' ? intervalsToTex(intervals) : intervalsToInequalityTex(intervals)
+      };
+    }
+
+    function generateIntervalProblem() {
+      const intervals = generateIntervalUnion();
+      return Math.random() < 0.5 ? makeType1Problem(intervals) : makeType2Problem(intervals);
+    }
+
+    function clearOldActivityState() {
+      feedbackText.textContent = '';
+      finalAnswerInput.innerHTML = '';
+      hintArea.innerHTML = '';
+      activityDiv.innerHTML = '';
+      activityDiv.style.display = 'none';
+      checkBtn.style.display = 'none';
+      hintBtn.disabled = true;
+      pendingIntervalStart = null;
+      placedIntervals = [];
+      type1Canvas = null;
+    }
+
+    function drawArrow(ctx, fromX, fromY, toX, toY) {
+      const headLength = 12;
+      const angle = Math.atan2(toY - fromY, toX - fromX);
+      ctx.beginPath();
+      ctx.moveTo(fromX, fromY);
+      ctx.lineTo(toX, toY);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(toX, toY);
+      ctx.lineTo(toX - headLength * Math.cos(angle - Math.PI / 6), toY - headLength * Math.sin(angle - Math.PI / 6));
+      ctx.lineTo(toX - headLength * Math.cos(angle + Math.PI / 6), toY - headLength * Math.sin(angle + Math.PI / 6));
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawThickIntervalArrow(ctx, fromX, fromY, toX, toY) {
+      const headLength = 22;
+      const headWidth = 24;
+      const angle = Math.atan2(toY - fromY, toX - fromX);
+      const shaftEndX = toX - headLength * Math.cos(angle);
+      const shaftEndY = toY - headLength * Math.sin(angle);
+
+      ctx.save();
+      ctx.strokeStyle = '#198754';
+      ctx.fillStyle = '#198754';
+      ctx.lineWidth = 9;
+      ctx.lineCap = 'round';
+
+      ctx.beginPath();
+      ctx.moveTo(fromX, fromY);
+      ctx.lineTo(shaftEndX, shaftEndY);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(toX, toY);
+      ctx.lineTo(
+        shaftEndX + (headWidth / 2) * Math.sin(angle),
+        shaftEndY - (headWidth / 2) * Math.cos(angle)
+      );
+      ctx.lineTo(
+        shaftEndX - (headWidth / 2) * Math.sin(angle),
+        shaftEndY + (headWidth / 2) * Math.cos(angle)
+      );
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawEndpointDot(ctx, x, y, closed) {
+      ctx.beginPath();
+      ctx.arc(x, y, 7, 0, 2 * Math.PI);
+      if (closed) {
+        ctx.fillStyle = '#198754';
+        ctx.fill();
+      } else {
+        ctx.fillStyle = 'white';
+        ctx.fill();
+        ctx.strokeStyle = '#198754';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+      }
+    }
+
+    function drawIntervalNumberLine(canvas, intervals) {
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      const leftPad = 70;
+      const rightPad = 70;
+      const y = 95;
+      const lineStart = leftPad;
+      const lineEnd = w - rightPad;
+
+      function sx(value) {
+        return lineStart + (value + 10) / 20 * (lineEnd - lineStart);
+      }
+
+      ctx.clearRect(0, 0, w, h);
+      ctx.lineCap = 'round';
+
+      ctx.strokeStyle = 'black';
+      ctx.fillStyle = 'black';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(sx(-10), y);
+      ctx.lineTo(sx(10), y);
+      ctx.stroke();
+      drawArrow(ctx, sx(-10), y, 20, y);
+      drawArrow(ctx, sx(10), y, w - 20, y);
+
+      ctx.font = '16px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      for (let n = -10; n <= 10; n++) {
+        const x = sx(n);
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x, y - 8);
+        ctx.lineTo(x, y + 8);
+        ctx.stroke();
+        ctx.fillStyle = 'black';
+        ctx.fillText(String(n), x, y + 14);
+      }
+
+      intervals.forEach(interval => {
+        const startX = interval.left === -Infinity ? 20 : sx(interval.left);
+        const endX = interval.right === Infinity ? w - 20 : sx(interval.right);
+
+        ctx.strokeStyle = '#198754';
+        ctx.fillStyle = '#198754';
+        ctx.lineWidth = 9;
+
+        if (interval.left === -Infinity && interval.right === Infinity) {
+          drawThickIntervalArrow(ctx, sx(10), y, 20, y);
+          drawThickIntervalArrow(ctx, sx(-10), y, w - 20, y);
+        } else if (interval.left === -Infinity) {
+          drawThickIntervalArrow(ctx, sx(interval.right), y, 20, y);
+          drawEndpointDot(ctx, sx(interval.right), y, interval.rightClosed);
+        } else if (interval.right === Infinity) {
+          drawThickIntervalArrow(ctx, sx(interval.left), y, w - 20, y);
+          drawEndpointDot(ctx, sx(interval.left), y, interval.leftClosed);
+        } else {
+          ctx.beginPath();
+          ctx.moveTo(startX, y);
+          ctx.lineTo(endX, y);
+          ctx.stroke();
+          drawEndpointDot(ctx, sx(interval.left), y, interval.leftClosed);
+          drawEndpointDot(ctx, sx(interval.right), y, interval.rightClosed);
+        }
+      });
+    }
+
+
+    function type1LeftClosedForTool(tool) {
+      if (tool === 'closed') return true;
+      if (tool === 'open') return false;
+      return false; // half-open starts open and ends closed
+    }
+
+    function type1RightClosedForTool(tool) {
+      if (tool === 'closed') return true;
+      if (tool === 'open') return false;
+      return true; // half-open starts open and ends closed
+    }
+
+    function setupIntervalToolButtons() {
+      document.querySelectorAll('.interval-tool-button').forEach(button => {
+        button.classList.toggle('selected', button.dataset.intervalTool === selectedIntervalTool);
+        button.addEventListener('click', () => {
+          selectedIntervalTool = button.dataset.intervalTool;
+          pendingIntervalStart = null;
+          document.querySelectorAll('.interval-tool-button').forEach(other => {
+            other.classList.toggle('selected', other === button);
+          });
+          redrawType1Canvas();
+        });
+      });
+
+      const clearButton = document.getElementById('clear-intervals-btn');
+      if (clearButton) {
+        clearButton.addEventListener('click', () => {
+          pendingIntervalStart = null;
+          placedIntervals = [];
+          feedbackText.textContent = '';
+          redrawType1Canvas();
+        });
+      }
+    }
+
+    function intervalToolButtonHtml(tool, label) {
+      const leftClosed = type1LeftClosedForTool(tool);
+      const rightClosed = type1RightClosedForTool(tool);
+      const leftDot = leftClosed
+        ? '<circle cx="18" cy="20" r="6" fill="#198754" stroke="#198754" stroke-width="3"></circle>'
+        : '<circle cx="18" cy="20" r="6" fill="white" stroke="#198754" stroke-width="3"></circle>';
+      const rightDot = rightClosed
+        ? '<circle cx="82" cy="20" r="6" fill="#198754" stroke="#198754" stroke-width="3"></circle>'
+        : '<circle cx="82" cy="20" r="6" fill="white" stroke="#198754" stroke-width="3"></circle>';
+      return `
+        <button type="button" class="interval-tool-button${tool === selectedIntervalTool ? ' selected' : ''}" data-interval-tool="${tool}" aria-label="${label}">
+          <svg width="100" height="40" viewBox="0 0 100 40" aria-hidden="true">
+            <line x1="18" y1="20" x2="82" y2="20" stroke="#198754" stroke-width="7" stroke-linecap="round"></line>
+            ${leftDot}${rightDot}
+          </svg>
+        </button>`;
+    }
+
+    function showType1Input(problem) {
+      selectedIntervalTool = 'closed';
+      pendingIntervalStart = null;
+      placedIntervals = [];
+      activityDiv.style.display = 'block';
+      activityDiv.style.textAlign = 'center';
+      activityDiv.innerHTML = `
+        <div class="interval-tool-row">
+          ${intervalToolButtonHtml('closed', 'Closed interval')}
+          ${intervalToolButtonHtml('half-open', 'Half-open interval')}
+          ${intervalToolButtonHtml('open', 'Open interval')}
+          <button id="clear-intervals-btn" type="button" class="rubber-button interval-clear-button">Clear</button>
+        </div>
+        <canvas id="type1-interval-number-line" width="900" height="170" style="max-width: 100%; background: white; border: 2px solid #1a1a4b; border-radius: 1em;"></canvas>`;
+      type1Canvas = document.getElementById('type1-interval-number-line');
+      setupIntervalToolButtons();
+      setupType1CanvasEvents();
+      redrawType1Canvas();
+    }
+
+    function type1Geometry(canvas) {
+      const w = canvas.width;
+      const y = 95;
+      const leftPad = 70;
+      const rightPad = 70;
+      const lineStart = leftPad;
+      const lineEnd = w - rightPad;
+      return { w, y, leftPad, rightPad, lineStart, lineEnd };
+    }
+
+    function sxForType1(value) {
+      const g = type1Geometry(type1Canvas);
+      if (value === -Infinity) return 20;
+      if (value === Infinity) return g.w - 20;
+      return g.lineStart + (value + 10) / 20 * (g.lineEnd - g.lineStart);
+    }
+
+    function snapPointerToEndpoint(canvas, event) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const x = (event.clientX - rect.left) * scaleX;
+      const g = type1Geometry(canvas);
+      if (x < g.lineStart - 22) return -Infinity;
+      if (x > g.lineEnd + 22) return Infinity;
+      const raw = -10 + (x - g.lineStart) / (g.lineEnd - g.lineStart) * 20;
+      return Math.max(-10, Math.min(10, Math.round(raw)));
+    }
+
+    function setupType1CanvasEvents() {
+      if (!type1Canvas) return;
+      type1Canvas.addEventListener('mousemove', event => {
+        type1Canvas.hoverEndpoint = snapPointerToEndpoint(type1Canvas, event);
+        redrawType1Canvas();
+      });
+      type1Canvas.addEventListener('mouseleave', () => {
+        type1Canvas.hoverEndpoint = null;
+        redrawType1Canvas();
+      });
+      type1Canvas.addEventListener('click', event => {
+        const endpoint = snapPointerToEndpoint(type1Canvas, event);
+        if (pendingIntervalStart === null) {
+          pendingIntervalStart = endpoint;
+        } else {
+          placeUserInterval(pendingIntervalStart, endpoint);
+          pendingIntervalStart = null;
+          feedbackText.textContent = '';
+        }
+        type1Canvas.hoverEndpoint = endpoint;
+        redrawType1Canvas();
+      });
+    }
+
+    function placeUserInterval(a, b) {
+      if (a === b) return;
+      let left = a < b ? a : b;
+      let right = a < b ? b : a;
+      if (left === Infinity || right === -Infinity) return;
+      const forward = a < b;
+      const startClosed = type1LeftClosedForTool(selectedIntervalTool);
+      const endClosed = type1RightClosedForTool(selectedIntervalTool);
+      let leftClosed = forward ? startClosed : endClosed;
+      let rightClosed = forward ? endClosed : startClosed;
+      if (left === -Infinity) leftClosed = false;
+      if (right === Infinity) rightClosed = false;
+      placedIntervals.push({ left, right, leftClosed, rightClosed });
+      placedIntervals = mergeIntervals(placedIntervals);
+    }
+
+    function intervalsOverlapOrTouchForMerge(a, b) {
+      if (a.right < b.left) return false;
+      if (b.right < a.left) return false;
+      if (a.right === b.left) return a.rightClosed || b.leftClosed;
+      if (b.right === a.left) return b.rightClosed || a.leftClosed;
+      return true;
+    }
+
+    function mergeTwoIntervals(a, b) {
+      const left = Math.min(a.left, b.left);
+      const right = Math.max(a.right, b.right);
+      let leftClosed;
+      if (a.left < b.left) leftClosed = a.leftClosed;
+      else if (b.left < a.left) leftClosed = b.leftClosed;
+      else leftClosed = a.leftClosed || b.leftClosed;
+
+      let rightClosed;
+      if (a.right > b.right) rightClosed = a.rightClosed;
+      else if (b.right > a.right) rightClosed = b.rightClosed;
+      else rightClosed = a.rightClosed || b.rightClosed;
+
+      return {
+        left,
+        right,
+        leftClosed: left === -Infinity ? false : leftClosed,
+        rightClosed: right === Infinity ? false : rightClosed
+      };
+    }
+
+    function mergeIntervals(intervals) {
+      const sorted = intervals.slice().sort((a, b) => a.left - b.left || a.right - b.right);
+      const result = [];
+      sorted.forEach(interval => {
+        if (!result.length) {
+          result.push({ ...interval });
+          return;
+        }
+        const last = result[result.length - 1];
+        if (intervalsOverlapOrTouchForMerge(last, interval)) {
+          result[result.length - 1] = mergeTwoIntervals(last, interval);
+        } else {
+          result.push({ ...interval });
+        }
+      });
+      return result;
+    }
+
+    function drawEmptyIntervalAxis(ctx, canvas) {
+      const { w, y, lineStart, lineEnd } = type1Geometry(canvas);
+      function sx(value) { return lineStart + (value + 10) / 20 * (lineEnd - lineStart); }
+      ctx.strokeStyle = 'black';
+      ctx.fillStyle = 'black';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(sx(-10), y);
+      ctx.lineTo(sx(10), y);
+      ctx.stroke();
+      drawArrow(ctx, sx(-10), y, 20, y);
+      drawArrow(ctx, sx(10), y, w - 20, y);
+
+      ctx.font = '16px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      for (let n = -10; n <= 10; n++) {
+        const x = sx(n);
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x, y - 8);
+        ctx.lineTo(x, y + 8);
+        ctx.stroke();
+        ctx.fillStyle = 'black';
+        ctx.fillText(String(n), x, y + 14);
+      }
+    }
+
+    function drawIntervalSegment(ctx, interval, alpha = 1) {
+      if (!type1Canvas) return;
+      const g = type1Geometry(type1Canvas);
+      const y = g.y;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = '#198754';
+      ctx.fillStyle = '#198754';
+      ctx.lineWidth = 9;
+      if (interval.left === -Infinity && interval.right === Infinity) {
+        drawThickIntervalArrow(ctx, sxForType1(10), y, 20, y);
+        drawThickIntervalArrow(ctx, sxForType1(-10), y, g.w - 20, y);
+      } else if (interval.left === -Infinity) {
+        drawThickIntervalArrow(ctx, sxForType1(interval.right), y, 20, y);
+        drawEndpointDot(ctx, sxForType1(interval.right), y, interval.rightClosed);
+      } else if (interval.right === Infinity) {
+        drawThickIntervalArrow(ctx, sxForType1(interval.left), y, g.w - 20, y);
+        drawEndpointDot(ctx, sxForType1(interval.left), y, interval.leftClosed);
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(sxForType1(interval.left), y);
+        ctx.lineTo(sxForType1(interval.right), y);
+        ctx.stroke();
+        drawEndpointDot(ctx, sxForType1(interval.left), y, interval.leftClosed);
+        drawEndpointDot(ctx, sxForType1(interval.right), y, interval.rightClosed);
+      }
+      ctx.restore();
+    }
+
+    function drawPreviewDot(ctx, endpoint, closed, alpha) {
+      if (!type1Canvas || endpoint === null) return;
+      const g = type1Geometry(type1Canvas);
+      const y = g.y;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      if (endpoint === -Infinity) {
+        drawThickIntervalArrow(ctx, sxForType1(-8.8), y, 20, y);
+      } else if (endpoint === Infinity) {
+        drawThickIntervalArrow(ctx, sxForType1(8.8), y, g.w - 20, y);
+      } else {
+        drawEndpointDot(ctx, sxForType1(endpoint), y, closed);
+      }
+      ctx.restore();
+    }
+
+    function previewIntervalFromPending(hoverEndpoint) {
+      if (pendingIntervalStart === null || hoverEndpoint === null || pendingIntervalStart === hoverEndpoint) return null;
+      const a = pendingIntervalStart;
+      const b = hoverEndpoint;
+      let left = a < b ? a : b;
+      let right = a < b ? b : a;
+      const forward = a < b;
+      const startClosed = type1LeftClosedForTool(selectedIntervalTool);
+      const endClosed = type1RightClosedForTool(selectedIntervalTool);
+      let leftClosed = forward ? startClosed : endClosed;
+      let rightClosed = forward ? endClosed : startClosed;
+      if (left === -Infinity) leftClosed = false;
+      if (right === Infinity) rightClosed = false;
+      return { left, right, leftClosed, rightClosed };
+    }
+
+    function redrawType1Canvas() {
+      if (!type1Canvas) return;
+      const ctx = type1Canvas.getContext('2d');
+      ctx.clearRect(0, 0, type1Canvas.width, type1Canvas.height);
+      ctx.lineCap = 'round';
+      drawEmptyIntervalAxis(ctx, type1Canvas);
+      placedIntervals.forEach(interval => drawIntervalSegment(ctx, interval, 1));
+
+      const hoverEndpoint = type1Canvas.hoverEndpoint;
+      if (pendingIntervalStart !== null) {
+        drawPreviewDot(ctx, pendingIntervalStart, type1LeftClosedForTool(selectedIntervalTool), 1);
+        const preview = previewIntervalFromPending(hoverEndpoint);
+        if (preview) drawIntervalSegment(ctx, preview, 0.45);
+      } else if (hoverEndpoint !== null && hoverEndpoint !== undefined) {
+        drawPreviewDot(ctx, hoverEndpoint, type1LeftClosedForTool(selectedIntervalTool), 0.45);
+      }
+    }
+
+    function intervalsExactlyMatch(a, b) {
+      if (a.length !== b.length) return false;
+      const normalizedA = mergeIntervals(a).sort((u, v) => u.left - v.left || u.right - v.right);
+      const normalizedB = mergeIntervals(b).sort((u, v) => u.left - v.left || u.right - v.right);
+      if (normalizedA.length !== normalizedB.length) return false;
+      return normalizedA.every((interval, index) => {
+        const expected = normalizedB[index];
+        return interval.left === expected.left &&
+               interval.right === expected.right &&
+               interval.leftClosed === expected.leftClosed &&
+               interval.rightClosed === expected.rightClosed;
+      });
+    }
+
+    function checkType1Answer() {
+      if (!currentProblem || currentProblem.type !== 1) return false;
+      return intervalsExactlyMatch(placedIntervals, currentProblem.intervals);
+    }
+
+    function checkCurrentAnswer() {
+      if (!currentProblem) return;
+      let correct = false;
+      if (currentProblem.type === 1) correct = checkType1Answer();
+      else if (currentProblem.type === 2) correct = checkType2Answer();
+      feedbackText.textContent = correct ? 'Correct!' : 'Incorrect, try again.';
+      feedbackText.style.color = correct ? 'green' : 'red';
+    }
+
+
+    function showType2Input(problem) {
+      finalAnswerInput.innerHTML = `
+        <div class="answer-line">
+          <label style="font-weight: bold; margin-right: 0.5em;">Answer:</label>
+          <span id="type2-answer-editor" class="restricted-answer-editor" contenteditable="true" role="textbox" aria-label="Interval or inequality answer"></span>
+        </div>
+        <div class="answer-toolbar" aria-label="Math input buttons">
+          <button type="button" class="math-symbol-button" data-insert-text=" ∪ ">∪</button>
+          <button type="button" class="math-symbol-button" data-insert-text=" ∩ ">∩</button>
+          <button type="button" class="math-symbol-button" data-insert-text=" or ">or</button>
+          <button type="button" class="math-symbol-button" data-insert-text=" and ">and</button>
+          <button type="button" class="math-symbol-button" data-insert-text="x">x</button>
+          <button type="button" class="math-symbol-button" data-insert-text="∞">∞</button>
+          <button type="button" class="math-symbol-button" data-insert-text="-∞">−∞</button>
+          <button type="button" class="math-symbol-button" data-insert-text="≥">≥</button>
+          <button type="button" class="math-symbol-button" data-insert-text="≤">≤</button>
+        </div>
+      `;
+
+      const editor = document.getElementById('type2-answer-editor');
+      activeType2Editor = editor;
+      editor.focus();
+      editor.addEventListener('focus', () => { activeType2Editor = editor; });
+      editor.addEventListener('click', () => { activeType2Editor = editor; });
+      editor.addEventListener('keydown', handleRestrictedType2Keydown);
+      editor.addEventListener('paste', handleRestrictedType2Paste);
+      editor.addEventListener('input', sanitizeType2Editor);
+
+      finalAnswerInput.querySelectorAll('.math-symbol-button').forEach(button => {
+        button.addEventListener('mousedown', event => event.preventDefault());
+        button.addEventListener('click', () => {
+          activeType2Editor = editor;
+          editor.focus();
+          insertTextIntoType2Editor(button.dataset.insertText || '');
+        });
+      });
+    }
+
+    function isAllowedType2Character(ch) {
+      return /[0-9x\[\]\(\),<>\-\s]/.test(ch) || ch === '∞' || ch === '∪' || ch === '∩' || ch === '≥' || ch === '≤';
+    }
+
+    function sanitizeType2Text(text) {
+      return text
+        .replace(/−/g, '-')
+        .replace(/>=/g, '≥')
+        .replace(/<=/g, '≤')
+        .replace(/\binfinity\b/gi, '∞')
+        .replace(/\binfty\b/gi, '∞')
+        .replace(/\binf\b/gi, '∞')
+        .replace(/\bcup\b/gi, '∪')
+        .replace(/\bcap\b/gi, '∩')
+        .replace(/\bor\b/gi, ' or ')
+        .replace(/\band\b/gi, ' and ')
+        .split('')
+        .filter(ch => isAllowedType2Character(ch) || /[AaNnDdOoRrXx]/.test(ch))
+        .join('')
+        .replace(/[^0-9x\[\]\(\),<>\-\s∞∪∩≥≤AaNnDdOoRr]/g, '');
+    }
+
+    function sanitizeType2Editor() {
+      const editor = document.getElementById('type2-answer-editor');
+      if (!editor) return;
+      const clean = sanitizeType2Text(editor.textContent);
+      if (editor.textContent !== clean) {
+        editor.textContent = clean;
+        placeCaretAtEnd(editor);
+      }
+    }
+
+    function handleRestrictedType2Keydown(event) {
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      const allowedControlKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Tab'];
+      if (allowedControlKeys.includes(event.key)) return;
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        return;
+      }
+      if (event.key.length === 1 && isAllowedType2Character(event.key)) return;
+      event.preventDefault();
+    }
+
+    function handleRestrictedType2Paste(event) {
+      event.preventDefault();
+      const text = sanitizeType2Text((event.clipboardData || window.clipboardData).getData('text'));
+      insertTextIntoType2Editor(text);
+    }
+
+    function insertTextIntoType2Editor(text) {
+      const editor = activeType2Editor || document.getElementById('type2-answer-editor');
+      if (!editor) return;
+      const selection = window.getSelection();
+      let range;
+      if (selection.rangeCount && editor.contains(selection.anchorNode)) {
+        range = selection.getRangeAt(0);
+      } else {
+        range = document.createRange();
+        range.selectNodeContents(editor);
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+      range.deleteContents();
+      const node = document.createTextNode(text);
+      range.insertNode(node);
+      range.setStartAfter(node);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      sanitizeType2Editor();
+    }
+
+    function placeCaretAtEnd(element) {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      range.collapse(false);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    function normalizeType2AnswerText(text) {
+      return text
+        .replace(/\u200b/g, '')
+        .replace(/−/g, '-')
+        .replace(/\\infty/g, '∞')
+        .replace(/infinity/gi, '∞')
+        .replace(/inf/gi, '∞')
+        .replace(/>=/g, '≥')
+        .replace(/<=/g, '≤')
+        .replace(/\\geq/g, '≥')
+        .replace(/\\leq/g, '≤')
+        .replace(/\\cup/g, '∪')
+        .replace(/\\cap/g, '∩')
+        .replace(/\bOR\b/g, 'or')
+        .replace(/\bAND\b/g, 'and')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function splitTopLevelByOperators(text) {
+      const normalized = normalizeType2AnswerText(text)
+        .replace(/\text\s*\{\s*or\s*\}/gi, 'or')
+        .replace(/\text\s*\{\s*and\s*\}/gi, 'and')
+        .trim();
+      const pieces = [];
+      let current = '';
+      let depth = 0;
+
+      for (let i = 0; i < normalized.length; i++) {
+        const ch = normalized[i];
+        if (ch === '(' || ch === '[') depth++;
+        else if (ch === ')' || ch === ']') depth = Math.max(0, depth - 1);
+
+        const rest = normalized.slice(i).toLowerCase();
+        const atWordOr = rest.startsWith('or') && !/[a-z]/i.test(normalized[i - 1] || '') && !/[a-z]/i.test(normalized[i + 2] || '');
+        const atWordAnd = rest.startsWith('and') && !/[a-z]/i.test(normalized[i - 1] || '') && !/[a-z]/i.test(normalized[i + 3] || '');
+
+        if (depth === 0 && (ch === '∪' || ch === '∩')) {
+          pieces.push({ type: 'set', value: current.trim() });
+          pieces.push({ type: 'op', value: ch === '∪' ? 'or' : 'and' });
+          current = '';
+        } else if (depth === 0 && atWordOr) {
+          pieces.push({ type: 'set', value: current.trim() });
+          pieces.push({ type: 'op', value: 'or' });
+          current = '';
+          i += 1;
+        } else if (depth === 0 && atWordAnd) {
+          pieces.push({ type: 'set', value: current.trim() });
+          pieces.push({ type: 'op', value: 'and' });
+          current = '';
+          i += 2;
+        } else {
+          current += ch;
+        }
+      }
+      pieces.push({ type: 'set', value: current.trim() });
+      return pieces.filter(piece => piece.type === 'op' || piece.value.length > 0);
+    }
+
+    function parseType2Endpoint(text) {
+      const t = text.trim().replace(/^\+/, '');
+      if (t === '∞') return Infinity;
+      if (t === '-∞') return -Infinity;
+      if (/^-?\d+$/.test(t)) return Number(t);
+      return NaN;
+    }
+
+    function parseType2Interval(text) {
+      const t = normalizeType2AnswerText(text).replace(/\s+/g, '');
+      if (!t) return null;
+      if (!(t[0] === '(' || t[0] === '[') || !(t[t.length - 1] === ')' || t[t.length - 1] === ']')) return null;
+      const body = t.slice(1, -1);
+      const commaIndex = body.indexOf(',');
+      if (commaIndex === -1 || body.indexOf(',', commaIndex + 1) !== -1) return null;
+      const left = parseType2Endpoint(body.slice(0, commaIndex));
+      const right = parseType2Endpoint(body.slice(commaIndex + 1));
+      if ((Number.isNaN(left) && left !== -Infinity) || (Number.isNaN(right) && right !== Infinity)) return null;
+      if (!(left < right)) return null;
+      return [{
+        left,
+        right,
+        leftClosed: left === -Infinity ? false : t[0] === '[',
+        rightClosed: right === Infinity ? false : t[t.length - 1] === ']'
+      }];
+    }
+
+    function parseType2Inequality(text) {
+      const t = normalizeType2AnswerText(text)
+        .replace(/\s+/g, '')
+        .replace(/≤/g, '<=')
+        .replace(/≥/g, '>=')
+        .toLowerCase();
+      if (!t || !t.includes('x')) return null;
+
+      const tokenPattern = /x|-?∞|-?\d+|<=|>=|<|>/g;
+      const tokens = t.match(tokenPattern);
+      if (!tokens || tokens.join('') !== t || tokens.length < 3 || tokens.length % 2 === 0) return null;
+
+      function isComparison(op) {
+        return op === '<' || op === '<=' || op === '>' || op === '>=';
+      }
+
+      for (let i = 1; i < tokens.length; i += 2) {
+        if (!isComparison(tokens[i])) return null;
+      }
+      for (let i = 0; i < tokens.length; i += 2) {
+        if (!/^x$|-?∞|-?\d+$/.test(tokens[i])) return null;
+      }
+
+      function relationToInterval(leftExpr, operator, rightExpr) {
+        const leftIsX = leftExpr === 'x';
+        const rightIsX = rightExpr === 'x';
+        if (leftIsX === rightIsX) return null;
+
+        if (leftIsX) {
+          const value = parseType2Endpoint(rightExpr);
+          if (Number.isNaN(value)) return null;
+          if (operator === '<' || operator === '<=') {
+            if (value === Infinity) return [{ left: -Infinity, right: Infinity, leftClosed: false, rightClosed: false }];
+            return [{ left: -Infinity, right: value, leftClosed: false, rightClosed: operator === '<=' }];
+          }
+          if (value === -Infinity) return [{ left: -Infinity, right: Infinity, leftClosed: false, rightClosed: false }];
+          return [{ left: value, right: Infinity, leftClosed: operator === '>=', rightClosed: false }];
+        }
+
+        const value = parseType2Endpoint(leftExpr);
+        if (Number.isNaN(value)) return null;
+        if (operator === '<' || operator === '<=') {
+          if (value === -Infinity) return [{ left: -Infinity, right: Infinity, leftClosed: false, rightClosed: false }];
+          return [{ left: value, right: Infinity, leftClosed: operator === '<=', rightClosed: false }];
+        }
+        if (value === Infinity) return [{ left: -Infinity, right: Infinity, leftClosed: false, rightClosed: false }];
+        return [{ left: -Infinity, right: value, leftClosed: false, rightClosed: operator === '>=' }];
+      }
+
+      let result = [{ left: -Infinity, right: Infinity, leftClosed: false, rightClosed: false }];
+      for (let i = 0; i < tokens.length - 2; i += 2) {
+        const relation = relationToInterval(tokens[i], tokens[i + 1], tokens[i + 2]);
+        if (!relation) return null;
+        result = intersectIntervalSets(result, relation);
+        if (!result.length) return [];
+      }
+      return mergeIntervals(result).filter(interval => !(interval.left === -Infinity && interval.right === Infinity));
+    }
+
+    function parseType2BasicSet(text) {
+      return parseType2Interval(text) || parseType2Inequality(text);
+    }
+
+    function intervalIntersection(a, b) {
+      const left = Math.max(a.left, b.left);
+      const right = Math.min(a.right, b.right);
+      let leftClosed;
+      if (a.left > b.left) leftClosed = a.leftClosed;
+      else if (b.left > a.left) leftClosed = b.leftClosed;
+      else leftClosed = a.leftClosed && b.leftClosed;
+      let rightClosed;
+      if (a.right < b.right) rightClosed = a.rightClosed;
+      else if (b.right < a.right) rightClosed = b.rightClosed;
+      else rightClosed = a.rightClosed && b.rightClosed;
+      if (left < right || (left === right && leftClosed && rightClosed)) return { left, right, leftClosed, rightClosed };
+      return null;
+    }
+
+    function intersectIntervalSets(a, b) {
+      const result = [];
+      a.forEach(intervalA => {
+        b.forEach(intervalB => {
+          const intersection = intervalIntersection(intervalA, intervalB);
+          if (intersection) result.push(intersection);
+        });
+      });
+      return mergeIntervals(result);
+    }
+
+    function parseType2SetExpression(text) {
+      const pieces = splitTopLevelByOperators(normalizeType2AnswerText(text));
+      if (!pieces.length || pieces[0].type !== 'set') return null;
+      let result = parseType2BasicSet(pieces[0].value);
+      if (result === null) return null;
+      for (let i = 1; i < pieces.length; i += 2) {
+        if (!pieces[i] || !pieces[i + 1] || pieces[i].type !== 'op' || pieces[i + 1].type !== 'set') return null;
+        const nextSet = parseType2BasicSet(pieces[i + 1].value);
+        if (nextSet === null) return null;
+        result = pieces[i].value === 'or' ? mergeIntervals(result.concat(nextSet)) : intersectIntervalSets(result, nextSet);
+      }
+      return mergeIntervals(result);
+    }
+
+    function checkType2Answer() {
+      if (!currentProblem || currentProblem.type !== 2) return false;
+      const editor = document.getElementById('type2-answer-editor');
+      if (!editor) return false;
+      const userIntervals = parseType2SetExpression(editor.textContent);
+      if (userIntervals === null) return false;
+      return intervalsExactlyMatch(userIntervals, currentProblem.intervals);
+    }
+
+    function showType2Graph(problem) {
+      activityDiv.style.display = 'block';
+      activityDiv.style.textAlign = 'center';
+      activityDiv.innerHTML = '<canvas id="interval-number-line" width="900" height="150" style="max-width: 100%; background: white; border: 2px solid #1a1a4b; border-radius: 1em;"></canvas>';
+      const canvas = document.getElementById('interval-number-line');
+      drawIntervalNumberLine(canvas, problem.intervals);
+    }
+
+    function showHint() {
+      if (!currentProblem) return;
+      hintArea.innerHTML = `<p style="text-align: center;">\\[${currentProblem.solutionTex}\\]</p>`;
+      typesetElement(hintArea);
+    }
+
+    startBtn.addEventListener('click', () => {
+      clearOldActivityState();
+
+      const sound = document.getElementById('click-sound');
+      if (sound) {
+        sound.currentTime = 0;
+        sound.play();
+      }
+
+      currentProblem = generateIntervalProblem();
+      questionText.innerHTML = currentProblem.statementHtml;
+      if (currentProblem.type === 1) {
+        showType1Input(currentProblem);
+        checkBtn.style.display = 'inline-block';
+      } else if (currentProblem.type === 2) {
+        showType2Graph(currentProblem);
+        showType2Input(currentProblem);
+        checkBtn.style.display = 'inline-block';
+      }
+      hintBtn.disabled = false;
+      typesetElement(questionText);
+    });
+
+    hintBtn.addEventListener('click', showHint);
+    checkBtn.addEventListener('click', checkCurrentAnswer);
+
+  </script>
+
+  <audio id="click-sound" src="button.mp3" preload="auto"></audio>
+  <audio id="set-sound" src="set2.mp3" preload="auto"></audio>
+
+</body>
+</html>

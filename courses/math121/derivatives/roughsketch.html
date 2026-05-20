@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -410,10 +411,23 @@ fetch("/nav.html")
           else x = segment.x0 + t * (segment.x1 - segment.x0 - eps);
         }
         const y = evaluateSegment(segment, x);
-        if (!Number.isFinite(y) || y < -30 || y > 30) {
+        if (!Number.isFinite(y)) {
           started = false;
           continue;
         }
+
+        if (segment.type === 'asymptoteCurve') {
+          // Stop asymptote-adjacent pieces as soon as they leave the visible window.
+          // Otherwise clamping makes the graph look horizontal along y = 10 or y = -10.
+          if (y <= -10 || y >= 10) {
+            started = false;
+            continue;
+          }
+        } else if (y < -30 || y > 30) {
+          started = false;
+          continue;
+        }
+
         const px = sx(x);
         const py = sy(clamp(y, -10, 10));
         if (!started) {
@@ -425,12 +439,6 @@ fetch("/nav.html")
       }
       ctx.stroke();
       ctx.restore();
-
-      if (segment.type === 'asymptoteCurve') {
-        const ax = segment.asymptoteSide === 'left' ? segment.x0 : segment.x1;
-        const yNear = segment.infinitySign > 0 ? 9.2 : -9.2;
-        drawArrowHead(ctx, sx(ax + (segment.asymptoteSide === 'left' ? 0.22 : -0.22)), sy(segment.infinitySign > 0 ? 7.6 : -7.6), sx(ax + (segment.asymptoteSide === 'left' ? 0.07 : -0.07)), sy(yNear), '#0b5cab');
-      }
     }
 
     function evaluateSegment(segment, x) {

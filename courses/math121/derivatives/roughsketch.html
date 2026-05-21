@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1021,7 +1022,6 @@ fetch("/nav.html")
     function drawDerivativeInfiniteCurve(ctx, piece, sx, sy) {
       const samples = 700;
       const boundaryY = piece.infinitySign > 0 ? 9.85 : -9.85;
-      const visibleLimit = piece.infinitySign > 0 ? 10 : -10;
       ctx.beginPath();
       let started = false;
       let previousVisiblePoint = null;
@@ -1030,11 +1030,16 @@ fetch("/nav.html")
         const t = i / samples;
         const eps = 0.012;
         let x;
+
+        // Always draw from the finite endpoint toward the vertical asymptote.
+        // Drawing right-side pieces from the asymptote outward starts off-screen,
+        // which made the loop break before any visible portion was drawn.
         if (piece.asymptoteSide === 'left') {
           x = piece.finiteX + t * (piece.asymptoteX - piece.finiteX - eps);
         } else {
-          x = piece.asymptoteX + eps + t * (piece.finiteX - piece.asymptoteX - eps);
+          x = piece.finiteX + t * (piece.asymptoteX - piece.finiteX + eps);
         }
+
         const y = evaluateDerivativePiece(piece, x);
         if (!Number.isFinite(y)) continue;
 

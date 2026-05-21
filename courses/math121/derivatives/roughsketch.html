@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -570,10 +571,8 @@ fetch("/nav.html")
     }
 
     function drawDomainEndpointMarkers(ctx, problem, sx, sy) {
-      const first = problem.segments[0];
-      const last = problem.segments[problem.segments.length - 1];
-      if (Number.isFinite(first.y0)) drawPoint(ctx, sx(first.x0), sy(first.y0), true);
-      if (Number.isFinite(last.y1)) drawPoint(ctx, sx(last.x1), sy(last.y1), true);
+      // Intentionally left blank:
+      // do not place endpoint dots at x = ±10.
     }
 
     function drawPoint(ctx, x, y, closed) {
@@ -1013,18 +1012,24 @@ fetch("/nav.html")
         ctx.moveTo(sx(piece.x0), sy(piece.y0));
         ctx.lineTo(sx(piece.x1), sy(piece.y1));
         ctx.stroke();
-        drawDerivativeDot(ctx, sx(piece.x0), sy(piece.y0), piece.leftClosed);
-        drawDerivativeDot(ctx, sx(piece.x1), sy(piece.y1), piece.rightClosed);
+        if (piece.x0 !== -10) {
+          drawDerivativeDot(ctx, sx(piece.x0), sy(piece.y0), piece.leftClosed);
+        }
+        if (piece.x1 !== 10) {
+          drawDerivativeDot(ctx, sx(piece.x1), sy(piece.y1), piece.rightClosed);
+        }
         ctx.restore();
         return;
       }
 
       if (piece.kind === 'infiniteCurve') {
         drawDerivativeInfiniteCurve(ctx, piece, sx, sy);
-        if (piece.asymptoteSide === 'left') {
-          drawDerivativeDot(ctx, sx(piece.finiteX), sy(piece.finiteY), piece.leftClosed);
-        } else {
-          drawDerivativeDot(ctx, sx(piece.finiteX), sy(piece.finiteY), piece.rightClosed);
+        if (piece.finiteX !== -10 && piece.finiteX !== 10) {
+          if (piece.asymptoteSide === 'left') {
+            drawDerivativeDot(ctx, sx(piece.finiteX), sy(piece.finiteY), piece.leftClosed);
+          } else {
+            drawDerivativeDot(ctx, sx(piece.finiteX), sy(piece.finiteY), piece.rightClosed);
+          }
         }
       }
       ctx.restore();
@@ -1344,8 +1349,12 @@ fetch("/nav.html")
       ctx.moveTo(sx(x0), sy(y0Clamped));
       ctx.lineTo(sx(x1), sy(y1Clamped));
       ctx.stroke();
-      drawDerivativeDot(ctx, sx(x0), sy(y0Clamped), leftClosed);
-      drawDerivativeDot(ctx, sx(x1), sy(y1Clamped), rightClosed);
+      if (x0 !== -10) {
+        drawDerivativeDot(ctx, sx(x0), sy(y0Clamped), leftClosed);
+      }
+      if (x1 !== 10) {
+        drawDerivativeDot(ctx, sx(x1), sy(y1Clamped), rightClosed);
+      }
     }
 
     startBtn.addEventListener('click', setupActivity);

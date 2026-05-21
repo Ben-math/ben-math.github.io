@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -111,7 +112,8 @@ fetch("/nav.html")
   </header>
 
   <main>
-    <p>This is a work in progress: the hint shown still isn't correct!</p>
+    <p>In this activity, draw a rough sketch of the derivative of the displayed function.  There is some flexibility buitl-in to the answer-checking 
+    (that is, you aren't expected to be able to eyeball the exact slopes), but some criteria your sketch must meet are:</p>
 
 
     <div class="button-container">
@@ -404,9 +406,8 @@ fetch("/nav.html")
         </div>
         <div id="answer-feedback" style="text-align:center; font-weight:bold; margin:0.6em 0;"></div>
         <div id="hint-area" style="display:none;">
-          <p style="text-align:center; font-weight:bold;">Derivative hint</p>
           <div class="rough-graph-wrap">
-            <canvas id="rough-hint-canvas" width="720" height="720" aria-label="Derivative hint graph"></canvas>
+            <canvas id="rough-hint-canvas" width="720" height="720" aria-label="Hint graph"></canvas>
           </div>
         </div>`;
       activityDiv.style.display = 'block';
@@ -574,10 +575,7 @@ fetch("/nav.html")
     }
 
     function drawDomainEndpointMarkers(ctx, problem, sx, sy) {
-      const first = problem.segments[0];
-      const last = problem.segments[problem.segments.length - 1];
-      if (Number.isFinite(first.y0)) drawPoint(ctx, sx(first.x0), sy(first.y0), true);
-      if (Number.isFinite(last.y1)) drawPoint(ctx, sx(last.x1), sy(last.y1), true);
+      // No endpoint dots at x = ±10; the graph just ends at the boundary.
     }
 
     function drawPoint(ctx, x, y, closed) {
@@ -1017,18 +1015,24 @@ fetch("/nav.html")
         ctx.moveTo(sx(piece.x0), sy(piece.y0));
         ctx.lineTo(sx(piece.x1), sy(piece.y1));
         ctx.stroke();
-        drawDerivativeDot(ctx, sx(piece.x0), sy(piece.y0), piece.leftClosed);
-        drawDerivativeDot(ctx, sx(piece.x1), sy(piece.y1), piece.rightClosed);
+        if (!isBoundaryX(piece.x0)) {
+          drawDerivativeDot(ctx, sx(piece.x0), sy(piece.y0), piece.leftClosed);
+        }
+        if (!isBoundaryX(piece.x1)) {
+          drawDerivativeDot(ctx, sx(piece.x1), sy(piece.y1), piece.rightClosed);
+        }
         ctx.restore();
         return;
       }
 
       if (piece.kind === 'infiniteCurve') {
         drawDerivativeInfiniteCurve(ctx, piece, sx, sy);
-        if (piece.asymptoteSide === 'left') {
-          drawDerivativeDot(ctx, sx(piece.finiteX), sy(piece.finiteY), piece.leftClosed);
-        } else {
-          drawDerivativeDot(ctx, sx(piece.finiteX), sy(piece.finiteY), piece.rightClosed);
+        if (!isBoundaryX(piece.finiteX)) {
+          if (piece.asymptoteSide === 'left') {
+            drawDerivativeDot(ctx, sx(piece.finiteX), sy(piece.finiteY), piece.leftClosed);
+          } else {
+            drawDerivativeDot(ctx, sx(piece.finiteX), sy(piece.finiteY), piece.rightClosed);
+          }
         }
       }
       ctx.restore();
@@ -1277,10 +1281,12 @@ fetch("/nav.html")
         const hintPiece = derivativeHintCurveForAsymptoteSegment(segment);
         if (!hintPiece) return;
         drawDerivativeInfiniteCurve(ctx, hintPiece, sx, sy);
-        if (hintPiece.asymptoteSide === 'left') {
-          drawDerivativeDot(ctx, sx(hintPiece.finiteX), sy(hintPiece.finiteY), hintPiece.leftClosed);
-        } else {
-          drawDerivativeDot(ctx, sx(hintPiece.finiteX), sy(hintPiece.finiteY), hintPiece.rightClosed);
+        if (!isBoundaryX(hintPiece.finiteX)) {
+          if (hintPiece.asymptoteSide === 'left') {
+            drawDerivativeDot(ctx, sx(hintPiece.finiteX), sy(hintPiece.finiteY), hintPiece.leftClosed);
+          } else {
+            drawDerivativeDot(ctx, sx(hintPiece.finiteX), sy(hintPiece.finiteY), hintPiece.rightClosed);
+          }
         }
       });
     }
@@ -1348,8 +1354,12 @@ fetch("/nav.html")
       ctx.moveTo(sx(x0), sy(y0Clamped));
       ctx.lineTo(sx(x1), sy(y1Clamped));
       ctx.stroke();
-      drawDerivativeDot(ctx, sx(x0), sy(y0Clamped), leftClosed);
-      drawDerivativeDot(ctx, sx(x1), sy(y1Clamped), rightClosed);
+      if (!isBoundaryX(x0)) {
+        drawDerivativeDot(ctx, sx(x0), sy(y0Clamped), leftClosed);
+      }
+      if (!isBoundaryX(x1)) {
+        drawDerivativeDot(ctx, sx(x1), sy(y1Clamped), rightClosed);
+      }
     }
 
 

@@ -3,6 +3,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -23,7 +24,8 @@
       margin: 1.1em auto;
     }
 
-    #rough-sketch-canvas {
+    #rough-sketch-canvas,
+    #rough-hint-canvas {
       max-width: 100%;
       border: 2px solid #ddd;
       border-radius: 12px;
@@ -137,6 +139,8 @@ fetch("/nav.html")
     let selectedDrawTool = 'closed';
     let pendingDerivativeStart = null;
     let placedDerivativePieces = [];
+    let hintStep = 0;
+    let hintCanvas = null;
 
     function randomInteger(min, max) {
       return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -384,6 +388,8 @@ fetch("/nav.html")
       selectedDrawTool = 'closed';
       pendingDerivativeStart = null;
       placedDerivativePieces = [];
+      hintStep = 0;
+      hintCanvas = null;
       questionText.innerHTML = '<p><strong>Sketch the derivative of the function shown below.</strong></p>';
       activityDiv.innerHTML = `
         <div class="rough-tool-row">
@@ -395,11 +401,21 @@ fetch("/nav.html")
         <div class="rough-input-note">Click lattice points to draw line segments.  Near a vertical asymptote, hover near the top or bottom of the asymptote to start or end with an infinite branch.</div>
         <div class="rough-graph-wrap">
           <canvas id="rough-sketch-canvas" width="720" height="720" aria-label="Generated piecewise function graph with derivative sketch input"></canvas>
+        </div>
+        <div class="button-container">
+          <button id="hint-btn" type="button" class="rubber-button">Hint</button>
+        </div>
+        <div id="hint-area" style="display:none;">
+          <p style="text-align:center; font-weight:bold;">Derivative hint</p>
+          <div class="rough-graph-wrap">
+            <canvas id="rough-hint-canvas" width="720" height="720" aria-label="Derivative hint graph"></canvas>
+          </div>
         </div>`;
       activityDiv.style.display = 'block';
       roughCanvas = document.getElementById('rough-sketch-canvas');
       setupDrawToolButtons();
       setupDerivativeCanvasEvents();
+      setupHintButton();
       redrawRoughCanvas();
       debugPanel.style.display = 'none';
       debugPanel.textContent = JSON.stringify(currentProblem, null, 2);
@@ -1132,6 +1148,196 @@ fetch("/nav.html")
         ctx.stroke();
       }
       ctx.restore();
+    }
+
+
+
+    function setupHintButton() {
+      const hintBtn = document.getElementById('hint-btn');
+      if (!hintBtn) return;
+      hintBtn.addEventListener('click', () => {
+        if (!currentProblem) return;
+        hintStep = Math.min(hintStep + 1, 4);
+        const hintArea = document.getElementById('hint-area');
+        if (hintArea) hintArea.style.display = 'block';
+        hintCanvas = document.getElementById('rough-hint-canvas');
+        redrawHintCanvas();
+      });
+    }
+
+    function redrawHintCanvas() {
+      if (!hintCanvas || !currentProblem) return;
+      drawHintAxesAndOriginal(hintCanvas, currentProblem);
+    }
+
+    function drawHintAxesAndOriginal(canvas, problem) {
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      const pad = 58;
+      const xmin = -10, xmax = 10, ymin = -10, ymax = 10;
+
+      function sx(x) { return pad + (x - xmin) / (xmax - xmin) * (w - 2 * pad); }
+      function sy(y) { return h - pad - (y - ymin) / (ymax - ymin) * (h - 2 * pad); }
+
+      ctx.clearRect(0, 0, w, h);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      ctx.strokeStyle = '#eeeeee';
+      ctx.lineWidth = 1;
+      for (let n = -10; n <= 10; n++) {
+        ctx.beginPath();
+        ctx.moveTo(sx(n), sy(-10));
+        ctx.lineTo(sx(n), sy(10));
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(sx(-10), sy(n));
+        ctx.lineTo(sx(10), sy(n));
+        ctx.stroke();
+      }
+
+      ctx.strokeStyle = '#333';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(sx(-10), sy(0));
+      ctx.lineTo(sx(10), sy(0));
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(sx(0), sy(-10));
+      ctx.lineTo(sx(0), sy(10));
+      ctx.stroke();
+
+      ctx.globalAlpha = 0.28;
+      problem.segments.forEach(segment => drawSegment(ctx, segment, sx, sy));
+      drawBreakMarkers(ctx, problem, sx, sy);
+      drawDomainEndpointMarkers(ctx, problem, sx, sy);
+      ctx.globalAlpha = 1;
+
+      drawHintDerivativePieces(ctx, sx, sy, hintStep);
+    }
+
+    function drawHintDerivativePieces(ctx, sx, sy, step) {
+      ctx.save();
+      ctx.strokeStyle = '#198754';
+      ctx.fillStyle = '#198754';
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      if (step >= 1) drawHintZeroDerivativeFeatures(ctx, sx, sy);
+      if (step >= 2) drawHintLinearDerivativeFeatures(ctx, sx, sy);
+      if (step >= 3) drawHintQuadraticDerivativeFeatures(ctx, sx, sy);
+      if (step >= 4) drawHintAsymptoteDerivativeFeatures(ctx, sx, sy);
+
+      ctx.restore();
+    }
+
+    function derivativeEndpointClosed(segment, side) {
+      if (!currentProblem) return false;
+      if (side === 'left' && segment.x0 === -10) return true;
+      if (side === 'right' && segment.x1 === 10) return true;
+      const x = side === 'left' ? segment.x0 : segment.x1;
+      return !currentProblem.breaks.some(info => info.x === x);
+    }
+
+    function drawHintZeroDerivativeFeatures(ctx, sx, sy) {
+      currentProblem.segments.forEach(segment => {
+        if (segment.type === 'quadratic') {
+          drawDerivativeDot(ctx, sx(segment.vx), sy(0), true);
+        }
+        if (segment.type === 'constant') {
+          drawHintLineWithDots(ctx, sx, sy, segment.x0, 0, segment.x1, 0, false, false);
+        }
+      });
+    }
+
+    function drawHintLinearDerivativeFeatures(ctx, sx, sy) {
+      currentProblem.segments.forEach(segment => {
+        if (segment.type !== 'linear') return;
+        const leftClosed = derivativeEndpointClosed(segment, 'left');
+        const rightClosed = derivativeEndpointClosed(segment, 'right');
+        drawHintLineWithDots(ctx, sx, sy, segment.x0, segment.m, segment.x1, segment.m, leftClosed, rightClosed);
+      });
+    }
+
+    function drawHintQuadraticDerivativeFeatures(ctx, sx, sy) {
+      currentProblem.segments.forEach(segment => {
+        if (segment.type !== 'quadratic') return;
+        const leftY = 2 * segment.a * (segment.x0 - segment.vx);
+        const rightY = 2 * segment.a * (segment.x1 - segment.vx);
+        const leftClosed = derivativeEndpointClosed(segment, 'left');
+        const rightClosed = derivativeEndpointClosed(segment, 'right');
+        drawHintLineWithDots(ctx, sx, sy, segment.x0, leftY, segment.x1, rightY, leftClosed, rightClosed);
+      });
+    }
+
+    function drawHintAsymptoteDerivativeFeatures(ctx, sx, sy) {
+      currentProblem.segments.forEach(segment => {
+        if (segment.type !== 'asymptoteCurve') return;
+        const hintPiece = derivativeHintCurveForAsymptoteSegment(segment);
+        if (!hintPiece) return;
+        drawDerivativeInfiniteCurve(ctx, hintPiece, sx, sy);
+        if (hintPiece.asymptoteSide === 'left') {
+          drawDerivativeDot(ctx, sx(hintPiece.finiteX), sy(hintPiece.finiteY), hintPiece.leftClosed);
+        } else {
+          drawDerivativeDot(ctx, sx(hintPiece.finiteX), sy(hintPiece.finiteY), hintPiece.rightClosed);
+        }
+      });
+    }
+
+    function derivativeHintCurveForAsymptoteSegment(segment) {
+      const finiteX = segment.asymptoteSide === 'left' ? segment.x1 : segment.x0;
+      const finiteY = segment.asymptoteSide === 'left' ? segment.y1 : segment.y0;
+      if (!Number.isFinite(finiteY)) return null;
+
+      const derivativeSide = segment.asymptoteSide;
+      const derivativeInfinitySign = segment.asymptoteSide === 'left'
+        ? -segment.infinitySign
+        : segment.infinitySign;
+
+      // Put the finite endpoint on the same side of the x-axis as the infinite end,
+      // while keeping it modestly inside the visible window.
+      const endSameSideY = derivativeInfinitySign > 0 ? 2 : -2;
+
+      if (derivativeSide === 'left') {
+        return {
+          kind: 'infiniteCurve',
+          asymptoteX: segment.x0,
+          asymptoteSide: 'left',
+          infinitySign: derivativeInfinitySign,
+          x0: segment.x1,
+          x1: segment.x0,
+          finiteX: segment.x1,
+          finiteY: endSameSideY,
+          leftClosed: derivativeEndpointClosed(segment, 'right'),
+          rightClosed: false
+        };
+      }
+
+      return {
+        kind: 'infiniteCurve',
+        asymptoteX: segment.x1,
+        asymptoteSide: 'right',
+        infinitySign: derivativeInfinitySign,
+        x0: segment.x1,
+        x1: segment.x0,
+        finiteX: segment.x0,
+        finiteY: endSameSideY,
+        leftClosed: false,
+        rightClosed: derivativeEndpointClosed(segment, 'left')
+      };
+    }
+
+    function drawHintLineWithDots(ctx, sx, sy, x0, y0, x1, y1, leftClosed, rightClosed) {
+      const y0Clamped = clamp(y0, -10, 10);
+      const y1Clamped = clamp(y1, -10, 10);
+      ctx.beginPath();
+      ctx.moveTo(sx(x0), sy(y0Clamped));
+      ctx.lineTo(sx(x1), sy(y1Clamped));
+      ctx.stroke();
+      drawDerivativeDot(ctx, sx(x0), sy(y0Clamped), leftClosed);
+      drawDerivativeDot(ctx, sx(x1), sy(y1Clamped), rightClosed);
     }
 
     startBtn.addEventListener('click', setupActivity);

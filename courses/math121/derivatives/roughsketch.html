@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1281,45 +1282,58 @@ fetch("/nav.html")
     }
 
     function derivativeHintCurveForAsymptoteSegment(segment) {
-      const finiteX = segment.asymptoteSide === 'left' ? segment.x1 : segment.x0;
       const finiteY = segment.asymptoteSide === 'left' ? segment.y1 : segment.y0;
       if (!Number.isFinite(finiteY)) return null;
 
-      const derivativeSide = segment.asymptoteSide;
-      const derivativeInfinitySign = segment.asymptoteSide === 'left'
-        ? -segment.infinitySign
-        : segment.infinitySign;
+      // IMPORTANT: segment.asymptoteSide records which END of the original
+      // function segment contains the asymptote, while infiniteCurve.asymptoteSide
+      // records which SIDE of the asymptote the derivative branch lies on.
+      //
+      // Original segment.asymptoteSide === 'right':
+      //   the graph is on the LEFT side of the asymptote, so
+      //   lim_{x -> a^-} f(x) has sign segment.infinitySign, and the derivative
+      //   should go to the SAME signed infinity.
+      //
+      // Original segment.asymptoteSide === 'left':
+      //   the graph is on the RIGHT side of the asymptote, so
+      //   lim_{x -> a^+} f(x) has sign segment.infinitySign, and the derivative
+      //   should go to the OPPOSITE signed infinity.
+      const derivativeInfinitySign = segment.asymptoteSide === 'right'
+        ? segment.infinitySign
+        : -segment.infinitySign;
 
-      // Put the finite endpoint on the same side of the x-axis as the infinite end,
-      // while keeping it modestly inside the visible window.
+      // The finite dot should be on the same side of the x-axis as the infinity
+      // being approached.
       const endSameSideY = derivativeInfinitySign > 0 ? 2 : -2;
 
-      if (derivativeSide === 'left') {
+      if (segment.asymptoteSide === 'right') {
+        // Original branch lies to the LEFT of x = segment.x1.
         return {
           kind: 'infiniteCurve',
-          asymptoteX: segment.x0,
+          asymptoteX: segment.x1,
           asymptoteSide: 'left',
           infinitySign: derivativeInfinitySign,
-          x0: segment.x1,
-          x1: segment.x0,
-          finiteX: segment.x1,
+          x0: segment.x0,
+          x1: segment.x1,
+          finiteX: segment.x0,
           finiteY: endSameSideY,
-          leftClosed: derivativeEndpointClosed(segment, 'right'),
+          leftClosed: derivativeEndpointClosed(segment, 'left'),
           rightClosed: false
         };
       }
 
+      // Original branch lies to the RIGHT of x = segment.x0.
       return {
         kind: 'infiniteCurve',
-        asymptoteX: segment.x1,
+        asymptoteX: segment.x0,
         asymptoteSide: 'right',
         infinitySign: derivativeInfinitySign,
-        x0: segment.x1,
-        x1: segment.x0,
-        finiteX: segment.x0,
+        x0: segment.x0,
+        x1: segment.x1,
+        finiteX: segment.x1,
         finiteY: endSameSideY,
         leftClosed: false,
-        rightClosed: derivativeEndpointClosed(segment, 'left')
+        rightClosed: derivativeEndpointClosed(segment, 'right')
       };
     }
 

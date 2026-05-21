@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -746,7 +747,7 @@ fetch("/nav.html")
 
       const x = clamp(Math.round(rawX), -10, 10);
       const y = clamp(Math.round(rawY), -10, 10);
-      return { kind: 'point', x, y };
+      return { kind: 'point', x, y, onAsymptote: asymptoteXs().includes(x) };
     }
 
     function isAllowedSecondTarget(start, end) {
@@ -773,11 +774,11 @@ fetch("/nav.html")
     }
 
     function placeDerivativePiece(start, end) {
-      const startClosed = endpointClosedForOrder(true);
-      const endClosed = endpointClosedForOrder(false);
+      const startClosed = start.kind === 'point' && start.onAsymptote ? false : endpointClosedForOrder(true);
+      const endClosed = end.kind === 'point' && end.onAsymptote ? false : endpointClosedForOrder(false);
 
       if (start.kind === 'point' && end.kind === 'point' && start.x === end.x && start.y === end.y) {
-        const dotClosed = selectedDrawTool === 'open' ? false : true;
+        const dotClosed = start.onAsymptote ? false : (selectedDrawTool === 'open' ? false : true);
         replaceDerivativeAtPoint({ kind: 'dot', x: start.x, y: start.y, closed: dotClosed });
         return;
       }
@@ -843,6 +844,12 @@ fetch("/nav.html")
     function splitExistingPieceAroundPoint(piece, dot) {
       if (piece.kind === 'dot') return piece.x === dot.x ? [] : [piece];
       if (dot.x < piece.x0 || dot.x > piece.x1) return [piece];
+
+      // Curved asymptote-adjacent sketches are intentionally coarse objects.
+      // If a later placement hits one, delete the whole curved piece rather
+      // than trying to trim it into smaller curved fragments.
+      if (piece.kind === 'infiniteCurve') return [];
+
       const result = [];
       if (piece.x0 < dot.x) {
         const left = trimPiece(piece, piece.x0, dot.x);
@@ -871,6 +878,11 @@ fetch("/nav.html")
       const overlapLeft = Math.max(piece.x0, newPiece.x0);
       const overlapRight = Math.min(piece.x1, newPiece.x1);
       if (overlapLeft > overlapRight || overlapLeft === overlapRight) return [piece];
+
+      // Replacement around vertical-asymptote curve pieces is deliberately simple:
+      // any overlap deletes the whole existing curve.  This avoids broken partial
+      // curved pieces and keeps the user's sketch function-valued.
+      if (piece.kind === 'infiniteCurve') return [];
 
       const result = [];
       if (piece.x0 < overlapLeft) {
@@ -958,14 +970,14 @@ fetch("/nav.html")
       placedDerivativePieces.forEach(piece => drawDerivativePiece(ctx, piece, sx, sy, 1));
 
       if (pendingDerivativeStart) {
-        drawTargetMarker(ctx, pendingDerivativeStart, endpointClosedForOrder(true), sx, sy, 1);
+        drawTargetMarker(ctx, pendingDerivativeStart, pendingDerivativeStart.kind === 'point' && pendingDerivativeStart.onAsymptote ? false : endpointClosedForOrder(true), sx, sy, 1);
         const hover = roughCanvas.hoverTarget;
         if (hover && isAllowedSecondTarget(pendingDerivativeStart, hover)) {
           const preview = makeDerivativePiece(pendingDerivativeStart, hover, endpointClosedForOrder(true), endpointClosedForOrder(false));
           if (preview) drawDerivativePiece(ctx, preview, sx, sy, 0.42);
         }
       } else if (roughCanvas.hoverTarget) {
-        drawTargetMarker(ctx, roughCanvas.hoverTarget, endpointClosedForOrder(true), sx, sy, 0.42);
+        drawTargetMarker(ctx, roughCanvas.hoverTarget, roughCanvas.hoverTarget.kind === 'point' && roughCanvas.hoverTarget.onAsymptote ? false : endpointClosedForOrder(true), sx, sy, 0.42);
       }
     }
 
@@ -999,9 +1011,7 @@ fetch("/nav.html")
         drawDerivativeInfiniteCurve(ctx, piece, sx, sy);
         if (piece.asymptoteSide === 'left') {
           drawDerivativeDot(ctx, sx(piece.finiteX), sy(piece.finiteY), piece.leftClosed);
-          drawDerivativeInfinityArrow(ctx, piece.asymptoteX, piece.asymptoteSide, piece.infinitySign, sx, sy);
         } else {
-          drawDerivativeInfinityArrow(ctx, piece.asymptoteX, piece.asymptoteSide, piece.infinitySign, sx, sy);
           drawDerivativeDot(ctx, sx(piece.finiteX), sy(piece.finiteY), piece.rightClosed);
         }
       }
@@ -1009,12 +1019,16 @@ fetch("/nav.html")
     }
 
     function drawDerivativeInfiniteCurve(ctx, piece, sx, sy) {
-      const samples = 160;
+      const samples = 700;
+      const boundaryY = piece.infinitySign > 0 ? 9.85 : -9.85;
+      const visibleLimit = piece.infinitySign > 0 ? 10 : -10;
       ctx.beginPath();
       let started = false;
+      let previousVisiblePoint = null;
+
       for (let i = 0; i <= samples; i++) {
         const t = i / samples;
-        const eps = 0.035;
+        const eps = 0.012;
         let x;
         if (piece.asymptoteSide === 'left') {
           x = piece.finiteX + t * (piece.asymptoteX - piece.finiteX - eps);
@@ -1022,16 +1036,29 @@ fetch("/nav.html")
           x = piece.asymptoteX + eps + t * (piece.finiteX - piece.asymptoteX - eps);
         }
         const y = evaluateDerivativePiece(piece, x);
-        if (!Number.isFinite(y) || y <= -10 || y >= 10) {
-          started = false;
-          continue;
+        if (!Number.isFinite(y)) continue;
+
+        const inWindow = y > -10 && y < 10;
+        if (!inWindow) {
+          if (previousVisiblePoint) {
+            const y0 = previousVisiblePoint.y;
+            const x0 = previousVisiblePoint.x;
+            const ratio = (boundaryY - y0) / (y - y0);
+            if (ratio >= 0 && ratio <= 1) {
+              const xb = x0 + ratio * (x - x0);
+              ctx.lineTo(sx(xb), sy(boundaryY));
+            }
+          }
+          break;
         }
+
         if (!started) {
           ctx.moveTo(sx(x), sy(y));
           started = true;
         } else {
           ctx.lineTo(sx(x), sy(y));
         }
+        previousVisiblePoint = { x, y };
       }
       ctx.stroke();
     }
@@ -1067,8 +1094,17 @@ fetch("/nav.html")
       if (target.kind === 'point') {
         drawDerivativeDot(ctx, sx(target.x), sy(target.y), closed);
       } else {
-        const xOffset = target.side === 'left' ? -0.16 : 0.16;
-        drawDerivativeArrowHead(ctx, sx(target.x + xOffset), sy(target.sign > 0 ? 8.2 : -8.2), sx(target.x + xOffset), sy(target.sign > 0 ? 9.75 : -9.75));
+        // Do not draw a closed/open endpoint on the asymptote itself.  The marker
+        // is just a short faint branch indicating the selected side/sign.
+        const xOffset = target.side === 'left' ? -0.42 : 0.42;
+        const nearX = target.x + xOffset;
+        const farX = target.x + (target.side === 'left' ? -1.05 : 1.05);
+        const y1 = target.sign > 0 ? 9.55 : -9.55;
+        const y0 = target.sign > 0 ? 7.2 : -7.2;
+        ctx.beginPath();
+        ctx.moveTo(sx(farX), sy(y0));
+        ctx.quadraticCurveTo(sx((farX + nearX) / 2), sy((y0 + y1) / 2), sx(nearX), sy(y1));
+        ctx.stroke();
       }
       ctx.restore();
     }

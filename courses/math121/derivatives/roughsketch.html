@@ -399,8 +399,10 @@ fetch("/nav.html")
           <canvas id="rough-sketch-canvas" width="720" height="720" aria-label="Generated piecewise function graph with derivative sketch input"></canvas>
         </div>
         <div class="button-container">
+          <button id="check-answer-btn" type="button" class="rubber-button">Check Answer</button>
           <button id="hint-btn" type="button" class="rubber-button">Hint</button>
         </div>
+        <div id="answer-feedback" style="text-align:center; font-weight:bold; margin:0.6em 0;"></div>
         <div id="hint-area" style="display:none;">
           <p style="text-align:center; font-weight:bold;">Derivative hint</p>
           <div class="rough-graph-wrap">
@@ -412,6 +414,7 @@ fetch("/nav.html")
       setupDrawToolButtons();
       setupDerivativeCanvasEvents();
       setupHintButton();
+      setupCheckAnswerButton();
       redrawRoughCanvas();
       debugPanel.style.display = 'none';
       debugPanel.textContent = JSON.stringify(currentProblem, null, 2);
@@ -571,8 +574,10 @@ fetch("/nav.html")
     }
 
     function drawDomainEndpointMarkers(ctx, problem, sx, sy) {
-      // Intentionally left blank:
-      // do not place endpoint dots at x = ±10.
+      const first = problem.segments[0];
+      const last = problem.segments[problem.segments.length - 1];
+      if (Number.isFinite(first.y0)) drawPoint(ctx, sx(first.x0), sy(first.y0), true);
+      if (Number.isFinite(last.y1)) drawPoint(ctx, sx(last.x1), sy(last.y1), true);
     }
 
     function drawPoint(ctx, x, y, closed) {
@@ -1012,24 +1017,18 @@ fetch("/nav.html")
         ctx.moveTo(sx(piece.x0), sy(piece.y0));
         ctx.lineTo(sx(piece.x1), sy(piece.y1));
         ctx.stroke();
-        if (piece.x0 !== -10) {
-          drawDerivativeDot(ctx, sx(piece.x0), sy(piece.y0), piece.leftClosed);
-        }
-        if (piece.x1 !== 10) {
-          drawDerivativeDot(ctx, sx(piece.x1), sy(piece.y1), piece.rightClosed);
-        }
+        drawDerivativeDot(ctx, sx(piece.x0), sy(piece.y0), piece.leftClosed);
+        drawDerivativeDot(ctx, sx(piece.x1), sy(piece.y1), piece.rightClosed);
         ctx.restore();
         return;
       }
 
       if (piece.kind === 'infiniteCurve') {
         drawDerivativeInfiniteCurve(ctx, piece, sx, sy);
-        if (piece.finiteX !== -10 && piece.finiteX !== 10) {
-          if (piece.asymptoteSide === 'left') {
-            drawDerivativeDot(ctx, sx(piece.finiteX), sy(piece.finiteY), piece.leftClosed);
-          } else {
-            drawDerivativeDot(ctx, sx(piece.finiteX), sy(piece.finiteY), piece.rightClosed);
-          }
+        if (piece.asymptoteSide === 'left') {
+          drawDerivativeDot(ctx, sx(piece.finiteX), sy(piece.finiteY), piece.leftClosed);
+        } else {
+          drawDerivativeDot(ctx, sx(piece.finiteX), sy(piece.finiteY), piece.rightClosed);
         }
       }
       ctx.restore();
@@ -1349,13 +1348,270 @@ fetch("/nav.html")
       ctx.moveTo(sx(x0), sy(y0Clamped));
       ctx.lineTo(sx(x1), sy(y1Clamped));
       ctx.stroke();
-      if (x0 !== -10) {
-        drawDerivativeDot(ctx, sx(x0), sy(y0Clamped), leftClosed);
-      }
-      if (x1 !== 10) {
-        drawDerivativeDot(ctx, sx(x1), sy(y1Clamped), rightClosed);
-      }
+      drawDerivativeDot(ctx, sx(x0), sy(y0Clamped), leftClosed);
+      drawDerivativeDot(ctx, sx(x1), sy(y1Clamped), rightClosed);
     }
+
+
+
+    function setupCheckAnswerButton() {
+      const checkBtn = document.getElementById('check-answer-btn');
+      if (!checkBtn) return;
+      checkBtn.addEventListener('click', () => {
+        const feedback = document.getElementById('answer-feedback');
+        if (!currentProblem) return;
+        const result = checkDerivativeSketchAnswer();
+        if (feedback) {
+          feedback.textContent = result.ok ? 'Correct!' : result.message;
+          feedback.style.color = result.ok ? 'green' : 'red';
+        }
+      });
+    }
+
+    function checkDerivativeSketchAnswer() {
+      if (!placedDerivativePieces.length) {
+        return { ok: false, message: 'Draw your derivative sketch first.' };
+      }
+
+      const checks = [
+        checkNoClosedDotsAtDiscontinuities,
+        checkZeroDerivativeIntervals,
+        checkLinearDerivativePieces,
+        checkQuadraticDerivativePieces,
+        checkAsymptoteDerivativePieces
+      ];
+
+      for (const check of checks) {
+        const result = check();
+        if (!result.ok) return result;
+      }
+      return { ok: true, message: 'Correct!' };
+    }
+
+    function roughlyZero(y) {
+      return Number.isFinite(y) && Math.abs(y) <= 0.35;
+    }
+
+    function signOf(y) {
+      if (!Number.isFinite(y)) return 0;
+      if (y > 0.35) return 1;
+      if (y < -0.35) return -1;
+      return 0;
+    }
+
+    function strictlySameSign(y, expectedSign) {
+      return expectedSign > 0 ? y > 0.35 : y < -0.35;
+    }
+
+    function nearlyEqual(a, b, tol = 1e-7) {
+      return Math.abs(a - b) <= tol;
+    }
+
+    function isBoundaryX(x) {
+      return nearlyEqual(x, -10) || nearlyEqual(x, 10);
+    }
+
+    function pieceCoversX(piece, x, includeEndpoints = true) {
+      if (piece.kind === 'dot') return nearlyEqual(piece.x, x);
+      if (includeEndpoints) return x >= piece.x0 - 1e-7 && x <= piece.x1 + 1e-7;
+      return x > piece.x0 + 1e-7 && x < piece.x1 - 1e-7;
+    }
+
+    function userValueAt(x) {
+      // Prefer non-dot pieces; dots are only used when the user intentionally places an isolated point.
+      for (const piece of placedDerivativePieces) {
+        if (piece.kind !== 'dot' && pieceCoversX(piece, x, true)) {
+          const atLeft = nearlyEqual(x, piece.x0);
+          const atRight = nearlyEqual(x, piece.x1);
+          if (atLeft && !piece.leftClosed && !isBoundaryX(x)) continue;
+          if (atRight && !piece.rightClosed && !isBoundaryX(x)) continue;
+          const y = evaluateDerivativePiece(piece, x);
+          if (Number.isFinite(y)) return y;
+        }
+      }
+      for (const piece of placedDerivativePieces) {
+        if (piece.kind === 'dot' && nearlyEqual(piece.x, x)) return piece.y;
+      }
+      return null;
+    }
+
+    function userValuesAt(xs) {
+      const vals = [];
+      for (const x of xs) {
+        const y = userValueAt(x);
+        if (y === null || !Number.isFinite(y)) return null;
+        vals.push(y);
+      }
+      return vals;
+    }
+
+    function sampleXsOnInterval(x0, x1, count = 3) {
+      const xs = [];
+      for (let i = 1; i <= count; i++) {
+        xs.push(x0 + (i / (count + 1)) * (x1 - x0));
+      }
+      return xs;
+    }
+
+    function discontinuityBreaks() {
+      return currentProblem.breaks.filter(info => info.kind !== 'continuous');
+    }
+
+    function hasClosedUserEndpointAtX(x) {
+      if (isBoundaryX(x)) return false;
+      return placedDerivativePieces.some(piece => {
+        if (piece.kind === 'dot') return nearlyEqual(piece.x, x) && piece.closed;
+        if (nearlyEqual(piece.x0, x) && piece.leftClosed) return true;
+        if (nearlyEqual(piece.x1, x) && piece.rightClosed) return true;
+        return false;
+      });
+    }
+
+    function hasOpenUserEndpointAtX(x) {
+      if (isBoundaryX(x)) return true;
+      return placedDerivativePieces.some(piece => {
+        if (piece.kind === 'dot') return nearlyEqual(piece.x, x) && !piece.closed;
+        if (nearlyEqual(piece.x0, x) && !piece.leftClosed) return true;
+        if (nearlyEqual(piece.x1, x) && !piece.rightClosed) return true;
+        return false;
+      });
+    }
+
+    function checkNoClosedDotsAtDiscontinuities() {
+      for (const info of discontinuityBreaks()) {
+        if (info.kind === 'asymptote') continue;
+        if (hasClosedUserEndpointAtX(info.x)) {
+          return { ok: false, message: 'Use open dots at discontinuities of the original function.' };
+        }
+        if (!hasOpenUserEndpointAtX(info.x)) {
+          return { ok: false, message: 'There should be open dots at discontinuities of the original function.' };
+        }
+      }
+      return { ok: true };
+    }
+
+    function checkZeroDerivativeIntervals() {
+      for (const segment of currentProblem.segments) {
+        if (segment.type !== 'constant') continue;
+        const vals = userValuesAt(sampleXsOnInterval(segment.x0, segment.x1, 3));
+        if (!vals || vals.some(y => !roughlyZero(y))) {
+          return { ok: false, message: 'Where the original function is constant, the derivative should be zero.' };
+        }
+      }
+      return { ok: true };
+    }
+
+    function checkLinearDerivativePieces() {
+      const linearData = [];
+      for (const segment of currentProblem.segments) {
+        if (segment.type !== 'linear') continue;
+        const xs = sampleXsOnInterval(segment.x0, segment.x1, 3);
+        const vals = userValuesAt(xs);
+        if (!vals) {
+          return { ok: false, message: 'Each linear piece needs a constant derivative drawn over its interval.' };
+        }
+        const expectedSign = Math.sign(segment.m);
+        if (vals.some(y => !strictlySameSign(y, expectedSign))) {
+          return { ok: false, message: 'The derivative of each increasing/decreasing line should have the correct sign.' };
+        }
+        const spread = Math.max(...vals) - Math.min(...vals);
+        if (spread > 1.25) {
+          return { ok: false, message: 'The derivative of a linear piece should be drawn as a constant segment.' };
+        }
+        linearData.push({ slope: segment.m, userY: vals.reduce((a, b) => a + b, 0) / vals.length });
+      }
+
+      for (let i = 0; i < linearData.length; i++) {
+        for (let j = i + 1; j < linearData.length; j++) {
+          const expectedDiff = linearData[i].slope - linearData[j].slope;
+          const userDiff = linearData[i].userY - linearData[j].userY;
+          if (expectedDiff < 0 && !(userDiff < -0.35)) {
+            return { ok: false, message: 'The relative heights of the constant derivative pieces should match the relative slopes of the original lines.' };
+          }
+          if (expectedDiff > 0 && !(userDiff > 0.35)) {
+            return { ok: false, message: 'The relative heights of the constant derivative pieces should match the relative slopes of the original lines.' };
+          }
+          if (expectedDiff === 0 && Math.abs(userDiff) > 1.25) {
+            return { ok: false, message: 'Equal original slopes should have roughly equal derivative heights.' };
+          }
+        }
+      }
+      return { ok: true };
+    }
+
+    function checkQuadraticDerivativePieces() {
+      for (const segment of currentProblem.segments) {
+        if (segment.type !== 'quadratic') continue;
+
+        const apexY = userValueAt(segment.vx);
+        if (apexY === null || !roughlyZero(apexY)) {
+          return { ok: false, message: 'The derivative should be zero at each quadratic apex.' };
+        }
+
+        const allXs = [];
+        if (segment.x0 < segment.vx) allXs.push(...sampleXsOnInterval(segment.x0, segment.vx, Math.min(3, Math.max(1, Math.round(segment.vx - segment.x0)))));
+        if (segment.vx < segment.x1) allXs.push(...sampleXsOnInterval(segment.vx, segment.x1, Math.min(3, Math.max(1, Math.round(segment.x1 - segment.vx)))));
+        const vals = userValuesAt(allXs);
+        if (!vals) {
+          return { ok: false, message: 'Each side of a quadratic needs a derivative segment.' };
+        }
+
+        for (let k = 0; k < allXs.length; k++) {
+          const x = allXs[k];
+          const y = vals[k];
+          const expectedSign = Math.sign(2 * segment.a * (x - segment.vx));
+          if (expectedSign !== 0 && !strictlySameSign(y, expectedSign)) {
+            return { ok: false, message: 'The derivative of a quadratic should have the correct sign on each side of the apex.' };
+          }
+        }
+
+        const sorted = allXs.map((x, i) => ({ x, y: vals[i] })).sort((a, b) => a.x - b.x);
+        for (let i = 0; i < sorted.length - 1; i++) {
+          if (segment.a > 0 && sorted[i + 1].y < sorted[i].y - 0.35) {
+            return { ok: false, message: 'For an upward-opening quadratic, the derivative should increase across the interval.' };
+          }
+          if (segment.a < 0 && sorted[i + 1].y > sorted[i].y + 0.35) {
+            return { ok: false, message: 'For a downward-opening quadratic, the derivative should decrease across the interval.' };
+          }
+        }
+      }
+      return { ok: true };
+    }
+
+    function expectedAsymptoteDerivativeInfo(segment) {
+      if (segment.asymptoteSide === 'right') {
+        return {
+          asymptoteX: segment.x1,
+          side: 'left',
+          sign: segment.infinitySign
+        };
+      }
+      return {
+        asymptoteX: segment.x0,
+        side: 'right',
+        sign: -segment.infinitySign
+      };
+    }
+
+    function checkAsymptoteDerivativePieces() {
+      for (const segment of currentProblem.segments) {
+        if (segment.type !== 'asymptoteCurve') continue;
+        const expected = expectedAsymptoteDerivativeInfo(segment);
+        const branch = placedDerivativePieces.find(piece =>
+          piece.kind === 'infiniteCurve' &&
+          nearlyEqual(piece.asymptoteX, expected.asymptoteX) &&
+          piece.asymptoteSide === expected.side
+        );
+        if (!branch) {
+          return { ok: false, message: 'Near each vertical asymptote, draw the derivative branch going to infinity on the correct side.' };
+        }
+        if (branch.infinitySign !== expected.sign || signOf(branch.finiteY) !== expected.sign) {
+          return { ok: false, message: 'Near a vertical asymptote, both the finite dot and the infinity approached must have the correct sign.' };
+        }
+      }
+      return { ok: true };
+    }
+
 
     startBtn.addEventListener('click', setupActivity);
   </script>

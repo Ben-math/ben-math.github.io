@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,6 +12,23 @@
   <script id="MathJax-script" async
     src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
   </script>
+
+  <style>
+    .differentiation-checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65em;
+      align-items: center;
+      margin: 1.25em auto;
+    }
+
+    .differentiation-checkbox-group .checkbox-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.8em 1.35em;
+    }
+  </style>
 </head>
 <body>
   <header>
@@ -49,14 +67,20 @@ fetch("/nav.html")
       this to \( \tan(x) \) and then differentiate - it will use the quotient rule.  Choose the elements you want to be involved in the problem for 
       practice (it defaults to polynomials and the sum/difference rules).  Excuse the occasionally excessive brackets, an artifact of the automation.</p>
 
-    <div id="rule-select" class="styled-checkbox-group">
-      <label><input type="checkbox" class="styled-checkbox" id="product"> Product Rule</label>
-      <label><input type="checkbox" class="styled-checkbox" id="quotient"> Quotient Rule</label>
-      <label><input type="checkbox" class="styled-checkbox" id="chain"> Chain Rule</label>
-      <label><input type="checkbox" class="styled-checkbox" id="trig"> Trigonometric Functions</label>
-      <label><input type="checkbox" class="styled-checkbox" id="exp"> Exponential Functions</label>
-      <label><input type="checkbox" class="styled-checkbox" id="poly"> Polynomial Functions</label>
-      <label><input type="checkbox" class="styled-checkbox" id="random"> Random</label>
+    <div id="rule-select" class="styled-checkbox-group differentiation-checkbox-group">
+      <div class="checkbox-row">
+        <label><input type="checkbox" class="styled-checkbox" id="product"> Product Rule</label>
+        <label><input type="checkbox" class="styled-checkbox" id="quotient"> Quotient Rule</label>
+        <label><input type="checkbox" class="styled-checkbox" id="chain"> Chain Rule</label>
+        <label><input type="checkbox" class="styled-checkbox" id="poly"> Polynomial Functions</label>
+        <label><input type="checkbox" class="styled-checkbox" id="random"> Random</label>
+      </div>
+      <div class="checkbox-row">
+        <label><input type="checkbox" class="styled-checkbox" id="exp"> Exponential Functions</label>
+        <label><input type="checkbox" class="styled-checkbox" id="log"> Logarithmic Functions</label>
+        <label><input type="checkbox" class="styled-checkbox" id="trig"> Trigonometric Functions</label>
+        <label><input type="checkbox" class="styled-checkbox" id="invtrig"> Inverse Trigonometric Functions</label>
+      </div>
     </div>
 
     <div class="button-container">
@@ -91,1535 +115,454 @@ fetch("/nav.html")
 
     const hintBtn = document.getElementById('hint-btn');
     const hintArea = document.getElementById('hint-area');
-    
+    const startBtn = document.getElementById('start-btn');
+    const checkBtn = document.getElementById('check-btn');
+    const fxDisplay = document.getElementById('fx-display');
+    const activityBox = document.getElementById('my-activity');
+
     let hintSteps = [];
     let hintIndex = 0;
-    let finalAnswer = "";
+    let currentExpressionLatex = '';
+    let currentGenerationData = null;
 
-    let expr1 = {}, expr2 = {}, expr3 = {}, expr4 = {}, expr5 = {}, expr6 = {};
-    let op0 = null, op1 = null, op2 = null;
-    
-
-
-    let a0, a1, a2, a3, e1, e2, e3;
-
-
-    const startBtn = document.getElementById('start-btn');
-    const questionText = document.getElementById('question-text');
-    const activityBox = document.getElementById('my-activity');
+    const RULE_TYPES = ['product', 'quotient', 'chain'];
+    const FUNCTION_TYPES = ['poly', 'exp', 'log', 'trig', 'invtrig'];
 
     const ruleCheckboxes = {
       product: document.getElementById('product'),
       quotient: document.getElementById('quotient'),
       chain: document.getElementById('chain'),
-      trig: document.getElementById('trig'),
-      exp: document.getElementById('exp'),
       poly: document.getElementById('poly'),
+      exp: document.getElementById('exp'),
+      log: document.getElementById('log'),
+      trig: document.getElementById('trig'),
+      invtrig: document.getElementById('invtrig'),
       random: document.getElementById('random'),
     };
-    
+
+    let ruleSelectionOrder = [];
+    let functionSelectionOrder = [];
+
     Object.values(ruleCheckboxes).forEach(box => {
-      box.addEventListener('change', () => {
-        // Mutual exclusion for Product and Quotient Rules
-        if (box.id === 'product' && box.checked) {
-          ruleCheckboxes.quotient.checked = false;
-        }
-        if (box.id === 'quotient' && box.checked) {
-          ruleCheckboxes.product.checked = false;
-        }
-    
-        // If Random is checked, uncheck all others
-        if (box.id === 'random' && box.checked) {
-          Object.keys(ruleCheckboxes).forEach(key => {
-            if (key !== 'random') ruleCheckboxes[key].checked = false;
-          });
-        }
-    
-        // If any rule other than Random is checked, uncheck Random
-        if (box.id !== 'random' && box.checked) {
-          ruleCheckboxes.random.checked = false;
-        }
-      });
+      box.addEventListener('change', () => handleCheckboxChange(box));
     });
+
+    function handleCheckboxChange(box) {
+      if (box.id === 'random' && box.checked) {
+        [...RULE_TYPES, ...FUNCTION_TYPES].forEach(key => ruleCheckboxes[key].checked = false);
+        ruleSelectionOrder = [];
+        functionSelectionOrder = [];
+        return;
+      }
+
+      if (box.id !== 'random' && box.checked) {
+        ruleCheckboxes.random.checked = false;
+      }
+
+      if (RULE_TYPES.includes(box.id)) {
+        updateLimitedSelection(box.id, box.checked, ruleSelectionOrder, RULE_TYPES, 2);
+      }
+
+      if (FUNCTION_TYPES.includes(box.id)) {
+        updateLimitedSelection(box.id, box.checked, functionSelectionOrder, FUNCTION_TYPES, 3);
+      }
+    }
+
+    function updateLimitedSelection(id, isChecked, orderArray, allowedIds, maxSelected) {
+      const existingIndex = orderArray.indexOf(id);
+      if (existingIndex !== -1) orderArray.splice(existingIndex, 1);
+
+      if (isChecked) {
+        orderArray.push(id);
+        while (orderArray.length > maxSelected) {
+          const removed = orderArray.shift();
+          ruleCheckboxes[removed].checked = false;
+        }
+      }
+    }
 
     function chooseRandom(arr) {
       return arr[Math.floor(Math.random() * arr.length)];
     }
 
-
-        function addTextToActivityBox(text, x, y, fontSize = 28) {
-      const txt = document.createElement('div');
-      txt.classList.add('activity-text');
-      txt.textContent = text;
-      txt.style.left = `${x}px`;
-      txt.style.top = `${y}px`;
-      txt.style.fontSize = `${fontSize}px`;
-      activityBox.appendChild(txt);
+    function chance(probability) {
+      return Math.random() < probability;
     }
 
-
-    function createFixedBox(text, x, y, boxSize = 80, fontSize = 28) {
-      const box = document.createElement('div');
-      box.classList.add('exponent-box');
-      box.style.left = `${x}px`;
-      box.style.top = `${y}px`;
-      box.style.width = `${boxSize}px`;
-      box.style.height = `${boxSize}px`;
-      box.style.fontSize = `${fontSize}px`;
-      box.textContent = text;
-      activityBox.appendChild(box);
-      return box;
-    }
-    
-    function createDraggableBox(text, x, y, boxSize = 80, fontSize = 28) {
-      const box = document.createElement('div');
-      box.classList.add('exponent-box', 'draggable-exponent');
-      box.style.left = `${x}px`;
-      box.style.top = `${y}px`;
-      box.style.width = `${boxSize}px`;
-      box.style.height = `${boxSize}px`;
-      box.style.fontSize = `${fontSize}px`;
-      box.textContent = text;
-      activityBox.appendChild(box);
-      makeExponentDraggable(box);
-      return box;
-    }
-    
-    function createSlot(x, y, boxSize = 80, fontSize = 28) {
-      const slot = document.createElement('div');
-      slot.classList.add('exponent-box', 'exponent-slot');
-      slot.style.left = `${x}px`;
-      slot.style.top = `${y}px`;
-      slot.style.width = `${boxSize}px`;
-      slot.style.height = `${boxSize}px`;
-      slot.style.fontSize = `${fontSize}px`;
-      activityBox.appendChild(slot);
-      setupDropTarget(slot);
-      return slot;
+    function shuffle(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
     }
 
-
-
-    function makeExponentDraggable(elem) {
-      elem.draggable = true;
-    
-      elem.addEventListener('dragstart', e => {
-        e.dataTransfer.setData('text/plain', elem.textContent);
-        setTimeout(() => elem.style.visibility = 'hidden', 0);
-      });
-    
-      elem.addEventListener('dragend', () => {
-        elem.style.visibility = 'visible';
-      });
-    }
-    
-    function setupDropTarget(slot) {
-      slot.addEventListener('dragover', e => {
-        e.preventDefault();
-        slot.classList.add('valid-hover');
-      });
-    
-      slot.addEventListener('dragleave', () => {
-        slot.classList.remove('valid-hover');
-      });
-    
-      slot.addEventListener('drop', e => {
-        e.preventDefault();
-        slot.classList.remove('valid-hover');
-        const droppedText = e.dataTransfer.getData('text/plain');
-        slot.textContent = droppedText;
-    
-        // Play sound when an exponent is dropped
-        const sound = document.getElementById('set-sound');
-        if (sound) {
-          sound.currentTime = 0; // rewind to start in case it's still playing
-          sound.play();
-        }
-      });
-    }
-
-
-    function formatTerm(coef, exp, isFirst) {
-      const sign = coef < 0 ? '−' : (isFirst ? '' : '+');
-      const absCoef = Math.abs(coef);
-    
-      if (exp === 0) return `${sign} ${absCoef}`;
-      if (exp === 1) return `${sign} ${absCoef === 1 ? 'x' : `${absCoef}x`}`;
-      return `${sign} ${absCoef === 1 ? `x^{${exp}}` : `${absCoef}x^{${exp}`}`;
-    }
-
-
-    function generateTrigExpr() {
-      const funcs = ['sin', 'cos', 'tan'];
-      return { type: 'trig', func: chooseRandom(funcs) };
-    }
-    
-    function generateExpExpr() {
-      const choice = Math.random() < 0.5 ? 'e' : generateRestrictedInteger();
-      return { type: 'exp', base: choice };
-    }
-    
-    function generatePolyExpr() {
-      const coeffs = [0, 0, 0].map(() => generateNonZeroInteger(-9, 9));
-      
-      let e1 = generateRandomInt(1, 9);
-      let e2;
-      do {
-        e2 = generateRandomInt(1, 9);
-      } while (e2 === e1);
-    
-      // Sort in descending order
-      const exps = [e1, e2].sort((a, b) => b - a);
-    
-      return { type: 'poly', coeffs, exps };
-    }
-
-    // Utility to generate integers
-    function generateRandomInt(min, max) {
+    function randomInt(min, max) {
       return Math.floor(Math.random() * (max - min + 1)) + min;
     }
-    
-    function generateNonZeroInteger(min, max) {
-      let num;
-      do {
-        num = generateRandomInt(min, max);
-      } while (num === 0);
-      return num;
+
+    function nonZeroInt(min, max) {
+      let n;
+      do { n = randomInt(min, max); } while (n === 0);
+      return n;
     }
 
-    function generateRestrictedInteger() {
-      let num;
-      do {
-        num = Math.floor(Math.random() * 19) - 9;  // Generates -9 to 9
-      } while (Math.abs(num) <= 1);  // Excludes -1, 0, 1
-      return num;
+    function signedJoin(left, right, op) {
+      return op === 'sum' ? sumNode(left, right) : diffNode(left, right);
     }
 
-
-    function generateExpression(type) {
-      if (type === 'trig') return generateTrigExpr();
-      if (type === 'exp') return generateExpExpr();
-      if (type === 'poly') return generatePolyExpr();
-      throw new Error(`Unknown expression type: ${type}`);
+    function randomPlusMinus() {
+      return chooseRandom(['sum', 'difference']);
     }
 
-
-    function appendAnyExpr(exprObj, includeX = false) {
-      if (exprObj.type === 'poly') {
-        return appendPolyExpr(exprObj);
-      } else if (exprObj.type === 'exp') {
-        return appendExpExpr(exprObj, includeX);
-      } else if (exprObj.type === 'trig') {
-        return appendTrigExpr(exprObj, includeX);
-      } else {
-        throw new Error(`Unknown expression type: ${exprObj.type}`);
+    function getSelectedRulesAndFunctions() {
+      if (ruleCheckboxes.random.checked) {
+        const shuffledFunctions = shuffle(FUNCTION_TYPES);
+        const shuffledRules = shuffle(RULE_TYPES);
+        const numberOfFunctions = randomInt(1, 3);
+        const numberOfRules = randomInt(0, 2);
+        return {
+          rules: shuffledRules.slice(0, numberOfRules),
+          functionTypes: shuffledFunctions.slice(0, numberOfFunctions),
+          usedRandom: true,
+        };
       }
+
+      return {
+        rules: RULE_TYPES.filter(type => ruleCheckboxes[type].checked),
+        functionTypes: FUNCTION_TYPES.filter(type => ruleCheckboxes[type].checked),
+        usedRandom: false,
+      };
     }
 
-    function appendTrigExpr(exprObj, includeX = false) {
-      const func = exprObj.func;
-      const sign = exprObj.isNegative ? '-' : '';
-      return `${sign}\\${func}${includeX ? "(x)" : ""}`;
+    function generateAtom(type) {
+      if (type === 'poly') return generatePolynomialAtom();
+      if (type === 'exp') return generateExponentialAtom();
+      if (type === 'log') return generateLogAtom();
+      if (type === 'trig') return generateTrigAtom();
+      if (type === 'invtrig') return generateInverseTrigAtom();
+      throw new Error(`Unknown function type: ${type}`);
     }
 
-
-
-    function appendExpExpr(exprObj, includeX = false) {
-      const base = exprObj.base;
-      let baseStr;
-    
-      if (base === 'e') {
-        baseStr = 'e';
-      } else if (base < 0) {
-        baseStr = `\\left(${base}\\right)`;
-      } else {
-        baseStr = `${base}`;
+    function generatePolynomialAtom() {
+      const powers = [1];
+      while (powers.length < 3) {
+        const candidate = randomInt(2, 9);
+        if (!powers.includes(candidate)) powers.push(candidate);
       }
-    
-      let expPart = includeX ? `${baseStr}^{x}` : `${baseStr}`;
+      powers.sort((a, b) => b - a);
 
-      if (exprObj.isLn) {
-        return `\\ln(${base}) \\cdot ${expPart}`;
-      }
-      return expPart;
-
+      return {
+        kind: 'atom',
+        functionType: 'poly',
+        coeffs: powers.map(() => nonZeroInt(-9, 9)),
+        powers,
+      };
     }
 
-
-
-
-
-    function appendPolyExpr(exprObj) {
-      const { coeffs, exps } = exprObj;
-      const [a, b, c] = coeffs;
-      const [e1, e2] = exps;
-    
-      let result = "";
-    
-      // First term (degree e1)
-      result += formatPolyTerm(a, e1, true);
-    
-      // Second term (degree e2)
-      result += formatPolyTerm(b, e2, false);
-    
-      // Constant term
-      result += formatPolyTerm(c, 0, false);
-    
-      return result;
+    function generateExponentialAtom() {
+      return {
+        kind: 'atom',
+        functionType: 'exp',
+        base: chance(0.5) ? 'e' : nonZeroInt(-9, 9),
+      };
     }
 
-
-    function formatPolyTerm(coef, exp, isFirst) {
-      if (coef === 0) return "";  // Skip zero terms
-    
-      const sign = coef > 0 ? (isFirst ? "" : " + ") : " - ";
-      const absCoef = Math.abs(coef);
-      const coeffStr = (absCoef === 1 && exp !== 0) ? "" : absCoef;
-      const xStr =
-        exp === 0 ? "" :
-        exp === 1 ? "x" :
-        `x^{${exp}}`;
-    
-      return `${sign}${coeffStr}${xStr}`;
+    function generateLogAtom() {
+      return {
+        kind: 'atom',
+        functionType: 'log',
+        base: chance(0.5) ? 'e' : randomInt(2, 9),
+      };
     }
 
-    function derivative(exprObj) {
-      if (exprObj.type === 'poly') {
-        return polyDerivative(exprObj);
-      } else if (exprObj.type === 'exp') {
-        return expDerivative(exprObj);
-      } else if (exprObj.type === 'trig') {
-        return trigDerivative(exprObj);
-      } else {
-        throw new Error(`Unknown expression type: ${exprObj.type}`);
-      }
+    function generateTrigAtom() {
+      return {
+        kind: 'atom',
+        functionType: 'trig',
+        func: chooseRandom(['sin', 'cos', 'tan', 'sec', 'csc', 'cot']),
+      };
     }
 
-    function polyDerivative(exprObj) {
-      const { coeffs, exps } = exprObj;
-      const [a, b, c] = coeffs;
-      const [e1, e2] = exps;
-    
-      const newCoeffs = [
-        a * e1,
-        b * e2,
-        0 // Constant term disappears
-      ];
-      const newExps = [
-        e1 - 1,
-        e2 - 1
-      ];
-    
-      return { type: 'poly', coeffs: newCoeffs, exps: newExps };
+    function generateInverseTrigAtom() {
+      return {
+        kind: 'atom',
+        functionType: 'invtrig',
+        func: chooseRandom(['sin', 'cos', 'tan']),
+        displayAsPower: chance(0.5),
+      };
     }
 
+    function atomNode(atom) { return atom; }
+    function sumNode(left, right) { return { kind: 'sum', left, right }; }
+    function diffNode(left, right) { return { kind: 'difference', left, right }; }
+    function productNode(left, right) { return { kind: 'product', left, right }; }
+    function quotientNode(left, right) { return { kind: 'quotient', left, right }; }
+    function composeNode(outer, inner) { return { kind: 'compose', outer, inner }; }
+    function powerNode(base, exponent) { return { kind: 'power', base, exponent }; }
 
-    function expDerivative(exprObj) {
-      const base = exprObj.base;
-    
-      if (base === 'e') {
-        return { type: 'exp', base: 'e' };
-      } else {
-        return { type: 'exp', base: base, isLn: true }; 
-      }
+    function render(node, variableLatex = 'x') {
+      if (node.kind === 'atom') return renderAtom(node, variableLatex);
+      if (node.kind === 'sum') return `${wrap(node.left, variableLatex)}+${wrap(node.right, variableLatex)}`;
+      if (node.kind === 'difference') return `${wrap(node.left, variableLatex)}-${wrap(node.right, variableLatex)}`;
+      if (node.kind === 'product') return `${wrap(node.left, variableLatex)}${wrap(node.right, variableLatex)}`;
+      if (node.kind === 'quotient') return `\\frac{${render(node.left, variableLatex)}}{${render(node.right, variableLatex)}}`;
+      if (node.kind === 'compose') return render(node.outer, render(node.inner, variableLatex));
+      if (node.kind === 'power') return `${wrap(node.base, variableLatex)}^{${node.exponent}}`;
+      throw new Error(`Unknown node kind: ${node.kind}`);
     }
 
-
-
-    function trigDerivative(exprObj) {
-      const func = exprObj.func;
-      let newFunc;
-      let isNegative = false;
-    
-      if (func === 'sin') {
-        newFunc = 'cos';
-      } else if (func === 'cos') {
-        newFunc = 'sin';
-        isNegative = true;  // Cos derivative is negative sin
-      } else if (func === 'tan') {
-        newFunc = 'sec^{2}';
-      } else {
-        throw new Error(`Unknown trig function: ${func}`);
-      }
-    
-      return { type: 'trig', func: newFunc, isNegative: isNegative };
+    function wrap(node, variableLatex = 'x') {
+      return `\\left(${render(node, variableLatex)}\\right)`;
     }
 
-
-
-
-
-
-
-
-
-
-
-    
-  startBtn.addEventListener('click', () => {
-
-    // Play sound when view button is clicked
-    const sound = document.getElementById('click-sound');
-    if (sound) {
-      sound.currentTime = 0; // rewind to start in case it's still playing
-      sound.play();
+    function renderAtom(atom, variableLatex = 'x') {
+      if (atom.functionType === 'poly') return renderPolynomial(atom, variableLatex);
+      if (atom.functionType === 'exp') return renderExponential(atom, variableLatex);
+      if (atom.functionType === 'log') return renderLog(atom, variableLatex);
+      if (atom.functionType === 'trig') return `\\${atom.func}\\left(${variableLatex}\\right)`;
+      if (atom.functionType === 'invtrig') return renderInverseTrig(atom, variableLatex);
+      throw new Error(`Unknown atom function type: ${atom.functionType}`);
     }
 
-    let useProduct, useQuotient, useChain, useTrig, useExp, usePoly;
-    hintSteps = [];
-
-    let useRandom = ruleCheckboxes.random.checked;
-    if (useRandom) {
-      // 33% chance for each of these to be true
-      useChain = Math.random() < 0.33;
-      useTrig = Math.random() < 0.33;
-      useExp = Math.random() < 0.33;
-      usePoly = Math.random() < 0.33;
-    
-      // 33% chance of picking one of product/quotient
-      if (Math.random() < 0.33) {
-        if (Math.random() < 0.5) {
-          useProduct = true;
-          useQuotient = false;
-        } else {
-          useProduct = false;
-          useQuotient = true;
-        }
-      } else {
-        useProduct = false;
-        useQuotient = false;
-      }
-    } else {
-      useProduct = ruleCheckboxes.product.checked;
-      useQuotient = ruleCheckboxes.quotient.checked;
-      useChain = ruleCheckboxes.chain.checked;
-      useTrig = ruleCheckboxes.trig.checked;
-      useExp = ruleCheckboxes.exp.checked;
-      usePoly = ruleCheckboxes.poly.checked;
-    }
-    
-    // Determine number of expressions
-    let numExprs;
-    
-    const selectedTypes = [];
-    if (useTrig) selectedTypes.push('trig');
-    if (useExp) selectedTypes.push('exp');
-    if (usePoly) selectedTypes.push('poly');
-    
-    // Count how many expression types are checked
-    const numTypesChecked = selectedTypes.length;
-    
-    // Decide number of expressions to use
-    if (numTypesChecked === 3) {
-      numExprs = 3;
-    } else if (numTypesChecked === 2) {
-      if ((useProduct || useQuotient) && useChain) {
-        numExprs = chooseRandom([2, 3]);
-      } else {
-        numExprs = 2;
-      }
-    } else {
-      if (useProduct || useQuotient) {
-        numExprs = 2;
-        if (useChain && numTypesChecked === 2) {
-            numExprs = chooseRandom([2, 3]);
-        }
-      } else if (useChain) {
-        if (usePoly || numTypesChecked === 0) {
-          numExprs = 1;
-        } else {
-          numExprs = chooseRandom([1, 2]);
-        }
-      } else {
-        numExprs = Math.max(1, numTypesChecked); // default to 1–3
-      }
-    }
-    
-    // Default to polynomial if no type is selected
-    const availableTypes = selectedTypes.length > 0 ? [...selectedTypes, 'poly'] : ['poly'];
-    
-    // Ensure we include at least one of each selected type
-    let requiredTypes = [...selectedTypes];
-    while (requiredTypes.length < numExprs) {
-      requiredTypes.push(chooseRandom(availableTypes));
-    }
-    requiredTypes = requiredTypes.slice(0, numExprs); // in case we overshot
-    
-    
-    // Determine how expressions are connected (op1/op2)
-    op1 = null;
-    op2 = null;
-    
-    const structuralRules = [];
-    if (useProduct) structuralRules.push('product');
-    if (useQuotient) structuralRules.push('quotient');
-    if (useChain) structuralRules.push('chain');
-    
-    if (numExprs === 1) {
-      // Single expression — no operators
-      op1 = null;
-      op2 = null;
-    } else if (numExprs === 2) {
-      // Use op1 only
-      if (structuralRules.length === 0) {
-        op1 = chooseRandom(['sum', 'difference']);
-      } else if (structuralRules.length === 1) {
-        op1 = structuralRules[0];
-      } else if (useProduct || useQuotient) {
-        op1 = useProduct ? 'product' : 'quotient';
-      } else {
-        op1 = 'chain';
-      }
-    } else if (numExprs === 3) {
-      // Use op1 and op2
-      const opSlots = [];
-
-      if (structuralRules.length === 0) {
-        opSlots.push(chooseRandom(['sum', 'difference']));
-        opSlots.push(chooseRandom(['sum', 'difference']));
-      } else if (structuralRules.length === 1) {
-        opSlots.push(structuralRules[0]);
-        opSlots.push(chooseRandom(['sum', 'difference']));
-      } else {
-        // Two structural rules — use both
-        opSlots.push(structuralRules[0]);
-        opSlots.push(structuralRules[1]);
-      }
-    
-      // Shuffle to avoid fixed positioning
-      opSlots.sort(() => Math.random() - 0.5);
-    
-      [op1, op2] = opSlots;
-
+    function renderPolynomial(atom, variableLatex = 'x') {
+      return atom.powers.map((power, index) => {
+        const coef = atom.coeffs[index];
+        const sign = coef < 0 ? '-' : (index === 0 ? '' : '+');
+        const absCoef = Math.abs(coef);
+        const coefLatex = absCoef === 1 ? '' : `${absCoef}`;
+        const variablePart = power === 1 ? variableLatex : `\\left(${variableLatex}\\right)^{${power}}`;
+        return `${sign}${coefLatex}${variablePart}`;
+      }).join('');
     }
 
-    // Now, shuffle — possibly multiple times, based on op1/op2
-    let shuffled = false;
-    do {
-      shuffled = false;
-      requiredTypes.sort(() => Math.random() - 0.5);
-    
-      if (numExprs >= 2 && op1 === 'chain' && requiredTypes[0] === 'poly') {
-        shuffled = true;
-      }
-      if (numExprs === 3 && op2 === 'chain' && requiredTypes[1] === 'poly') {
-        shuffled = true;
-      }
-    } while (shuffled);
-
-    
-    // Assign expression types
-    [expr1, expr2, expr3] = [{}, {}, {}];
-    if (numExprs >= 1) expr1.type = requiredTypes[0];
-    if (numExprs >= 2) expr2.type = requiredTypes[1];
-    if (numExprs === 3) expr3.type = requiredTypes[2];
-
-    
-    const chainSelected = useChain;
-    const chainUsed = (op1 === 'chain' || op2 === 'chain');
-    
-    if (chainSelected && !chainUsed) {
-      op0 = generateRandomInt(2, 9);
-    } else {
-      op0 = null;
+    function renderExponential(atom, variableLatex = 'x') {
+      if (atom.base === 'e') return `e^{${variableLatex}}`;
+      const baseLatex = atom.base < 0 ? `\\left(${atom.base}\\right)` : `${atom.base}`;
+      return `${baseLatex}^{${variableLatex}}`;
     }
 
-    expr1 = { ...expr1, ...generateExpression(expr1.type) };
-    if (numExprs >= 2) expr2 = { ...expr2, ...generateExpression(expr2.type) };
-    if (numExprs === 3) expr3 = { ...expr3, ...generateExpression(expr3.type) };
+    function renderLog(atom, variableLatex = 'x') {
+      if (atom.base === 'e') return `\\ln\\left(${variableLatex}\\right)`;
+      return `\\log_{${atom.base}}\\left(${variableLatex}\\right)`;
+    }
 
-    
-    console.log({ numExprs, expr1, expr2, expr3, op0, op1, op2 });
+    function renderInverseTrig(atom, variableLatex = 'x') {
+      if (atom.displayAsPower) return `\\${atom.func}^{-1}\\left(${variableLatex}\\right)`;
+      const arcName = atom.func === 'sin' ? 'arcsin' : atom.func === 'cos' ? 'arccos' : 'arctan';
+      return `\\${arcName}\\left(${variableLatex}\\right)`;
+    }
 
+    function getAtoms(functionTypes, minimumCount) {
+      const types = [...functionTypes];
+      while (types.length < minimumCount) types.push('poly');
+      return shuffle(types).slice(0, minimumCount).map(generateAtom);
+    }
 
-      
-  
-      const fxDisplay = document.getElementById('fx-display');
+    function getNonPolynomialIndex(atoms) {
+      const candidates = atoms.map((atom, index) => atom.functionType !== 'poly' ? index : -1).filter(index => index !== -1);
+      return candidates.length ? chooseRandom(candidates) : -1;
+    }
 
-      
-      // Build string term-by-term
-      let expr = "";
-      let innermostExpr = "";
+    function containsNonPolynomial(node) {
+      if (!node) return false;
+      if (node.kind === 'atom') return node.functionType !== 'poly';
+      if (node.kind === 'sum' || node.kind === 'difference' || node.kind === 'product' || node.kind === 'quotient') {
+        return containsNonPolynomial(node.left) || containsNonPolynomial(node.right);
+      }
+      if (node.kind === 'compose') return containsNonPolynomial(node.outer);
+      if (node.kind === 'power') return false;
+      return false;
+    }
 
-      if (op1 === 'product' || op1 === 'sum' || op1 === 'difference') {
-        expr += `\\left(`;
-      } else if (op1 === 'quotient') {
-        expr += `\\frac{`;
+    function makeComposition(outer, inner) {
+      if (!containsNonPolynomial(outer)) {
+        return powerNode(inner, randomInt(2, 9));
+      }
+      return composeNode(outer, inner);
+    }
+
+    function chooseOuterAndInner(atoms) {
+      const outerIndex = getNonPolynomialIndex(atoms);
+      if (outerIndex === -1) {
+        return { outer: null, inner: chooseRandom(atoms), usedPowerInstead: true };
+      }
+      const outer = atoms[outerIndex];
+      const remaining = atoms.filter((_, index) => index !== outerIndex);
+      return { outer, inner: chooseRandom(remaining), usedPowerInstead: false };
+    }
+
+    function buildQuestionExpression(functionTypes, selectedRules) {
+      const hasProduct = selectedRules.includes('product');
+      const hasQuotient = selectedRules.includes('quotient');
+      const hasChain = selectedRules.includes('chain');
+      const selectedCount = functionTypes.length;
+
+      if (!hasProduct && !hasQuotient && !hasChain) {
+        const atoms = getAtoms(functionTypes.length ? functionTypes : ['poly'], Math.max(1, functionTypes.length));
+        return combineByRandomSigns(shuffle(atoms));
       }
 
+      if (hasChain && !hasProduct && !hasQuotient) {
+        if (selectedCount <= 1) {
+          const atom = getAtoms(functionTypes.length ? functionTypes : ['poly'], 1)[0];
+          return powerNode(atom, randomInt(2, 9));
+        }
 
-      if (numExprs === 1) {
-        expr += appendAnyExpr(expr1, true);
-      } else if (op1 !== 'chain') {
-        expr += appendAnyExpr(expr1, true);
-      } else {
-        expr += appendAnyExpr(expr1);
+        if (selectedCount === 2) {
+          const atoms = getAtoms(functionTypes, 2);
+          const { outer, inner, usedPowerInstead } = chooseOuterAndInner(atoms);
+          return usedPowerInstead ? powerNode(inner, randomInt(2, 9)) : composeNode(outer, inner);
+        }
+
+        const [f, g, h] = getAtoms(functionTypes, 3);
+        const templates = [
+          () => makeComposition(f, signedJoin(g, h, randomPlusMinus())),
+          () => makeComposition(signedJoin(f, g, randomPlusMinus()), h),
+          () => signedJoin(f, makeComposition(g, h), randomPlusMinus()),
+          () => signedJoin(makeComposition(f, g), h, randomPlusMinus()),
+        ];
+        return chooseRandom(templates)();
       }
 
-
-
-
-
-
-
-
-
-      if (numExprs === 2) {
-        if (op1 === 'chain') {
-          if (expr1.type === 'exp') {
-            expr += `^{`;
-          } else {
-            expr += `\\left(`;
-          }
-        }
-  
-        if (op1 === 'product') {
-          expr += `\\right)\\left(`;
-        } else if (op1 === 'quotient') {
-          expr += `}{`;
-        } else if (op1 === 'sum') {
-          expr += `\\right)+\\left(`;
-        } else if (op1 === 'difference') {
-          expr += `\\right)-\\left(`;
-        }
-        // We are now past expr1
-  
-        expr += appendAnyExpr(expr2, true);
-  
-  
-        // This is the end of the chain rule applied to expressions after expr1
-        if (op1 === 'chain') {
-          if (expr1.type === 'exp') {
-            expr += `}`;
-          } else {
-            expr += `\\right)`;
-          }
-        } else if (op1 === 'product' || op1 === 'sum' || op1 === 'difference') {
-          expr += `\\right)`;
-        } else if (op1 === 'quotient') {
-          expr += `}`;
-        }
+      if (hasProduct && hasQuotient && !hasChain) {
+        const [f, g, h] = getAtoms(functionTypes, 3);
+        return chooseRandom([
+          () => quotientNode(productNode(f, g), h),
+          () => quotientNode(f, productNode(g, h)),
+          () => productNode(f, quotientNode(g, h)),
+          () => productNode(quotientNode(f, g), h),
+        ])();
       }
 
-
-
-
-
-
-
-
-
-    
-
-    
-      if (numExprs === 3) {
-        if (op1 === 'chain') {
-          if (expr1.type === 'exp') {
-            expr += `^{`;
-          } else {
-            expr += `\\left(`;
-          }
+      if ((hasProduct || hasQuotient) && !hasChain) {
+        const structuralNode = hasProduct ? productNode : quotientNode;
+        if (selectedCount <= 2) {
+          const [f, g] = getAtoms(functionTypes, 2);
+          return structuralNode(f, g);
         }
-  
-        if (op1 === 'product') {
-          expr += `\\right)\\left(`;
-        } else if (op1 === 'quotient') {
-          expr += `}{`;
-        } else if (op1 === 'sum') {
-          expr += `\\right)+\\left(`;
-        } else if (op1 === 'difference') {
-          expr += `\\right)-\\left(`;
-        }
-        // We are now past expr1
-  
-        if (op2 === 'product' || op2 === 'sum' || op2 === 'difference') {
-          innermostExpr += `\\left(`;
-        } else if (op2 === 'quotient') {
-          innermostExpr += `\\frac{`;
-        }
-       
-        innermostExpr += appendAnyExpr(expr2);
-       
-        if (op2 !== 'chain') {
-          if (expr2.type === 'exp') {
-            innermostExpr += `^x`;
-          } else if (expr2.type === 'trig') {
-            innermostExpr += `(x)`;
-          }
-        } else {
-          if (expr2.type === 'exp') {
-            innermostExpr += `^{`;
-          } else {
-            innermostExpr += `\\left(`;
-          }
-        }
-  
-        if (op2 === 'product') {
-          innermostExpr += `\\right)\\left(`;
-        } else if (op2 === 'quotient') {
-          innermostExpr += `}{`;
-        } else if (op2 === 'sum') {
-          innermostExpr += `\\right)+\\left(`;
-        } else if (op2 === 'difference') {
-          innermostExpr += `\\right)-\\left(`;
-        }
-        // We are now past expr2
-
-        innermostExpr += appendAnyExpr(expr3, true);
-  
-        if (op2 === 'chain') {
-          if (expr2.type === 'exp') {
-            innermostExpr += `}`;
-          } else {
-            innermostExpr += `\\right)`;
-          }
-        } else if (op2 === 'product' || op2 === 'sum' || op2 === 'difference') {
-          innermostExpr += `\\right)`;
-        } else if (op2 === 'quotient') {
-          innermostExpr += `}`;
-        }
-  
-        expr += innermostExpr;
-  
-        // This is the end of the chain rule applied to expressions after expr1
-        if (op1 === 'chain') {
-          if (expr1.type === 'exp') {
-            expr += `}`;
-          } else {
-            expr += `\\right)`;
-          }
-        } else if (op1 === 'product' || op1 === 'sum' || op1 === 'difference') {
-          expr += `\\right)`;
-        } else if (op1 === 'quotient') {
-          expr += `}`;
-        }
-      }
-      
-      let innerExpr = expr;
-    
-      if (op0 !== null) {
-        expr = "";
-        expr += `\\left(${innerExpr}\\right)^{${op0}}`;
+        const [f, g, h] = getAtoms(functionTypes, 3);
+        return chooseRandom([
+          () => signedJoin(structuralNode(f, g), h, randomPlusMinus()),
+          () => signedJoin(f, structuralNode(g, h), randomPlusMinus()),
+          () => structuralNode(f, signedJoin(g, h, randomPlusMinus())),
+          () => structuralNode(signedJoin(f, g, randomPlusMinus()), h),
+        ])();
       }
 
+      if (hasChain && (hasProduct || hasQuotient)) {
+        const structuralNode = hasProduct ? productNode : quotientNode;
+        const structuralName = hasProduct ? 'product' : 'quotient';
 
-      
-      const fxLatex = `\\[ \\text{Find the derivative of } \\hspace{5mm} f(x) = ${expr} \\]`;
+        if (selectedCount === 0) {
+          const [f, g] = getAtoms(['poly', 'poly'], 2);
+          return chance(0.5)
+            ? structuralNode(f, powerNode(g, randomInt(2, 9)))
+            : structuralNode(powerNode(f, randomInt(2, 9)), g);
+        }
 
-      fxDisplay.textContent = fxLatex;
-      // fxDisplay.textContent = fxLatex;
-      MathJax.typeset([fxDisplay]);
+        if (selectedCount <= 2) {
+          const [f, g] = getAtoms(functionTypes, 2);
+          const composition = makeComposition(f, g);
+          return chance(0.5) ? structuralNode(f, composition) : structuralNode(composition, g);
+        }
 
-
-
-      hintSteps = [];
-      hintIndex = 0;
-      finalAnswer = "";
-
-
-
-      // Here we will compute the derivative, while storing steps and hints
-      let i = 0
-    
-      if (op0 !== null) {
-        hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Chain Rule: if } h(x) = f(g(x)), \\text{ then } h'(x) = f'(g(x)) \\cdot g'(x) \\]
-        \\[ \\text{Here, we have the exponent }  ${op0} \\text{ applied to the expression in the brackets.} \\]
-        \\[ \\text{So, take the expression in the brackets to be } g(x), \\text{ and take } f(x) = x^${op0}. \\]`;
-        i++;
-        hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${op0}\\left(${innerExpr}\\right)^${op0-1}\\cdot\\left(${innerExpr}\\right)' \\]`;
-        finalAnswer += `${op0}\\left(${innerExpr}\\right)^${op0-1}\\cdot `;
-        i++;
+        const [f, g, h] = getAtoms(functionTypes, 3);
+        return chooseRandom([
+          () => makeComposition(f, structuralNode(g, h)),
+          () => makeComposition(structuralNode(f, g), h),
+          () => structuralNode(f, makeComposition(g, h)),
+          () => structuralNode(makeComposition(f, g), h),
+        ])();
       }
 
-      if (numExprs === 1) {
-        expr4 = derivative(expr1);
-        if (expr1.type === 'exp' && expr1.base === 'e') {
-          if (op0 === null) {
-            finalAnswer += `${appendAnyExpr(expr4, true)}`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = ${finalAnswer}\\]`;
-            i++;
-          } else {
-            finalAnswer += `${appendAnyExpr(expr4, true)}`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\]`;
-            i++;
-          }
-        } else if (expr1.type === 'exp') {
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
-          i++;
-          finalAnswer += `${appendAnyExpr(expr4, true)}`;
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer} \\]`;
-          i++;
-        } else if (expr1.type === 'trig') {
-          finalAnswer += `${appendAnyExpr(expr4, true)}`;
-          if (op0 === null) {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${finalAnswer} \\]`;
-            i++;
-          } else {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${expr4.func === 'sin' ? '-' : ''}\\${expr4.func}(x), 
-            \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\]`;
-            i++;
-          }
-        } else {
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
-          = f'(x) \\pm g'(x)\\]
-          \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
-          i++;
-          if (op0 === null) {
-            finalAnswer += `${appendAnyExpr(expr4)}`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer} \\]`;
-            i++;
-          } else {
-            finalAnswer += `\\left( ${appendAnyExpr(expr4)} \\right)`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer} \\]`;
-            i++;
-          }
-        }
-      }
-
-
-
-
-
-
-      if (numExprs === 2) {
-        expr4 = derivative(expr1);
-        expr5 = derivative(expr2);
-        if (op1 === 'quotient') {
-          finalAnswer += `\\frac{`;
-        }
-
-        if (op1 === 'sum') {
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Sum/Difference Rule, } (f(x) \\pm g(x))'
-          = f'(x) \\pm g'(x)\\]`;
-          i++;
-          if (expr1.type === 'exp' && expr1.base === 'e') {
-            finalAnswer += `${appendAnyExpr(expr4, true)}`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = 
-            ${finalAnswer} + \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
-            i++;
-          } else if (expr1.type === 'exp') {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
-            i++;
-            finalAnswer += `${appendAnyExpr(expr4, true)}`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer} + 
-            \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
-            i++;
-          } else if (expr1.type === 'trig') {
-            finalAnswer += `${appendAnyExpr(expr4, true)}`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${appendAnyExpr(expr4, true)}, 
-            \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} + \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
-            i++;
-          } else {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
-            = f'(x) \\pm g(x)\\]
-            \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
-            i++;
-            finalAnswer += `${appendAnyExpr(expr4)}`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  + 
-            \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
-            i++;
-          }
-        }
-
-        if (op1 === 'difference') {
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Sum/Difference Rule, } (f(x) \\pm g(x))'
-          = f'(x) \\pm g'(x)\\]`;
-          i++;
-          if (expr1.type === 'exp' && expr1.base === 'e') {
-            finalAnswer += `${appendAnyExpr(expr4, true)}`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = 
-            ${finalAnswer} - \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
-            i++;
-          } else if (expr1.type === 'exp') {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
-            i++;
-            finalAnswer += `${appendAnyExpr(expr4, true)}`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer} - 
-            \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
-            i++;
-          } else if (expr1.type === 'trig') {
-            finalAnswer += `${appendAnyExpr(expr4, true)}`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${appendAnyExpr(expr4, true)}, 
-            \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} - \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
-            i++;
-          } else {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
-            = f'(x) \\pm g(x)\\]
-            \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
-            i++;
-            finalAnswer += `${appendAnyExpr(expr4)}`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  - 
-            \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
-            i++;
-          }
-        }
-
-        if (op1 === 'product') {
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Product Rule, } (f(x) \\cdot g(x))'
-          = f'(x) \\cdot g(x) + f(x) \\cdot g'(x)\\]`;
-          i++;
-          if (expr1.type === 'exp' && expr1.base === 'e') {
-            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` + `\\right)` + `+ ${appendAnyExpr(expr1, true)}` + `\\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = 
-            ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
-            i++;
-          } else if (expr1.type === 'exp') {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
-            i++;
-            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}`
-              + `\\right)` + `+ ${appendAnyExpr(expr1, true)}` + `\\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = 
-            ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
-            i++;
-          } else if (expr1.type === 'trig') {
-            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
-           + `\\right)` + `+${appendAnyExpr(expr1, true)}` + `\\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${appendAnyExpr(expr4, true)}, 
-            \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
-            i++;
-          } else {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
-            = f'(x) \\pm g(x)\\]
-            \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
-            i++;
-            finalAnswer += `\\left( ${appendAnyExpr(expr4)} \\right)` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
-            + `\\right)` + `+\\left( ${appendAnyExpr(expr1, true)} \\right)` + `\\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  
-            \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
-            i++;
-          }
-        }
-
-
-        if (op1 === 'quotient') {
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Quotient Rule, } \\left(\\frac{f(x)}{g(x)}\\right)'
-          = \\frac{f'(x)g(x)-f(x)g'(x)}{(g(x))^2}\\]`;
-          i++;
-          if (expr1.type === 'exp' && expr1.base === 'e') {
-            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` + `\\right)` + `- ${appendAnyExpr(expr1, true)}` + `\\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\left(${expr}\\right)' = 
-            ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)'}{\\left(${appendAnyExpr(expr2, true)}\\right)^2} \\]`;
-            i++;
-          } else if (expr1.type === 'exp') {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
-            i++;
-            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}`
-              + `\\right)` + `- ${appendAnyExpr(expr1, true)}` + `\\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = 
-            ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)'}{\\left(${appendAnyExpr(expr2, true)}\\right)^2} \\]`;
-            i++;
-          } else if (expr1.type === 'trig') {
-            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
-           + `\\right)` + `-${appendAnyExpr(expr1, true)}` + `\\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${appendAnyExpr(expr4, true)}, 
-            \\text{ so } \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' }{\\left(${appendAnyExpr(expr2, true)}\\right)^2} \\]`;
-            i++;
-          } else {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
-            = f'(x) \\pm g(x)\\]
-            \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
-            i++;
-            finalAnswer += `\\left( ${appendAnyExpr(expr4)} \\right)` + `\\cdot \\left(` + `${appendAnyExpr(expr2, true)}` 
-            + `\\right)` + `-\\left( ${appendAnyExpr(expr1, true)} \\right)` + `\\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  
-            \\left(${appendAnyExpr(expr2, true)}\\right)' }{\\left(${appendAnyExpr(expr2, true)}\\right)^2} \\]`;
-            i++;
-          }
-        }
-
-
-
-        if (op1 === 'chain') {
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Chain Rule: if } h(x) = f(g(x)), \\text{ then } h'(x) = f'(g(x)) \\cdot g'(x) \\]`;
-          i++;
-          if (expr1.type === 'exp' && expr1.base === 'e') {
-            finalAnswer += `${appendAnyExpr(expr4)}^{${appendAnyExpr(expr2, true)}} \\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Note that } (e^{g(x)})' = e^{g(x)} \\cdot g'(x), \\text{ so } \\left(${expr}\\right)' = 
-            ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
-            i++;
-          } else if (expr1.type === 'exp') {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Note that } (a^{g(x)})' = \\ln(a) \\cdot a^{g(x)} \\cdot g'(x)\\]`;
-            i++;
-            finalAnswer += `${appendAnyExpr(expr4)}^{${appendAnyExpr(expr2, true)}} \\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = 
-            ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)' \\]`;
-            i++;
-          } else if (expr1.type === 'trig') {
-            finalAnswer += `${appendAnyExpr(expr4)} \\left(${appendAnyExpr(expr2, true)}\\right) \\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Note that } (\\${expr1.func}(g(x)))' = ${appendAnyExpr(expr4)}(g(x)) \\cdot g'(x), \\text{ so } 
-            \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr2, true)}\\right)'\\]`;
-            i++;
-          }
-        }
-
-
-
-        if (op1 === 'sum') {
-          finalAnswer += `+`;
-        }
-
-
-        if (op1 === 'difference') {
-          finalAnswer += `-`;
-        }
-
-        if (expr2.type === 'exp' && expr2.base === 'e') {
-          finalAnswer += `${appendAnyExpr(expr5, true)}`;
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x \\]`;
-          i++;
-        } else if (expr2.type === 'exp') {
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x \\]`;
-          i++;
-          finalAnswer += `${appendAnyExpr(expr5, true)}`;
-        } else if (expr2.type === 'trig') {
-          finalAnswer += `${appendAnyExpr(expr5, true)}`;
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr2.func}(x))' = ${appendAnyExpr(expr5, true)} \\]`;
-          i++;
-        } else {
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
-          = f'(x) \\pm g(x)\\]
-          \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
-          i++;
-          finalAnswer += `\\left(${appendAnyExpr(expr5)}\\right)`;
-        }
-
-
-        
-
-
-        if (op1 === 'quotient') {
-          finalAnswer += `}{\\left(${appendAnyExpr(expr2, true)}\\right)^2} `;
-        }
-        hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = ${finalAnswer} \\]`;
-        i++;
-      }
-
-
-
-
-
-
-
-
-
-
-      if (numExprs === 3) {
-        expr4 = derivative(expr1);
-        expr5 = derivative(expr2);
-        expr6 = derivative(expr3);
-        if (op1 === 'quotient') {
-          finalAnswer += `\\frac{`;
-        }
-
-        if (op1 === 'sum') {
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Sum/Difference Rule, } (f(x) \\pm g(x))'
-          = f'(x) \\pm g'(x)\\]`;
-          i++;
-          if (expr1.type === 'exp' && expr1.base === 'e') {
-            finalAnswer += `${appendAnyExpr(expr4, true)}`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\]\\[ \\left(${expr}\\right)' = 
-            ${finalAnswer} + \\left(${innermostExpr}\\right)' \\]`;
-            i++;
-          } else if (expr1.type === 'exp') {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
-            i++;
-            finalAnswer += `${appendAnyExpr(expr4, true)}`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer} + 
-            \\left(${innermostExpr}\\right)' \\]`;
-            i++;
-          } else if (expr1.type === 'trig') {
-            finalAnswer += `${appendAnyExpr(expr4, true)}`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${appendAnyExpr(expr4, true)}, 
-            \\text{ so } \\]\\[ \\left(${expr}\\right)' = ${finalAnswer} + \\left(${innermostExpr}\\right)' \\]`;
-            i++;
-          } else {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
-            = f'(x) \\pm g(x)\\]
-            \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
-            i++;
-            finalAnswer += `${appendAnyExpr(expr4)}`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  + 
-            \\left(${innermostExpr}\\right)' \\]`;
-            i++;
-          }
-        }
-
-
-        if (op1 === 'difference') {
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Sum/Difference Rule, } (f(x) \\pm g(x))'
-          = f'(x) \\pm g'(x)\\]`;
-          i++;
-          if (expr1.type === 'exp' && expr1.base === 'e') {
-            finalAnswer += `${appendAnyExpr(expr4, true)}`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\]\\[ \\left(${expr}\\right)' = 
-            ${finalAnswer} - \\left(${innermostExpr}\\right)' \\]`;
-            i++;
-          } else if (expr1.type === 'exp') {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
-            i++;
-            finalAnswer += `${appendAnyExpr(expr4, true)}`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer} - 
-            \\left(${innermostExpr}\\right)' \\]`;
-            i++;
-          } else if (expr1.type === 'trig') {
-            finalAnswer += `${appendAnyExpr(expr4, true)}`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${appendAnyExpr(expr4, true)}, 
-            \\text{ so } \\]\\[ \\left(${expr}\\right)' = ${finalAnswer} - \\left(${innermostExpr}\\right)' \\]`;
-            i++;
-          } else {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
-            = f'(x) \\pm g(x)\\]
-            \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
-            i++;
-            finalAnswer += `${appendAnyExpr(expr4)}`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  - 
-            \\left(${innermostExpr}\\right)' \\]`;
-            i++;
-          }
-        }
-
-        if (op1 === 'product') {
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Product Rule, } (f(x) \\cdot g(x))'
-          = f'(x) \\cdot g(x) + f(x) \\cdot g'(x)\\]`;
-          i++;
-          if (expr1.type === 'exp' && expr1.base === 'e') {
-            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${innermostExpr}` + `\\right)` + `+ ${appendAnyExpr(expr1, true)}` + `\\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\]\\[ \\left(${expr}\\right)' = 
-            ${finalAnswer} \\left(${innermostExpr}\\right)' \\]`;
-            i++;
-          } else if (expr1.type === 'exp') {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
-            i++;
-            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${innermostExpr}`
-              + `\\right)` + `+ ${appendAnyExpr(expr1, true)}` + `\\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = 
-            ${finalAnswer} \\left(${innermostExpr}\\right)' \\]`;
-            i++;
-          } else if (expr1.type === 'trig') {
-            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${innermostExpr}` 
-           + `\\right)` + `+${appendAnyExpr(expr1, true)}` + `\\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${appendAnyExpr(expr4, true)}, 
-            \\text{ so } \\]\\[ \\left(${expr}\\right)' = ${finalAnswer} \\left(${innermostExpr}\\right)' \\]`;
-            i++;
-          } else {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
-            = f'(x) \\pm g(x)\\]
-            \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
-            i++;
-            finalAnswer += `\\left( ${appendAnyExpr(expr4)} \\right)` + `\\cdot \\left(` + `${innermostExpr}` 
-            + `\\right)` + `+\\left( ${appendAnyExpr(expr1, true)} \\right)` + `\\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  
-            \\left(${innermostExpr}\\right)' \\]`;
-            i++;
-          }
-        }
-
-
-        if (op1 === 'quotient') {
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Quotient Rule, } \\left(\\frac{f(x)}{g(x)}\\right)'
-          = \\frac{f'(x)g(x)-f(x)g'(x)}{(g(x))^2}\\]`;
-          i++;
-          if (expr1.type === 'exp' && expr1.base === 'e') {
-            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${innermostExpr}` + `\\right)` + `- ${appendAnyExpr(expr1, true)}` + `\\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\]\\[ \\left(${expr}\\right)' = 
-            ${finalAnswer} \\left(${innermostExpr}\\right)'}{\\left(${innermostExpr}\\right)^2} \\]`;
-            i++;
-          } else if (expr1.type === 'exp') {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
-            i++;
-            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${innermostExpr}`
-              + `\\right)` + `- ${appendAnyExpr(expr1, true)}` + `\\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = 
-            ${finalAnswer} \\left(${innermostExpr}\\right)'}{\\left(${innermostExpr}\\right)^2} \\]`;
-            i++;
-          } else if (expr1.type === 'trig') {
-            finalAnswer += `${appendAnyExpr(expr4, true)}` + `\\cdot \\left(` + `${innermostExpr}` 
-           + `\\right)` + `-${appendAnyExpr(expr1, true)}` + `\\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr1.func}(x))' = ${appendAnyExpr(expr4, true)}, 
-            \\text{ so } \\]\\[ \\left(${expr}\\right)' = ${finalAnswer} \\left(${innermostExpr}\\right)' }{\\left(${innermostExpr}\\right)^2} \\]`;
-            i++;
-          } else {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
-            = f'(x) \\pm g(x)\\]
-            \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
-            i++;
-            finalAnswer += `\\left( ${appendAnyExpr(expr4)} \\right)` + `\\cdot \\left(` + `${innermostExpr}` 
-            + `\\right)` + `-\\left( ${appendAnyExpr(expr1, true)} \\right)` + `\\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  
-            \\left(${innermostExpr}\\right)' }{\\left(${innermostExpr}\\right)^2} \\]`;
-            i++;
-          }
-        }
-
-
-
-        if (op1 === 'chain') {
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Chain Rule: if } h(x) = f(g(x)), \\text{ then } h'(x) = f'(g(x)) \\cdot g'(x) \\]`;
-          i++;
-          if (expr1.type === 'exp' && expr1.base === 'e') {
-            finalAnswer += `${appendAnyExpr(expr4)}^{${innermostExpr}} \\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Note that } (e^{g(x)})' = e^{g(x)} \\cdot g'(x), \\text{ so } \\]\\[ \\left(${expr}\\right)' = 
-            ${finalAnswer} \\left(${innermostExpr}\\right)' \\]`;
-            i++;
-          } else if (expr1.type === 'exp') {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Note that } (a^{g(x)})' = \\ln(a) \\cdot a^{g(x)} \\cdot g'(x)\\]`;
-            i++;
-            finalAnswer += `${appendAnyExpr(expr4)}^{${innermostExpr}} \\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = 
-            ${finalAnswer} \\left(${innermostExpr}\\right)' \\]`;
-            i++;
-          } else if (expr1.type === 'trig') {
-            finalAnswer += `${appendAnyExpr(expr4)} \\left(${innermostExpr}\\right) \\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Note that } (\\${expr1.func}(g(x)))' = ${appendAnyExpr(expr4)}(g(x)) \\cdot g'(x), \\text{ so } 
-            \\]\\[ \\left(${expr}\\right)' = ${finalAnswer} \\left(${innermostExpr}\\right)'\\]`;
-            i++;
-          }
-        }
-
-
-
-        if (op1 === 'sum') {
-          finalAnswer += `+`;
-        }
-
-
-        if (op1 === 'difference') {
-          finalAnswer += `- \\left(`;
-        }
-
-        if (op1 === 'chain') {
-          finalAnswer += `\\left(`;
-        }
-
-
-        // HERE IS WHERE WE HAVE DEALT WITH EXPR1, NEXT CONSIDER OP2
-
-
-
-
-
-
-
-        if (op2 === 'quotient') {
-          finalAnswer += `\\frac{`;
-        }
-
-        if (op2 === 'sum') {
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Sum/Difference Rule, } (f(x) \\pm g(x))'
-          = f'(x) \\pm g'(x)\\]`;
-          i++;
-          if (expr2.type === 'exp' && expr2.base === 'e') {
-            finalAnswer += `${appendAnyExpr(expr5, true)}`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\]\\[ \\left(${expr}\\right)' = 
-            ${finalAnswer} + \\left(${appendAnyExpr(expr3, true)}\\right)' 
-            ${op1 === 'quotient' ? `}{\\left(${innermostExpr}\\right)^{2}}` : ''}${(op1 === 'difference' || op1 === 'chain') ? '\\right)' : ''}\\]`;
-            i++;
-          } else if (expr2.type === 'exp') {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
-            i++;
-            finalAnswer += `${appendAnyExpr(expr5, true)}`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer} + 
-            \\left(${appendAnyExpr(expr3, true)}\\right)' 
-            ${op1 === 'quotient' ? `}{\\left(${innermostExpr}\\right)^{2}}` : ''}${(op1 === 'difference' || op1 === 'chain') ? '\\right)' : ''}\\]`;
-            i++;
-          } else if (expr2.type === 'trig') {
-            finalAnswer += `${appendAnyExpr(expr5, true)}`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr2.func}(x))' = ${appendAnyExpr(expr5, true)}, 
-            \\text{ so } \\]\\[ \\left(${expr}\\right)' = ${finalAnswer} + \\left(${appendAnyExpr(expr3, true)}\\right)' 
-            ${op1 === 'quotient' ? `}{\\left(${innermostExpr}\\right)^{2}}` : ''}${(op1 === 'difference' || op1 === 'chain') ? '\\right)' : ''}\\]`;
-            i++;
-          } else {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
-            = f'(x) \\pm g(x)\\]
-            \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
-            i++;
-            finalAnswer += `${appendAnyExpr(expr5)}`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  + 
-            \\left(${appendAnyExpr(expr3, true)}\\right)' 
-            ${op1 === 'quotient' ? `}{\\left(${innermostExpr}\\right)^{2}}` : ''}${(op1 === 'difference' || op1 === 'chain') ? '\\right)' : ''}\\]`;
-            i++;
-          }
-        }
-
-        if (op2 === 'difference') {
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Sum/Difference Rule, } (f(x) \\pm g(x))'
-          = f'(x) \\pm g'(x)\\]`;
-          i++;
-          if (expr2.type === 'exp' && expr2.base === 'e') {
-            finalAnswer += `${appendAnyExpr(expr5, true)}`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\]\\[ \\left(${expr}\\right)' = 
-            ${finalAnswer} - \\left(${appendAnyExpr(expr3, true)}\\right)' 
-            ${op1 === 'quotient' ? `}{\\left(${innermostExpr}\\right)^{2}}` : ''}${(op1 === 'difference' || op1 === 'chain') ? '\\right)' : ''}\\]`;
-            i++;
-          } else if (expr2.type === 'exp') {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
-            i++;
-            finalAnswer += `${appendAnyExpr(expr5, true)}`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer} - 
-            \\left(${appendAnyExpr(expr3, true)}\\right)' 
-            ${op1 === 'quotient' ? `}{\\left(${innermostExpr}\\right)^{2}}` : ''}${(op1 === 'difference' || op1 === 'chain') ? '\\right)' : ''}\\]`;
-            i++;
-          } else if (expr2.type === 'trig') {
-            finalAnswer += `${appendAnyExpr(expr5, true)}`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr2.func}(x))' = ${appendAnyExpr(expr5, true)}, 
-            \\text{ so } \\]\\[ \\left(${expr}\\right)' = ${finalAnswer} - \\left(${appendAnyExpr(expr3, true)}\\right)' 
-            ${op1 === 'quotient' ? `}{\\left(${innermostExpr}\\right)^{2}}` : ''}${(op1 === 'difference' || op1 === 'chain') ? '\\right)' : ''}\\]`;
-            i++;
-          } else {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
-            = f'(x) \\pm g(x)\\]
-            \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
-            i++;
-            finalAnswer += `${appendAnyExpr(expr5)}`;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  - 
-            \\left(${appendAnyExpr(expr3, true)}\\right)' 
-            ${op1 === 'quotient' ? `}{\\left(${innermostExpr}\\right)^{2}}` : ''}${(op1 === 'difference' || op1 === 'chain') ? '\\right)' : ''}\\]`;
-            i++;
-          }
-        }
-
-        if (op2 === 'product') {
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Product Rule, } (f(x) \\cdot g(x))'
-          = f'(x) \\cdot g(x) + f(x) \\cdot g'(x)\\]`;
-          i++;
-          if (expr2.type === 'exp' && expr2.base === 'e') {
-            finalAnswer += `${appendAnyExpr(expr5, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr3, true)}` + `\\right)` + `+ ${appendAnyExpr(expr2, true)}` + `\\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\]\\[ \\left(${expr}\\right)' = 
-            ${finalAnswer} \\left(${appendAnyExpr(expr3, true)}\\right)' 
-            ${op1 === 'quotient' ? `}{\\left(${innermostExpr}\\right)^{2}}` : ''}${(op1 === 'difference' || op1 === 'chain') ? '\\right)' : ''}\\]`;
-            i++;
-          } else if (expr2.type === 'exp') {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
-            i++;
-            finalAnswer += `${appendAnyExpr(expr5, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr3, true)}`
-              + `\\right)` + `+ ${appendAnyExpr(expr2, true)}` + `\\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = 
-            ${finalAnswer} \\left(${appendAnyExpr(expr3, true)}\\right)' 
-            ${op1 === 'quotient' ? `}{\\left(${innermostExpr}\\right)^{2}}` : ''}${(op1 === 'difference' || op1 === 'chain') ? '\\right)' : ''}\\]`;
-            i++;
-          } else if (expr2.type === 'trig') {
-            finalAnswer += `${appendAnyExpr(expr5, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr3, true)}` 
-           + `\\right)` + `+${appendAnyExpr(expr2, true)}` + `\\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr2.func}(x))' = ${appendAnyExpr(expr5, true)}, 
-            \\text{ so } \\]\\[ \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr3, true)}\\right)' 
-            ${op1 === 'quotient' ? `}{\\left(${innermostExpr}\\right)^{2}}` : ''}${(op1 === 'difference' || op1 === 'chain') ? '\\right)' : ''}\\]`;
-            i++;
-          } else {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
-            = f'(x) \\pm g(x)\\]
-            \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
-            i++;
-            finalAnswer += `\\left( ${appendAnyExpr(expr5)} \\right)` + `\\cdot \\left(` + `${appendAnyExpr(expr3, true)}` 
-            + `\\right)` + `+\\left( ${appendAnyExpr(expr2, true)} \\right)` + `\\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  
-            \\left(${appendAnyExpr(expr3, true)}\\right)' 
-            ${op1 === 'quotient' ? `}{\\left(${innermostExpr}\\right)^{2}}` : ''}${(op1 === 'difference' || op1 === 'chain') ? '\\right)' : ''}\\]`;
-            i++;
-          }
-        }
-
-
-        if (op2 === 'quotient') {
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Quotient Rule, } \\left(\\frac{f(x)}{g(x)}\\right)'
-          = \\frac{f'(x)g(x)-f(x)g'(x)}{(g(x))^2}\\]`;
-          i++;
-          if (expr2.type === 'exp' && expr2.base === 'e') {
-            finalAnswer += `${appendAnyExpr(expr5, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr3, true)}` + `\\right)` + `- ${appendAnyExpr(expr2, true)}` + `\\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x, \\text{ so } \\]\\[ \\left(${expr}\\right)' = 
-            ${finalAnswer} \\left(${appendAnyExpr(expr3, true)}\\right)'}{\\left(${appendAnyExpr(expr3, true)}\\right)^2} 
-            ${op1 === 'quotient' ? `}{\\left(${innermostExpr}\\right)^{2}}` : ''}${(op1 === 'difference' || op1 === 'chain') ? '\\right)' : ''}\\]`;
-            i++;
-          } else if (expr2.type === 'exp') {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x\\]`;
-            i++;
-            finalAnswer += `${appendAnyExpr(expr5, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr3, true)}`
-              + `\\right)` + `- ${appendAnyExpr(expr2, true)}` + `\\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = 
-            ${finalAnswer} \\left(${appendAnyExpr(expr3, true)}\\right)'}{\\left(${appendAnyExpr(expr3, true)}\\right)^2} 
-            ${op1 === 'quotient' ? `}{\\left(${innermostExpr}\\right)^{2}}` : ''}${(op1 === 'difference' || op1 === 'chain') ? '\\right)' : ''}\\]`;
-            i++;
-          } else if (expr2.type === 'trig') {
-            finalAnswer += `${appendAnyExpr(expr5, true)}` + `\\cdot \\left(` + `${appendAnyExpr(expr3, true)}` 
-           + `\\right)` + `-${appendAnyExpr(expr2, true)}` + `\\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr2.func}(x))' = ${appendAnyExpr(expr5, true)}, 
-            \\text{ so } \\]\\[ \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr3, true)}\\right)' }{\\left(${appendAnyExpr(expr3, true)}\\right)^2} 
-            ${op1 === 'quotient' ? `}{\\left(${innermostExpr}\\right)^{2}}` : ''}${(op1 === 'difference' || op1 === 'chain') ? '\\right)' : ''}\\]`;
-            i++;
-          } else {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
-            = f'(x) \\pm g(x)\\]
-            \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
-            i++;
-            finalAnswer += `\\left( ${appendAnyExpr(expr5)} \\right)` + `\\cdot \\left(` + `${appendAnyExpr(expr3, true)}` 
-            + `\\right)` + `-\\left( ${appendAnyExpr(expr2, true)} \\right)` + `\\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: } \\left(${expr}\\right)' = ${finalAnswer}  
-            \\left(${appendAnyExpr(expr3, true)}\\right)' }{\\left(${appendAnyExpr(expr3, true)}\\right)^2} 
-            ${op1 === 'quotient' ? `}{\\left(${innermostExpr}\\right)^{2}}` : ''}${(op1 === 'difference' || op1 === 'chain') ? '\\right)' : ''}\\]`;
-            i++;
-          }
-        }
-
-
-
-        if (op2 === 'chain') {
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Chain Rule: if } h(x) = f(g(x)), \\text{ then } h'(x) = f'(g(x)) \\cdot g'(x) \\]`;
-          i++;
-          if (expr2.type === 'exp' && expr2.base === 'e') {
-            finalAnswer += `${appendAnyExpr(expr5)}^{${appendAnyExpr(expr3, true)}} \\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Note that } (e^{g(x)})' = e^{g(x)} \\cdot g'(x), \\text{ so } \\]\\[ \\left(${expr}\\right)' = 
-            ${finalAnswer} \\left(${appendAnyExpr(expr3, true)}\\right)' 
-            ${op1 === 'quotient' ? `}{\\left(${innermostExpr}\\right)^{2}}` : ''}${(op1 === 'difference' || op1 === 'chain') ? '\\right)' : ''}\\]`;
-            i++;
-          } else if (expr2.type === 'exp') {
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Note that } (a^{g(x)})' = \\ln(a) \\cdot a^{g(x)} \\cdot g'(x)\\]`;
-            i++;
-            finalAnswer += `${appendAnyExpr(expr5)}^{${appendAnyExpr(expr3, true)}} \\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = 
-            ${finalAnswer} \\left(${appendAnyExpr(expr3, true)}\\right)' 
-            ${op1 === 'quotient' ? `}{\\left(${innermostExpr}\\right)^{2}}` : ''}${(op1 === 'difference' || op1 === 'chain') ? '\\right)' : ''}\\]`;
-            i++;
-          } else if (expr2.type === 'trig') {
-            finalAnswer += `${appendAnyExpr(expr5)} \\left(${appendAnyExpr(expr3, true)}\\right) \\cdot `;
-            hintSteps[i] = `\\[ \\text{Hint ${i+1}: Note that } (\\${expr2.func}(g(x)))' = ${appendAnyExpr(expr5)}(g(x)) \\cdot g'(x), \\text{ so } 
-            \\]\\[ \\left(${expr}\\right)' = ${finalAnswer} \\left(${appendAnyExpr(expr3, true)}\\right)' 
-            ${op1 === 'quotient' ? `}{\\left(${innermostExpr}\\right)^{2}}` : ''}${(op1 === 'difference' || op1 === 'chain') ? '\\right)' : ''}\\]`;
-            i++;
-          }
-        }
-
-
-
-        if (op2 === 'sum') {
-          finalAnswer += `+`;
-        }
-
-
-        if (op2 === 'difference') {
-          finalAnswer += `-`;
-        }
-
-        if (expr3.type === 'exp' && expr3.base === 'e') {
-          finalAnswer += `${appendAnyExpr(expr6, true)}`;
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (e^x)' = e^x \\]`;
-          i++;
-        } else if (expr3.type === 'exp') {
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (a^x)' = \\ln(a) \\cdot a^x \\]`;
-          i++;
-          finalAnswer += `${appendAnyExpr(expr6, true)}`;
-        } else if (expr3.type === 'trig') {
-          finalAnswer += `${appendAnyExpr(expr6, true)}`;
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall that } (\\${expr3.func}(x))' = ${appendAnyExpr(expr6, true)} \\]`;
-          i++;
-        } else {
-          hintSteps[i] = `\\[ \\text{Hint ${i+1}: Recall the Power Rule, } (x^n)' = nx^{n-1}, \\text{ and the Sum/Difference Rule, } (f(x) \\pm g(x))'
-          = f'(x) \\pm g(x)\\]
-          \\[ \\text{With these rules, we can differentiate any polynomial.} \\]`;
-          i++;
-          finalAnswer += `\\left(${appendAnyExpr(expr6)}\\right)`;
-        }
-
-
-        
-
-
-        if (op2 === 'quotient') {
-          finalAnswer += `}{\\left(${appendAnyExpr(expr3, true)}\\right)^2} `;
-        }
-
-
-
-
-
-
-
-
-
-        // HERE IS THE END OF THE NESTED OP2 CODE
-
-        
-
-
-        if (op1 === 'quotient') {
-          finalAnswer += `}{\\left(${appendAnyExpr(expr3, true)}\\right)^2} `;
-        }
-        if (op1 === 'difference' || op1 === 'chain') {
-          finalAnswer += `\\right)`;
-        }
-        hintSteps[i] = `\\[ \\text{Hint ${i+1}: }  \\left(${expr}\\right)' = ${finalAnswer} \\]`;
-        i++;
-      }
-
-
-
-    
-    
-      hintIndex = 0;
-      hintArea.innerHTML = "";  // Clear previous hints
-
-
-
-      
-      // Clear the activity box first
-      activityBox.innerHTML = "";
-      
-
-
-    });
-
-
-    const checkBtn = document.getElementById('check-btn');
-    const answerDisplay = document.getElementById('answer-display');
-    
-    checkBtn.addEventListener('click', () => {
-      // Play sound when view button is clicked
+      const fallbackAtom = getAtoms(functionTypes.length ? functionTypes : ['poly'], 1)[0];
+      return fallbackAtom;
+    }
+
+    function nonPolyOrPowerBase(preferredOuter, possibleInners) {
+      if (preferredOuter.functionType !== 'poly') return preferredOuter;
+      const nonPolyInner = possibleInners.find(node => node.functionType && node.functionType !== 'poly');
+      return nonPolyInner || preferredOuter;
+    }
+
+    function combineByRandomSigns(nodes) {
+      if (nodes.length === 1) return nodes[0];
+      return nodes.slice(1).reduce((acc, node) => signedJoin(acc, node, randomPlusMinus()), nodes[0]);
+    }
+
+    function describeNode(node) {
+      return render(node).replaceAll('\\left(', '(').replaceAll('\\right)', ')');
+    }
+
+    startBtn.addEventListener('click', () => {
       const sound = document.getElementById('click-sound');
       if (sound) {
-        sound.currentTime = 0; // rewind to start in case it's still playing
+        sound.currentTime = 0;
         sound.play();
       }
 
-      // Remove any existing answer div
-      const existingAnswer = activityBox.querySelector('.math');
-      if (existingAnswer) {
-        activityBox.removeChild(existingAnswer);
+      const selection = getSelectedRulesAndFunctions();
+      const expressionTree = buildQuestionExpression(selection.functionTypes, selection.rules);
+      currentExpressionLatex = render(expressionTree);
+      currentGenerationData = { selection, expressionTree };
+
+      fxDisplay.textContent = `\\[ \\text{Find the derivative of } \\hspace{5mm} f(x) = ${currentExpressionLatex} \\]`;
+      if (window.MathJax) MathJax.typeset([fxDisplay]);
+
+      hintSteps = buildTemporaryHintSteps(selection, expressionTree);
+      hintIndex = 0;
+      hintArea.innerHTML = '';
+      activityBox.innerHTML = '<div id="answer-display" class="math" style="text-align: center;"></div>';
+
+      console.log('Generated differentiation question:', currentGenerationData);
+    });
+
+    function buildTemporaryHintSteps(selection, expressionTree) {
+      const ruleNames = selection.rules.length ? selection.rules.join(', ') : 'sum/difference only';
+      const functionNames = selection.functionTypes.length ? selection.functionTypes.join(', ') : 'polynomial default';
+      return [
+        `\\[ \\text{Generated using function type(s): ${functionNames}.} \\]`,
+        `\\[ \\text{Generated using rule type(s): ${ruleNames}.} \\]`,
+        `\\[ \\text{Derivative computation and worked hint steps are the next update.} \\]`,
+      ];
+    }
+
+    checkBtn.addEventListener('click', () => {
+      const sound = document.getElementById('click-sound');
+      if (sound) {
+        sound.currentTime = 0;
+        sound.play();
       }
-      
-      // Create a new div to hold the LaTeX answer
+
+      activityBox.innerHTML = '';
       const answerDiv = document.createElement('div');
       answerDiv.classList.add('math');
       answerDiv.style.textAlign = 'center';
-      answerDiv.style.fontSize = '24px'; 
-
-      answerDiv.textContent = `\\[ ${finalAnswer} \\]`;
-
+      answerDiv.style.fontSize = '24px';
+      answerDiv.textContent = `\\[ \\text{Derivative computation will be added in the next pass.} \\]`;
       activityBox.appendChild(answerDiv);
-      
-      MathJax.typeset([answerDiv]);
+      if (window.MathJax) MathJax.typeset([answerDiv]);
     });
 
+    hintBtn.addEventListener('click', () => {
+      const sound = document.getElementById('click-sound');
+      if (sound) {
+        sound.currentTime = 0;
+        sound.play();
+      }
 
+      if (hintIndex < hintSteps.length) {
+        const hintPara = document.createElement('div');
+        hintPara.classList.add('hint-step');
+        hintPara.textContent = hintSteps[hintIndex];
+        hintArea.appendChild(hintPara);
+        if (window.MathJax) MathJax.typeset([hintPara]);
+        hintIndex++;
+      }
+    });
 
-  
-  hintBtn.addEventListener('click', () => {
-    // Play sound when view button is clicked
-    const sound = document.getElementById('click-sound');
-    if (sound) {
-      sound.currentTime = 0; // rewind to start in case it's still playing
-      sound.play();
-    }
-    if (hintIndex < hintSteps.length) {
-      // Create a new paragraph for each hint
-      const hintPara = document.createElement('div');
-      hintPara.classList.add('hint-step');
-      hintPara.textContent = hintSteps[hintIndex];
-      hintArea.appendChild(hintPara);
-      
-      MathJax.typeset([hintPara]);
-      hintIndex++;
-    }
-  });
-
-    
   </script>
 
   <audio id="click-sound" src="button.mp3" preload="auto"></audio>

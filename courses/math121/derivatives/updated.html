@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -124,6 +125,7 @@ fetch("/nav.html")
     let hintSteps = [];
     let hintIndex = 0;
     let currentExpressionLatex = '';
+    let finalAnswerLatex = '';
     let currentGenerationData = null;
 
     const RULE_TYPES = ['product', 'quotient', 'chain'];
@@ -574,13 +576,218 @@ fetch("/nav.html")
       fxDisplay.textContent = `\\[ \\text{Find the derivative of } \\hspace{5mm} f(x) = ${currentExpressionLatex} \\]`;
       if (window.MathJax) MathJax.typeset([fxDisplay]);
 
-      hintSteps = buildTemporaryHintSteps(selection, expressionTree);
+      const derivativeWork = buildHintSteps(expressionTree);
+      hintSteps = derivativeWork.steps;
+      finalAnswerLatex = derivativeWork.finalAnswer;
       hintIndex = 0;
       hintArea.innerHTML = '';
       activityBox.innerHTML = '<div id="answer-display" class="math" style="text-align: center;"></div>';
 
       console.log('Generated differentiation question:', currentGenerationData);
     });
+
+
+    function latexStep(exprLatex) {
+      return `\\[ ${exprLatex} \\]`;
+    }
+
+    function replaceOnce(source, target, replacement) {
+      const index = source.indexOf(target);
+      if (index === -1) return source;
+      return source.slice(0, index) + replacement + source.slice(index + target.length);
+    }
+
+    function primeOf(node, variableLatex = 'x') {
+      return `\\left(${render(node, variableLatex)}\\right)'`;
+    }
+
+    function multiplication(left, right) {
+      return `${wrapLatex(left)}${wrapLatex(right)}`;
+    }
+
+    function wrapLatex(latex) {
+      return `\\left(${latex}\\right)`;
+    }
+
+    function derivativeRuleReminder(node) {
+      if (node.kind === 'sum' || node.kind === 'difference') {
+        return latexStep(`\\text{Recall the Sum/Difference Rule: } (f(x)\\pm g(x))'=f'(x)\\pm g'(x).`);
+      }
+      if (node.kind === 'product') {
+        return latexStep(`\\text{Recall the Product Rule: } (f(x)g(x))'=f'(x)g(x)+f(x)g'(x).`);
+      }
+      if (node.kind === 'quotient') {
+        return latexStep(`\\text{Recall the Quotient Rule: } \\left(\\frac{f(x)}{g(x)}\\right)'=\\frac{f'(x)g(x)-f(x)g'(x)}{(g(x))^2}.`);
+      }
+      if (node.kind === 'compose' || node.kind === 'power') {
+        return latexStep(`\\text{Recall the Chain Rule: if } h(x)=f(g(x)),\\text{ then }h'(x)=f'(g(x))g'(x).`);
+      }
+      if (node.kind === 'atom') return atomRuleReminder(node);
+      return latexStep(`\\text{Differentiate the next remaining factor.}`);
+    }
+
+    function atomRuleReminder(atom) {
+      if (atom.functionType === 'poly') {
+        return latexStep(`\\text{Recall the Power Rule: }(x^n)'=nx^{n-1},\\text{ and differentiate term-by-term.}`);
+      }
+      if (atom.functionType === 'exp') {
+        if (atom.base === 'e') return latexStep(`\\text{Recall that }(e^x)'=e^x.`);
+        return latexStep(`\\text{Recall that }(a^x)'=a^x\\ln(a).`);
+      }
+      if (atom.functionType === 'log') {
+        if (atom.base === 'e') return latexStep(`\\text{Recall that }(\\ln(x))'=\\frac{1}{x}.`);
+        return latexStep(`\\text{Recall that }(\\log_a(x))'=\\frac{1}{x\\ln(a)}.`);
+      }
+      if (atom.functionType === 'trig') {
+        return latexStep(`\\text{Recall the needed trigonometric derivative.}`);
+      }
+      if (atom.functionType === 'invtrig') {
+        return latexStep(`\\text{Recall the needed inverse trigonometric derivative.}`);
+      }
+      return latexStep(`\\text{Recall the relevant derivative rule.}`);
+    }
+
+    function derivativeFinal(node, variableLatex = 'x') {
+      if (node.kind === 'atom') return atomDerivativeLatex(node, variableLatex);
+      if (node.kind === 'sum') return `${wrapLatex(derivativeFinal(node.left, variableLatex))}+${wrapLatex(derivativeFinal(node.right, variableLatex))}`;
+      if (node.kind === 'difference') return `${wrapLatex(derivativeFinal(node.left, variableLatex))}-${wrapLatex(derivativeFinal(node.right, variableLatex))}`;
+      if (node.kind === 'product') {
+        return `${wrapLatex(derivativeFinal(node.left, variableLatex))}${wrapLatex(render(node.right, variableLatex))}+${wrapLatex(render(node.left, variableLatex))}${wrapLatex(derivativeFinal(node.right, variableLatex))}`;
+      }
+      if (node.kind === 'quotient') {
+        return `\\frac{${wrapLatex(derivativeFinal(node.left, variableLatex))}${wrapLatex(render(node.right, variableLatex))}-${wrapLatex(derivativeFinal(node.right, variableLatex))}${wrapLatex(render(node.left, variableLatex))}}{${wrapLatex(render(node.right, variableLatex))}^{2}}`;
+      }
+      if (node.kind === 'compose') {
+        const innerLatex = render(node.inner, variableLatex);
+        return `${wrapLatex(derivativeFinal(node.outer, innerLatex))}${wrapLatex(derivativeFinal(node.inner, variableLatex))}`;
+      }
+      if (node.kind === 'power') {
+        const baseLatex = render(node.base, variableLatex);
+        return `${node.exponent}${wrapLatex(baseLatex)}^{${node.exponent - 1}}${wrapLatex(derivativeFinal(node.base, variableLatex))}`;
+      }
+      throw new Error(`Unknown node kind: ${node.kind}`);
+    }
+
+    function atomDerivativeLatex(atom, variableLatex = 'x') {
+      if (atom.functionType === 'poly') return polynomialDerivativeLatex(atom, variableLatex);
+      if (atom.functionType === 'exp') {
+        if (atom.base === 'e') return `e^{${variableLatex}}`;
+        const baseLatex = atom.base < 0 ? `\\left(${atom.base}\\right)` : `${atom.base}`;
+        return `${baseLatex}^{${variableLatex}}\\ln\\left(${baseLatex}\\right)`;
+      }
+      if (atom.functionType === 'log') {
+        if (atom.base === 'e') return `\\frac{1}{${variableLatex}}`;
+        return `\\frac{1}{${wrapLatex(variableLatex)}\\ln\\left(${atom.base}\\right)}`;
+      }
+      if (atom.functionType === 'trig') return trigDerivativeLatex(atom.func, variableLatex);
+      if (atom.functionType === 'invtrig') return inverseTrigDerivativeLatex(atom.func, variableLatex);
+      throw new Error(`Unknown atom type: ${atom.functionType}`);
+    }
+
+    function polynomialDerivativeLatex(atom, variableLatex = 'x') {
+      const terms = [];
+      atom.powers.forEach((power, index) => {
+        const coef = atom.coeffs[index] * power;
+        const newPower = power - 1;
+        if (coef === 0) return;
+        const absCoef = Math.abs(coef);
+        const sign = coef < 0 ? '-' : (terms.length === 0 ? '' : '+');
+        let body;
+        if (newPower === 0) {
+          body = `${absCoef}`;
+        } else {
+          const coefLatex = absCoef === 1 ? '' : `${absCoef}`;
+          const variablePart = newPower === 1 ? variableLatex : `${wrapLatex(variableLatex)}^{${newPower}}`;
+          body = `${coefLatex}${variablePart}`;
+        }
+        terms.push(`${sign}${body}`);
+      });
+      return terms.join('') || '0';
+    }
+
+    function trigDerivativeLatex(func, variableLatex = 'x') {
+      if (func === 'sin') return `\\cos\\left(${variableLatex}\\right)`;
+      if (func === 'cos') return `-\\sin\\left(${variableLatex}\\right)`;
+      if (func === 'tan') return `\\sec^{2}\\left(${variableLatex}\\right)`;
+      if (func === 'sec') return `\\sec\\left(${variableLatex}\\right)\\tan\\left(${variableLatex}\\right)`;
+      if (func === 'csc') return `-\\csc\\left(${variableLatex}\\right)\\cot\\left(${variableLatex}\\right)`;
+      if (func === 'cot') return `-\\csc^{2}\\left(${variableLatex}\\right)`;
+      throw new Error(`Unknown trig function: ${func}`);
+    }
+
+    function inverseTrigDerivativeLatex(func, variableLatex = 'x') {
+      if (func === 'sin') return `\\frac{1}{\\sqrt{1-${wrapLatex(variableLatex)}^{2}}}`;
+      if (func === 'cos') return `-\\frac{1}{\\sqrt{1-${wrapLatex(variableLatex)}^{2}}}`;
+      if (func === 'tan') return `\\frac{1}{1+${wrapLatex(variableLatex)}^{2}}`;
+      throw new Error(`Unknown inverse trig function: ${func}`);
+    }
+
+    function structuralPrimeExpansion(node, variableLatex = 'x') {
+      const left = render(node.left, variableLatex);
+      const right = render(node.right, variableLatex);
+      if (node.kind === 'sum') return `${primeOf(node.left, variableLatex)}+${primeOf(node.right, variableLatex)}`;
+      if (node.kind === 'difference') return `${primeOf(node.left, variableLatex)}-${primeOf(node.right, variableLatex)}`;
+      if (node.kind === 'product') return `${primeOf(node.left, variableLatex)}${wrapLatex(right)}+${primeOf(node.right, variableLatex)}${wrapLatex(left)}`;
+      if (node.kind === 'quotient') return `\\frac{${primeOf(node.left, variableLatex)}${wrapLatex(right)}-${primeOf(node.right, variableLatex)}${wrapLatex(left)}}{${wrapLatex(right)}^{2}}`;
+      throw new Error(`Not a structural node: ${node.kind}`);
+    }
+
+    function buildHintSteps(expressionTree) {
+      const steps = [];
+      let current = primeOf(expressionTree);
+
+      function showCurrent() {
+        steps.push(latexStep(current));
+      }
+
+      function processNode(node, target, variableLatex = 'x') {
+        if (node.kind === 'sum' || node.kind === 'difference' || node.kind === 'product' || node.kind === 'quotient') {
+          steps.push(derivativeRuleReminder(node));
+          current = replaceOnce(current, target, structuralPrimeExpansion(node, variableLatex));
+          showCurrent();
+          processNode(node.left, primeOf(node.left, variableLatex), variableLatex);
+          processNode(node.right, primeOf(node.right, variableLatex), variableLatex);
+          return;
+        }
+
+        if (node.kind === 'power') {
+          const baseLatex = render(node.base, variableLatex);
+          steps.push(derivativeRuleReminder(node));
+          current = replaceOnce(current, target, `${node.exponent}${wrapLatex(baseLatex)}^{${node.exponent - 1}}${primeOf(node.base, variableLatex)}`);
+          showCurrent();
+          processNode(node.base, primeOf(node.base, variableLatex), variableLatex);
+          return;
+        }
+
+        if (node.kind === 'compose') {
+          const innerLatex = render(node.inner, variableLatex);
+          steps.push(derivativeRuleReminder(node));
+
+          if (node.outer.kind === 'atom') {
+            steps.push(atomRuleReminder(node.outer));
+            current = replaceOnce(current, target, `${atomDerivativeLatex(node.outer, innerLatex)}${primeOf(node.inner, variableLatex)}`);
+            showCurrent();
+            processNode(node.inner, primeOf(node.inner, variableLatex), variableLatex);
+          } else {
+            current = replaceOnce(current, target, `${wrapLatex(derivativeFinal(node.outer, innerLatex))}${primeOf(node.inner, variableLatex)}`);
+            showCurrent();
+            processNode(node.inner, primeOf(node.inner, variableLatex), variableLatex);
+          }
+          return;
+        }
+
+        if (node.kind === 'atom') {
+          steps.push(atomRuleReminder(node));
+          current = replaceOnce(current, target, atomDerivativeLatex(node, variableLatex));
+          showCurrent();
+          return;
+        }
+      }
+
+      processNode(expressionTree, current);
+      return { steps, finalAnswer: derivativeFinal(expressionTree) };
+    }
+
 
     function buildTemporaryHintSteps(selection, expressionTree) {
       const ruleNames = selection.rules.length ? selection.rules.join(', ') : 'sum/difference only';
@@ -604,7 +811,7 @@ fetch("/nav.html")
       answerDiv.classList.add('math');
       answerDiv.style.textAlign = 'center';
       answerDiv.style.fontSize = '24px';
-      answerDiv.textContent = `\\[ \\text{Derivative computation will be added in the next pass.} \\]`;
+      answerDiv.textContent = finalAnswerLatex ? `\\[ f'(x) = ${finalAnswerLatex} \\]` : `\\[ \\text{Press Start to generate a problem first.} \\]`;
       activityBox.appendChild(answerDiv);
       if (window.MathJax) MathJax.typeset([answerDiv]);
     });

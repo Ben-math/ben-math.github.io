@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -208,6 +209,12 @@ fetch("/nav.html")
       return n;
     }
 
+    function integerExcluding(min, max, excludedValues) {
+      let n;
+      do { n = randomInt(min, max); } while (excludedValues.includes(n));
+      return n;
+    }
+
     function signedJoin(left, right, op) {
       return op === 'sum' ? sumNode(left, right) : diffNode(left, right);
     }
@@ -265,7 +272,7 @@ fetch("/nav.html")
       return {
         kind: 'atom',
         functionType: 'exp',
-        base: chance(0.5) ? 'e' : nonZeroInt(-9, 9),
+        base: chance(0.5) ? 'e' : integerExcluding(-9, 9, [-1, 0, 1]),
       };
     }
 
@@ -332,7 +339,7 @@ fetch("/nav.html")
         const sign = coef < 0 ? '-' : (index === 0 ? '' : '+');
         const absCoef = Math.abs(coef);
         const coefLatex = absCoef === 1 ? '' : `${absCoef}`;
-        const variablePart = power === 1 ? variableLatex : `\\left(${variableLatex}\\right)^{${power}}`;
+        const variablePart = power === 1 ? variableLatex : `${variableLatex}^{${power}}`;
         return `${sign}${coefLatex}${variablePart}`;
       }).join('');
     }
@@ -391,6 +398,65 @@ fetch("/nav.html")
       const outer = atoms[outerIndex];
       const remaining = atoms.filter((_, index) => index !== outerIndex);
       return { outer, inner: chooseRandom(remaining), usedPowerInstead: false };
+    }
+
+
+    function buildChainWithStructuralRule(atoms, structuralNode) {
+      const [a, b, c] = atoms;
+      const nonPolyIndices = atoms
+        .map((atom, index) => atom.functionType !== 'poly' ? index : -1)
+        .filter(index => index !== -1);
+
+      function makeCompositionUsingNonPoly(preferredOuterIndex, preferredInnerIndex, fallbackOuterIndex = null) {
+        let outerIndex = preferredOuterIndex;
+
+        if (atoms[outerIndex].functionType === 'poly') {
+          if (fallbackOuterIndex !== null && atoms[fallbackOuterIndex].functionType !== 'poly') {
+            outerIndex = fallbackOuterIndex;
+          } else {
+            outerIndex = chooseRandom(nonPolyIndices);
+          }
+        }
+
+        let innerIndex = preferredInnerIndex;
+        if (innerIndex === outerIndex) {
+          innerIndex = [0, 1, 2].find(index => index !== outerIndex);
+        }
+
+        return composeNode(atoms[outerIndex], atoms[innerIndex]);
+      }
+
+      function remainingAtom(excludedIndices) {
+        const remaining = atoms.filter((_, index) => !excludedIndices.includes(index));
+        return remaining.length ? remaining[0] : chooseRandom(atoms);
+      }
+
+      const roll = Math.random();
+
+      if (roll < 0.5) {
+        // Product selected: f \circ (g*h). Quotient selected: f \circ (g/h).
+        // The outer function is swapped to a non-polynomial if needed.
+        let outerIndex = 0;
+        if (atoms[outerIndex].functionType === 'poly') outerIndex = chooseRandom(nonPolyIndices);
+        const innerIndices = [0, 1, 2].filter(index => index !== outerIndex);
+        return composeNode(atoms[outerIndex], structuralNode(atoms[innerIndices[0]], atoms[innerIndices[1]]));
+      }
+
+      if (roll < 0.75) {
+        // Product selected: f*(g \circ h). Quotient selected: f/(g \circ h).
+        const composition = makeCompositionUsingNonPoly(1, 2, 0);
+        const usedOuterIndex = atoms.indexOf(composition.outer);
+        const usedInnerIndex = atoms.indexOf(composition.inner);
+        const f = remainingAtom([usedOuterIndex, usedInnerIndex]);
+        return structuralNode(f, composition);
+      }
+
+      // Product selected: (f \circ g)*h. Quotient selected: (f \circ g)/h.
+      const composition = makeCompositionUsingNonPoly(0, 1, 2);
+      const usedOuterIndex = atoms.indexOf(composition.outer);
+      const usedInnerIndex = atoms.indexOf(composition.inner);
+      const h = remainingAtom([usedOuterIndex, usedInnerIndex]);
+      return structuralNode(composition, h);
     }
 
     function buildQuestionExpression(functionTypes, selectedRules) {
@@ -453,28 +519,25 @@ fetch("/nav.html")
 
       if (hasChain && (hasProduct || hasQuotient)) {
         const structuralNode = hasProduct ? productNode : quotientNode;
-        const structuralName = hasProduct ? 'product' : 'quotient';
 
-        if (selectedCount === 0) {
+        if (selectedCount === 0 || (selectedCount === 1 && functionTypes[0] === 'poly')) {
           const [f, g] = getAtoms(['poly', 'poly'], 2);
           return chance(0.5)
             ? structuralNode(f, powerNode(g, randomInt(2, 9)))
             : structuralNode(powerNode(f, randomInt(2, 9)), g);
         }
 
-        if (selectedCount <= 2) {
-          const [f, g] = getAtoms(functionTypes, 2);
-          const composition = makeComposition(f, g);
-          return chance(0.5) ? structuralNode(f, composition) : structuralNode(composition, g);
+        const atoms = getAtoms(functionTypes.length ? functionTypes : ['poly'], 3);
+        const nonPolyAtoms = atoms.filter(atom => atom.functionType !== 'poly');
+
+        if (nonPolyAtoms.length === 0) {
+          const [f, g] = getAtoms(['poly', 'poly'], 2);
+          return chance(0.5)
+            ? structuralNode(f, powerNode(g, randomInt(2, 9)))
+            : structuralNode(powerNode(f, randomInt(2, 9)), g);
         }
 
-        const [f, g, h] = getAtoms(functionTypes, 3);
-        return chooseRandom([
-          () => makeComposition(f, structuralNode(g, h)),
-          () => makeComposition(structuralNode(f, g), h),
-          () => structuralNode(f, makeComposition(g, h)),
-          () => structuralNode(makeComposition(f, g), h),
-        ])();
+        return buildChainWithStructuralRule(atoms, structuralNode);
       }
 
       const fallbackAtom = getAtoms(functionTypes.length ? functionTypes : ['poly'], 1)[0];

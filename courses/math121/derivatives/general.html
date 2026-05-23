@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -597,6 +598,10 @@ fetch("/nav.html")
       return `\\left(${render(node, variableLatex)}\\right)'`;
     }
 
+    function primeFactorOf(node, variableLatex = 'x') {
+      return wrapLatex(primeOf(node, variableLatex));
+    }
+
     function multiplication(left, right) {
       return `${wrapLatex(left)}${wrapLatex(right)}`;
     }
@@ -744,8 +749,8 @@ fetch("/nav.html")
       const right = render(node.right, variableLatex);
       if (node.kind === 'sum') return `${primeOf(node.left, variableLatex)}+${primeOf(node.right, variableLatex)}`;
       if (node.kind === 'difference') return `${primeOf(node.left, variableLatex)}-${primeOf(node.right, variableLatex)}`;
-      if (node.kind === 'product') return `${primeOf(node.left, variableLatex)}${wrapLatex(right)}+${primeOf(node.right, variableLatex)}${wrapLatex(left)}`;
-      if (node.kind === 'quotient') return `\\frac{${primeOf(node.left, variableLatex)}${wrapLatex(right)}-${primeOf(node.right, variableLatex)}${wrapLatex(left)}}{${wrapLatex(right)}^{2}}`;
+      if (node.kind === 'product') return `${primeFactorOf(node.left, variableLatex)}${wrapLatex(right)}+${primeFactorOf(node.right, variableLatex)}${wrapLatex(left)}`;
+      if (node.kind === 'quotient') return `\\frac{${primeFactorOf(node.left, variableLatex)}${wrapLatex(right)}-${primeFactorOf(node.right, variableLatex)}${wrapLatex(left)}}{${wrapLatex(right)}^{2}}`;
       throw new Error(`Not a structural node: ${node.kind}`);
     }
 
@@ -770,7 +775,7 @@ fetch("/nav.html")
         if (node.kind === 'power') {
           const baseLatex = render(node.base, variableLatex);
           steps.push(derivativeRuleReminder(node));
-          current = replaceOnce(current, target, `${node.exponent}${wrapLatex(baseLatex)}^{${node.exponent - 1}}${primeOf(node.base, variableLatex)}`);
+          current = replaceOnce(current, target, `${node.exponent}${wrapLatex(baseLatex)}^{${node.exponent - 1}}${primeFactorOf(node.base, variableLatex)}`);
           showCurrent();
           processNode(node.base, primeOf(node.base, variableLatex), variableLatex);
           return;
@@ -782,11 +787,11 @@ fetch("/nav.html")
 
           if (node.outer.kind === 'atom') {
             steps.push(atomRuleReminder(node.outer));
-            current = replaceOnce(current, target, `${atomDerivativeLatex(node.outer, innerLatex)}${primeOf(node.inner, variableLatex)}`);
+            current = replaceOnce(current, target, `${atomDerivativeLatex(node.outer, innerLatex)}${primeFactorOf(node.inner, variableLatex)}`);
             showCurrent();
             processNode(node.inner, primeOf(node.inner, variableLatex), variableLatex);
           } else {
-            current = replaceOnce(current, target, `${wrapLatex(derivativeFinal(node.outer, innerLatex))}${primeOf(node.inner, variableLatex)}`);
+            current = replaceOnce(current, target, `${wrapLatex(derivativeFinal(node.outer, innerLatex))}${primeFactorOf(node.inner, variableLatex)}`);
             showCurrent();
             processNode(node.inner, primeOf(node.inner, variableLatex), variableLatex);
           }

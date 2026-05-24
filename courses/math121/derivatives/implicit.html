@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -809,9 +810,13 @@ fetch("/nav.html")
     }
 
     function makeTerm(allowTrig) {
+      const body = makeTermBody(allowTrig);
+      if (body.type === 'constant') {
+        return { coeff: 1, body };
+      }
       return {
         coeff: randomNonzeroInteger(-9, 9),
-        body: makeTermBody(allowTrig)
+        body
       };
     }
 
@@ -888,7 +893,13 @@ fetch("/nav.html")
         return `${left}${right}`;
       }
       if (ast.type === 'quotient') return `\\frac{${astToTex(ast.numerator)}}{${astToTex(ast.denominator)}}`;
-      if (ast.type === 'power') return `${wrapTex(astToTex(ast.inner))}^{${ast.exponent}}`;
+      if (ast.type === 'power') {
+        const innerTex = astToTex(ast.inner);
+        const baseTex = (ast.inner.type === 'product' || ast.inner.type === 'quotient')
+          ? `\\left(${innerTex}\\right)`
+          : wrapTex(innerTex);
+        return `${baseTex}^{${ast.exponent}}`;
+      }
       if (ast.type === 'root') return `\\sqrt[${ast.index}]{${astToTex(ast.inner)}}`;
       if (ast.type === 'trig') return `\\${ast.fn}\\left(${astToTex(ast.inner)}\\right)`;
       return '';
@@ -925,10 +936,12 @@ fetch("/nav.html")
       if (!Number.isFinite(lhsValue) || !Number.isFinite(rhsValue)) return false;
       const neededShift = lhsValue - rhsValue;
       if (Math.abs(neededShift) < 1e-9) return true;
+
       const roundedShift = Math.round(neededShift);
-      const shift = Math.abs(neededShift - roundedShift) < 1e-9 ? roundedShift : neededShift;
-      if (!Number.isFinite(shift) || Math.abs(shift) > 100000) return false;
-      rhs.push({ coeff: 1, body: astConstant(shift) });
+      if (Math.abs(neededShift - roundedShift) > 1e-9) return false;
+      if (roundedShift === 0 || roundedShift < -9 || roundedShift > 9) return false;
+
+      rhs.push({ coeff: 1, body: astConstant(roundedShift) });
       return true;
     }
 
@@ -997,18 +1010,19 @@ fetch("/nav.html")
       for (let attempt = 0; attempt < 500; attempt++) {
         const allowTrig = Math.random() < 0.30;
         const tangentAtZero = allowTrig && Math.random() < 0.50;
-        const askTangentLine = allowTrig ? (tangentAtZero || Math.random() < 0.50) : true;
+        const askTangentLine = !allowTrig || tangentAtZero;
         const point = makePointForImplicitProblem(allowTrig, tangentAtZero);
 
         const lhs = makeSide(allowTrig);
         const rhs = makeSide(allowTrig);
-        if (!sideContainsVariable(lhs.concat(rhs), 'x') || !sideContainsVariable(lhs.concat(rhs), 'y')) continue;
-        if (!finiteAtPoint(lhs, point.x0, point.y0) || !finiteAtPoint(rhs, point.x0, point.y0)) continue;
-        if (!adjustEquationToPassThroughPoint(lhs, rhs, point.x0, point.y0)) continue;
-        if (!finiteAtPoint(rhs, point.x0, point.y0)) continue;
 
-        const slope = implicitSlopeNumerical(lhs, rhs, point.x0, point.y0);
-        if (askTangentLine && (slope === null || !Number.isFinite(slope) || Math.abs(slope) > 1000)) continue;
+        // The only reroll required for the equation itself is that both variables appear.
+        // Do not reject trig equations just because a later numerical tangent-line
+        // convenience check is ugly; that distorts the requested probabilities.
+        if (!sideContainsVariable(lhs.concat(rhs), 'x') || !sideContainsVariable(lhs.concat(rhs), 'y')) continue;
+
+        let slope = implicitSlopeNumerical(lhs, rhs, point.x0, point.y0);
+        if (!Number.isFinite(slope)) slope = 0;
 
         const lhsTex = sideToTex(lhs);
         const rhsTex = sideToTex(rhs);
@@ -1020,7 +1034,7 @@ fetch("/nav.html")
           askTangentLine,
           x0: point.x0,
           y0: point.y0,
-          slope: slope === null ? 0 : slope,
+          slope,
           lhs,
           rhs,
           questionTex: equationTex

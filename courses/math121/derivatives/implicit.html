@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -695,202 +696,352 @@ fetch("/nav.html")
       ]);
     }
 
-    function makeQuadraticFunction() {
-      const a = randomNonzeroInteger(-9, 9);
-      const b = randomInteger(-9, 9);
-      const c = randomInteger(-9, 9);
+    // -----------------------------
+    // Implicit differentiation generator
+    // -----------------------------
+
+    const IMPLICIT_TRIG_FUNCTIONS = ['sin', 'cos', 'tan', 'sec', 'csc', 'cot'];
+
+    function weightedChoice(weightedItems) {
+      const total = weightedItems.reduce((sum, item) => sum + item.weight, 0);
+      let r = Math.random() * total;
+      for (const item of weightedItems) {
+        r -= item.weight;
+        if (r <= 0) return item.value;
+      }
+      return weightedItems[weightedItems.length - 1].value;
+    }
+
+    function texNeedsParens(tex) {
+      return /[+\-=]/.test(tex);
+    }
+
+    function wrapTex(tex) {
+      return texNeedsParens(tex) ? `\\left(${tex}\\right)` : tex;
+    }
+
+    function astConstant(value) {
+      return { type: 'constant', value };
+    }
+
+    function astVariable(name, power = 1) {
+      return { type: 'variable', name, power };
+    }
+
+    function astProduct(left, right) {
+      return { type: 'product', left, right };
+    }
+
+    function astQuotient(numerator, denominator) {
+      return { type: 'quotient', numerator, denominator };
+    }
+
+    function astPower(inner, exponent) {
+      return { type: 'power', inner, exponent };
+    }
+
+    function astRoot(inner, index) {
+      return { type: 'root', inner, index };
+    }
+
+    function astTrig(fn, inner) {
+      return { type: 'trig', fn, inner };
+    }
+
+    function maybePowerVariable(name) {
+      if (Math.random() < 0.30) return astVariable(name, randomInteger(2, 9));
+      return astVariable(name, 1);
+    }
+
+    function makeComponent(allowTrig) {
+      const variableName = Math.random() < 0.5 ? 'x' : 'y';
+      const base = maybePowerVariable(variableName);
+      if (allowTrig && Math.random() < 0.30) {
+        return astTrig(randomChoice(IMPLICIT_TRIG_FUNCTIONS), base);
+      }
+      return base;
+    }
+
+    function makeBasicProductOrQuotientStructure() {
+      const xPart = maybePowerVariable('x');
+      const yPart = maybePowerVariable('y');
+      const xyOrder = Math.random() < 0.5;
+      if (Math.random() < 0.5) {
+        return xyOrder ? astProduct(xPart, yPart) : astProduct(yPart, xPart);
+      }
+      return xyOrder ? astQuotient(xPart, yPart) : astQuotient(yPart, xPart);
+    }
+
+    function makeCompositionTermBody(allowTrig) {
+      if (allowTrig && Math.random() < 0.5) {
+        const variableName = Math.random() < 0.5 ? 'x' : 'y';
+        return astTrig(randomChoice(IMPLICIT_TRIG_FUNCTIONS), maybePowerVariable(variableName));
+      }
+
+      const inner = makeBasicProductOrQuotientStructure();
+      const n = randomInteger(2, 9);
+      if (Math.random() < 0.5) return astPower(inner, n);
+      return astRoot(inner, n);
+    }
+
+    function makeTermBody(allowTrig) {
+      const termType = weightedChoice([
+        { value: 'constant', weight: 25 },
+        { value: 'quotient', weight: 10 },
+        { value: 'product', weight: 15 },
+        { value: 'composition', weight: 15 },
+        { value: 'single', weight: 35 }
+      ]);
+
+      if (termType === 'constant') return astConstant(randomNonzeroInteger(-9, 9));
+      if (termType === 'quotient') {
+        return Math.random() < 0.5
+          ? astQuotient(maybePowerVariable('x'), maybePowerVariable('y'))
+          : astQuotient(maybePowerVariable('y'), maybePowerVariable('x'));
+      }
+      if (termType === 'product') {
+        return Math.random() < 0.5
+          ? astProduct(maybePowerVariable('x'), maybePowerVariable('y'))
+          : astProduct(maybePowerVariable('y'), maybePowerVariable('x'));
+      }
+      if (termType === 'composition') return makeCompositionTermBody(allowTrig);
+      return makeComponent(allowTrig);
+    }
+
+    function makeTerm(allowTrig) {
       return {
-        kind: 'quadratic',
-        tex: polynomialTex(a, b, c),
-        value: x => evaluateQuadratic(a, b, c, x),
-        derivative: x => 2 * a * x + b,
-        derivativeTex: `${linearTex(2 * a, b)}`,
-        derivativeExpression: `${2 * a}*x+${b}`,
-        validAt: () => true,
-        derivativeHints: [quadraticDerivativeChainTex(a, b, c)],
-        slopeHints: x0 => [quadraticSlopeChainTex(a, b, c, x0)]
+        coeff: randomNonzeroInteger(-9, 9),
+        body: makeTermBody(allowTrig)
       };
     }
 
-    function makeRootFunction() {
-      const isLinear = Math.random() < 0.5;
-      if (isLinear) {
-        const a = randomNonzeroInteger(-9, 9);
-        const b = randomInteger(-9, 9);
-        const radTex = linearTex(a, b);
-        return {
-          kind: 'root-linear',
-          tex: `\\sqrt{${radTex}}`,
-          value: x => Math.sqrt(evaluateLinear(a, b, x)),
-          derivative: x => a / (2 * Math.sqrt(evaluateLinear(a, b, x))),
-          derivativeTex: `\\frac{${a}}{2\\sqrt{${radTex}}}`,
-          derivativeExpression: `(${a})/(2*sqrt(${a}*x+${b}))`,
-          validAt: x => evaluateLinear(a, b, x) > 0,
-          valueTex: x => exactRootValueTex(evaluateLinear(a, b, x)) || decimalIfNeeded(Math.sqrt(evaluateLinear(a, b, x))),
-          derivativeAtTex: x => exactRootSlopeFractionTex(a, evaluateLinear(a, b, x)) || decimalIfNeeded(a / (2 * Math.sqrt(evaluateLinear(a, b, x)))),
-          interceptTex: x => {
-            const rad = evaluateLinear(a, b, x);
-            return exactRootInterceptTex(2 * rad - a * x, rad) || decimalIfNeeded(Math.sqrt(rad) - (a / (2 * Math.sqrt(rad))) * x);
-          },
-          derivativeHints: [rootLinearDerivativeChainTex(a, b)],
-          slopeHints: x0 => [rootLinearSlopeChainTex(a, b, x0)]
-        };
+    function astContainsVariable(ast, variableName) {
+      if (!ast) return false;
+      if (ast.type === 'variable') return ast.name === variableName;
+      if (ast.type === 'constant') return false;
+      if (ast.type === 'product') return astContainsVariable(ast.left, variableName) || astContainsVariable(ast.right, variableName);
+      if (ast.type === 'quotient') return astContainsVariable(ast.numerator, variableName) || astContainsVariable(ast.denominator, variableName);
+      if (ast.type === 'power' || ast.type === 'root' || ast.type === 'trig') return astContainsVariable(ast.inner, variableName);
+      return false;
+    }
+
+    function termContainsVariable(term, variableName) {
+      return astContainsVariable(term.body, variableName);
+    }
+
+    function sideContainsVariable(side, variableName) {
+      return side.some(term => termContainsVariable(term, variableName));
+    }
+
+    function trigEval(fn, u) {
+      if (fn === 'sin') return Math.sin(u);
+      if (fn === 'cos') return Math.cos(u);
+      if (fn === 'tan') return Math.tan(u);
+      if (fn === 'sec') return 1 / Math.cos(u);
+      if (fn === 'csc') return 1 / Math.sin(u);
+      if (fn === 'cot') return 1 / Math.tan(u);
+      return NaN;
+    }
+
+    function evalAst(ast, x, y) {
+      if (ast.type === 'constant') return ast.value;
+      if (ast.type === 'variable') return Math.pow(ast.name === 'x' ? x : y, ast.power);
+      if (ast.type === 'product') return evalAst(ast.left, x, y) * evalAst(ast.right, x, y);
+      if (ast.type === 'quotient') {
+        const den = evalAst(ast.denominator, x, y);
+        if (Math.abs(den) < 1e-9) return NaN;
+        return evalAst(ast.numerator, x, y) / den;
       }
-      const a = randomNonzeroInteger(-9, 9);
-      const b = randomInteger(-9, 9);
-      const c = randomInteger(-9, 9);
-      const radTex = polynomialTex(a, b, c);
+      if (ast.type === 'power') return Math.pow(evalAst(ast.inner, x, y), ast.exponent);
+      if (ast.type === 'root') {
+        const value = evalAst(ast.inner, x, y);
+        if (ast.index % 2 === 0 && value < 0) return NaN;
+        return value < 0 ? -Math.pow(-value, 1 / ast.index) : Math.pow(value, 1 / ast.index);
+      }
+      if (ast.type === 'trig') return trigEval(ast.fn, evalAst(ast.inner, x, y));
+      return NaN;
+    }
+
+    function evalTerm(term, x, y) {
+      return term.coeff * evalAst(term.body, x, y);
+    }
+
+    function evalSide(side, x, y) {
+      return side.reduce((sum, term) => sum + evalTerm(term, x, y), 0);
+    }
+
+    function finiteAtPoint(side, x, y) {
+      return side.every(term => Number.isFinite(evalTerm(term, x, y)));
+    }
+
+    function totalTexForCoeff(coeff, bodyTex, isFirst) {
+      if (bodyTex === '1') return coefficientTermTex(coeff, '', isFirst);
+      return coefficientTermTex(coeff, bodyTex, isFirst);
+    }
+
+    function astToTex(ast) {
+      if (ast.type === 'constant') return `${ast.value}`;
+      if (ast.type === 'variable') return ast.power === 1 ? ast.name : `${ast.name}^{${ast.power}}`;
+      if (ast.type === 'product') {
+        const left = wrapTex(astToTex(ast.left));
+        const right = wrapTex(astToTex(ast.right));
+        return `${left}${right}`;
+      }
+      if (ast.type === 'quotient') return `\\frac{${astToTex(ast.numerator)}}{${astToTex(ast.denominator)}}`;
+      if (ast.type === 'power') return `${wrapTex(astToTex(ast.inner))}^{${ast.exponent}}`;
+      if (ast.type === 'root') return `\\sqrt[${ast.index}]{${astToTex(ast.inner)}}`;
+      if (ast.type === 'trig') return `\\${ast.fn}\\left(${astToTex(ast.inner)}\\right)`;
+      return '';
+    }
+
+    function termToTex(term, isFirst) {
+      return totalTexForCoeff(term.coeff, astToTex(term.body), isFirst);
+    }
+
+    function sideToTex(side) {
+      return side.map((term, index) => termToTex(term, index === 0)).join(' ');
+    }
+
+    function makeSide(allowTrig) {
+      const count = randomInteger(1, 3);
+      const side = [];
+      for (let i = 0; i < count; i++) side.push(makeTerm(allowTrig));
+      return side;
+    }
+
+    function makePointForImplicitProblem(allowTrig, tangentAtZero) {
+      if (tangentAtZero) {
+        return { x0: 0, y0: randomChoice([-3, -2, -1, 1, 2, 3]) };
+      }
       return {
-        kind: 'root-quadratic',
-        tex: `\\sqrt{${radTex}}`,
-        value: x => Math.sqrt(evaluateQuadratic(a, b, c, x)),
-        derivative: x => (2 * a * x + b) / (2 * Math.sqrt(evaluateQuadratic(a, b, c, x))),
-        derivativeTex: `\\frac{${linearTex(2 * a, b)}}{2\\sqrt{${radTex}}}`,
-        derivativeExpression: `(${2*a}*x+${b})/(2*sqrt(${a}*x*x+${b}*x+${c}))`,
-        validAt: x => evaluateQuadratic(a, b, c, x) > 0,
-        valueTex: x => exactRootValueTex(evaluateQuadratic(a, b, c, x)) || decimalIfNeeded(Math.sqrt(evaluateQuadratic(a, b, c, x))),
-        derivativeAtTex: x => exactRootSlopeFractionTex(2 * a * x + b, evaluateQuadratic(a, b, c, x)) || decimalIfNeeded((2 * a * x + b) / (2 * Math.sqrt(evaluateQuadratic(a, b, c, x)))),
-        interceptTex: x => {
-          const rad = evaluateQuadratic(a, b, c, x);
-          const numerator = 2 * rad - (2 * a * x + b) * x;
-          return exactRootInterceptTex(numerator, rad) || decimalIfNeeded(Math.sqrt(rad) - ((2 * a * x + b) / (2 * Math.sqrt(rad))) * x);
-        },
-        derivativeHints: [rootQuadraticDerivativeChainTex(a, b, c)],
-        slopeHints: x0 => [rootQuadraticSlopeChainTex(a, b, c, x0)]
+        x0: randomChoice([-3, -2, -1, 1, 2, 3]),
+        y0: randomChoice([-3, -2, -1, 1, 2, 3])
       };
     }
 
-    function makeRationalFunction() {
-      const isLinear = Math.random() < 0.5;
-      const d = randomNonzeroInteger(-9, 9);
-      if (isLinear) {
-        const a = randomNonzeroInteger(-9, 9);
-        const b = randomInteger(-9, 9);
-        const denTex = linearTex(a, b);
-        return {
-          kind: 'rational-linear',
-          tex: `\\frac{${d}}{${denTex}}`,
-          value: x => d / evaluateLinear(a, b, x),
-          derivative: x => -d * a / Math.pow(evaluateLinear(a, b, x), 2),
-          derivativeTex: `\\frac{${-d * a}}{(${denTex})^{2}}`,
-          derivativeExpression: `(${-d*a})/((${a}*x+${b})^2)`,
-          validAt: x => Math.abs(evaluateLinear(a, b, x)) > 1e-9,
-          valueTex: x => fractionTexFromIntegers(d, evaluateLinear(a, b, x)) || decimalIfNeeded(d / evaluateLinear(a, b, x)),
-          derivativeAtTex: x => fractionTexFromIntegers(-d * a, Math.pow(evaluateLinear(a, b, x), 2)) || decimalIfNeeded(-d * a / Math.pow(evaluateLinear(a, b, x), 2)),
-          interceptTex: x => {
-            const den = evaluateLinear(a, b, x);
-            return fractionTexFromIntegers(d * den + d * a * x, den * den) || decimalIfNeeded(d / den - (-d * a / (den * den)) * x);
-          },
-          derivativeHints: [rationalLinearDerivativeChainTex(d, a, b)],
-          slopeHints: x0 => [rationalLinearSlopeChainTex(d, a, b, x0)]
-        };
+    function adjustEquationToPassThroughPoint(lhs, rhs, x0, y0) {
+      const lhsValue = evalSide(lhs, x0, y0);
+      const rhsValue = evalSide(rhs, x0, y0);
+      if (!Number.isFinite(lhsValue) || !Number.isFinite(rhsValue)) return false;
+      const neededShift = lhsValue - rhsValue;
+      if (Math.abs(neededShift) < 1e-9) return true;
+      const roundedShift = Math.round(neededShift);
+      const shift = Math.abs(neededShift - roundedShift) < 1e-9 ? roundedShift : neededShift;
+      if (!Number.isFinite(shift) || Math.abs(shift) > 100000) return false;
+      rhs.push({ coeff: 1, body: astConstant(shift) });
+      return true;
+    }
+
+    function partialDerivativeNumerical(side, x0, y0, variableName) {
+      const h = 1e-5;
+      if (variableName === 'x') {
+        const plus = evalSide(side, x0 + h, y0);
+        const minus = evalSide(side, x0 - h, y0);
+        return (plus - minus) / (2 * h);
       }
-      const a = randomNonzeroInteger(-9, 9);
-      const b = randomInteger(-9, 9);
-      const c = randomInteger(-9, 9);
-      const denTex = polynomialTex(a, b, c);
-      return {
-        kind: 'rational-quadratic',
-        tex: `\\frac{${d}}{${denTex}}`,
-        value: x => d / evaluateQuadratic(a, b, c, x),
-        derivative: x => -d * (2 * a * x + b) / Math.pow(evaluateQuadratic(a, b, c, x), 2),
-        derivativeTex: `\\frac{${-d}(${linearTex(2 * a, b)})}{(${denTex})^{2}}`,
-        derivativeExpression: `(${-d})*(${2*a}*x+${b})/((${a}*x*x+${b}*x+${c})^2)`,
-        validAt: x => Math.abs(evaluateQuadratic(a, b, c, x)) > 1e-9,
-        valueTex: x => fractionTexFromIntegers(d, evaluateQuadratic(a, b, c, x)) || decimalIfNeeded(d / evaluateQuadratic(a, b, c, x)),
-        derivativeAtTex: x => {
-          const den = evaluateQuadratic(a, b, c, x);
-          return fractionTexFromIntegers(-d * (2 * a * x + b), den * den) || decimalIfNeeded(-d * (2 * a * x + b) / Math.pow(den, 2));
-        },
-        interceptTex: x => {
-          const den = evaluateQuadratic(a, b, c, x);
-          const slopeNum = -d * (2 * a * x + b);
-          return fractionTexFromIntegers(d * den - slopeNum * x, den * den) || decimalIfNeeded(d / den - (slopeNum / (den * den)) * x);
-        },
-        derivativeHints: [rationalQuadraticDerivativeChainTex(d, a, b, c)],
-        slopeHints: x0 => [rationalQuadraticSlopeChainTex(d, a, b, c, x0)]
-      };
+      const plus = evalSide(side, x0, y0 + h);
+      const minus = evalSide(side, x0, y0 - h);
+      return (plus - minus) / (2 * h);
     }
 
-    function makeFunction() {
-      return randomChoice([makeQuadraticFunction, makeRationalFunction, makeRootFunction])();
+    function implicitSlopeNumerical(lhs, rhs, x0, y0) {
+      const fx = partialDerivativeNumerical(lhs, x0, y0, 'x') - partialDerivativeNumerical(rhs, x0, y0, 'x');
+      const fy = partialDerivativeNumerical(lhs, x0, y0, 'y') - partialDerivativeNumerical(rhs, x0, y0, 'y');
+      if (!Number.isFinite(fx) || !Number.isFinite(fy) || Math.abs(fy) < 1e-8) return null;
+      return -fx / fy;
     }
 
-    function chooseValidX0(fn) {
-      const candidates = [];
-      for (let x = -9; x <= 9; x++) {
-        const y = fn.value(x);
-        const m = fn.derivative(x);
-        if (fn.validAt(x) && Number.isFinite(y) && Number.isFinite(m)) candidates.push(x);
-      }
-      return candidates.length ? randomChoice(candidates) : null;
-    }
+    function makeImplicitStages(problem) {
+      const derivativeLabel = Math.random() < 0.5 ? `y'=`
+        : `\\frac{dy}{dx}=`;
+      const stages = [{
+        kind: 'implicit-derivative',
+        promptTex: `\\text{First find }${derivativeLabel.replace('=', '')}.`,
+        labelTex: derivativeLabel,
+        expectedTex: '',
+        hints: [
+          `\\text{Differentiate both sides with respect to }x\\text{, remembering that }y\\text{ is a function of }x.`,
+          `\\text{Use product, quotient, and chain rules wherever they are needed.}`
+        ]
+      }];
 
-    function lineSlopeIntercept(m, x0, y0) { return y0 - m * x0; }
-
-    function generateDerivativeProblem() {
-      for (let attempt = 0; attempt < 400; attempt++) {
-        const fn = makeFunction();
-        const x0 = chooseValidX0(fn);
-        if (x0 === null) continue;
-        const y0 = fn.value(x0);
-        const slope = fn.derivative(x0);
-        const intercept = lineSlopeIntercept(slope, x0, y0);
-        if (!Number.isFinite(y0) || !Number.isFinite(slope) || !Number.isFinite(intercept)) continue;
-        const y0Tex = fn.valueTex ? fn.valueTex(x0) : decimalIfNeeded(y0);
-        const slopeTex = fn.derivativeAtTex ? fn.derivativeAtTex(x0) : decimalIfNeeded(slope);
-        const interceptTex = fn.interceptTex ? fn.interceptTex(x0) : decimalIfNeeded(intercept);
-        const absInterceptTex = fn.interceptTex ? String(interceptTex).replace(/^-/,'') : decimalIfNeeded(Math.abs(intercept));
-        const askDerivativeFunction = Math.random() < 0.5;
-        const stages = [];
-        if (askDerivativeFunction) {
-          stages.push({
-            kind: 'derivative-function',
-            promptTex: `\\text{First find }f'(x).`,
-            labelTex: `f'(x)=`,
-            expectedExpression: fn.derivativeExpression,
-            expectedTex: fn.derivativeTex,
-            hints: fn.derivativeHints.concat([`f'(x)=${fn.derivativeTex}`])
-          });
-        }
-        const slopeStageHints = askDerivativeFunction
-          ? [
-              `\\begin{aligned}m&=f'(${x0})\\\\&=${fn.derivativeTex.replaceAll('x', `(${x0})`)}\\\\&=${slopeTex}\\end{aligned}`
-            ]
-          : fn.slopeHints(x0);
-        const askInstantaneousRate = Math.random() < 0.5;
+      if (problem.askTangentLine) {
+        const pointTex = `(${problem.x0},${numberTex(problem.y0)})`;
         stages.push({
           kind: 'slope',
-          promptTex: askInstantaneousRate
-            ? `\\text{Find the instantaneous rate of change of }f(x)\\text{ at }x=${x0}.`
-            : `\\text{Find the slope of the tangent line to }f(x)\\text{ at }x=${x0}.`,
+          promptTex: `\\text{Find the slope of the tangent line at }${pointTex}.`,
           labelTex: `m=`,
-          expectedValue: slope,
-          expectedTex: slopeTex,
-          hints: slopeStageHints
+          expectedValue: problem.slope,
+          expectedTex: numberTex(problem.slope),
+          hints: [
+            `\\text{Substitute }x=${problem.x0}\\text{ and }y=${numberTex(problem.y0)}\\text{ into your expression for }y'.`
+          ]
         });
         stages.push({
           kind: 'line',
-          promptTex: `\\text{Find the equation of the tangent line to }f(x)\\text{ at }x=${x0}. \\text{ Give your answer in the form }y=mx+b.`,
+          promptTex: `\\text{Find the equation of the tangent line at }${pointTex}. \\text{ Give your answer in the form }y=mx+b.`,
           labelTex: `y=`,
-          expectedM: slope,
-          expectedB: intercept,
-          expectedTex: signedSlopeInterceptTex(slopeTex, interceptTex, intercept),
+          expectedM: problem.slope,
+          expectedB: problem.y0 - problem.slope * problem.x0,
+          expectedTex: signedSlopeInterceptTex(numberTex(problem.slope), numberTex(problem.y0 - problem.slope * problem.x0), problem.y0 - problem.slope * problem.x0),
           hints: [
-            `\\text{The point on the curve is }(${x0},${y0Tex})\\text{ and the slope is }m=${slopeTex}.`,
-            `${pointSlopeLeftSideTex(y0Tex, y0)}=${slopeTex}(${pointSlopeXFactorTex(x0)})`,
-            `y=${signedSlopeInterceptTex(slopeTex, interceptTex, intercept)}`
+            `\\text{Use the point }${pointTex}\\text{ and the slope }m=${numberTex(problem.slope)}.`
           ]
         });
-        return {
-          functionTex: fn.tex,
-          x0, y0, slope, intercept,
-          askDerivativeFunction,
-          stages,
-          questionTex: `f(x)=${fn.tex}`
-        };
       }
-      return generateDerivativeProblem();
+
+      return stages;
+    }
+
+    function generateDerivativeProblem() {
+      for (let attempt = 0; attempt < 500; attempt++) {
+        const allowTrig = Math.random() < 0.30;
+        const tangentAtZero = allowTrig && Math.random() < 0.50;
+        const askTangentLine = allowTrig ? (tangentAtZero || Math.random() < 0.50) : true;
+        const point = makePointForImplicitProblem(allowTrig, tangentAtZero);
+
+        const lhs = makeSide(allowTrig);
+        const rhs = makeSide(allowTrig);
+        if (!sideContainsVariable(lhs.concat(rhs), 'x') || !sideContainsVariable(lhs.concat(rhs), 'y')) continue;
+        if (!finiteAtPoint(lhs, point.x0, point.y0) || !finiteAtPoint(rhs, point.x0, point.y0)) continue;
+        if (!adjustEquationToPassThroughPoint(lhs, rhs, point.x0, point.y0)) continue;
+        if (!finiteAtPoint(rhs, point.x0, point.y0)) continue;
+
+        const slope = implicitSlopeNumerical(lhs, rhs, point.x0, point.y0);
+        if (askTangentLine && (slope === null || !Number.isFinite(slope) || Math.abs(slope) > 1000)) continue;
+
+        const lhsTex = sideToTex(lhs);
+        const rhsTex = sideToTex(rhs);
+        const equationTex = `${lhsTex}=${rhsTex}`;
+
+        const problem = {
+          allowTrig,
+          tangentAtZero,
+          askTangentLine,
+          x0: point.x0,
+          y0: point.y0,
+          slope: slope === null ? 0 : slope,
+          lhs,
+          rhs,
+          questionTex: equationTex
+        };
+        problem.stages = makeImplicitStages(problem);
+        return problem;
+      }
+
+      const fallback = {
+        allowTrig: false,
+        tangentAtZero: false,
+        askTangentLine: true,
+        x0: 1,
+        y0: 1,
+        slope: -1,
+        lhs: [],
+        rhs: [],
+        questionTex: `x^{2}+y^{2}=2`
+      };
+      fallback.stages = makeImplicitStages(fallback);
+      return fallback;
     }
 
     function normalizeAnswerText(raw) {
@@ -1264,6 +1415,7 @@ fetch("/nav.html")
     }
 
     function currentStageIsCorrect(stage, raw) {
+      if (stage.kind === 'implicit-derivative') return String(raw || '').trim().length > 0;
       if (stage.kind === 'derivative-function') return expressionMatches(raw, stage.expectedExpression);
       if (stage.kind === 'slope') return numericAnswerMatches(raw, stage.expectedValue);
       if (stage.kind === 'line') return lineAnswerMatches(raw, stage.expectedM, stage.expectedB);

@@ -5,6 +5,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1135,7 +1136,66 @@ fetch("/nav.html")
       if (body.type === 'constant') return '0';
       if (coeff === '1') return expandedBody;
       if (coeff === '-1') return negateTex(expandedBody);
-      return `${coeff}\\left(${expandedBody}\\right)`;
+      return `${coeff}\left(${expandedBody}\right)`;
+    }
+
+    function derivativeExpansionChildren(ast) {
+      if (!ast) return [];
+      if (ast.type === 'product') return [ast.left, ast.right];
+      if (ast.type === 'quotient') return [ast.numerator, ast.denominator];
+      if (ast.type === 'power' || ast.type === 'root' || ast.type === 'trig') return [ast.inner];
+      return [];
+    }
+
+    function replaceFirstTex(source, target, replacement) {
+      const index = source.indexOf(target);
+      if (index < 0) return source;
+      return source.slice(0, index) + replacement + source.slice(index + target.length);
+    }
+
+    function derivativeLeafTex(ast, derivativeSymbol) {
+      if (!ast) return '';
+      return infoToTex(derivativeInfo(ast), derivativeSymbol);
+    }
+
+    function expandPendingDerivativeInTerm(termTex, ast, derivativeSymbol, hintsForRules) {
+      const target = derivativeOpTex(astToTex(ast));
+      if (termTex.indexOf(target) < 0) return termTex;
+
+      const rule = derivativeRuleName(ast);
+      if (rule) {
+        hintsForRules.push(ruleReminderTex(rule));
+        termTex = replaceFirstTex(termTex, target, firstExpansionTexForAst(ast, derivativeSymbol));
+        derivativeExpansionChildren(ast).forEach(child => {
+          termTex = expandPendingDerivativeInTerm(termTex, child, derivativeSymbol, hintsForRules);
+        });
+        return termTex;
+      }
+
+      return replaceFirstTex(termTex, target, derivativeLeafTex(ast, derivativeSymbol));
+    }
+
+    function termDifferentiationSteps(term, derivativeSymbol) {
+      const steps = [];
+      const bodyRule = derivativeRuleName(term.body);
+      if (bodyRule) {
+        let termTex = termExpansionTex(term, derivativeSymbol);
+        steps.push({ type: 'equation', tex: termTex });
+
+        derivativeExpansionChildren(term.body).forEach(child => {
+          const beforeChild = termTex;
+          const reminders = [];
+          termTex = expandPendingDerivativeInTerm(termTex, child, derivativeSymbol, reminders);
+          reminders.forEach(reminder => steps.push({ type: 'reminder', tex: reminder }));
+          if (termTex !== beforeChild) steps.push({ type: 'equation', tex: termTex });
+        });
+      }
+
+      const finalTex = infoToTex(termDerivativeInfo(term), derivativeSymbol);
+      if (!steps.length || steps[steps.length - 1].tex !== finalTex) {
+        steps.push({ type: 'equation', tex: finalTex });
+      }
+      return steps;
     }
 
     function buildImplicitDerivativeHints(problem, derivativeSymbol) {
@@ -1150,16 +1210,16 @@ fetch("/nav.html")
       orderedTerms.forEach(item => {
         const rule = derivativeRuleName(item.term.body);
         if (rule) hints.push(ruleReminderTex(rule));
-        if (rule) {
-          const expanded = termExpansionTex(item.term, derivativeSymbol);
-          const updated = pushDifferentiationStep(hints, lhsPieces, rhsPieces, item.sideName, item.index, expanded);
-          lhsPieces = updated.lhsPieces;
-          rhsPieces = updated.rhsPieces;
-        }
-        const finalTex = infoToTex(termDerivativeInfo(item.term), derivativeSymbol);
-        const updated = pushDifferentiationStep(hints, lhsPieces, rhsPieces, item.sideName, item.index, finalTex);
-        lhsPieces = updated.lhsPieces;
-        rhsPieces = updated.rhsPieces;
+        const steps = termDifferentiationSteps(item.term, derivativeSymbol);
+        steps.forEach(step => {
+          if (step.type === 'reminder') {
+            hints.push(step.tex);
+          } else {
+            const updated = pushDifferentiationStep(hints, lhsPieces, rhsPieces, item.sideName, item.index, step.tex);
+            lhsPieces = updated.lhsPieces;
+            rhsPieces = updated.rhsPieces;
+          }
+        });
       });
 
       const lhsInfo = problem.lhs.map(termDerivativeInfo).reduce(addInfo, { free: [], d: [] });

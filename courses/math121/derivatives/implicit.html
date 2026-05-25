@@ -3,6 +3,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -913,6 +914,268 @@ fetch("/nav.html")
       return side.map((term, index) => termToTex(term, index === 0)).join(' ');
     }
 
+
+    function derivativeOpTex(tex) {
+      return `\frac{d}{dx}\left(${tex}\right)`;
+    }
+
+    function derivativeSymbolWrapped(symbol) {
+      return symbol === `y'` ? `y'` : `\left(${symbol}\right)`;
+    }
+
+    function stripLeadingPlus(tex) {
+      return String(tex || '').replace(/^\s*\+\s*/, '');
+    }
+
+    function texFactor(tex) {
+      tex = String(tex || '').trim();
+      if (!tex) return '';
+      if (tex === '1') return '';
+      if (tex === '-1') return '-';
+      if (/^[+-]?\d+$/.test(tex)) return tex;
+      if (/^[xy](\^\{\d+\})?$/.test(tex)) return tex;
+      if (/^\\[a-z]+/.test(tex)) return tex;
+      if (/^\\frac/.test(tex)) return tex;
+      if (/^\\sqrt/.test(tex)) return tex;
+      if (/^\\left\(.*\\right\)$/.test(tex)) return tex;
+      return `\left(${tex}\right)`;
+    }
+
+    function multiplyTex(a, b) {
+      a = String(a || '').trim();
+      b = String(b || '').trim();
+      if (!a || a === '1') return b || '1';
+      if (!b || b === '1') return a || '1';
+      if (a === '-1') return negateTex(b);
+      if (b === '-1') return negateTex(a);
+      return `${texFactor(a)}${texFactor(b)}`;
+    }
+
+    function negateTex(tex) {
+      tex = String(tex || '').trim();
+      if (!tex || tex === '0') return '0';
+      if (tex.startsWith('-')) return tex.slice(1).trim();
+      return `-${tex}`;
+    }
+
+    function signedTexParts(tex) {
+      tex = String(tex || '').trim();
+      if (!tex || tex === '0') return null;
+      if (tex.startsWith('-')) return { sign: -1, tex: tex.slice(1).trim() };
+      return { sign: 1, tex };
+    }
+
+    function joinTexSum(items) {
+      const clean = [];
+      items.forEach(item => {
+        const part = signedTexParts(item);
+        if (part) clean.push(part);
+      });
+      if (!clean.length) return '0';
+      return clean.map((part, index) => {
+        if (index === 0) return part.sign < 0 ? `-${part.tex}` : part.tex;
+        return `${part.sign < 0 ? '-' : '+'} ${part.tex}`;
+      }).join(' ');
+    }
+
+    function formatCoeffTimesDerivative(coeffTex, derivativeSymbol) {
+      coeffTex = String(coeffTex || '').trim();
+      if (!coeffTex || coeffTex === '1') return derivativeSymbol;
+      if (coeffTex === '-1') return `-${derivativeSymbol}`;
+      return `${texFactor(coeffTex)}${derivativeSymbolWrapped(derivativeSymbol)}`;
+    }
+
+    function infoToTex(info, derivativeSymbol) {
+      const pieces = [];
+      (info.free || []).forEach(t => pieces.push(t));
+      (info.d || []).forEach(t => pieces.push(formatCoeffTimesDerivative(t, derivativeSymbol)));
+      return joinTexSum(pieces);
+    }
+
+    function scaleInfo(info, factorTex) {
+      return {
+        free: (info.free || []).map(t => multiplyTex(factorTex, t)),
+        d: (info.d || []).map(t => multiplyTex(factorTex, t))
+      };
+    }
+
+    function addInfo(a, b) {
+      return {
+        free: (a.free || []).concat(b.free || []),
+        d: (a.d || []).concat(b.d || [])
+      };
+    }
+
+    function trigDerivativeOuterTex(fn, innerTex) {
+      if (fn === 'sin') return `\cos\left(${innerTex}\right)`;
+      if (fn === 'cos') return `-\sin\left(${innerTex}\right)`;
+      if (fn === 'tan') return `\sec^{2}\left(${innerTex}\right)`;
+      if (fn === 'sec') return `\sec\left(${innerTex}\right)\tan\left(${innerTex}\right)`;
+      if (fn === 'csc') return `-\csc\left(${innerTex}\right)\cot\left(${innerTex}\right)`;
+      if (fn === 'cot') return `-\csc^{2}\left(${innerTex}\right)`;
+      return '';
+    }
+
+    function derivativeInfo(ast) {
+      if (ast.type === 'constant') return { free: [], d: [] };
+      if (ast.type === 'variable') {
+        const n = ast.power;
+        if (ast.name === 'x') {
+          if (n === 1) return { free: ['1'], d: [] };
+          return { free: [`${n}${n - 1 === 1 ? '' : `x^{${n - 1}}`}`], d: [] };
+        }
+        if (n === 1) return { free: [], d: ['1'] };
+        return { free: [], d: [`${n}y^{${n - 1}}`] };
+      }
+      if (ast.type === 'product') {
+        const leftTex = astToTex(ast.left);
+        const rightTex = astToTex(ast.right);
+        const leftD = scaleInfo(derivativeInfo(ast.left), rightTex);
+        const rightD = scaleInfo(derivativeInfo(ast.right), leftTex);
+        return addInfo(leftD, rightD);
+      }
+      if (ast.type === 'quotient') {
+        const numTex = astToTex(ast.numerator);
+        const denTex = astToTex(ast.denominator);
+        const denSq = `\left(${denTex}\right)^{2}`;
+        const numPrime = scaleInfo(derivativeInfo(ast.numerator), denTex);
+        const denPrime = scaleInfo(derivativeInfo(ast.denominator), negateTex(numTex));
+        return scaleInfo(addInfo(numPrime, denPrime), `\frac{1}{${denSq}}`);
+      }
+      if (ast.type === 'power') {
+        const innerTex = astToTex(ast.inner);
+        const factor = `${ast.exponent}\left(${innerTex}\right)^{${ast.exponent - 1}}`;
+        return scaleInfo(derivativeInfo(ast.inner), factor);
+      }
+      if (ast.type === 'root') {
+        const innerTex = astToTex(ast.inner);
+        const factor = `\frac{1}{${ast.index}\sqrt[${ast.index}]{\left(${innerTex}\right)^{${ast.index - 1}}}}`;
+        return scaleInfo(derivativeInfo(ast.inner), factor);
+      }
+      if (ast.type === 'trig') {
+        const innerTex = astToTex(ast.inner);
+        return scaleInfo(derivativeInfo(ast.inner), trigDerivativeOuterTex(ast.fn, innerTex));
+      }
+      return { free: [], d: [] };
+    }
+
+    function termDerivativeInfo(term) {
+      return scaleInfo(derivativeInfo(term.body), `${term.coeff}`);
+    }
+
+    function termFullTex(term) {
+      return stripLeadingPlus(termToTex(term, true));
+    }
+
+    function initialDerivativeSide(side) {
+      return side.map(term => derivativeOpTex(termFullTex(term)));
+    }
+
+    function derivativeEquationTex(lhsPieces, rhsPieces) {
+      return `${joinTexSum(lhsPieces)}=${joinTexSum(rhsPieces)}`;
+    }
+
+    function replacePiece(pieces, index, tex) {
+      const copy = pieces.slice();
+      copy[index] = tex;
+      return copy;
+    }
+
+    function pushDifferentiationStep(hints, lhsPieces, rhsPieces, sideName, index, tex) {
+      if (sideName === 'lhs') lhsPieces = replacePiece(lhsPieces, index, tex);
+      else rhsPieces = replacePiece(rhsPieces, index, tex);
+      hints.push(`\implies ${derivativeEquationTex(lhsPieces, rhsPieces)}`);
+      return { lhsPieces, rhsPieces };
+    }
+
+    function derivativeRuleName(ast) {
+      if (ast.type === 'product') return 'product';
+      if (ast.type === 'quotient') return 'quotient';
+      if (ast.type === 'power' || ast.type === 'root' || ast.type === 'trig') return 'chain';
+      return '';
+    }
+
+    function ruleReminderTex(rule) {
+      if (rule === 'product') return `\text{Recall the Product Rule: }\frac{d}{dx}\left(fg\right)=f'g+fg'.`;
+      if (rule === 'quotient') return `\text{Recall the Quotient Rule: }\frac{d}{dx}\left(\frac{f}{g}\right)=\frac{f'g-fg'}{g^{2}}.`;
+      if (rule === 'chain') return `\text{Recall the Chain Rule: if }h(x)=f(g(x)),\text{ then }h'(x)=f'(g(x))g'(x).`;
+      return '';
+    }
+
+    function firstExpansionTexForAst(ast, derivativeSymbol) {
+      const tex = astToTex(ast);
+      if (ast.type === 'product') {
+        const left = astToTex(ast.left);
+        const right = astToTex(ast.right);
+        return `${derivativeOpTex(left)}${texFactor(right)} + ${texFactor(left)}${derivativeOpTex(right)}`;
+      }
+      if (ast.type === 'quotient') {
+        const num = astToTex(ast.numerator);
+        const den = astToTex(ast.denominator);
+        return `\frac{${derivativeOpTex(num)}${texFactor(den)}-${texFactor(num)}${derivativeOpTex(den)}}{\left(${den}\right)^{2}}`;
+      }
+      if (ast.type === 'power') {
+        return `${ast.exponent}\left(${astToTex(ast.inner)}\right)^{${ast.exponent - 1}}${derivativeOpTex(astToTex(ast.inner))}`;
+      }
+      if (ast.type === 'root') {
+        const inner = astToTex(ast.inner);
+        return `\frac{${derivativeOpTex(inner)}}{${ast.index}\sqrt[${ast.index}]{\left(${inner}\right)^{${ast.index - 1}}}}`;
+      }
+      if (ast.type === 'trig') {
+        const inner = astToTex(ast.inner);
+        return `${trigDerivativeOuterTex(ast.fn, inner)}${derivativeOpTex(inner)}`;
+      }
+      return infoToTex(derivativeInfo(ast), derivativeSymbol);
+    }
+
+    function termExpansionTex(term, derivativeSymbol) {
+      const body = term.body;
+      const coeff = `${term.coeff}`;
+      const expandedBody = firstExpansionTexForAst(body, derivativeSymbol);
+      if (body.type === 'constant') return '0';
+      if (coeff === '1') return expandedBody;
+      if (coeff === '-1') return negateTex(expandedBody);
+      return `${coeff}\left(${expandedBody}\right)`;
+    }
+
+    function buildImplicitDerivativeHints(problem, derivativeSymbol) {
+      const hints = [];
+      let lhsPieces = initialDerivativeSide(problem.lhs);
+      let rhsPieces = initialDerivativeSide(problem.rhs);
+      hints.push(`\text{Differentiate both sides with respect to }x:\quad ${derivativeEquationTex(lhsPieces, rhsPieces)}`);
+
+      const orderedTerms = problem.lhs.map((term, index) => ({ term, sideName: 'lhs', index }))
+        .concat(problem.rhs.map((term, index) => ({ term, sideName: 'rhs', index })));
+
+      orderedTerms.forEach(item => {
+        const rule = derivativeRuleName(item.term.body);
+        if (rule) hints.push(ruleReminderTex(rule));
+        if (rule) {
+          const expanded = termExpansionTex(item.term, derivativeSymbol);
+          const updated = pushDifferentiationStep(hints, lhsPieces, rhsPieces, item.sideName, item.index, expanded);
+          lhsPieces = updated.lhsPieces;
+          rhsPieces = updated.rhsPieces;
+        }
+        const finalTex = infoToTex(termDerivativeInfo(item.term), derivativeSymbol);
+        const updated = pushDifferentiationStep(hints, lhsPieces, rhsPieces, item.sideName, item.index, finalTex);
+        lhsPieces = updated.lhsPieces;
+        rhsPieces = updated.rhsPieces;
+      });
+
+      const lhsInfo = problem.lhs.map(termDerivativeInfo).reduce(addInfo, { free: [], d: [] });
+      const rhsInfo = problem.rhs.map(termDerivativeInfo).reduce(addInfo, { free: [], d: [] });
+      const derivativeCoeffsLeft = lhsInfo.d.concat(rhsInfo.d.map(negateTex));
+      const freeTermsRight = rhsInfo.free.concat(lhsInfo.free.map(negateTex));
+      const leftGrouped = derivativeCoeffsLeft.map(t => formatCoeffTimesDerivative(t, derivativeSymbol));
+      const rightGrouped = joinTexSum(freeTermsRight);
+      const derivativeCoeff = joinTexSum(derivativeCoeffsLeft);
+
+      hints.push(`\implies ${joinTexSum(leftGrouped)}=${rightGrouped}`);
+      hints.push(`\implies ${derivativeSymbol}\left(${derivativeCoeff}\right)=${rightGrouped}`);
+      hints.push(`\implies ${derivativeSymbol}=\frac{${rightGrouped}}{${derivativeCoeff}}`);
+      return hints;
+    }
+
     function makeSide(allowTrig) {
       const count = randomInteger(1, 3);
       const side = [];
@@ -965,40 +1228,37 @@ fetch("/nav.html")
     }
 
     function makeImplicitStages(problem) {
-      const derivativeLabel = Math.random() < 0.5 ? `y'=`
-        : `\\frac{dy}{dx}=`;
+      const derivativeSymbol = Math.random() < 0.5 ? `y'` : `\frac{dy}{dx}`;
+      const derivativeLabel = `${derivativeSymbol}=`;
       const stages = [{
         kind: 'implicit-derivative',
-        promptTex: `\\text{First find }${derivativeLabel.replace('=', '')}.`,
+        promptTex: `\text{First find }${derivativeSymbol}.`,
         labelTex: derivativeLabel,
         expectedTex: '',
-        hints: [
-          `\\text{Differentiate both sides with respect to }x\\text{, remembering that }y\\text{ is a function of }x.`,
-          `\\text{Use product, quotient, and chain rules wherever they are needed.}`
-        ]
+        hints: buildImplicitDerivativeHints(problem, derivativeSymbol)
       }];
 
       if (problem.askTangentLine) {
         const pointTex = `(${problem.x0},${numberTex(problem.y0)})`;
         stages.push({
           kind: 'slope',
-          promptTex: `\\text{Find the slope of the tangent line at }${pointTex}.`,
+          promptTex: `\text{Find the slope of the tangent line at }${pointTex}.`,
           labelTex: `m=`,
           expectedValue: problem.slope,
           expectedTex: numberTex(problem.slope),
           hints: [
-            `\\text{Substitute }x=${problem.x0}\\text{ and }y=${numberTex(problem.y0)}\\text{ into your expression for }y'.`
+            `\text{Substitute }x=${problem.x0}\text{ and }y=${numberTex(problem.y0)}\text{ into your expression for }${derivativeSymbol}.`
           ]
         });
         stages.push({
           kind: 'line',
-          promptTex: `\\text{Find the equation of the tangent line at }${pointTex}. \\text{ Give your answer in the form }y=mx+b.`,
+          promptTex: `\text{Find the equation of the tangent line at }${pointTex}. \text{ Give your answer in the form }y=mx+b.`,
           labelTex: `y=`,
           expectedM: problem.slope,
           expectedB: problem.y0 - problem.slope * problem.x0,
           expectedTex: signedSlopeInterceptTex(numberTex(problem.slope), numberTex(problem.y0 - problem.slope * problem.x0), problem.y0 - problem.slope * problem.x0),
           hints: [
-            `\\text{Use the point }${pointTex}\\text{ and the slope }m=${numberTex(problem.slope)}.`
+            `\text{Use the point }${pointTex}\text{ and the slope }m=${numberTex(problem.slope)}.`
           ]
         });
       }

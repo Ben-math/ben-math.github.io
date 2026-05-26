@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1428,6 +1429,7 @@ fetch("/nav.html")
 
       const checks = [
         checkNoClosedDotsAtDiscontinuities,
+        checkNoOpenDotsAtDifferentiableJoins,
         checkZeroDerivativeIntervals,
         checkLinearDerivativePieces,
         checkQuadraticDerivativePieces,
@@ -1528,6 +1530,27 @@ fetch("/nav.html")
         if (nearlyEqual(piece.x1, x) && !piece.rightClosed) return true;
         return false;
       });
+    }
+
+    function hasExplicitOpenUserEndpointAtX(x) {
+      if (isBoundaryX(x)) return false;
+      return placedDerivativePieces.some(piece => {
+        if (piece.kind === 'dot') return nearlyEqual(piece.x, x) && !piece.closed;
+        if (piece.kind !== 'dot' && nearlyEqual(piece.x0, x) && !piece.leftClosed) return true;
+        if (piece.kind !== 'dot' && nearlyEqual(piece.x1, x) && !piece.rightClosed) return true;
+        return false;
+      });
+    }
+
+    function checkNoOpenDotsAtDifferentiableJoins() {
+      if (!currentProblem) return { ok: true };
+      for (const info of currentProblem.breaks) {
+        if (!isDifferentiableJoinAtX(info.x)) continue;
+        if (hasExplicitOpenUserEndpointAtX(info.x)) {
+          return { ok: false, message: 'Do not use an open dot where the original function is differentiable.' };
+        }
+      }
+      return { ok: true };
     }
 
     function checkNoClosedDotsAtDiscontinuities() {

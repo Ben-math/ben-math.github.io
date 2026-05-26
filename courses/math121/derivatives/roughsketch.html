@@ -3,6 +3,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -864,38 +865,73 @@ fetch("/nav.html")
     }
 
     function replaceDerivativeAtPoint(dot) {
-      placedDerivativePieces = placedDerivativePieces.flatMap(piece => splitExistingPieceAroundPoint(piece, dot));
-      placedDerivativePieces.push(dot);
-      sortDerivativePieces();
+      let touchedExistingPiece = false;
+      const updatedPieces = [];
+
+      placedDerivativePieces.forEach(piece => {
+        const replacement = splitExistingPieceAroundPoint(piece, dot);
+        if (replacement.touched) touchedExistingPiece = true;
+        updatedPieces.push(...replacement.pieces);
+      });
+
+      placedDerivativePieces = updatedPieces;
+
+      // A closed dot gives the derivative a value at that point.  An open dot
+      // placed directly on an existing segment instead deletes that point from
+      // the segment; the two open endpoints created by the split draw the hole.
+      // If the open dot was not on an existing segment, keep it as visual input.
+      if (dot.closed || !touchedExistingPiece) placedDerivativePieces.push(dot);
+
+      normalizeDerivativePieces();
     }
 
     function splitExistingPieceAroundPoint(piece, dot) {
-      if (piece.kind === 'dot') return piece.x === dot.x ? [] : [piece];
-      if (dot.x < piece.x0 || dot.x > piece.x1) return [piece];
+      if (piece.kind === 'dot') {
+        return { touched: nearlyEqual(piece.x, dot.x), pieces: nearlyEqual(piece.x, dot.x) ? [] : [piece] };
+      }
+      if (dot.x < piece.x0 - 1e-7 || dot.x > piece.x1 + 1e-7) {
+        return { touched: false, pieces: [piece] };
+      }
 
       // Curved asymptote-adjacent sketches are intentionally coarse objects.
       // If a later placement hits one, delete the whole curved piece rather
       // than trying to trim it into smaller curved fragments.
-      if (piece.kind === 'infiniteCurve') return [];
+      if (piece.kind === 'infiniteCurve') return { touched: true, pieces: [] };
+
+      const expectedY = evaluateDerivativePiece(piece, dot.x);
+      if (!Number.isFinite(expectedY) || Math.abs(expectedY - dot.y) > 1e-7) {
+        return { touched: false, pieces: [piece] };
+      }
 
       const result = [];
+      if (nearlyEqual(dot.x, piece.x0)) {
+        const adjusted = { ...piece, leftClosed: dot.closed };
+        result.push(adjusted);
+        return { touched: true, pieces: result };
+      }
+      if (nearlyEqual(dot.x, piece.x1)) {
+        const adjusted = { ...piece, rightClosed: dot.closed };
+        result.push(adjusted);
+        return { touched: true, pieces: result };
+      }
+
       if (piece.x0 < dot.x) {
         const left = trimPiece(piece, piece.x0, dot.x);
-        left.rightClosed = false;
+        left.rightClosed = dot.closed;
         result.push(left);
       }
       if (dot.x < piece.x1) {
         const right = trimPiece(piece, dot.x, piece.x1);
-        right.leftClosed = false;
+        right.leftClosed = dot.closed;
         result.push(right);
       }
-      return result;
+      return { touched: true, pieces: result };
     }
 
     function replaceDerivativeOnInterval(newPiece) {
       placedDerivativePieces = placedDerivativePieces.flatMap(piece => subtractIntervalFromPiece(piece, newPiece));
       placedDerivativePieces.push(newPiece);
-      sortDerivativePieces();
+      normalizeDerivativePieces();
     }
 
     function subtractIntervalFromPiece(piece, newPiece) {
@@ -932,6 +968,71 @@ fetch("/nav.html")
         const bx = b.kind === 'dot' ? b.x : b.x0;
         return ax - bx;
       });
+    }
+
+    function lineSlope(piece) {
+      return (piece.y1 - piece.y0) / (piece.x1 - piece.x0);
+    }
+
+    function lineIntercept(piece) {
+      return piece.y0 - lineSlope(piece) * piece.x0;
+    }
+
+    function sameLineForMerge(a, b) {
+      if (a.kind !== 'line' || b.kind !== 'line') return false;
+      return Math.abs(lineSlope(a) - lineSlope(b)) <= 1e-7 &&
+             Math.abs(lineIntercept(a) - lineIntercept(b)) <= 1e-7;
+    }
+
+    function mergeLinePieces(a, b) {
+      const x0 = Math.min(a.x0, b.x0);
+      const x1 = Math.max(a.x1, b.x1);
+      const base = a.x0 <= b.x0 ? a : b;
+      const merged = trimPiece(base, x0, x1);
+
+      if (nearlyEqual(x0, a.x0) && nearlyEqual(x0, b.x0)) merged.leftClosed = a.leftClosed || b.leftClosed;
+      else if (nearlyEqual(x0, a.x0)) merged.leftClosed = a.leftClosed;
+      else if (nearlyEqual(x0, b.x0)) merged.leftClosed = b.leftClosed;
+      else merged.leftClosed = true;
+
+      if (nearlyEqual(x1, a.x1) && nearlyEqual(x1, b.x1)) merged.rightClosed = a.rightClosed || b.rightClosed;
+      else if (nearlyEqual(x1, a.x1)) merged.rightClosed = a.rightClosed;
+      else if (nearlyEqual(x1, b.x1)) merged.rightClosed = b.rightClosed;
+      else merged.rightClosed = true;
+
+      return merged;
+    }
+
+    function linePiecesShouldMerge(a, b) {
+      if (!sameLineForMerge(a, b)) return false;
+      if (b.x0 < a.x1 - 1e-7) return true;
+      if (nearlyEqual(b.x0, a.x1)) return a.rightClosed || b.leftClosed;
+      return false;
+    }
+
+    function normalizeDerivativePieces() {
+      sortDerivativePieces();
+
+      const nonLines = placedDerivativePieces.filter(piece => piece.kind !== 'line');
+      const lines = placedDerivativePieces.filter(piece => piece.kind === 'line')
+        .sort((a, b) => a.x0 - b.x0 || a.x1 - b.x1);
+
+      const mergedLines = [];
+      for (const line of lines) {
+        if (!mergedLines.length) {
+          mergedLines.push(line);
+          continue;
+        }
+        const previous = mergedLines[mergedLines.length - 1];
+        if (linePiecesShouldMerge(previous, line)) {
+          mergedLines[mergedLines.length - 1] = mergeLinePieces(previous, line);
+        } else {
+          mergedLines.push(line);
+        }
+      }
+
+      placedDerivativePieces = nonLines.concat(mergedLines);
+      sortDerivativePieces();
     }
 
     function closedAtX(piece, x) {
@@ -1485,7 +1586,7 @@ fetch("/nav.html")
         }
       }
       for (const piece of placedDerivativePieces) {
-        if (piece.kind === 'dot' && nearlyEqual(piece.x, x)) return piece.y;
+        if (piece.kind === 'dot' && nearlyEqual(piece.x, x) && piece.closed) return piece.y;
       }
       return null;
     }

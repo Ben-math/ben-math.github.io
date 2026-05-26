@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -395,14 +396,22 @@ fetch("/nav.html")
       return f.den === 1 ? `${f.num}` : `\\frac{${f.num}}{${f.den}}`;
     }
 
+    function positiveTex(tex) {
+      tex = String(tex);
+      if (tex.startsWith('-')) return tex.slice(1).trim();
+      const negativeFractionMatch = tex.match(/^\\frac\{-([^{}]+)\}\{([^{}]+)\}$/);
+      if (negativeFractionMatch) return `\\frac{${negativeFractionMatch[1]}}{${negativeFractionMatch[2]}}`;
+      return tex;
+    }
+
     function signedSlopeInterceptTex(mTex, bTex, bValue) {
       if (Math.abs(bValue) < 1e-10) return `${mTex}x`;
-      const cleanB = String(bTex).replace(/^-/,'');
+      const cleanB = positiveTex(bTex);
       return `${mTex}x ${bValue < 0 ? '-' : '+'} ${cleanB}`;
     }
 
     function pointSlopeLeftSideTex(yValueTex, yValue) {
-      const cleanY = String(yValueTex).replace(/^-/,'');
+      const cleanY = positiveTex(yValueTex);
       if (Math.abs(yValue) < 1e-10) return 'y';
       return `y ${yValue < 0 ? '+' : '-'} ${cleanY}`;
     }

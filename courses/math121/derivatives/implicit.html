@@ -311,12 +311,12 @@ fetch("/nav.html")
     <p>But all is not lost: we can still find the derivative of \(y\) with respect to \(x\), via implicit differentiation (an application of the Chain 
     Rule).  In the preceding equation, since there are only two variable, it may be clear from context that we are taking the derivative with respect to 
     \(x\), and so can denote the derivative of \(y\) by \(y'\) unambiguously.  Later, when we have more variables, we will have to specify: we are 
-    talking about the rate of change of \y\) as <b>what</b> changes?  Leibniz notation takes care of this: the derivative of \(y\) with respect to \(x\) 
+    talking about the rate of change of \(y\) as <b>what</b> changes?  Leibniz notation takes care of this: the derivative of \(y\) with respect to \(x\) 
     is denoted by \(\frac{dy}{dx}\).</p>
 
     <p>Solving the preceding problem, we differentiate both sides of the original equation with respect to \(x\): \[\implies \frac{d}{dx}(xy^2)  
     - \frac{d}{dx}(3x^2) = \frac{d}{dx}(2) - \frac{d}{dx}(2y)\]  We work our way from left-to-right.  We apply the product rule to the term \(xy^2\): 
-    \[\implies \frac(d}{dx}(x)y^2 + x\frac{d}{dx}(y^2) - \frac{d}{dx}(3x^2) = \frac{d}{dx}(2) - \frac{d}{dx}(2y)\]
+    \[\implies \frac{d}{dx}(x)y^2 + x\frac{d}{dx}(y^2) - \frac{d}{dx}(3x^2) = \frac{d}{dx}(2) - \frac{d}{dx}(2y)\]
     Then differentiating \(y^2\), we will need to apply the Chain Rule, since \(y\) is a function of \(x\).  You can think of \(y\) as being the inner 
     function, and the squaring function as being the outer function.  So we take the derivative of the outer function, leave \(y\) inside it, but then 
     multiply by the derivative of the inner function:

@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1248,11 +1249,39 @@ fetch("/nav.html")
       ctx.restore();
     }
 
+    function segmentDerivativeSlopeAtEndpoint(segment, side) {
+      if (!segment) return null;
+      if (segment.type === 'constant') return 0;
+      if (segment.type === 'linear') return segment.m;
+      if (segment.type === 'quadratic') {
+        const x = side === 'left' ? segment.x0 : segment.x1;
+        return 2 * segment.a * (x - segment.vx);
+      }
+      return null;
+    }
+
+    function isDifferentiableJoinAtX(x) {
+      if (!currentProblem || isBoundaryX(x)) return true;
+      const breakInfo = currentProblem.breaks.find(info => nearlyEqual(info.x, x));
+      if (!breakInfo || breakInfo.kind !== 'continuous') return false;
+
+      const rightIndex = currentProblem.endpoints.findIndex(value => nearlyEqual(value, x));
+      if (rightIndex <= 0 || rightIndex >= currentProblem.segments.length) return false;
+
+      const leftSegment = currentProblem.segments[rightIndex - 1];
+      const rightSegment = currentProblem.segments[rightIndex];
+      const leftSlope = segmentDerivativeSlopeAtEndpoint(leftSegment, 'right');
+      const rightSlope = segmentDerivativeSlopeAtEndpoint(rightSegment, 'left');
+
+      return leftSlope !== null && rightSlope !== null && Math.abs(leftSlope - rightSlope) <= 1e-7;
+    }
+
     function derivativeEndpointClosed(segment, side) {
       if (!currentProblem) return false;
       if (side === 'left' && segment.x0 === -10) return true;
       if (side === 'right' && segment.x1 === 10) return true;
       const x = side === 'left' ? segment.x0 : segment.x1;
+      if (isDifferentiableJoinAtX(x)) return true;
       return !currentProblem.breaks.some(info => info.x === x);
     }
 
@@ -1262,7 +1291,9 @@ fetch("/nav.html")
           drawDerivativeDot(ctx, sx(segment.vx), sy(0), true);
         }
         if (segment.type === 'constant') {
-          drawHintLineWithDots(ctx, sx, sy, segment.x0, 0, segment.x1, 0, false, false);
+          const leftClosed = derivativeEndpointClosed(segment, 'left');
+          const rightClosed = derivativeEndpointClosed(segment, 'right');
+          drawHintLineWithDots(ctx, sx, sy, segment.x0, 0, segment.x1, 0, leftClosed, rightClosed);
         }
       });
     }

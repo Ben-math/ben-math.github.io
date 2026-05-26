@@ -8,6 +8,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -263,6 +264,19 @@
       white-space: nowrap;
     }
 
+
+    .difficulty-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45em;
+      margin-right: 0.9em;
+      font-weight: bold;
+    }
+
+    .difficulty-control input {
+      transform: scale(1.15);
+    }
+
     @media (max-width: 760px) {
       .visual-limit-grid {
         grid-template-columns: 1fr;
@@ -325,6 +339,10 @@ fetch("/nav.html")
     <p>Now you try!</p>
 
     <div class="button-container">
+      <label class="difficulty-control">
+        <input type="checkbox" id="hard-mode-checkbox">
+        Hard Mode
+      </label>
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>
 
@@ -357,6 +375,7 @@ fetch("/nav.html")
     const checkBtn = document.getElementById('check-btn');
     const feedbackText = document.getElementById('feedbackText');
     const finalAnswerInput = document.getElementById('final-answer-input');
+    const hardModeCheckbox = document.getElementById('hard-mode-checkbox');
 
     let currentProblem = null;
     let currentStageIndex = 0;
@@ -759,10 +778,11 @@ fetch("/nav.html")
       return astVariable(name, 1);
     }
 
-    function makeComponent(allowTrig) {
+    function makeComponent(allowTrig, hardMode = false) {
       const variableName = Math.random() < 0.5 ? 'x' : 'y';
       const base = maybePowerVariable(variableName);
-      if (allowTrig && Math.random() < 0.30) {
+      const trigComponentProbability = hardMode ? 0.45 : 0.30;
+      if (allowTrig && Math.random() < trigComponentProbability) {
         return astTrig(randomChoice(IMPLICIT_TRIG_FUNCTIONS), base);
       }
       return base;
@@ -778,8 +798,9 @@ fetch("/nav.html")
       return xyOrder ? astQuotient(xPart, yPart) : astQuotient(yPart, xPart);
     }
 
-    function makeCompositionTermBody(allowTrig) {
-      if (allowTrig && Math.random() < 0.5) {
+    function makeCompositionTermBody(allowTrig, hardMode = false) {
+      const directTrigChainProbability = hardMode ? 0.65 : 0.50;
+      if (allowTrig && Math.random() < directTrigChainProbability) {
         const variableName = Math.random() < 0.5 ? 'x' : 'y';
         return astTrig(randomChoice(IMPLICIT_TRIG_FUNCTIONS), maybePowerVariable(variableName));
       }
@@ -790,14 +811,24 @@ fetch("/nav.html")
       return astRoot(inner, n);
     }
 
-    function makeTermBody(allowTrig) {
-      const termType = weightedChoice([
-        { value: 'constant', weight: 25 },
-        { value: 'quotient', weight: 10 },
-        { value: 'product', weight: 15 },
-        { value: 'composition', weight: 15 },
-        { value: 'single', weight: 35 }
-      ]);
+    function makeTermBody(allowTrig, hardMode = false) {
+      const termWeights = hardMode
+        ? [
+            { value: 'constant', weight: 15 },
+            { value: 'quotient', weight: 15 },
+            { value: 'product', weight: 22 },
+            { value: 'composition', weight: 23 },
+            { value: 'single', weight: 25 }
+          ]
+        : [
+            { value: 'constant', weight: 25 },
+            { value: 'quotient', weight: 7 },
+            { value: 'product', weight: 10 },
+            { value: 'composition', weight: 10 },
+            { value: 'single', weight: 48 }
+          ];
+
+      const termType = weightedChoice(termWeights);
 
       if (termType === 'constant') return astConstant(randomNonzeroInteger(-9, 9));
       if (termType === 'quotient') {
@@ -810,12 +841,12 @@ fetch("/nav.html")
           ? astProduct(maybePowerVariable('x'), maybePowerVariable('y'))
           : astProduct(maybePowerVariable('y'), maybePowerVariable('x'));
       }
-      if (termType === 'composition') return makeCompositionTermBody(allowTrig);
-      return makeComponent(allowTrig);
+      if (termType === 'composition') return makeCompositionTermBody(allowTrig, hardMode);
+      return makeComponent(allowTrig, hardMode);
     }
 
-    function makeTerm(allowTrig) {
-      const body = makeTermBody(allowTrig);
+    function makeTerm(allowTrig, hardMode = false) {
+      const body = makeTermBody(allowTrig, hardMode);
       if (body.type === 'constant') {
         return { coeff: 1, body };
       }
@@ -1238,10 +1269,25 @@ fetch("/nav.html")
       return hints;
     }
 
-    function makeSide(allowTrig) {
-      const count = randomInteger(1, 3);
+    function chooseImplicitSideCounts(hardMode) {
+      const totalTerms = hardMode
+        ? randomChoice([4, 4, 5, 5, 6])
+        : randomChoice([2, 3, 3, 4]);
+
+      const possibleLeftCounts = [];
+      for (let leftCount = 1; leftCount <= 3; leftCount++) {
+        const rightCount = totalTerms - leftCount;
+        if (rightCount >= 1 && rightCount <= 3) possibleLeftCounts.push(leftCount);
+      }
+
+      const leftCount = randomChoice(possibleLeftCounts);
+      return { leftCount, rightCount: totalTerms - leftCount };
+    }
+
+    function makeSide(allowTrig, hardMode = false, count = null) {
+      const sideTermCount = count ?? randomInteger(1, 3);
       const side = [];
-      for (let i = 0; i < count; i++) side.push(makeTerm(allowTrig));
+      for (let i = 0; i < sideTermCount; i++) side.push(makeTerm(allowTrig, hardMode));
       return side;
     }
 
@@ -1330,13 +1376,15 @@ fetch("/nav.html")
 
     function generateDerivativeProblem() {
       for (let attempt = 0; attempt < 500; attempt++) {
-        const allowTrig = Math.random() < 0.30;
+        const hardMode = Boolean(hardModeCheckbox && hardModeCheckbox.checked);
+        const allowTrig = Math.random() < (hardMode ? 0.50 : 0.30);
         const tangentAtZero = allowTrig && Math.random() < 0.50;
         const askTangentLine = !allowTrig || tangentAtZero;
         const point = makePointForImplicitProblem(allowTrig, tangentAtZero);
+        const sideCounts = chooseImplicitSideCounts(hardMode);
 
-        const lhs = makeSide(allowTrig);
-        const rhs = makeSide(allowTrig);
+        const lhs = makeSide(allowTrig, hardMode, sideCounts.leftCount);
+        const rhs = makeSide(allowTrig, hardMode, sideCounts.rightCount);
 
         // The only reroll required for the equation itself is that both variables appear.
         // Do not reject trig equations just because a later numerical tangent-line
@@ -1357,6 +1405,7 @@ fetch("/nav.html")
           x0: point.x0,
           y0: point.y0,
           slope,
+          hardMode,
           lhs,
           rhs,
           questionTex: equationTex

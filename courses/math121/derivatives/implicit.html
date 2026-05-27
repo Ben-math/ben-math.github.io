@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1003,9 +1004,45 @@ fetch("/nav.html")
       return { sign: 1, tex };
     }
 
+    function splitNumericalCoeff(tex) {
+      tex = String(tex || '').trim();
+      if (!tex) return { coeff: 0, body: '' };
+      if (/^\d+$/.test(tex)) return { coeff: Number(tex), body: '' };
+      const match = tex.match(/^(\d+)(.+)$/);
+      if (match && !match[2].startsWith('^')) return { coeff: Number(match[1]), body: match[2] };
+      return { coeff: 1, body: tex };
+    }
+
+    function coeffBodyToTex(coeff, body) {
+      if (coeff === 0) return '0';
+      if (!body) return `${coeff}`;
+      if (coeff === 1) return body;
+      if (coeff === -1) return `-${body}`;
+      return `${coeff}${body}`;
+    }
+
+    function combineLikeTexTerms(items) {
+      const order = [];
+      const totals = new Map();
+
+      items.forEach(item => {
+        const part = signedTexParts(item);
+        if (!part) return;
+        const split = splitNumericalCoeff(part.tex);
+        const body = split.body;
+        const coeff = part.sign * split.coeff;
+        if (!totals.has(body)) order.push(body);
+        totals.set(body, (totals.get(body) || 0) + coeff);
+      });
+
+      return order
+        .map(body => coeffBodyToTex(totals.get(body), body))
+        .filter(tex => tex !== '0');
+    }
+
     function joinTexSum(items) {
       const clean = [];
-      items.forEach(item => {
+      combineLikeTexTerms(items).forEach(item => {
         const part = signedTexParts(item);
         if (part) clean.push(part);
       });
@@ -1054,16 +1091,32 @@ fetch("/nav.html")
       return '';
     }
 
+    function powerRuleFactorTex(coefficient, variableName, exponentAfterDerivative) {
+      if (exponentAfterDerivative === 0) return `${coefficient}`;
+      const variableTex = exponentAfterDerivative === 1 ? variableName : `${variableName}^{${exponentAfterDerivative}}`;
+      return `${coefficient}${variableTex}`;
+    }
+
+    function chainPowerFactorTex(coefficient, innerTex, exponentAfterDerivative) {
+      if (exponentAfterDerivative === 0) return `${coefficient}`;
+      const powerTex = exponentAfterDerivative === 1 ? `\\left(${innerTex}\\right)` : `\\left(${innerTex}\\right)^{${exponentAfterDerivative}}`;
+      return `${coefficient}${powerTex}`;
+    }
+
+    function rootInnerPowerTex(innerTex, exponent) {
+      return exponent === 1 ? `\\left(${innerTex}\\right)` : `\\left(${innerTex}\\right)^{${exponent}}`;
+    }
+
     function derivativeInfo(ast) {
       if (ast.type === 'constant') return { free: [], d: [] };
       if (ast.type === 'variable') {
         const n = ast.power;
         if (ast.name === 'x') {
           if (n === 1) return { free: ['1'], d: [] };
-          return { free: [`${n}${n - 1 === 1 ? 'x' : `x^{${n - 1}}`}`], d: [] };
+          return { free: [powerRuleFactorTex(n, 'x', n - 1)], d: [] };
         }
         if (n === 1) return { free: [], d: ['1'] };
-        return { free: [], d: [`${n}y^{${n - 1}}`] };
+        return { free: [], d: [powerRuleFactorTex(n, 'y', n - 1)] };
       }
       if (ast.type === 'product') {
         const leftTex = astToTex(ast.left);
@@ -1082,12 +1135,12 @@ fetch("/nav.html")
       }
       if (ast.type === 'power') {
         const innerTex = astToTex(ast.inner);
-        const factor = `${ast.exponent}\\left(${innerTex}\\right)^{${ast.exponent - 1}}`;
+        const factor = chainPowerFactorTex(ast.exponent, innerTex, ast.exponent - 1);
         return scaleInfo(derivativeInfo(ast.inner), factor);
       }
       if (ast.type === 'root') {
         const innerTex = astToTex(ast.inner);
-        const factor = `\\frac{1}{${ast.index}\\sqrt[${ast.index}]{\\left(${innerTex}\\right)^{${ast.index - 1}}}}`;
+        const factor = `\\frac{1}{${ast.index}\\sqrt[${ast.index}]{${rootInnerPowerTex(innerTex, ast.index - 1)}}}`;
         return scaleInfo(derivativeInfo(ast.inner), factor);
       }
       if (ast.type === 'trig') {
@@ -1152,11 +1205,11 @@ fetch("/nav.html")
         return `\\frac{${derivativeOpTex(num)}${texFactor(den)}-${texFactor(num)}${derivativeOpTex(den)}}{\\left(${den}\\right)^{2}}`;
       }
       if (ast.type === 'power') {
-        return `${ast.exponent}\\left(${astToTex(ast.inner)}\\right)^{${ast.exponent - 1}}${derivativeOpTex(astToTex(ast.inner))}`;
+        return `${chainPowerFactorTex(ast.exponent, astToTex(ast.inner), ast.exponent - 1)}${derivativeOpTex(astToTex(ast.inner))}`;
       }
       if (ast.type === 'root') {
         const inner = astToTex(ast.inner);
-        return `\\frac{${derivativeOpTex(inner)}}{${ast.index}\\sqrt[${ast.index}]{\\left(${inner}\\right)^{${ast.index - 1}}}}`;
+        return `\\frac{${derivativeOpTex(inner)}}{${ast.index}\\sqrt[${ast.index}]{${rootInnerPowerTex(inner, ast.index - 1)}}}`;
       }
       if (ast.type === 'trig') {
         const inner = astToTex(ast.inner);

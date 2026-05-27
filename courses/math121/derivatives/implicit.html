@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -980,6 +981,100 @@ fetch("/nav.html")
       return `\\left(${tex}\\right)`;
     }
 
+    function parseSimpleMonomialTex(tex) {
+      tex = String(tex || '').trim()
+        .replace(/\\left/g, '')
+        .replace(/\\right/g, '')
+        .replace(/\s+/g, '');
+      if (!tex || /\\(frac|sqrt|sin|cos|tan|sec|csc|cot|text|implies|frac\{d\})/.test(tex)) return null;
+      if (/[+=]/.test(tex)) return null;
+
+      let i = 0;
+
+      function multiply(a, b) {
+        return { coeff: a.coeff * b.coeff, xPow: a.xPow + b.xPow, yPow: a.yPow + b.yPow };
+      }
+
+      function powMono(a, n) {
+        return { coeff: Math.pow(a.coeff, n), xPow: a.xPow * n, yPow: a.yPow * n };
+      }
+
+      function readExponent() {
+        if (tex.slice(i, i + 2) !== '^{') return 1;
+        i += 2;
+        const start = i;
+        while (i < tex.length && /\d/.test(tex[i])) i++;
+        if (tex[i] !== '}') return null;
+        const n = Number(tex.slice(start, i));
+        i++;
+        return Number.isFinite(n) ? n : null;
+      }
+
+      function parseTerm(stopChar = '') {
+        let result = { coeff: 1, xPow: 0, yPow: 0 };
+        let sawFactor = false;
+
+        while (i < tex.length && (!stopChar || tex[i] !== stopChar)) {
+          let sign = 1;
+          if (tex[i] === '-') {
+            sign = -1;
+            i++;
+          }
+
+          let factor = null;
+
+          if (/\d/.test(tex[i] || '')) {
+            const start = i;
+            while (i < tex.length && /\d/.test(tex[i])) i++;
+            factor = { coeff: sign * Number(tex.slice(start, i)), xPow: 0, yPow: 0 };
+          } else if (tex[i] === 'x' || tex[i] === 'y') {
+            const variable = tex[i++];
+            const exponent = readExponent();
+            if (exponent === null) return null;
+            factor = { coeff: sign, xPow: variable === 'x' ? exponent : 0, yPow: variable === 'y' ? exponent : 0 };
+          } else if (tex[i] === '(') {
+            i++;
+            factor = parseTerm(')');
+            if (!factor || tex[i] !== ')') return null;
+            i++;
+            const exponent = readExponent();
+            if (exponent === null) return null;
+            factor = powMono(factor, exponent);
+            factor.coeff *= sign;
+          } else {
+            return null;
+          }
+
+          result = multiply(result, factor);
+          sawFactor = true;
+        }
+
+        return sawFactor ? result : null;
+      }
+
+      const parsed = parseTerm('');
+      if (!parsed || i !== tex.length) return null;
+      if (!Number.isFinite(parsed.coeff) || Math.abs(parsed.coeff) > 1000000000) return null;
+      return parsed;
+    }
+
+    function simpleMonomialToTex(mono) {
+      if (!mono || mono.coeff === 0) return '0';
+      const bodyParts = [];
+      if (mono.xPow) bodyParts.push(mono.xPow === 1 ? 'x' : `x^{${mono.xPow}}`);
+      if (mono.yPow) bodyParts.push(mono.yPow === 1 ? 'y' : `y^{${mono.yPow}}`);
+      const body = bodyParts.join('');
+      if (!body) return `${mono.coeff}`;
+      if (mono.coeff === 1) return body;
+      if (mono.coeff === -1) return `-${body}`;
+      return `${mono.coeff}${body}`;
+    }
+
+    function simplifySimpleMonomialTex(tex) {
+      const parsed = parseSimpleMonomialTex(tex);
+      return parsed ? simpleMonomialToTex(parsed) : tex;
+    }
+
     function multiplyTex(a, b) {
       a = String(a || '').trim();
       b = String(b || '').trim();
@@ -987,7 +1082,7 @@ fetch("/nav.html")
       if (!b || b === '1') return a || '1';
       if (a === '-1') return negateTex(b);
       if (b === '-1') return negateTex(a);
-      return `${texFactor(a)}${texFactor(b)}`;
+      return simplifySimpleMonomialTex(`${texFactor(a)}${texFactor(b)}`);
     }
 
     function negateTex(tex) {
@@ -1225,7 +1320,7 @@ fetch("/nav.html")
       if (body.type === 'constant') return '0';
       if (coeff === '1') return expandedBody;
       if (coeff === '-1') return negateTex(expandedBody);
-      return `${coeff}\\left(${expandedBody}\\right)`;
+      return simplifySimpleMonomialTex(`${coeff}\\left(${expandedBody}\\right)`);
     }
 
     function derivativeExpansionChildren(ast) {
@@ -1239,7 +1334,24 @@ fetch("/nav.html")
     function replaceFirstTex(source, target, replacement) {
       const index = source.indexOf(target);
       if (index < 0) return source;
-      return source.slice(0, index) + replacement + source.slice(index + target.length);
+
+      const before = source.slice(0, index);
+      const after = source.slice(index + target.length);
+
+      // When d/dx(x) is one factor in a product, writing the replacement literally
+      // gives ugly strings like y1 or 1y.  Keep a standalone derivative equal to 1,
+      // but suppress the 1 when another factor is immediately adjacent.
+      if (String(replacement).trim() === '1') {
+        const leftChar = before.trim().slice(-1);
+        const rightChar = after.trim().charAt(0);
+        const adjacentFactorOnLeft = /[xy\)}]$/.test(leftChar);
+        const adjacentFactorOnRight = /^([xy\\(]|\d)/.test(rightChar);
+        if (adjacentFactorOnLeft || adjacentFactorOnRight) {
+          return simplifySimpleMonomialTex(before + after);
+        }
+      }
+
+      return simplifySimpleMonomialTex(before + replacement + after);
     }
 
     function derivativeLeafTex(ast, derivativeSymbol) {

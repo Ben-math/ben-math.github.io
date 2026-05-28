@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1853,32 +1854,49 @@ fetch("/nav.html")
     }
 
     function normalizeAnswerText(raw) {
-      return String(raw || '')
+      let s = String(raw || '')
         .replace(/−/g, '-')
+        .replace(/π/g, 'pi')
         .replace(/\s+/g, '')
         .replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, '(($1)/($2))')
         .replace(/\\sqrt\{([^{}]+)\}/g, 'sqrt($1)')
         .replace(/√\(/g, 'sqrt(')
-        .replace(/√([0-9.]+|x)/g, 'sqrt($1)')
+        .replace(/√([0-9.]+|x|y)/g, 'sqrt($1)')
         .replace(/\^/g, '**')
         .toLowerCase();
+      s = s.replace(/^(y'|dy\/dx)=/, '');
+      return s;
     }
 
     function expressionToJs(raw) {
       let s = normalizeAnswerText(raw);
       if (s.startsWith('y=')) s = s.slice(2);
-      s = s.replace(/sqrt/g, 'Math.sqrt').replace(/pi/g, 'Math.PI');
-      // insert common implicit multiplication: 2x, 2(x+1), x(x+1), )(x), 2sqrt(x), xsqrt(x), 2pi
-      s = s.replace(/(\d|x|\))(?=(x|Math\.sqrt|Math\.PI|\())/g, '$1*');
-      s = s.replace(/(x|\))(?=\d)/g, '$1*');
+      s = s.replace(/\bpi\b/g, 'PI');
+      // insert common implicit multiplication: 2x, 2y, 2(x+1), x(y+1), )(x), 2sqrt(x), xsin(y), 2pi
+      s = s.replace(/(\d|x|y|\))(?=(x|y|sqrt|sin|cos|tan|sec|csc|cot|PI|\())/g, '$1*');
+      s = s.replace(/(x|y|\))(?=\d)/g, '$1*');
       return s;
     }
 
-    function evaluateUserExpression(raw, x) {
+    function expressionIdentifiersAreSafe(js) {
+      const allowed = new Set(['x', 'y', 'sqrt', 'sin', 'cos', 'tan', 'sec', 'csc', 'cot', 'PI']);
+      const identifiers = js.match(/[A-Za-z_][A-Za-z0-9_]*/g) || [];
+      return identifiers.every(name => allowed.has(name));
+    }
+
+    function evaluateUserExpression(raw, x, y = 0) {
       const js = expressionToJs(raw);
-      if (!js || /[^0-9x+\-*/().,MathsqrtPIe]/.test(js)) return NaN;
+      if (!js || /[^0-9A-Za-z_+\-*/().,]/.test(js) || !expressionIdentifiersAreSafe(js)) return NaN;
       try {
-        const value = Function('x', `"use strict"; return (${js});`)(x);
+        const sqrt = Math.sqrt;
+        const sin = Math.sin;
+        const cos = Math.cos;
+        const tan = Math.tan;
+        const sec = u => 1 / Math.cos(u);
+        const csc = u => 1 / Math.sin(u);
+        const cot = u => 1 / Math.tan(u);
+        const PI = Math.PI;
+        const value = Function('x', 'y', 'sqrt', 'sin', 'cos', 'tan', 'sec', 'csc', 'cot', 'PI', `"use strict"; return (${js});`)(x, y, sqrt, sin, cos, tan, sec, csc, cot, PI);
         return Number.isFinite(value) ? value : NaN;
       } catch (error) {
         return NaN;
@@ -1913,10 +1931,30 @@ fetch("/nav.html")
       });
     }
 
+
+
+    function implicitDerivativeAnswerMatches(raw, problem) {
+      const samples = [
+        [-3, -2], [-3, 1], [-2, 3], [-1, -3],
+        [1, 2], [2, -1], [3, 1], [4, 2], [-4, 2]
+      ];
+      let checked = 0;
+      for (const [x, y] of samples) {
+        if (!finiteAtPoint(problem.lhs, x, y) || !finiteAtPoint(problem.rhs, x, y)) continue;
+        const expected = implicitSlopeNumerical(problem.lhs, problem.rhs, x, y);
+        const user = evaluateUserExpression(raw, x, y);
+        if (!Number.isFinite(expected) || !Number.isFinite(user)) continue;
+        checked++;
+        if (Math.abs(user - expected) > 1e-4 * Math.max(1, Math.abs(expected))) return false;
+      }
+      return checked >= 4;
+    }
+
     function answerToolbarHtml() {
       return `
         <div class="answer-toolbar">
           <button type="button" class="math-symbol-button" data-insert-text="x">x</button>
+          <button type="button" class="math-symbol-button" data-insert-text="y">y</button>
           <button type="button" class="math-symbol-button" data-insert-exponent="true">x<sup>□</sup></button>
           <button type="button" class="math-symbol-button" data-insert-radical="true">√</button>
           <button type="button" class="math-symbol-button" data-insert-fraction="true"><span class="fraction-button-display"><span class="fraction-button-top">a</span><span class="fraction-button-bottom">b</span></span></button>
@@ -2223,7 +2261,7 @@ fetch("/nav.html")
     }
 
     function currentStageIsCorrect(stage, raw) {
-      if (stage.kind === 'implicit-derivative') return String(raw || '').trim().length > 0;
+      if (stage.kind === 'implicit-derivative') return implicitDerivativeAnswerMatches(raw, currentProblem);
       if (stage.kind === 'derivative-function') return expressionMatches(raw, stage.expectedExpression);
       if (stage.kind === 'slope') return numericAnswerMatches(raw, stage.expectedValue);
       if (stage.kind === 'line') return lineAnswerMatches(raw, stage.expectedM, stage.expectedB);

@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1759,6 +1760,97 @@ fetch("/nav.html")
       return -fx / fy;
     }
 
+
+    function latticeSearchOrder(limit) {
+      const points = [];
+      for (let r = 0; r <= limit; r++) {
+        for (let x = -r; x <= r; x++) {
+          for (let y = -r; y <= r; y++) {
+            if (Math.max(Math.abs(x), Math.abs(y)) === r) points.push({ x0: x, y0: y });
+          }
+        }
+      }
+      points.sort((a, b) => {
+        const aSize = Math.max(Math.abs(a.x0), Math.abs(a.y0));
+        const bSize = Math.max(Math.abs(b.x0), Math.abs(b.y0));
+        if (aSize !== bSize) return aSize - bSize;
+        const aSum = Math.abs(a.x0) + Math.abs(a.y0);
+        const bSum = Math.abs(b.x0) + Math.abs(b.y0);
+        if (aSum !== bSum) return aSum - bSum;
+        if (Math.abs(a.x0) !== Math.abs(b.x0)) return Math.abs(a.x0) - Math.abs(b.x0);
+        if (Math.abs(a.y0) !== Math.abs(b.y0)) return Math.abs(a.y0) - Math.abs(b.y0);
+        if (a.x0 !== b.x0) return a.x0 - b.x0;
+        return a.y0 - b.y0;
+      });
+      return points;
+    }
+
+    const SMALL_LATTICE_SEARCH_POINTS = latticeSearchOrder(35);
+
+    function equationResidualAtPoint(lhs, rhs, x0, y0) {
+      if (!finiteAtPoint(lhs, x0, y0) || !finiteAtPoint(rhs, x0, y0)) return NaN;
+      const lhsValue = evalSide(lhs, x0, y0);
+      const rhsValue = evalSide(rhs, x0, y0);
+      if (!Number.isFinite(lhsValue) || !Number.isFinite(rhsValue)) return NaN;
+      return lhsValue - rhsValue;
+    }
+
+    function pointIsOnGeneratedCurve(lhs, rhs, x0, y0) {
+      const residual = equationResidualAtPoint(lhs, rhs, x0, y0);
+      if (!Number.isFinite(residual)) return false;
+      const scale = Math.max(1, Math.abs(evalSide(lhs, x0, y0)), Math.abs(evalSide(rhs, x0, y0)));
+      return Math.abs(residual) < 1e-8 * scale;
+    }
+
+    function findNiceLatticePointForProblem(lhs, rhs, allowTrig) {
+      const skipZeroXCandidate = !allowTrig && Math.random() < 0.5;
+
+      function candidateWorks(x0, y0) {
+        if (!Number.isInteger(x0) || !Number.isInteger(y0)) return false;
+        if (Math.abs(x0) > 1000 || Math.abs(y0) > 1000) return false;
+        if (!allowTrig && skipZeroXCandidate && x0 === 0) return false;
+        if (!pointIsOnGeneratedCurve(lhs, rhs, x0, y0)) return false;
+        const slope = implicitSlopeNumerical(lhs, rhs, x0, y0);
+        if (!Number.isFinite(slope)) return false;
+        return { x0, y0, slope };
+      }
+
+      if (allowTrig) {
+        for (let r = 0; r <= 1000; r++) {
+          const yCandidates = r === 0 ? [0] : [-r, r];
+          for (const y0 of yCandidates) {
+            const found = candidateWorks(0, y0);
+            if (found) return found;
+          }
+        }
+        return null;
+      }
+
+      for (const point of SMALL_LATTICE_SEARCH_POINTS) {
+        const found = candidateWorks(point.x0, point.y0);
+        if (found) return found;
+      }
+
+      // In rare cases a modest search misses a point.  Continue outward in square
+      // shells, but stop as soon as the first small-by-radius point is found.
+      for (let r = 36; r <= 1000; r++) {
+        for (let x0 = -r; x0 <= r; x0++) {
+          for (const y0 of [-r, r]) {
+            const found = candidateWorks(x0, y0);
+            if (found) return found;
+          }
+        }
+        for (let y0 = -r + 1; y0 <= r - 1; y0++) {
+          for (const x0 of [-r, r]) {
+            const found = candidateWorks(x0, y0);
+            if (found) return found;
+          }
+        }
+      }
+
+      return null;
+    }
+
     function makeImplicitStages(problem) {
       const derivativeSymbol = Math.random() < 0.5 ? `y'` : `\\frac{dy}{dx}`;
       const derivativeLabel = `${derivativeSymbol}=`;
@@ -1770,18 +1862,8 @@ fetch("/nav.html")
         hints: buildImplicitDerivativeHints(problem, derivativeSymbol)
       }];
 
-      if (problem.askTangentLine) {
+      if (problem.latticePoint) {
         const pointTex = `(${problem.x0},${numberTex(problem.y0)})`;
-        stages.push({
-          kind: 'slope',
-          promptTex: `\\text{Find the slope of the tangent line at }${pointTex}.`,
-          labelTex: `m=`,
-          expectedValue: problem.slope,
-          expectedTex: numberTex(problem.slope),
-          hints: [
-            `\\text{Substitute }x=${problem.x0}\\text{ and }y=${numberTex(problem.y0)}\\text{ into your expression for }${derivativeSymbol}.`
-          ]
-        });
         stages.push({
           kind: 'line',
           promptTex: `\\text{Find the equation of the tangent line at }${pointTex}. \\text{ Give your answer in the form }y=mx+b.`,
@@ -1790,7 +1872,10 @@ fetch("/nav.html")
           expectedB: problem.y0 - problem.slope * problem.x0,
           expectedTex: signedSlopeInterceptTex(numberTex(problem.slope), numberTex(problem.y0 - problem.slope * problem.x0), problem.y0 - problem.slope * problem.x0),
           hints: [
-            `\\text{Use the point }${pointTex}\\text{ and the slope }m=${numberTex(problem.slope)}.`
+            `\\text{Use your expression for }${derivativeSymbol}\\text{ to find the slope at }${pointTex}.`,
+            `\\text{Substitute }x=${problem.x0}\\text{ and }y=${numberTex(problem.y0)}\\text{ to get }m=${numberTex(problem.slope)}.`,
+            `\\text{Use point-slope form: }y ${problem.y0 < 0 ? '+' : '-'} ${numberTex(Math.abs(problem.y0))}=${numberTex(problem.slope)}\\left(x ${problem.x0 < 0 ? '+' : '-'} ${numberTex(Math.abs(problem.x0))}\\right).`,
+            `\\implies y=${stageLineTex(problem.slope, problem.y0 - problem.slope * problem.x0)}`
           ]
         });
       }
@@ -1798,25 +1883,23 @@ fetch("/nav.html")
       return stages;
     }
 
+    function stageLineTex(m, b) {
+      return signedSlopeInterceptTex(numberTex(m), numberTex(b), b);
+    }
+
     function generateDerivativeProblem() {
       for (let attempt = 0; attempt < 500; attempt++) {
         const hardMode = Boolean(hardModeCheckbox && hardModeCheckbox.checked);
         const allowTrig = Math.random() < (hardMode ? 0.50 : 0.30);
-        const tangentAtZero = allowTrig && Math.random() < 0.50;
-        const askTangentLine = !allowTrig || tangentAtZero;
-        const point = makePointForImplicitProblem(allowTrig, tangentAtZero);
         const sideCounts = chooseImplicitSideCounts(hardMode);
 
         const lhs = makeSide(allowTrig, hardMode, sideCounts.leftCount);
         const rhs = makeSide(allowTrig, hardMode, sideCounts.rightCount);
 
         // The only reroll required for the equation itself is that both variables appear.
-        // Do not reject trig equations just because a later numerical tangent-line
-        // convenience check is ugly; that distorts the requested probabilities.
         if (!sideContainsVariable(lhs.concat(rhs), 'x') || !sideContainsVariable(lhs.concat(rhs), 'y')) continue;
 
-        let slope = implicitSlopeNumerical(lhs, rhs, point.x0, point.y0);
-        if (!Number.isFinite(slope)) slope = 0;
+        const latticePoint = findNiceLatticePointForProblem(lhs, rhs, allowTrig);
 
         const lhsTex = sideToTex(lhs);
         const rhsTex = sideToTex(rhs);
@@ -1824,11 +1907,12 @@ fetch("/nav.html")
 
         const problem = {
           allowTrig,
-          tangentAtZero,
-          askTangentLine,
-          x0: point.x0,
-          y0: point.y0,
-          slope,
+          tangentAtZero: Boolean(allowTrig && latticePoint && latticePoint.x0 === 0),
+          askTangentLine: Boolean(latticePoint),
+          latticePoint,
+          x0: latticePoint ? latticePoint.x0 : null,
+          y0: latticePoint ? latticePoint.y0 : null,
+          slope: latticePoint ? latticePoint.slope : null,
           hardMode,
           lhs,
           rhs,
@@ -1838,15 +1922,19 @@ fetch("/nav.html")
         return problem;
       }
 
+      const fallbackLhs = [{ coeff: 1, body: astPower(astVariable('x', 1), 2) }, { coeff: 1, body: astPower(astVariable('y', 1), 2) }];
+      const fallbackRhs = [{ coeff: 1, body: astConstant(2) }];
+      const fallbackPoint = findNiceLatticePointForProblem(fallbackLhs, fallbackRhs, false);
       const fallback = {
         allowTrig: false,
         tangentAtZero: false,
-        askTangentLine: true,
-        x0: 1,
-        y0: 1,
-        slope: -1,
-        lhs: [],
-        rhs: [],
+        askTangentLine: Boolean(fallbackPoint),
+        latticePoint: fallbackPoint,
+        x0: fallbackPoint ? fallbackPoint.x0 : null,
+        y0: fallbackPoint ? fallbackPoint.y0 : null,
+        slope: fallbackPoint ? fallbackPoint.slope : null,
+        lhs: fallbackLhs,
+        rhs: fallbackRhs,
         questionTex: `x^{2}+y^{2}=2`
       };
       fallback.stages = makeImplicitStages(fallback);

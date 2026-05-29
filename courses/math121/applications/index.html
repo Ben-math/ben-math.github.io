@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta charset="UTF-8" />
+  <title>MATH 121 - Applications of Differentiation</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <h1>MATH 121 - Applications of Differentiation</h1>
+    <div id="nav-placeholder"></div>
+
+      <script>
+fetch("/nav.html")
+  .then(response => response.text())
+  .then(html => {
+    document.getElementById("nav-placeholder").innerHTML = html;
+
+    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+    const navLinks = document.querySelectorAll("#nav-placeholder a");
+    navLinks.forEach(link => {
+      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+      if (linkPath === currentPath) {
+        link.classList.add("active");
+      }
+    });
+
+    const s = document.createElement("script");
+    s.src = "/mascot.js";
+    s.defer = true;
+    document.body.appendChild(s);
+  })
+  .catch(err => {
+    console.error("Failed to load nav:", err);
+  });
+</script>
+
+
+      
+  </header>
+  <main>
+    <p>An activity on related rates word problems: 
+      <a href="https://ben-math.github.io/courses/math121/applications/relatedrates.html">Related Rates</a></p>
+
+    <p>An activity on linear approximation: 
+      <a href="https://ben-math.github.io/courses/math121/applications/linearappoximation.html">Linear Approximation</a></p>
+
+    <p>An activity on finding maximum/minimum values of functions: 
+      <a href="https://ben-math.github.io/courses/math121/applications/maximaminima.html">Maximum/Minimum Values</a></p>
+
+    <p>An activity on optimization: 
+      <a href="https://ben-math.github.io/courses/math121/applications/optimization.html">Optimization</a></p>
+
+    <p>An activity on curve sketching: 
+      <a href="https://ben-math.github.io/courses/math121/applications/curvesketching.html">Curve Sketching</a></p>
+  </main>
+</body>
+</html>

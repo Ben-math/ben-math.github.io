@@ -3,6 +3,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1807,7 +1808,7 @@ fetch("/nav.html")
 
       function candidateWorks(x0, y0) {
         if (!Number.isInteger(x0) || !Number.isInteger(y0)) return false;
-        if (Math.abs(x0) > 1000 || Math.abs(y0) > 1000) return false;
+        if (Math.abs(x0) > 50 || Math.abs(y0) > 50) return false;
         if (!allowTrig && skipZeroXCandidate && x0 === 0) return false;
         if (!pointIsOnGeneratedCurve(lhs, rhs, x0, y0)) return false;
         const slope = implicitSlopeNumerical(lhs, rhs, x0, y0);
@@ -1816,7 +1817,7 @@ fetch("/nav.html")
       }
 
       if (allowTrig) {
-        for (let r = 0; r <= 1000; r++) {
+        for (let r = 0; r <= 50; r++) {
           const yCandidates = r === 0 ? [0] : [-r, r];
           for (const y0 of yCandidates) {
             const found = candidateWorks(0, y0);
@@ -1829,23 +1830,6 @@ fetch("/nav.html")
       for (const point of SMALL_LATTICE_SEARCH_POINTS) {
         const found = candidateWorks(point.x0, point.y0);
         if (found) return found;
-      }
-
-      // In rare cases a modest search misses a point.  Continue outward in square
-      // shells, but stop as soon as the first small-by-radius point is found.
-      for (let r = 36; r <= 1000; r++) {
-        for (let x0 = -r; x0 <= r; x0++) {
-          for (const y0 of [-r, r]) {
-            const found = candidateWorks(x0, y0);
-            if (found) return found;
-          }
-        }
-        for (let y0 = -r + 1; y0 <= r - 1; y0++) {
-          for (const x0 of [-r, r]) {
-            const found = candidateWorks(x0, y0);
-            if (found) return found;
-          }
-        }
       }
 
       return null;

@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -848,7 +849,7 @@ fetch("/nav.html")
           stages: [
             {
               kind: 'function',
-              promptTex: `\\text{Choose a function }f(x)\\text{ so that the desired value has the form }f(x).`,
+              promptTex: `\\text{Identify the function }f(x)\\text{ whose linearization will be helpful.}`,
               labelTex: `f(x)=`,
               expectedExpression: fnExpression,
               expectedTex: fnTex,
@@ -856,7 +857,7 @@ fetch("/nav.html")
             },
             {
               kind: 'a',
-              promptTex: `\\text{Choose a nearby value }a\\text{ where }f(a)\\text{ and }f'(a)\\text{ are easy to evaluate.`,
+              promptTex: `\\text{Choose a nearby value }a\\text{ where }f(a)\\text{ and }f'(a)\\text{ are easy to evaluate.}`,
               labelTex: `a=`,
               expectedValue: a,
               expectedTex: piMultipleTex(a),
@@ -877,7 +878,7 @@ fetch("/nav.html")
             },
             {
               kind: 'approximation',
-              promptTex: `\\text{Use your linearization to approximate the original value.`,
+              promptTex: `\\text{Use your linearization to approximate the original value.}`,
               labelTex: `\\approx`,
               expectedValue: approx,
               expectedTex: formatDecimal(approx, 4),
@@ -929,7 +930,7 @@ fetch("/nav.html")
         stages: [
           {
             kind: 'function',
-            promptTex: `\\text{Choose a function }f(x)\\text{ so that the desired value has the form }f(x).`,
+            promptTex: `\\text{Identify the function }f(x)\\text{ whose linearization will be helpful.}`,
             labelTex: `f(x)=`,
             expectedExpression: rootOrPowerExpression(p, q),
             expectedTex: fnTex,
@@ -937,7 +938,7 @@ fetch("/nav.html")
           },
           {
             kind: 'a',
-            promptTex: `\\text{Choose a nearby value }a\\text{ where }f(a)\\text{ is easy to evaluate.`,
+            promptTex: `\\text{Choose a nearby value }a\\text{ where }f(a)\\text{ is easy to evaluate.}`,
             labelTex: `a=`,
             expectedValue: a,
             expectedTex: numberTex(a),
@@ -958,7 +959,7 @@ fetch("/nav.html")
           },
           {
             kind: 'approximation',
-            promptTex: `\\text{Use your linearization to approximate the original value.`,
+            promptTex: `\\text{Use your linearization to approximate the original value.}`,
             labelTex: `\\approx`,
             expectedValue: approx,
             expectedTex: formatDecimal(approx, 4),
@@ -980,6 +981,7 @@ fetch("/nav.html")
     function normalizeAnswerText(raw) {
       return String(raw || '')
         .replace(/−/g, '-')
+        .replace(/π/g, 'pi')
         .replace(/\s+/g, '')
         .replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, '(($1)/($2))')
         .replace(/\\sqrt\{([^{}]+)\}/g, 'sqrt($1)')
@@ -1050,7 +1052,7 @@ fetch("/nav.html")
       return `
         <div class="answer-toolbar">
           <button type="button" class="math-symbol-button" data-insert-text="x">x</button>
-          <button type="button" class="math-symbol-button" data-insert-text="pi">π</button>
+          <button type="button" class="math-symbol-button" data-insert-text="π">π</button>
           <button type="button" class="math-symbol-button" data-insert-text="sin(">sin</button>
           <button type="button" class="math-symbol-button" data-insert-text="cos(">cos</button>
           <button type="button" class="math-symbol-button" data-insert-text="tan(">tan</button>

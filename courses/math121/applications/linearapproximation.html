@@ -4,6 +4,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -825,6 +826,12 @@ fetch("/nav.html")
       const mTex = numberTex(m);
       return {
         caseType: 1,
+        graphFn: value,
+        graphA: a,
+        graphTarget: NaN,
+        graphY0: y0,
+        graphM: m,
+        graphB: b,
         questionTex: `\\text{Find the linearization of }f(x)=${fnTex}\\text{ at }a=${a}.`,
         stages: [{
           kind: 'linearization',
@@ -892,6 +899,12 @@ fetch("/nav.html")
         const targetTex = `${piMultipleTex(a)} ${signedDeltaTex(delta)}`;
         return {
           caseType: 2,
+          graphFn: x => squared ? Math.pow(base.value(x), 2) : base.value(x),
+          graphA: a,
+          graphTarget: target,
+          graphY0: y0,
+          graphM: m,
+          graphB: b,
           questionTex: `\\text{Use linear approximation to estimate }${squared ? `${base.tex}^{2}` : base.tex}\\left(${targetTex}\\right).`,
           stages: [
             {
@@ -973,6 +986,12 @@ fetch("/nav.html")
       const exponentTex = fractionTexFromIntegers(p, q);
       return {
         caseType: 2,
+        graphFn: x => signedPower(x, p, q),
+        graphA: a,
+        graphTarget: target,
+        graphY0: y0,
+        graphM: m,
+        graphB: b,
         questionTex: `\\text{Use linear approximation to estimate }${powerTex(formatDecimal(target, 2), exponentTex)}.`,
         stages: [
           {
@@ -1606,8 +1625,12 @@ fetch("/nav.html")
             <div class="linearization-graph-note">The dashed green segment shows the difference between the true value and the linear approximation.</div>
           </div>
         </div>`;
-      drawLinearizationGraph(document.getElementById('linearization-overview-canvas'), currentProblem, false);
-      drawLinearizationGraph(document.getElementById('linearization-zoom-canvas'), currentProblem, true);
+      const overviewCanvas = document.getElementById('linearization-overview-canvas');
+      const zoomCanvas = document.getElementById('linearization-zoom-canvas');
+      if (overviewCanvas && zoomCanvas) {
+        drawLinearizationGraph(overviewCanvas, currentProblem, false);
+        drawLinearizationGraph(zoomCanvas, currentProblem, true);
+      }
     }
 
     function checkUserAnswer() {

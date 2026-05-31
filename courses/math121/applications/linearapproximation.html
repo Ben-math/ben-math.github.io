@@ -295,8 +295,18 @@ fetch("/nav.html")
   </header>
 
 <main>
-    <p>The linearization \(L(x)\) of a function \(f(x)\) at \(a\) is the equation of the tangent line to the function at \(a\), and can be used to approximate 
-    \(f(x)\) for values of \(x\) near \(a\).  That is, \[f(x) \approx L(x) = f(a) + f'(a)(x-a)\] </p>
+    <p>The linearization \(L(x)\) of a function \(f(x)\) at \(a\) is the equation of the tangent line to the function at \(a\), and can be used to 
+    approximate \(f(x)\) for values of \(x\) near \(a\).  That is, \[f(x) \approx L(x) = f(a) + f'(a)(x-a)\] For example, the square root function is 
+    relatively easy to evaluate at perfect squares, but would be hard to directly evaluate at numbers <i>near</i> those perfect squares: \[\sqrt{9} = 3, 
+    \hspace{5mm} \sqrt{8.94} = ?\]  Taking \(a = 9\) in the above linearization formula, we find the derivative and fill in \(f(a)\), \(f'(a)\), and 
+    \(a\): \[f'(x) = \frac{1}{2\sqrt{x}}, \hspace{4mm} f'(9) = \frac{1}{2\sqrt{9}} = \frac{1}{6}, \hspace{4mm} f(a) = \sqrt{9} = 3\] so the linearization 
+    of \(f(x)\) at \(a = 9\) is \[L(x) = 3 + \frac{1}{6}(x - 9)\] and we can approximate \(\sqrt{8.94}\) using it: \[\sqrt{8.94} = f(8.94) \approx L(8.94) 
+    = 3 + \frac{1}{6}(8.94-9) = 3 + \frac(1}{6}(-0.06) = 3 - 0.01 = 2.99\] We can check the quality of this approximation using a calculator: \[\sqrt{9} 
+    \approx 2.989983\] which is extremely close to what we found!</p>
+
+  <p>In the following activity, you will approximate a number by:
+    first determining a function whose linearization would be helpful, deciding on a value \(a\) 
+  which is close to the value you want to approximate, but is relatively easy at which to evaluate your function, and </p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

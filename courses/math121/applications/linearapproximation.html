@@ -5,6 +5,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -824,8 +825,20 @@ fetch("/nav.html")
       const b = y0 - m * a;
       const bTex = numberTex(b);
       const mTex = numberTex(m);
+      const graphNotableXs = [a];
+      if (a3) {
+        const A = 3 * a3, B = 2 * a2, C = a1;
+        const disc = B * B - 4 * A * C;
+        if (disc >= 0) {
+          graphNotableXs.push((-B - Math.sqrt(disc)) / (2 * A), (-B + Math.sqrt(disc)) / (2 * A));
+        }
+      } else if (a2) {
+        graphNotableXs.push(-a1 / (2 * a2));
+      }
       return {
         caseType: 1,
+        graphKind: 'polynomial',
+        graphNotableXs,
         graphFn: value,
         graphA: a,
         graphTarget: NaN,
@@ -899,6 +912,9 @@ fetch("/nav.html")
         const targetTex = `${piMultipleTex(a)} ${signedDeltaTex(delta)}`;
         return {
           caseType: 2,
+          graphKind: 'trig',
+          graphInfiniteRange: ['tan', 'sec', 'csc', 'cot'].includes(name),
+          graphSquared: squared,
           graphFn: x => squared ? Math.pow(base.value(x), 2) : base.value(x),
           graphA: a,
           graphTarget: target,
@@ -986,6 +1002,9 @@ fetch("/nav.html")
       const exponentTex = fractionTexFromIntegers(p, q);
       return {
         caseType: 2,
+        graphKind: 'root',
+        graphRootDenominator: q,
+        graphRootNumerator: p,
         graphFn: x => signedPower(x, p, q),
         graphA: a,
         graphTarget: target,
@@ -1455,23 +1474,9 @@ fetch("/nav.html")
       }
     }
 
-    function chooseGraphRange(problem, zoomed) {
-      const a = problem.graphA || 0;
-      const target = Number.isFinite(problem.graphTarget) ? problem.graphTarget : null;
-      const delta = target === null ? 0.25 : Math.abs(target - a);
-      if (zoomed) {
-        const halfWidth = Math.max(0.12, 4 * delta, 0.02 * Math.max(1, Math.abs(a)));
-        return [a - halfWidth, a + halfWidth];
-      }
-      let halfWidth;
-      if (problem.caseType === 1) halfWidth = Math.max(3, 0.8 * Math.max(1, Math.abs(a)));
-      else halfWidth = Math.max(1.2, 12 * Math.max(delta, 0.04), 0.12 * Math.max(1, Math.abs(a)));
-      return [a - halfWidth, a + halfWidth];
-    }
-
     function collectGraphSamples(problem, xmin, xmax) {
       const samples = [];
-      const n = 420;
+      const n = 520;
       for (let i = 0; i <= n; i++) {
         const x = xmin + (xmax - xmin) * i / n;
         const y = finiteGraphValue(problem, x);
@@ -1481,32 +1486,122 @@ fetch("/nav.html")
       return samples;
     }
 
-    function graphBounds(problem, xmin, xmax, zoomed) {
-      const samples = collectGraphSamples(problem, xmin, xmax);
-      let ys = [];
+    function finiteSampleYs(samples, includeLine = true) {
+      const ys = [];
       samples.forEach(p => {
         if (Number.isFinite(p.y)) ys.push(p.y);
-        if (Number.isFinite(p.lineY)) ys.push(p.lineY);
+        if (includeLine && Number.isFinite(p.lineY)) ys.push(p.lineY);
       });
-      if (Number.isFinite(problem.graphY0)) ys.push(problem.graphY0);
-      if (Number.isFinite(problem.graphTarget)) {
-        const trueTarget = finiteGraphValue(problem, problem.graphTarget);
-        const tangentTarget = problem.graphM * problem.graphTarget + problem.graphB;
-        if (Number.isFinite(trueTarget)) ys.push(trueTarget);
-        if (Number.isFinite(tangentTarget)) ys.push(tangentTarget);
-      }
-      if (!ys.length) ys = [-1, 1];
+      return ys;
+    }
+
+    function paddedBoundsFromValues(values, minPad = 0.15) {
+      let ys = values.filter(Number.isFinite);
+      if (!ys.length) return { ymin: -1, ymax: 1 };
       ys.sort((a, b) => a - b);
       const lowIndex = Math.floor(ys.length * 0.03);
       const highIndex = Math.ceil(ys.length * 0.97) - 1;
       let ymin = ys[Math.max(0, lowIndex)];
       let ymax = ys[Math.min(ys.length - 1, highIndex)];
       if (!Number.isFinite(ymin) || !Number.isFinite(ymax) || Math.abs(ymax - ymin) < 1e-8) {
-        ymin = (ys[0] || 0) - 1;
-        ymax = (ys[0] || 0) + 1;
+        const centre = Number.isFinite(ys[0]) ? ys[0] : 0;
+        ymin = centre - 1;
+        ymax = centre + 1;
       }
-      const pad = Math.max(0.15, 0.15 * (ymax - ymin));
-      return { ymin: ymin - pad, ymax: ymax + pad, samples };
+      const pad = Math.max(minPad, 0.12 * (ymax - ymin));
+      return { ymin: ymin - pad, ymax: ymax + pad };
+    }
+
+    function polynomialOverviewWindow(problem) {
+      const notable = Array.isArray(problem.graphNotableXs) ? problem.graphNotableXs.filter(Number.isFinite) : [];
+      notable.push(Number.isFinite(problem.graphA) ? problem.graphA : 0);
+      let xmin = Math.min(...notable);
+      let xmax = Math.max(...notable);
+      if (!Number.isFinite(xmin) || !Number.isFinite(xmax) || Math.abs(xmax - xmin) < 1e-8) {
+        xmin = -5;
+        xmax = 5;
+      }
+      const centre = (xmin + xmax) / 2;
+      const halfWidth = Math.max(4, 1.4 * (xmax - xmin) / 2);
+      xmin = centre - halfWidth;
+      xmax = centre + halfWidth;
+      const samples = collectGraphSamples(problem, xmin, xmax);
+      const ys = finiteSampleYs(samples, true);
+      return { xmin, xmax, ...paddedBoundsFromValues(ys, 1), samples };
+    }
+
+    function trigOverviewWindow(problem) {
+      const xmin = -2 * Math.PI;
+      const xmax = 2 * Math.PI;
+      const samples = collectGraphSamples(problem, xmin, xmax);
+      const ymin = problem.graphInfiniteRange ? -10 : (problem.graphSquared ? -0.15 : -1.2);
+      const ymax = problem.graphInfiniteRange ? 10 : 1.2;
+      return { xmin, xmax, ymin, ymax, samples };
+    }
+
+    function rootOverviewWindow(problem) {
+      const n = problem.graphRootDenominator || 2;
+      const a = Math.abs(problem.graphA || 1);
+      const xmax = Math.max(1, 2 * a);
+      let xmin = 0;
+      let ymin = 0;
+      let ymax = 1.2 * finiteGraphValue(problem, xmax);
+      if (n % 2 === 1) {
+        xmin = -xmax;
+        const yAtRight = Math.abs(finiteGraphValue(problem, xmax));
+        ymin = -1.2 * yAtRight;
+        ymax = 1.2 * yAtRight;
+      }
+      if (!Number.isFinite(ymin) || !Number.isFinite(ymax) || Math.abs(ymax - ymin) < 1e-8) {
+        const samples = collectGraphSamples(problem, xmin, xmax);
+        return { xmin, xmax, ...paddedBoundsFromValues(finiteSampleYs(samples, true)), samples };
+      }
+      const samples = collectGraphSamples(problem, xmin, xmax);
+      return { xmin, xmax, ymin, ymax, samples };
+    }
+
+    function overviewGraphWindow(problem) {
+      if (problem.graphKind === 'root') return rootOverviewWindow(problem);
+      if (problem.graphKind === 'trig') return trigOverviewWindow(problem);
+      if (problem.graphKind === 'polynomial') return polynomialOverviewWindow(problem);
+      const a = Number.isFinite(problem.graphA) ? problem.graphA : 0;
+      const xmin = a - 4, xmax = a + 4;
+      const samples = collectGraphSamples(problem, xmin, xmax);
+      return { xmin, xmax, ...paddedBoundsFromValues(finiteSampleYs(samples, true)), samples };
+    }
+
+    function zoomGraphWindow(problem) {
+      const a = Number.isFinite(problem.graphA) ? problem.graphA : 0;
+      const target = Number.isFinite(problem.graphTarget) ? problem.graphTarget : a + 0.05;
+      const delta = Math.abs(target - a);
+      const xmin = Math.min(a, target) - Math.max(0.015, 0.75 * delta);
+      const xmax = Math.max(a, target) + Math.max(0.015, 0.75 * delta);
+      const samples = collectGraphSamples(problem, xmin, xmax);
+      const trueTarget = finiteGraphValue(problem, target);
+      const tangentTarget = problem.graphM * target + problem.graphB;
+      const y0 = Number.isFinite(problem.graphY0) ? problem.graphY0 : finiteGraphValue(problem, a);
+      const error = Math.abs(trueTarget - tangentTarget);
+
+      if (Number.isFinite(error) && error > 1e-12 && Number.isFinite(trueTarget) && Number.isFinite(tangentTarget)) {
+        const mid = (trueTarget + tangentTarget) / 2;
+        let height = 8 * error;
+        const neededLow = Math.min(trueTarget, tangentTarget, y0);
+        const neededHigh = Math.max(trueTarget, tangentTarget, y0);
+        height = Math.max(height, 1.25 * (neededHigh - neededLow), 1e-6);
+        const ymin = mid - height / 2;
+        const ymax = mid + height / 2;
+        return { xmin, xmax, ymin, ymax, samples };
+      }
+
+      const ys = finiteSampleYs(samples, true);
+      if (Number.isFinite(trueTarget)) ys.push(trueTarget);
+      if (Number.isFinite(tangentTarget)) ys.push(tangentTarget);
+      if (Number.isFinite(y0)) ys.push(y0);
+      return { xmin, xmax, ...paddedBoundsFromValues(ys, 0.05), samples };
+    }
+
+    function graphWindow(problem, zoomed) {
+      return zoomed ? zoomGraphWindow(problem) : overviewGraphWindow(problem);
     }
 
     function drawGraphAxes(ctx, toCanvasX, toCanvasY, xmin, xmax, ymin, ymax, width, height, margin) {
@@ -1565,8 +1660,7 @@ fetch("/nav.html")
       const width = canvas.width, height = canvas.height;
       ctx.clearRect(0, 0, width, height);
       const margin = { left: 45, right: 18, top: 20, bottom: 34 };
-      const [xmin, xmax] = chooseGraphRange(problem, zoomed);
-      const { ymin, ymax, samples } = graphBounds(problem, xmin, xmax, zoomed);
+      const { xmin, xmax, ymin, ymax, samples } = graphWindow(problem, zoomed);
       const toCanvasX = x => margin.left + (x - xmin) / (xmax - xmin) * (width - margin.left - margin.right);
       const toCanvasY = y => height - margin.bottom - (y - ymin) / (ymax - ymin) * (height - margin.top - margin.bottom);
 

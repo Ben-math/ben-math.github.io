@@ -7,6 +7,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -460,21 +461,79 @@ fetch("/nav.html")
       return `x ${xValue < 0 ? '+' : '-'} ${Math.abs(xValue)}`;
     }
 
-    function numberTex(value) {
+    function rationalApproximation(value, maxDen = 10000000, tolerance = 1e-12) {
+      if (!Number.isFinite(value)) return null;
+      if (Object.is(value, -0)) value = 0;
+      const sign = value < 0 ? -1 : 1;
+      let x = Math.abs(value);
+      if (Math.abs(x - Math.round(x)) < tolerance) return { num: sign * Math.round(x), den: 1 };
+
+      let h0 = 0, h1 = 1, k0 = 1, k1 = 0;
+      let b = x;
+      for (let i = 0; i < 40; i++) {
+        const a = Math.floor(b);
+        const h2 = a * h1 + h0;
+        const k2 = a * k1 + k0;
+        if (k2 > maxDen) break;
+        h0 = h1; h1 = h2;
+        k0 = k1; k1 = k2;
+        if (Math.abs(x - h1 / k1) <= tolerance * Math.max(1, x)) break;
+        const fracPart = b - a;
+        if (Math.abs(fracPart) < tolerance) break;
+        b = 1 / fracPart;
+      }
+
+      if (k1 === 0) return null;
+      const reduced = frac(sign * h1, k1);
+      return reduced;
+    }
+
+    function rationalTex(value, maxDen = 10000000, tolerance = 1e-12) {
+      const r = rationalApproximation(value, maxDen, tolerance);
+      if (!r) return null;
+      return r.den === 1 ? `${r.num}` : `\\frac{${r.num}}{${r.den}}`;
+    }
+
+    function denominatorTerminatesInBaseTen(den) {
+      den = Math.abs(Math.round(den));
+      if (den === 0) return false;
+      while (den % 2 === 0) den /= 2;
+      while (den % 5 === 0) den /= 5;
+      return den === 1;
+    }
+
+    function terminatingDecimalPlaces(den) {
+      den = Math.abs(Math.round(den));
+      let twos = 0, fives = 0;
+      while (den % 2 === 0) { den /= 2; twos++; }
+      while (den % 5 === 0) { den /= 5; fives++; }
+      return Math.max(twos, fives);
+    }
+
+    function exactValueTex(value, preferTerminatingDecimals = false) {
       if (Object.is(value, -0)) value = 0;
       if (!Number.isFinite(value)) return value > 0 ? '\\infty' : '-\\infty';
       const rounded = Math.round(value);
       if (Math.abs(value - rounded) < 1e-10) return `${rounded}`;
-      let bestNum = 0, bestDen = 1, bestErr = Infinity;
-      const sign = value < 0 ? -1 : 1;
-      const abs = Math.abs(value);
-      for (let den = 1; den <= 1000; den++) {
-        const num = Math.round(abs * den);
-        const err = Math.abs(abs - num / den);
-        if (err < bestErr) { bestErr = err; bestNum = num; bestDen = den; }
+
+      const r = rationalApproximation(value);
+      if (r && Math.abs(value - r.num / r.den) <= 1e-10 * Math.max(1, Math.abs(value))) {
+        if (preferTerminatingDecimals && denominatorTerminatesInBaseTen(r.den)) {
+          const places = Math.min(8, terminatingDecimalPlaces(r.den));
+          return formatDecimal(value, places);
+        }
+        return r.den === 1 ? `${r.num}` : `\\frac{${r.num}}{${r.den}}`;
       }
-      const f = frac(sign * bestNum, bestDen);
-      return f.den === 1 ? `${f.num}` : `\\frac{${f.num}}{${f.den}}`;
+
+      return Number(value).toPrecision(8).replace(/\.?0+$/,'');
+    }
+
+    function numberTex(value) {
+      return exactValueTex(value, false);
+    }
+
+    function approximationValueTex(value) {
+      return exactValueTex(value, true);
     }
 
     function decimalIfNeeded(value) {
@@ -964,9 +1023,9 @@ fetch("/nav.html")
               promptTex: `\\text{Use your linearization to approximate the original value.}`,
               labelTex: `\\approx`,
               expectedValue: approx,
-              expectedTex: formatDecimal(approx, 4),
+              expectedTex: approximationValueTex(approx),
               hints: [
-                `\\begin{aligned}${squared ? `${base.tex}^{2}` : base.tex}\\left(${targetTex}\\right)&\\approx L\\left(${targetTex}\\right)\\\\&=${trigValueTex(y0)}+${trigValueTex(m)}\\left((${targetTex})-${piMultipleTex(a)}\\right)\\\\&=${trigValueTex(y0)}+${trigValueTex(m)}(${formatDecimal(delta, 2)})\\\\&=${formatDecimal(approx, 4)}\\end{aligned}`
+                `\\begin{aligned}${squared ? `${base.tex}^{2}` : base.tex}\\left(${targetTex}\\right)&\\approx L\\left(${targetTex}\\right)\\\\&=${trigValueTex(y0)}+${trigValueTex(m)}\\left((${targetTex})-${piMultipleTex(a)}\\right)\\\\&=${trigValueTex(y0)}+${trigValueTex(m)}(${formatDecimal(delta, 2)})\\\\&=${approximationValueTex(approx)}\\end{aligned}`
               ]
             }
           ]
@@ -1054,9 +1113,9 @@ fetch("/nav.html")
             promptTex: `\\text{Use your linearization to approximate the original value.}`,
             labelTex: `\\approx`,
             expectedValue: approx,
-            expectedTex: formatDecimal(approx, 4),
+            expectedTex: approximationValueTex(approx),
             hints: [
-              `\\begin{aligned}${powerTex(formatDecimal(target, 2), exponentTex)}&=f(${formatDecimal(target, 2)})\\\\&\\approx L(${formatDecimal(target, 2)})\\\\&=${numberTex(y0)}+${numberTex(m)}(${formatDecimal(target, 2)}-${a})\\\\&=${numberTex(y0)}+${numberTex(m)}(${formatDecimal(delta, 2)})\\\\&=${formatDecimal(approx, 4)}\\end{aligned}`
+              `\\begin{aligned}${powerTex(formatDecimal(target, 2), exponentTex)}&=f(${formatDecimal(target, 2)})\\\\&\\approx L(${formatDecimal(target, 2)})\\\\&=${numberTex(y0)}+${numberTex(m)}(${formatDecimal(target, 2)}-${a})\\\\&=${numberTex(y0)}+${numberTex(m)}(${formatDecimal(delta, 2)})\\\\&=${approximationValueTex(approx)}\\end{aligned}`
             ]
           }
         ]
@@ -1481,9 +1540,8 @@ fetch("/nav.html")
       }
     }
 
-    function collectGraphSamples(problem, xmin, xmax) {
+    function collectGraphSamples(problem, xmin, xmax, n = 520) {
       const samples = [];
-      const n = 520;
       for (let i = 0; i <= n; i++) {
         const x = xmin + (xmax - xmin) * i / n;
         const y = finiteGraphValue(problem, x);
@@ -1584,7 +1642,7 @@ fetch("/nav.html")
       const xPad = Math.max(0.002, 0.35 * delta);
       const xmin = Math.min(a, target) - xPad;
       const xmax = Math.max(a, target) + xPad;
-      const samples = collectGraphSamples(problem, xmin, xmax);
+      const samples = collectGraphSamples(problem, xmin, xmax, 5000);
       const trueTarget = finiteGraphValue(problem, target);
       const tangentTarget = problem.graphM * target + problem.graphB;
       const y0 = Number.isFinite(problem.graphY0) ? problem.graphY0 : finiteGraphValue(problem, a);
@@ -1630,18 +1688,18 @@ fetch("/nav.html")
       }
     }
 
-    function drawSamplePath(ctx, samples, toCanvasX, toCanvasY, which, strokeStyle, lineWidth, ymin, ymax) {
+    function drawSamplePath(ctx, samples, toCanvasX, toCanvasY, which, strokeStyle, lineWidth, ymin, ymax, allowLargeJumps = false) {
       ctx.strokeStyle = strokeStyle;
       ctx.lineWidth = lineWidth;
       ctx.beginPath();
       let drawing = false;
       let previousY = NaN;
-      const jumpLimit = 0.55 * (ymax - ymin);
+      const jumpLimit = allowLargeJumps ? Infinity : 0.55 * (ymax - ymin);
       samples.forEach(p => {
         const y = p[which];
         if (!Number.isFinite(y) || y < ymin - 2 * (ymax - ymin) || y > ymax + 2 * (ymax - ymin) || (Number.isFinite(previousY) && Math.abs(y - previousY) > jumpLimit)) {
           drawing = false;
-          previousY = y;
+          previousY = NaN;
           return;
         }
         const cx = toCanvasX(p.x), cy = toCanvasY(y);
@@ -1670,8 +1728,8 @@ fetch("/nav.html")
       const toCanvasY = y => height - margin.bottom - (y - ymin) / (ymax - ymin) * (height - margin.top - margin.bottom);
 
       drawGraphAxes(ctx, toCanvasX, toCanvasY, xmin, xmax, ymin, ymax, width, height, margin);
-      drawSamplePath(ctx, samples, toCanvasX, toCanvasY, 'y', '#2563eb', 2.2, ymin, ymax);
-      drawSamplePath(ctx, samples, toCanvasX, toCanvasY, 'lineY', '#dc2626', 2, ymin, ymax);
+      drawSamplePath(ctx, samples, toCanvasX, toCanvasY, 'y', '#2563eb', 2.2, ymin, ymax, zoomed);
+      drawSamplePath(ctx, samples, toCanvasX, toCanvasY, 'lineY', '#dc2626', 2, ymin, ymax, zoomed);
 
       const a = problem.graphA;
       const y0 = problem.graphY0;

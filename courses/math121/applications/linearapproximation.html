@@ -9,6 +9,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1058,8 +1059,10 @@ fetch("/nav.html")
         base = randomChoice([-2, 2]);
       }
       const a = Math.pow(base, denominator);
-      const delta = signedSmallDeltaValue();
+      const delta = randomNonzeroInteger(-9, 9) / 10;
       const target = a + delta;
+      const targetDisplay = formatDecimal(target, 1);
+      const deltaDisplay = formatDecimal(delta, 1);
       const p = numerator, q = denominator;
       const y0 = signedPower(a, p, q);
       const m = (p / q) * signedPower(a, p - q, q);
@@ -1078,7 +1081,7 @@ fetch("/nav.html")
         graphY0: y0,
         graphM: m,
         graphB: b,
-        questionTex: `\\text{Use linear approximation to estimate }${powerTex(formatDecimal(target, 2), exponentTex)}.`,
+        questionTex: `\\text{Use linear approximation to estimate }${powerTex(targetDisplay, exponentTex)}.`,
         stages: [
           {
             kind: 'function',
@@ -1094,7 +1097,7 @@ fetch("/nav.html")
             labelTex: `a=`,
             expectedValue: a,
             expectedTex: numberTex(a),
-            hints: [`${formatDecimal(target, 2)}\\text{ is close to }${a}=${base}^{${denominator}}.`, `a=${a}`]
+            hints: [`${targetDisplay}\\text{ is close to }${a}=${base}^{${denominator}}.`, `a=${a}`]
           },
           {
             kind: 'linearization',
@@ -1116,7 +1119,7 @@ fetch("/nav.html")
             expectedValue: approx,
             expectedTex: approximationValueTex(approx),
             hints: [
-              `\\begin{aligned}${powerTex(formatDecimal(target, 2), exponentTex)}&=f(${formatDecimal(target, 2)})\\\\&\\approx L(${formatDecimal(target, 2)})\\\\&=${numberTex(y0)}+${numberTex(m)}(${formatDecimal(target, 2)}-${a})\\\\&=${numberTex(y0)}+${numberTex(m)}(${formatDecimal(delta, 2)})\\\\&=${approximationValueTex(approx)}\\end{aligned}`
+              `\\begin{aligned}${powerTex(targetDisplay, exponentTex)}&=f(${targetDisplay})\\\\&\\approx L(${targetDisplay})\\\\&=${numberTex(y0)}+${numberTex(m)}(${targetDisplay}-${a})\\\\&=${numberTex(y0)}+${numberTex(m)}(${deltaDisplay})\\\\&=${approximationValueTex(approx)}\\end{aligned}`
             ]
           }
         ]

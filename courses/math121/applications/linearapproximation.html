@@ -6,6 +6,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -765,9 +766,15 @@ fetch("/nav.html")
       return `${delta < 0 ? '-' : '+'} ${Math.abs(delta).toFixed(2)}`;
     }
 
+    function positiveTex(tex) {
+      return String(tex)
+        .replace(/^\s*-\s*/, '')
+        .replace(/\\frac\{\s*-\s*([^{}]+)\}\{([^{}]+)\}/g, '\\frac{$1}{$2}');
+    }
+
     function pointSlopeFormulaTex(yTex, mTex, mValue, xFactorTex) {
-      const cleanM = String(mTex).replace(/^-/, '');
       if (Math.abs(mValue) < 1e-12) return `${yTex}`;
+      const cleanM = positiveTex(mTex);
       return `${yTex} ${mValue < 0 ? '-' : '+'} ${cleanM}(${xFactorTex})`;
     }
 
@@ -1574,8 +1581,9 @@ fetch("/nav.html")
       const a = Number.isFinite(problem.graphA) ? problem.graphA : 0;
       const target = Number.isFinite(problem.graphTarget) ? problem.graphTarget : a + 0.05;
       const delta = Math.abs(target - a);
-      const xmin = Math.min(a, target) - Math.max(0.015, 0.75 * delta);
-      const xmax = Math.max(a, target) + Math.max(0.015, 0.75 * delta);
+      const xPad = Math.max(0.002, 0.35 * delta);
+      const xmin = Math.min(a, target) - xPad;
+      const xmax = Math.max(a, target) + xPad;
       const samples = collectGraphSamples(problem, xmin, xmax);
       const trueTarget = finiteGraphValue(problem, target);
       const tangentTarget = problem.graphM * target + problem.graphB;
@@ -1584,20 +1592,17 @@ fetch("/nav.html")
 
       if (Number.isFinite(error) && error > 1e-12 && Number.isFinite(trueTarget) && Number.isFinite(tangentTarget)) {
         const mid = (trueTarget + tangentTarget) / 2;
-        let height = 8 * error;
-        const neededLow = Math.min(trueTarget, tangentTarget, y0);
-        const neededHigh = Math.max(trueTarget, tangentTarget, y0);
-        height = Math.max(height, 1.25 * (neededHigh - neededLow), 1e-6);
+        const height = Math.max(8 * error, 1e-7);
         const ymin = mid - height / 2;
         const ymax = mid + height / 2;
         return { xmin, xmax, ymin, ymax, samples };
       }
 
-      const ys = finiteSampleYs(samples, true);
+      const ys = [];
       if (Number.isFinite(trueTarget)) ys.push(trueTarget);
       if (Number.isFinite(tangentTarget)) ys.push(tangentTarget);
       if (Number.isFinite(y0)) ys.push(y0);
-      return { xmin, xmax, ...paddedBoundsFromValues(ys, 0.05), samples };
+      return { xmin, xmax, ...paddedBoundsFromValues(ys.length ? ys : finiteSampleYs(samples, true), 0.05), samples };
     }
 
     function graphWindow(problem, zoomed) {
@@ -1705,26 +1710,26 @@ fetch("/nav.html")
 
     function showLinearizationGraphs() {
       if (!currentProblem || !graphArea || typeof currentProblem.graphFn !== 'function') return;
+      const hasApproximationGraph = Number.isFinite(currentProblem.graphTarget);
       graphArea.style.display = 'block';
       graphArea.innerHTML = `
-        <div class="linearization-graph-grid">
+        <div class="linearization-graph-grid" style="${hasApproximationGraph ? '' : 'grid-template-columns: minmax(300px, 560px); justify-content: center;'}">
           <div class="linearization-graph-card">
             <div class="linearization-graph-card-title">Function and linearization</div>
             <canvas id="linearization-overview-canvas" width="520" height="360"></canvas>
             <div class="linearization-graph-note">Blue: original function. Red: tangent line from the linearization.</div>
           </div>
+          ${hasApproximationGraph ? `
           <div class="linearization-graph-card">
             <div class="linearization-graph-card-title">Zoom near the approximation</div>
             <canvas id="linearization-zoom-canvas" width="520" height="360"></canvas>
             <div class="linearization-graph-note">The dashed green segment shows the difference between the true value and the linear approximation.</div>
-          </div>
+          </div>` : ''}
         </div>`;
       const overviewCanvas = document.getElementById('linearization-overview-canvas');
       const zoomCanvas = document.getElementById('linearization-zoom-canvas');
-      if (overviewCanvas && zoomCanvas) {
-        drawLinearizationGraph(overviewCanvas, currentProblem, false);
-        drawLinearizationGraph(zoomCanvas, currentProblem, true);
-      }
+      if (overviewCanvas) drawLinearizationGraph(overviewCanvas, currentProblem, false);
+      if (zoomCanvas) drawLinearizationGraph(zoomCanvas, currentProblem, true);
     }
 
     function checkUserAnswer() {

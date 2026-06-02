@@ -249,7 +249,14 @@ fetch("/nav.html")
   </header>
 
   <main>
-    <p>Placeholder page!</p>
+    <p>L'Hôpital's Rule is a rule which helps us evaluate limits of "indeterminate forms".</p>
+
+    <p>Suppose \(f\) and \(g\) are differentiable and \(g'(x) \neq 0\) near \(a\) (except possibly at \(a\)).  Suppose that
+        \[\lim_{x \to a}f(x) = 0 \hspace{3mm} \text{ and } \hspace{3mm} \lim_{x \to a}g(x) = 0\]
+        \[\text{or } \hspace{5mm} \lim_{x \to a}f(x) = \pm \infty \hspace{3mm} \text{ and } \hspace{3mm} \lim_{x \to a}g(x) = \pm \infty\hspace{3mm}\]
+        (That is, we have an indeterminate form of type \(\frac{0}{0}\) of type \(\frac{\infty}{\infty}\))  Then
+        \[\lim_{x \to a}\frac{f(x)}{g(x)} = \lim_{x \to a}\frac{f'(x)}{g'(x)}\]
+        if the limit on the right-hand side exists (or is \(\pm \infty\)).</p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

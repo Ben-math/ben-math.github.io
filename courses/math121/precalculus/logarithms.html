@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -352,8 +353,12 @@ fetch("/nav.html")
     x = \log_4\left(\frac{y}{30}\right)\]  Then, since we're more accustomed to using \(x\) as an independent variable, there's nothing stopping us from 
     simply renaming the variables in the preceding inverse function: \[f^{-1}(x) = \log_4\left(\frac{x}{30}\right)\]  Now you try!</p>
 
-    <div class="button-container">
+    <div class="button-container" style="gap: 1em; align-items: center;">
       <button id="start-btn" class="rubber-button">Start!</button>
+      <label style="display: inline-flex; align-items: center; gap: 0.35em; font-weight: bold;">
+        <input type="checkbox" id="log-diff-checkbox">
+        Logarithmic Differentiation
+      </label>
     </div>
 
     <div id="question-text"></div>
@@ -388,6 +393,7 @@ fetch("/nav.html")
     const feedbackText = document.getElementById('feedbackText');
     const finalAnswerInput = document.getElementById('final-answer-input');
     const graphArea = document.getElementById('graph-area');
+    const logDiffCheckbox = document.getElementById('log-diff-checkbox');
 
     let currentProblem = null;
     let currentStageIndex = 0;
@@ -860,264 +866,136 @@ fetch("/nav.html")
       return `x**(${p}/${q})`;
     }
 
-    function makePolynomialLinearizationProblem() {
-      const isCubic = Math.random() < 0.45;
-      const a3 = isCubic ? randomNonzeroInteger(-4, 4) : 0;
-      const a2 = randomNonzeroInteger(-6, 6);
-      const a1 = randomInteger(-9, 9);
-      const a0 = randomInteger(-9, 9);
-      const a = randomInteger(-5, 5);
-      const value = x => a3 * x * x * x + a2 * x * x + a1 * x + a0;
-      const derivative = x => 3 * a3 * x * x + 2 * a2 * x + a1;
-      const fnTex = a3
-        ? [coefficientTermTex(a3, 'x^{3}', true), coefficientTermTex(a2, 'x^{2}'), coefficientTermTex(a1, 'x'), coefficientTermTex(a0, '')].filter(Boolean).join(' ')
-        : polynomialTex(a2, a1, a0);
-      const derivativeTex = a3
-        ? [coefficientTermTex(3 * a3, 'x^{2}', true), coefficientTermTex(2 * a2, 'x'), coefficientTermTex(a1, '')].filter(Boolean).join(' ') || '0'
-        : linearTex(2 * a2, a1);
-      const y0 = value(a);
-      const m = derivative(a);
-      const b = y0 - m * a;
-      const bTex = numberTex(b);
-      const mTex = numberTex(m);
-      const graphNotableXs = [a];
-      if (a3) {
-        const A = 3 * a3, B = 2 * a2, C = a1;
-        const disc = B * B - 4 * A * C;
-        if (disc >= 0) {
-          graphNotableXs.push((-B - Math.sqrt(disc)) / (2 * A), (-B + Math.sqrt(disc)) / (2 * A));
-        }
-      } else if (a2) {
-        graphNotableXs.push(-a1 / (2 * a2));
-      }
+
+    function integerBaseTex(base) {
+      return base === 'e' ? 'e' : `${base}`;
+    }
+
+    function logTex(base, argumentTex) {
+      return base === 'e' ? `\\ln\\left(${argumentTex}\\right)` : `\\log_{${base}}\\left(${argumentTex}\\right)`;
+    }
+
+    function expFunctionTex(a, b, c, d, n) {
+      const exponent = linearTex(c, d);
+      const baseTex = integerBaseTex(b);
+      const expTex = `${baseTex}^{${exponent}}`;
+      const main = a === 1 ? expTex : (a === -1 ? `-${expTex}` : `${a}\\cdot ${expTex}`);
+      return `${main}${n > 0 ? `+${n}` : `${n}`}`;
+    }
+
+    function makeInverseExponentialProblem() {
+      const a = randomNonzeroInteger(-9, 9);
+      const c = randomNonzeroInteger(-9, 9);
+      const d = randomNonzeroInteger(-9, 9);
+      const n = randomNonzeroInteger(-9, 9);
+      const b = Math.random() < 0.5 ? 'e' : randomChoice([2,3,4,5,6,7,8,9]);
+      const exponent = linearTex(c, d);
+      const fTex = expFunctionTex(a, b, c, d, n);
+      const argY = `\\frac{y${n < 0 ? `+${Math.abs(n)}` : `-${n}`}}{${a}}`;
+      const argX = `\\frac{x${n < 0 ? `+${Math.abs(n)}` : `-${n}`}}{${a}}`;
+      const logY = logTex(b, argY);
+      const logX = logTex(b, argX);
+      const baseTex = integerBaseTex(b);
+      const expectedExpression = b === 'e'
+        ? `((ln((x-(${n}))/(${a})))-(${d}))/(${c})`
+        : `((log(${b},(x-(${n}))/(${a})))-(${d}))/(${c})`;
       return {
-        caseType: 1,
-        graphKind: 'polynomial',
-        graphNotableXs,
-        graphFn: value,
-        graphA: a,
-        graphTarget: NaN,
-        graphY0: y0,
-        graphM: m,
-        graphB: b,
-        questionTex: `\\text{Find the linearization of }f(x)=${fnTex}\\text{ at }a=${a}.`,
+        caseType: 'inverse-exponential',
+        questionTex: `\\text{Find the inverse function of } f(x)=${fTex}.`,
         stages: [{
-          kind: 'linearization',
-          promptTex: `\\text{Find the linearization }L(x)\\text{ of }f(x)\\text{ at }a=${a}.`,
-          labelTex: `L(x)=`,
-          expectedM: m,
-          expectedB: b,
-          expectedTex: signedSlopeInterceptTex(mTex, bTex, b),
+          kind: 'inverse-expression',
+          promptTex: `\\text{Find }f^{-1}(x).`,
+          labelTex: `f^{-1}(x)=`,
+          expectedExpression,
+          expectedTex: `\\frac{1}{${c}}\\left(${logX}${d < 0 ? `+${Math.abs(d)}` : `-${d}`}\\right)`,
+          testPoints: [0.5, 1, 2, 3, 5].map(v => n + a * v),
           hints: [
-            `f'(x)=${derivativeTex}`,
-            `\\begin{aligned}f(${a})&=${numberTex(y0)}\\\\ f'(${a})&=${numberTex(m)}\\end{aligned}`,
-            `L(x)=f(a)+f'(a)(x-a)=${pointSlopeFormulaTex(numberTex(y0), numberTex(m), m, pointSlopeXFactorTex(a))}`, 
-            `L(x)=${signedSlopeInterceptTex(mTex, bTex, b)}`
+            `y=${fTex}`,
+            `\\implies y${n < 0 ? `+${Math.abs(n)}` : `-${n}`}=${a}\\cdot ${baseTex}^{${exponent}}`,
+            `\\implies ${argY}=${baseTex}^{${exponent}}`,
+            `\\implies ${logTex(b, argY)}=${logTex(b, `${baseTex}^{${exponent}}`)}`,
+            `\\implies ${logY}=(${exponent})${logTex(b, baseTex)}`,
+            `\\implies ${logY}=${exponent}`,
+            `\\implies ${logY}${d < 0 ? `+${Math.abs(d)}` : `-${d}`}=${c}x`,
+            `\\implies \\frac{1}{${c}}\\left(${logY}${d < 0 ? `+${Math.abs(d)}` : `-${d}`}\\right)=x`,
+            `\\implies f^{-1}(x)=\\frac{1}{${c}}\\left(${logX}${d < 0 ? `+${Math.abs(d)}` : `-${d}`}\\right)`
           ]
         }]
       };
     }
 
-    const trigDefinitions = {
-      sin: { tex: '\\sin', value: x => Math.sin(x), derivative: x => Math.cos(x), derivativeTex: '\\cos(x)', expression: 'sin(x)' },
-      cos: { tex: '\\cos', value: x => Math.cos(x), derivative: x => -Math.sin(x), derivativeTex: '-\\sin(x)', expression: 'cos(x)' },
-      tan: { tex: '\\tan', value: x => Math.tan(x), derivative: x => 1 / (Math.cos(x) ** 2), derivativeTex: '\\sec^{2}(x)', expression: 'tan(x)' },
-      sec: { tex: '\\sec', value: x => 1 / Math.cos(x), derivative: x => Math.sin(x) / (Math.cos(x) ** 2), derivativeTex: '\\sec(x)\\tan(x)', expression: 'sec(x)' },
-      csc: { tex: '\\csc', value: x => 1 / Math.sin(x), derivative: x => -Math.cos(x) / (Math.sin(x) ** 2), derivativeTex: '-\\csc(x)\\cot(x)', expression: 'csc(x)' },
-      cot: { tex: '\\cot', value: x => Math.cos(x) / Math.sin(x), derivative: x => -1 / (Math.sin(x) ** 2), derivativeTex: '-\\csc^{2}(x)', expression: 'cot(x)' }
-    };
-
-    function simpleTrigNumber(value) {
-      if (!Number.isFinite(value)) return false;
-      const candidates = [-4, -3, -2, -1, 0, 1, 2, 3, 4];
-      return candidates.some(n => Math.abs(value - n) < 1e-9);
+    function powerEquationLeftTex(q, exponentTex) {
+      return `${integerBaseTex(q)}^{${exponentTex}}`;
     }
 
-    function trigValueTex(value) {
-      const rounded = Math.round(value);
-      return Math.abs(value - rounded) < 1e-9 ? `${rounded}` : numberTex(value);
-    }
-
-    function makeTrigLinearizationProblem() {
-      for (let attempt = 0; attempt < 300; attempt++) {
-        const name = randomChoice(Object.keys(trigDefinitions));
-        const base = trigDefinitions[name];
-        const squared = Math.random() < 0.35;
-        const candidates = [0, Math.PI / 6, Math.PI / 4, Math.PI / 3, Math.PI / 2, Math.PI, 3 * Math.PI / 2];
-        const good = candidates.filter(a => {
-          const y = base.value(a);
-          const dy = base.derivative(a);
-          const fVal = squared ? y * y : y;
-          const fDer = squared ? 2 * y * dy : dy;
-          return simpleTrigNumber(fVal) && simpleTrigNumber(fDer);
-        });
-        if (!good.length) continue;
-        const nonzero = good.filter(a => Math.abs(a) > 1e-10);
-        const a = nonzero.length && Math.random() < 0.8 ? randomChoice(nonzero) : randomChoice(good);
-        const delta = signedSmallDeltaValue();
-        const target = a + delta;
-        const y0 = squared ? base.value(a) ** 2 : base.value(a);
-        const m = squared ? 2 * base.value(a) * base.derivative(a) : base.derivative(a);
-        if (!Number.isFinite(y0) || !Number.isFinite(m)) continue;
-        const b = y0 - m * a;
-        const fnTex = squared ? `${base.tex}^{2}(x)` : `${base.tex}(x)`;
-        const fnExpression = squared ? `(${base.expression})**2` : base.expression;
-        const derivativeTex = squared ? `2${base.tex}(x)${base.derivativeTex}` : base.derivativeTex;
-        const approx = y0 + m * delta;
-        const targetTex = `${piMultipleTex(a)} ${signedDeltaTex(delta)}`;
+    function makeLogEquationProblem() {
+      const isLinear = Math.random() < 0.30;
+      const q = Math.random() < 0.4 ? 'e' : randomInteger(2, 4);
+      const p = randomInteger(2, 5);
+      if (isLinear) {
+        const c = randomNonzeroInteger(-9, 9);
+        const d = randomNonzeroInteger(-9, 9);
+        const exponentTex = linearTex(c, d + p);
+        const rhsTex = q === 'e' ? `e^{${p}}` : `${Math.pow(q, p)}`;
+        const logBase = q;
+        const solution = frac(-d, c);
+        const solTex = solution.den === 1 ? `${solution.num}` : `\\frac{${solution.num}}{${solution.den}}`;
         return {
-          caseType: 2,
-          graphKind: 'trig',
-          graphInfiniteRange: ['tan', 'sec', 'csc', 'cot'].includes(name),
-          graphSquared: squared,
-          graphFn: x => squared ? Math.pow(base.value(x), 2) : base.value(x),
-          graphA: a,
-          graphTarget: target,
-          graphY0: y0,
-          graphM: m,
-          graphB: b,
-          questionTex: `\\text{Use linear approximation to estimate }${squared ? `${base.tex}^{2}` : base.tex}\\left(${targetTex}\\right).`,
-          stages: [
-            {
-              kind: 'function',
-              promptTex: `\\text{Identify the function }f(x)\\text{ whose linearization will be helpful.}`,
-              labelTex: `f(x)=`,
-              expectedExpression: fnExpression,
-              expectedTex: fnTex,
-              hints: [`\\text{Use the outside function from the expression being approximated.}`, `f(x)=${fnTex}`]
-            },
-            {
-              kind: 'a',
-              promptTex: `\\text{Choose a nearby value }a\\text{ where }f(a)\\text{ and }f'(a)\\text{ are easy to evaluate.}`,
-              labelTex: `a=`,
-              expectedValue: a,
-              expectedTex: piMultipleTex(a),
-              hints: [`${targetTex}\\text{ is close to }${piMultipleTex(a)}.`, `a=${piMultipleTex(a)}`]
-            },
-            {
-              kind: 'linearization',
-              promptTex: `\\text{Find the linearization }L(x)\\text{ of }f(x)\\text{ at }a=${piMultipleTex(a)}.`,
-              labelTex: `L(x)=`,
-              expectedM: m,
-              expectedB: b,
-              expectedTex: pointSlopeFormulaTex(trigValueTex(y0), trigValueTex(m), m, `x-${piMultipleTex(a)}`),
-              hints: [
-                `f'(x)=${derivativeTex}`,
-                `\\begin{aligned}f(${piMultipleTex(a)})&=${trigValueTex(y0)}\\\\ f'(${piMultipleTex(a)})&=${trigValueTex(m)}\\end{aligned}`,
-                `L(x)=f(a)+f'(a)(x-a)=${pointSlopeFormulaTex(trigValueTex(y0), trigValueTex(m), m, `x-${piMultipleTex(a)}`)}`
-              ]
-            },
-            {
-              kind: 'approximation',
-              promptTex: `\\text{Use your linearization to approximate the original value.}`,
-              labelTex: `\\approx`,
-              expectedValue: approx,
-              expectedTex: approximationValueTex(approx),
-              hints: [
-                `\\begin{aligned}${squared ? `${base.tex}^{2}` : base.tex}\\left(${targetTex}\\right)&\\approx L\\left(${targetTex}\\right)\\\\&=${trigValueTex(y0)}+${trigValueTex(m)}\\left((${targetTex})-${piMultipleTex(a)}\\right)\\\\&=${trigValueTex(y0)}+${trigValueTex(m)}(${formatDecimal(delta, 2)})\\\\&=${approximationValueTex(approx)}\\end{aligned}`
-              ]
-            }
-          ]
+          caseType: 'log-equation-linear',
+          questionTex: `\\text{Solve the equation } ${powerEquationLeftTex(q, exponentTex)}=${rhsTex}.`,
+          stages: [{
+            kind: 'solution-set',
+            promptTex: `\\text{Solve for }x.`,
+            labelTex: `x=`,
+            expectedValues: [solution.num / solution.den],
+            expectedTex: solTex,
+            hints: [
+              `\\implies ${logTex(logBase, powerEquationLeftTex(q, exponentTex))}=${logTex(logBase, `${integerBaseTex(q)}^{${p}}`)}`,
+              `\\implies (${exponentTex})${logTex(logBase, integerBaseTex(q))}=${p}`,
+              `\\implies ${exponentTex}=${p}`,
+              `\\implies ${linearTex(c, d)}=0`,
+              `\\implies ${c}x=${-d}`,
+              `\\implies x=${solTex}`
+            ]
+          }]
         };
       }
-      return makeTrigLinearizationProblem();
-    }
-
-    function makeRootLinearizationProblem() {
-      const denominator = (() => {
-        const r = Math.random();
-        if (r < 0.65) return 2;
-        if (r < 0.85) return 3;
-        if (r < 0.95) return 4;
-        return 5;
-      })();
-      let numerator = 1;
-      if (Math.random() < 0.25) {
-        do { numerator = randomNonzeroInteger(-5, 5); } while (gcd(numerator, denominator) !== 1);
-      }
-      let base;
-      if (denominator === 2) {
-        do { base = randomNonzeroInteger(-12, 12); } while (Math.abs(base) === 1);
-      } else if (denominator === 3) {
-        do { base = randomNonzeroInteger(-5, 5); } while (Math.abs(base) === 1);
-      } else if (denominator === 4) {
-        base = randomChoice([-3, -2, 2, 3]);
-      } else {
-        base = randomChoice([-2, 2]);
-      }
-      const a = Math.pow(base, denominator);
-      const delta = randomNonzeroInteger(-9, 9) / 10;
-      const target = a + delta;
-      const targetDisplay = formatDecimal(target, 1);
-      const deltaDisplay = formatDecimal(delta, 1);
-      const p = numerator, q = denominator;
-      const y0 = signedPower(a, p, q);
-      const m = (p / q) * signedPower(a, p - q, q);
-      const approx = y0 + m * delta;
-      const b = y0 - m * a;
-      const fnTex = rootOrPowerFunctionTex(p, q);
-      const exponentTex = fractionTexFromIntegers(p, q);
+      const a = randomNonzeroInteger(-9, 9);
+      const n = randomNonzeroInteger(-9, 9);
+      let m = randomNonzeroInteger(-9, 9);
+      while (m === n) m = randomNonzeroInteger(-9, 9);
+      const B = -a * (n + m);
+      const C = a * n * m;
+      const exponentTex = polynomialTex(a, B, C + p);
+      const withoutPTex = polynomialTex(a, B, C);
+      const rhsTex = q === 'e' ? `e^{${p}}` : `${Math.pow(q, p)}`;
       return {
-        caseType: 2,
-        graphKind: 'root',
-        graphRootDenominator: q,
-        graphRootNumerator: p,
-        graphFn: x => signedPower(x, p, q),
-        graphA: a,
-        graphTarget: target,
-        graphY0: y0,
-        graphM: m,
-        graphB: b,
-        questionTex: `\\text{Use linear approximation to estimate }${powerTex(targetDisplay, exponentTex)}.`,
-        stages: [
-          {
-            kind: 'function',
-            promptTex: `\\text{Identify the function }f(x)\\text{ whose linearization will be helpful.}`,
-            labelTex: `f(x)=`,
-            expectedExpression: rootOrPowerExpression(p, q),
-            expectedTex: fnTex,
-            hints: [`\\text{Use the power/root as the function and put the messy number in for }x.`, `f(x)=${fnTex}`]
-          },
-          {
-            kind: 'a',
-            promptTex: `\\text{Choose a nearby value }a\\text{ where }f(a)\\text{ is easy to evaluate.}`,
-            labelTex: `a=`,
-            expectedValue: a,
-            expectedTex: numberTex(a),
-            hints: [`${targetDisplay}\\text{ is close to }${a}=${base}^{${denominator}}.`, `a=${a}`]
-          },
-          {
-            kind: 'linearization',
-            promptTex: `\\text{Find the linearization }L(x)\\text{ of }f(x)\\text{ at }a=${a}.`,
-            labelTex: `L(x)=`,
-            expectedM: m,
-            expectedB: b,
-            expectedTex: pointSlopeFormulaTex(numberTex(y0), numberTex(m), m, pointSlopeXFactorTex(a)),
-            hints: [
-              `f'(x)=\\frac{${p}}{${q}}x^{${fractionTexFromIntegers(p - q, q)}}`,
-              `\\begin{aligned}f(${a})&=${numberTex(y0)}\\\\ f'(${a})&=${numberTex(m)}\\end{aligned}`,
-              `L(x)=f(a)+f'(a)(x-a)=${pointSlopeFormulaTex(numberTex(y0), numberTex(m), m, pointSlopeXFactorTex(a))}`
-            ]
-          },
-          {
-            kind: 'approximation',
-            promptTex: `\\text{Use your linearization to approximate the original value.}`,
-            labelTex: `\\approx`,
-            expectedValue: approx,
-            expectedTex: approximationValueTex(approx),
-            hints: [
-              `\\begin{aligned}${powerTex(targetDisplay, exponentTex)}&=f(${targetDisplay})\\\\&\\approx L(${targetDisplay})\\\\&=${numberTex(y0)}+${numberTex(m)}(${targetDisplay}-${a})\\\\&=${numberTex(y0)}+${numberTex(m)}(${deltaDisplay})\\\\&=${approximationValueTex(approx)}\\end{aligned}`
-            ]
-          }
-        ]
+        caseType: 'log-equation-quadratic',
+        questionTex: `\\text{Solve the equation } ${powerEquationLeftTex(q, exponentTex)}=${rhsTex}.`,
+        stages: [{
+          kind: 'solution-set',
+          promptTex: `\\text{Solve for }x.`,
+          labelTex: `x=`,
+          expectedValues: [n, m],
+          expectedTex: `${n}\\text{ or }${m}`,
+          hints: [
+            `\\implies ${logTex(q, powerEquationLeftTex(q, exponentTex))}=${logTex(q, `${integerBaseTex(q)}^{${p}}`)}`,
+            `\\implies (${exponentTex})${logTex(q, integerBaseTex(q))}=${p}`,
+            `\\implies ${exponentTex}=${p}`,
+            `\\implies ${withoutPTex}=0`,
+            `\\implies ${a}\\left(x^{2}${-(n+m) < 0 ? '-' : '+'}${Math.abs(n+m)}x${n*m < 0 ? '-' : '+'}${Math.abs(n*m)}\\right)=0`,
+            `\\implies ${a}(x${n < 0 ? `+${Math.abs(n)}` : `-${n}`})(x${m < 0 ? `+${Math.abs(m)}` : `-${m}`})=0`,
+            `\\implies x=${n}\\hspace{3mm}\\text{ or }\\hspace{3mm}${m}`
+          ]
+        }]
       };
     }
 
-    function generateLinearApproximationProblem() {
-      const r = Math.random();
-      if (r < 0.10) return makePolynomialLinearizationProblem();
-      if (r < 0.50) return makeTrigLinearizationProblem();
-      return makeRootLinearizationProblem();
+    function generateLogarithmProblem() {
+      if (logDiffCheckbox && logDiffCheckbox.checked) {
+        return makeLogEquationProblem();
+      }
+      return Math.random() < 0.5 ? makeInverseExponentialProblem() : makeLogEquationProblem();
     }
 
     function normalizeAnswerText(raw) {
@@ -1140,6 +1018,9 @@ fetch("/nav.html")
       s = s
         .replace(new RegExp(`${trigNames}\\*\\*\\(([^()]+)\\)\\(([^()]+)\\)`, 'g'), '($1($3))**($2)')
         .replace(new RegExp(`${trigNames}\\*\\*([0-9]+)\\(([^()]+)\\)`, 'g'), '($1($3))**($2)')
+        .replace(/ln/g, 'Math.log')
+        .replace(/\blog\(/g, 'logb(')
+        .replace(/\be\b/g, 'Math.E')
         .replace(/sqrt/g, 'Math.sqrt')
         .replace(/sin/g, 'Math.sin')
         .replace(/cos/g, 'Math.cos')
@@ -1158,7 +1039,7 @@ fetch("/nav.html")
       const js = expressionToJs(raw);
       if (!js || /[^0-9x+\-*/().,A-Za-z_]/.test(js)) return NaN;
       try {
-        const value = Function('x', `"use strict"; return (${js});`)(x);
+        const value = Function('x', 'logb', `"use strict"; return (${js});`)(x, (base, arg) => Math.log(arg) / Math.log(base));
         return Number.isFinite(value) ? value : NaN;
       } catch (error) {
         return NaN;
@@ -1179,6 +1060,19 @@ fetch("/nav.html")
       return checked >= 3;
     }
 
+    function expressionMatchesOnPoints(raw, expectedRaw, points) {
+      let checked = 0;
+      for (const x of points || []) {
+        const user = evaluateUserExpression(raw, x);
+        const expected = evaluateUserExpression(expectedRaw, x);
+        if (Number.isFinite(user) && Number.isFinite(expected)) {
+          checked++;
+          if (Math.abs(user - expected) > 1e-6 * Math.max(1, Math.abs(expected))) return false;
+        }
+      }
+      return checked >= Math.min(3, (points || []).length);
+    }
+
     function numericAnswerMatches(raw, expected) {
       const user = evaluateUserExpression(raw, 0);
       return Number.isFinite(user) && Math.abs(user - expected) < 1e-6 * Math.max(1, Math.abs(expected));
@@ -1197,6 +1091,9 @@ fetch("/nav.html")
       return `
         <div class="answer-toolbar">
           <button type="button" class="math-symbol-button" data-insert-text="x">x</button>
+          <button type="button" class="math-symbol-button" data-insert-text="e">e</button>
+          <button type="button" class="math-symbol-button" data-insert-text="ln(">ln</button>
+          <button type="button" class="math-symbol-button" data-insert-text="log(">log</button>
           <button type="button" class="math-symbol-button" data-insert-text="π">π</button>
           <button type="button" class="math-symbol-button" data-insert-text="sin(">sin</button>
           <button type="button" class="math-symbol-button" data-insert-text="cos(">cos</button>
@@ -1509,6 +1406,25 @@ fetch("/nav.html")
       if (activeInput) activeInput.focus();
     }
 
+
+    function solutionSetMatches(raw, expectedValues) {
+      const pieces = String(raw || '')
+        .replace(/−/g, '-')
+        .replace(/\\text\{or\}|or|,/gi, ' ')
+        .split(/\s+/)
+        .map(s => s.trim())
+        .filter(Boolean);
+      const values = pieces.map(piece => evaluateUserExpression(piece, 0)).filter(Number.isFinite);
+      if (values.length !== expectedValues.length) return false;
+      const remaining = expectedValues.slice();
+      for (const value of values) {
+        const index = remaining.findIndex(expected => Math.abs(value - expected) < 1e-6 * Math.max(1, Math.abs(expected)));
+        if (index < 0) return false;
+        remaining.splice(index, 1);
+      }
+      return remaining.length === 0;
+    }
+
     function currentStageIsCorrect(stage, raw) {
       if (stage.kind === 'function') return expressionMatches(raw, stage.expectedExpression);
       if (stage.kind === 'a') return numericAnswerMatches(raw, stage.expectedValue);
@@ -1517,6 +1433,8 @@ fetch("/nav.html")
       if (stage.kind === 'derivative-function') return expressionMatches(raw, stage.expectedExpression);
       if (stage.kind === 'slope') return numericAnswerMatches(raw, stage.expectedValue);
       if (stage.kind === 'line') return lineAnswerMatches(raw, stage.expectedM, stage.expectedB);
+      if (stage.kind === 'inverse-expression') return expressionMatchesOnPoints(raw, stage.expectedExpression, stage.testPoints);
+      if (stage.kind === 'solution-set') return solutionSetMatches(raw, stage.expectedValues);
       return false;
     }
 
@@ -1872,7 +1790,6 @@ fetch("/nav.html")
         renderStages();
         checkBtn.style.display = 'none';
         hintBtn.disabled = true;
-        showLinearizationGraphs();
         return;
       }
       renderStages();
@@ -1919,7 +1836,7 @@ fetch("/nav.html")
       clearOldActivityState();
       const sound = document.getElementById('click-sound');
       if (sound) { sound.currentTime = 0; sound.play(); }
-      currentProblem = generateLinearApproximationProblem();
+      currentProblem = generateLogarithmProblem();
       questionText.innerHTML = `\\[${currentProblem.questionTex}\\]`;
       renderStages();
       checkBtn.style.display = 'inline-block';

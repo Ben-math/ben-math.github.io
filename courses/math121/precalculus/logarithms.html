@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -300,6 +301,39 @@
       .linearization-graph-grid {
         grid-template-columns: 1fr;
       }
+    }
+
+
+    .log-entry {
+      display: inline-flex;
+      align-items: baseline;
+      vertical-align: middle;
+      margin: 0 0.08em;
+      white-space: nowrap;
+    }
+
+    .log-label {
+      display: inline-block;
+    }
+
+    .log-base-entry {
+      font-size: 0.7em;
+      vertical-align: sub;
+      display: inline-block;
+      min-width: 0.7em;
+      min-height: 1em;
+      padding: 0 0.08em;
+      border-bottom: 1px solid #777;
+      line-height: 1;
+      align-self: flex-end;
+      margin-right: 0.04em;
+    }
+
+    .log-argument-entry {
+      display: inline-block;
+      min-width: 1.2em;
+      min-height: 1.1em;
+      padding: 0 0.12em;
     }
 
   </style>
@@ -891,14 +925,30 @@ fetch("/nav.html")
       const b = Math.random() < 0.5 ? 'e' : randomChoice([2,3,4,5,6,7,8,9]);
       const exponent = linearTex(c, d);
       const fTex = expFunctionTex(a, b, c, d, n);
-      const argY = `\\frac{y${n < 0 ? `+${Math.abs(n)}` : `-${n}`}}{${a}}`;
-      const argX = `\\frac{x${n < 0 ? `+${Math.abs(n)}` : `-${n}`}}{${a}}`;
+      const shiftedY = `y${n < 0 ? `+${Math.abs(n)}` : `-${n}`}`;
+      const shiftedX = `x${n < 0 ? `+${Math.abs(n)}` : `-${n}`}`;
+      const argY = a === 1 ? shiftedY : `\\frac{${shiftedY}}{${a}}`;
+      const argX = a === 1 ? shiftedX : `\\frac{${shiftedX}}{${a}}`;
+      const jsArg = a === 1 ? `(x-(${n}))` : `(x-(${n}))/(${a})`;
       const logY = logTex(b, argY);
       const logX = logTex(b, argX);
       const baseTex = integerBaseTex(b);
       const expectedExpression = b === 'e'
-        ? `((ln((x-(${n}))/(${a})))-(${d}))/(${c})`
-        : `((log(${b},(x-(${n}))/(${a})))-(${d}))/(${c})`;
+        ? `((ln(${jsArg}))-(${d}))/(${c})`
+        : `((log(${b},${jsArg}))-(${d}))/(${c})`;
+      const inverseHints = [
+        `y=${fTex}`,
+        `\\implies ${shiftedY}=${a === 1 ? '' : `${a}\\cdot `}${baseTex}^{${exponent}}`
+      ];
+      if (a !== 1) inverseHints.push(`\\implies ${argY}=${baseTex}^{${exponent}}`);
+      inverseHints.push(
+        `\\implies ${logTex(b, argY)}=${logTex(b, `${baseTex}^{${exponent}}`)}`,
+        `\\implies ${logY}=(${exponent})${logTex(b, baseTex)}`,
+        `\\implies ${logY}=${exponent}`,
+        `\\implies ${logY}${d < 0 ? `+${Math.abs(d)}` : `-${d}`}=${c}x`,
+        `\\implies \\frac{1}{${c}}\\left(${logY}${d < 0 ? `+${Math.abs(d)}` : `-${d}`}\\right)=x`,
+        `\\implies f^{-1}(x)=\\frac{1}{${c}}\\left(${logX}${d < 0 ? `+${Math.abs(d)}` : `-${d}`}\\right)`
+      );
       return {
         caseType: 'inverse-exponential',
         questionTex: `\\text{Find the inverse function of } f(x)=${fTex}.`,
@@ -909,17 +959,7 @@ fetch("/nav.html")
           expectedExpression,
           expectedTex: `\\frac{1}{${c}}\\left(${logX}${d < 0 ? `+${Math.abs(d)}` : `-${d}`}\\right)`,
           testPoints: [0.5, 1, 2, 3, 5].map(v => n + a * v),
-          hints: [
-            `y=${fTex}`,
-            `\\implies y${n < 0 ? `+${Math.abs(n)}` : `-${n}`}=${a}\\cdot ${baseTex}^{${exponent}}`,
-            `\\implies ${argY}=${baseTex}^{${exponent}}`,
-            `\\implies ${logTex(b, argY)}=${logTex(b, `${baseTex}^{${exponent}}`)}`,
-            `\\implies ${logY}=(${exponent})${logTex(b, baseTex)}`,
-            `\\implies ${logY}=${exponent}`,
-            `\\implies ${logY}${d < 0 ? `+${Math.abs(d)}` : `-${d}`}=${c}x`,
-            `\\implies \\frac{1}{${c}}\\left(${logY}${d < 0 ? `+${Math.abs(d)}` : `-${d}`}\\right)=x`,
-            `\\implies f^{-1}(x)=\\frac{1}{${c}}\\left(${logX}${d < 0 ? `+${Math.abs(d)}` : `-${d}`}\\right)`
-          ]
+          hints: inverseHints
         }]
       };
     }
@@ -969,6 +1009,25 @@ fetch("/nav.html")
       const exponentTex = polynomialTex(a, B, C + p);
       const withoutPTex = polynomialTex(a, B, C);
       const rhsTex = q === 'e' ? `e^{${p}}` : `${Math.pow(q, p)}`;
+      const factoredQuadraticTex = `x^{2}${-(n+m) < 0 ? '-' : '+'}${Math.abs(n+m)}x${n*m < 0 ? '-' : '+'}${Math.abs(n*m)}`;
+      const factorProductTex = `(x${n < 0 ? `+${Math.abs(n)}` : `-${n}`})(x${m < 0 ? `+${Math.abs(m)}` : `-${m}`})`;
+      const quadraticHints = [
+        `\\implies ${logTex(q, powerEquationLeftTex(q, exponentTex))}=${logTex(q, `${integerBaseTex(q)}^{${p}}`)}`,
+        `\\implies (${exponentTex})${logTex(q, integerBaseTex(q))}=${p}`,
+        `\\implies ${exponentTex}=${p}`,
+        `\\implies ${withoutPTex}=0`
+      ];
+      if (a === 1) {
+        quadraticHints.push(
+          `\\implies ${factorProductTex}=0`
+        );
+      } else {
+        quadraticHints.push(
+          `\\implies ${a}\\left(${factoredQuadraticTex}\\right)=0`,
+          `\\implies ${a}${factorProductTex}=0`
+        );
+      }
+      quadraticHints.push(`\\implies x=${n}\\hspace{3mm}\\text{ or }\\hspace{3mm}${m}`);
       return {
         caseType: 'log-equation-quadratic',
         questionTex: `\\text{Solve the equation } ${powerEquationLeftTex(q, exponentTex)}=${rhsTex}.`,
@@ -978,15 +1037,7 @@ fetch("/nav.html")
           labelTex: `x=`,
           expectedValues: [n, m],
           expectedTex: `${n}\\text{ or }${m}`,
-          hints: [
-            `\\implies ${logTex(q, powerEquationLeftTex(q, exponentTex))}=${logTex(q, `${integerBaseTex(q)}^{${p}}`)}`,
-            `\\implies (${exponentTex})${logTex(q, integerBaseTex(q))}=${p}`,
-            `\\implies ${exponentTex}=${p}`,
-            `\\implies ${withoutPTex}=0`,
-            `\\implies ${a}\\left(x^{2}${-(n+m) < 0 ? '-' : '+'}${Math.abs(n+m)}x${n*m < 0 ? '-' : '+'}${Math.abs(n*m)}\\right)=0`,
-            `\\implies ${a}(x${n < 0 ? `+${Math.abs(n)}` : `-${n}`})(x${m < 0 ? `+${Math.abs(m)}` : `-${m}`})=0`,
-            `\\implies x=${n}\\hspace{3mm}\\text{ or }\\hspace{3mm}${m}`
-          ]
+          hints: quadraticHints
         }]
       };
     }
@@ -1018,8 +1069,9 @@ fetch("/nav.html")
       s = s
         .replace(new RegExp(`${trigNames}\\*\\*\\(([^()]+)\\)\\(([^()]+)\\)`, 'g'), '($1($3))**($2)')
         .replace(new RegExp(`${trigNames}\\*\\*([0-9]+)\\(([^()]+)\\)`, 'g'), '($1($3))**($2)')
-        .replace(/ln/g, 'Math.log')
+        .replace(/log_?\{?([0-9]+|e)\}?\(/g, 'logb($1,')
         .replace(/\blog\(/g, 'logb(')
+        .replace(/ln\(/g, 'Math.log(')
         .replace(/\be\b/g, 'Math.E')
         .replace(/sqrt/g, 'Math.sqrt')
         .replace(/sin/g, 'Math.sin')
@@ -1029,9 +1081,11 @@ fetch("/nav.html")
         .replace(/csc\(([^()]+)\)/g, '(1/Math.sin($1))')
         .replace(/cot\(([^()]+)\)/g, '(1/Math.tan($1))')
         .replace(/pi/g, 'Math.PI');
-      // insert common implicit multiplication: 2x, 2(x+1), x(x+1), )(x), 2sqrt(x), xsqrt(x), 2pi
-      s = s.replace(/(\d|x|\))(?=(x|Math\.sqrt|Math\.sin|Math\.cos|Math\.tan|Math\.PI|\())/g, '$1*');
+      // insert common implicit multiplication without breaking function calls
+      s = s.replace(/(\d|x|\))(?=(x|Math\.sqrt|Math\.sin|Math\.cos|Math\.tan|Math\.log|Math\.PI)\b)/g, '$1*');
+      s = s.replace(/(\d|x|\))(?=\()/g, '$1*');
       s = s.replace(/(x|\))(?=\d)/g, '$1*');
+      s = s.replace(/(Math\.sqrt|Math\.sin|Math\.cos|Math\.tan|Math\.log|logb)\*/g, '$1');
       return s;
     }
 
@@ -1093,7 +1147,7 @@ fetch("/nav.html")
           <button type="button" class="math-symbol-button" data-insert-text="x">x</button>
           <button type="button" class="math-symbol-button" data-insert-text="e">e</button>
           <button type="button" class="math-symbol-button" data-insert-text="ln(">ln</button>
-          <button type="button" class="math-symbol-button" data-insert-text="log(">log</button>
+          <button type="button" class="math-symbol-button" data-insert-log="true">log<sub>□</sub>(□)</button>
           <button type="button" class="math-symbol-button" data-insert-text="π">π</button>
           <button type="button" class="math-symbol-button" data-insert-text="sin(">sin</button>
           <button type="button" class="math-symbol-button" data-insert-text="cos(">cos</button>
@@ -1208,6 +1262,18 @@ fetch("/nav.html")
       placeCaretInside(wrapper.querySelector('.radical-entry'));
     }
 
+    function insertLogAtSelection(editor = getInsertionEditor()) {
+      if (!editor) return;
+      const range = getEditorRange(editor);
+      range.deleteContents();
+      const wrapper = document.createElement('span');
+      wrapper.className = 'log-entry special-wrapper';
+      wrapper.setAttribute('data-special-wrapper', 'log');
+      wrapper.innerHTML = '<span class="log-label">log</span><span class="log-base-entry special-entry" contenteditable="true" data-special-entry="log-base"></span><span class="log-open">(</span><span class="log-argument-entry special-entry" contenteditable="true" data-special-entry="log-argument"></span><span class="log-close">)</span>';
+      range.insertNode(wrapper);
+      placeCaretInside(wrapper.querySelector('.log-base-entry'));
+    }
+
     function editorToPlainText(editor) {
       function walk(node) {
         if (!node) return '';
@@ -1222,6 +1288,9 @@ fetch("/nav.html")
         if (node.matches && node.matches('.exponent-entry')) {
           return `**(${Array.from(node.childNodes).map(walk).join('')})`;
         }
+        if (node.matches && node.matches('.log-entry')) {
+          return `log(${walk(node.querySelector('.log-base-entry'))},${walk(node.querySelector('.log-argument-entry'))})`;
+        }
         return Array.from(node.childNodes).map(walk).join('');
       }
       return Array.from(editor.childNodes).map(walk).join('').replace(/\u200b/g, '').replace(/​/g, '').trim();
@@ -1230,7 +1299,7 @@ fetch("/nav.html")
     function closestMathWidget(node) {
       if (!node) return null;
       const element = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
-      return element ? element.closest('.fraction-entry, .math-radical, .exponent-entry') : null;
+      return element ? element.closest('.fraction-entry, .math-radical, .exponent-entry, .log-entry') : null;
     }
 
     function visibleTextAfterCaretInside(element) {
@@ -1304,7 +1373,7 @@ fetch("/nav.html")
       while (previous && previous.nodeType === Node.TEXT_NODE && previous.textContent.replace(/\u200b/g, '').replace(/​/g, '') === '') {
         previous = previous.previousSibling;
       }
-      if (previous && previous.nodeType === Node.ELEMENT_NODE && previous.matches('.fraction-entry, .math-radical, .exponent-entry')) {
+      if (previous && previous.nodeType === Node.ELEMENT_NODE && previous.matches('.fraction-entry, .math-radical, .exponent-entry, .log-entry')) {
         event.preventDefault();
         previous.remove();
         return true;
@@ -1326,6 +1395,11 @@ fetch("/nav.html")
         const selection = window.getSelection();
         if (selection.rangeCount) {
           const widget = closestMathWidget(selection.getRangeAt(0).startContainer);
+          if (widget && widget.matches('.log-entry') && target && target.matches('.log-base-entry') && visibleTextAfterCaretInside(target) === '') {
+            event.preventDefault();
+            placeCaretInside(widget.querySelector('.log-argument-entry'));
+            return;
+          }
           if (widget && visibleTextAfterCaretInside(widget) === '') {
             event.preventDefault();
             moveCursorAfterElement(widget);
@@ -1338,6 +1412,11 @@ fetch("/nav.html")
         const selection = window.getSelection();
         if (selection.rangeCount) {
           const widget = closestMathWidget(selection.getRangeAt(0).startContainer);
+          if (widget && widget.matches('.log-entry') && target && target.matches('.log-argument-entry') && visibleTextBeforeCaretInside(target) === '') {
+            event.preventDefault();
+            placeCaretInside(widget.querySelector('.log-base-entry'));
+            return;
+          }
           if (widget && visibleTextBeforeCaretInside(widget) === '') {
             event.preventDefault();
             moveCursorBeforeElement(widget);
@@ -1398,6 +1477,7 @@ fetch("/nav.html")
           if (button.dataset.insertExponent) insertExponentAtSelection(editor);
           else if (button.dataset.insertFraction) insertFractionAtSelection(editor);
           else if (button.dataset.insertRadical) insertRadicalAtSelection(editor);
+          else if (button.dataset.insertLog) insertLogAtSelection(editor);
           else insertTextAtSelection(button.dataset.insertText || '', editor);
         });
       });

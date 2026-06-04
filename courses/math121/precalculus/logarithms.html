@@ -345,7 +345,11 @@ fetch("/nav.html")
     the variable appears in the base: \[x^2 + 7x + 12 = 0\] is relatively simple to solve, whereas \[2^{x^2-5x+8} = 4\] should give you pause.  But 
     by applying a logarithm to both sides of an equation, we can take advantage of the logarithm laws to bring that variable down.  And if we choose 
     the base of our logarithm cleverly, we can ensure that things work out nicely: \[\log_2\left(2^{x^2-5x+8}\right) = \log_24 \implies 
-    (x^2-5x+8)\log_22 = 2 \implies x^2-5x+8 = 2 \implies x^2-5x+6 = 0 \implies (x-2)(x-3) = 0 \implies x = 2 \text{ or } 3\]</p>
+    (x^2-5x+8)\log_22 = 2 \implies x^2-5x+8 = 2 \implies x^2-5x+6 = 0 \implies (x-2)(x-3) = 0 \implies x = 2 \text{ or } 3\] To find the inverse of an 
+    exponential function, we follow the usual procedure for finding an inverse function: solve for the independent variable in the original function. 
+    For instance, given the function \[f(x) = 30(4)^x\] we start by replacing \(f(x)\) with \(y\), and then solving for \(x\): \[y = 30(4)^x \implies 
+    \frac{y}{30} = 4^x \implies \log_4\left(\frac{y}{30}\right) = \log_4(4^x) \implies x\log_44 = \log_4\left(\frac{y}{30}\right) \implies 
+    x = \log_4\left(\frac{y}{30}\right)\]</p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

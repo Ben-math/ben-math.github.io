@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1088,6 +1089,7 @@ fetch("/nav.html")
         .replace(new RegExp(`${trigNames}\\*\\*([0-9]+)\\(([^()]+)\\)`, 'g'), '($1($3))**($2)')
         .replace(/log_\{?([0-9]+|e)\}?\(/g, 'logb($1,')
         .replace(/log\{?([0-9]+|e)\}?\(/g, 'logb($1,')
+        .replace(/log([0-9]+|e)\(/g, 'logb($1,')
         .replace(/\blog\(/g, 'logb(')
         .replace(/ln\(/g, 'Math.log(')
         .replace(/\be\b/g, 'Math.E')
@@ -1165,7 +1167,7 @@ fetch("/nav.html")
           <button type="button" class="math-symbol-button" data-insert-text="x">x</button>
           <button type="button" class="math-symbol-button" data-insert-text="e">e</button>
           <button type="button" class="math-symbol-button" data-insert-text="ln(">ln</button>
-          <button type="button" class="math-symbol-button" data-insert-log="true">log<sub>□</sub>(□)</button>
+          <button type="button" class="math-symbol-button" data-insert-log="true">log<sub>□</sub>(</button>
           <button type="button" class="math-symbol-button" data-insert-text="π">π</button>
           <button type="button" class="math-symbol-button" data-insert-text="sin(">sin</button>
           <button type="button" class="math-symbol-button" data-insert-text="cos(">cos</button>
@@ -1298,12 +1300,20 @@ fetch("/nav.html")
       if (!editor) return;
       const range = getEditorRange(editor);
       range.deleteContents();
-      const wrapper = document.createElement('span');
-      wrapper.className = 'log-entry special-wrapper';
-      wrapper.setAttribute('data-special-wrapper', 'log');
-      wrapper.innerHTML = '<span class="log-label">log</span><span class="log-base-entry special-entry" contenteditable="true" data-special-entry="log-base"></span><span class="log-open">(</span><span class="log-argument-entry special-entry" contenteditable="true" data-special-entry="log-argument"></span><span class="log-close">)</span>';
-      range.insertNode(wrapper);
-      placeCaretInside(wrapper.querySelector('.log-base-entry'));
+
+      const logText = document.createTextNode('log');
+      const subscript = document.createElement('span');
+      subscript.className = 'subscript-entry special-wrapper special-entry';
+      subscript.setAttribute('data-special-wrapper', 'subscript');
+      subscript.setAttribute('data-special-entry', 'subscript');
+      subscript.contentEditable = 'true';
+      const openParen = document.createTextNode('(');
+
+      range.insertNode(openParen);
+      range.insertNode(subscript);
+      range.insertNode(logText);
+
+      placeCaretInside(subscript);
     }
 
     function editorToPlainText(editor) {

@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -331,9 +332,10 @@
 
     .log-argument-entry {
       display: inline-block;
-      min-width: 1.2em;
+      min-width: 0.8em;
       min-height: 1.1em;
-      padding: 0 0.12em;
+      padding: 0;
+      margin-left: 0.08em;
     }
 
   </style>
@@ -1270,6 +1272,8 @@ fetch("/nav.html")
       wrapper.className = 'log-entry special-wrapper';
       wrapper.setAttribute('data-special-wrapper', 'log');
       wrapper.innerHTML = '<span class="log-label">log</span><span class="log-base-entry special-entry" contenteditable="true" data-special-entry="log-base"></span><span class="log-open">(</span><span class="log-argument-entry special-entry" contenteditable="true" data-special-entry="log-argument"></span><span class="log-close">)</span>';
+      wrapper.querySelector('.log-base-entry').appendChild(document.createTextNode('\u200b'));
+      wrapper.querySelector('.log-argument-entry').appendChild(document.createTextNode('\u200b'));
       range.insertNode(wrapper);
       placeCaretInside(wrapper.querySelector('.log-base-entry'));
     }

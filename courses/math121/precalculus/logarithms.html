@@ -4,6 +4,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -444,6 +445,7 @@ fetch("/nav.html")
     const feedbackText = document.getElementById('feedbackText');
     const finalAnswerInput = document.getElementById('final-answer-input');
     const graphArea = document.getElementById('graph-area');
+    const activityBox = document.getElementById('my-activity');
     const logDiffCheckbox = document.getElementById('log-diff-checkbox');
 
     let currentProblem = null;
@@ -2154,16 +2156,28 @@ fetch("/nav.html")
       hintBtn.disabled = hintStep >= stage.hints.length;
     }
 
+    function viewLogDifferentiationAnswer() {
+      if (!currentProblem || currentProblem.caseType !== 'logarithmic-differentiation') return;
+      const stage = currentProblem.stages[0];
+      if (!stage || !stage.hints || !stage.hints.length || !activityBox) return;
+      const finalHintStep = stage.hints[stage.hints.length - 1];
+      activityBox.style.display = 'block';
+      activityBox.innerHTML = `<div id="answer-display" class="math" style="text-align: center;">\\[${finalHintStep}\\]</div>`;
+      typesetElement(activityBox);
+    }
+
     function clearOldActivityState() {
       feedbackText.textContent = '';
       finalAnswerInput.innerHTML = '';
       hintArea.innerHTML = '';
       if (graphArea) { graphArea.innerHTML = ''; graphArea.style.display = 'none'; }
+      if (activityBox) { activityBox.innerHTML = ''; activityBox.style.display = 'none'; }
       questionText.innerHTML = '';
       hintStep = 0;
       currentStageIndex = 0;
       hintBtn.disabled = true;
       checkBtn.style.display = 'none';
+      checkBtn.textContent = 'Check Answer';
       hintIsTypesetting = false;
     }
 
@@ -2173,14 +2187,32 @@ fetch("/nav.html")
       if (sound) { sound.currentTime = 0; sound.play(); }
       currentProblem = generateLogarithmProblem();
       questionText.innerHTML = `\\[${currentProblem.questionTex}\\]`;
-      renderStages();
+
+      if (currentProblem.caseType === 'logarithmic-differentiation') {
+        finalAnswerInput.innerHTML = '';
+        if (activityBox) {
+          activityBox.style.display = 'block';
+          activityBox.innerHTML = '<div id="answer-display" class="math" style="text-align: center;"></div>';
+        }
+        checkBtn.textContent = 'View Answer';
+      } else {
+        renderStages();
+        checkBtn.textContent = 'Check Answer';
+      }
+
       checkBtn.style.display = 'inline-block';
       hintBtn.disabled = false;
       typesetElement(questionText);
     });
 
     hintBtn.addEventListener('click', advanceHint);
-    checkBtn.addEventListener('click', checkUserAnswer);
+    checkBtn.addEventListener('click', () => {
+      if (currentProblem && currentProblem.caseType === 'logarithmic-differentiation') {
+        viewLogDifferentiationAnswer();
+      } else {
+        checkUserAnswer();
+      }
+    });
   
   </script>
 

@@ -3,6 +3,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1058,9 +1059,210 @@ fetch("/nav.html")
       };
     }
 
+
+    function ldRand(arr) { return arr[randomInteger(0, arr.length - 1)]; }
+    function ldChance(p) { return Math.random() < p; }
+
+    function ldFraction(num, den) {
+      const f = frac(num, den);
+      return f;
+    }
+
+    function ldExponent() {
+      const roll = Math.random();
+      if (roll < 0.30) {
+        const n = randomInteger(2, 9);
+        return { value: 1 / n, tex: `\\frac{1}{${n}}`, powerTex: `\\frac{1}{${n}}`, kind: 'radical', root: n };
+      }
+      if (roll < 0.80) {
+        const k = randomNonzeroInteger(-9, 9);
+        return { value: k, tex: `${k}`, powerTex: `${k}`, kind: 'integer' };
+      }
+      let num, den, f;
+      do {
+        num = randomNonzeroInteger(-9, 9);
+        den = randomNonzeroInteger(-9, 9);
+        if (den < 0) { num = -num; den = -den; }
+        f = ldFraction(num, den);
+      } while (f.den === 1);
+      return { value: f.num / f.den, tex: `\\frac{${f.num}}{${f.den}}`, powerTex: `\\frac{${f.num}}{${f.den}}`, kind: 'fraction' };
+    }
+
+    function ldParen(tex) {
+      return `\\left(${tex}\\right)`;
+    }
+
+    function ldComponentPowerTex(component, exponent) {
+      if (exponent.kind === 'radical') return `\\sqrt[${exponent.root}]{${component.tex}}`;
+      return `${ldParen(component.tex)}^{${exponent.powerTex}}`;
+    }
+
+    function ldComponentPowerJs(component, exponent) {
+      return `((${component.js})**(${exponent.value}))`;
+    }
+
+    function ldComponentPowerLogTerm(component, exponent) {
+      const sign = exponent.value < 0 ? '-' : '+';
+      const absTex = exponent.tex.startsWith('-') ? exponent.tex.slice(1) : exponent.tex;
+      const coeffTex = exponent.value < 0 ? absTex : exponent.tex;
+      const tex = `${coeffTex}\\ln\\left(${ldParen(component.tex)}\\right)`;
+      const derivTex = `${exponent.tex}\\cdot \\frac{${component.dtex}}{${component.tex}}`;
+      const djs = `((${exponent.value})*((${component.djs})/(${component.js})))`;
+      return { sign, tex, derivTex, djs };
+    }
+
+    function ldMakePolyComponent(variableTex = 'x', variableJs = 'x', variableDJs = '1', variableDTex = '1') {
+      const a = randomInteger(1, 5);
+      const b = randomInteger(2, 9);
+      const innerTex = variableTex === 'x' ? 'x' : ldParen(variableTex);
+      const tex = `${a}${innerTex}^{2}+${b}`;
+      const js = `(${a}*(${variableJs})**2+${b})`;
+      const dtex = `${2*a}${innerTex}\\cdot ${variableDTex}`;
+      const djs = `(${2*a}*(${variableJs})*(${variableDJs}))`;
+      return { tex, js, dtex, djs, type: 'poly' };
+    }
+
+    function ldMakeTrigComponent(variableTex = 'x', variableJs = 'x', variableDJs = '1', variableDTex = '1') {
+      const func = ldRand(['sin', 'cos']);
+      const tex = `\\${func}\\left(${variableTex}\\right)+2`;
+      const js = `(Math.${func}(${variableJs})+2)`;
+      const dtex = func === 'sin'
+        ? `\\cos\\left(${variableTex}\\right)\\cdot ${variableDTex}`
+        : `-\\sin\\left(${variableTex}\\right)\\cdot ${variableDTex}`;
+      const djs = func === 'sin'
+        ? `(Math.cos(${variableJs})*(${variableDJs}))`
+        : `(-Math.sin(${variableJs})*(${variableDJs}))`;
+      return { tex, js, dtex, djs, type: 'trig' };
+    }
+
+    function ldMakeExpComponent(variableTex = 'x', variableJs = 'x', variableDJs = '1', variableDTex = '1') {
+      const useE = ldChance(0.5);
+      if (useE) {
+        return {
+          tex: `e^{${variableTex}}`,
+          js: `(Math.exp(${variableJs}))`,
+          dtex: `e^{${variableTex}}\\cdot ${variableDTex}`,
+          djs: `(Math.exp(${variableJs})*(${variableDJs}))`,
+          type: 'exp'
+        };
+      }
+      const base = randomInteger(2, 5);
+      return {
+        tex: `${base}^{${variableTex}}`,
+        js: `((${base})**(${variableJs}))`,
+        dtex: `${base}^{${variableTex}}\\ln\\left(${base}\\right)\\cdot ${variableDTex}`,
+        djs: `(((${base})**(${variableJs}))*Math.log(${base})*(${variableDJs}))`,
+        type: 'exp'
+      };
+    }
+
+    function ldMakeLogComponent(variableTex = 'x', variableJs = 'x', variableDJs = '1', variableDTex = '1') {
+      const useLn = ldChance(0.5);
+      const shiftedTex = `${variableTex}+10`;
+      const shiftedJs = `((${variableJs})+10)`;
+      if (useLn) {
+        return {
+          tex: `\\ln\\left(${shiftedTex}\\right)+3`,
+          js: `(Math.log(${shiftedJs})+3)`,
+          dtex: `\\frac{${variableDTex}}{${shiftedTex}}`,
+          djs: `((${variableDJs})/(${shiftedJs}))`,
+          type: 'log'
+        };
+      }
+      const base = randomInteger(2, 5);
+      return {
+        tex: `\\log_{${base}}\\left(${shiftedTex}\\right)+3`,
+        js: `(Math.log(${shiftedJs})/Math.log(${base})+3)`,
+        dtex: `\\frac{${variableDTex}}{\\left(${shiftedTex}\\right)\\ln\\left(${base}\\right)}`,
+        djs: `((${variableDJs})/((${shiftedJs})*Math.log(${base})))`,
+        type: 'log'
+      };
+    }
+
+    function ldMakeBasicComponent(variableTex = 'x', variableJs = 'x', variableDJs = '1', variableDTex = '1', allowedTypes = ['poly','trig','exp','log']) {
+      const type = ldRand(allowedTypes);
+      if (type === 'poly') return ldMakePolyComponent(variableTex, variableJs, variableDJs, variableDTex);
+      if (type === 'trig') return ldMakeTrigComponent(variableTex, variableJs, variableDJs, variableDTex);
+      if (type === 'exp') return ldMakeExpComponent(variableTex, variableJs, variableDJs, variableDTex);
+      return ldMakeLogComponent(variableTex, variableJs, variableDJs, variableDTex);
+    }
+
+    function ldMakeComponent() {
+      if (!ldChance(0.30)) return ldMakeBasicComponent();
+
+      const inner = ldMakeBasicComponent();
+      const outerTypes = ['trig', 'exp', 'log'];
+      const outer = ldMakeBasicComponent(inner.tex, inner.js, inner.djs, inner.dtex, outerTypes);
+      outer.type = `chain-${outer.type}`;
+      return outer;
+    }
+
+    function ldJoinSignedTerms(terms, key = 'tex') {
+      if (!terms.length) return '';
+      return terms.map((term, index) => {
+        const raw = term[key];
+        if (index === 0) return term.sign === '-' ? `-${raw}` : raw;
+        return `${term.sign === '-' ? '-' : '+'} ${raw}`;
+      }).join(' ');
+    }
+
+    function makeLogDifferentiationProblem() {
+      const components = [ldMakeComponent(), ldMakeComponent(), ldMakeComponent()];
+      const exponents = [ldExponent(), ldExponent(), ldExponent()];
+      const powered = components.map((component, i) => ({
+        component,
+        exponent: exponents[i],
+        tex: ldComponentPowerTex(component, exponents[i]),
+        js: ldComponentPowerJs(component, exponents[i])
+      }));
+
+      const numeratorFirst = ldChance(0.5);
+      const numerator = numeratorFirst ? [0, 1] : [1, 2];
+      const denominator = numeratorFirst ? 2 : 0;
+
+      const functionTex = `\\frac{${powered[numerator[0]].tex}${powered[numerator[1]].tex}}{${powered[denominator].tex}}`;
+      const functionJs = `((${powered[numerator[0]].js})*(${powered[numerator[1]].js})/(${powered[denominator].js}))`;
+
+      const logTerms = [
+        { ...ldComponentPowerLogTerm(components[numerator[0]], exponents[numerator[0]]), sign: exponents[numerator[0]].value < 0 ? '-' : '+' },
+        { ...ldComponentPowerLogTerm(components[numerator[1]], exponents[numerator[1]]), sign: exponents[numerator[1]].value < 0 ? '-' : '+' },
+        { ...ldComponentPowerLogTerm(components[denominator], exponents[denominator]), sign: exponents[denominator].value < 0 ? '+' : '-' }
+      ];
+
+      const derivativeRightTex = ldJoinSignedTerms(logTerms, 'derivTex');
+      const derivativeRightJs = `(${logTerms.map(t => t.sign === '-' ? `-(${t.djs})` : `(${t.djs})`).join('+')})`;
+      const expectedExpression = `((${derivativeRightJs})*(${functionJs}))`;
+
+      const expandedLogTex = `\\ln\\left(${ldParen(powered[numerator[0]].component.tex)}^{${exponents[numerator[0]].tex}}\\right)+\\ln\\left(${ldParen(powered[numerator[1]].component.tex)}^{${exponents[numerator[1]].tex}}\\right)-\\ln\\left(${ldParen(powered[denominator].component.tex)}^{${exponents[denominator].tex}}\\right)`;
+      const pulledDownTex = ldJoinSignedTerms(logTerms, 'tex');
+
+      return {
+        caseType: 'logarithmic-differentiation',
+        questionTex: `\\text{Use logarithmic differentiation to find } \\frac{dy}{dx}\\text{ for } y=${functionTex}.`,
+        stages: [{
+          kind: 'log-diff-derivative',
+          promptTex: `\\text{Find }\\frac{dy}{dx}.`,
+          labelTex: `\\frac{dy}{dx}=`,
+          expectedExpression,
+          expectedTex: `${ldParen(derivativeRightTex)}${functionTex}`,
+          testPoints: [0, 1, 2, 3, 4],
+          hints: [
+            `y=${functionTex}`,
+            `\\ln(y)=\\ln\\left(${functionTex}\\right)`,
+            `\\ln(y)=${expandedLogTex}`,
+            `\\ln(y)=${pulledDownTex}`,
+            `\\frac{1}{y}\\frac{dy}{dx}=${derivativeRightTex}`,
+            `\\frac{dy}{dx}=\\left(${derivativeRightTex}\\right)y`,
+            `\\frac{dy}{dx}=\\left(${derivativeRightTex}\\right)${functionTex}`
+          ]
+        }]
+      };
+    }
+
+
     function generateLogarithmProblem() {
       if (logDiffCheckbox && logDiffCheckbox.checked) {
-        return makeLogEquationProblem();
+        return makeLogDifferentiationProblem();
       }
       return Math.random() < 0.5 ? makeInverseExponentialProblem() : makeLogEquationProblem();
     }
@@ -1567,6 +1769,7 @@ fetch("/nav.html")
       if (stage.kind === 'line') return lineAnswerMatches(raw, stage.expectedM, stage.expectedB);
       if (stage.kind === 'inverse-expression') return expressionMatchesOnPoints(raw, stage.expectedExpression, stage.testPoints);
       if (stage.kind === 'solution-set') return solutionSetMatches(raw, stage.expectedValues);
+      if (stage.kind === 'log-diff-derivative') return expressionMatchesOnPoints(raw, stage.expectedExpression, stage.testPoints);
       return false;
     }
 

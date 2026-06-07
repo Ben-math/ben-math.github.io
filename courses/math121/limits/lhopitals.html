@@ -316,19 +316,19 @@ fetch("/nav.html")
     terms of an indeterminate quotient, and then apply L'Hôpital's Rule.</p>
 
     <p>We start with indeterminate products: those of the form \(0 \cdot \infty\).  For instance, we rephrase the following as an indeterminate form of 
-    type \(\frac{\infty}{\infty}\): \[\lim_{x \to \infty}x^3e^{-x^2} = \lim_{x \to \infty}\frac{x^3}{e^{x^2}} = \lim_{x \to \infty}
-    \frac{3x^2}{e^{x^2}\cdot 2x} = \lim_{x \to \infty}\frac{3x}{2e^{x^2}} = \lim_{x \to \infty}\frac{3}{2e^{x^2}\cdot 2x} = 0\]  Note that there were two 
-    choices we could have made in terms of how to rephrase it as a quotient: the other was as an indeterminate form of type \(\frac{0}{0}\): 
-    \[\lim_{x \to \infty}x^3e^{-x^2} = \lim_{x \to \infty}\frac{e^{-x^2}}{x^{-3}} = \lim_{x \to \infty}\frac{e^{-x^2}\cdot -2x}{-3x^{-4}} = 
-    \lim_{x \to \infty}\frac{2}{3}x^5e^{-x^2}\] ...which is still an indeterminate form of type \(0 \cdot \infty\).  That is, we aren't making any 
+    type \(\frac{\infty}{\infty}\), and then apply L'Hôpital's Rule: \[\lim_{x \to \infty}x^3e^{-x^2} = \lim_{x \to \infty}\frac{x^3}{e^{x^2}} = 
+    \lim_{x \to \infty}\frac{3x^2}{e^{x^2}\cdot 2x} = \lim_{x \to \infty}\frac{3x}{2e^{x^2}} = \lim_{x \to \infty}\frac{3}{2e^{x^2}\cdot 2x} = 0\]  Note 
+    that there were two choices we could have made in terms of how to rephrase it as a quotient: the other was as an indeterminate form of type 
+    \(\frac{0}{0}\): \[\lim_{x \to \infty}x^3e^{-x^2} = \lim_{x \to \infty}\frac{e^{-x^2}}{x^{-3}} = \lim_{x \to \infty}\frac{e^{-x^2}\cdot -2x}{-3x^{-4}} 
+    = \lim_{x \to \infty}\frac{2}{3}x^5e^{-x^2}\] ...which is still an indeterminate form of type \(0 \cdot \infty\).  That is, we aren't making any 
     progress taking this approach.  There comes a point where we must recognize that applying L'Hôpital's Rule has not improved our position (in fact it 
     has worsened it here), and so we must backtrack and try the other avenue.</p>
 
     <p>Next, indeterminate differences: those of the form \(\infty - \infty\).  We handle these similarly - observe in the following we combine fractions 
-    with a common denominator to obtain an indeterminate form of type \(\frac{0}{0}\): \[\lim_{x \to \left(\frac{\pi}{2}\right)^-}
-    (\sec x - \tan x) = \lim_{x \to \left(\frac{\pi}{2}\right)^-}\left(\frac{1}{\cos x}-\frac{\sin x}{\cos x}\right) = 
-    \lim_{x \to \left(\frac{\pi}{2}\right)^-}\frac{1 - \sin x}{\cos x} = \lim_{x \to \left(\frac{\pi}{2}\right)^-}\frac{-\cos x}{- \sin x} = 
-    \frac{0}{-1} = 0\]</p>
+    with a common denominator to obtain an indeterminate form of type \(\frac{0}{0}\), and then apply L'Hôpital's Rule: 
+    \[\lim_{x \to \left(\frac{\pi}{2}\right)^-}(\sec x - \tan x) = \lim_{x \to \left(\frac{\pi}{2}\right)^-}
+    \left(\frac{1}{\cos x}-\frac{\sin x}{\cos x}\right) = \lim_{x \to \left(\frac{\pi}{2}\right)^-}\frac{1 - \sin x}{\cos x} = 
+    \lim_{x \to \left(\frac{\pi}{2}\right)^-}\frac{-\cos x}{- \sin x} = \frac{0}{-1} = 0\]</p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

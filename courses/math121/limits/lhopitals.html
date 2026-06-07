@@ -274,16 +274,16 @@ fetch("/nav.html")
     \[\text{Logarithmic} < \text{Root} < \text{Polynomial} < \text{Exponential}\] 
     This will help us predict the result of "which will win" in the contest between numerator and denominator.  For instance, we 
     will have to apply L'Hôpital's Rule twice to evaluate the following limit (as we will have an indeterminate form of type \(\frac{\infty}{\infty}\) 
-    in both instances: \[\lim_{x \to \infty}\frac{e^x}{x^2} = \lim_{x \to \infty}\frac{e^x}{2x} = \lim_{x \to \infty}\frac{e^x}{2} = \infty\] We can see 
-    from the preceding example that even \(\lim_{x \to \infty}\frac{e^x}{5634563x^{2524359}} = \infty\), as we will simply apply L'Hôpital's Rule 
-    repeatedly until the denominator "dies off" (see 
+    in both instances): \[\lim_{x \to \infty}\frac{e^x}{x^2} = \lim_{x \to \infty}\frac{e^x}{2x} = \lim_{x \to \infty}\frac{e^x}{2} = \infty\] We can see 
+    from the preceding example that even \(\lim_{x \to \infty}\frac{5634563x^{2524359}}{e^x} = 0\), as we will simply apply L'Hôpital's Rule 
+    repeatedly until the numerator "dies off" (see 
     <a href="https://mathwithbaddrawings.com/2015/10/28/the-differentiation-a-survivors-tale/">The Differentiation: A Survivor's Tale</a>, a story from a 
     favourite comic creator of mine, for a haunting tale of functions' relative experiences with differentiation).</p>
 
     <p>L'Hôpital's Rule can be used to evaluate limits which we had previously used other techniques on.  For instance, we previously evaluated infinite 
     limits of rational functions as follows: \[\lim_{x \to \infty}\frac{6x^4 - 9}{2x^4 + 1000x^3 + 3000} = \lim_{x \to \infty}
     \frac{\frac{6x^4}{x^4} - \frac{9}{x^4}}{\frac{2x^4}{x^4} + \frac{1000x^3}{x^4} + \frac{3000}{x^4}} = \lim_{x \to \infty}
-    \frac{6 - \frac{9}{x^4}}{2 + \frac{1000}{x} + \frac{3000}{x^4}} = \lim_{x \to \infty}\frac{6 - 0 + 0}{2 + 0} = \frac{6}{2} = 3\] 
+    \frac{6 - \frac{9}{x^4}}{2 + \frac{1000}{x} + \frac{3000}{x^4}} = \frac{6 - 0 + 0}{2 + 0} = \frac{6}{2} = 3\] 
     However, we could have recognized that we started with an indeterminate form of type 
     \(\frac{\infty}{\infty}\), and differentiated repeatedly: \[\lim_{x \to \infty}\frac{6x^4 - 9}{2x^4 + 1000x^3 + 3000} = 
     \lim_{x \to \infty}\frac{24x^3}{8x^3 + 3000x^2} = \lim_{x \to \infty}\frac{72x^2}{24x^2} = \lim_{x \to \infty}\frac{72}{24} = 3\] Once we've learned 
@@ -298,7 +298,9 @@ fetch("/nav.html")
 
     <p>On the second point, consider the following attempt to evaluate a limit, which is an indeterminate form of type \(\frac{\infty}{\infty}\): 
     \[\lim_{x \to \infty}\frac{\sqrt{2x^2+5}}{3x-6} = \lim_{x \to \infty}\frac{\frac{1}{2}(2x^2+5)^{-\frac{1}{2}}\cdot 4x}{3} = \lim_{x \to \infty} 
-    \frac{4x}{3\sqrt{2x^2+5}}\]\</p>
+    \frac{4x}{3\sqrt{2x^2+5}} = \lim_{x \to \infty}\frac{4}{3\cdot \frac{1}{2}(2x^2+5)^{-\frac{1}{2}}\cdot 4x} = \lim_{x \to \infty} 
+    \frac{8\sqrt{2x^2+5}}{12x}\]  We aren't getting anywhere here: the linear and root will just keep swapping places as we repeatedly apply L'Hôpital's 
+    Rule.</p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

@@ -270,8 +270,9 @@ fetch("/nav.html")
     <p>To apply L'Hôpital's Rule, we must first confirm that we are dealing with an indeterminate form.  For instance, \[\lim_{x \to 1}\frac{\ln(x)}{x-1}\] 
     is an indeterminate form of type \(\frac{0}{0}\), so we can differentiate the numerator and denominator: \[\lim_{x \to 1}\frac{\ln(x)}{x-1} = 
     \lim_{x \to 1}\frac{\frac{1}{x}}{1} = \lim_{x \to 1}\frac{1}{x} = \frac{1}{1} = 1\] After some practice evaluating limits, you will start to 
-    recognize a sort of "tier list" of functions in terms of how quickly they grow.  Generally: \[\text{Logarithmic} < \text{Root} < \text{Polynomial} < 
-    \text{Exponential}\] This will help us predict the result of "which will win" in the contest between numerator and denominator.  For instance, we 
+    recognize a sort of "tier list" of functions in terms of how quickly they grow (that is, the limit as \(x \to \infty\)).  Generally: 
+    \[\text{Logarithmic} < \text{Root} < \text{Polynomial} < \text{Exponential}\] 
+    This will help us predict the result of "which will win" in the contest between numerator and denominator.  For instance, we 
     will have to apply L'Hôpital's Rule twice to evaluate the following limit (as we will have an indeterminate form of type \(\frac{\infty}{\infty}\) 
     in both instances: \[\lim_{x \to \infty}\frac{e^x}{x^2} = \lim_{x \to \infty}\frac{e^x}{2x} = \lim_{x \to \infty}\frac{e^x}{2} = \infty\] We can see 
     from the preceding example that even \(\lim_{x \to \infty}\frac{e^x}{5634563x^{2524359}} = \infty\), as we will simply apply L'Hôpital's Rule 

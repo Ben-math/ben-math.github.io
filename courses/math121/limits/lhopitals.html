@@ -330,6 +330,15 @@ fetch("/nav.html")
     \left(\frac{1}{\cos x}-\frac{\sin x}{\cos x}\right) = \lim_{x \to \left(\frac{\pi}{2}\right)^-}\frac{1 - \sin x}{\cos x} = 
     \lim_{x \to \left(\frac{\pi}{2}\right)^-}\frac{-\cos x}{- \sin x} = \frac{0}{-1} = 0\]</p>
 
+    <p>Finally, indeterminate powers: those of the form \(0^0\), \(\infty^0\), or \(1^{\infty}\).  We can deal with these by instead evaluating the limit 
+    of the natural logarithm of the limit's argument, so that we can take advantage of the laws of logarithms to rephrase the problem in terms of an 
+    indeterminate quotient.  We then use this result to solve the original problem.  For example, to solve the problem 
+    \[\lim_{x \to 0^+}(\tan 2x)^x\] we recognize we have an indeterminate form of type \(0^0\).  We take the natural logarithm to solve a related problem: 
+    \[y = (\tan 2x)^x \implies \ln y = \ln\left((\tan 2x)^x\right) \implies \ln y = x\ln(\tan 2x)\] Then we take the limit of this, which is an indeterminate 
+    product of the form \(0 \cdot \infty\), so we turn it into an indeterminate quotient of the form \(\frac{0}{0}\) and then apply L'Hôpital's Rule:
+    \[\lim_{x \to 0^+}(x\ln(\tan 2x)) = \lim_{x \to 0^+}\frac{x}{(\ln(\tan 2x))^{-1}} = \lim_{x \to 0^+}\frac{1}{-(\ln(\tan 2x))^{-2} \cdot \frac{1}{\tan 2x} 
+    \cdot \sec^2(2x) \cdot 2}\]</p>
+
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>

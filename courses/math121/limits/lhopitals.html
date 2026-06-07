@@ -337,7 +337,8 @@ fetch("/nav.html")
     \[y = (\tan 2x)^x \implies \ln y = \ln\left((\tan 2x)^x\right) \implies \ln y = x\ln(\tan 2x)\] Then we take the limit of this, which is an indeterminate 
     product of the form \(0 \cdot \infty\), so we turn it into an indeterminate quotient of the form \(\frac{0}{0}\) and then apply L'Hôpital's Rule:
     \[\lim_{x \to 0^+}(x\ln(\tan 2x)) = \lim_{x \to 0^+}\frac{x}{(\ln(\tan 2x))^{-1}} = \lim_{x \to 0^+}\frac{1}{-(\ln(\tan 2x))^{-2} \cdot \frac{1}{\tan 2x} 
-    \cdot \sec^2(2x) \cdot 2}\]</p>
+    \cdot \sec^2(2x) \cdot 2} = \lim_{x \to 0^+}\frac{-(\ln(\tan 2x))^2 \cdot \tan 2x}{2\sec^2(2x)} = \frac{1}{2}\lim_{x \to 0^+}\left(-(\ln(\tan 2x))^2 
+    \cdot \frac{\sin 2x}{\cos 2x} \cdot \cos^2x\right)\]</p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

@@ -818,12 +818,6 @@ fetch("/nav.html")
       return value > 0 ? '\\infty' : '-\\infty';
     }
 
-    function limitDirectionTex(direction) {
-      if (direction === 'positive') return '\\infty';
-      if (direction === 'negative') return '-\\infty';
-      return '\\pm\\infty';
-    }
-
     function reciprocalSideTex(coefficient, side) {
       if (side === 'right') return signedInfinityTex(coefficient);
       return signedInfinityTex(-coefficient);
@@ -933,12 +927,11 @@ fetch("/nav.html")
       return piScale ? polynomialToTexWithPi(poly, piScale) : polynomialToTex(poly);
     }
 
-    function rationalDivideEquationTex(numerator, denominator, divisorPower, piScale = null, functionName = 'f', direction = null) {
-      const limitTex = limitDirectionTex(direction);
+    function rationalDivideEquationTex(numerator, denominator, divisorPower, piScale = null, functionName = 'f') {
       const original = `\\frac{${polynomialToTexMaybePi(numerator, piScale)}}{${polynomialToTex(denominator)}}`;
       const unsimplified = `\\frac{${dividedPolynomialUnsimplifiedTex(numerator, divisorPower, piScale)}}{${dividedPolynomialUnsimplifiedTex(denominator, divisorPower)}}`;
       const simplified = `\\frac{${dividedPolynomialSimplifiedTex(numerator, divisorPower, piScale)}}{${dividedPolynomialSimplifiedTex(denominator, divisorPower)}}`;
-      return `\\lim_{x\\to ${limitTex}}${functionName}(x)=\\lim_{x\\to ${limitTex}}${original}=\\lim_{x\\to ${limitTex}}${unsimplified}=\\lim_{x\\to ${limitTex}}${simplified}`;
+      return `\\lim_{x\\to\\pm\\infty}${functionName}(x)=\\lim_{x\\to\\pm\\infty}${original}=\\lim_{x\\to\\pm\\infty}${unsimplified}=\\lim_{x\\to\\pm\\infty}${simplified}`;
     }
 
     function answerObjectToTexExtended(answer) {
@@ -955,46 +948,37 @@ fetch("/nav.html")
     }
 
     function rationalDivisionHints(numerator, denominator, answers, options = {}) {
-      const { piScale = null, functionName = 'f', finalAnswers = true, direction = null } = options;
+      const { piScale = null, functionName = 'f', finalAnswers = true } = options;
       const numDegree = degreeOfPolynomial(numerator);
       const denDegree = degreeOfPolynomial(denominator);
       const divisorPower = Math.min(numDegree, denDegree);
       const numLead = leadingCoefficient(numerator);
       const denLead = leadingCoefficient(denominator);
       const hints = [];
-      const limitTex = limitDirectionTex(direction);
 
       if (numDegree === denDegree) {
         hints.push(`\\text{The degree of both the numerator and denominator is }${numDegree}\\text{, so we divide every term by }${xPowerTex(divisorPower)}.`);
       } else {
         hints.push(`\\text{The lowest degree of the numerator/denominator is }${divisorPower}\\text{, so we divide every term by }${xPowerTex(divisorPower)}.`);
       }
-      hints.push(rationalDivideEquationTex(numerator, denominator, divisorPower, piScale, functionName, direction));
+      hints.push(rationalDivideEquationTex(numerator, denominator, divisorPower, piScale, functionName));
 
       if (numDegree > denDegree) {
         const dominantNumeratorTerm = dividedTermBody(combineLikeTerms(numerator)[0], divisorPower, numerator, piScale);
         hints.push(`\\text{The lead term in the higher degree numerator, }${dominantNumeratorTerm}\\text{, dominates and determines the end behaviour.}`);
         hints.push(`\\text{The dominant term in the denominator is }${denLead}\\text{, which is }${signTex(denLead)}.`);
         const diff = numDegree - denDegree;
-        if (direction === 'positive') {
-          hints.push(`\\text{As }x\\to ${limitTex}\\text{, the remaining power of }x\\text{ is positive, so the sign is determined by }\\frac{${numLead}}{${denLead}}\\text{.}`);
-        } else if (direction === 'negative') {
-          hints.push(diff % 2 === 0
-            ? `\\text{As }x\\to ${limitTex}\\text{, the remaining exponent is even, so the sign is determined by }\\frac{${numLead}}{${denLead}}\\text{.}`
-            : `\\text{As }x\\to ${limitTex}\\text{, the remaining exponent is odd, so the sign is the opposite of the sign of }\\frac{${numLead}}{${denLead}}\\text{.}`);
-        } else {
-          hints.push(diff % 2 === 0
-            ? `\\text{Since the remaining exponent is even, the two ends go in the same direction.}`
-            : `\\text{Since the remaining exponent is odd, the two ends go in opposite directions.}`);
-        }
+        hints.push(diff % 2 === 0
+          ? `\\text{Since the remaining exponent is even, the two ends go in the same direction.}`
+          : `\\text{Since the remaining exponent is odd, the two ends go in opposite directions.}`);
       } else if (numDegree === denDegree) {
         const ratio = piScale ? piMultipleToTex(piScale) : fractionToTex(exactFraction(numLead, denLead));
-        hints.push(`\\text{Every term in the above limit approaches zero except the constants, so the limit is their ratio.}`);
+        hints.push(`\\text{Every term in the above limit approaches zero except the constants, so we have a horizontal asymptote at their ratio.}`);
         hints.push(piScale
           ? `\\frac{${numLead < 0 ? '-' : ''}${piCoefficientTexForScale(Math.abs(numLead), piScale)}}{${denLead}}=${ratio}`
           : `\\frac{${numLead}}{${denLead}}=${ratio}`);
       } else {
-        hints.push(`\\text{The numerator is finite and the denominator grows without bound, so the limit is }0.`);
+        hints.push(`\\text{The numerator is finite and the denominator grows without bound, so we have a horizontal asymptote at }y=0.`);
       }
       if (finalAnswers) hints.push(`${answerListTexExtended(answers)}`);
       return hints;
@@ -1025,21 +1009,20 @@ fetch("/nav.html")
       }).join(' ');
     }
 
-    function type3Hints(numerator, denominator, answers, direction) {
-      const originalHints = rationalDivisionHints(numerator, denominator, answers, { direction });
+    function type3Hints(numerator, denominator, answers) {
+      const originalHints = rationalDivisionHints(numerator, denominator, answers);
       const hints = [];
       let currentNumerator = numerator;
       let currentDenominator = denominator;
-      const limitTex = limitDirectionTex(direction);
 
-      hints.push(`\\text{As }x\\to ${limitTex}\\text{, this is an indeterminate form of type }\\frac{\\infty}{\\infty}\\text{, so we can apply L'Hôpital's Rule.}`);
+      hints.push(`\\text{As }x\\to\\infty\\text{ or }x\\to-\\infty\\text{, this is an indeterminate form of type }\\frac{\\infty}{\\infty}\\text{, so we can apply L'Hôpital's Rule.}`);
 
       let lhopitalStep = 0;
       while (degreeOfPolynomial(currentNumerator) > 0 && degreeOfPolynomial(currentDenominator) > 0 && lhopitalStep < 12) {
         currentNumerator = derivativePolynomial(currentNumerator);
         currentDenominator = derivativePolynomial(currentDenominator);
         lhopitalStep++;
-        hints.push(`\\lim_{x\\to ${limitTex}}f(x)=\\lim_{x\\to ${limitTex}}\\frac{${polynomialToTex(currentNumerator)}}{${polynomialToTex(currentDenominator)}}`);
+        hints.push(`\\lim_{x\\to\\infty}f(x)=\\lim_{x\\to\\infty}\\frac{${polynomialToTex(currentNumerator)}}{${polynomialToTex(currentDenominator)}}\\quad\\text{and}\\quad \\lim_{x\\to-\\infty}f(x)=\\lim_{x\\to-\\infty}\\frac{${polynomialToTex(currentNumerator)}}{${polynomialToTex(currentDenominator)}}`);
       }
 
       hints.push(`\\text{Now one of the numerator/denominator is constant, so evaluate the remaining limit directly.}`);
@@ -1100,12 +1083,11 @@ fetch("/nav.html")
       return [...terms].sort((a, b) => b.power - a.power).map((term, index) => exponentialDividedTermTex(term, divisorPower, baseTex, index)).join(' ');
     }
 
-    function exponentialDivideEquationTex(numerator, denominator, divisorPower, baseTex, direction = null) {
-      const limitTex = limitDirectionTex(direction);
+    function exponentialDivideEquationTex(numerator, denominator, divisorPower, baseTex) {
       const original = `\\frac{${exponentialExpressionToTex(numerator, baseTex)}}{${exponentialExpressionToTex(denominator, baseTex)}}`;
       const unsimplified = `\\frac{${exponentialDividedExpressionUnsimplifiedTex(numerator, divisorPower, baseTex)}}{${exponentialDividedExpressionUnsimplifiedTex(denominator, divisorPower, baseTex)}}`;
       const simplified = `\\frac{${exponentialDividedExpressionSimplifiedTex(numerator, divisorPower, baseTex)}}{${exponentialDividedExpressionSimplifiedTex(denominator, divisorPower, baseTex)}}`;
-      return `\\lim_{x\\to ${limitTex}}f(x)=\\lim_{x\\to ${limitTex}}${original}=\\lim_{x\\to ${limitTex}}${unsimplified}=\\lim_{x\\to ${limitTex}}${simplified}`;
+      return `\\lim_{x\\to\\pm\\infty}f(x)=\\lim_{x\\to\\pm\\infty}${original}=\\lim_{x\\to\\pm\\infty}${unsimplified}=\\lim_{x\\to\\pm\\infty}${simplified}`;
     }
 
     function exponentialLeadTermByPower(terms, power) {
@@ -1147,35 +1129,21 @@ fetch("/nav.html")
       return power === 1 ? 'x' : `${power}x`;
     }
 
-    function type5Hints(baseTex, numerator, denominator, numDegree, denDegree, answers, direction) {
-      const powersInNumerator = numerator.map(term => term.power);
-      const powersInDenominator = denominator.map(term => term.power);
-      const positiveDivisorPower = Math.min(numDegree, denDegree);
-      const negativeDivisorPower = Math.max(Math.min(...powersInNumerator), Math.min(...powersInDenominator));
-      const divisorPower = direction === 'negative' ? negativeDivisorPower : positiveDivisorPower;
+    function type5Hints(baseTex, numerator, denominator, numDegree, denDegree, answers) {
+      const divisorPower = Math.min(numDegree, denDegree);
       const hints = [];
-      const limitTex = limitDirectionTex(direction);
 
-      hints.push(`\\text{As }x\\to ${limitTex}\\text{, this is an indeterminate quotient, so try one application of L'Hôpital's Rule.}`);
-      hints.push(`\\lim_{x\\to ${limitTex}}f(x)=\\lim_{x\\to ${limitTex}}\\frac{${derivativeExponentialExpressionToTex(numerator, baseTex)}}{${derivativeExponentialExpressionToTex(denominator, baseTex)}}`);
+      hints.push(`\\text{As }x\\to\\infty\\text{, this is an indeterminate form of type }\\frac{\\infty}{\\infty}\\text{, so try one application of L'Hôpital's Rule.}`);
+      hints.push(`\\lim_{x\\to\\infty}f(x)=\\lim_{x\\to\\infty}\\frac{${derivativeExponentialExpressionToTex(numerator, baseTex)}}{${derivativeExponentialExpressionToTex(denominator, baseTex)}}`);
       hints.push(`\\text{The quotient still has competing exponential terms, so L'Hôpital's Rule has not really simplified the problem.}`);
       hints.push(`\\text{Instead, use the exponential end-behaviour strategy.}`);
 
-      if (direction === 'negative') {
-        hints.push(`\\text{As }x\\to -\\infty\\text{, the terms with the most negative exponents dominate, so we divide by }${exponentialPowerTex(baseTex, divisorPower)}\\text{.}`);
-      } else if (numDegree === denDegree) {
+      if (numDegree === denDegree) {
         hints.push(`\\text{The numerator and denominator have the same exponential degree }${numDegree}\\text{, so we divide every term by }${exponentialPowerTex(baseTex, divisorPower)}.`);
       } else {
         hints.push(`\\text{The lowest exponential degree of the numerator/denominator is }${divisorPower}\\text{, so we divide every term by }${exponentialPowerTex(baseTex, divisorPower)}.`);
       }
-      hints.push(exponentialDivideEquationTex(numerator, denominator, divisorPower, baseTex, direction));
-
-      if (direction === 'negative') {
-        hints.push(exponentialDirectionComparisonHint(baseTex, numerator, denominator, divisorPower, 'negative'));
-        hints.push(`\\lim_{x\\to ${limitTex}}f(x)=${answerObjectToTexExtended(answers[0].answer)}.`);
-        hints.push(`${answerListTexExtended(answers)}`);
-        return hints;
-      }
+      hints.push(exponentialDivideEquationTex(numerator, denominator, divisorPower, baseTex));
 
       const shiftedNumDegree = numDegree - divisorPower;
       const shiftedDenDegree = denDegree - divisorPower;
@@ -1184,7 +1152,7 @@ fetch("/nav.html")
 
       if (shiftedNumDegree > shiftedDenDegree) {
         hints.push(`\\text{For }x\\to\\infty\\text{, the term of exponential degree }${exponentialDegreeDescriptionTex(shiftedNumDegree)}\\text{ in the numerator dominates the constant term in the denominator.}`);
-        hints.push(`\\text{The sign is determined by }\\frac{${numLead}}{${denLead}}\\text{, so }\\lim_{x\\to\\infty}f(x)=${answerObjectToTexExtended(answers[0].answer)}.`);
+        hints.push(`\\text{The sign is determined by }\\frac{${numLead}}{${denLead}}\\text{, so }\\lim_{x\\to\\infty}f(x)=${answerObjectToTexExtended(answers[1].answer)}.`);
       } else if (shiftedNumDegree === shiftedDenDegree) {
         hints.push(`\\text{For }x\\to\\infty\\text{, the dominant remaining exponential degree is the same in the numerator and denominator.}`);
         hints.push(`\\lim_{x\\to\\infty}f(x)=\\frac{${numLead}}{${denLead}}=${fractionToTex(exactFraction(numLead, denLead))}.`);
@@ -1193,6 +1161,8 @@ fetch("/nav.html")
         hints.push(`\\lim_{x\\to\\infty}f(x)=0.`);
       }
 
+      hints.push(exponentialDirectionComparisonHint(baseTex, numerator, denominator, divisorPower, 'negative'));
+      hints.push(`\\lim_{x\\to-\\infty}f(x)=${answerObjectToTexExtended(answers[0].answer)}.`);
       hints.push(`${answerListTexExtended(answers)}`);
       return hints;
     }
@@ -1261,17 +1231,15 @@ fetch("/nav.html")
     function generateType3LimitProblem() {
       const rational = generateDegreeMatchedRational();
       const { numerator, denominator } = rational;
-      const direction = randomChoice(['negative', 'positive']);
-      const limitTex = limitDirectionTex(direction);
       const answers = [
-        { labelTex: `\\lim_{x \\to ${limitTex}}f(x)`, answer: rationalEndBehaviour(numerator, denominator, direction) }
+        { labelTex: '\\lim_{x \\to -\\infty}f(x)', answer: rationalEndBehaviour(numerator, denominator, 'negative') },
+        { labelTex: '\\lim_{x \\to \\infty}f(x)', answer: rationalEndBehaviour(numerator, denominator, 'positive') }
       ];
       return {
         type: 3,
-        direction,
-        questionTex: `f(x)=${rationalFunctionTex(numerator, denominator)}.\\quad \\text{Evaluate }\\lim_{x \\to ${limitTex}}f(x).`,
+        questionTex: `f(x)=${rationalFunctionTex(numerator, denominator)}.\\quad \\text{Evaluate }\\lim_{x \\to -\\infty}f(x)\\;\\text{and}\\;\\lim_{x \\to \\infty}f(x).`,
         answers,
-        hints: type3Hints(numerator, denominator, answers, direction)
+        hints: type3Hints(numerator, denominator, answers)
       };
     }
 
@@ -1404,17 +1372,15 @@ fetch("/nav.html")
       }
       const numerator = randomExponentialExpressionExactDegree(numDegree);
       const denominator = randomExponentialExpressionExactDegree(denDegree);
-      const direction = randomChoice(['negative', 'positive']);
-      const limitTex = limitDirectionTex(direction);
       const answers = [
-        { labelTex: `\\lim_{x \\to ${limitTex}}f(x)`, answer: exponentialEndBehaviour(numerator, denominator, direction) }
+        { labelTex: '\\lim_{x \\to -\\infty}f(x)', answer: exponentialEndBehaviour(numerator, denominator, 'negative') },
+        { labelTex: '\\lim_{x \\to \\infty}f(x)', answer: exponentialEndBehaviour(numerator, denominator, 'positive') }
       ];
       return {
         type: 5,
-        direction,
-        questionTex: `f(x)=\\frac{${exponentialExpressionToTex(numerator, baseTex)}}{${exponentialExpressionToTex(denominator, baseTex)}}.\\quad \\text{Evaluate }\\lim_{x \\to ${limitTex}}f(x).`,
+        questionTex: `f(x)=\\frac{${exponentialExpressionToTex(numerator, baseTex)}}{${exponentialExpressionToTex(denominator, baseTex)}}.\\quad \\text{Evaluate }\\lim_{x \\to -\\infty}f(x)\\;\\text{and}\\;\\lim_{x \\to \\infty}f(x).`,
         answers,
-        hints: type5Hints(baseTex, numerator, denominator, numDegree, denDegree, answers, direction)
+        hints: type5Hints(baseTex, numerator, denominator, numDegree, denDegree, answers)
       };
     }
 
@@ -1707,8 +1673,484 @@ fetch("/nav.html")
     }
 
 
+
+    function directionData(direction) {
+      return direction === 'positive'
+        ? { dir: 'positive', limitTex: '\\infty', labelTex: '\\lim_{x \\to \\infty}f(x)' }
+        : { dir: 'negative', limitTex: '-\\infty', labelTex: '\\lim_{x \\to -\\infty}f(x)' };
+    }
+
+    function finiteLimitData(a, side = '') {
+      return {
+        a,
+        side,
+        limitTex: `${numberTex(a)}${side}`,
+        labelTex: `\\lim_{x \\to ${numberTex(a)}${side}}f(x)`
+      };
+    }
+
+    function derivativePolynomialNTimes(poly, times) {
+      let out = poly;
+      for (let i = 0; i < times; i++) out = derivativePolynomial(out);
+      return out;
+    }
+
+    function type1RationalInfinityHints(numerator, denominator, answerEntry, direction) {
+      const data = directionData(direction);
+      const hints = [];
+      let currentNumerator = numerator;
+      let currentDenominator = denominator;
+
+      hints.push(`\\text{As }x\\to ${data.limitTex}\\text{, this is an indeterminate form of type }\\frac{\\infty}{\\infty}\\text{, so we can apply L'Hôpital's Rule.}`);
+      let lhopitalStep = 0;
+      while (degreeOfPolynomial(currentNumerator) > 0 && degreeOfPolynomial(currentDenominator) > 0 && lhopitalStep < 12) {
+        currentNumerator = derivativePolynomial(currentNumerator);
+        currentDenominator = derivativePolynomial(currentDenominator);
+        lhopitalStep++;
+        hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${polynomialToTex(currentNumerator)}}{${polynomialToTex(currentDenominator)}}`);
+      }
+
+      hints.push(`\\text{Now one of the numerator/denominator is constant, so evaluate the remaining limit directly.}`);
+      hints.push(`${answerEquationTexExtended(answerEntry)}`);
+      hints.push(`\\text{Alternate solution: use the older end-behaviour method.}`);
+      hints.push(...rationalDivisionHints(numerator, denominator, [answerEntry]));
+      return hints;
+    }
+
+    function generateRenamedType1LimitProblem() {
+      const rational = generateDegreeMatchedRational();
+      const { numerator, denominator } = rational;
+      const direction = Math.random() < 0.5 ? 'positive' : 'negative';
+      const data = directionData(direction);
+      const answerEntry = { labelTex: data.labelTex, answer: rationalEndBehaviour(numerator, denominator, direction) };
+      return {
+        type: 1,
+        questionTex: `f(x)=${rationalFunctionTex(numerator, denominator)}.\\quad \\text{Evaluate }${data.labelTex}.`,
+        answers: [answerEntry],
+        hints: type1RationalInfinityHints(numerator, denominator, answerEntry, direction)
+      };
+    }
+
+    function type2ExponentialRationalHints(baseTex, numerator, denominator, numDegree, denDegree, answerEntry, direction) {
+      const data = directionData(direction);
+      const divisorPower = Math.min(numDegree, denDegree);
+      const hints = [];
+
+      hints.push(`\\text{As }x\\to ${data.limitTex}\\text{, this is an indeterminate form of type }\\frac{\\infty}{\\infty}\\text{, so try one application of L'Hôpital's Rule.}`);
+      hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${derivativeExponentialExpressionToTex(numerator, baseTex)}}{${derivativeExponentialExpressionToTex(denominator, baseTex)}}`);
+      hints.push(`\\text{The quotient still has competing exponential terms, so L'Hôpital's Rule has not really simplified the problem.}`);
+      hints.push(`\\text{Instead, use the exponential end-behaviour strategy.}`);
+
+      if (numDegree === denDegree) {
+        hints.push(`\\text{The numerator and denominator have the same exponential degree }${numDegree}\\text{, so we divide every term by }${exponentialPowerTex(baseTex, divisorPower)}.`);
+      } else {
+        hints.push(`\\text{The lowest exponential degree of the numerator/denominator is }${divisorPower}\\text{, so we divide every term by }${exponentialPowerTex(baseTex, divisorPower)}.`);
+      }
+      hints.push(exponentialDivideEquationTex(numerator, denominator, divisorPower, baseTex).replaceAll('\\pm\\infty', data.limitTex));
+      hints.push(exponentialDirectionComparisonHint(baseTex, numerator, denominator, divisorPower, direction));
+      hints.push(`${answerEquationTexExtended(answerEntry)}`);
+      return hints;
+    }
+
+    function generateRenamedType2LimitProblem() {
+      const baseTex = Math.random() < 0.6 ? `${randomInteger(2, 9)}` : 'e';
+      const relation = randomChoice(['greater', 'equal', 'less']);
+      let numDegree, denDegree;
+      const possibleDegrees = [];
+      for (let k = -10; k <= 10; k++) if (k !== 0) possibleDegrees.push(k);
+      if (relation === 'greater') {
+        const pairs = [];
+        possibleDegrees.forEach(a => possibleDegrees.forEach(b => { if (a > b) pairs.push([a, b]); }));
+        [numDegree, denDegree] = randomChoice(pairs);
+      } else if (relation === 'less') {
+        const pairs = [];
+        possibleDegrees.forEach(a => possibleDegrees.forEach(b => { if (a < b) pairs.push([a, b]); }));
+        [numDegree, denDegree] = randomChoice(pairs);
+      } else {
+        numDegree = denDegree = randomChoice(possibleDegrees);
+      }
+      const numerator = randomExponentialExpressionExactDegree(numDegree);
+      const denominator = randomExponentialExpressionExactDegree(denDegree);
+      const direction = Math.random() < 0.5 ? 'positive' : 'negative';
+      const data = directionData(direction);
+      const answerEntry = { labelTex: data.labelTex, answer: exponentialEndBehaviour(numerator, denominator, direction) };
+      return {
+        type: 2,
+        questionTex: `f(x)=\\frac{${exponentialExpressionToTex(numerator, baseTex)}}{${exponentialExpressionToTex(denominator, baseTex)}}.\\quad \\text{Evaluate }${data.labelTex}.`,
+        answers: [answerEntry],
+        hints: type2ExponentialRationalHints(baseTex, numerator, denominator, numDegree, denDegree, answerEntry, direction)
+      };
+    }
+
+    function coeffForSimpleFunction() {
+      const values = [];
+      for (let k = -9; k <= 9; k++) if (k !== 0 && k !== 1) values.push(k);
+      return randomChoice(values);
+    }
+
+    function randomPolynomialAtLeastDegree3() {
+      return randomPolynomialExactDegree(randomInteger(3, 7), 2, 4);
+    }
+
+    function randomLinearData() {
+      const c = coeffForSimpleFunction();
+      const d = coeffForSimpleFunction();
+      return { c, d, root: exactFraction(-d, c), poly: polynomialFromAxPlusC(c, d) };
+    }
+
+    function randomQuadraticData() {
+      const a = Math.random() < 0.5 ? 1 : coeffForSimpleFunction();
+      let n = coeffForSimpleFunction();
+      let m;
+      do { m = coeffForSimpleFunction(); } while (m === n);
+      let poly = multiplyPolynomials(polynomialFromRoot(n), polynomialFromRoot(m));
+      poly = scalePolynomial(poly, a);
+      return { a, n, m, roots: [n, m], poly };
+    }
+
+    function functionTypeName(type) {
+      return {
+        1: 'polynomial',
+        2: 'linear',
+        3: 'quadratic',
+        4: 'trigonometric',
+        5: 'exponential',
+        6: 'logarithmic'
+      }[type];
+    }
+
+    function trigDerivativeTex(name, innerTex = 'x', innerPrimeTex = '1') {
+      const ip = innerPrimeTex === '1' ? '' : `\\cdot ${innerPrimeTex}`;
+      if (name === 'sin') return `\\cos\\left(${innerTex}\\right)${ip}`;
+      if (name === 'cos') return `-\\sin\\left(${innerTex}\\right)${ip}`;
+      if (name === 'tan') return `\\sec^2\\left(${innerTex}\\right)${ip}`;
+      if (name === 'sec') return `\\sec\\left(${innerTex}\\right)\\tan\\left(${innerTex}\\right)${ip}`;
+      if (name === 'csc') return `-\\csc\\left(${innerTex}\\right)\\cot\\left(${innerTex}\\right)${ip}`;
+      return `-\\csc^2\\left(${innerTex}\\right)${ip}`;
+    }
+
+    function trigTex(name, innerTex = 'x') {
+      return `\\${name}\\left(${innerTex}\\right)`;
+    }
+
+    function expTex(base, innerTex = 'x') {
+      return base === 'e' ? `e^{${innerTex}}` : `${base}^{${innerTex}}`;
+    }
+
+    function expDerivativeTex(base, innerTex = 'x', innerPrimeTex = '1') {
+      const ip = innerPrimeTex === '1' ? '' : `\\cdot ${innerPrimeTex}`;
+      return base === 'e' ? `e^{${innerTex}}${ip}` : `\\ln(${base})${base}^{${innerTex}}${ip}`;
+    }
+
+    function logTex(base, innerTex = 'x') {
+      return base === 'e' ? `\\ln\\left(${innerTex}\\right)` : `\\log_{${base}}\\left(${innerTex}\\right)`;
+    }
+
+    function logDerivativeTex(base, innerTex = 'x', innerPrimeTex = '1') {
+      const numerator = innerPrimeTex === '1' ? '1' : innerPrimeTex;
+      return base === 'e'
+        ? `\\frac{${numerator}}{${innerTex}}`
+        : `\\frac{${numerator}}{${innerTex}\\ln(${base})}`;
+    }
+
+    function finiteAnswer(value) {
+      const tex = numberTex(value);
+      return { kind: 'finite', value: { decimal: value }, tex };
+    }
+
+    function finiteFromFraction(num, den) {
+      const f = exactFraction(num, den);
+      return { kind: 'finite', value: f, tex: fractionToTex(f) };
+    }
+
+    function infinityAnswerFromSign(sign) {
+      return sign > 0 ? { kind: 'infinity' } : { kind: 'negativeInfinity' };
+    }
+
+    function shiftedZeroFunctionForType(type, a) {
+      if (type === 4) {
+        const trig = randomChoice(['sin', 'cos', 'tan', 'cot']);
+        if (trig === 'sin') return {
+          tex: `\\sin\\left(x ${a < 0 ? '+' : '-'} ${Math.abs(a)}\\right)`,
+          derivativeTex: `\\cos\\left(x ${a < 0 ? '+' : '-'} ${Math.abs(a)}\\right)`,
+          derivativeAtA: 1,
+          zeroDescription: `\\sin(0)=0`
+        };
+        if (trig === 'tan') return {
+          tex: `\\tan\\left(x ${a < 0 ? '+' : '-'} ${Math.abs(a)}\\right)`,
+          derivativeTex: `\\sec^2\\left(x ${a < 0 ? '+' : '-'} ${Math.abs(a)}\\right)`,
+          derivativeAtA: 1,
+          zeroDescription: `\\tan(0)=0`
+        };
+        if (trig === 'cos') return {
+          tex: `\\cos\\left(x ${a < 0 ? '+' : '-'} ${Math.abs(a)}+\\frac{\\pi}{2}\\right)`,
+          derivativeTex: `-\\sin\\left(x ${a < 0 ? '+' : '-'} ${Math.abs(a)}+\\frac{\\pi}{2}\\right)`,
+          derivativeAtA: -1,
+          zeroDescription: `\\cos\\left(\\frac{\\pi}{2}\\right)=0`
+        };
+        if (trig === 'cot') return {
+          tex: `\\cot\\left(x ${a < 0 ? '+' : '-'} ${Math.abs(a)}+\\frac{\\pi}{2}\\right)`,
+          derivativeTex: `-\\csc^2\\left(x ${a < 0 ? '+' : '-'} ${Math.abs(a)}+\\frac{\\pi}{2}\\right)`,
+          derivativeAtA: -1,
+          zeroDescription: `\\cot\\left(\\frac{\\pi}{2}\\right)=0`
+        };
+        if (trig === 'sec') return {
+          tex: `\\sec\\left(x ${a < 0 ? '+' : '-'} ${Math.abs(a)}\\right)-1`,
+          derivativeTex: `\\sec\\left(x ${a < 0 ? '+' : '-'} ${Math.abs(a)}\\right)\\tan\\left(x ${a < 0 ? '+' : '-'} ${Math.abs(a)}\\right)`,
+          derivativeAtA: 0,
+          secondDerivativeAtA: 1,
+          zeroDescription: `\\sec(0)-1=0`
+        };
+        return {
+          tex: `\\csc\\left(x ${a < 0 ? '+' : '-'} ${Math.abs(a)}+\\frac{\\pi}{2}\\right)-1`,
+          derivativeTex: `-\\csc\\left(x ${a < 0 ? '+' : '-'} ${Math.abs(a)}+\\frac{\\pi}{2}\\right)\\cot\\left(x ${a < 0 ? '+' : '-'} ${Math.abs(a)}+\\frac{\\pi}{2}\\right)`,
+          derivativeAtA: 0,
+          secondDerivativeAtA: 1,
+          zeroDescription: `\\csc\\left(\\frac{\\pi}{2}\\right)-1=0`
+        };
+      }
+      if (type === 5) {
+        const base = Math.random() < 0.5 ? 'e' : randomInteger(2, 9);
+        const shiftTex = `x ${a < 0 ? '+' : '-'} ${Math.abs(a)}`;
+        return {
+          tex: `${expTex(base, shiftTex)} - 1`,
+          derivativeTex: expDerivativeTex(base, shiftTex),
+          derivativeAtA: base === 'e' ? 1 : Math.log(base),
+          zeroDescription: `${expTex(base, '0')}-1=0`
+        };
+      }
+      const base = Math.random() < 0.5 ? 'e' : randomInteger(2, 9);
+      const shift = a - 1;
+      const innerTex = `x ${shift < 0 ? '+' : '-'} ${Math.abs(shift)}`;
+      return {
+        tex: logTex(base, innerTex),
+        derivativeTex: logDerivativeTex(base, innerTex),
+        derivativeAtA: base === 'e' ? 1 : 1 / Math.log(base),
+        zeroDescription: `${logTex(base, '1')}=0`
+      };
+    }
+
+    function lhopitalFiniteZeroHints(problemTex, numeratorTex, denominatorTex, numeratorDerivativeTex, denominatorDerivativeTex, limitData, answerEntry, indeterminateTex='\\frac{0}{0}') {
+      return [
+        `\\text{At }x=${limitData.limitTex}\\text{, the quotient has indeterminate form }${indeterminateTex}\\text{.}`,
+        `\\text{By L'Hôpital's Rule, differentiate the numerator and denominator.}`,
+        `\\lim_{x\\to ${limitData.limitTex}}f(x)=\\lim_{x\\to ${limitData.limitTex}}\\frac{${numeratorDerivativeTex}}{${denominatorDerivativeTex}}`,
+        `${answerEquationTexExtended(answerEntry)}`
+      ];
+    }
+
+    function generateType3FinitePolynomialZero() {
+      const polyType = Math.random() < 0.5 ? 2 : 3;
+      const otherType = randomChoice([4,5,6]);
+      let poly, a, rootTex, polyDerivativeValue;
+      if (polyType === 2) {
+        const data = randomLinearData();
+        poly = data.poly;
+        a = fractionToNumber(data.root);
+        rootTex = fractionToTex(data.root);
+        polyDerivativeValue = data.c;
+      } else {
+        const data = randomQuadraticData();
+        poly = data.poly;
+        a = randomChoice(data.roots);
+        rootTex = numberTex(a);
+        polyDerivativeValue = evaluatePolynomial(derivativePolynomial(poly), a);
+      }
+
+      const shifted = shiftedZeroFunctionForType(otherType, a);
+      const polyTex = polynomialToTex(poly);
+      const polyDerivTex = polynomialToTex(derivativePolynomial(poly));
+      let answerValue, numTex, denTex, numDerivTex, denDerivTex;
+      if (Math.random() < 0.5) {
+        numTex = polyTex; denTex = shifted.tex;
+        numDerivTex = polyDerivTex; denDerivTex = shifted.derivativeTex;
+        answerValue = shifted.derivativeAtA === 0
+          ? (shifted.secondDerivativeAtA ? 0 : NaN)
+          : polyDerivativeValue / shifted.derivativeAtA;
+      } else {
+        numTex = shifted.tex; denTex = polyTex;
+        numDerivTex = shifted.derivativeTex; denDerivTex = polyDerivTex;
+        answerValue = shifted.derivativeAtA / polyDerivativeValue;
+      }
+
+      const limitData = finiteLimitData(a);
+      const answerEntry = { labelTex: limitData.labelTex, answer: finiteAnswer(answerValue) };
+      const hints = [
+        `\\text{Both numerator and denominator approach }0\\text{ as }x\\to ${limitData.limitTex}\\text{, so this is an indeterminate form of type }\\frac{0}{0}.`,
+        `\\text{By L'Hôpital's Rule, differentiate the numerator and denominator.}`,
+        `\\lim_{x\\to ${limitData.limitTex}}f(x)=\\lim_{x\\to ${limitData.limitTex}}\\frac{${numDerivTex}}{${denDerivTex}}`,
+        `${answerEquationTexExtended(answerEntry)}`
+      ];
+
+      return {
+        type: 3,
+        questionTex: `f(x)=\\frac{${numTex}}{${denTex}}.\\quad \\text{Evaluate }${limitData.labelTex}.`,
+        answers: [answerEntry],
+        hints
+      };
+    }
+
+    function generateType3PolynomialInfinity() {
+      const poly = randomPolynomialAtLeastDegree3();
+      const otherType = randomChoice([4,5,6]);
+      const direction = otherType === 4 ? (Math.random() < 0.5 ? 'positive' : 'negative') : (Math.random() < 0.5 ? 'positive' : 'negative');
+      const data = directionData(direction);
+      const polyTex = polynomialToTex(poly);
+      let otherTex, answer, hints, otherDerivativeTex;
+      const polyInfty = polynomialEndBehaviour(poly, direction);
+      const polySign = polyInfty === 'infinity' ? 1 : -1;
+
+      if (otherType === 4) {
+        const trig = randomChoice(['sin','cos','tan']);
+        const polynomialInNumerator = Math.random() < 0.5;
+        otherTex = trigTex(trig);
+        answer = { kind: 'dne' };
+        hints = [
+          `\\text{As }x\\to ${data.limitTex}\\text{, the polynomial grows without bound, but }${trigTex(trig)}\\text{ does not approach a single infinite value.}`,
+          `\\text{This is not an indeterminate form where L'Hôpital's Rule is useful.}`,
+          `${data.labelTex}=\\text{DNE}`
+        ];
+        return {
+          type: 3,
+          questionTex: polynomialInNumerator
+            ? `f(x)=\\frac{${polyTex}}{${otherTex}}.\\quad \\text{Evaluate }${data.labelTex}.`
+            : `f(x)=\\frac{${otherTex}}{${polyTex}}.\\quad \\text{Evaluate }${data.labelTex}.`,
+          answers: [{ labelTex: data.labelTex, answer }],
+          hints
+        };
+      } else if (otherType === 5) {
+        const base = Math.random() < 0.5 ? 'e' : randomInteger(2,9);
+        otherTex = expTex(base, 'x^2');
+        otherDerivativeTex = expDerivativeTex(base, 'x^2', '2x');
+        answer = Math.random() < 0.5 ? { kind: 'finite', value: exactFraction(0,1), tex: '0' } : null;
+        const exponentialInNumerator = Math.random() < 0.5;
+        if (exponentialInNumerator) {
+          answer = infinityAnswerFromSign(polySign);
+          hints = [
+            `\\text{As }x\\to ${data.limitTex}\\text{, both numerator and denominator grow without bound, so this is an indeterminate form of type }\\frac{\\infty}{\\infty}.`,
+            `\\text{Apply L'Hôpital's Rule repeatedly until the polynomial has been differentiated enough times to become constant.}`,
+            `\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${otherDerivativeTex}}{${polynomialToTex(derivativePolynomial(poly))}}`,
+            `\\text{The exponential still grows faster than any remaining polynomial term.}`,
+            `${data.labelTex}=${answerObjectToTexExtended(answer)}`
+          ];
+          return {
+            type: 3,
+            questionTex: `f(x)=\\frac{${otherTex}}{${polyTex}}.\\quad \\text{Evaluate }${data.labelTex}.`,
+            answers: [{ labelTex: data.labelTex, answer }],
+            hints
+          };
+        }
+        answer = { kind: 'finite', value: exactFraction(0,1), tex: '0' };
+        hints = [
+          `\\text{As }x\\to ${data.limitTex}\\text{, both numerator and denominator grow without bound, so this is an indeterminate form of type }\\frac{\\infty}{\\infty}.`,
+          `\\text{Apply L'Hôpital's Rule repeatedly until the polynomial has been differentiated enough times to become constant.}`,
+          `\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${polynomialToTex(derivativePolynomial(poly))}}{${otherDerivativeTex}}`,
+          `\\text{The exponential still grows faster than any remaining polynomial term.}`,
+          `${data.labelTex}=0`
+        ];
+        return {
+          type: 3,
+          questionTex: `f(x)=\\frac{${polyTex}}{${otherTex}}.\\quad \\text{Evaluate }${data.labelTex}.`,
+          answers: [{ labelTex: data.labelTex, answer }],
+          hints
+        };
+      } else {
+        const base = Math.random() < 0.5 ? 'e' : randomInteger(2,9);
+        otherTex = logTex(base, 'x^2+1');
+        otherDerivativeTex = logDerivativeTex(base, 'x^2+1', '2x');
+        const logarithmInNumerator = Math.random() < 0.5;
+        if (logarithmInNumerator) {
+          answer = { kind: 'finite', value: exactFraction(0,1), tex: '0' };
+          hints = [
+            `\\text{As }x\\to ${data.limitTex}\\text{, both numerator and denominator grow without bound, so this is an indeterminate form of type }\\frac{\\infty}{\\infty}.`,
+            `\\text{Apply L'Hôpital's Rule.  Polynomial terms eventually dominate logarithmic growth.}`,
+            `\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${otherDerivativeTex}}{${polynomialToTex(derivativePolynomial(poly))}}`,
+            `${data.labelTex}=0`
+          ];
+          return {
+            type: 3,
+            questionTex: `f(x)=\\frac{${otherTex}}{${polyTex}}.\\quad \\text{Evaluate }${data.labelTex}.`,
+            answers: [{ labelTex: data.labelTex, answer }],
+            hints
+          };
+        }
+        answer = infinityAnswerFromSign(polySign);
+        hints = [
+          `\\text{As }x\\to ${data.limitTex}\\text{, both numerator and denominator grow without bound, so this is an indeterminate form of type }\\frac{\\infty}{\\infty}.`,
+          `\\text{Apply L'Hôpital's Rule.  Polynomial terms eventually dominate logarithmic growth.}`,
+          `\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${polynomialToTex(derivativePolynomial(poly))}}{${otherDerivativeTex}}`,
+          `${data.labelTex}=${answerObjectToTexExtended(answer)}`
+        ];
+        return {
+          type: 3,
+          questionTex: `f(x)=\\frac{${polyTex}}{${otherTex}}.\\quad \\text{Evaluate }${data.labelTex}.`,
+          answers: [{ labelTex: data.labelTex, answer }],
+          hints
+        };
+      }
+    }
+
+    function generateType3TrigBased() {
+      const templates = [
+        {
+          texA: '\\sin(x)', texB: '\\ln(x+1)', limitTex: '0', answerValue: 1,
+          derivA: '\\cos(x)', derivB: '\\frac{1}{x+1}', form: '\\frac{0}{0}'
+        },
+        {
+          texA: '\\tan(x)', texB: 'e^x-1', limitTex: '0', answerValue: 1,
+          derivA: '\\sec^2(x)', derivB: 'e^x', form: '\\frac{0}{0}'
+        },
+        {
+          texA: '\\cos(x)-1', texB: '\\sin^2(x)', limitTex: '0', answerValue: -0.5,
+          derivA: '-\\sin(x)', derivB: '2\\sin(x)\\cos(x)', form: '\\frac{0}{0}', second: true
+        },
+        {
+          texA: '\\sec(x)', texB: '-\\ln\\left(\\frac{\\pi}{2}-x\\right)', limitTex: '\\left(\\frac{\\pi}{2}\\right)^-', answerValue: 1,
+          derivA: '\\sec(x)\\tan(x)', derivB: '\\frac{1}{\\frac{\\pi}{2}-x}', form: '\\frac{\\infty}{\\infty}'
+        },
+        {
+          texA: '\\csc(x)', texB: '\\frac{1}{x}', limitTex: '0^+', answerValue: 1,
+          derivA: '-\\csc(x)\\cot(x)', derivB: '-\\frac{1}{x^2}', form: '\\frac{\\infty}{\\infty}'
+        }
+      ];
+      const t = randomChoice(templates);
+      const flip = Math.random() < 0.5;
+      const numTex = flip ? t.texB : t.texA;
+      const denTex = flip ? t.texA : t.texB;
+      const numDeriv = flip ? t.derivB : t.derivA;
+      const denDeriv = flip ? t.derivA : t.derivB;
+      const answerValue = flip ? 1 / t.answerValue : t.answerValue;
+      const labelTex = `\\lim_{x \\to ${t.limitTex}}f(x)`;
+      const answerEntry = { labelTex, answer: finiteAnswer(answerValue) };
+      const hints = [
+        `\\text{This quotient has indeterminate form }${t.form}\\text{.}`,
+        `\\text{Apply L'Hôpital's Rule by differentiating numerator and denominator.}`,
+        `\\lim_{x\\to ${t.limitTex}}f(x)=\\lim_{x\\to ${t.limitTex}}\\frac{${numDeriv}}{${denDeriv}}`,
+        t.second ? `\\text{This still has form }\\frac{0}{0}\\text{, so apply L'Hôpital's Rule once more.}` : `\\text{Now evaluate the resulting limit.}`,
+        `${answerEquationTexExtended(answerEntry)}`
+      ];
+      return {
+        type: 3,
+        questionTex: `f(x)=\\frac{${numTex}}{${denTex}}.\\quad \\text{Evaluate }${labelTex}.`,
+        answers: [answerEntry],
+        hints
+      };
+    }
+
+    function generateSimpleIndeterminateQuotientProblem() {
+      // Weighted subcases reflecting the requested logic, with conservative domain choices.
+      const r = Math.random();
+      if (r < 0.45) return generateType3FinitePolynomialZero();
+      if (r < 0.78) return generateType3PolynomialInfinity();
+      return generateType3TrigBased();
+    }
+
+
     function generateLimitProblem() {
-      return Math.random() < 0.5 ? generateType3LimitProblem() : generateType5LimitProblem();
+      const r = Math.random();
+      if (r < 0.05) return generateRenamedType1LimitProblem();
+      if (r < 0.10) return generateRenamedType2LimitProblem();
+      return generateSimpleIndeterminateQuotientProblem();
     }
 
     function createHintStepBlock(extraClass = '') {

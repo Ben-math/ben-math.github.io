@@ -286,7 +286,16 @@ fetch("/nav.html")
     \(\frac{\infty}{\infty}\), and differentiated repeatedly: \[\lim_{x \to \infty}\frac{6x^4 - 9}{2x^4 + 1000x^3 + 3000} = 
     \lim_{x \to \infty}\frac{24x^3}{8x^3 + 3000x^2} = \lim_{x \to \infty}\frac{72x^2}{24x^2} = \lim_{x \to \infty}\frac{72}{24} = 3\] Once we've learned 
     L'Hôpital's Rule, it can be tempting to treat it as a sledgehammer that we want to use on <i>every</i> limit we encounter.  However, we must be 
-    cautious of two things: </p>
+    cautious of two things: <ul>
+      <li>Make sure that we have an indeterminate form, otherwise L'Hôpital's Rule can't be applied.</li>
+      <li>Sometimes, even if L'Hôpital's Rule <b>can</b> be applied, it doesn't necessarily mean it will help.</li>
+    </ul> On the first point, you might glance at \[\lim_{x \to 0^+}\frac{\ln x}{x}\] and think to apply L'Hôpital's Rule.  However, as \(x \to 0^+\), 
+    the numerator \(\ln x \to -\infty\), and the denominator \(x \to 0^+\).  The fraction \(\frac{-\infty}{0}\) is not an indeterminate form.  A very 
+    large negative number divided by a very small positive number is a very large negative number.  So we immediately see that 
+    \[\lim_{x \to 0^+}\frac{\ln x}{x} = -\infty\] without needing to apply L'Hôpital's Rule.</p>
+
+    <p>On the second point, consider the following attempt to evaluate a limit, which is an indeterminate form of type \(\frac{\infty}{\infty}\): 
+    </p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -39,6 +40,52 @@
       line-height: 1;
     }
 
+
+
+    .subscript-entry {
+      font-size: 0.7em;
+      vertical-align: sub;
+      display: inline-block;
+      min-width: 0.7em;
+      min-height: 1em;
+      padding: 0 0.08em;
+      border-bottom: 1px solid #777;
+      line-height: 1;
+    }
+
+    .log-entry {
+      display: inline-flex;
+      align-items: baseline;
+      vertical-align: middle;
+      margin: 0 0.08em;
+      white-space: nowrap;
+      gap: 0;
+    }
+
+    .log-label {
+      display: inline-block;
+    }
+
+    .log-base-entry {
+      font-size: 0.7em;
+      vertical-align: sub;
+      display: inline-block;
+      min-width: 0.7em;
+      min-height: 1em;
+      padding: 0;
+      border-bottom: 1px solid #777;
+      line-height: 1;
+      align-self: flex-end;
+      margin-right: 0;
+    }
+
+    .log-argument-entry {
+      display: inline-block;
+      min-width: 0.7em;
+      min-height: 1.1em;
+      padding: 0;
+      margin-left: 0;
+    }
 
     .answer-toolbar {
       margin-top: 0.65em;
@@ -936,8 +983,52 @@ fetch("/nav.html")
       return hints;
     }
 
+
+    function derivativePolynomial(poly) {
+      return combineLikeTerms(poly
+        .filter(term => term.power > 0)
+        .map(term => makeTerm(term.coefficient * term.power, term.power - 1)));
+    }
+
+    function derivativeExponentialExpressionToTex(terms, baseTex) {
+      const sorted = [...terms].sort((a, b) => b.power - a.power);
+      return sorted.map((term, index) => {
+        const coefficient = term.coefficient * term.power;
+        const absCoefficient = Math.abs(coefficient);
+        let body;
+        if (baseTex === 'e') {
+          const coefficientTex = absCoefficient === 1 ? '' : `${absCoefficient}\\cdot `;
+          body = `${coefficientTex}e^{${term.power === 1 ? 'x' : `${term.power}x`}}`;
+        } else {
+          const coefficientTex = absCoefficient === 1 ? '' : `${absCoefficient}\\cdot `;
+          body = `${coefficientTex}\\ln(${baseTex})\\cdot ${baseTex}^{${term.power === 1 ? 'x' : `${term.power}x`}}`;
+        }
+        if (coefficient < 0) return index === 0 ? `-${body}` : `- ${body}`;
+        return index === 0 ? body : `+ ${body}`;
+      }).join(' ');
+    }
+
     function type3Hints(numerator, denominator, answers) {
-      return rationalDivisionHints(numerator, denominator, answers);
+      const originalHints = rationalDivisionHints(numerator, denominator, answers);
+      const hints = [];
+      let currentNumerator = numerator;
+      let currentDenominator = denominator;
+
+      hints.push(`\\text{As }x\\to\\infty\\text{ or }x\\to-\\infty\\text{, this is an indeterminate form of type }\\frac{\\infty}{\\infty}\\text{, so we can apply L'Hôpital's Rule.}`);
+
+      let lhopitalStep = 0;
+      while (degreeOfPolynomial(currentNumerator) > 0 && degreeOfPolynomial(currentDenominator) > 0 && lhopitalStep < 12) {
+        currentNumerator = derivativePolynomial(currentNumerator);
+        currentDenominator = derivativePolynomial(currentDenominator);
+        lhopitalStep++;
+        hints.push(`\\lim_{x\\to\\infty}f(x)=\\lim_{x\\to\\infty}\\frac{${polynomialToTex(currentNumerator)}}{${polynomialToTex(currentDenominator)}}\\quad\\text{and}\\quad \\lim_{x\\to-\\infty}f(x)=\\lim_{x\\to-\\infty}\\frac{${polynomialToTex(currentNumerator)}}{${polynomialToTex(currentDenominator)}}`);
+      }
+
+      hints.push(`\\text{Now one of the numerator/denominator is constant, so evaluate the remaining limit directly.}`);
+      hints.push(`${answerListTexExtended(answers)}`);
+      hints.push(`\\text{Alternate solution: use the older end-behaviour method.}`);
+      hints.push(...originalHints);
+      return hints;
     }
 
     function type4Hints(trigName, numerator, denominator, piScale, leftInner, rightInner, answers) {
@@ -1040,6 +1131,12 @@ fetch("/nav.html")
     function type5Hints(baseTex, numerator, denominator, numDegree, denDegree, answers) {
       const divisorPower = Math.min(numDegree, denDegree);
       const hints = [];
+
+      hints.push(`\\text{As }x\\to\\infty\\text{, this is an indeterminate form of type }\\frac{\\infty}{\\infty}\\text{, so try one application of L'Hôpital's Rule.}`);
+      hints.push(`\\lim_{x\\to\\infty}f(x)=\\lim_{x\\to\\infty}\\frac{${derivativeExponentialExpressionToTex(numerator, baseTex)}}{${derivativeExponentialExpressionToTex(denominator, baseTex)}}`);
+      hints.push(`\\text{The quotient still has competing exponential terms, so L'Hôpital's Rule has not really simplified the problem.}`);
+      hints.push(`\\text{Instead, use the exponential end-behaviour strategy.}`);
+
       if (numDegree === denDegree) {
         hints.push(`\\text{The numerator and denominator have the same exponential degree }${numDegree}\\text{, so we divide every term by }${exponentialPowerTex(baseTex, divisorPower)}.`);
       } else {
@@ -1576,13 +1673,7 @@ fetch("/nav.html")
 
 
     function generateLimitProblem() {
-      const r = Math.random();
-      if (r < 0.10) return generateType1LimitProblem();
-      if (r < 0.20) return generateType2LimitProblem();
-      if (r < 0.50) return generateType3LimitProblem();
-      if (r < 0.70) return generateType4LimitProblem();
-      if (r < 0.80) return generateType5LimitProblem();
-      return generateType6LimitProblem();
+      return Math.random() < 0.5 ? generateType3LimitProblem() : generateType5LimitProblem();
     }
 
     function createHintStepBlock(extraClass = '') {
@@ -1668,6 +1759,10 @@ fetch("/nav.html")
           target.focus();
           if (button.dataset.insertText !== undefined) insertTextAtSelection(button.dataset.insertText, target);
           else if (button.dataset.insertFraction) insertFractionAtSelection(target);
+          else if (button.dataset.insertExponent) insertExponentAtSelection(target);
+          else if (button.dataset.insertSubscript) insertSubscriptAtSelection(target);
+          else if (button.dataset.insertRadical) insertRadicalAtSelection(target);
+          else if (button.dataset.insertLog) insertLogAtSelection(target);
         });
       });
 
@@ -1678,10 +1773,26 @@ fetch("/nav.html")
     function answerToolbarHtml() {
       return `
         <div class="answer-toolbar" aria-label="Math input buttons">
+          <button type="button" class="math-symbol-button" data-insert-text="x">x</button>
+          <button type="button" class="math-symbol-button" data-insert-text="e">e</button>
+          <button type="button" class="math-symbol-button" data-insert-text="ln(">ln</button>
+          <button type="button" class="math-symbol-button" data-insert-log="true">log<sub>□</sub>(</button>
+          <button type="button" class="math-symbol-button" data-insert-text="π">π</button>
+          <button type="button" class="math-symbol-button" data-insert-text="sin(">sin</button>
+          <button type="button" class="math-symbol-button" data-insert-text="cos(">cos</button>
+          <button type="button" class="math-symbol-button" data-insert-text="tan(">tan</button>
+          <button type="button" class="math-symbol-button" data-insert-text="sec(">sec</button>
+          <button type="button" class="math-symbol-button" data-insert-text="csc(">csc</button>
+          <button type="button" class="math-symbol-button" data-insert-text="cot(">cot</button>
+          <button type="button" class="math-symbol-button" data-insert-exponent="true">x<sup>□</sup></button>
+          <button type="button" class="math-symbol-button" data-insert-subscript="true">x<sub>□</sub></button>
+          <button type="button" class="math-symbol-button" data-insert-radical="true">√</button>
+          <button type="button" class="math-symbol-button" data-insert-fraction="true"><span class="fraction-button-display"><span class="fraction-button-top">a</span><span class="fraction-button-bottom">b</span></span></button>
           <button type="button" class="math-symbol-button" data-insert-text="/">/</button>
           <button type="button" class="math-symbol-button" data-insert-text="∞">∞</button>
           <button type="button" class="math-symbol-button" data-insert-text="DNE">DNE</button>
-          <button type="button" class="math-symbol-button" data-insert-fraction="true"><span class="fraction-button-display"><span class="fraction-button-top">a</span><span class="fraction-button-bottom">b</span></span></button>
+          <button type="button" class="math-symbol-button" data-insert-text="(">(</button>
+          <button type="button" class="math-symbol-button" data-insert-text=")">)</button>
         </div>
       `;
     }
@@ -1752,12 +1863,51 @@ fetch("/nav.html")
       input.focus();
     }
 
+
+    function removePreviousSpecialWrapperAtCaret() {
+      const selection = window.getSelection();
+      if (!selection.rangeCount || !selection.getRangeAt(0).collapsed) return false;
+      const range = selection.getRangeAt(0);
+      let previous = null;
+      if (range.startContainer.nodeType === Node.TEXT_NODE) {
+        if (range.startOffset > 0 && range.startContainer.textContent.slice(0, range.startOffset).replace(/\u200b/g, '') !== '') return false;
+        previous = range.startContainer.previousSibling;
+      } else if (range.startOffset > 0) {
+        previous = range.startContainer.childNodes[range.startOffset - 1];
+      }
+      while (previous && previous.nodeType === Node.TEXT_NODE && previous.textContent.replace(/\u200b/g, '') === '') previous = previous.previousSibling;
+      if (previous && previous.nodeType === Node.ELEMENT_NODE && previous.classList.contains('special-wrapper')) {
+        previous.remove();
+        return true;
+      }
+      return false;
+    }
+
     function handleMathEditorKeydown(event) {
       activeMathEditor = event.currentTarget;
+
       if (event.key === 'Enter') {
         event.preventDefault();
         return;
       }
+
+      if (event.key === '^') {
+        event.preventDefault();
+        insertExponentAtSelection(activeMathEditor);
+        return;
+      }
+
+      if (event.key === '_') {
+        event.preventDefault();
+        insertSubscriptAtSelection(activeMathEditor);
+        return;
+      }
+
+      if (event.key === 'Backspace' && removePreviousSpecialWrapperAtCaret()) {
+        event.preventDefault();
+        return;
+      }
+
       if (event.key === 'ArrowRight') {
         const specialBox = getContainingSpecialEntry(getSelectionStartNode());
         if (specialBox) {
@@ -1803,6 +1953,54 @@ fetch("/nav.html")
       range.insertNode(wrapper);
       placeCaretInside(wrapper.querySelector('.fraction-numerator'));
     }
+
+    function insertExponentAtSelection(editor) {
+      const range = ensureSelectionInsideEditor(editor);
+      range.deleteContents();
+      const exponent = document.createElement('span');
+      exponent.className = 'exponent-entry special-wrapper special-entry';
+      exponent.setAttribute('data-special-wrapper', 'exponent');
+      exponent.setAttribute('data-special-entry', 'exponent');
+      exponent.contentEditable = 'true';
+      range.insertNode(exponent);
+      placeCaretInside(exponent);
+    }
+
+    function insertSubscriptAtSelection(editor) {
+      const range = ensureSelectionInsideEditor(editor);
+      range.deleteContents();
+      const subscript = document.createElement('span');
+      subscript.className = 'subscript-entry special-wrapper special-entry';
+      subscript.setAttribute('data-special-wrapper', 'subscript');
+      subscript.setAttribute('data-special-entry', 'subscript');
+      subscript.contentEditable = 'true';
+      range.insertNode(subscript);
+      placeCaretInside(subscript);
+    }
+
+    function insertRadicalAtSelection(editor) {
+      const range = ensureSelectionInsideEditor(editor);
+      range.deleteContents();
+      const wrapper = document.createElement('span');
+      wrapper.className = 'math-radical special-wrapper';
+      wrapper.setAttribute('data-special-wrapper', 'radical');
+      wrapper.innerHTML = '<span class="radical-symbol">√</span><span class="radical-entry special-entry" contenteditable="true" data-special-entry="radical"></span>';
+      range.insertNode(wrapper);
+      placeCaretInside(wrapper.querySelector('.radical-entry'));
+    }
+
+    function insertLogAtSelection(editor) {
+      const range = ensureSelectionInsideEditor(editor);
+      range.deleteContents();
+      const wrapper = document.createElement('span');
+      wrapper.className = 'log-entry special-wrapper';
+      wrapper.setAttribute('data-special-wrapper', 'log');
+      wrapper.innerHTML = '<span class="log-label">log</span><span class="log-base-entry special-entry" contenteditable="true" data-special-entry="log-base"></span><span>(</span><span class="log-argument-entry special-entry" contenteditable="true" data-special-entry="log-argument"></span><span>)</span>';
+      range.insertNode(wrapper);
+      placeCaretInside(wrapper.querySelector('.log-base-entry'));
+    }
+
+
 
     function getSelectionStartNode() {
       const selection = window.getSelection();
@@ -1891,6 +2089,10 @@ fetch("/nav.html")
         if (node.nodeType === Node.TEXT_NODE) return node.textContent.replace(/\u200b/g, '');
         if (node.nodeType !== Node.ELEMENT_NODE) return '';
         if (node.matches && node.matches('.fraction-entry')) return `(${walk(node.querySelector('.fraction-numerator'))})/(${walk(node.querySelector('.fraction-denominator'))})`;
+        if (node.matches && node.matches('.math-radical')) return `sqrt(${walk(node.querySelector('.radical-entry'))})`;
+        if (node.matches && node.matches('.exponent-entry')) return `**(${Array.from(node.childNodes).map(walk).join('')})`;
+        if (node.matches && node.matches('.subscript-entry')) return `_{${Array.from(node.childNodes).map(walk).join('')}}`;
+        if (node.matches && node.matches('.log-entry')) return `log(${walk(node.querySelector('.log-base-entry'))},${walk(node.querySelector('.log-argument-entry'))})`;
         return Array.from(node.childNodes).map(walk).join('');
       }
       return Array.from(editor.childNodes).map(walk).join('').trim();
@@ -1916,6 +2118,7 @@ fetch("/nav.html")
         .replace(/\u200b/g, '')
         .replace(/−/g, '-')
         .replace(/∞/g, 'infty')
+        .replace(/π/g, 'pi')
         .replace(/\\infty/g, 'infty')
         .replace(/\s+/g, '')
         .replace(/^=/, '')

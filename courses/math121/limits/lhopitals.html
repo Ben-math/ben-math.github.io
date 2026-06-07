@@ -303,7 +303,14 @@ fetch("/nav.html")
     Rule.  However, this problem <b>can</b> be solved by our more elementary strategy of dividing the numerator and denominator by the higher power in the 
     smallest degree of the two (in this case, by \(x\)): \[\lim_{x \to \infty}\frac{\sqrt{2x^2+5}}{3x-6} = \lim_{x \to \infty}
     \frac{\frac{1}{x}\sqrt{2x^2+5}}{\frac{3x}{x}-\frac{6}{x}} = \lim_{x \to \infty}\frac{\sqrt{\frac{2x^2}{x^2}+\frac{5}{x^2}}}{3 - \frac{6}{x}} = 
-    \lim_{x \to \infty}\frac{\sqrt{2 + \frac{5}{x^2}}}{3 - \frac{6}{x}} = \frac{\sqrt{2 - 0}}{3 - 0} = \frac{\sqrt{2}}{3}\]</p>
+    \lim_{x \to \infty}\frac{\sqrt{2 + \frac{5}{x^2}}}{3 - \frac{6}{x}} = \frac{\sqrt{2 - 0}}{3 - 0} = \frac{\sqrt{2}}{3}\] It can sometimes be difficult 
+    to tell "when to stop" (i.e., when do we recognize whether or not applying L'Hôpital's Rule repeatedly is helping?).  Answering the question 
+    "are we in a better position than we were in before?" is a skill that largely comes with the experience of evaluating many limits.  For instance, 
+    consider the following: \[\lim_{x \to \infty}\frac{5^x}{4^x} = \lim_{x \to \infty}\frac{5^x \cdot \ln 5}{4^x \cdot \ln 4} = \frac{\ln 5}{\ln 4}
+    \lim_{x \to \infty}\frac{5^x}{4^x} > \lim_{x \to \infty}\frac{5^x}{4^x} \hspace{1cm} \text{ since } \frac{\ln 5}{\ln 4} > 1\] That last step is the 
+    tricky part: recognizing that we have gotten something larger than we started with after applying L'Hôpital's Rule, and that this would continue to 
+    happen with repeated applications.  And so, \[\lim_{x \to \infty}\frac{5^x}{4^x} = \infty\] (which you might have guessed to begin with, since the base 
+    in the numerator is larger than that in the denominator).</p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

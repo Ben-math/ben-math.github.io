@@ -324,6 +324,11 @@ fetch("/nav.html")
     progress taking this approach.  There comes a point where we must recognize that applying L'Hôpital's Rule has not improved our position (in fact it 
     has worsened it here), and so we must backtrack and try the other avenue.</p>
 
+    <p>Next, indeterminate differences: those of the form \(\infty - \infty\).  We handle these similarly - observe in the following we combine fractions 
+    with a common denominator to obtain an indeterminate form of type \(\frac{0}{0}\): \[\lim_{x \to \left(\frac{\pi}{2}\right)^-}
+    \sec x - \tan x = \lim_{x \to \left(\frac{\pi}{2}\right)^-}\left(\frac{1}{\cos x}-\frac{\sin x}{\cos x}\right) = 
+    \lim_{x \to \left(\frac{\pi}{2}\right)^-}\frac{1 - \sin x}{\cos x} = \lim_{x \to \left(\frac{\pi}{2}\right)^-}\frac{-\cos x}{- \sin x}\]</p>
+
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>

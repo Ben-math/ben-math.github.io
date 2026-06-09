@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1850,9 +1851,10 @@ fetch("/nav.html")
 
     function logDerivativeTex(base, innerTex = 'x', innerPrimeTex = '1') {
       const numerator = innerPrimeTex === '1' ? '1' : innerPrimeTex;
+      const denominatorInner = innerTex === 'x' ? 'x' : `\\left(${innerTex}\\right)`;
       return base === 'e'
-        ? `\\frac{${numerator}}{${innerTex}}`
-        : `\\frac{${numerator}}{${innerTex}\\ln(${base})}`;
+        ? `\\frac{${numerator}}{${denominatorInner}}`
+        : `\\frac{${numerator}}{${denominatorInner}\\ln(${base})}`;
     }
 
     function finiteAnswer(value) {
@@ -2005,8 +2007,8 @@ fetch("/nav.html")
         ? `\\frac{\\cos\\left(${innerTex}\\right)}{x^2\\sin^2\\left(${innerTex}\\right)}`
         : `\\frac{1}{x^2\\sin^2\\left(${innerTex}\\right)}`;
       const simplifiedAfterDivisionTex = trig === 'csc'
-        ? `${polyPrimeTex}\\cdot \\frac{x^2\\sin^2\\left(${innerTex}\\right)}{\\cos\\left(${innerTex}\\right)}`
-        : `${polyPrimeTex}\\cdot x^2\\sin^2\\left(${innerTex}\\right)`;
+        ? `\\left(\\left(${polyPrimeTex}\\right)\\cdot \\frac{x^2\\sin^2\\left(${innerTex}\\right)}{\\cos\\left(${innerTex}\\right)}\\right)`
+        : `\\left(\\left(${polyPrimeTex}\\right)\\cdot x^2\\sin^2\\left(${innerTex}\\right)\\right)`;
       const reciprocalOverPolyTex = trig === 'csc'
         ? `\\frac{\\cos\\left(${innerTex}\\right)}{x^2\\sin^2\\left(${innerTex}\\right)\\left(${polyPrimeTex}\\right)}`
         : `\\frac{1}{x^2\\sin^2\\left(${innerTex}\\right)\\left(${polyPrimeTex}\\right)}`;

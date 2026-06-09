@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -335,8 +336,6 @@ fetch("/nav.html")
     let currentProblem = null;
     let hintStep = 0;
     let mathJaxTypesetPromise = Promise.resolve();
-    let hintIsTypesetting = false;
-    let activeMathEditor = null;
 
     function typesetElement(element) {
       if (!window.MathJax || !MathJax.typesetPromise) {
@@ -359,10 +358,6 @@ fetch("/nav.html")
       return n;
     }
 
-    function randomPositiveInteger(min, max) {
-      return randomInteger(Math.max(1, min), max);
-    }
-
     function randomChoice(items) {
       return items[randomInteger(0, items.length - 1)];
     }
@@ -378,32 +373,6 @@ fetch("/nav.html")
       return a || 1;
     }
 
-    function numberTex(value) {
-      if (Object.is(value, -0)) value = 0;
-      if (!Number.isFinite(value)) return value > 0 ? '\\infty' : '-\\infty';
-      const rounded = Math.round(value);
-      if (Math.abs(value - rounded) < 1e-10) return `${rounded}`;
-
-      const sign = value < 0 ? -1 : 1;
-      let bestNum = 0;
-      let bestDen = 1;
-      let bestErr = Infinity;
-      const abs = Math.abs(value);
-      for (let den = 1; den <= 1000; den++) {
-        const num = Math.round(abs * den);
-        const err = Math.abs(abs - num / den);
-        if (err < bestErr) {
-          bestErr = err;
-          bestNum = num;
-          bestDen = den;
-        }
-      }
-      const d = gcd(bestNum, bestDen);
-      bestNum = sign * bestNum / d;
-      bestDen = bestDen / d;
-      return bestDen === 1 ? `${bestNum}` : `\\frac{${bestNum}}{${bestDen}}`;
-    }
-
     function exactFraction(num, den = 1) {
       if (den < 0) { num = -num; den = -den; }
       if (num === 0) return { num: 0, den: 1 };
@@ -411,8 +380,20 @@ fetch("/nav.html")
       return { num: num / d, den: den / d };
     }
 
-    function fractionToNumber(frac) {
-      return frac.num / frac.den;
+    function numberTex(value) {
+      if (Object.is(value, -0)) value = 0;
+      const rounded = Math.round(value);
+      if (Math.abs(value - rounded) < 1e-10) return `${rounded}`;
+      const sign = value < 0 ? -1 : 1;
+      const abs = Math.abs(value);
+      let bestNum = 0, bestDen = 1, bestErr = Infinity;
+      for (let den = 1; den <= 144; den++) {
+        const num = Math.round(abs * den);
+        const err = Math.abs(abs - num / den);
+        if (err < bestErr) { bestNum = num; bestDen = den; bestErr = err; }
+      }
+      const f = exactFraction(sign * bestNum, bestDen);
+      return f.den === 1 ? `${f.num}` : `\\frac{${f.num}}{${f.den}}`;
     }
 
     function fractionToTex(frac) {
@@ -421,258 +402,8 @@ fetch("/nav.html")
       return `\\frac{${f.num}}{${f.den}}`;
     }
 
-    function makeTerm(coefficient, power = 0) {
-      return { coefficient, power };
-    }
-
-    function combineLikeTerms(poly) {
-      const byPower = new Map();
-      poly.forEach(term => {
-        if (term.coefficient === 0) return;
-        byPower.set(term.power, (byPower.get(term.power) || 0) + term.coefficient);
-      });
-      return Array.from(byPower.entries())
-        .map(([power, coefficient]) => ({ power: Number(power), coefficient }))
-        .filter(term => term.coefficient !== 0)
-        .sort((a, b) => b.power - a.power);
-    }
-
-    function addPolynomials(a, b) {
-      return combineLikeTerms([...a, ...b]);
-    }
-
-    function scalePolynomial(poly, scalar) {
-      return combineLikeTerms(poly.map(term => ({ coefficient: term.coefficient * scalar, power: term.power })));
-    }
-
-    function subtractPolynomials(a, b) {
-      return addPolynomials(a, scalePolynomial(b, -1));
-    }
-
-    function multiplyPolynomials(a, b) {
-      const terms = [];
-      a.forEach(A => {
-        b.forEach(B => {
-          terms.push({ coefficient: A.coefficient * B.coefficient, power: A.power + B.power });
-        });
-      });
-      return combineLikeTerms(terms);
-    }
-
-    function polynomialFromConstant(c) {
-      return c === 0 ? [] : [makeTerm(c, 0)];
-    }
-
-    function polynomialFromAxPlusC(a, c) {
-      return combineLikeTerms([makeTerm(a, 1), makeTerm(c, 0)]);
-    }
-
-    function polynomialFromRoot(root) {
-      return combineLikeTerms([makeTerm(1, 1), makeTerm(-root, 0)]);
-    }
-
-    function polynomialFromPlusRoot(root) {
-      return combineLikeTerms([makeTerm(1, 1), makeTerm(root, 0)]);
-    }
-
-    function evaluatePolynomial(poly, x) {
-      return combineLikeTerms(poly).reduce((sum, term) => sum + term.coefficient * Math.pow(x, term.power), 0);
-    }
-
-    function termToTex(term, options = {}) {
-      const { omitLeadingPlus = false, forceSign = false } = options;
-      const coefficient = term.coefficient;
-      const absCoefficient = Math.abs(coefficient);
-      const power = term.power;
-
-      let variablePart = '';
-      if (power === 1) variablePart = 'x';
-      else if (power !== 0) variablePart = `x^{${power}}`;
-
-      let body;
-      if (variablePart === '') body = `${absCoefficient}`;
-      else if (absCoefficient === 1) body = variablePart;
-      else body = `${absCoefficient}${variablePart}`;
-
-      if (coefficient < 0) return `- ${body}`;
-      if (forceSign || !omitLeadingPlus) return `+ ${body}`;
-      return body;
-    }
-
-    function polynomialToTex(poly) {
-      const combined = combineLikeTerms(poly);
-      if (!combined.length) return '0';
-      return combined.map((term, index) => termToTex(term, {
-        omitLeadingPlus: index === 0,
-        forceSign: index > 0
-      })).join(' ');
-    }
-
-    function linearFactorTex(root) {
-      if (root === 0) return 'x';
-      return `(x ${root < 0 ? '+ ' + Math.abs(root) : '- ' + root})`;
-    }
-
-    function plusLinearFactorTex(root) {
-      if (root === 0) return 'x';
-      return `(x ${root < 0 ? '- ' + Math.abs(root) : '+ ' + root})`;
-    }
-
-    function rationalFunctionTex(num, den) {
-      return `\\frac{${polynomialToTex(num)}}{${polynomialToTex(den)}}`;
-    }
-
-    function denominatorXPlusTex(n) {
-      if (n === 0) return 'x';
-      return `x ${n < 0 ? '- ' + Math.abs(n) : '+ ' + n}`;
-    }
-
-    function radicandLinearTex(a, c) {
-      return polynomialToTex(polynomialFromAxPlusC(a, c));
-    }
-
-    function radicandQuadraticTex(c) {
-      return polynomialToTex(combineLikeTerms([makeTerm(1, 2), makeTerm(c, 0)]));
-    }
-
-    function degreeOfPolynomial(poly) {
-      const combined = combineLikeTerms(poly);
-      return combined.length ? combined[0].power : -Infinity;
-    }
-
-    function leadingCoefficient(poly) {
-      const combined = combineLikeTerms(poly);
-      return combined.length ? combined[0].coefficient : 0;
-    }
-
-    function hasRoot(poly, root) {
-      return Math.abs(evaluatePolynomial(poly, root)) < 1e-10;
-    }
-
-    function multiplyByScalarCoefficient(poly, scalarTex, scalarValue = 1) {
-      return {
-        poly,
-        scalarTex,
-        scalarValue
-      };
-    }
-
-    function coefficientToTex(coefficient, isLeading, variablePart) {
-      const sign = coefficient < 0 ? '-' : (isLeading ? '' : '+');
-      const absCoefficient = Math.abs(coefficient);
-      let body = '';
-      if (!variablePart) body = `${absCoefficient}`;
-      else if (absCoefficient === 1) body = variablePart;
-      else body = `${absCoefficient}${variablePart}`;
-      if (sign === '-') return isLeading ? `-${body}` : `- ${body}`;
-      if (sign === '+') return `+ ${body}`;
-      return body;
-    }
-
-    function polynomialToTexWithPi(poly, piScale) {
-      const combined = combineLikeTerms(poly);
-      if (!combined.length) return '0';
-      return combined.map((term, index) => {
-        const coeff = term.coefficient;
-        const absCoeff = Math.abs(coeff);
-        let variablePart = '';
-        if (term.power === 1) variablePart = 'x';
-        else if (term.power !== 0) variablePart = `x^{${term.power}}`;
-
-        let body;
-        if (index === 0 && piScale && term.power === degreeOfPolynomial(poly)) {
-          const scale = exactFraction(piScale.num * absCoeff, piScale.den);
-          const piCoeff = scale.num === scale.den ? '\\pi' : scale.den === 1 ? `${scale.num}\\pi` : `\\frac{${scale.num}\\pi}{${scale.den}}`;
-          body = variablePart ? `${piCoeff}\\,${variablePart}` : piCoeff;
-        } else if (!variablePart) body = `${absCoeff}`;
-        else if (absCoeff === 1) body = variablePart;
-        else body = `${absCoeff}${variablePart}`;
-
-        if (coeff < 0) return index === 0 ? `-${body}` : `- ${body}`;
-        return index === 0 ? body : `+ ${body}`;
-      }).join(' ');
-    }
-
-    function randomPolynomialExactDegree(degree, minTerms = 1, maxTerms = Math.min(5, degree + 1)) {
-      const possiblePowers = Array.from({ length: degree + 1 }, (_, i) => i);
-      const chosenPowers = [degree];
-      const remaining = possiblePowers.filter(power => power !== degree);
-      const termCount = Math.min(randomInteger(minTerms, maxTerms), degree + 1);
-      while (chosenPowers.length < termCount && remaining.length) {
-        const index = randomInteger(0, remaining.length - 1);
-        chosenPowers.push(remaining.splice(index, 1)[0]);
-      }
-      return combineLikeTerms(chosenPowers.map(power => makeTerm(randomNonzeroInteger(-10, 10), power)));
-    }
-
-    function randomPolynomialType2() {
-      const degree = randomInteger(1, 10);
-      return randomPolynomialExactDegree(degree, 1, Math.min(5, degree + 1));
-    }
-
-    function randomPolynomialForDegreeComparison(targetDegree) {
-      return randomPolynomialExactDegree(targetDegree, 1, Math.min(5, targetDegree + 1));
-    }
-
-    function generateDegreeMatchedRational() {
-      const relation = randomChoice(['greater', 'equal', 'less']);
-      let numDegree, denDegree;
-      if (relation === 'greater') {
-        denDegree = randomInteger(1, 8);
-        numDegree = randomInteger(denDegree + 1, 10);
-      } else if (relation === 'less') {
-        numDegree = randomInteger(1, 8);
-        denDegree = randomInteger(numDegree + 1, 10);
-      } else {
-        numDegree = denDegree = randomInteger(1, 10);
-      }
-      return {
-        relation,
-        numerator: randomPolynomialForDegreeComparison(numDegree),
-        denominator: randomPolynomialForDegreeComparison(denDegree)
-      };
-    }
-
-    function polynomialEndBehaviour(poly, direction) {
-      const degree = degreeOfPolynomial(poly);
-      const lead = leadingCoefficient(poly);
-      const signAtInfinity = direction === 'positive' ? 1 : (degree % 2 === 0 ? 1 : -1);
-      const sign = Math.sign(lead) * signAtInfinity;
-      return sign > 0 ? 'infinity' : 'negativeInfinity';
-    }
-
-    function rationalEndBehaviour(num, den, direction) {
-      const numDegree = degreeOfPolynomial(num);
-      const denDegree = degreeOfPolynomial(den);
-      const numLead = leadingCoefficient(num);
-      const denLead = leadingCoefficient(den);
-      if (numDegree < denDegree) return { kind: 'finite', value: exactFraction(0, 1), tex: '0' };
-      if (numDegree === denDegree) {
-        const value = exactFraction(numLead, denLead);
-        return { kind: 'finite', value, tex: fractionToTex(value) };
-      }
-      const degreeDifference = numDegree - denDegree;
-      const signAtInfinity = direction === 'positive' ? 1 : (degreeDifference % 2 === 0 ? 1 : -1);
-      const sign = Math.sign(numLead / denLead) * signAtInfinity;
-      return { kind: sign > 0 ? 'infinity' : 'negativeInfinity', tex: sign > 0 ? '\\infty' : '-\\infty' };
-    }
-
-    function answerObjectToTex(answer) {
-      if (answer.kind === 'infinity') return '\\infty';
-      if (answer.kind === 'negativeInfinity') return '-\\infty';
-      if (answer.kind === 'dne') return '\\text{DNE}';
-      if (answer.kind === 'oscillates') return '\\text{DNE}';
-      if (answer.kind === 'undefined') return '\\text{DNE}';
-      if (answer.kind === 'finite') return answer.tex || fractionToTex(answer.value);
-      return `${answer}`;
-    }
-
-    function numericAnswer(frac) {
-      return frac.num / frac.den;
-    }
-
-    function piMultipleToTex(frac) {
-      const f = exactFraction(frac.num, frac.den);
+    function piMultipleToTex(k) {
+      const f = exactFraction(k, 12);
       if (f.num === 0) return '0';
       const sign = f.num < 0 ? '-' : '';
       const absNum = Math.abs(f.num);
@@ -680,2198 +411,292 @@ fetch("/nav.html")
       return `${sign}\\frac{${absNum === 1 ? '' : absNum}\\pi}{${f.den}}`;
     }
 
-    function trigExactAnswer(trigName, piMultiple) {
-      const f = exactFraction(piMultiple.num, piMultiple.den);
-      const angle = Math.PI * f.num / f.den;
-      let value = trigName === 'sin' ? Math.sin(angle) : trigName === 'cos' ? Math.cos(angle) : Math.tan(angle);
-      if (Math.abs(value) > 1e12 || !Number.isFinite(value)) return { kind: 'dne', tex: '\\text{DNE}' };
-      value = Math.round(value * 1e12) / 1e12;
-      const special = [
-        { v: -Math.sqrt(3), tex: '-\\sqrt{3}' },
-        { v: -1, tex: '-1' },
-        { v: -Math.sqrt(3) / 2, tex: '-\\frac{\\sqrt{3}}{2}' },
-        { v: -Math.sqrt(2) / 2, tex: '-\\frac{\\sqrt{2}}{2}' },
-        { v: -0.5, tex: '-\\frac{1}{2}' },
-        { v: 0, tex: '0' },
-        { v: 0.5, tex: '\\frac{1}{2}' },
-        { v: Math.sqrt(2) / 2, tex: '\\frac{\\sqrt{2}}{2}' },
-        { v: Math.sqrt(3) / 2, tex: '\\frac{\\sqrt{3}}{2}' },
-        { v: 1, tex: '1' },
-        { v: Math.sqrt(3), tex: '\\sqrt{3}' }
-      ];
-      const match = special.find(item => Math.abs(value - item.v) < 1e-9);
-      if (match) return { kind: 'finite', value: { decimal: value }, tex: match.tex };
-      return { kind: 'finite', value: { decimal: value }, tex: numberTex(value) };
-    }
-
-    function leadingTermTex(poly) {
-      const combined = combineLikeTerms(poly);
-      if (!combined.length) return '0';
-      return termToTex(combined[0], { omitLeadingPlus: true });
-    }
-
-    function answerEquationTex(entry) {
-      return `${entry.labelTex}=${answerObjectToTex(entry.answer)}`;
-    }
-
-    function answerListTex(entries) {
-      return entries.map(answerEquationTex).join(',\\quad ');
-    }
-
-    function signTex(value) {
-      return value > 0 ? '\\text{positive}' : value < 0 ? '\\text{negative}' : '0';
-    }
-
-    function signedInfinityTex(value) {
-      return value > 0 ? '\\infty' : '-\\infty';
-    }
-
-    function reciprocalSideTex(coefficient, side) {
-      if (side === 'right') return signedInfinityTex(coefficient);
-      return signedInfinityTex(-coefficient);
-    }
-
-    function type1Hints(n, numerator, denominatorDegree, otherRoot, numeratorAtN, otherFactorAtN, answers) {
-      const localDenominatorTex = denominatorDegree === 1
-        ? linearFactorTex(n)
-        : `${linearFactorTex(n)}${linearFactorTex(otherRoot)}`;
-      const localFactorTex = denominatorDegree === 1 ? '1' : `${numberTex(otherFactorAtN)}`;
-      const reducedLocalCoefficient = exactFraction(numeratorAtN, otherFactorAtN);
-      return [
-        `\\text{Near }x=${numberTex(n)}\\text{,}\\quad f(x)\\sim\\frac{${numberTex(numeratorAtN)}}{${localFactorTex}${linearFactorTex(n)}}=\\frac{${fractionToTex(reducedLocalCoefficient)}}{${linearFactorTex(n)}}.`,
-        `\\text{As }x\\to ${numberTex(n)}^+\\text{, }${linearFactorTex(n)}\\to 0^+\\text{, so }f(x)\\to ${answerObjectToTex(answers[0].answer)}.`,
-        `\\text{As }x\\to ${numberTex(n)}^-\\text{, }${linearFactorTex(n)}\\to 0^-\\text{, so }f(x)\\to ${answerObjectToTex(answers[1].answer)}.`,
-        `${answerListTex(answers)}`
-      ];
-    }
-
-    function type2Hints(poly, answers) {
-      const degree = degreeOfPolynomial(poly);
-      const lead = leadingCoefficient(poly);
-      return [
-        `\\text{For a polynomial, the end behaviour is determined by the leading term.}`,
-        `\\text{The leading term is }${leadingTermTex(poly)}\\text{, so the degree is }${degree}\\text{ and the leading coefficient is }${lead}.`,
-        degree % 2 === 0
-          ? `\\text{The degree is even, so both ends have the same sign as the leading coefficient.}`
-          : `\\text{The degree is odd, so the two ends go in opposite directions.}`,
-        `${answerListTex(answers)}`
-      ];
-    }
-
-    function xPowerTex(power) {
-      if (power === 0) return '1';
-      if (power === 1) return 'x';
-      return `x^{${power}}`;
-    }
-
-    function exponentialPowerTex(baseTex, power) {
-      if (power === 0) return '1';
-      const exponentTex = power === 1 ? 'x' : `${power}x`;
-      return `${baseTex}^{${exponentTex}}`;
-    }
-
-    function signedBodyTex(body, coefficient, index) {
-      if (coefficient < 0) return index === 0 ? `-${body}` : `- ${body}`;
-      return index === 0 ? body : `+ ${body}`;
-    }
-
-    function plainMonomialBody(absCoefficient, power) {
-      const variablePart = xPowerTex(power);
-      if (power === 0) return `${absCoefficient}`;
-      if (absCoefficient === 1) return variablePart;
-      return `${absCoefficient}${variablePart}`;
-    }
-
-    function piCoefficientTexForScale(absCoefficient, piScale) {
-      const scale = exactFraction(piScale.num * absCoefficient, piScale.den);
-      if (scale.num === scale.den) return '\\pi';
-      if (scale.den === 1) return `${scale.num}\\pi`;
-      return `\\frac{${scale.num}\\pi}{${scale.den}}`;
-    }
-
-    function termBodyPossiblyPi(term, poly, piScale) {
-      const absCoefficient = Math.abs(term.coefficient);
-      const isPiLead = piScale && term.power === degreeOfPolynomial(poly);
-      if (!isPiLead) return plainMonomialBody(absCoefficient, term.power);
-      const piCoeff = piCoefficientTexForScale(absCoefficient, piScale);
-      if (term.power === 0) return piCoeff;
-      return `${piCoeff}\\,${xPowerTex(term.power)}`;
-    }
-
-    function termOverXPowerTex(term, divisorPower, index, poly = null, piScale = null) {
-      const body = termBodyPossiblyPi(term, poly || [term], piScale);
-      const divisor = xPowerTex(divisorPower);
-      return signedBodyTex(`\\frac{${body}}{${divisor}}`, term.coefficient, index);
-    }
-
-    function dividedTermBody(term, divisorPower, poly = null, piScale = null) {
-      const newPower = term.power - divisorPower;
-      const absCoefficient = Math.abs(term.coefficient);
-      const isPiLead = piScale && poly && term.power === degreeOfPolynomial(poly);
-      const coeffBody = isPiLead ? piCoefficientTexForScale(absCoefficient, piScale) : `${absCoefficient}`;
-
-      if (newPower > 0) {
-        if (!isPiLead) return plainMonomialBody(absCoefficient, newPower);
-        return `${coeffBody}\\,${xPowerTex(newPower)}`;
-      }
-      if (newPower === 0) return coeffBody;
-      const denominator = xPowerTex(-newPower);
-      return `\\frac{${coeffBody}}{${denominator}}`;
-    }
-
-    function dividedTermTex(term, divisorPower, index, poly = null, piScale = null) {
-      return signedBodyTex(dividedTermBody(term, divisorPower, poly, piScale), term.coefficient, index);
-    }
-
-    function dividedPolynomialUnsimplifiedTex(poly, divisorPower, piScale = null) {
-      return combineLikeTerms(poly).map((term, index) => termOverXPowerTex(term, divisorPower, index, poly, piScale)).join(' ');
-    }
-
-    function dividedPolynomialSimplifiedTex(poly, divisorPower, piScale = null) {
-      return combineLikeTerms(poly).map((term, index) => dividedTermTex(term, divisorPower, index, poly, piScale)).join(' ');
-    }
-
-    function polynomialToTexMaybePi(poly, piScale = null) {
-      return piScale ? polynomialToTexWithPi(poly, piScale) : polynomialToTex(poly);
-    }
-
-    function rationalDivideEquationTex(numerator, denominator, divisorPower, piScale = null, functionName = 'f') {
-      const original = `\\frac{${polynomialToTexMaybePi(numerator, piScale)}}{${polynomialToTex(denominator)}}`;
-      const unsimplified = `\\frac{${dividedPolynomialUnsimplifiedTex(numerator, divisorPower, piScale)}}{${dividedPolynomialUnsimplifiedTex(denominator, divisorPower)}}`;
-      const simplified = `\\frac{${dividedPolynomialSimplifiedTex(numerator, divisorPower, piScale)}}{${dividedPolynomialSimplifiedTex(denominator, divisorPower)}}`;
-      return `\\lim_{x\\to\\pm\\infty}${functionName}(x)=\\lim_{x\\to\\pm\\infty}${original}=\\lim_{x\\to\\pm\\infty}${unsimplified}=\\lim_{x\\to\\pm\\infty}${simplified}`;
-    }
-
-    function answerObjectToTexExtended(answer) {
-      if (answer.kind === 'piMultiple') return answer.tex || piMultipleToTex(answer.multiple);
-      return answerObjectToTex(answer);
-    }
-
-    function answerEquationTexExtended(entry) {
-      return `${entry.labelTex}=${answerObjectToTexExtended(entry.answer)}`;
-    }
-
-    function answerListTexExtended(entries) {
-      return entries.map(answerEquationTexExtended).join(',\\quad ');
-    }
-
-    function rationalDivisionHints(numerator, denominator, answers, options = {}) {
-      const { piScale = null, functionName = 'f', finalAnswers = true } = options;
-      const numDegree = degreeOfPolynomial(numerator);
-      const denDegree = degreeOfPolynomial(denominator);
-      const divisorPower = Math.min(numDegree, denDegree);
-      const numLead = leadingCoefficient(numerator);
-      const denLead = leadingCoefficient(denominator);
-      const hints = [];
-
-      if (numDegree === denDegree) {
-        hints.push(`\\text{The degree of both the numerator and denominator is }${numDegree}\\text{, so we divide every term by }${xPowerTex(divisorPower)}.`);
-      } else {
-        hints.push(`\\text{The lowest degree of the numerator/denominator is }${divisorPower}\\text{, so we divide every term by }${xPowerTex(divisorPower)}.`);
-      }
-      hints.push(rationalDivideEquationTex(numerator, denominator, divisorPower, piScale, functionName));
-
-      if (numDegree > denDegree) {
-        const dominantNumeratorTerm = dividedTermBody(combineLikeTerms(numerator)[0], divisorPower, numerator, piScale);
-        hints.push(`\\text{The lead term in the higher degree numerator, }${dominantNumeratorTerm}\\text{, dominates and determines the end behaviour.}`);
-        hints.push(`\\text{The dominant term in the denominator is }${denLead}\\text{, which is }${signTex(denLead)}.`);
-        const diff = numDegree - denDegree;
-        hints.push(diff % 2 === 0
-          ? `\\text{Since the remaining exponent is even, the two ends go in the same direction.}`
-          : `\\text{Since the remaining exponent is odd, the two ends go in opposite directions.}`);
-      } else if (numDegree === denDegree) {
-        const ratio = piScale ? piMultipleToTex(piScale) : fractionToTex(exactFraction(numLead, denLead));
-        hints.push(`\\text{Every term in the above limit approaches zero except the constants, so we have a horizontal asymptote at their ratio.}`);
-        hints.push(piScale
-          ? `\\frac{${numLead < 0 ? '-' : ''}${piCoefficientTexForScale(Math.abs(numLead), piScale)}}{${denLead}}=${ratio}`
-          : `\\frac{${numLead}}{${denLead}}=${ratio}`);
-      } else {
-        hints.push(`\\text{The numerator is finite and the denominator grows without bound, so we have a horizontal asymptote at }y=0.`);
-      }
-      if (finalAnswers) hints.push(`${answerListTexExtended(answers)}`);
-      return hints;
-    }
-
-
-    function derivativePolynomial(poly) {
-      return combineLikeTerms(poly
-        .filter(term => term.power > 0)
-        .map(term => makeTerm(term.coefficient * term.power, term.power - 1)));
-    }
-
-    function derivativeExponentialExpressionToTex(terms, baseTex) {
-      const sorted = [...terms].sort((a, b) => b.power - a.power);
-      return sorted.map((term, index) => {
-        const coefficient = term.coefficient * term.power;
-        const absCoefficient = Math.abs(coefficient);
+    function simplePolynomialTex(terms) {
+      const cleaned = terms.filter(t => Math.abs(t.c) > 1e-12).sort((a, b) => b.p - a.p);
+      if (!cleaned.length) return '0';
+      return cleaned.map((t, i) => {
+        const sign = t.c < 0 ? '-' : (i === 0 ? '' : '+');
+        const abs = Math.abs(t.c);
         let body;
-        if (baseTex === 'e') {
-          const coefficientTex = absCoefficient === 1 ? '' : `${absCoefficient}\\cdot `;
-          body = `${coefficientTex}e^{${term.power === 1 ? 'x' : `${term.power}x`}}`;
-        } else {
-          const coefficientTex = absCoefficient === 1 ? '' : `${absCoefficient}\\cdot `;
-          body = `${coefficientTex}\\ln(${baseTex})\\cdot ${baseTex}^{${term.power === 1 ? 'x' : `${term.power}x`}}`;
+        if (t.p === 0) body = numberTex(abs);
+        else {
+          const xpart = t.p === 1 ? 'x' : `x^{${t.p}}`;
+          body = Math.abs(abs - 1) < 1e-12 ? xpart : `${numberTex(abs)}${xpart}`;
         }
-        if (coefficient < 0) return index === 0 ? `-${body}` : `- ${body}`;
-        return index === 0 ? body : `+ ${body}`;
+        return i === 0 ? `${sign}${body}` : `${sign} ${body}`;
       }).join(' ');
     }
 
-    function type3Hints(numerator, denominator, answers) {
-      const originalHints = rationalDivisionHints(numerator, denominator, answers);
-      const hints = [];
-      let currentNumerator = numerator;
-      let currentDenominator = denominator;
-
-      hints.push(`\\text{As }x\\to\\infty\\text{ or }x\\to-\\infty\\text{, this is an indeterminate form of type }\\frac{\\infty}{\\infty}\\text{, so we can apply L'Hôpital's Rule.}`);
-
-      let lhopitalStep = 0;
-      while (degreeOfPolynomial(currentNumerator) > 0 && degreeOfPolynomial(currentDenominator) > 0 && lhopitalStep < 12) {
-        currentNumerator = derivativePolynomial(currentNumerator);
-        currentDenominator = derivativePolynomial(currentDenominator);
-        lhopitalStep++;
-        hints.push(`\\lim_{x\\to\\infty}f(x)=\\lim_{x\\to\\infty}\\frac{${polynomialToTex(currentNumerator)}}{${polynomialToTex(currentDenominator)}}\\quad\\text{and}\\quad \\lim_{x\\to-\\infty}f(x)=\\lim_{x\\to-\\infty}\\frac{${polynomialToTex(currentNumerator)}}{${polynomialToTex(currentDenominator)}}`);
-      }
-
-      hints.push(`\\text{Now one of the numerator/denominator is constant, so evaluate the remaining limit directly.}`);
-      hints.push(`${answerListTexExtended(answers)}`);
-      hints.push(`\\text{Alternate solution: use the older end-behaviour method.}`);
-      hints.push(...originalHints);
-      return hints;
+    function linearFactorTex(h) {
+      if (h === 0) return 'x';
+      return `(x ${h < 0 ? '+ ' + Math.abs(h) : '- ' + h})`;
     }
 
-    function type4Hints(trigName, numerator, denominator, piScale, leftInner, rightInner, answers) {
-      const innerAnswers = [
-        { labelTex: '\\lim_{x \\to -\\infty}g(x)', answer: leftInner },
-        { labelTex: '\\lim_{x \\to \\infty}g(x)', answer: rightInner }
-      ];
-      const hints = [
-        `\\text{Work from the inside out.  Let }g(x)=\\frac{${polynomialToTexMaybePi(numerator, piScale)}}{${polynomialToTex(denominator)}}.`
-      ];
-      hints.push(...rationalDivisionHints(numerator, denominator, innerAnswers, { piScale, functionName: 'g', finalAnswers: false }));
-      hints.push(`${answerListTexExtended(innerAnswers)}`);
-
-      if ((leftInner.kind === 'finite' && leftInner.value && leftInner.value.num === 0) || (rightInner.kind === 'finite' && rightInner.value && rightInner.value.num === 0)) {
-        hints.push(`\\text{Now apply the outer function: }\\${trigName}(0)=0.`);
-      } else if (piScale) {
-        if (answers.some(entry => entry.answer.kind === 'dne' || entry.answer.kind === 'undefined')) {
-          hints.push(`\\text{Now apply the outer function: }\\${trigName}\\left(${piMultipleToTex(piScale)}\\right)\\text{ is undefined, so the limits do not exist.}`);
-        } else {
-          hints.push(`\\text{Now apply the outer function: }\\${trigName}\\left(${piMultipleToTex(piScale)}\\right)=${answerObjectToTexExtended(answers[0].answer)}.`);
-        }
-      } else {
-        hints.push(`\\text{Since the inside grows without bound, the trigonometric function oscillates and the limit does not exist.}`);
-      }
-      hints.push(`${answerListTexExtended(answers)}`);
-      return hints;
+    function signedTex(n) {
+      return n < 0 ? `- ${Math.abs(n)}` : `+ ${n}`;
     }
 
-    function exponentialDividedTermBody(term, divisorPower, baseTex) {
-      const newPower = term.power - divisorPower;
-      const coeff = Math.abs(term.coefficient);
-      const coefficientTex = coeff === 1 ? '' : `${coeff}\\cdot `;
-      if (newPower === 0) return `${coeff}`;
-      return `${coefficientTex}${exponentialPowerTex(baseTex, newPower)}`;
+    function valueObj(decimal, tex = null) {
+      return { decimal: Math.abs(decimal) < 1e-12 ? 0 : decimal, tex: tex || numberTex(decimal) };
     }
 
-    function exponentialTermOverDivisorTex(term, divisorPower, baseTex, index) {
-      const body = exponentialTermToTex({ ...term, coefficient: Math.abs(term.coefficient) }, baseTex);
-      return signedBodyTex(`\\frac{${body}}{${exponentialPowerTex(baseTex, divisorPower)}}`, term.coefficient, index);
-    }
-
-    function exponentialDividedTermTex(term, divisorPower, baseTex, index) {
-      return signedBodyTex(exponentialDividedTermBody(term, divisorPower, baseTex), term.coefficient, index);
-    }
-
-    function exponentialDividedExpressionUnsimplifiedTex(terms, divisorPower, baseTex) {
-      return [...terms].sort((a, b) => b.power - a.power).map((term, index) => exponentialTermOverDivisorTex(term, divisorPower, baseTex, index)).join(' ');
-    }
-
-    function exponentialDividedExpressionSimplifiedTex(terms, divisorPower, baseTex) {
-      return [...terms].sort((a, b) => b.power - a.power).map((term, index) => exponentialDividedTermTex(term, divisorPower, baseTex, index)).join(' ');
-    }
-
-    function exponentialDivideEquationTex(numerator, denominator, divisorPower, baseTex) {
-      const original = `\\frac{${exponentialExpressionToTex(numerator, baseTex)}}{${exponentialExpressionToTex(denominator, baseTex)}}`;
-      const unsimplified = `\\frac{${exponentialDividedExpressionUnsimplifiedTex(numerator, divisorPower, baseTex)}}{${exponentialDividedExpressionUnsimplifiedTex(denominator, divisorPower, baseTex)}}`;
-      const simplified = `\\frac{${exponentialDividedExpressionSimplifiedTex(numerator, divisorPower, baseTex)}}{${exponentialDividedExpressionSimplifiedTex(denominator, divisorPower, baseTex)}}`;
-      return `\\lim_{x\\to\\pm\\infty}f(x)=\\lim_{x\\to\\pm\\infty}${original}=\\lim_{x\\to\\pm\\infty}${unsimplified}=\\lim_{x\\to\\pm\\infty}${simplified}`;
-    }
-
-    function exponentialLeadTermByPower(terms, power) {
-      return terms.find(term => term.power === power);
-    }
-
-    function exponentialDirectionComparisonHint(baseTex, numerator, denominator, divisorPower, direction) {
-      const shiftedNumerator = numerator.map(term => ({ ...term, shiftedPower: term.power - divisorPower }));
-      const shiftedDenominator = denominator.map(term => ({ ...term, shiftedPower: term.power - divisorPower }));
-      if (direction === 'positive') {
-        const numMax = Math.max(...shiftedNumerator.map(term => term.shiftedPower));
-        const denMax = Math.max(...shiftedDenominator.map(term => term.shiftedPower));
-        if (numMax > denMax) {
-          const term = shiftedNumerator.find(item => item.shiftedPower === numMax);
-          return `\\text{As }x\\to\\infty\\text{, the numerator has the growing dominant term }${exponentialDividedTermBody(term, divisorPower, baseTex)}\\text{, while the denominator is lower order.}`;
-        }
-        if (numMax === denMax) {
-          return `\\text{As }x\\to\\infty\\text{, the dominant remaining exponential degree is the same in numerator and denominator, so their coefficients determine the limit.}`;
-        }
-        const term = shiftedDenominator.find(item => item.shiftedPower === denMax);
-        return `\\text{As }x\\to\\infty\\text{, the denominator has the growing dominant term }${exponentialDividedTermBody(term, divisorPower, baseTex)}\\text{, while the numerator is lower order.}`;
-      }
-
-      const numMin = Math.min(...shiftedNumerator.map(term => term.shiftedPower));
-      const denMin = Math.min(...shiftedDenominator.map(term => term.shiftedPower));
-      if (numMin < denMin) {
-        const term = shiftedNumerator.find(item => item.shiftedPower === numMin);
-        return `\\text{As }x\\to-\\infty\\text{, the most negative remaining exponent grows fastest; in the numerator this is }${exponentialDividedTermBody(term, divisorPower, baseTex)}.`;
-      }
-      if (numMin === denMin) {
-        return `\\text{As }x\\to-\\infty\\text{, the most negative remaining exponent is the same in numerator and denominator, so their coefficients determine the limit.}`;
-      }
-      const term = shiftedDenominator.find(item => item.shiftedPower === denMin);
-      return `\\text{As }x\\to-\\infty\\text{, the most negative remaining exponent grows fastest; in the denominator this is }${exponentialDividedTermBody(term, divisorPower, baseTex)}.`;
-    }
-
-    function exponentialDegreeDescriptionTex(power) {
-      if (power === 0) return '\\text{constant}';
-      return power === 1 ? 'x' : `${power}x`;
-    }
-
-    function type5Hints(baseTex, numerator, denominator, numDegree, denDegree, answers) {
-      const divisorPower = Math.min(numDegree, denDegree);
-      const hints = [];
-
-      hints.push(`\\text{As }x\\to\\infty\\text{, this is an indeterminate form of type }\\frac{\\infty}{\\infty}\\text{, so try one application of L'Hôpital's Rule.}`);
-      hints.push(`\\lim_{x\\to\\infty}f(x)=\\lim_{x\\to\\infty}\\frac{${derivativeExponentialExpressionToTex(numerator, baseTex)}}{${derivativeExponentialExpressionToTex(denominator, baseTex)}}`);
-      hints.push(`\\text{The quotient still has competing exponential terms, so L'Hôpital's Rule has not really simplified the problem.}`);
-      hints.push(`\\text{Instead, use the exponential end-behaviour strategy.}`);
-
-      if (numDegree === denDegree) {
-        hints.push(`\\text{The numerator and denominator have the same exponential degree }${numDegree}\\text{, so we divide every term by }${exponentialPowerTex(baseTex, divisorPower)}.`);
-      } else {
-        hints.push(`\\text{The lowest exponential degree of the numerator/denominator is }${divisorPower}\\text{, so we divide every term by }${exponentialPowerTex(baseTex, divisorPower)}.`);
-      }
-      hints.push(exponentialDivideEquationTex(numerator, denominator, divisorPower, baseTex));
-
-      const shiftedNumDegree = numDegree - divisorPower;
-      const shiftedDenDegree = denDegree - divisorPower;
-      const numLead = exponentialLeadTermByPower(numerator, numDegree).coefficient;
-      const denLead = exponentialLeadTermByPower(denominator, denDegree).coefficient;
-
-      if (shiftedNumDegree > shiftedDenDegree) {
-        hints.push(`\\text{For }x\\to\\infty\\text{, the term of exponential degree }${exponentialDegreeDescriptionTex(shiftedNumDegree)}\\text{ in the numerator dominates the constant term in the denominator.}`);
-        hints.push(`\\text{The sign is determined by }\\frac{${numLead}}{${denLead}}\\text{, so }\\lim_{x\\to\\infty}f(x)=${answerObjectToTexExtended(answers[1].answer)}.`);
-      } else if (shiftedNumDegree === shiftedDenDegree) {
-        hints.push(`\\text{For }x\\to\\infty\\text{, the dominant remaining exponential degree is the same in the numerator and denominator.}`);
-        hints.push(`\\lim_{x\\to\\infty}f(x)=\\frac{${numLead}}{${denLead}}=${fractionToTex(exactFraction(numLead, denLead))}.`);
-      } else {
-        hints.push(`\\text{For }x\\to\\infty\\text{, the denominator has the growing exponential term of degree }${exponentialDegreeDescriptionTex(shiftedDenDegree)}\\text{, while the numerator is lower order.}`);
-        hints.push(`\\lim_{x\\to\\infty}f(x)=0.`);
-      }
-
-      hints.push(exponentialDirectionComparisonHint(baseTex, numerator, denominator, divisorPower, 'negative'));
-      hints.push(`\\lim_{x\\to-\\infty}f(x)=${answerObjectToTexExtended(answers[0].answer)}.`);
-      hints.push(`${answerListTexExtended(answers)}`);
-      return hints;
-    }
-
-    function generateType1LimitProblem() {
-      const n = randomInteger(-10, 10);
-      const denominatorDegree = randomChoice([1, 2]);
-      let numeratorDegree = randomInteger(0, 2);
-      let numerator;
-      if (numeratorDegree === 0) {
-        numerator = polynomialFromConstant(randomNonzeroInteger(-10, 10));
-      } else if (numeratorDegree === 1) {
-        let r;
-        do { r = randomInteger(-10, 10); } while (r === n);
-        numerator = polynomialFromRoot(r);
-      } else {
-        let r, s;
-        do { r = randomInteger(-10, 10); } while (r === n);
-        do { s = randomInteger(-10, 10); } while (s === n);
-        numerator = multiplyPolynomials(polynomialFromRoot(r), polynomialFromRoot(s));
-      }
-
-      let denominator;
-      let otherRoot = null;
-      if (denominatorDegree === 1) {
-        denominator = polynomialFromRoot(n);
-      } else {
-        do { otherRoot = randomInteger(-10, 10); } while (otherRoot === n);
-        denominator = multiplyPolynomials(polynomialFromRoot(n), polynomialFromRoot(otherRoot));
-      }
-
-      const numeratorAtN = evaluatePolynomial(numerator, n);
-      const otherFactorAtN = denominatorDegree === 1 ? 1 : n - otherRoot;
-      const signMultiplier = Math.sign(numeratorAtN / otherFactorAtN);
-      const right = signMultiplier > 0 ? { kind: 'infinity' } : { kind: 'negativeInfinity' };
-      const left = signMultiplier > 0 ? { kind: 'negativeInfinity' } : { kind: 'infinity' };
-      const twoSided = right.kind === left.kind ? right : { kind: 'dne' };
-      const answers = [
-        { labelTex: `\\lim_{x \\to ${numberTex(n)}^+}f(x)`, answer: right },
-        { labelTex: `\\lim_{x \\to ${numberTex(n)}^-}f(x)`, answer: left },
-        { labelTex: `\\lim_{x \\to ${numberTex(n)}}f(x)`, answer: twoSided }
-      ];
-
-      return {
-        type: 1,
-        questionTex: `f(x)=${rationalFunctionTex(numerator, denominator)}.\\quad \\text{Evaluate }\\lim_{x \\to ${numberTex(n)}^+}f(x),\\; \\lim_{x \\to ${numberTex(n)}^-}f(x),\\; \\text{and }\\lim_{x \\to ${numberTex(n)}}f(x).`,
-        answers,
-        hints: type1Hints(n, numerator, denominatorDegree, otherRoot, numeratorAtN, otherFactorAtN, answers)
-      };
-    }
-
-    function generateType2LimitProblem() {
-      const poly = randomPolynomialType2();
-      const answers = [
-        { labelTex: '\\lim_{x \\to -\\infty}f(x)', answer: { kind: polynomialEndBehaviour(poly, 'negative') } },
-        { labelTex: '\\lim_{x \\to \\infty}f(x)', answer: { kind: polynomialEndBehaviour(poly, 'positive') } }
-      ];
-      return {
-        type: 2,
-        questionTex: `f(x)=${polynomialToTex(poly)}.\\quad \\text{Evaluate }\\lim_{x \\to -\\infty}f(x)\\;\\text{and}\\;\\lim_{x \\to \\infty}f(x).`,
-        answers,
-        hints: type2Hints(poly, answers)
-      };
-    }
-
-    function generateType3LimitProblem() {
-      const rational = generateDegreeMatchedRational();
-      const { numerator, denominator } = rational;
-      const answers = [
-        { labelTex: '\\lim_{x \\to -\\infty}f(x)', answer: rationalEndBehaviour(numerator, denominator, 'negative') },
-        { labelTex: '\\lim_{x \\to \\infty}f(x)', answer: rationalEndBehaviour(numerator, denominator, 'positive') }
-      ];
-      return {
-        type: 3,
-        questionTex: `f(x)=${rationalFunctionTex(numerator, denominator)}.\\quad \\text{Evaluate }\\lim_{x \\to -\\infty}f(x)\\;\\text{and}\\;\\lim_{x \\to \\infty}f(x).`,
-        answers,
-        hints: type3Hints(numerator, denominator, answers)
-      };
-    }
-
-    function generatePiRatio() {
-      const options = [
-        { num: 2, den: 1 },
-        { num: 1, den: 1 },
-        { num: randomNonzeroInteger(-6, 6), den: 2 },
-        { num: randomNonzeroInteger(-6, 6), den: 3 },
-        { num: randomNonzeroInteger(-6, 6), den: 4 },
-        { num: randomNonzeroInteger(-6, 6), den: 6 }
-      ];
-      return exactFraction(...Object.values(randomChoice(options)));
-    }
-
-    function generateTrigRational() {
-      const relation = randomChoice(['greater', 'equal', 'less']);
-      let numDegree, denDegree, numerator, denominator, piScale = null;
-      if (relation === 'greater') {
-        denDegree = randomInteger(1, 8);
-        numDegree = randomInteger(denDegree + 1, 10);
-        numerator = randomPolynomialForDegreeComparison(numDegree);
-        denominator = randomPolynomialForDegreeComparison(denDegree);
-      } else if (relation === 'less') {
-        numDegree = randomInteger(1, 8);
-        denDegree = randomInteger(numDegree + 1, 10);
-        numerator = randomPolynomialForDegreeComparison(numDegree);
-        denominator = randomPolynomialForDegreeComparison(denDegree);
-      } else {
-        numDegree = denDegree = randomInteger(1, 10);
-        denominator = randomPolynomialForDegreeComparison(denDegree);
-        const denLead = leadingCoefficient(denominator);
-        piScale = generatePiRatio();
-        numerator = randomPolynomialForDegreeComparison(numDegree);
-        const currentLead = leadingCoefficient(numerator);
-        numerator = combineLikeTerms(numerator.map(term => term.power === numDegree ? makeTerm(denLead, term.power) : term));
-      }
-      return { relation, numerator, denominator, piScale };
-    }
-
-    function generateType4LimitProblem() {
-      const trigName = randomChoice(['sin', 'cos', 'tan']);
-      const rational = generateTrigRational();
-      const { numerator, denominator, piScale } = rational;
-      const numeratorTex = polynomialToTexWithPi(numerator, piScale);
-      const innerTex = `\\frac{${numeratorTex}}{${polynomialToTex(denominator)}}`;
-      let leftInner = rationalEndBehaviour(numerator, denominator, 'negative');
-      let rightInner = rationalEndBehaviour(numerator, denominator, 'positive');
-      if (piScale) {
-        leftInner = rightInner = { kind: 'piMultiple', multiple: piScale, tex: piMultipleToTex(piScale) };
-      }
-
-      function outerAnswer(inner) {
-        if (inner.kind === 'finite' && inner.value && inner.value.num === 0) return trigExactAnswer(trigName, { num: 0, den: 1 });
-        if (inner.kind === 'piMultiple') return trigExactAnswer(trigName, inner.multiple);
-        return { kind: 'oscillates', tex: '\\text{DNE}' };
-      }
-
-      const answers = [
-        { labelTex: '\\lim_{x \\to -\\infty}f(x)', answer: outerAnswer(leftInner) },
-        { labelTex: '\\lim_{x \\to \\infty}f(x)', answer: outerAnswer(rightInner) }
-      ];
-
-      return {
-        type: 4,
-        questionTex: `f(x)=\\${trigName}\\left(${innerTex}\\right).\\quad \\text{Evaluate }\\lim_{x \\to -\\infty}f(x)\\;\\text{and}\\;\\lim_{x \\to \\infty}f(x).`,
-        answers,
-        hints: type4Hints(trigName, numerator, denominator, piScale, leftInner, rightInner, answers)
-      };
-    }
-
-    function exponentialTermToTex(term, baseTex) {
-      const coefficientTex = term.coefficient === 1 ? '' : term.coefficient === -1 ? '-' : `${term.coefficient}\\cdot `;
-      return `${coefficientTex}${baseTex}^{${term.power === 1 ? 'x' : `${term.power}x`}}`;
-    }
-
-    function exponentialExpressionToTex(terms, baseTex) {
-      const sorted = [...terms].sort((a, b) => b.power - a.power);
-      return sorted.map((term, index) => {
-        const absTerm = { ...term, coefficient: Math.abs(term.coefficient) };
-        const body = exponentialTermToTex(absTerm, baseTex);
-        if (term.coefficient < 0) return index === 0 ? `-${body}` : `- ${body}`;
-        return index === 0 ? body : `+ ${body}`;
-      }).join(' ');
-    }
-
-    function randomExponentialExpressionExactDegree(degree) {
-      const possiblePowers = [];
-      for (let k = -10; k < degree; k++) if (k !== 0) possiblePowers.push(k);
-      const termCount = randomInteger(1, Math.min(5, possiblePowers.length + 1));
-      const chosen = [degree];
-      while (chosen.length < termCount && possiblePowers.length) {
-        const index = randomInteger(0, possiblePowers.length - 1);
-        chosen.push(possiblePowers.splice(index, 1)[0]);
-      }
-      return chosen.map(power => ({ coefficient: randomNonzeroInteger(-10, 10), power }));
-    }
-
-    function exponentialEndBehaviour(numTerms, denTerms, direction) {
-      const transformPower = term => direction === 'positive' ? term.power : -term.power;
-      const numLead = numTerms.reduce((best, term) => transformPower(term) > transformPower(best) ? term : best, numTerms[0]);
-      const denLead = denTerms.reduce((best, term) => transformPower(term) > transformPower(best) ? term : best, denTerms[0]);
-      const numDegree = transformPower(numLead);
-      const denDegree = transformPower(denLead);
-      if (numDegree < denDegree) return { kind: 'finite', value: exactFraction(0, 1), tex: '0' };
-      if (numDegree === denDegree) {
-        const value = exactFraction(numLead.coefficient, denLead.coefficient);
-        return { kind: 'finite', value, tex: fractionToTex(value) };
-      }
-      const sign = Math.sign(numLead.coefficient / denLead.coefficient);
-      return { kind: sign > 0 ? 'infinity' : 'negativeInfinity' };
-    }
-
-    function generateType5LimitProblem() {
-      const baseTex = Math.random() < 0.6 ? `${randomInteger(2, 10)}` : 'e';
-      const relation = randomChoice(['greater', 'equal', 'less']);
-      let numDegree, denDegree;
-      const possibleDegrees = [];
-      for (let k = -10; k <= 10; k++) if (k !== 0) possibleDegrees.push(k);
-      if (relation === 'greater') {
-        const pairs = [];
-        possibleDegrees.forEach(a => possibleDegrees.forEach(b => { if (a > b) pairs.push([a, b]); }));
-        [numDegree, denDegree] = randomChoice(pairs);
-      } else if (relation === 'less') {
-        const pairs = [];
-        possibleDegrees.forEach(a => possibleDegrees.forEach(b => { if (a < b) pairs.push([a, b]); }));
-        [numDegree, denDegree] = randomChoice(pairs);
-      } else {
-        numDegree = denDegree = randomChoice(possibleDegrees);
-      }
-      const numerator = randomExponentialExpressionExactDegree(numDegree);
-      const denominator = randomExponentialExpressionExactDegree(denDegree);
-      const answers = [
-        { labelTex: '\\lim_{x \\to -\\infty}f(x)', answer: exponentialEndBehaviour(numerator, denominator, 'negative') },
-        { labelTex: '\\lim_{x \\to \\infty}f(x)', answer: exponentialEndBehaviour(numerator, denominator, 'positive') }
-      ];
-      return {
-        type: 5,
-        questionTex: `f(x)=\\frac{${exponentialExpressionToTex(numerator, baseTex)}}{${exponentialExpressionToTex(denominator, baseTex)}}.\\quad \\text{Evaluate }\\lim_{x \\to -\\infty}f(x)\\;\\text{and}\\;\\lim_{x \\to \\infty}f(x).`,
-        answers,
-        hints: type5Hints(baseTex, numerator, denominator, numDegree, denDegree, answers)
-      };
-    }
-
-
-    function polynomialFromRootsWithPower(coefficient, zeroPower, roots) {
-      let poly = polynomialFromConstant(coefficient);
-      for (let i = 0; i < zeroPower; i++) poly = multiplyPolynomials(poly, [makeTerm(1, 1)]);
-      roots.forEach(root => { poly = multiplyPolynomials(poly, polynomialFromRoot(root)); });
-      return poly;
-    }
-
-    function rootCountsFromData(zeroPower, roots) {
-      const counts = new Map();
-      if (zeroPower > 0) counts.set(0, zeroPower);
-      roots.forEach(root => counts.set(root, (counts.get(root) || 0) + 1));
-      return counts;
-    }
-
-    function subtractCancelledRootCounts(numCounts, denCounts) {
-      const reducedNum = new Map(numCounts);
-      const reducedDen = new Map(denCounts);
-      const allRoots = new Set([...reducedNum.keys(), ...reducedDen.keys()]);
-      allRoots.forEach(root => {
-        const cancel = Math.min(reducedNum.get(root) || 0, reducedDen.get(root) || 0);
-        if (cancel > 0) {
-          reducedNum.set(root, (reducedNum.get(root) || 0) - cancel);
-          reducedDen.set(root, (reducedDen.get(root) || 0) - cancel);
-        }
-        if ((reducedNum.get(root) || 0) === 0) reducedNum.delete(root);
-        if ((reducedDen.get(root) || 0) === 0) reducedDen.delete(root);
-      });
-      return { reducedNum, reducedDen };
-    }
-
-    function polynomialFromRootCounts(coefficient, counts) {
-      let poly = polynomialFromConstant(coefficient);
-      Array.from(counts.entries()).forEach(([root, count]) => {
-        for (let i = 0; i < count; i++) poly = multiplyPolynomials(poly, polynomialFromRoot(root));
-      });
-      return poly;
-    }
-
-    function evaluateRootCountProduct(counts, x, excludedRoot = null, excludedCount = 0) {
-      let value = 1;
-      counts.forEach((count, root) => {
-        const power = root === excludedRoot ? Math.max(0, count - excludedCount) : count;
-        value *= Math.pow(x - root, power);
-      });
-      return value;
-    }
-
-    function type6LimitAtPointTex(a, j, k, reducedNumCounts, reducedDenCounts) {
-      const denMultiplicity = reducedDenCounts.get(a) || 0;
-      if (denMultiplicity === 0) {
-        const numValue = j * evaluateRootCountProduct(reducedNumCounts, a);
-        const denValue = k * evaluateRootCountProduct(reducedDenCounts, a);
-        const value = exactFraction(numValue, denValue);
-        return {
-          right: { kind: 'finite', value, tex: fractionToTex(value) },
-          left: { kind: 'finite', value, tex: fractionToTex(value) },
-          twoSided: { kind: 'finite', value, tex: fractionToTex(value) }
-        };
-      }
-
-      const numBase = j * evaluateRootCountProduct(reducedNumCounts, a);
-      const denBase = k * evaluateRootCountProduct(reducedDenCounts, a, a, denMultiplicity);
-      const baseSign = Math.sign(numBase / denBase);
-      const rightSign = baseSign;
-      const leftSign = baseSign * (denMultiplicity % 2 === 0 ? 1 : -1);
-      const right = rightSign > 0 ? { kind: 'infinity' } : { kind: 'negativeInfinity' };
-      const left = leftSign > 0 ? { kind: 'infinity' } : { kind: 'negativeInfinity' };
-      const twoSided = right.kind === left.kind ? right : { kind: 'dne' };
-      return { right, left, twoSided };
-    }
-
-    function limitEntriesForPoint(a, j, k, reducedNumCounts, reducedDenCounts) {
-      const lims = type6LimitAtPointTex(a, j, k, reducedNumCounts, reducedDenCounts);
-      return [
-        { labelTex: `\\lim_{x \\to ${numberTex(a)}^+}f(x)`, answer: lims.right },
-        { labelTex: `\\lim_{x \\to ${numberTex(a)}^-}f(x)`, answer: lims.left },
-        { labelTex: `\\lim_{x \\to ${numberTex(a)}}f(x)`, answer: lims.twoSided }
-      ];
-    }
-
-    function uniqueAsymptotes(asymptotes) {
-      const seen = new Set();
-      return asymptotes.filter(item => {
-        const key = `${item.type}:${Math.round(item.value * 1e10) / 1e10}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-    }
-
-    function rootFactorPowerTex(root, count) {
-      const base = root === 0 ? 'x' : linearFactorTex(root);
-      return count === 1 ? base : `${base}^{${count}}`;
-    }
-
-    function rootCountsFactorTex(coefficient, counts) {
-      const pieces = [];
-      if (coefficient === -1 && counts.size > 0) pieces.push('-1');
-      else if (coefficient !== 1 || counts.size === 0) pieces.push(`${coefficient}`);
-      Array.from(counts.entries()).sort((a, b) => b[0] - a[0]).forEach(([root, count]) => {
-        pieces.push(rootFactorPowerTex(root, count));
-      });
-      return pieces.join('\\cdot ');
-    }
-
-    function signedNumericFactorTex(value) {
-      return value < 0 ? `(${numberTex(value)})` : numberTex(value);
-    }
-
-    function rootCountsSubstitutionTex(coefficient, counts, a, excludedRoot = null, excludedCount = 0) {
-      const pieces = [`${coefficient}`];
-      Array.from(counts.entries()).sort((left, right) => right[0] - left[0]).forEach(([root, count]) => {
-        const visibleCount = root === excludedRoot ? Math.max(0, count - excludedCount) : count;
-        for (let i = 0; i < visibleCount; i++) {
-          pieces.push(signedNumericFactorTex(a - root));
-        }
-      });
-      return pieces.join('\\cdot ');
-    }
-
-    function type6PointHints(a, entries, j, k, reducedNumCounts, reducedDenCounts) {
-      const denMultiplicity = reducedDenCounts.get(a) || 0;
-      const hints = [];
-      if (denMultiplicity === 0) {
-        hints.push(`\\text{After cancellation, the denominator is nonzero at }x=${numberTex(a)}\\text{, so substitute }x=${numberTex(a)}.`);
-        hints.push(`${answerListTexExtended(entries)}`);
-        return hints;
-      }
-
-      const numBase = j * evaluateRootCountProduct(reducedNumCounts, a);
-      const denBase = k * evaluateRootCountProduct(reducedDenCounts, a, a, denMultiplicity);
-      const reducedLocalCoefficient = exactFraction(numBase, denBase);
-      const localFactor = rootFactorPowerTex(a, denMultiplicity);
-      const sideFactor = linearFactorTex(a);
-      const substitutedNumerator = rootCountsSubstitutionTex(j, reducedNumCounts, a);
-      const substitutedDenominator = rootCountsSubstitutionTex(k, reducedDenCounts, a, a, denMultiplicity);
-      hints.push(`\\text{Near }x=${numberTex(a)}\\text{,}\\quad f(x)\\sim\\frac{${substitutedNumerator}}{${substitutedDenominator}\\cdot ${localFactor}}=\\frac{${fractionToTex(reducedLocalCoefficient)}}{${localFactor}}.`);
-      hints.push(`\\text{As }x\\to ${numberTex(a)}^+\\text{, }${sideFactor}\\to 0^+\\text{, so }f(x)\\to ${answerObjectToTexExtended(entries[0].answer)}.`);
-      hints.push(`\\text{As }x\\to ${numberTex(a)}^-\\text{, }${sideFactor}\\to 0^-\\text{, so }f(x)\\to ${answerObjectToTexExtended(entries[1].answer)}.`);
-      hints.push(`${answerListTexExtended(entries)}`);
-      return hints;
-    }
-
-    function type6Hints(data) {
-      const {
-        targets,
-        expectedAsymptotes,
-        answerGroups,
-        j,
-        k,
-        numCounts,
-        denCounts,
-        reducedNum,
-        reducedDen,
-        simplifiedNumerator,
-        simplifiedDenominator
-      } = data;
-
-      const hints = [];
-      hints.push(`\\text{First factor the numerator and denominator.}`);
-      hints.push(`f(x)=\\frac{${rootCountsFactorTex(j, numCounts)}}{${rootCountsFactorTex(k, denCounts)}}=\\frac{${rootCountsFactorTex(j, reducedNum)}}{${rootCountsFactorTex(k, reducedDen)}}`);
-
-      const finiteGroups = answerGroups.filter(group => group.entries.length === 3);
-      finiteGroups.forEach(group => {
-        const targetMatch = group.titleTex.match(/x=([^}]*)/);
-      });
-
-      targets.forEach((target, index) => {
-        const group = answerGroups[index];
-        hints.push(...type6PointHints(target, group.entries, j, k, reducedNum, reducedDen));
-      });
-
-      const infinityGroup = answerGroups.find(group => group.titleTex === 'x\\to\\pm\\infty');
-      if (infinityGroup) {
-        hints.push(...rationalDivisionHints(simplifiedNumerator, simplifiedDenominator, infinityGroup.entries, { finalAnswers: false }));
-        hints.push(`${answerListTexExtended(infinityGroup.entries)}`);
-      }
-
-      const verticals = expectedAsymptotes.filter(a => a.type === 'vertical').map(a => `x=${numberTex(a.value)}`);
-      const horizontals = expectedAsymptotes.filter(a => a.type === 'horizontal').map(a => `y=${numberTex(a.value)}`);
-      const asymptoteParts = [];
-      if (verticals.length) asymptoteParts.push(`\\text{vertical: }${verticals.join(',\\; ')}`);
-      if (horizontals.length) asymptoteParts.push(`\\text{horizontal: }${horizontals.join(',\\; ')}`);
-      if (!asymptoteParts.length) asymptoteParts.push(`\\text{no asymptotes}`);
-      hints.push(`\\text{The asymptotes are }${asymptoteParts.join('\\quad ')}.`);
-      return hints;
-    }
-
-    function generateType6LimitProblem() {
-      const j = randomNonzeroInteger(-8, 8);
-      const k = randomNonzeroInteger(-8, 8);
-
-      let n, m;
-      const powerRoll = Math.random();
-      if (powerRoll < 0.50) {
-        n = 0;
-        m = 0;
-      } else if (powerRoll < 0.75) {
-        n = m = randomInteger(1, 7);
-      } else {
-        do {
-          n = randomInteger(0, 7);
-          m = randomInteger(0, 7);
-        } while (n === m);
-      }
-
-      let f, g;
-      do { f = randomInteger(-9, 9); } while (f === 0);
-      do { g = randomInteger(-9, 9); } while (g === 0 || g === f);
-
-      let b, c;
-      if (Math.random() < 0.50) {
-        const denominatorRootToCancel = randomChoice([f, g]);
-        if (Math.random() < 0.50) {
-          b = denominatorRootToCancel;
-          do { c = randomInteger(-9, 9); } while (c === 0);
-        } else {
-          c = denominatorRootToCancel;
-          do { b = randomInteger(-9, 9); } while (b === 0);
-        }
-      } else {
-        do { b = randomInteger(-9, 9); } while (b === 0 || b === f || b === g);
-        do { c = randomInteger(-9, 9); } while (c === 0 || c === f || c === g);
-      }
-
-      const numerator = polynomialFromRootsWithPower(j, n, [b, c]);
-      const denominator = polynomialFromRootsWithPower(k, m, [f, g]);
-
-      const numCounts = rootCountsFromData(n, [b, c]);
-      const denCounts = rootCountsFromData(m, [f, g]);
-      const { reducedNum, reducedDen } = subtractCancelledRootCounts(numCounts, denCounts);
-      const simplifiedNumerator = polynomialFromRootCounts(j, reducedNum);
-      const simplifiedDenominator = polynomialFromRootCounts(k, reducedDen);
-
-      const targets = [f, g];
-      if (m !== 0 && !targets.includes(0)) targets.push(0);
-
-      const answerGroups = targets.map(target => ({
-        titleTex: `x=${numberTex(target)}`,
-        entries: limitEntriesForPoint(target, j, k, reducedNum, reducedDen)
-      }));
-
-      const infinityEntries = [
-        { labelTex: '\\lim_{x \\to -\\infty}f(x)', answer: rationalEndBehaviour(simplifiedNumerator, simplifiedDenominator, 'negative') },
-        { labelTex: '\\lim_{x \\to \\infty}f(x)', answer: rationalEndBehaviour(simplifiedNumerator, simplifiedDenominator, 'positive') }
-      ];
-      answerGroups.push({ titleTex: `x\\to\\pm\\infty`, entries: infinityEntries });
-
-      const answers = answerGroups.flatMap(group => group.entries);
-
-      const expectedAsymptotes = [];
-      reducedDen.forEach((count, root) => {
-        if (count > 0) expectedAsymptotes.push({ type: 'vertical', value: root });
-      });
-      const numDegree = degreeOfPolynomial(simplifiedNumerator);
-      const denDegree = degreeOfPolynomial(simplifiedDenominator);
-      if (numDegree < denDegree) {
-        expectedAsymptotes.push({ type: 'horizontal', value: 0 });
-      } else if (numDegree === denDegree) {
-        expectedAsymptotes.push({ type: 'horizontal', value: leadingCoefficient(simplifiedNumerator) / leadingCoefficient(simplifiedDenominator) });
-      }
-
-      const expected = uniqueAsymptotes(expectedAsymptotes);
-      const questionTex = `f(x)=${rationalFunctionTex(numerator, denominator)}.\\quad \\text{Evaluate the following limits and list all asymptotes.}`;
-
-      return {
-        type: 6,
-        questionTex,
-        answers,
-        answerGroups,
-        expectedAsymptotes: expected,
-        hints: type6Hints({
-          targets,
-          expectedAsymptotes: expected,
-          answerGroups,
-          j,
-          k,
-          numCounts,
-          denCounts,
-          reducedNum,
-          reducedDen,
-          simplifiedNumerator,
-          simplifiedDenominator
-        })
-      };
-    }
-
-
-
-    function directionData(direction) {
-      return direction === 'positive'
-        ? { dir: 'positive', limitTex: '\\infty', labelTex: '\\lim_{x \\to \\infty}f(x)' }
-        : { dir: 'negative', limitTex: '-\\infty', labelTex: '\\lim_{x \\to -\\infty}f(x)' };
-    }
-
-    function finiteLimitData(a, side = '') {
-      return {
-        a,
-        side,
-        limitTex: `${numberTex(a)}${side}`,
-        labelTex: `\\lim_{x \\to ${numberTex(a)}${side}}f(x)`
-      };
-    }
-
-    function derivativePolynomialNTimes(poly, times) {
-      let out = poly;
-      for (let i = 0; i < times; i++) out = derivativePolynomial(out);
-      return out;
-    }
-
-    function type1RationalInfinityHints(numerator, denominator, answerEntry, direction) {
-      const data = directionData(direction);
-      const hints = [];
-      let currentNumerator = numerator;
-      let currentDenominator = denominator;
-
-      hints.push(`\\text{As }x\\to ${data.limitTex}\\text{, this is an indeterminate form of type }\\frac{\\infty}{\\infty}\\text{, so we can apply L'Hôpital's Rule.}`);
-      let lhopitalStep = 0;
-      while (degreeOfPolynomial(currentNumerator) > 0 && degreeOfPolynomial(currentDenominator) > 0 && lhopitalStep < 12) {
-        currentNumerator = derivativePolynomial(currentNumerator);
-        currentDenominator = derivativePolynomial(currentDenominator);
-        lhopitalStep++;
-        hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${polynomialToTex(currentNumerator)}}{${polynomialToTex(currentDenominator)}}`);
-      }
-
-      hints.push(`\\text{Now one of the numerator/denominator is constant, so evaluate the remaining limit directly.}`);
-      hints.push(`${answerEquationTexExtended(answerEntry)}`);
-      hints.push(`\\text{Alternate solution: use the older end-behaviour method.}`);
-      hints.push(...rationalDivisionHints(numerator, denominator, [answerEntry]));
-      return hints;
-    }
-
-    function generateRenamedType1LimitProblem() {
-      const rational = generateDegreeMatchedRational();
-      const { numerator, denominator } = rational;
-      const direction = Math.random() < 0.5 ? 'positive' : 'negative';
-      const data = directionData(direction);
-      const answerEntry = { labelTex: data.labelTex, answer: rationalEndBehaviour(numerator, denominator, direction) };
-      return {
-        type: 1,
-        questionTex: `f(x)=${rationalFunctionTex(numerator, denominator)}.\\quad \\text{Evaluate }${data.labelTex}.`,
-        answers: [answerEntry],
-        hints: type1RationalInfinityHints(numerator, denominator, answerEntry, direction)
-      };
-    }
-
-    function type2ExponentialRationalHints(baseTex, numerator, denominator, numDegree, denDegree, answerEntry, direction) {
-      const data = directionData(direction);
-      const divisorPower = Math.min(numDegree, denDegree);
-      const hints = [];
-
-      hints.push(`\\text{As }x\\to ${data.limitTex}\\text{, this is an indeterminate form of type }\\frac{\\infty}{\\infty}\\text{, so try one application of L'Hôpital's Rule.}`);
-      hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${derivativeExponentialExpressionToTex(numerator, baseTex)}}{${derivativeExponentialExpressionToTex(denominator, baseTex)}}`);
-      hints.push(`\\text{The quotient still has competing exponential terms, so L'Hôpital's Rule has not really simplified the problem.}`);
-      hints.push(`\\text{Instead, use the exponential end-behaviour strategy.}`);
-
-      if (numDegree === denDegree) {
-        hints.push(`\\text{The numerator and denominator have the same exponential degree }${numDegree}\\text{, so we divide every term by }${exponentialPowerTex(baseTex, divisorPower)}.`);
-      } else {
-        hints.push(`\\text{The lowest exponential degree of the numerator/denominator is }${divisorPower}\\text{, so we divide every term by }${exponentialPowerTex(baseTex, divisorPower)}.`);
-      }
-      hints.push(exponentialDivideEquationTex(numerator, denominator, divisorPower, baseTex).replaceAll('\\pm\\infty', data.limitTex));
-      hints.push(exponentialDirectionComparisonHint(baseTex, numerator, denominator, divisorPower, direction));
-      hints.push(`${answerEquationTexExtended(answerEntry)}`);
-      return hints;
-    }
-
-    function generateRenamedType2LimitProblem() {
-      const baseTex = Math.random() < 0.6 ? `${randomInteger(2, 9)}` : 'e';
-      const relation = randomChoice(['greater', 'equal', 'less']);
-      let numDegree, denDegree;
-      const possibleDegrees = [];
-      for (let k = -10; k <= 10; k++) if (k !== 0) possibleDegrees.push(k);
-      if (relation === 'greater') {
-        const pairs = [];
-        possibleDegrees.forEach(a => possibleDegrees.forEach(b => { if (a > b) pairs.push([a, b]); }));
-        [numDegree, denDegree] = randomChoice(pairs);
-      } else if (relation === 'less') {
-        const pairs = [];
-        possibleDegrees.forEach(a => possibleDegrees.forEach(b => { if (a < b) pairs.push([a, b]); }));
-        [numDegree, denDegree] = randomChoice(pairs);
-      } else {
-        numDegree = denDegree = randomChoice(possibleDegrees);
-      }
-      const numerator = randomExponentialExpressionExactDegree(numDegree);
-      const denominator = randomExponentialExpressionExactDegree(denDegree);
-      const direction = Math.random() < 0.5 ? 'positive' : 'negative';
-      const data = directionData(direction);
-      const answerEntry = { labelTex: data.labelTex, answer: exponentialEndBehaviour(numerator, denominator, direction) };
-      return {
-        type: 2,
-        questionTex: `f(x)=\\frac{${exponentialExpressionToTex(numerator, baseTex)}}{${exponentialExpressionToTex(denominator, baseTex)}}.\\quad \\text{Evaluate }${data.labelTex}.`,
-        answers: [answerEntry],
-        hints: type2ExponentialRationalHints(baseTex, numerator, denominator, numDegree, denDegree, answerEntry, direction)
-      };
-    }
-
-    function coeffForSimpleFunction() {
-      const values = [];
-      for (let k = -9; k <= 9; k++) if (k !== 0 && k !== 1) values.push(k);
-      return randomChoice(values);
-    }
-
-    function randomPolynomialAtLeastDegree3() {
-      return randomPolynomialExactDegree(randomInteger(3, 7), 2, 4);
-    }
-
-    function randomLinearData() {
-      const c = coeffForSimpleFunction();
-      const d = coeffForSimpleFunction();
-      return { c, d, root: exactFraction(-d, c), poly: polynomialFromAxPlusC(c, d) };
-    }
-
-    function randomQuadraticData() {
-      const a = Math.random() < 0.5 ? 1 : coeffForSimpleFunction();
-      let n = coeffForSimpleFunction();
-      let m;
-      do { m = coeffForSimpleFunction(); } while (m === n);
-      let poly = multiplyPolynomials(polynomialFromRoot(n), polynomialFromRoot(m));
-      poly = scalePolynomial(poly, a);
-      return { a, n, m, roots: [n, m], poly };
-    }
-
-    function functionTypeName(type) {
-      return {
-        1: 'polynomial',
-        2: 'linear',
-        3: 'quadratic',
-        4: 'trigonometric',
-        5: 'exponential',
-        6: 'logarithmic'
-      }[type];
-    }
-
-    function trigDerivativeTex(name, innerTex = 'x', innerPrimeTex = '1') {
-      const ip = innerPrimeTex === '1' ? '' : `\\cdot ${innerPrimeTex}`;
-      if (name === 'sin') return `\\cos\\left(${innerTex}\\right)${ip}`;
-      if (name === 'cos') return `-\\sin\\left(${innerTex}\\right)${ip}`;
-      if (name === 'tan') return `\\sec^2\\left(${innerTex}\\right)${ip}`;
-      if (name === 'sec') return `\\sec\\left(${innerTex}\\right)\\tan\\left(${innerTex}\\right)${ip}`;
-      if (name === 'csc') return `-\\csc\\left(${innerTex}\\right)\\cot\\left(${innerTex}\\right)${ip}`;
-      return `-\\csc^2\\left(${innerTex}\\right)${ip}`;
-    }
-
-    function trigTex(name, innerTex = 'x') {
-      return `\\${name}\\left(${innerTex}\\right)`;
-    }
-
-    function expTex(base, innerTex = 'x') {
-      return base === 'e' ? `e^{${innerTex}}` : `${base}^{${innerTex}}`;
-    }
-
-    function expDerivativeTex(base, innerTex = 'x', innerPrimeTex = '1') {
-      const ip = innerPrimeTex === '1' ? '' : `\\cdot ${innerPrimeTex}`;
-      return base === 'e' ? `e^{${innerTex}}${ip}` : `\\ln(${base})${base}^{${innerTex}}${ip}`;
-    }
-
-    function logTex(base, innerTex = 'x') {
-      return base === 'e' ? `\\ln\\left(${innerTex}\\right)` : `\\log_{${base}}\\left(${innerTex}\\right)`;
-    }
-
-    function logDerivativeTex(base, innerTex = 'x', innerPrimeTex = '1') {
-      const numerator = innerPrimeTex === '1' ? '1' : innerPrimeTex;
-      const denominatorInner = innerTex === 'x' ? 'x' : `\\left(${innerTex}\\right)`;
-      return base === 'e'
-        ? `\\frac{${numerator}}{${denominatorInner}}`
-        : `\\frac{${numerator}}{${denominatorInner}\\ln(${base})}`;
-    }
-
-    function finiteAnswer(value) {
-      const tex = numberTex(value);
-      return { kind: 'finite', value: { decimal: value }, tex };
-    }
-
-    function finiteFromFraction(num, den) {
+    function fracValue(num, den = 1) {
       const f = exactFraction(num, den);
-      return { kind: 'finite', value: f, tex: fractionToTex(f) };
+      return { decimal: f.num / f.den, tex: fractionToTex(f) };
     }
 
-    function infinityAnswerFromSign(sign) {
-      return sign > 0 ? { kind: 'infinity' } : { kind: 'negativeInfinity' };
+    function specialTrigValue(n, d) {
+      const angle = Math.PI * n / d;
+      const v = Math.round(Math.sin(angle) * 1e12) / 1e12;
+      const values = [
+        [-1, '-1'], [-Math.sqrt(3)/2, '-\\frac{\\sqrt{3}}{2}'], [-Math.SQRT1_2, '-\\frac{\\sqrt{2}}{2}'], [-0.5, '-\\frac{1}{2}'],
+        [0, '0'], [0.5, '\\frac{1}{2}'], [Math.SQRT1_2, '\\frac{\\sqrt{2}}{2}'], [Math.sqrt(3)/2, '\\frac{\\sqrt{3}}{2}'], [1, '1']
+      ];
+      const match = values.find(([x]) => Math.abs(v - x) < 1e-9);
+      return valueObj(v, match ? match[1] : numberTex(v));
     }
 
-    function shiftedZeroFunctionForType(type, a) {
-      if (type === 4) {
-        const trig = randomChoice(['sin', 'cos', 'tan', 'cot']);
-        if (trig === 'sin') return {
-          tex: `\\sin\\left(x ${a < 0 ? '+' : '-'} ${Math.abs(a)}\\right)`,
-          derivativeTex: `\\cos\\left(x ${a < 0 ? '+' : '-'} ${Math.abs(a)}\\right)`,
-          derivativeAtA: 1,
-          zeroDescription: `\\sin(0)=0`
-        };
-        if (trig === 'tan') return {
-          tex: `\\tan\\left(x ${a < 0 ? '+' : '-'} ${Math.abs(a)}\\right)`,
-          derivativeTex: `\\sec^2\\left(x ${a < 0 ? '+' : '-'} ${Math.abs(a)}\\right)`,
-          derivativeAtA: 1,
-          zeroDescription: `\\tan(0)=0`
-        };
-        if (trig === 'cos') return {
-          tex: `\\cos\\left(x ${a < 0 ? '+' : '-'} ${Math.abs(a)}+\\frac{\\pi}{2}\\right)`,
-          derivativeTex: `-\\sin\\left(x ${a < 0 ? '+' : '-'} ${Math.abs(a)}+\\frac{\\pi}{2}\\right)`,
-          derivativeAtA: -1,
-          zeroDescription: `\\cos\\left(\\frac{\\pi}{2}\\right)=0`
-        };
-        if (trig === 'cot') return {
-          tex: `\\cot\\left(x ${a < 0 ? '+' : '-'} ${Math.abs(a)}+\\frac{\\pi}{2}\\right)`,
-          derivativeTex: `-\\csc^2\\left(x ${a < 0 ? '+' : '-'} ${Math.abs(a)}+\\frac{\\pi}{2}\\right)`,
-          derivativeAtA: -1,
-          zeroDescription: `\\cot\\left(\\frac{\\pi}{2}\\right)=0`
-        };
-        if (trig === 'sec') return {
-          tex: `\\sec\\left(x ${a < 0 ? '+' : '-'} ${Math.abs(a)}\\right)-1`,
-          derivativeTex: `\\sec\\left(x ${a < 0 ? '+' : '-'} ${Math.abs(a)}\\right)\\tan\\left(x ${a < 0 ? '+' : '-'} ${Math.abs(a)}\\right)`,
-          derivativeAtA: 0,
-          secondDerivativeAtA: 1,
-          zeroDescription: `\\sec(0)-1=0`
-        };
-        return {
-          tex: `\\csc\\left(x ${a < 0 ? '+' : '-'} ${Math.abs(a)}+\\frac{\\pi}{2}\\right)-1`,
-          derivativeTex: `-\\csc\\left(x ${a < 0 ? '+' : '-'} ${Math.abs(a)}+\\frac{\\pi}{2}\\right)\\cot\\left(x ${a < 0 ? '+' : '-'} ${Math.abs(a)}+\\frac{\\pi}{2}\\right)`,
-          derivativeAtA: 0,
-          secondDerivativeAtA: 1,
-          zeroDescription: `\\csc\\left(\\frac{\\pi}{2}\\right)-1=0`
-        };
+    function cosSpecial(k) { return specialTrigValue(6 - k, 12); }
+    function sinSpecial(k) { return specialTrigValue(k, 12); }
+
+    function multiplyValueTex(v, c) {
+      return valueObj(c * v.decimal, c === 1 ? v.tex : `${c < 0 ? '-' : ''}${Math.abs(c)}${v.tex === '1' ? '' : v.tex === '-1' ? '(-1)' : `\\left(${v.tex}\\right)`}`);
+    }
+
+    function integerIntervalContaining(points, minWidth = 4) {
+      const lowPoint = Math.min(...points);
+      const highPoint = Math.max(...points);
+      let left = Math.max(-10, Math.floor(lowPoint) - randomInteger(1, 3));
+      let right = Math.min(10, Math.ceil(highPoint) + randomInteger(1, 3));
+      while (right - left < minWidth) {
+        if (left > -10) left--;
+        if (right - left >= minWidth) break;
+        if (right < 10) right++;
+        if (left === -10 && right === 10) break;
       }
-      if (type === 5) {
-        const base = Math.random() < 0.5 ? 'e' : randomInteger(2, 9);
-        const shiftTex = `x ${a < 0 ? '+' : '-'} ${Math.abs(a)}`;
-        return {
-          tex: `${expTex(base, shiftTex)} - 1`,
-          derivativeTex: expDerivativeTex(base, shiftTex),
-          derivativeAtA: base === 'e' ? 1 : Math.log(base),
-          zeroDescription: `${expTex(base, '0')}-1=0`
-        };
-      }
-      const base = Math.random() < 0.5 ? 'e' : randomInteger(2, 9);
-      const shift = a - 1;
-      const innerTex = `x ${shift < 0 ? '+' : '-'} ${Math.abs(shift)}`;
+      return { a: left, b: right, aTex: numberTex(left), bTex: numberTex(right) };
+    }
+
+    function trigIntervalContaining(criticalK) {
+      const all = Array.from(new Set([...Array.from({length:25}, (_,i)=>i), ...criticalK])).sort((a,b)=>a-b);
+      const k = randomChoice(criticalK.filter(x => x > 0 && x < 24));
+      const possibleLeft = all.filter(x => x < k && x >= 0);
+      const possibleRight = all.filter(x => x > k && x <= 24);
+      const left = randomChoice(possibleLeft.slice(Math.max(0, possibleLeft.length - 6)));
+      const right = randomChoice(possibleRight.slice(0, 6));
+      return { a: left, b: right, aTex: piMultipleToTex(left), bTex: piMultipleToTex(right) };
+    }
+
+    function buildProblem({ family, tex, continuity, derivativeTex, criticalTex, criticals, interval, evalAt }) {
+      const candidates = [interval.a, interval.b, ...criticals.filter(x => x > interval.a + 1e-10 && x < interval.b - 1e-10)];
+      const evaluations = candidates.map(x => ({ x, value: evalAt(x) }));
+      const maxVal = evaluations.reduce((best, item) => item.value.decimal > best.value.decimal ? item : best, evaluations[0]);
+      const minVal = evaluations.reduce((best, item) => item.value.decimal < best.value.decimal ? item : best, evaluations[0]);
+      const evalTex = evaluations.map(item => `f(${item.xTex || numberTex(item.x)})=${item.value.tex}`).join(',\\quad ');
       return {
-        tex: logTex(base, innerTex),
-        derivativeTex: logDerivativeTex(base, innerTex),
-        derivativeAtA: base === 'e' ? 1 : 1 / Math.log(base),
-        zeroDescription: `${logTex(base, '1')}=0`
+        family,
+        questionTex: `\\text{Find the absolute maximum and absolute minimum values of } f(x)=${tex} \\text{ on } [${interval.aTex},${interval.bTex}].`,
+        maxValue: maxVal.value,
+        minValue: minVal.value,
+        hints: [
+          `f(x)=${tex}\\text{ is continuous on }[${interval.aTex},${interval.bTex}]\\text{ because }${continuity}\\text{, so the Extreme Value Theorem applies.}`,
+          `${derivativeTex}\\quad ${criticalTex}`,
+          `\\text{Evaluate }f\\text{ at the endpoints and at the critical points in the interval: }${evalTex}.`,
+          `\\text{The absolute maximum value is }${maxVal.value.tex}\\text{ and the absolute minimum value is }${minVal.value.tex}.`
+        ]
       };
     }
 
-    function lhopitalFiniteZeroHints(problemTex, numeratorTex, denominatorTex, numeratorDerivativeTex, denominatorDerivativeTex, limitData, answerEntry, indeterminateTex='\\frac{0}{0}') {
-      return [
-        `\\text{At }x=${limitData.limitTex}\\text{, the quotient has indeterminate form }${indeterminateTex}\\text{.}`,
-        `\\text{By L'Hôpital's Rule, differentiate the numerator and denominator.}`,
-        `\\lim_{x\\to ${limitData.limitTex}}f(x)=\\lim_{x\\to ${limitData.limitTex}}\\frac{${numeratorDerivativeTex}}{${denominatorDerivativeTex}}`,
-        `${answerEquationTexExtended(answerEntry)}`
-      ];
+    function generateQuadraticProblem() {
+      let r = randomInteger(-7, 7);
+      let s;
+      do { s = randomInteger(-7, 7); } while (s === r || ((r + s) % 2 !== 0));
+      const a = randomChoice([-3, -2, -1, 1, 2, 3]);
+      const h = (r + s) / 2;
+      const tex = `${a === 1 ? '' : a === -1 ? '-' : a}${linearFactorTex(r)}${linearFactorTex(s)}`;
+      const interval = integerIntervalContaining([r, s, h]);
+      const evalAt = x => valueObj(a * (x - r) * (x - s));
+      return buildProblem({
+        family: 'quadratic', tex, interval, evalAt,
+        continuity: '\\text{it is a polynomial}',
+        derivativeTex: `f'(x)=${a}(2x ${signedTex(-(r+s))})`,
+        criticalTex: `f'(x)=0\\text{ gives }x=${numberTex(h)}.`,
+        criticals: [h]
+      });
     }
 
-
-    function type3PolynomialSlotProblem() {
-      const polynomial = randomPolynomialAtLeastDegree3();
-      const polynomialInNumerator = Math.random() < 0.5;
-      const partnerType = randomChoice([4, 5, 6]);
-      if (partnerType === 4) return generateType3PolynomialTrigPartner(polynomial, polynomialInNumerator);
-      if (partnerType === 5) return generateType3PolynomialExponentialPartner(polynomial, polynomialInNumerator);
-      return generateType3PolynomialLogPartner(polynomial, polynomialInNumerator);
+    function generateCubicProblem() {
+      let p = randomInteger(-5, 4), q;
+      do { q = randomInteger(p + 1, 6); } while (q === p);
+      const A = randomChoice([-12, -6, 6, 12]);
+      const C = randomInteger(-10, 10);
+      const terms = [{ c: A/3, p: 3 }, { c: -A*(p+q)/2, p: 2 }, { c: A*p*q, p: 1 }, { c: C, p: 0 }];
+      const tex = simplePolynomialTex(terms);
+      const interval = integerIntervalContaining([p, q]);
+      const evalAt = x => valueObj(A/3*x*x*x - A*(p+q)/2*x*x + A*p*q*x + C);
+      return buildProblem({
+        family: 'cubic', tex, interval, evalAt,
+        continuity: '\\text{it is a polynomial}',
+        derivativeTex: `f'(x)=${A}${linearFactorTex(p)}${linearFactorTex(q)}`,
+        criticalTex: `f'(x)=0\\text{ gives }x=${p},${q}.`,
+        criticals: [p, q]
+      });
     }
 
-    function polyDerivativeSequence(poly) {
-      const seq = [poly];
-      let current = poly;
-      while (degreeOfPolynomial(current) > 0 && seq.length < 12) {
-        current = derivativePolynomial(current);
-        seq.push(current);
+    function generateQuarticProblem() {
+      let p = randomInteger(-5, 4), q;
+      do { q = randomInteger(p + 1, 6); } while ((p + q) % 2 !== 0);
+      const a = randomChoice([-2, -1, 1, 2]);
+      const C = randomInteger(-10, 10);
+      const mid = (p + q) / 2;
+      const tex = `${a === 1 ? '' : a === -1 ? '-' : a}${linearFactorTex(p)}^2${linearFactorTex(q)}^2${C ? ` ${signedTex(C)}` : ''}`;
+      const interval = integerIntervalContaining([p, q, mid]);
+      const evalAt = x => valueObj(a * Math.pow(x - p, 2) * Math.pow(x - q, 2) + C);
+      return buildProblem({
+        family: 'quartic', tex, interval, evalAt,
+        continuity: '\\text{it is a polynomial}',
+        derivativeTex: `f'(x)=${4*a}${linearFactorTex(p)}${linearFactorTex(q)}\\left(x-${numberTex(mid)}\\right)`,
+        criticalTex: `f'(x)=0\\text{ gives }x=${p},${numberTex(mid)},${q}.`,
+        criticals: [p, mid, q]
+      });
+    }
+
+    function generateLinearPowerProblem() {
+      const m = randomChoice([-3, -2, -1, 1, 2, 3]);
+      const h = randomInteger(-6, 6);
+      const n = randomInteger(2, 5);
+      const tex = `(${m === 1 ? '' : m === -1 ? '-' : m}${linearFactorTex(h)})^{${n}}`;
+      const interval = integerIntervalContaining([h]);
+      const evalAt = x => valueObj(Math.pow(m * (x - h), n));
+      return buildProblem({
+        family: 'linear power', tex, interval, evalAt,
+        continuity: '\\text{it is a power of a polynomial}',
+        derivativeTex: `f'(x)=${n*m}(${m === 1 ? '' : m === -1 ? '-' : m}${linearFactorTex(h)})^{${n-1}}`,
+        criticalTex: `f'(x)=0\\text{ gives }x=${h}.`,
+        criticals: [h]
+      });
+    }
+
+    function generateAbsoluteValueProblem() {
+      const m = randomChoice([-4, -3, -2, -1, 1, 2, 3, 4]);
+      const h = randomInteger(-6, 6);
+      const tex = `\\left|${m === 1 ? '' : m === -1 ? '-' : m}${linearFactorTex(h)}\\right|`;
+      const interval = integerIntervalContaining([h]);
+      const evalAt = x => valueObj(Math.abs(m * (x - h)));
+      return buildProblem({
+        family: 'absolute value', tex, interval, evalAt,
+        continuity: '\\text{absolute value functions are continuous}',
+        derivativeTex: `f'(x)\\text{ is undefined at }x=${h}\\text{ and nonzero elsewhere on each side of }${h}.`,
+        criticalTex: `\\text{Thus the only critical point is }x=${h}.`,
+        criticals: [h]
+      });
+    }
+
+    function generateReciprocalQuadraticProblem() {
+      const h = randomInteger(-6, 6);
+      const k = randomInteger(1, 9);
+      const tex = `\\frac{1}{${linearFactorTex(h)}^2+${k}}`;
+      const interval = integerIntervalContaining([h]);
+      const evalAt = x => fracValue(1, (x-h)*(x-h)+k);
+      return buildProblem({
+        family: 'reciprocal quadratic', tex, interval, evalAt,
+        continuity: `\\text{the denominator }${linearFactorTex(h)}^2+${k}\\text{ is always positive}`,
+        derivativeTex: `f'(x)=\\frac{-2${linearFactorTex(h)}}{(${linearFactorTex(h)}^2+${k})^2}`,
+        criticalTex: `f'(x)=0\\text{ gives }x=${h}.`,
+        criticals: [h]
+      });
+    }
+
+    function trigXTex(k) { return piMultipleToTex(k); }
+
+    function generateTrigProblem() {
+      const kind = randomChoice(['sin', 'cos', 'sinPower', 'cosPower', 'sincos', 'sinpluscos']);
+      let tex, derivativeTex, criticalTex, criticalKs, evalAt, continuity;
+      continuity = '\\text{sine and cosine are continuous everywhere}';
+      if (kind === 'sin') {
+        tex = '\\sin x'; derivativeTex = `f'(x)=\\cos x`; criticalTex = `\\cos x=0\\text{ gives }x=\\frac{\\pi}{2},\\frac{3\\pi}{2}.`; criticalKs = [6,18]; evalAt = k => sinSpecial(k);
+      } else if (kind === 'cos') {
+        tex = '\\cos x'; derivativeTex = `f'(x)=-\\sin x`; criticalTex = `\\sin x=0\\text{ gives }x=0,\\pi,2\\pi.`; criticalKs = [0,12,24]; evalAt = k => cosSpecial(k);
+      } else if (kind === 'sinPower') {
+        const n = randomInteger(2, 5); tex = `\\sin^{${n}}x`; derivativeTex = `f'(x)=${n}\\sin^{${n-1}}x\\cos x`; criticalTex = `f'(x)=0\\text{ gives }x=0,\\frac{\\pi}{2},\\pi,\\frac{3\\pi}{2},2\\pi.`; criticalKs = [0,6,12,18,24]; evalAt = k => { const v=sinSpecial(k); return valueObj(Math.pow(v.decimal,n), n===2 && Math.abs(v.decimal)===Math.SQRT1_2 ? '\\frac{1}{2}' : numberTex(Math.pow(v.decimal,n))); };
+      } else if (kind === 'cosPower') {
+        const n = randomInteger(2, 5); tex = `\\cos^{${n}}x`; derivativeTex = `f'(x)=-${n}\\cos^{${n-1}}x\\sin x`; criticalTex = `f'(x)=0\\text{ gives }x=0,\\frac{\\pi}{2},\\pi,\\frac{3\\pi}{2},2\\pi.`; criticalKs = [0,6,12,18,24]; evalAt = k => { const v=cosSpecial(k); return valueObj(Math.pow(v.decimal,n), n===2 && Math.abs(v.decimal)===Math.SQRT1_2 ? '\\frac{1}{2}' : numberTex(Math.pow(v.decimal,n))); };
+      } else if (kind === 'sincos') {
+        tex = '\\sin x\\cos x'; derivativeTex = `f'(x)=\\cos^2x-\\sin^2x`; criticalTex = `f'(x)=0\\text{ gives }x=\\frac{\\pi}{4},\\frac{3\\pi}{4},\\frac{5\\pi}{4},\\frac{7\\pi}{4}.`; criticalKs = [3,9,15,21]; evalAt = k => valueObj(sinSpecial(k).decimal * cosSpecial(k).decimal, numberTex(sinSpecial(k).decimal * cosSpecial(k).decimal));
+      } else {
+        tex = '\\sin x+\\cos x'; derivativeTex = `f'(x)=\\cos x-\\sin x`; criticalTex = `f'(x)=0\\text{ gives }x=\\frac{\\pi}{4},\\frac{5\\pi}{4}.`; criticalKs = [3,15]; evalAt = k => { const v = sinSpecial(k).decimal + cosSpecial(k).decimal; const tex = Math.abs(v - Math.sqrt(2)) < 1e-9 ? '\\sqrt{2}' : Math.abs(v + Math.sqrt(2)) < 1e-9 ? '-\\sqrt{2}' : numberTex(v); return valueObj(v, tex); };
       }
-      return seq;
-    }
-
-    function type3LimitQuestion(numTex, denTex, data) {
-      return `f(x)=\\frac{${numTex}}{${denTex}}.\\quad \\text{Evaluate }${data.labelTex}.`;
-    }
-
-    function generateType3PolynomialTrigPartner(polynomial, polynomialInNumerator) {
-      const direction = Math.random() < 0.5 ? 'positive' : 'negative';
-      const data = directionData(direction);
-      const polyTex = polynomialToTex(polynomial);
-
-      // Most ordinary trigonometric functions do not have a limit as x -> +/- infinity.
-      // The special reciprocal-trig cases below are the only allowed 1/x versions for now,
-      // because they can be explained cleanly using lim_{u->0} sin(u)/u = 1.
-      const useReciprocalOneOverX = Math.random() < 0.5;
-      if (!useReciprocalOneOverX) {
-        const trig = randomChoice(['sin', 'cos', 'tan']);
-        const trigFnTex = trigTex(trig);
-        const numTex = polynomialInNumerator ? polyTex : trigFnTex;
-        const denTex = polynomialInNumerator ? trigFnTex : polyTex;
-        const answerEntry = { labelTex: data.labelTex, answer: { kind: 'dne' } };
-        const hints = [
-          `\\lim_{x\\to ${data.limitTex}}${trigFnTex}=\\text{DNE}`,
-          `\\text{Since one part of the quotient does not approach }0\\text{ or }\\pm\\infty\\text{ in a useful way, this is not an indeterminate quotient.}`,
-          `${data.labelTex}=\\text{DNE}`
-        ];
-        return {
-          type: 3,
-          questionTex: type3LimitQuestion(numTex, denTex, data),
-          answers: [answerEntry],
-          hints
-        };
-      }
-
-      const trig = randomChoice(['csc', 'cot']);
-      const innerTex = '\\frac{1}{x}';
-      const trigFnTex = trigTex(trig, innerTex);
-      const polyPrime = derivativePolynomial(polynomial);
-      const polyPrimeTex = polynomialToTex(polyPrime);
-      const derivativeTrigTex = trig === 'csc'
-        ? `\\frac{\\csc\\left(${innerTex}\\right)\\cot\\left(${innerTex}\\right)}{x^2}`
-        : `\\frac{\\csc^2\\left(${innerTex}\\right)}{x^2}`;
-      const derivativeTrigNoReciprocalTex = trig === 'csc'
-        ? `\\frac{\\cos\\left(${innerTex}\\right)}{x^2\\sin^2\\left(${innerTex}\\right)}`
-        : `\\frac{1}{x^2\\sin^2\\left(${innerTex}\\right)}`;
-      const simplifiedAfterDivisionTex = trig === 'csc'
-        ? `\\left(\\left(${polyPrimeTex}\\right)\\cdot \\frac{x^2\\sin^2\\left(${innerTex}\\right)}{\\cos\\left(${innerTex}\\right)}\\right)`
-        : `\\left(\\left(${polyPrimeTex}\\right)\\cdot x^2\\sin^2\\left(${innerTex}\\right)\\right)`;
-      const reciprocalOverPolyTex = trig === 'csc'
-        ? `\\frac{\\cos\\left(${innerTex}\\right)}{x^2\\sin^2\\left(${innerTex}\\right)\\left(${polyPrimeTex}\\right)}`
-        : `\\frac{1}{x^2\\sin^2\\left(${innerTex}\\right)\\left(${polyPrimeTex}\\right)}`;
-
-      const numTex = polynomialInNumerator ? polyTex : trigFnTex;
-      const denTex = polynomialInNumerator ? trigFnTex : polyTex;
-      const answer = polynomialInNumerator
-        ? { kind: polynomialEndBehaviour(polyPrime, direction) }
-        : { kind: 'finite', value: exactFraction(0, 1), tex: '0' };
-      const answerEntry = { labelTex: data.labelTex, answer };
-      const hints = [
-        `\\text{As }x\\to ${data.limitTex}\\text{, the polynomial and }${trigFnTex}\\text{ both grow without bound, so this is an indeterminate form of type }\\frac{\\infty}{\\infty}.`,
-        `\\text{Apply L'Hôpital's Rule.}`,
-        polynomialInNumerator
-          ? `\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${polyPrimeTex}}{${derivativeTrigTex}}`
-          : `\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${derivativeTrigTex}}{${polyPrimeTex}}`,
-        `\\text{Rewrite the reciprocal trigonometric functions using sine and cosine.}`,
-        polynomialInNumerator
-          ? `\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${polyPrimeTex}}{${derivativeTrigNoReciprocalTex}}`
-          : `\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${derivativeTrigNoReciprocalTex}}{${polyPrimeTex}}`,
-        `\\text{Now rewrite the compound fraction as a single ordinary fraction.}`,
-        polynomialInNumerator
-          ? `\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}${simplifiedAfterDivisionTex}`
-          : `\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}${reciprocalOverPolyTex}`,
-        `\\text{Use }\\lim_{u\\to 0}\\frac{\\sin u}{u}=1\\text{ with }u=\\frac{1}{x}.\\text{ Since }x\\to ${data.limitTex}\\text{ gives }u\\to 0,\\text{ we have }\\lim_{x\\to ${data.limitTex}}\\frac{\\sin(1/x)}{1/x}=1.`,
-        `\\text{Therefore }\\lim_{x\\to ${data.limitTex}}x\\sin\\left(\\frac{1}{x}\\right)=1\\text{, so }\\lim_{x\\to ${data.limitTex}}x^2\\sin^2\\left(\\frac{1}{x}\\right)=1.`
-      ];
-      if (trig === 'csc') {
-        hints.push(`\\text{Also, }\\lim_{x\\to ${data.limitTex}}\\cos\\left(\\frac{1}{x}\\right)=1.`);
-      }
-      hints.push(polynomialInNumerator
-        ? `\\text{So the trigonometric factor approaches }1\\text{, and the remaining limit has the same end behaviour as }${polyPrimeTex}.`
-        : `\\text{So the trigonometric part approaches }1\\text{, while }${polyPrimeTex}\\text{ grows without bound.}`);
-      hints.push(`${answerEquationTexExtended(answerEntry)}`);
-      return {
-        type: 3,
-        questionTex: type3LimitQuestion(numTex, denTex, data),
-        answers: [answerEntry],
-        hints
+      const interval = trigIntervalContaining(criticalKs);
+      const crits = criticalKs.map(k => k / 12 * Math.PI);
+      const wrappedEvalAt = x => {
+        const k = Math.round(x / Math.PI * 12);
+        return evalAt(k);
       };
+      const problem = buildProblem({ tex, interval: { a: interval.a/12*Math.PI, b: interval.b/12*Math.PI, aTex: interval.aTex, bTex: interval.bTex }, evalAt: wrappedEvalAt, continuity, derivativeTex, criticalTex, criticals: crits });
+      problem.hints[2] = `\\text{Evaluate }f\\text{ at the endpoints and at the critical points in the interval: }` +
+        [interval.a, interval.b, ...criticalKs.filter(k => k > interval.a && k < interval.b)]
+        .map(k => `f(${trigXTex(k)})=${evalAt(k).tex}`).join(',\\quad ') + '.';
+      return problem;
     }
 
-    function randomType3ExponentialData(direction) {
-      const r = Math.random();
-      const base = r < 0.50 ? 'e' : randomInteger(2, 9);
-      const useComposed = r >= 0.70;
-      let innerTex, innerPrimeTex, growsDescription;
-      if (!useComposed) {
-        if (direction === 'positive') {
-          innerTex = 'x';
-          innerPrimeTex = '1';
-        } else {
-          innerTex = '-x';
-          innerPrimeTex = '-1';
-        }
-      } else {
-        const slope = direction === 'positive' ? randomPositiveInteger(1, 4) : -randomPositiveInteger(1, 4);
-        const intercept = randomInteger(-5, 5);
-        const innerPoly = polynomialFromAxPlusC(slope, intercept);
-        innerTex = polynomialToTex(innerPoly);
-        innerPrimeTex = `${slope}`;
-      }
-      const tex = expTex(base, innerTex);
-      return { base, tex, innerTex, innerPrimeTex, useComposed };
-    }
-
-    function exponentialLinearDerivativeTex(expData, order) {
-      const factor = expData.base === 'e' ? expData.innerPrimeTex : `${expData.innerPrimeTex}\\ln(${expData.base})`;
-      if (order === 0) return expData.tex;
-      if (order === 1) return `${factor}\\,${expData.tex}`;
-      return `\\left(${factor}\\right)^{${order}}${expData.tex}`;
-    }
-
-    function exponentialLinearDerivativeSign(expData, order) {
-      const slope = Number(expData.innerPrimeTex);
-      if (order === 0) return 1;
-      return slope < 0 && order % 2 === 1 ? -1 : 1;
-    }
-
-    function generateType3PolynomialExponentialPartner(polynomial, polynomialInNumerator) {
-      const direction = Math.random() < 0.5 ? 'positive' : 'negative';
-      const data = directionData(direction);
-      const expData = randomType3ExponentialData(direction);
-      const polyTex = polynomialToTex(polynomial);
-      const numTex = polynomialInNumerator ? polyTex : expData.tex;
-      const denTex = polynomialInNumerator ? expData.tex : polyTex;
-      const seq = polyDerivativeSequence(polynomial);
-      const degree = degreeOfPolynomial(polynomial);
-      const finalPoly = seq[seq.length - 1];
-      const finalConstant = leadingCoefficient(finalPoly);
-      const expDerivativeSign = exponentialLinearDerivativeSign(expData, degree);
-      let answer;
-      if (polynomialInNumerator) {
-        answer = { kind: 'finite', value: exactFraction(0, 1), tex: '0' };
-      } else {
-        answer = infinityAnswerFromSign(expDerivativeSign * Math.sign(finalConstant));
-      }
-      const answerEntry = { labelTex: data.labelTex, answer };
-      const hints = [
-        `\\text{As }x\\to ${data.limitTex}\\text{, both numerator and denominator grow without bound, so this is an indeterminate form of type }\\frac{\\infty}{\\infty}.`,
-        `\\text{Apply L'Hôpital's Rule repeatedly until the polynomial has become constant.}`
+    function generateEVTProblem() {
+      const generators = [
+        generateQuadraticProblem,
+        generateCubicProblem,
+        generateQuarticProblem,
+        generateLinearPowerProblem,
+        generateAbsoluteValueProblem,
+        generateReciprocalQuadraticProblem,
+        generateTrigProblem,
+        generateTrigProblem
       ];
-      for (let i = 1; i < seq.length; i++) {
-        const polyDerivTex = polynomialToTex(seq[i]);
-        const expDerivTex = exponentialLinearDerivativeTex(expData, i);
-        hints.push(polynomialInNumerator
-          ? `\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${polyDerivTex}}{${expDerivTex}}`
-          : `\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${expDerivTex}}{${polyDerivTex}}`);
+      return randomChoice(generators)();
+    }
+
+    function evaluateFlexibleNumericAnswer(input) {
+      if (!input) return NaN;
+      let expr = input.trim().toLowerCase();
+      expr = expr.replace(/−/g, '-');
+      expr = expr.replace(/π/g, 'pi');
+      expr = expr.replace(/\\pi/g, 'pi');
+      expr = expr.replace(/sqrt/g, 'Math.sqrt');
+      expr = expr.replace(/\\sqrt\s*\{([^{}]+)\}/g, 'Math.sqrt($1)');
+      expr = expr.replace(/\\frac\s*\{([^{}]+)\}\s*\{([^{}]+)\}/g, '($1)/($2)');
+      expr = expr.replace(/\^/g, '**');
+      expr = expr.replace(/pi/g, 'Math.PI');
+      expr = expr.replace(/[^0-9+\-*/(). MathPIsqrt]/g, '');
+      try {
+        const value = Function(`"use strict"; return (${expr});`)();
+        return Number.isFinite(value) ? value : NaN;
+      } catch (e) {
+        return NaN;
       }
-      hints.push(polynomialInNumerator
-        ? `\\text{Now the numerator is constant while the exponential denominator grows without bound, so }${data.labelTex}=0.`
-        : `\\text{Now the denominator is constant while the exponential numerator grows without bound, so }${data.labelTex}=${answerObjectToTexExtended(answer)}.`);
-      hints.push(`${answerEquationTexExtended(answerEntry)}`);
-      return {
-        type: 3,
-        questionTex: type3LimitQuestion(numTex, denTex, data),
-        answers: [answerEntry],
-        hints
-      };
-    }
-
-    function randomType3LogData(direction) {
-      const r = Math.random();
-      const base = r < 0.50 ? 'e' : randomInteger(2, 9);
-      const useComposed = r >= 0.70;
-      let innerTex, derivativeTex, hPoly = null;
-      if (!useComposed) {
-        innerTex = 'x';
-        derivativeTex = base === 'e' ? '\\frac{1}{x}' : `\\frac{1}{x\\ln(${base})}`;
-      } else {
-        const c = randomInteger(1, 9);
-        hPoly = combineLikeTerms([makeTerm(1, 2), makeTerm(c, 0)]);
-        innerTex = polynomialToTex(hPoly);
-        derivativeTex = base === 'e'
-          ? `\\frac{2x}{\\left(${innerTex}\\right)}`
-          : `\\frac{2x}{\\left(${innerTex}\\right)\\ln(${base})}`;
-      }
-      return { base, useComposed, hPoly, innerTex, tex: logTex(base, innerTex), derivativeTex };
-    }
-
-    function polyTimesX(poly) {
-      return combineLikeTerms(poly.map(term => makeTerm(term.coefficient, term.power + 1)));
-    }
-
-    function generateType3PolynomialLogPartner(polynomial, polynomialInNumerator) {
-      const direction = 'positive';
-      const data = directionData(direction);
-      const logData = randomType3LogData(direction);
-      const polyTex = polynomialToTex(polynomial);
-      const logTexValue = logData.tex;
-      const numTex = polynomialInNumerator ? polyTex : logTexValue;
-      const denTex = polynomialInNumerator ? logTexValue : polyTex;
-      const polyPrime = derivativePolynomial(polynomial);
-      const polyPrimeTex = polynomialToTex(polyPrime);
-      const baseFactor = logData.base === 'e' ? '' : `\\ln(${logData.base})`;
-      const positiveBaseFactor = logData.base === 'e' ? '' : `\\ln(${logData.base})`;
-      let answer;
-      if (polynomialInNumerator) {
-        const polySign = polynomialEndBehaviour(polynomial, direction) === 'infinity' ? 1 : -1;
-        answer = infinityAnswerFromSign(polySign);
-      } else {
-        answer = { kind: 'finite', value: exactFraction(0, 1), tex: '0' };
-      }
-      const answerEntry = { labelTex: data.labelTex, answer };
-      const hints = [
-        `\\text{As }x\\to ${data.limitTex}\\text{, both numerator and denominator grow without bound, so this is an indeterminate form of type }\\frac{\\infty}{\\infty}.`,
-        `\\text{We expect polynomial growth to dominate logarithmic growth, but we still show the L'Hôpital's Rule details.}`,
-        `\\text{Apply L'Hôpital's Rule once.}`
-      ];
-
-      if (!logData.useComposed) {
-        if (polynomialInNumerator) {
-          const combinedPoly = polyTimesX(polyPrime);
-          hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${polyPrimeTex}}{${logData.derivativeTex}}`);
-          if (logData.base === 'e') {
-            hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}${polynomialToTex(combinedPoly)}`);
-          } else {
-            hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}${positiveBaseFactor}\\left(${polynomialToTex(combinedPoly)}\\right)`);
-          }
-          hints.push(`\\text{Direct substitution into this polynomial end-behaviour expression gives }${answerObjectToTexExtended(answer)}.`);
-        } else {
-          const combinedDen = polyTimesX(polyPrime);
-          hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${logData.derivativeTex}}{${polyPrimeTex}}`);
-          if (logData.base === 'e') {
-            hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{1}{${polynomialToTex(combinedDen)}}`);
-          } else {
-            hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{1}{${positiveBaseFactor}\\left(${polynomialToTex(combinedDen)}\\right)}`);
-          }
-          hints.push(`\\text{The denominator grows without bound, so direct substitution gives }${data.labelTex}=0.`);
-        }
-      } else {
-        const hTimesPolyPrime = multiplyPolynomials(logData.hPoly, polyPrime);
-        const hTimesPolyPrimePrime = derivativePolynomial(hTimesPolyPrime);
-        if (polynomialInNumerator) {
-          hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${polyPrimeTex}}{${logData.derivativeTex}}`);
-          if (logData.base === 'e') {
-            hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${polynomialToTex(hTimesPolyPrime)}}{2x}`);
-            hints.push(`\\text{This is still an indeterminate form of type }\\frac{\\infty}{\\infty}\\text{, so apply L'Hôpital's Rule again.}`);
-            hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${polynomialToTex(hTimesPolyPrimePrime)}}{2}`);
-          } else {
-            hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${positiveBaseFactor}\\left(${polynomialToTex(hTimesPolyPrime)}\\right)}{2x}`);
-            hints.push(`\\text{This is still an indeterminate form of type }\\frac{\\infty}{\\infty}\\text{, so apply L'Hôpital's Rule again.}`);
-            hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${positiveBaseFactor}\\left(${polynomialToTex(hTimesPolyPrimePrime)}\\right)}{2}`);
-          }
-          hints.push(`\\text{Direct substitution into this final expression gives }${answerObjectToTexExtended(answer)}.`);
-        } else {
-          hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${logData.derivativeTex}}{${polyPrimeTex}}`);
-          if (logData.base === 'e') {
-            hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{2x}{${polynomialToTex(hTimesPolyPrime)}}`);
-            hints.push(`\\text{This is still an indeterminate form of type }\\frac{\\infty}{\\infty}\\text{, so apply L'Hôpital's Rule again.}`);
-            hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{2}{${polynomialToTex(hTimesPolyPrimePrime)}}`);
-          } else {
-            hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{2x}{${positiveBaseFactor}\\left(${polynomialToTex(hTimesPolyPrime)}\\right)}`);
-            hints.push(`\\text{This is still an indeterminate form of type }\\frac{\\infty}{\\infty}\\text{, so apply L'Hôpital's Rule again.}`);
-            hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{2}{${positiveBaseFactor}\\left(${polynomialToTex(hTimesPolyPrimePrime)}\\right)}`);
-          }
-          hints.push(`\\text{The denominator grows without bound, so direct substitution gives }${data.labelTex}=0.`);
-        }
-      }
-      hints.push(`${answerEquationTexExtended(answerEntry)}`);
-      return {
-        type: 3,
-        questionTex: type3LimitQuestion(numTex, denTex, data),
-        answers: [answerEntry],
-        hints
-      };
-    }
-
-    function generateType3FinitePolynomialZero() {
-      const polyType = Math.random() < 0.5 ? 2 : 3;
-      const otherType = randomChoice([4,5,6]);
-      let poly, a, rootTex, polyDerivativeValue;
-      if (polyType === 2) {
-        const data = randomLinearData();
-        poly = data.poly;
-        a = fractionToNumber(data.root);
-        rootTex = fractionToTex(data.root);
-        polyDerivativeValue = data.c;
-      } else {
-        const data = randomQuadraticData();
-        poly = data.poly;
-        a = randomChoice(data.roots);
-        rootTex = numberTex(a);
-        polyDerivativeValue = evaluatePolynomial(derivativePolynomial(poly), a);
-      }
-
-      const shifted = shiftedZeroFunctionForType(otherType, a);
-      const polyTex = polynomialToTex(poly);
-      const polyDerivTex = polynomialToTex(derivativePolynomial(poly));
-      let answerValue, numTex, denTex, numDerivTex, denDerivTex;
-      if (Math.random() < 0.5) {
-        numTex = polyTex; denTex = shifted.tex;
-        numDerivTex = polyDerivTex; denDerivTex = shifted.derivativeTex;
-        answerValue = shifted.derivativeAtA === 0
-          ? (shifted.secondDerivativeAtA ? 0 : NaN)
-          : polyDerivativeValue / shifted.derivativeAtA;
-      } else {
-        numTex = shifted.tex; denTex = polyTex;
-        numDerivTex = shifted.derivativeTex; denDerivTex = polyDerivTex;
-        answerValue = shifted.derivativeAtA / polyDerivativeValue;
-      }
-
-      const limitData = finiteLimitData(a);
-      const answerEntry = { labelTex: limitData.labelTex, answer: finiteAnswer(answerValue) };
-      const hints = [
-        `\\text{Both numerator and denominator approach }0\\text{ as }x\\to ${limitData.limitTex}\\text{, so this is an indeterminate form of type }\\frac{0}{0}.`,
-        `\\text{By L'Hôpital's Rule, differentiate the numerator and denominator.}`,
-        `\\lim_{x\\to ${limitData.limitTex}}f(x)=\\lim_{x\\to ${limitData.limitTex}}\\frac{${numDerivTex}}{${denDerivTex}}`,
-        `${answerEquationTexExtended(answerEntry)}`
-      ];
-
-      return {
-        type: 3,
-        questionTex: `f(x)=\\frac{${numTex}}{${denTex}}.\\quad \\text{Evaluate }${limitData.labelTex}.`,
-        answers: [answerEntry],
-        hints
-      };
-    }
-
-    function generateType3PolynomialInfinity() {
-      const poly = randomPolynomialAtLeastDegree3();
-      const otherType = randomChoice([4,5,6]);
-      const direction = otherType === 4 ? (Math.random() < 0.5 ? 'positive' : 'negative') : (Math.random() < 0.5 ? 'positive' : 'negative');
-      const data = directionData(direction);
-      const polyTex = polynomialToTex(poly);
-      let otherTex, answer, hints, otherDerivativeTex;
-      const polyInfty = polynomialEndBehaviour(poly, direction);
-      const polySign = polyInfty === 'infinity' ? 1 : -1;
-
-      if (otherType === 4) {
-        const trig = randomChoice(['sin','cos','tan']);
-        const polynomialInNumerator = Math.random() < 0.5;
-        otherTex = trigTex(trig);
-        answer = { kind: 'dne' };
-        hints = [
-          `\\text{As }x\\to ${data.limitTex}\\text{, the polynomial grows without bound, but }${trigTex(trig)}\\text{ does not approach a single infinite value.}`,
-          `\\text{This is not an indeterminate form where L'Hôpital's Rule is useful.}`,
-          `${data.labelTex}=\\text{DNE}`
-        ];
-        return {
-          type: 3,
-          questionTex: polynomialInNumerator
-            ? `f(x)=\\frac{${polyTex}}{${otherTex}}.\\quad \\text{Evaluate }${data.labelTex}.`
-            : `f(x)=\\frac{${otherTex}}{${polyTex}}.\\quad \\text{Evaluate }${data.labelTex}.`,
-          answers: [{ labelTex: data.labelTex, answer }],
-          hints
-        };
-      } else if (otherType === 5) {
-        const base = Math.random() < 0.5 ? 'e' : randomInteger(2,9);
-        otherTex = expTex(base, 'x^2');
-        otherDerivativeTex = expDerivativeTex(base, 'x^2', '2x');
-        answer = Math.random() < 0.5 ? { kind: 'finite', value: exactFraction(0,1), tex: '0' } : null;
-        const exponentialInNumerator = Math.random() < 0.5;
-        if (exponentialInNumerator) {
-          answer = infinityAnswerFromSign(polySign);
-          hints = [
-            `\\text{As }x\\to ${data.limitTex}\\text{, both numerator and denominator grow without bound, so this is an indeterminate form of type }\\frac{\\infty}{\\infty}.`,
-            `\\text{Apply L'Hôpital's Rule repeatedly until the polynomial has been differentiated enough times to become constant.}`,
-            `\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${otherDerivativeTex}}{${polynomialToTex(derivativePolynomial(poly))}}`,
-            `\\text{The exponential still grows faster than any remaining polynomial term.}`,
-            `${data.labelTex}=${answerObjectToTexExtended(answer)}`
-          ];
-          return {
-            type: 3,
-            questionTex: `f(x)=\\frac{${otherTex}}{${polyTex}}.\\quad \\text{Evaluate }${data.labelTex}.`,
-            answers: [{ labelTex: data.labelTex, answer }],
-            hints
-          };
-        }
-        answer = { kind: 'finite', value: exactFraction(0,1), tex: '0' };
-        hints = [
-          `\\text{As }x\\to ${data.limitTex}\\text{, both numerator and denominator grow without bound, so this is an indeterminate form of type }\\frac{\\infty}{\\infty}.`,
-          `\\text{Apply L'Hôpital's Rule repeatedly until the polynomial has been differentiated enough times to become constant.}`,
-          `\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${polynomialToTex(derivativePolynomial(poly))}}{${otherDerivativeTex}}`,
-          `\\text{The exponential still grows faster than any remaining polynomial term.}`,
-          `${data.labelTex}=0`
-        ];
-        return {
-          type: 3,
-          questionTex: `f(x)=\\frac{${polyTex}}{${otherTex}}.\\quad \\text{Evaluate }${data.labelTex}.`,
-          answers: [{ labelTex: data.labelTex, answer }],
-          hints
-        };
-      } else {
-        const base = Math.random() < 0.5 ? 'e' : randomInteger(2,9);
-        otherTex = logTex(base, 'x^2+1');
-        otherDerivativeTex = logDerivativeTex(base, 'x^2+1', '2x');
-        const logarithmInNumerator = Math.random() < 0.5;
-        if (logarithmInNumerator) {
-          answer = { kind: 'finite', value: exactFraction(0,1), tex: '0' };
-          hints = [
-            `\\text{As }x\\to ${data.limitTex}\\text{, both numerator and denominator grow without bound, so this is an indeterminate form of type }\\frac{\\infty}{\\infty}.`,
-            `\\text{Apply L'Hôpital's Rule.  Polynomial terms eventually dominate logarithmic growth.}`,
-            `\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${otherDerivativeTex}}{${polynomialToTex(derivativePolynomial(poly))}}`,
-            `${data.labelTex}=0`
-          ];
-          return {
-            type: 3,
-            questionTex: `f(x)=\\frac{${otherTex}}{${polyTex}}.\\quad \\text{Evaluate }${data.labelTex}.`,
-            answers: [{ labelTex: data.labelTex, answer }],
-            hints
-          };
-        }
-        answer = infinityAnswerFromSign(polySign);
-        hints = [
-          `\\text{As }x\\to ${data.limitTex}\\text{, both numerator and denominator grow without bound, so this is an indeterminate form of type }\\frac{\\infty}{\\infty}.`,
-          `\\text{Apply L'Hôpital's Rule.  Polynomial terms eventually dominate logarithmic growth.}`,
-          `\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${polynomialToTex(derivativePolynomial(poly))}}{${otherDerivativeTex}}`,
-          `${data.labelTex}=${answerObjectToTexExtended(answer)}`
-        ];
-        return {
-          type: 3,
-          questionTex: `f(x)=\\frac{${polyTex}}{${otherTex}}.\\quad \\text{Evaluate }${data.labelTex}.`,
-          answers: [{ labelTex: data.labelTex, answer }],
-          hints
-        };
-      }
-    }
-
-    function generateType3TrigBased() {
-      const templates = [
-        {
-          texA: '\\sin(x)', texB: '\\ln(x+1)', limitTex: '0', answerValue: 1,
-          derivA: '\\cos(x)', derivB: '\\frac{1}{x+1}', form: '\\frac{0}{0}'
-        },
-        {
-          texA: '\\tan(x)', texB: 'e^x-1', limitTex: '0', answerValue: 1,
-          derivA: '\\sec^2(x)', derivB: 'e^x', form: '\\frac{0}{0}'
-        },
-        {
-          texA: '\\cos(x)-1', texB: '\\sin^2(x)', limitTex: '0', answerValue: -0.5,
-          derivA: '-\\sin(x)', derivB: '2\\sin(x)\\cos(x)', form: '\\frac{0}{0}', second: true
-        },
-        {
-          texA: '\\sec(x)', texB: '-\\ln\\left(\\frac{\\pi}{2}-x\\right)', limitTex: '\\left(\\frac{\\pi}{2}\\right)^-', answerValue: 1,
-          derivA: '\\sec(x)\\tan(x)', derivB: '\\frac{1}{\\frac{\\pi}{2}-x}', form: '\\frac{\\infty}{\\infty}'
-        },
-        {
-          texA: '\\csc(x)', texB: '\\frac{1}{x}', limitTex: '0^+', answerValue: 1,
-          derivA: '-\\csc(x)\\cot(x)', derivB: '-\\frac{1}{x^2}', form: '\\frac{\\infty}{\\infty}'
-        }
-      ];
-      const t = randomChoice(templates);
-      const flip = Math.random() < 0.5;
-      const numTex = flip ? t.texB : t.texA;
-      const denTex = flip ? t.texA : t.texB;
-      const numDeriv = flip ? t.derivB : t.derivA;
-      const denDeriv = flip ? t.derivA : t.derivB;
-      const answerValue = flip ? 1 / t.answerValue : t.answerValue;
-      const labelTex = `\\lim_{x \\to ${t.limitTex}}f(x)`;
-      const answerEntry = { labelTex, answer: finiteAnswer(answerValue) };
-      const hints = [
-        `\\text{This quotient has indeterminate form }${t.form}\\text{.}`,
-        `\\text{Apply L'Hôpital's Rule by differentiating numerator and denominator.}`,
-        `\\lim_{x\\to ${t.limitTex}}f(x)=\\lim_{x\\to ${t.limitTex}}\\frac{${numDeriv}}{${denDeriv}}`,
-        t.second ? `\\text{This still has form }\\frac{0}{0}\\text{, so apply L'Hôpital's Rule once more.}` : `\\text{Now evaluate the resulting limit.}`,
-        `${answerEquationTexExtended(answerEntry)}`
-      ];
-      return {
-        type: 3,
-        questionTex: `f(x)=\\frac{${numTex}}{${denTex}}.\\quad \\text{Evaluate }${labelTex}.`,
-        answers: [answerEntry],
-        hints
-      };
-    }
-
-    function generateSimpleIndeterminateQuotientProblem() {
-      return type3PolynomialSlotProblem();
-    }
-
-
-    function generateLimitProblem() {
-      const r = Math.random();
-      if (r < 0.05) return generateRenamedType1LimitProblem();
-      if (r < 0.10) return generateRenamedType2LimitProblem();
-      return generateSimpleIndeterminateQuotientProblem();
-    }
-
-    function createHintStepBlock(extraClass = '') {
-      const block = document.createElement('div');
-      block.className = `hint-step-block ${extraClass}`.trim();
-      block.style.textAlign = 'center';
-      block.style.margin = '0.5em auto';
-      block.style.padding = '0';
-      block.style.maxWidth = '100%';
-      block.style.overflowX = 'auto';
-      hintArea.appendChild(block);
-      return block;
-    }
-
-    function appendMathHint(tex) {
-      const block = createHintStepBlock();
-      block.innerHTML = `\\[${tex}\\]`;
-      return typesetElement(block);
-    }
-
-    async function advanceHint() {
-      if (!currentProblem || hintIsTypesetting) return;
-      const sound = document.getElementById('click-sound');
-      if (sound) { sound.currentTime = 0; sound.play(); }
-
-      hintIsTypesetting = true;
-      hintBtn.disabled = true;
-
-      if (hintStep < currentProblem.hints.length) {
-        await appendMathHint(currentProblem.hints[hintStep]);
-      }
-
-      hintStep++;
-      hintIsTypesetting = false;
-      hintBtn.disabled = hintStep >= currentProblem.hints.length;
     }
 
     function setupAnswerEditor() {
-      const answers = currentProblem && currentProblem.answers ? currentProblem.answers : [{ labelTex: 'Limit', answer: currentProblem.answer }];
-
-      if (currentProblem && currentProblem.answerGroups) {
-        let answerIndex = 0;
-        finalAnswerInput.innerHTML = `
-          <div class="answer-group-grid">
-            ${currentProblem.answerGroups.map(group => `
-              <div class="answer-group-card">
-                <div class="answer-group-card-title">\\(${group.titleTex}\\)</div>
-                ${group.entries.map(entry => {
-                  const id = answerIndex++;
-                  return `
-                    <div class="answer-line" style="margin: 0.55em 0;">
-                      <label style="font-weight: bold; margin-right: 0.5em;">\\(${entry.labelTex}=\\)</label>
-                      <span id="answer-editor-${id}" class="polynomial-answer-editor math-answer-editor" contenteditable="true" role="textbox" aria-label="Limit value answer ${id + 1}" style="min-width: 105px;"></span>
-                    </div>
-                  `;
-                }).join('')}
-              </div>
-            `).join('')}
+      finalAnswerInput.innerHTML = `
+        <div class="answer-group-grid">
+          <div class="answer-group-card">
+            <div class="answer-group-card-title">Absolute maximum value</div>
+            <input id="max-answer" class="asymptote-value-input" style="width: 170px;" autocomplete="off">
           </div>
-        ` + answerToolbarHtml() + (currentProblem.expectedAsymptotes ? asymptoteInputHtml() : '');
-      } else {
-        finalAnswerInput.innerHTML = answers.map((entry, index) => `
-          <div class="answer-line" style="margin: 0.65em 0;">
-            <label style="font-weight: bold; margin-right: 0.5em;">\\(${entry.labelTex}=\\)</label>
-            <span id="answer-editor-${index}" class="polynomial-answer-editor math-answer-editor" contenteditable="true" role="textbox" aria-label="Limit value answer ${index + 1}" style="min-width: 130px;"></span>
+          <div class="answer-group-card">
+            <div class="answer-group-card-title">Absolute minimum value</div>
+            <input id="min-answer" class="asymptote-value-input" style="width: 170px;" autocomplete="off">
           </div>
-        `).join('') + answerToolbarHtml();
-      }
-
-      const editors = finalAnswerInput.querySelectorAll('.math-answer-editor');
-      activeMathEditor = editors[0];
-      editors.forEach(editor => {
-        editor.addEventListener('focus', () => { activeMathEditor = editor; });
-        editor.addEventListener('click', () => { activeMathEditor = editor; });
-        editor.addEventListener('keydown', handleMathEditorKeydown);
-      });
-      if (activeMathEditor) activeMathEditor.focus();
-
-      finalAnswerInput.querySelectorAll('.math-symbol-button').forEach(button => {
-        button.addEventListener('mousedown', event => event.preventDefault());
-        button.addEventListener('click', () => {
-          const target = activeMathEditor || editors[0];
-          target.focus();
-          if (button.dataset.insertText !== undefined) insertTextAtSelection(button.dataset.insertText, target);
-          else if (button.dataset.insertFraction) insertFractionAtSelection(target);
-          else if (button.dataset.insertExponent) insertExponentAtSelection(target);
-          else if (button.dataset.insertSubscript) insertSubscriptAtSelection(target);
-          else if (button.dataset.insertRadical) insertRadicalAtSelection(target);
-          else if (button.dataset.insertLog) insertLogAtSelection(target);
-        });
-      });
-
-      setupAsymptoteControls();
-      typesetElement(finalAnswerInput);
-    }
-
-    function answerToolbarHtml() {
-      return `
-        <div class="answer-toolbar" aria-label="Math input buttons">
-          <button type="button" class="math-symbol-button" data-insert-text="x">x</button>
-          <button type="button" class="math-symbol-button" data-insert-text="e">e</button>
-          <button type="button" class="math-symbol-button" data-insert-text="ln(">ln</button>
-          <button type="button" class="math-symbol-button" data-insert-log="true">log<sub>□</sub>(</button>
-          <button type="button" class="math-symbol-button" data-insert-text="π">π</button>
-          <button type="button" class="math-symbol-button" data-insert-text="sin(">sin</button>
-          <button type="button" class="math-symbol-button" data-insert-text="cos(">cos</button>
-          <button type="button" class="math-symbol-button" data-insert-text="tan(">tan</button>
-          <button type="button" class="math-symbol-button" data-insert-text="sec(">sec</button>
-          <button type="button" class="math-symbol-button" data-insert-text="csc(">csc</button>
-          <button type="button" class="math-symbol-button" data-insert-text="cot(">cot</button>
-          <button type="button" class="math-symbol-button" data-insert-exponent="true">x<sup>□</sup></button>
-          <button type="button" class="math-symbol-button" data-insert-subscript="true">x<sub>□</sub></button>
-          <button type="button" class="math-symbol-button" data-insert-radical="true">√</button>
-          <button type="button" class="math-symbol-button" data-insert-fraction="true"><span class="fraction-button-display"><span class="fraction-button-top">a</span><span class="fraction-button-bottom">b</span></span></button>
-          <button type="button" class="math-symbol-button" data-insert-text="/">/</button>
-          <button type="button" class="math-symbol-button" data-insert-text="∞">∞</button>
-          <button type="button" class="math-symbol-button" data-insert-text="DNE">DNE</button>
-          <button type="button" class="math-symbol-button" data-insert-text="(">(</button>
-          <button type="button" class="math-symbol-button" data-insert-text=")">)</button>
-        </div>
-      `;
-    }
-
-    function asymptoteInputHtml() {
-      return `
-        <div class="asymptote-entry-panel">
-          <div style="font-weight: bold; text-align: center;">Asymptotes</div>
-          <div class="asymptote-control-row" style="margin-top: 0.45em;">
-            <label><input type="checkbox" id="vertical-asymptote-choice" checked> Vertical asymptote</label>
-            <label><input type="checkbox" id="horizontal-asymptote-choice"> Horizontal asymptote</label>
-          </div>
-          <div id="asymptote-entry-box" class="asymptote-entry-box"></div>
-          <div class="asymptote-control-row">
-            <button type="button" id="add-asymptote-btn" class="asymptote-button">+</button>
-            <button type="button" id="remove-asymptote-btn" class="asymptote-button">−</button>
-          </div>
-        </div>
-      `;
-    }
-
-    function setupAsymptoteControls() {
-      const verticalChoice = document.getElementById('vertical-asymptote-choice');
-      const horizontalChoice = document.getElementById('horizontal-asymptote-choice');
-      const addBtn = document.getElementById('add-asymptote-btn');
-      const removeBtn = document.getElementById('remove-asymptote-btn');
-      const box = document.getElementById('asymptote-entry-box');
-      if (!verticalChoice || !horizontalChoice || !addBtn || !removeBtn || !box) return;
-
-      verticalChoice.addEventListener('change', () => {
-        if (verticalChoice.checked) horizontalChoice.checked = false;
-        if (!verticalChoice.checked && !horizontalChoice.checked) verticalChoice.checked = true;
-      });
-      horizontalChoice.addEventListener('change', () => {
-        if (horizontalChoice.checked) verticalChoice.checked = false;
-        if (!verticalChoice.checked && !horizontalChoice.checked) horizontalChoice.checked = true;
-      });
-
-      addBtn.addEventListener('click', () => {
-        const type = horizontalChoice.checked ? 'horizontal' : 'vertical';
-        addAsymptoteEntry(type);
-      });
-
-      removeBtn.addEventListener('click', () => {
-        const selected = box.querySelector('.asymptote-entry-row.selected');
-        if (selected) selected.remove();
-      });
-    }
-
-    function addAsymptoteEntry(type) {
-      const box = document.getElementById('asymptote-entry-box');
-      if (!box) return;
-      const row = document.createElement('div');
-      row.className = 'asymptote-entry-row';
-      row.dataset.type = type;
-      const label = type === 'horizontal' ? 'Horizontal asymptote at y =' : 'Vertical asymptote at x =';
-      row.innerHTML = `<span>${label}</span><input class="asymptote-value-input" type="text" inputmode="decimal" aria-label="${label} value">`;
-      row.addEventListener('click', () => {
-        box.querySelectorAll('.asymptote-entry-row').forEach(item => item.classList.remove('selected'));
-        row.classList.add('selected');
-      });
-      const input = row.querySelector('input');
-      input.addEventListener('input', () => {
-        input.value = input.value.replace(/[^0-9+\-.\/]/g, '');
-      });
-      box.appendChild(row);
-      row.classList.add('selected');
-      input.focus();
-    }
-
-
-    function removePreviousSpecialWrapperAtCaret() {
-      const selection = window.getSelection();
-      if (!selection.rangeCount || !selection.getRangeAt(0).collapsed) return false;
-      const range = selection.getRangeAt(0);
-      let previous = null;
-      if (range.startContainer.nodeType === Node.TEXT_NODE) {
-        if (range.startOffset > 0 && range.startContainer.textContent.slice(0, range.startOffset).replace(/\u200b/g, '') !== '') return false;
-        previous = range.startContainer.previousSibling;
-      } else if (range.startOffset > 0) {
-        previous = range.startContainer.childNodes[range.startOffset - 1];
-      }
-      while (previous && previous.nodeType === Node.TEXT_NODE && previous.textContent.replace(/\u200b/g, '') === '') previous = previous.previousSibling;
-      if (previous && previous.nodeType === Node.ELEMENT_NODE && previous.classList.contains('special-wrapper')) {
-        previous.remove();
-        return true;
-      }
-      return false;
-    }
-
-    function handleMathEditorKeydown(event) {
-      activeMathEditor = event.currentTarget;
-
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        return;
-      }
-
-      if (event.key === '^') {
-        event.preventDefault();
-        insertExponentAtSelection(activeMathEditor);
-        return;
-      }
-
-      if (event.key === '_') {
-        event.preventDefault();
-        insertSubscriptAtSelection(activeMathEditor);
-        return;
-      }
-
-      if (event.key === 'Backspace' && removePreviousSpecialWrapperAtCaret()) {
-        event.preventDefault();
-        return;
-      }
-
-      if (event.key === 'ArrowRight') {
-        const specialBox = getContainingSpecialEntry(getSelectionStartNode());
-        if (specialBox) {
-          event.preventDefault();
-          placeCaretAfterNode(specialBox.wrapper);
-        }
-      }
-      if (event.key === 'ArrowLeft') {
-        const specialBox = getContainingSpecialEntry(getSelectionStartNode());
-        if (specialBox) {
-          event.preventDefault();
-          placeCaretBeforeNode(specialBox.wrapper);
-        }
-      }
-    }
-
-    function ensureSelectionInsideEditor(editor) {
-      const selection = window.getSelection();
-      if (selection.rangeCount && editor.contains(selection.anchorNode)) return selection.getRangeAt(0);
-      const range = document.createRange();
-      range.selectNodeContents(editor);
-      range.collapse(false);
-      selection.removeAllRanges();
-      selection.addRange(range);
-      return range;
-    }
-
-    function insertTextAtSelection(text, editor) {
-      const range = ensureSelectionInsideEditor(editor);
-      range.deleteContents();
-      const node = document.createTextNode(text);
-      range.insertNode(node);
-      placeCaretInTextNode(node, node.textContent.length);
-    }
-
-    function insertFractionAtSelection(editor) {
-      const range = ensureSelectionInsideEditor(editor);
-      range.deleteContents();
-      const wrapper = document.createElement('span');
-      wrapper.className = 'fraction-entry special-wrapper';
-      wrapper.setAttribute('data-special-wrapper', 'fraction');
-      wrapper.innerHTML = '<span class="fraction-numerator special-entry" contenteditable="true" data-special-entry="fraction-numerator"></span><span class="fraction-denominator special-entry" contenteditable="true" data-special-entry="fraction-denominator"></span>';
-      range.insertNode(wrapper);
-      placeCaretInside(wrapper.querySelector('.fraction-numerator'));
-    }
-
-    function insertExponentAtSelection(editor) {
-      const range = ensureSelectionInsideEditor(editor);
-      range.deleteContents();
-      const exponent = document.createElement('span');
-      exponent.className = 'exponent-entry special-wrapper special-entry';
-      exponent.setAttribute('data-special-wrapper', 'exponent');
-      exponent.setAttribute('data-special-entry', 'exponent');
-      exponent.contentEditable = 'true';
-      range.insertNode(exponent);
-      placeCaretInside(exponent);
-    }
-
-    function insertSubscriptAtSelection(editor) {
-      const range = ensureSelectionInsideEditor(editor);
-      range.deleteContents();
-      const subscript = document.createElement('span');
-      subscript.className = 'subscript-entry special-wrapper special-entry';
-      subscript.setAttribute('data-special-wrapper', 'subscript');
-      subscript.setAttribute('data-special-entry', 'subscript');
-      subscript.contentEditable = 'true';
-      range.insertNode(subscript);
-      placeCaretInside(subscript);
-    }
-
-    function insertRadicalAtSelection(editor) {
-      const range = ensureSelectionInsideEditor(editor);
-      range.deleteContents();
-      const wrapper = document.createElement('span');
-      wrapper.className = 'math-radical special-wrapper';
-      wrapper.setAttribute('data-special-wrapper', 'radical');
-      wrapper.innerHTML = '<span class="radical-symbol">√</span><span class="radical-entry special-entry" contenteditable="true" data-special-entry="radical"></span>';
-      range.insertNode(wrapper);
-      placeCaretInside(wrapper.querySelector('.radical-entry'));
-    }
-
-    function insertLogAtSelection(editor) {
-      const range = ensureSelectionInsideEditor(editor);
-      range.deleteContents();
-      const wrapper = document.createElement('span');
-      wrapper.className = 'log-entry special-wrapper';
-      wrapper.setAttribute('data-special-wrapper', 'log');
-      wrapper.innerHTML = '<span class="log-label">log</span><span class="log-base-entry special-entry" contenteditable="true" data-special-entry="log-base"></span><span>(</span><span class="log-argument-entry special-entry" contenteditable="true" data-special-entry="log-argument"></span><span>)</span>';
-      range.insertNode(wrapper);
-      placeCaretInside(wrapper.querySelector('.log-base-entry'));
-    }
-
-
-
-    function getSelectionStartNode() {
-      const selection = window.getSelection();
-      return selection.rangeCount ? selection.getRangeAt(0).startContainer : null;
-    }
-
-    function closestMathEditor(node) {
-      let current = node && (node.nodeType === Node.TEXT_NODE ? node.parentElement : node);
-      while (current && current !== document) {
-        if (current.classList && current.classList.contains('math-answer-editor')) return current;
-        current = current.parentElement;
-      }
-      return null;
-    }
-
-    function getContainingSpecialEntry(node) {
-      let current = node && (node.nodeType === Node.TEXT_NODE ? node.parentElement : node);
-      while (current && current !== document) {
-        if (current.classList && current.classList.contains('special-entry')) {
-          let wrapper = current;
-          while (wrapper && wrapper !== document && !(wrapper.classList && wrapper.classList.contains('special-wrapper'))) {
-            wrapper = wrapper.parentElement;
-          }
-          return { entry: current, wrapper: wrapper || current };
-        }
-        current = current.parentElement;
-      }
-      return null;
-    }
-
-    function placeCaretInside(element) {
-      const range = document.createRange();
-      range.selectNodeContents(element);
-      range.collapse(false);
-      const selection = window.getSelection();
-      selection.removeAllRanges();
-      selection.addRange(range);
-      element.focus();
-    }
-
-    function placeCaretBeforeNode(node) {
-      const parent = node.parentNode;
-      let beforeNode = node.previousSibling;
-      if (!beforeNode || beforeNode.nodeType !== Node.TEXT_NODE) {
-        beforeNode = document.createTextNode('​');
-        parent.insertBefore(beforeNode, node);
-      } else if (beforeNode.textContent.length === 0) {
-        beforeNode.textContent = '​';
-      }
-      placeCaretInTextNode(beforeNode, beforeNode.textContent.length);
-      const editor = closestMathEditor(parent);
-      if (editor) {
-        activeMathEditor = editor;
-        editor.focus();
-      }
-    }
-
-    function placeCaretAfterNode(node) {
-      const parent = node.parentNode;
-      let afterNode = node.nextSibling;
-      if (!afterNode || afterNode.nodeType !== Node.TEXT_NODE) {
-        afterNode = document.createTextNode('\u200b');
-        parent.insertBefore(afterNode, node.nextSibling);
-      } else if (afterNode.textContent.length === 0) {
-        afterNode.textContent = '\u200b';
-      }
-      placeCaretInTextNode(afterNode, afterNode.textContent.length);
-      const editor = closestMathEditor(parent);
-      if (editor) {
-        activeMathEditor = editor;
-        editor.focus();
-      }
-    }
-
-    function placeCaretInTextNode(node, offset) {
-      const range = document.createRange();
-      range.setStart(node, offset);
-      range.collapse(true);
-      const selection = window.getSelection();
-      selection.removeAllRanges();
-      selection.addRange(range);
-    }
-
-    function editorToPlainText(editor) {
-      function walk(node) {
-        if (node.nodeType === Node.TEXT_NODE) return node.textContent.replace(/\u200b/g, '');
-        if (node.nodeType !== Node.ELEMENT_NODE) return '';
-        if (node.matches && node.matches('.fraction-entry')) return `(${walk(node.querySelector('.fraction-numerator'))})/(${walk(node.querySelector('.fraction-denominator'))})`;
-        if (node.matches && node.matches('.math-radical')) return `sqrt(${walk(node.querySelector('.radical-entry'))})`;
-        if (node.matches && node.matches('.exponent-entry')) return `**(${Array.from(node.childNodes).map(walk).join('')})`;
-        if (node.matches && node.matches('.subscript-entry')) return `_{${Array.from(node.childNodes).map(walk).join('')}}`;
-        if (node.matches && node.matches('.log-entry')) return `log(${walk(node.querySelector('.log-base-entry'))},${walk(node.querySelector('.log-argument-entry'))})`;
-        return Array.from(node.childNodes).map(walk).join('');
-      }
-      return Array.from(editor.childNodes).map(walk).join('').trim();
-    }
-
-    function evaluateNumericAnswer(raw) {
-      const text = raw
-        .replace(/\u200b/g, '')
-        .replace(/−/g, '-')
-        .replace(/\s+/g, '')
-        .replace(/^=/, '');
-      if (!text || /[^0-9+\-*/().]/.test(text)) return NaN;
-      try {
-        const value = Function(`"use strict"; return (${text});`)();
-        return Number.isFinite(value) ? value : NaN;
-      } catch (error) {
-        return NaN;
-      }
-    }
-
-    function normalizeAnswerText(raw) {
-      return raw
-        .replace(/\u200b/g, '')
-        .replace(/−/g, '-')
-        .replace(/∞/g, 'infty')
-        .replace(/π/g, 'pi')
-        .replace(/\\infty/g, 'infty')
-        .replace(/\s+/g, '')
-        .replace(/^=/, '')
-        .toLowerCase();
-    }
-
-    function evaluateFlexibleNumericAnswer(raw) {
-      const text = normalizeAnswerText(raw)
-        .replace(/sqrt/g, 'Math.sqrt')
-        .replace(/pi/g, 'Math.PI');
-      if (!text || /[^0-9+\-*/().MathsqrtPI]/.test(text)) return NaN;
-      try {
-        const value = Function(`"use strict"; return (${text});`)();
-        return Number.isFinite(value) ? value : NaN;
-      } catch (error) {
-        return NaN;
-      }
-    }
-
-    function answerMatches(userRaw, expected) {
-      const text = normalizeAnswerText(userRaw);
-      if (expected.kind === 'infinity') return ['infty', '+infty', 'infinity', '+infinity'].includes(text);
-      if (expected.kind === 'negativeInfinity') return ['-infty', '-infinity'].includes(text);
-      if (expected.kind === 'dne' || expected.kind === 'oscillates') return ['dne', 'doesnotexist', 'undefined'].includes(text);
-      if (expected.kind === 'undefined') return ['undefined', 'dne', 'doesnotexist'].includes(text);
-      if (expected.kind === 'finite') {
-        const userValue = evaluateFlexibleNumericAnswer(userRaw);
-        const expectedValue = expected.value && expected.value.decimal !== undefined
-          ? expected.value.decimal
-          : fractionToNumber(expected.value);
-        return Number.isFinite(userValue) && Math.abs(userValue - expectedValue) < 1e-8;
-      }
-      const userValue = evaluateFlexibleNumericAnswer(userRaw);
-      const expectedValue = fractionToNumber(expected);
-      return Number.isFinite(userValue) && Math.abs(userValue - expectedValue) < 1e-8;
-    }
-
-    function collectAsymptoteEntries() {
-      const rows = document.querySelectorAll('.asymptote-entry-row');
-      return Array.from(rows).map(row => {
-        const input = row.querySelector('.asymptote-value-input');
-        return {
-          type: row.dataset.type,
-          value: evaluateFlexibleNumericAnswer(input ? input.value : '')
-        };
-      }).filter(item => Number.isFinite(item.value));
-    }
-
-    function asymptoteListsMatch(userEntries, expectedEntries) {
-      if (!expectedEntries) return true;
-      if (userEntries.length !== expectedEntries.length) return false;
-      const used = new Array(userEntries.length).fill(false);
-      return expectedEntries.every(expected => {
-        const index = userEntries.findIndex((user, i) =>
-          !used[i] &&
-          user.type === expected.type &&
-          Math.abs(user.value - expected.value) < 1e-8
-        );
-        if (index === -1) return false;
-        used[index] = true;
-        return true;
-      });
+        </div>`;
     }
 
     function checkUserAnswer() {
       if (!currentProblem) return;
-      const answers = currentProblem.answers || [{ labelTex: 'Limit', answer: currentProblem.answer }];
-      const allLimitsCorrect = answers.every((entry, index) => {
-        const editor = document.getElementById(`answer-editor-${index}`);
-        return editor && answerMatches(editorToPlainText(editor), entry.answer);
-      });
-      const asymptotesCorrect = currentProblem.expectedAsymptotes
-        ? asymptoteListsMatch(collectAsymptoteEntries(), currentProblem.expectedAsymptotes)
-        : true;
-      const allCorrect = allLimitsCorrect && asymptotesCorrect;
-      feedbackText.textContent = allCorrect ? 'Correct!' : 'Incorrect, try again.';
-      feedbackText.style.color = allCorrect ? 'green' : 'red';
+      const maxInput = document.getElementById('max-answer');
+      const minInput = document.getElementById('min-answer');
+      const userMax = evaluateFlexibleNumericAnswer(maxInput ? maxInput.value : '');
+      const userMin = evaluateFlexibleNumericAnswer(minInput ? minInput.value : '');
+      const maxCorrect = Number.isFinite(userMax) && Math.abs(userMax - currentProblem.maxValue.decimal) < 1e-8;
+      const minCorrect = Number.isFinite(userMin) && Math.abs(userMin - currentProblem.minValue.decimal) < 1e-8;
+      feedbackText.textContent = maxCorrect && minCorrect ? 'Correct!' : 'Incorrect, try again.';
+      feedbackText.style.color = maxCorrect && minCorrect ? 'green' : 'red';
     }
 
     function clearOldActivityState() {
@@ -2881,23 +706,30 @@ fetch("/nav.html")
       hintStep = 0;
       hintBtn.disabled = true;
       checkBtn.style.display = 'none';
-      hintIsTypesetting = false;
+    }
+
+    function advanceHint() {
+      if (!currentProblem || hintStep >= currentProblem.hints.length) return;
+      const line = document.createElement('p');
+      line.innerHTML = `\\[${currentProblem.hints[hintStep]}\\]`;
+      hintArea.appendChild(line);
+      hintStep++;
+      if (hintStep >= currentProblem.hints.length) hintBtn.disabled = true;
+      typesetElement(hintArea);
     }
 
     startBtn.addEventListener('click', () => {
       clearOldActivityState();
-
       const sound = document.getElementById('click-sound');
       if (sound) {
         sound.currentTime = 0;
         sound.play();
       }
-
-      currentProblem = generateLimitProblem();
-      questionText.innerHTML = `Evaluate: \\[${currentProblem.questionTex}\\]`;
+      currentProblem = generateEVTProblem();
+      questionText.innerHTML = `\\[${currentProblem.questionTex}\\]`;
       setupAnswerEditor();
       checkBtn.style.display = 'inline-block';
-      hintBtn.disabled = !currentProblem.hints.length;
+      hintBtn.disabled = false;
       typesetElement(questionText);
     });
 

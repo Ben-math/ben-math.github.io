@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1939,6 +1940,238 @@ fetch("/nav.html")
       ];
     }
 
+
+    function type3PolynomialSlotProblem() {
+      const polynomial = randomPolynomialAtLeastDegree3();
+      const polynomialInNumerator = Math.random() < 0.5;
+      const partnerType = randomChoice([4, 5, 6]);
+      if (partnerType === 4) return generateType3PolynomialTrigPartner(polynomial, polynomialInNumerator);
+      if (partnerType === 5) return generateType3PolynomialExponentialPartner(polynomial, polynomialInNumerator);
+      return generateType3PolynomialLogPartner(polynomial, polynomialInNumerator);
+    }
+
+    function polyDerivativeSequence(poly) {
+      const seq = [poly];
+      let current = poly;
+      while (degreeOfPolynomial(current) > 0 && seq.length < 12) {
+        current = derivativePolynomial(current);
+        seq.push(current);
+      }
+      return seq;
+    }
+
+    function type3LimitQuestion(numTex, denTex, data) {
+      return `f(x)=\\frac{${numTex}}{${denTex}}.\\quad \\text{Evaluate }${data.labelTex}.`;
+    }
+
+    function generateType3PolynomialTrigPartner(polynomial, polynomialInNumerator) {
+      const direction = Math.random() < 0.5 ? 'positive' : 'negative';
+      const data = directionData(direction);
+      const trig = randomChoice(['sin', 'cos', 'tan', 'sec', 'csc', 'cot']);
+      const polyTex = polynomialToTex(polynomial);
+      const trigFnTex = trigTex(trig);
+      const numTex = polynomialInNumerator ? polyTex : trigFnTex;
+      const denTex = polynomialInNumerator ? trigFnTex : polyTex;
+      const answerEntry = { labelTex: data.labelTex, answer: { kind: 'dne' } };
+      const hints = [
+        `\\lim_{x\\to ${data.limitTex}}${trigFnTex}=\\text{DNE}`,
+        `\\text{Since one part of the quotient does not approach }0\\text{ or }\\pm\\infty\\text{ in a useful way, this is not an indeterminate quotient.}`,
+        `${data.labelTex}=\\text{DNE}`
+      ];
+      return {
+        type: 3,
+        questionTex: type3LimitQuestion(numTex, denTex, data),
+        answers: [answerEntry],
+        hints
+      };
+    }
+
+    function randomType3ExponentialData(direction) {
+      const r = Math.random();
+      const base = r < 0.50 ? 'e' : randomInteger(2, 9);
+      const useComposed = r >= 0.70;
+      let innerTex, innerPrimeTex, growsDescription;
+      if (!useComposed) {
+        if (direction === 'positive') {
+          innerTex = 'x';
+          innerPrimeTex = '1';
+        } else {
+          innerTex = '-x';
+          innerPrimeTex = '-1';
+        }
+      } else {
+        const slope = direction === 'positive' ? randomPositiveInteger(1, 4) : -randomPositiveInteger(1, 4);
+        const intercept = randomInteger(-5, 5);
+        const innerPoly = polynomialFromAxPlusC(slope, intercept);
+        innerTex = polynomialToTex(innerPoly);
+        innerPrimeTex = `${slope}`;
+      }
+      const tex = expTex(base, innerTex);
+      return { base, tex, innerTex, innerPrimeTex, useComposed };
+    }
+
+    function exponentialLinearDerivativeTex(expData, order) {
+      const factor = expData.base === 'e' ? expData.innerPrimeTex : `${expData.innerPrimeTex}\\ln(${expData.base})`;
+      if (order === 0) return expData.tex;
+      if (order === 1) return `${factor}\\,${expData.tex}`;
+      return `\\left(${factor}\\right)^{${order}}${expData.tex}`;
+    }
+
+    function exponentialLinearDerivativeSign(expData, order) {
+      const slope = Number(expData.innerPrimeTex);
+      if (order === 0) return 1;
+      return slope < 0 && order % 2 === 1 ? -1 : 1;
+    }
+
+    function generateType3PolynomialExponentialPartner(polynomial, polynomialInNumerator) {
+      const direction = Math.random() < 0.5 ? 'positive' : 'negative';
+      const data = directionData(direction);
+      const expData = randomType3ExponentialData(direction);
+      const polyTex = polynomialToTex(polynomial);
+      const numTex = polynomialInNumerator ? polyTex : expData.tex;
+      const denTex = polynomialInNumerator ? expData.tex : polyTex;
+      const seq = polyDerivativeSequence(polynomial);
+      const degree = degreeOfPolynomial(polynomial);
+      const finalPoly = seq[seq.length - 1];
+      const finalConstant = leadingCoefficient(finalPoly);
+      const expDerivativeSign = exponentialLinearDerivativeSign(expData, degree);
+      let answer;
+      if (polynomialInNumerator) {
+        answer = { kind: 'finite', value: exactFraction(0, 1), tex: '0' };
+      } else {
+        answer = infinityAnswerFromSign(expDerivativeSign * Math.sign(finalConstant));
+      }
+      const answerEntry = { labelTex: data.labelTex, answer };
+      const hints = [
+        `\\text{As }x\\to ${data.limitTex}\\text{, both numerator and denominator grow without bound, so this is an indeterminate form of type }\\frac{\\infty}{\\infty}.`,
+        `\\text{Apply L'Hôpital's Rule repeatedly until the polynomial has become constant.}`
+      ];
+      for (let i = 1; i < seq.length; i++) {
+        const polyDerivTex = polynomialToTex(seq[i]);
+        const expDerivTex = exponentialLinearDerivativeTex(expData, i);
+        hints.push(polynomialInNumerator
+          ? `\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${polyDerivTex}}{${expDerivTex}}`
+          : `\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${expDerivTex}}{${polyDerivTex}}`);
+      }
+      hints.push(polynomialInNumerator
+        ? `\\text{Now the numerator is constant while the exponential denominator grows without bound, so }${data.labelTex}=0.`
+        : `\\text{Now the denominator is constant while the exponential numerator grows without bound, so }${data.labelTex}=${answerObjectToTexExtended(answer)}.`);
+      hints.push(`${answerEquationTexExtended(answerEntry)}`);
+      return {
+        type: 3,
+        questionTex: type3LimitQuestion(numTex, denTex, data),
+        answers: [answerEntry],
+        hints
+      };
+    }
+
+    function randomType3LogData(direction) {
+      const r = Math.random();
+      const base = r < 0.50 ? 'e' : randomInteger(2, 9);
+      const useComposed = r >= 0.70;
+      let innerTex, derivativeTex, hPoly = null;
+      if (!useComposed) {
+        innerTex = 'x';
+        derivativeTex = base === 'e' ? '\\frac{1}{x}' : `\\frac{1}{x\\ln(${base})}`;
+      } else {
+        const c = randomInteger(1, 9);
+        hPoly = combineLikeTerms([makeTerm(1, 2), makeTerm(c, 0)]);
+        innerTex = polynomialToTex(hPoly);
+        derivativeTex = base === 'e'
+          ? `\\frac{2x}{${innerTex}}`
+          : `\\frac{2x}{${innerTex}\\ln(${base})}`;
+      }
+      return { base, useComposed, hPoly, innerTex, tex: logTex(base, innerTex), derivativeTex };
+    }
+
+    function polyTimesX(poly) {
+      return combineLikeTerms(poly.map(term => makeTerm(term.coefficient, term.power + 1)));
+    }
+
+    function generateType3PolynomialLogPartner(polynomial, polynomialInNumerator) {
+      const direction = 'positive';
+      const data = directionData(direction);
+      const logData = randomType3LogData(direction);
+      const polyTex = polynomialToTex(polynomial);
+      const logTexValue = logData.tex;
+      const numTex = polynomialInNumerator ? polyTex : logTexValue;
+      const denTex = polynomialInNumerator ? logTexValue : polyTex;
+      const polyPrime = derivativePolynomial(polynomial);
+      const polyPrimeTex = polynomialToTex(polyPrime);
+      const baseFactor = logData.base === 'e' ? '' : `\\ln(${logData.base})`;
+      const positiveBaseFactor = logData.base === 'e' ? '' : `\\ln(${logData.base})`;
+      let answer;
+      if (polynomialInNumerator) {
+        const polySign = polynomialEndBehaviour(polynomial, direction) === 'infinity' ? 1 : -1;
+        answer = infinityAnswerFromSign(polySign);
+      } else {
+        answer = { kind: 'finite', value: exactFraction(0, 1), tex: '0' };
+      }
+      const answerEntry = { labelTex: data.labelTex, answer };
+      const hints = [
+        `\\text{As }x\\to ${data.limitTex}\\text{, both numerator and denominator grow without bound, so this is an indeterminate form of type }\\frac{\\infty}{\\infty}.`,
+        `\\text{We expect polynomial growth to dominate logarithmic growth, but we still show the L'Hôpital's Rule details.}`,
+        `\\text{Apply L'Hôpital's Rule once.}`
+      ];
+
+      if (!logData.useComposed) {
+        if (polynomialInNumerator) {
+          const combinedPoly = polyTimesX(polyPrime);
+          hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${polyPrimeTex}}{${logData.derivativeTex}}`);
+          if (logData.base === 'e') {
+            hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}${polynomialToTex(combinedPoly)}`);
+          } else {
+            hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}${positiveBaseFactor}\\left(${polynomialToTex(combinedPoly)}\\right)`);
+          }
+          hints.push(`\\text{Direct substitution into this polynomial end-behaviour expression gives }${answerObjectToTexExtended(answer)}.`);
+        } else {
+          const combinedDen = polyTimesX(polyPrime);
+          hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${logData.derivativeTex}}{${polyPrimeTex}}`);
+          if (logData.base === 'e') {
+            hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{1}{${polynomialToTex(combinedDen)}}`);
+          } else {
+            hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{1}{${positiveBaseFactor}\\left(${polynomialToTex(combinedDen)}\\right)}`);
+          }
+          hints.push(`\\text{The denominator grows without bound, so direct substitution gives }${data.labelTex}=0.`);
+        }
+      } else {
+        const hTimesPolyPrime = multiplyPolynomials(logData.hPoly, polyPrime);
+        const hTimesPolyPrimePrime = derivativePolynomial(hTimesPolyPrime);
+        if (polynomialInNumerator) {
+          hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${polyPrimeTex}}{${logData.derivativeTex}}`);
+          if (logData.base === 'e') {
+            hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${polynomialToTex(hTimesPolyPrime)}}{2x}`);
+            hints.push(`\\text{This is still an indeterminate form of type }\\frac{\\infty}{\\infty}\\text{, so apply L'Hôpital's Rule again.}`);
+            hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${polynomialToTex(hTimesPolyPrimePrime)}}{2}`);
+          } else {
+            hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${positiveBaseFactor}\\left(${polynomialToTex(hTimesPolyPrime)}\\right)}{2x}`);
+            hints.push(`\\text{This is still an indeterminate form of type }\\frac{\\infty}{\\infty}\\text{, so apply L'Hôpital's Rule again.}`);
+            hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${positiveBaseFactor}\\left(${polynomialToTex(hTimesPolyPrimePrime)}\\right)}{2}`);
+          }
+          hints.push(`\\text{Direct substitution into this final expression gives }${answerObjectToTexExtended(answer)}.`);
+        } else {
+          hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${logData.derivativeTex}}{${polyPrimeTex}}`);
+          if (logData.base === 'e') {
+            hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{2x}{${polynomialToTex(hTimesPolyPrime)}}`);
+            hints.push(`\\text{This is still an indeterminate form of type }\\frac{\\infty}{\\infty}\\text{, so apply L'Hôpital's Rule again.}`);
+            hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{2}{${polynomialToTex(hTimesPolyPrimePrime)}}`);
+          } else {
+            hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{2x}{${positiveBaseFactor}\\left(${polynomialToTex(hTimesPolyPrime)}\\right)}`);
+            hints.push(`\\text{This is still an indeterminate form of type }\\frac{\\infty}{\\infty}\\text{, so apply L'Hôpital's Rule again.}`);
+            hints.push(`\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{2}{${positiveBaseFactor}\\left(${polynomialToTex(hTimesPolyPrimePrime)}\\right)}`);
+          }
+          hints.push(`\\text{The denominator grows without bound, so direct substitution gives }${data.labelTex}=0.`);
+        }
+      }
+      hints.push(`${answerEquationTexExtended(answerEntry)}`);
+      return {
+        type: 3,
+        questionTex: type3LimitQuestion(numTex, denTex, data),
+        answers: [answerEntry],
+        hints
+      };
+    }
+
     function generateType3FinitePolynomialZero() {
       const polyType = Math.random() < 0.5 ? 2 : 3;
       const otherType = randomChoice([4,5,6]);
@@ -2138,11 +2371,7 @@ fetch("/nav.html")
     }
 
     function generateSimpleIndeterminateQuotientProblem() {
-      // Weighted subcases reflecting the requested logic, with conservative domain choices.
-      const r = Math.random();
-      if (r < 0.45) return generateType3FinitePolynomialZero();
-      if (r < 0.78) return generateType3PolynomialInfinity();
-      return generateType3TrigBased();
+      return type3PolynomialSlotProblem();
     }
 
 

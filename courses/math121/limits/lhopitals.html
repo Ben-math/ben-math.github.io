@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1967,17 +1968,79 @@ fetch("/nav.html")
     function generateType3PolynomialTrigPartner(polynomial, polynomialInNumerator) {
       const direction = Math.random() < 0.5 ? 'positive' : 'negative';
       const data = directionData(direction);
-      const trig = randomChoice(['sin', 'cos', 'tan', 'sec', 'csc', 'cot']);
       const polyTex = polynomialToTex(polynomial);
-      const trigFnTex = trigTex(trig);
+
+      // Most ordinary trigonometric functions do not have a limit as x -> +/- infinity.
+      // The special reciprocal-trig cases below are the only allowed 1/x versions for now,
+      // because they can be explained cleanly using lim_{u->0} sin(u)/u = 1.
+      const useReciprocalOneOverX = Math.random() < 0.5;
+      if (!useReciprocalOneOverX) {
+        const trig = randomChoice(['sin', 'cos', 'tan']);
+        const trigFnTex = trigTex(trig);
+        const numTex = polynomialInNumerator ? polyTex : trigFnTex;
+        const denTex = polynomialInNumerator ? trigFnTex : polyTex;
+        const answerEntry = { labelTex: data.labelTex, answer: { kind: 'dne' } };
+        const hints = [
+          `\\lim_{x\\to ${data.limitTex}}${trigFnTex}=\\text{DNE}`,
+          `\\text{Since one part of the quotient does not approach }0\\text{ or }\\pm\\infty\\text{ in a useful way, this is not an indeterminate quotient.}`,
+          `${data.labelTex}=\\text{DNE}`
+        ];
+        return {
+          type: 3,
+          questionTex: type3LimitQuestion(numTex, denTex, data),
+          answers: [answerEntry],
+          hints
+        };
+      }
+
+      const trig = randomChoice(['csc', 'cot']);
+      const innerTex = '\\frac{1}{x}';
+      const trigFnTex = trigTex(trig, innerTex);
+      const polyPrime = derivativePolynomial(polynomial);
+      const polyPrimeTex = polynomialToTex(polyPrime);
+      const derivativeTrigTex = trig === 'csc'
+        ? `\\frac{\\csc\\left(${innerTex}\\right)\\cot\\left(${innerTex}\\right)}{x^2}`
+        : `\\frac{\\csc^2\\left(${innerTex}\\right)}{x^2}`;
+      const derivativeTrigNoReciprocalTex = trig === 'csc'
+        ? `\\frac{\\cos\\left(${innerTex}\\right)}{x^2\\sin^2\\left(${innerTex}\\right)}`
+        : `\\frac{1}{x^2\\sin^2\\left(${innerTex}\\right)}`;
+      const simplifiedAfterDivisionTex = trig === 'csc'
+        ? `${polyPrimeTex}\\cdot \\frac{x^2\\sin^2\\left(${innerTex}\\right)}{\\cos\\left(${innerTex}\\right)}`
+        : `${polyPrimeTex}\\cdot x^2\\sin^2\\left(${innerTex}\\right)`;
+      const reciprocalOverPolyTex = trig === 'csc'
+        ? `\\frac{\\cos\\left(${innerTex}\\right)}{x^2\\sin^2\\left(${innerTex}\\right)\\left(${polyPrimeTex}\\right)}`
+        : `\\frac{1}{x^2\\sin^2\\left(${innerTex}\\right)\\left(${polyPrimeTex}\\right)}`;
+
       const numTex = polynomialInNumerator ? polyTex : trigFnTex;
       const denTex = polynomialInNumerator ? trigFnTex : polyTex;
-      const answerEntry = { labelTex: data.labelTex, answer: { kind: 'dne' } };
+      const answer = polynomialInNumerator
+        ? { kind: polynomialEndBehaviour(polyPrime, direction) }
+        : { kind: 'finite', value: exactFraction(0, 1), tex: '0' };
+      const answerEntry = { labelTex: data.labelTex, answer };
       const hints = [
-        `\\lim_{x\\to ${data.limitTex}}${trigFnTex}=\\text{DNE}`,
-        `\\text{Since one part of the quotient does not approach }0\\text{ or }\\pm\\infty\\text{ in a useful way, this is not an indeterminate quotient.}`,
-        `${data.labelTex}=\\text{DNE}`
+        `\\text{As }x\\to ${data.limitTex}\\text{, the polynomial and }${trigFnTex}\\text{ both grow without bound, so this is an indeterminate form of type }\\frac{\\infty}{\\infty}.`,
+        `\\text{Apply L'Hôpital's Rule.}`,
+        polynomialInNumerator
+          ? `\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${polyPrimeTex}}{${derivativeTrigTex}}`
+          : `\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${derivativeTrigTex}}{${polyPrimeTex}}`,
+        `\\text{Rewrite the reciprocal trigonometric functions using sine and cosine.}`,
+        polynomialInNumerator
+          ? `\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${polyPrimeTex}}{${derivativeTrigNoReciprocalTex}}`
+          : `\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}\\frac{${derivativeTrigNoReciprocalTex}}{${polyPrimeTex}}`,
+        `\\text{Now rewrite the compound fraction as a single ordinary fraction.}`,
+        polynomialInNumerator
+          ? `\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}${simplifiedAfterDivisionTex}`
+          : `\\lim_{x\\to ${data.limitTex}}f(x)=\\lim_{x\\to ${data.limitTex}}${reciprocalOverPolyTex}`,
+        `\\text{Use }\\lim_{u\\to 0}\\frac{\\sin u}{u}=1\\text{ with }u=\\frac{1}{x}.\\text{ Since }x\\to ${data.limitTex}\\text{ gives }u\\to 0,\\text{ we have }\\lim_{x\\to ${data.limitTex}}\\frac{\\sin(1/x)}{1/x}=1.`,
+        `\\text{Therefore }\\lim_{x\\to ${data.limitTex}}x\\sin\\left(\\frac{1}{x}\\right)=1\\text{, so }\\lim_{x\\to ${data.limitTex}}x^2\\sin^2\\left(\\frac{1}{x}\\right)=1.`
       ];
+      if (trig === 'csc') {
+        hints.push(`\\text{Also, }\\lim_{x\\to ${data.limitTex}}\\cos\\left(\\frac{1}{x}\\right)=1.`);
+      }
+      hints.push(polynomialInNumerator
+        ? `\\text{So the trigonometric factor approaches }1\\text{, and the remaining limit has the same end behaviour as }${polyPrimeTex}.`
+        : `\\text{So the trigonometric part approaches }1\\text{, while }${polyPrimeTex}\\text{ grows without bound.}`);
+      hints.push(`${answerEquationTexExtended(answerEntry)}`);
       return {
         type: 3,
         questionTex: type3LimitQuestion(numTex, denTex, data),

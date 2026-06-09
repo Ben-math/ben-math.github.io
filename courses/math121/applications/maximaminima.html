@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -445,19 +446,93 @@ fetch("/nav.html")
       return { decimal: f.num / f.den, tex: fractionToTex(f) };
     }
 
-    function specialTrigValue(n, d) {
-      const angle = Math.PI * n / d;
-      const v = Math.round(Math.sin(angle) * 1e12) / 1e12;
-      const values = [
-        [-1, '-1'], [-Math.sqrt(3)/2, '-\\frac{\\sqrt{3}}{2}'], [-Math.SQRT1_2, '-\\frac{\\sqrt{2}}{2}'], [-0.5, '-\\frac{1}{2}'],
-        [0, '0'], [0.5, '\\frac{1}{2}'], [Math.SQRT1_2, '\\frac{\\sqrt{2}}{2}'], [Math.sqrt(3)/2, '\\frac{\\sqrt{3}}{2}'], [1, '1']
-      ];
-      const match = values.find(([x]) => Math.abs(v - x) < 1e-9);
-      return valueObj(v, match ? match[1] : numberTex(v));
+    function trigExactTexFromTable(kind, k) {
+      const normalized = ((k % 24) + 24) % 24;
+      const sinTable = {
+        0: '0',
+        1: '\\frac{\\sqrt{6}-\\sqrt{2}}{4}',
+        2: '\\frac{1}{2}',
+        3: '\\frac{\\sqrt{2}}{2}',
+        4: '\\frac{\\sqrt{3}}{2}',
+        5: '\\frac{\\sqrt{6}+\\sqrt{2}}{4}',
+        6: '1',
+        7: '\\frac{\\sqrt{6}+\\sqrt{2}}{4}',
+        8: '\\frac{\\sqrt{3}}{2}',
+        9: '\\frac{\\sqrt{2}}{2}',
+        10: '\\frac{1}{2}',
+        11: '\\frac{\\sqrt{6}-\\sqrt{2}}{4}',
+        12: '0',
+        13: '-\\frac{\\sqrt{6}-\\sqrt{2}}{4}',
+        14: '-\\frac{1}{2}',
+        15: '-\\frac{\\sqrt{2}}{2}',
+        16: '-\\frac{\\sqrt{3}}{2}',
+        17: '-\\frac{\\sqrt{6}+\\sqrt{2}}{4}',
+        18: '-1',
+        19: '-\\frac{\\sqrt{6}+\\sqrt{2}}{4}',
+        20: '-\\frac{\\sqrt{3}}{2}',
+        21: '-\\frac{\\sqrt{2}}{2}',
+        22: '-\\frac{1}{2}',
+        23: '-\\frac{\\sqrt{6}-\\sqrt{2}}{4}'
+      };
+      const cosTable = {
+        0: '1',
+        1: '\\frac{\\sqrt{6}+\\sqrt{2}}{4}',
+        2: '\\frac{\\sqrt{3}}{2}',
+        3: '\\frac{\\sqrt{2}}{2}',
+        4: '\\frac{1}{2}',
+        5: '\\frac{\\sqrt{6}-\\sqrt{2}}{4}',
+        6: '0',
+        7: '-\\frac{\\sqrt{6}-\\sqrt{2}}{4}',
+        8: '-\\frac{1}{2}',
+        9: '-\\frac{\\sqrt{2}}{2}',
+        10: '-\\frac{\\sqrt{3}}{2}',
+        11: '-\\frac{\\sqrt{6}+\\sqrt{2}}{4}',
+        12: '-1',
+        13: '-\\frac{\\sqrt{6}+\\sqrt{2}}{4}',
+        14: '-\\frac{\\sqrt{3}}{2}',
+        15: '-\\frac{\\sqrt{2}}{2}',
+        16: '-\\frac{1}{2}',
+        17: '-\\frac{\\sqrt{6}-\\sqrt{2}}{4}',
+        18: '0',
+        19: '\\frac{\\sqrt{6}-\\sqrt{2}}{4}',
+        20: '\\frac{1}{2}',
+        21: '\\frac{\\sqrt{2}}{2}',
+        22: '\\frac{\\sqrt{3}}{2}',
+        23: '\\frac{\\sqrt{6}+\\sqrt{2}}{4}'
+      };
+      return (kind === 'sin' ? sinTable : cosTable)[normalized];
     }
 
-    function cosSpecial(k) { return specialTrigValue(6 - k, 12); }
-    function sinSpecial(k) { return specialTrigValue(k, 12); }
+    function specialTrigValue(kind, k) {
+      const angle = Math.PI * k / 12;
+      const decimal = kind === 'sin' ? Math.sin(angle) : Math.cos(angle);
+      return valueObj(Math.round(decimal * 1e12) / 1e12, trigExactTexFromTable(kind, k));
+    }
+
+    function cosSpecial(k) { return specialTrigValue('cos', k); }
+    function sinSpecial(k) { return specialTrigValue('sin', k); }
+
+    function parenthesizeTex(tex) {
+      return /^-/.test(tex) || /[+]/.test(tex.replace(/^-/,'')) ? `\\left(${tex}\\right)` : tex;
+    }
+
+    function powerValue(v, n) {
+      const decimal = Math.pow(v.decimal, n);
+      if (v.tex === '0') return valueObj(0, '0');
+      if (v.tex === '1') return valueObj(1, '1');
+      if (v.tex === '-1') return valueObj(n % 2 === 0 ? 1 : -1, n % 2 === 0 ? '1' : '-1');
+      return valueObj(decimal, `${parenthesizeTex(v.tex)}^{${n}}`);
+    }
+
+    function productValue(a, b) {
+      const decimal = a.decimal * b.decimal;
+      if (a.tex === '0' || b.tex === '0') return valueObj(0, '0');
+      if (a.tex === '1') return valueObj(decimal, b.tex);
+      if (b.tex === '1') return valueObj(decimal, a.tex);
+      if (a.tex === '-1') return valueObj(decimal, `-${parenthesizeTex(b.tex)}`);
+      if (b.tex === '-1') return valueObj(decimal, `-${parenthesizeTex(a.tex)}`);
+      return valueObj(decimal, `${parenthesizeTex(a.tex)}${parenthesizeTex(b.tex)}`);
+    }
 
     function multiplyValueTex(v, c) {
       return valueObj(c * v.decimal, c === 1 ? v.tex : `${c < 0 ? '-' : ''}${Math.abs(c)}${v.tex === '1' ? '' : v.tex === '-1' ? '(-1)' : `\\left(${v.tex}\\right)`}`);
@@ -513,14 +588,18 @@ fetch("/nav.html")
       do { s = randomInteger(-7, 7); } while (s === r || ((r + s) % 2 !== 0));
       const a = randomChoice([-3, -2, -1, 1, 2, 3]);
       const h = (r + s) / 2;
-      const tex = `${a === 1 ? '' : a === -1 ? '-' : a}${linearFactorTex(r)}${linearFactorTex(s)}`;
+      const tex = simplePolynomialTex([
+        { c: a, p: 2 },
+        { c: -a * (r + s), p: 1 },
+        { c: a * r * s, p: 0 }
+      ]);
       const interval = integerIntervalContaining([r, s, h]);
       const evalAt = x => valueObj(a * (x - r) * (x - s));
       return buildProblem({
         family: 'quadratic', tex, interval, evalAt,
-        continuity: '\\text{it is a polynomial}',
-        derivativeTex: `f'(x)=${a}(2x ${signedTex(-(r+s))})`,
-        criticalTex: `f'(x)=0\\text{ gives }x=${numberTex(h)}.`,
+        continuity: '\text{it is a polynomial}',
+        derivativeTex: `f'(x)=${simplePolynomialTex([{ c: 2 * a, p: 1 }, { c: -a * (r + s), p: 0 }])}`,
+        criticalTex: `f'(x)=0\text{ gives }x=${numberTex(h)}.`,
         criticals: [h]
       });
     }
@@ -618,11 +697,11 @@ fetch("/nav.html")
       } else if (kind === 'cos') {
         tex = '\\cos x'; derivativeTex = `f'(x)=-\\sin x`; criticalTex = `\\sin x=0\\text{ gives }x=0,\\pi,2\\pi.`; criticalKs = [0,12,24]; evalAt = k => cosSpecial(k);
       } else if (kind === 'sinPower') {
-        const n = randomInteger(2, 5); tex = `\\sin^{${n}}x`; derivativeTex = `f'(x)=${n}\\sin^{${n-1}}x\\cos x`; criticalTex = `f'(x)=0\\text{ gives }x=0,\\frac{\\pi}{2},\\pi,\\frac{3\\pi}{2},2\\pi.`; criticalKs = [0,6,12,18,24]; evalAt = k => { const v=sinSpecial(k); return valueObj(Math.pow(v.decimal,n), n===2 && Math.abs(v.decimal)===Math.SQRT1_2 ? '\\frac{1}{2}' : numberTex(Math.pow(v.decimal,n))); };
+        const n = randomInteger(2, 5); tex = `\\sin^{${n}}x`; derivativeTex = `f'(x)=${n}\\sin^{${n-1}}x\\cos x`; criticalTex = `f'(x)=0\\text{ gives }x=0,\\frac{\\pi}{2},\\pi,\\frac{3\\pi}{2},2\\pi.`; criticalKs = [0,6,12,18,24]; evalAt = k => powerValue(sinSpecial(k), n);
       } else if (kind === 'cosPower') {
-        const n = randomInteger(2, 5); tex = `\\cos^{${n}}x`; derivativeTex = `f'(x)=-${n}\\cos^{${n-1}}x\\sin x`; criticalTex = `f'(x)=0\\text{ gives }x=0,\\frac{\\pi}{2},\\pi,\\frac{3\\pi}{2},2\\pi.`; criticalKs = [0,6,12,18,24]; evalAt = k => { const v=cosSpecial(k); return valueObj(Math.pow(v.decimal,n), n===2 && Math.abs(v.decimal)===Math.SQRT1_2 ? '\\frac{1}{2}' : numberTex(Math.pow(v.decimal,n))); };
+        const n = randomInteger(2, 5); tex = `\\cos^{${n}}x`; derivativeTex = `f'(x)=-${n}\\cos^{${n-1}}x\\sin x`; criticalTex = `f'(x)=0\\text{ gives }x=0,\\frac{\\pi}{2},\\pi,\\frac{3\\pi}{2},2\\pi.`; criticalKs = [0,6,12,18,24]; evalAt = k => powerValue(cosSpecial(k), n);
       } else if (kind === 'sincos') {
-        tex = '\\sin x\\cos x'; derivativeTex = `f'(x)=\\cos^2x-\\sin^2x`; criticalTex = `f'(x)=0\\text{ gives }x=\\frac{\\pi}{4},\\frac{3\\pi}{4},\\frac{5\\pi}{4},\\frac{7\\pi}{4}.`; criticalKs = [3,9,15,21]; evalAt = k => valueObj(sinSpecial(k).decimal * cosSpecial(k).decimal, numberTex(sinSpecial(k).decimal * cosSpecial(k).decimal));
+        tex = '\\sin x\\cos x'; derivativeTex = `f'(x)=\\cos^2x-\\sin^2x`; criticalTex = `f'(x)=0\\text{ gives }x=\\frac{\\pi}{4},\\frac{3\\pi}{4},\\frac{5\\pi}{4},\\frac{7\\pi}{4}.`; criticalKs = [3,9,15,21]; evalAt = k => productValue(sinSpecial(k), cosSpecial(k));
       } else {
         tex = '\\sin x+\\cos x'; derivativeTex = `f'(x)=\\cos x-\\sin x`; criticalTex = `f'(x)=0\\text{ gives }x=\\frac{\\pi}{4},\\frac{5\\pi}{4}.`; criticalKs = [3,15]; evalAt = k => { const v = sinSpecial(k).decimal + cosSpecial(k).decimal; const tex = Math.abs(v - Math.sqrt(2)) < 1e-9 ? '\\sqrt{2}' : Math.abs(v + Math.sqrt(2)) < 1e-9 ? '-\\sqrt{2}' : numberTex(v); return valueObj(v, tex); };
       }
@@ -645,7 +724,6 @@ fetch("/nav.html")
         generateCubicProblem,
         generateQuarticProblem,
         generateLinearPowerProblem,
-        generateAbsoluteValueProblem,
         generateReciprocalQuadraticProblem,
         generateTrigProblem,
         generateTrigProblem

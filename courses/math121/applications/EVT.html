@@ -3,6 +3,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -823,13 +824,21 @@ fetch("/nav.html")
     function evaluateFlexibleNumericAnswer(input) {
       if (!input) return NaN;
       let expr = input.trim().toLowerCase();
+      expr = expr.replace(/\u200b/g, '');
       expr = expr.replace(/−/g, '-');
+      expr = expr.replace(/\s+/g, '');
       expr = expr.replace(/π/g, 'pi');
       expr = expr.replace(/\\pi/g, 'pi');
-      expr = expr.replace(/sqrt/g, 'Math.sqrt');
-      expr = expr.replace(/\\sqrt\s*\{([^{}]+)\}/g, 'Math.sqrt($1)');
-      expr = expr.replace(/\\frac\s*\{([^{}]+)\}\s*\{([^{}]+)\}/g, '($1)/($2)');
+      expr = expr.replace(/\\sqrt\s*\{([^{}]+)\}/g, 'sqrt($1)');
+      expr = expr.replace(/√\s*\(?([^()]+)\)?/g, 'sqrt($1)');
+      expr = expr.replace(/\\frac\s*\{([^{}]+)\}\s*\{([^{}]+)\}/g, '(($1)/($2))');
       expr = expr.replace(/\^/g, '**');
+
+      // Allow natural exact entries like 3π/2, 2sqrt(3), or )(.
+      expr = expr.replace(/(\d|\)|pi)(?=pi|sqrt|\()/g, '$1*');
+      expr = expr.replace(/pi(?=\d)/g, 'pi*');
+
+      expr = expr.replace(/sqrt/g, 'Math.sqrt');
       expr = expr.replace(/pi/g, 'Math.PI');
       expr = expr.replace(/[^0-9+\-*/(). MathPIsqrt]/g, '');
       try {
@@ -844,6 +853,7 @@ fetch("/nav.html")
       return `
         <div class="answer-toolbar">
           <button type="button" class="math-symbol-button" data-insert-text="π">π</button>
+          <button type="button" class="math-symbol-button" data-insert-radical="true">√</button>
           <button type="button" class="math-symbol-button" data-insert-fraction="true"><span class="fraction-button-display"><span class="fraction-button-top">a</span><span class="fraction-button-bottom">b</span></span></button>
         </div>`;
     }
@@ -916,6 +926,18 @@ fetch("/nav.html")
       placeCaretInside(wrapper.querySelector('.fraction-numerator'));
     }
 
+    function insertRadicalAtSelection(editor = getInsertionEditor()) {
+      if (!editor) return;
+      const range = getEditorRange(editor);
+      range.deleteContents();
+      const wrapper = document.createElement('span');
+      wrapper.className = 'math-radical special-wrapper';
+      wrapper.setAttribute('data-special-wrapper', 'radical');
+      wrapper.innerHTML = '<span class="radical-symbol">√</span><span class="radical-entry special-entry" contenteditable="true" data-special-entry="radical"></span>';
+      range.insertNode(wrapper);
+      placeCaretInside(wrapper.querySelector('.radical-entry'));
+    }
+
     function editorToPlainText(editor) {
       function walk(node) {
         if (!node) return '';
@@ -923,6 +945,9 @@ fetch("/nav.html")
         if (node.nodeType !== Node.ELEMENT_NODE) return '';
         if (node.matches && node.matches('.fraction-entry')) {
           return `((${walk(node.querySelector('.fraction-numerator'))})/(${walk(node.querySelector('.fraction-denominator'))}))`;
+        }
+        if (node.matches && node.matches('.math-radical')) {
+          return `sqrt(${walk(node.querySelector('.radical-entry'))})`;
         }
         return Array.from(node.childNodes).map(walk).join('');
       }
@@ -932,7 +957,7 @@ fetch("/nav.html")
     function closestMathWidget(node) {
       if (!node) return null;
       const element = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
-      return element ? element.closest('.fraction-entry') : null;
+      return element ? element.closest('.fraction-entry, .math-radical') : null;
     }
 
     function visibleTextAfterCaretInside(element) {
@@ -996,7 +1021,7 @@ fetch("/nav.html")
       while (previous && previous.nodeType === Node.TEXT_NODE && previous.textContent.replace(/\u200b/g, '').replace(/​/g, '') === '') {
         previous = previous.previousSibling;
       }
-      if (previous && previous.nodeType === Node.ELEMENT_NODE && previous.matches('.fraction-entry')) {
+      if (previous && previous.nodeType === Node.ELEMENT_NODE && previous.matches('.fraction-entry, .math-radical')) {
         event.preventDefault();
         previous.remove();
         return true;
@@ -1084,6 +1109,7 @@ fetch("/nav.html")
           const editor = getInsertionEditor();
           if (!editor) return;
           if (button.dataset.insertFraction) insertFractionAtSelection(editor);
+          else if (button.dataset.insertRadical) insertRadicalAtSelection(editor);
           else insertTextAtSelection(button.dataset.insertText || '', editor);
         });
       });

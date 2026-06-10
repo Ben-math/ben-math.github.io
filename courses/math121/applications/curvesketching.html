@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -341,6 +342,8 @@ fetch("/nav.html")
       <button id="hint-btn" class="rubber-button">Hint</button>
     </div>
 
+    <div id="sketch-panel" style="margin-top: 1em;"></div>
+
     <div id="hint-area" class="math" style="margin-top: 1em;"></div>
 
     <div id="my-activity" style="display: none;"></div>
@@ -355,6 +358,7 @@ fetch("/nav.html")
     const checkBtn = document.getElementById('check-btn');
     const feedbackText = document.getElementById('feedbackText');
     const finalAnswerInput = document.getElementById('final-answer-input');
+    const sketchPanel = document.getElementById('sketch-panel');
 
     let currentProblem = null;
     let hintStep = 0;
@@ -428,6 +432,10 @@ fetch("/nav.html")
     }
 
     function shiftSqrtTex(h, n, sign) {
+      const rootValue = Math.sqrt(n);
+      if (Math.abs(rootValue - Math.round(rootValue)) < 1e-10) {
+        return numberTex(h + sign * Math.round(rootValue));
+      }
       const root = sqrtTex(n);
       if (h === 0) return sign < 0 ? `-${root}` : root;
       if (sign > 0) return `${h}+${root}`;
@@ -465,9 +473,25 @@ fetch("/nav.html")
       return items.length ? items.join(',\\; ') : emptyText;
     }
 
-    function intervalTex(a, b, domainBreaks = []) {
-      const left = a === -Infinity ? '-\\infty' : numberTex(a);
-      const right = b === Infinity ? '\\infty' : numberTex(b);
+    function exactBoundaryTex(problem, value) {
+      if (value === -Infinity) return '-\\infty';
+      if (value === Infinity) return '\\infty';
+      const sources = [
+        ...(problem.criticalPoints || []),
+        ...(problem.inflectionPoints || []),
+        ...(problem.xIntercepts || []),
+        ...(problem.verticalAsymptotes || []).map(x => ({ x, xTex: numberTex(x) })),
+        ...(problem.domainBreaks || []).map(x => ({ x, xTex: numberTex(x) }))
+      ];
+      for (const item of sources) {
+        if (Number.isFinite(item.x) && Math.abs(item.x - value) < 1e-8 && item.xTex) return item.xTex;
+      }
+      return numberTex(value);
+    }
+
+    function intervalTex(a, b, problem = null) {
+      const left = problem ? exactBoundaryTex(problem, a) : (a === -Infinity ? '-\\infty' : numberTex(a));
+      const right = problem ? exactBoundaryTex(problem, b) : (b === Infinity ? '\\infty' : numberTex(b));
       return `(${left},${right})`;
     }
 
@@ -504,9 +528,9 @@ fetch("/nav.html")
       return (a + b) / 2;
     }
 
-    function intervalListBySign(intervals, positiveLabel, negativeLabel) {
-      const pos = intervals.filter(I => I.sign > 0).map(I => intervalTex(I.a, I.b));
-      const neg = intervals.filter(I => I.sign < 0).map(I => intervalTex(I.a, I.b));
+    function intervalListBySign(problem, intervals, positiveLabel, negativeLabel) {
+      const pos = intervals.filter(I => I.sign > 0).map(I => intervalTex(I.a, I.b, problem));
+      const neg = intervals.filter(I => I.sign < 0).map(I => intervalTex(I.a, I.b, problem));
       return `${positiveLabel}: ${texList(pos)}\\quad ${negativeLabel}: ${texList(neg)}`;
     }
 
@@ -559,15 +583,14 @@ fetch("/nav.html")
       const infTex = summary.inflections.map(pointTex);
 
       const hints = [];
-      hints.push({ type: 'math', content: `\\text{We will sketch } f(x)=${problem.tex}.` });
       hints.push({ type: 'math', content: problem.domainHint });
       hints.push({ type: 'math', content: problem.interceptHint });
       hints.push({ type: 'math', content: problem.asymptoteHint });
       problem.firstDerivativeHints.forEach(h => hints.push({ type: 'math', content: h }));
-      hints.push({ type: 'math', content: intervalListBySign(summary.incIntervals, '\\text{Increasing}', '\\text{Decreasing}') });
+      hints.push({ type: 'math', content: intervalListBySign(problem, summary.incIntervals, '\\text{Increasing}', '\\text{Decreasing}') });
       hints.push({ type: 'math', content: `\\text{Local maximums: }${texList(localMax)}\\qquad \\text{Local minimums: }${texList(localMin)}` });
       problem.secondDerivativeHints.forEach(h => hints.push({ type: 'math', content: h }));
-      hints.push({ type: 'math', content: intervalListBySign(summary.concIntervals, '\\text{Concave up}', '\\text{Concave down}') });
+      hints.push({ type: 'math', content: intervalListBySign(problem, summary.concIntervals, '\\text{Concave up}', '\\text{Concave down}') });
       hints.push({ type: 'math', content: `\\text{Points of inflection: }${texList(infTex)}` });
       hints.push({ type: 'html', content: makeSketchSvg(problem, 0) });
       hints.push({ type: 'html', content: makeSketchSvg(problem, 1) });
@@ -1018,17 +1041,18 @@ fetch("/nav.html")
       problem.verticalAsymptotes.forEach(x => xs.push(x));
       problem.domainBreaks.forEach(x => xs.push(x));
       if (!xs.length) xs.push(-5,5);
-      let xMin = Math.floor(Math.min(...xs) - 3);
-      let xMax = Math.ceil(Math.max(...xs) + 3);
+      const xMargin = problem.verticalAsymptotes.length ? 3 : 1;
+      let xMin = Math.floor(Math.min(...xs) - xMargin);
+      let xMax = Math.ceil(Math.max(...xs) + xMargin);
       xMin = Math.max(-12, xMin);
       xMax = Math.min(12, xMax);
       if (xMax - xMin < 8) { xMin -= 4; xMax += 4; }
       const sampleYs = [];
-      for (let i=0;i<=160;i++) {
-        const x = xMin + (xMax-xMin)*i/160;
+      for (let i=0;i<=400;i++) {
+        const x = xMin + (xMax-xMin)*i/400;
         if (problem.domainBreaks.some(d => Math.abs(x-d) < 0.05)) continue;
         const y = problem.f(x);
-        if (Number.isFinite(y) && Math.abs(y) < 1000) sampleYs.push(y);
+        if (Number.isFinite(y) && Math.abs(y) < 10000) sampleYs.push(y);
       }
       problem.knownPoints.forEach(p => { if (Number.isFinite(p.y)) sampleYs.push(p.y); });
       let yMin = sampleYs.length ? Math.min(...sampleYs) : -5;
@@ -1036,8 +1060,6 @@ fetch("/nav.html")
       if (Math.abs(yMax-yMin) < 4) { yMin -= 3; yMax += 3; }
       const pad = 0.15*(yMax-yMin);
       yMin -= pad; yMax += pad;
-      yMin = Math.max(-30, yMin);
-      yMax = Math.min(30, yMax);
       if (yMax <= yMin) { yMin=-5; yMax=5; }
       problem.window = {xMin, xMax, yMin, yMax};
     }
@@ -1055,7 +1077,8 @@ fetch("/nav.html")
       svg += line(left, Y(0), W-right, Y(0), `stroke="#222" stroke-width="2"`);
       svg += line(X(0), top, X(0), top+plotH, `stroke="#222" stroke-width="2"`);
       for (let x=Math.ceil(xMin); x<=Math.floor(xMax); x++) svg += line(X(x), Y(0)-4, X(x), Y(0)+4, `stroke="#222" stroke-width="1"`);
-      for (let y=Math.ceil(yMin); y<=Math.floor(yMax); y++) svg += line(X(0)-4, Y(y), X(0)+4, Y(y), `stroke="#222" stroke-width="1"`);
+      const yTickStep = Math.max(1, Math.ceil((yMax - yMin) / 20));
+      for (let y=Math.ceil(yMin / yTickStep) * yTickStep; y<=Math.floor(yMax); y += yTickStep) svg += line(X(0)-4, Y(y), X(0)+4, Y(y), `stroke="#222" stroke-width="1"`);
       svg += `<text x="${W/2}" y="${H-8}" text-anchor="middle" font-size="13">x</text>`;
       svg += `<text x="15" y="${top+12}" font-size="13">y</text>`;
       if (stage >= 1) {
@@ -1139,6 +1162,7 @@ fetch("/nav.html")
       feedbackText.textContent = '';
       finalAnswerInput.innerHTML = '';
       hintArea.innerHTML = '';
+      sketchPanel.innerHTML = '';
       hintStep = 0;
       hintBtn.disabled = true;
       checkBtn.style.display = 'none';
@@ -1147,16 +1171,16 @@ fetch("/nav.html")
     function advanceHint() {
       if (!currentProblem || hintStep >= currentProblem.hints.length) return;
       const hint = currentProblem.hints[hintStep];
-      const line = document.createElement('div');
       if (hint.type === 'html') {
-        line.innerHTML = hint.content;
+        sketchPanel.innerHTML = hint.content;
       } else {
+        const line = document.createElement('div');
         line.innerHTML = `\\[${hint.content}\\]`;
+        hintArea.appendChild(line);
+        typesetElement(hintArea);
       }
-      hintArea.appendChild(line);
       hintStep++;
       if (hintStep >= currentProblem.hints.length) hintBtn.disabled = true;
-      typesetElement(hintArea);
     }
 
     startBtn.addEventListener('click', () => {

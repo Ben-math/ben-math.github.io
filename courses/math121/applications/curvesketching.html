@@ -3,6 +3,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1035,69 +1036,159 @@ fetch("/nav.html")
       return [min, ...cuts, max].map((x, i, arr) => i < arr.length - 1 ? {a:x, b:arr[i+1]} : null).filter(Boolean);
     }
 
+    function finiteNumbers(values) {
+      return values.filter(v => Number.isFinite(v));
+    }
+
+    function median(values) {
+      const clean = finiteNumbers(values).sort((a,b)=>a-b);
+      if (!clean.length) return 1;
+      const m = Math.floor(clean.length/2);
+      return clean.length % 2 ? clean[m] : (clean[m-1]+clean[m])/2;
+    }
+
+    function transformedYFactory(problem) {
+      const compressed = !!(problem.window && problem.window.yCompressed);
+      const scale = problem.window && problem.window.yScale ? problem.window.yScale : 1;
+      if (!compressed) return y => y;
+      return y => Math.sign(y) * Math.log1p(Math.abs(y) / scale);
+    }
+
     function computeWindow(problem) {
       const xs = [];
       problem.knownPoints.forEach(p => { if (Number.isFinite(p.x)) xs.push(p.x); });
       problem.verticalAsymptotes.forEach(x => xs.push(x));
       problem.domainBreaks.forEach(x => xs.push(x));
-      if (!xs.length) xs.push(-5,5);
+      if (!xs.length) xs.push(-5, 5);
+
       const xMargin = problem.verticalAsymptotes.length ? 3 : 1;
       let xMin = Math.floor(Math.min(...xs) - xMargin);
       let xMax = Math.ceil(Math.max(...xs) + xMargin);
       xMin = Math.max(-12, xMin);
       xMax = Math.min(12, xMax);
       if (xMax - xMin < 8) { xMin -= 4; xMax += 4; }
+
+      const featureYs = [];
       const sampleYs = [];
-      for (let i=0;i<=400;i++) {
-        const x = xMin + (xMax-xMin)*i/400;
-        if (problem.domainBreaks.some(d => Math.abs(x-d) < 0.05)) continue;
+      problem.knownPoints.forEach(p => { if (Number.isFinite(p.y)) featureYs.push(p.y); });
+      if (problem.horizontalAsymptote === 'y=0') featureYs.push(0);
+
+      for (let i = 0; i <= 500; i++) {
+        const x = xMin + (xMax - xMin) * i / 500;
+        if (problem.domainBreaks.some(d => Math.abs(x - d) < 0.05)) continue;
         const y = problem.f(x);
-        if (Number.isFinite(y) && Math.abs(y) < 10000) sampleYs.push(y);
+        if (Number.isFinite(y) && Math.abs(y) < 1e6) sampleYs.push(y);
       }
-      problem.knownPoints.forEach(p => { if (Number.isFinite(p.y)) sampleYs.push(p.y); });
-      let yMin = sampleYs.length ? Math.min(...sampleYs) : -5;
-      let yMax = sampleYs.length ? Math.max(...sampleYs) : 5;
-      if (Math.abs(yMax-yMin) < 4) { yMin -= 3; yMax += 3; }
-      const pad = 0.15*(yMax-yMin);
-      yMin -= pad; yMax += pad;
-      if (yMax <= yMin) { yMin=-5; yMax=5; }
-      problem.window = {xMin, xMax, yMin, yMax};
+
+      const allYs = finiteNumbers([...featureYs, ...sampleYs, 0]);
+      let rawMin = allYs.length ? Math.min(...allYs) : -5;
+      let rawMax = allYs.length ? Math.max(...allYs) : 5;
+      if (Math.abs(rawMax - rawMin) < 4) { rawMin -= 3; rawMax += 3; }
+
+      const nonzeroAbs = allYs.map(y => Math.abs(y)).filter(y => y > 1e-8).sort((a,b)=>a-b);
+      const largest = nonzeroAbs.length ? nonzeroAbs[nonzeroAbs.length-1] : 1;
+      const typicalFeature = median(featureYs.map(y => Math.abs(y)).filter(y => y > 1e-8));
+      const typicalSample = median(sampleYs.map(y => Math.abs(y)).filter(y => y > 1e-8));
+      const typical = Math.max(1, Math.min(typicalFeature || 1, typicalSample || typicalFeature || 1));
+      const yCompressed = largest / typical > 35 || rawMax - rawMin > 80;
+      const yScale = Math.max(1, typical);
+
+      const transform = yCompressed
+        ? (y => Math.sign(y) * Math.log1p(Math.abs(y) / yScale))
+        : (y => y);
+
+      const transformed = allYs.map(transform).filter(Number.isFinite);
+      let yMin = transformed.length ? Math.min(...transformed) : -5;
+      let yMax = transformed.length ? Math.max(...transformed) : 5;
+      if (Math.abs(yMax - yMin) < 4) { yMin -= 2; yMax += 2; }
+      const pad = 0.12 * (yMax - yMin || 1);
+      yMin -= pad;
+      yMax += pad;
+      problem.window = { xMin, xMax, yMin, yMax, rawMin, rawMax, yCompressed, yScale };
+    }
+
+    function svgTextEscape(text) {
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\\sqrt\{([^{}]+)\}/g, '√$1')
+        .replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, '($1/$2)')
+        .replace(/\\infty/g, '∞')
+        .replace(/\\/g, '');
     }
 
     function makeSketchSvg(problem, stage) {
       if (!problem.window) computeWindow(problem);
-      const W = 720, H = 500, left = 55, right = 25, top = 25, bottom = 95;
+      const W = 720, H = 520, left = 65, right = 35, top = 25, bottom = 105;
       const plotW = W-left-right, plotH = H-top-bottom;
       const xMin=problem.window.xMin, xMax=problem.window.xMax, yMin=problem.window.yMin, yMax=problem.window.yMax;
+      const transformY = transformedYFactory(problem);
       const X = x => left + (x-xMin)/(xMax-xMin)*plotW;
-      const Y = y => top + (yMax-y)/(yMax-yMin)*plotH;
+      const Y = y => top + (yMax-transformY(y))/(yMax-yMin)*plotH;
       function line(x1,y1,x2,y2,attrs) { return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" ${attrs}/>`; }
       let svg = `<div style="overflow-x:auto; text-align:center;"><svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="max-width:100%; background:white; border:1px solid #ddd; border-radius:10px;">`;
       svg += `<rect x="0" y="0" width="${W}" height="${H}" fill="white"/>`;
-      svg += line(left, Y(0), W-right, Y(0), `stroke="#222" stroke-width="2"`);
-      svg += line(X(0), top, X(0), top+plotH, `stroke="#222" stroke-width="2"`);
-      for (let x=Math.ceil(xMin); x<=Math.floor(xMax); x++) svg += line(X(x), Y(0)-4, X(x), Y(0)+4, `stroke="#222" stroke-width="1"`);
-      const yTickStep = Math.max(1, Math.ceil((yMax - yMin) / 20));
-      for (let y=Math.ceil(yMin / yTickStep) * yTickStep; y<=Math.floor(yMax); y += yTickStep) svg += line(X(0)-4, Y(y), X(0)+4, Y(y), `stroke="#222" stroke-width="1"`);
+
+      const y0 = Y(0);
+      const x0 = X(0);
+      if (y0 >= top && y0 <= top+plotH) svg += line(left, y0, W-right, y0, `stroke="#222" stroke-width="2"`);
+      if (x0 >= left && x0 <= W-right) svg += line(x0, top, x0, top+plotH, `stroke="#222" stroke-width="2"`);
+      for (let x=Math.ceil(xMin); x<=Math.floor(xMax); x++) {
+        if (y0 >= top && y0 <= top+plotH) svg += line(X(x), y0-4, X(x), y0+4, `stroke="#222" stroke-width="1"`);
+      }
+
+      if (problem.window.yCompressed) {
+        const yMarks = [];
+        problem.knownPoints.forEach(p => { if (Number.isFinite(p.y)) yMarks.push(p.y); });
+        yMarks.push(0);
+        dedupeNumbers(yMarks, 1e-8).forEach(y => {
+          const yy = Y(y);
+          if (yy >= top && yy <= top+plotH) {
+            svg += line(left-4, yy, left+4, yy, `stroke="#777" stroke-width="1"`);
+            svg += `<text x="${left-8}" y="${yy+4}" font-size="10" text-anchor="end">${svgTextEscape(numberTex(y))}</text>`;
+          }
+        });
+        svg += `<text x="${W-right}" y="${top+14}" font-size="11" text-anchor="end">compressed vertical scale</text>`;
+      } else {
+        const rawRange = problem.window.rawMax - problem.window.rawMin;
+        const yTickStep = Math.max(1, Math.ceil(rawRange / 20));
+        for (let y=Math.ceil(problem.window.rawMin / yTickStep) * yTickStep; y<=Math.floor(problem.window.rawMax); y += yTickStep) {
+          const yy = Y(y);
+          if (yy >= top && yy <= top+plotH) svg += line(x0-4, yy, x0+4, yy, `stroke="#222" stroke-width="1"`);
+        }
+      }
       svg += `<text x="${W/2}" y="${H-8}" text-anchor="middle" font-size="13">x</text>`;
       svg += `<text x="15" y="${top+12}" font-size="13">y</text>`;
+
       if (stage >= 1) {
         const pts = [];
         problem.xIntercepts.forEach(p => pts.push(p));
         if (problem.yIntercept) pts.push(problem.yIntercept);
         (problem.extrema || []).forEach(p => pts.push(p));
         (problem.actualInflections || []).forEach(p => pts.push(p));
+        const seen = new Set();
         pts.forEach(p => {
           if (!Number.isFinite(p.x) || !Number.isFinite(p.y)) return;
-          if (p.x < xMin || p.x > xMax || p.y < yMin || p.y > yMax) return;
-          svg += `<circle cx="${X(p.x)}" cy="${Y(p.y)}" r="4" fill="#111"/>`;
+          if (p.x < xMin || p.x > xMax) return;
+          const cx = X(p.x), cy = Y(p.y);
+          if (cy < top-20 || cy > top+plotH+20) return;
+          const key = `${Math.round(p.x*1e8)}:${Math.round(p.y*1e8)}`;
+          if (seen.has(key)) return;
+          seen.add(key);
+          svg += `<circle cx="${cx}" cy="${cy}" r="4" fill="#111"/>`;
+          const label = svgTextEscape(`(${p.xTex},${p.yTex})`);
+          const dx = cx > W - 180 ? -8 : 8;
+          const anchor = cx > W - 180 ? 'end' : 'start';
+          const dy = cy < top + 18 ? 16 : -8;
+          svg += `<text x="${cx+dx}" y="${cy+dy}" font-size="11" text-anchor="${anchor}" fill="#111">${label}</text>`;
         });
       }
       if (stage >= 2) {
         problem.verticalAsymptotes.forEach(a => {
           if (a > xMin && a < xMax) svg += line(X(a), top, X(a), top+plotH, `stroke="#d33" stroke-width="2" stroke-dasharray="7 6"`);
         });
-        if (problem.horizontalAsymptote === 'y=0') svg += line(left, Y(0), W-right, Y(0), `stroke="#d33" stroke-width="2" stroke-dasharray="7 6"`);
+        if (problem.horizontalAsymptote === 'y=0' && y0 >= top && y0 <= top+plotH) svg += line(left, y0, W-right, y0, `stroke="#d33" stroke-width="2" stroke-dasharray="7 6"`);
         if (problem.slantAsymptote) {
           const hMatch = problem.slantAsymptote.match(/y=x ([+-]) (\d+)/);
           let c = 0;
@@ -1106,12 +1197,12 @@ fetch("/nav.html")
         }
       }
       if (stage >= 3) {
-        svg += behaviourBars(problem, X, left, W-right, top+plotH+28, top+plotH+54, xMin, xMax);
+        svg += behaviourBars(problem, X, left, W-right, top+plotH+28, top+plotH+56, xMin, xMax);
       }
       const pieces = sketchBreaks(problem);
       const piecesToDraw = Math.max(0, stage - 3);
       for (let i=0; i<Math.min(piecesToDraw, pieces.length); i++) {
-        svg += curvePath(problem, pieces[i].a, pieces[i].b, X, Y, yMin, yMax);
+        svg += curvePath(problem, pieces[i].a, pieces[i].b, X, Y, yMin, yMax, transformY);
       }
       svg += `</svg></div>`;
       if (stage === 0) svg += `<p style="text-align:center;">Start with the axes.</p>`;
@@ -1136,7 +1227,7 @@ fetch("/nav.html")
       return out;
     }
 
-    function curvePath(problem, a, b, X, Y, yMin, yMax) {
+    function curvePath(problem, a, b, X, Y, yMin, yMax, transformY) {
       let aa = a, bb = b;
       const eps = (problem.window.xMax - problem.window.xMin) / 400;
       if (problem.domainBreaks.some(d => Math.abs(d-aa)<1e-8)) aa += eps;
@@ -1144,12 +1235,14 @@ fetch("/nav.html")
       if (bb <= aa) return '';
       let d = '';
       let started = false;
-      const N = 80;
+      const N = 120;
       for (let i=0;i<=N;i++) {
         const x = aa + (bb-aa)*i/N;
         if (problem.domainBreaks.some(v => Math.abs(x-v) < eps/2)) { started=false; continue; }
         const y = problem.f(x);
-        if (!Number.isFinite(y) || y < yMin-5 || y > yMax+5) { started=false; continue; }
+        if (!Number.isFinite(y)) { started=false; continue; }
+        const ty = transformY(y);
+        if (!Number.isFinite(ty) || ty < yMin-0.8 || ty > yMax+0.8) { started=false; continue; }
         const cmd = started ? 'L' : 'M';
         d += `${cmd}${X(x).toFixed(2)},${Y(y).toFixed(2)} `;
         started = true;

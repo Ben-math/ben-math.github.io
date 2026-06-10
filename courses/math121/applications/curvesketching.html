@@ -1,0 +1,893 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta charset="UTF-8" />
+  <title>Curve Sketching</title>
+  <link rel="stylesheet" href="/style.css" />
+
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+
+  <style>
+    .polynomial-answer-editor {
+      display: inline-block;
+      min-width: 260px;
+      min-height: 1.8em;
+      padding: 0.35em 0.55em;
+      border: 2px solid #555;
+      border-radius: 8px;
+      background: white;
+      font-size: 1.25em;
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    .polynomial-answer-editor:focus {
+      outline: 3px solid rgba(80, 140, 255, 0.35);
+    }
+
+    .exponent-entry {
+      font-size: 0.7em;
+      vertical-align: super;
+      display: inline-block;
+      min-width: 0.7em;
+      min-height: 1em;
+      padding: 0 0.08em;
+      border-bottom: 1px solid #777;
+      line-height: 1;
+    }
+
+
+
+    .subscript-entry {
+      font-size: 0.7em;
+      vertical-align: sub;
+      display: inline-block;
+      min-width: 0.7em;
+      min-height: 1em;
+      padding: 0 0.08em;
+      border-bottom: 1px solid #777;
+      line-height: 1;
+    }
+
+    .log-entry {
+      display: inline-flex;
+      align-items: baseline;
+      vertical-align: middle;
+      margin: 0 0.08em;
+      white-space: nowrap;
+      gap: 0;
+    }
+
+    .log-label {
+      display: inline-block;
+    }
+
+    .log-base-entry {
+      font-size: 0.7em;
+      vertical-align: sub;
+      display: inline-block;
+      min-width: 0.7em;
+      min-height: 1em;
+      padding: 0;
+      border-bottom: 1px solid #777;
+      line-height: 1;
+      align-self: flex-end;
+      margin-right: 0;
+    }
+
+    .log-argument-entry {
+      display: inline-block;
+      min-width: 0.7em;
+      min-height: 1.1em;
+      padding: 0;
+      margin-left: 0;
+    }
+
+    .answer-toolbar {
+      margin-top: 0.65em;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4em;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .math-symbol-button {
+      border: 2px solid #555;
+      border-radius: 8px;
+      background: white;
+      padding: 0.25em 0.6em;
+      font-size: 1.05em;
+      cursor: pointer;
+    }
+
+    .math-symbol-button:hover {
+      background: #f2f2f2;
+    }
+
+    .interval-answer-editor {
+      min-width: 420px;
+    }
+
+    .math-radical {
+      display: inline-flex;
+      align-items: flex-start;
+      vertical-align: middle;
+      margin: 0 0.08em;
+    }
+
+    .radical-symbol {
+      font-size: 1.25em;
+      line-height: 1;
+      padding-top: 0.06em;
+    }
+
+    .radical-entry {
+      display: inline-block;
+      min-width: 1.2em;
+      min-height: 1.1em;
+      border-top: 2px solid #222;
+      padding: 0 0.12em;
+      line-height: 1.15;
+    }
+
+    .fraction-entry {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: stretch;
+      vertical-align: middle;
+      min-width: 1.4em;
+      margin: 0 0.08em;
+      text-align: center;
+      line-height: 1.05;
+    }
+
+    .fraction-numerator,
+    .fraction-denominator {
+      display: block;
+      min-width: 1.2em;
+      min-height: 1em;
+      padding: 0 0.15em;
+    }
+
+    .fraction-numerator {
+      border-bottom: 2px solid #222;
+    }
+
+    .fraction-denominator {
+      padding-top: 0.05em;
+    }
+
+
+    .fraction-button-display {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 0.9;
+      min-width: 1.1em;
+      vertical-align: middle;
+    }
+
+    .fraction-button-display .fraction-button-top {
+      display: block;
+      border-bottom: 1.5px solid currentColor;
+      padding: 0 0.18em 0.04em;
+    }
+
+    .fraction-button-display .fraction-button-bottom {
+      display: block;
+      padding: 0.04em 0.18em 0;
+    }
+
+    .answer-group-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.1em;
+      justify-content: center;
+      align-items: flex-start;
+      margin-top: 0.8em;
+    }
+
+    .answer-group-card {
+      border: 2px solid #ddd;
+      border-radius: 12px;
+      padding: 0.7em 0.9em;
+      background: #fafafa;
+      min-width: 230px;
+    }
+
+    .answer-group-card-title {
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 0.5em;
+    }
+
+    .asymptote-entry-panel {
+      max-width: 620px;
+      margin: 1.1em auto 0;
+      padding: 0.85em;
+      border: 2px solid #ddd;
+      border-radius: 12px;
+      background: #fafafa;
+      text-align: left;
+    }
+
+    .asymptote-entry-box {
+      min-height: 54px;
+      border: 2px solid #bbb;
+      border-radius: 8px;
+      background: white;
+      padding: 0.35em;
+      margin: 0.55em 0;
+    }
+
+    .asymptote-entry-row {
+      display: flex;
+      align-items: center;
+      gap: 0.35em;
+      padding: 0.25em 0.35em;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .asymptote-entry-row.selected {
+      background: rgba(80, 140, 255, 0.18);
+    }
+
+    .asymptote-value-input {
+      width: 90px;
+      padding: 0.2em 0.35em;
+      border: 1.5px solid #777;
+      border-radius: 6px;
+      font-size: 1em;
+    }
+
+    .asymptote-control-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65em;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .asymptote-button {
+      border: 2px solid #555;
+      border-radius: 8px;
+      background: white;
+      padding: 0.18em 0.65em;
+      font-size: 1.15em;
+      cursor: pointer;
+    }
+
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Curve Sketching</h1>
+    <div id="nav-placeholder"></div>
+    <script>
+fetch("/nav.html")
+  .then(response => response.text())
+  .then(html => {
+    document.getElementById("nav-placeholder").innerHTML = html;
+
+    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+    const navLinks = document.querySelectorAll("#nav-placeholder a");
+    navLinks.forEach(link => {
+      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+      if (linkPath === currentPath) {
+        link.classList.add("active");
+      }
+    });
+
+    const s = document.createElement("script");
+    s.src = "/mascot.js";
+    s.defer = true;
+    document.body.appendChild(s);
+  })
+  .catch(err => {
+    console.error("Failed to load nav:", err);
+  });
+    </script>
+  </header>
+
+  <main>
+    <p>I love it when a plan comes together.</p>
+
+    <p>In the following activity, user input would clearly be impossible to implement, so you will want to follow the steps to sketch a curve below (many of 
+    which can be completed in any order) and sketch it on a piece of paper, then compare your work to what is generated:</p>
+
+    <div class="button-container">
+      <button id="start-btn" class="rubber-button">Start!</button>
+    </div>
+
+    <p id="question-text"></p>
+
+    <div id="final-answer-input" style="text-align: center; margin-top: 1em;"></div>
+
+    <div class="button-container">
+      <button id="check-btn" class="rubber-button" style="display: none;">Check Answer</button>
+    </div>
+
+    <div class="button-container">
+      <div id="feedbackText" class="center-feedback"></div>
+    </div>
+
+    <div class="button-container">
+      <button id="hint-btn" class="rubber-button">Hint</button>
+    </div>
+
+    <div id="hint-area" class="math" style="margin-top: 1em;"></div>
+
+    <div id="my-activity" style="display: none;"></div>
+  </main>
+
+  <script>
+    const hintBtn = document.getElementById('hint-btn');
+    const hintArea = document.getElementById('hint-area');
+    const startBtn = document.getElementById('start-btn');
+    const questionText = document.getElementById('question-text');
+    const checkBtn = document.getElementById('check-btn');
+    const feedbackText = document.getElementById('feedbackText');
+    const finalAnswerInput = document.getElementById('final-answer-input');
+
+    let currentProblem = null;
+    let hintStep = 0;
+    let mathJaxTypesetPromise = Promise.resolve();
+
+    function typesetElement(element) {
+      if (!window.MathJax || !MathJax.typesetPromise) {
+        if (window.MathJax && MathJax.typeset) MathJax.typeset([element]);
+        return Promise.resolve();
+      }
+      mathJaxTypesetPromise = mathJaxTypesetPromise
+        .then(() => MathJax.typesetPromise([element]))
+        .catch(error => console.error('MathJax typesetting failed:', error));
+      return mathJaxTypesetPromise;
+    }
+
+    function randomInteger(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function randomNonzeroInteger(min, max) {
+      let n;
+      do { n = randomInteger(min, max); } while (n === 0);
+      return n;
+    }
+
+    function randomChoice(items) {
+      return items[randomInteger(0, items.length - 1)];
+    }
+
+    function gcd(a, b) {
+      a = Math.abs(Math.round(a));
+      b = Math.abs(Math.round(b));
+      while (b !== 0) {
+        const t = b;
+        b = a % b;
+        a = t;
+      }
+      return a || 1;
+    }
+
+    function exactFraction(num, den = 1) {
+      if (den < 0) { num = -num; den = -den; }
+      if (num === 0) return { num: 0, den: 1 };
+      const d = gcd(num, den);
+      return { num: num / d, den: den / d };
+    }
+
+    function numberTex(value) {
+      if (Object.is(value, -0)) value = 0;
+      const rounded = Math.round(value);
+      if (Math.abs(value - rounded) < 1e-10) return `${rounded}`;
+      const sign = value < 0 ? -1 : 1;
+      const abs = Math.abs(value);
+      let bestNum = 0, bestDen = 1, bestErr = Infinity;
+      for (let den = 1; den <= 144; den++) {
+        const num = Math.round(abs * den);
+        const err = Math.abs(abs - num / den);
+        if (err < bestErr) { bestNum = num; bestDen = den; bestErr = err; }
+      }
+      const f = exactFraction(sign * bestNum, bestDen);
+      return f.den === 1 ? `${f.num}` : `\\frac{${f.num}}{${f.den}}`;
+    }
+
+    function fractionToTex(frac) {
+      const f = exactFraction(frac.num, frac.den);
+      if (f.den === 1) return `${f.num}`;
+      return `\\frac{${f.num}}{${f.den}}`;
+    }
+
+    function piMultipleToTex(k) {
+      const f = exactFraction(k, 12);
+      if (f.num === 0) return '0';
+      const sign = f.num < 0 ? '-' : '';
+      const absNum = Math.abs(f.num);
+      if (f.den === 1) return `${sign}${absNum === 1 ? '' : absNum}\\pi`;
+      return `${sign}\\frac{${absNum === 1 ? '' : absNum}\\pi}{${f.den}}`;
+    }
+
+    function simplePolynomialTex(terms) {
+      const cleaned = terms.filter(t => Math.abs(t.c) > 1e-12).sort((a, b) => b.p - a.p);
+      if (!cleaned.length) return '0';
+      return cleaned.map((t, i) => {
+        const sign = t.c < 0 ? '-' : (i === 0 ? '' : '+');
+        const abs = Math.abs(t.c);
+        let body;
+        if (t.p === 0) body = numberTex(abs);
+        else {
+          const xpart = t.p === 1 ? 'x' : `x^{${t.p}}`;
+          body = Math.abs(abs - 1) < 1e-12 ? xpart : `${numberTex(abs)}${xpart}`;
+        }
+        return i === 0 ? `${sign}${body}` : `${sign} ${body}`;
+      }).join(' ');
+    }
+
+    function linearFactorTex(h) {
+      if (h === 0) return 'x';
+      return `(x ${h < 0 ? '+ ' + Math.abs(h) : '- ' + h})`;
+    }
+
+    function signedTex(n) {
+      return n < 0 ? `- ${Math.abs(n)}` : `+ ${n}`;
+    }
+
+    function valueObj(decimal, tex = null) {
+      return { decimal: Math.abs(decimal) < 1e-12 ? 0 : decimal, tex: tex || numberTex(decimal) };
+    }
+
+    function fracValue(num, den = 1) {
+      const f = exactFraction(num, den);
+      return { decimal: f.num / f.den, tex: fractionToTex(f) };
+    }
+
+    function specialTrigValue(n, d) {
+      const angle = Math.PI * n / d;
+      const v = Math.round(Math.sin(angle) * 1e12) / 1e12;
+      const values = [
+        [-1, '-1'], [-Math.sqrt(3)/2, '-\\frac{\\sqrt{3}}{2}'], [-Math.SQRT1_2, '-\\frac{\\sqrt{2}}{2}'], [-0.5, '-\\frac{1}{2}'],
+        [0, '0'], [0.5, '\\frac{1}{2}'], [Math.SQRT1_2, '\\frac{\\sqrt{2}}{2}'], [Math.sqrt(3)/2, '\\frac{\\sqrt{3}}{2}'], [1, '1']
+      ];
+      const match = values.find(([x]) => Math.abs(v - x) < 1e-9);
+      return valueObj(v, match ? match[1] : numberTex(v));
+    }
+
+    function cosSpecial(k) { return specialTrigValue(6 - k, 12); }
+    function sinSpecial(k) { return specialTrigValue(k, 12); }
+
+    function texRaw(s) {
+      return String.raw({ raw: [s] });
+    }
+
+    function exactTrigAtom(kind, k) {
+      const tableSin = {
+        0: [0, '0'], 2: [0.5, texRaw('\\frac{1}{2}')], 3: [Math.SQRT1_2, texRaw('\\frac{\\sqrt{2}}{2}')], 4: [Math.sqrt(3)/2, texRaw('\\frac{\\sqrt{3}}{2}')],
+        6: [1, '1'], 8: [Math.sqrt(3)/2, texRaw('\\frac{\\sqrt{3}}{2}')], 9: [Math.SQRT1_2, texRaw('\\frac{\\sqrt{2}}{2}')], 10: [0.5, texRaw('\\frac{1}{2}')],
+        12: [0, '0'], 14: [-0.5, texRaw('-\\frac{1}{2}')], 15: [-Math.SQRT1_2, texRaw('-\\frac{\\sqrt{2}}{2}')], 16: [-Math.sqrt(3)/2, texRaw('-\\frac{\\sqrt{3}}{2}')],
+        18: [-1, '-1'], 20: [-Math.sqrt(3)/2, texRaw('-\\frac{\\sqrt{3}}{2}')], 21: [-Math.SQRT1_2, texRaw('-\\frac{\\sqrt{2}}{2}')], 22: [-0.5, texRaw('-\\frac{1}{2}')], 24: [0, '0']
+      };
+      const tableCos = {
+        0: [1, '1'], 2: [Math.sqrt(3)/2, texRaw('\\frac{\\sqrt{3}}{2}')], 3: [Math.SQRT1_2, texRaw('\\frac{\\sqrt{2}}{2}')], 4: [0.5, texRaw('\\frac{1}{2}')],
+        6: [0, '0'], 8: [-0.5, texRaw('-\\frac{1}{2}')], 9: [-Math.SQRT1_2, texRaw('-\\frac{\\sqrt{2}}{2}')], 10: [-Math.sqrt(3)/2, texRaw('-\\frac{\\sqrt{3}}{2}')],
+        12: [-1, '-1'], 14: [-Math.sqrt(3)/2, texRaw('-\\frac{\\sqrt{3}}{2}')], 15: [-Math.SQRT1_2, texRaw('-\\frac{\\sqrt{2}}{2}')], 16: [-0.5, texRaw('-\\frac{1}{2}')],
+        18: [0, '0'], 20: [0.5, texRaw('\\frac{1}{2}')], 21: [Math.SQRT1_2, texRaw('\\frac{\\sqrt{2}}{2}')], 22: [Math.sqrt(3)/2, texRaw('\\frac{\\sqrt{3}}{2}')], 24: [1, '1']
+      };
+      const item = (kind === 'sin' ? tableSin : tableCos)[((k % 24) + 24) % 24];
+      return valueObj(item[0], item[1]);
+    }
+
+    function exactTrigPower(kind, k, n) {
+      const v = exactTrigAtom(kind, k);
+      const absDecimal = Math.abs(v.decimal);
+      const sign = v.decimal < 0 && n % 2 === 1 ? '-' : '';
+      if (Math.abs(absDecimal) < 1e-12) return valueObj(0, '0');
+      if (Math.abs(absDecimal - 1) < 1e-12) return valueObj(Math.pow(v.decimal, n), sign ? '-1' : '1');
+
+      let radicand;
+      if (Math.abs(absDecimal - 0.5) < 1e-9) radicand = 1;
+      else if (Math.abs(absDecimal - Math.SQRT1_2) < 1e-9) radicand = 2;
+      else if (Math.abs(absDecimal - Math.sqrt(3) / 2) < 1e-9) radicand = 3;
+      else return valueObj(Math.pow(v.decimal, n), numberTex(Math.pow(v.decimal, n)));
+
+      const den = Math.pow(2, n);
+      let numTex;
+      if (radicand === 1) {
+        numTex = '1';
+      } else if (n % 2 === 0) {
+        numTex = `${Math.pow(radicand, n / 2)}`;
+      } else {
+        const coeff = Math.pow(radicand, (n - 1) / 2);
+        numTex = `${coeff === 1 ? '' : coeff}\\sqrt{${radicand}}`;
+      }
+      const numeric = Math.pow(v.decimal, n);
+      if (numTex === '1') return valueObj(numeric, `${sign}\\frac{1}{${den}}`);
+      return valueObj(numeric, `${sign}\\frac{${numTex}}{${den}}`);
+    }
+
+    function exactSinCosProduct(k) {
+      const s = exactTrigAtom('sin', k).decimal;
+      const c = exactTrigAtom('cos', k).decimal;
+      const table = {
+        0: '0', 2: texRaw('\\frac{\\sqrt{3}}{4}'), 3: texRaw('\\frac{1}{2}'), 4: texRaw('\\frac{\\sqrt{3}}{4}'), 6: '0',
+        8: texRaw('-\\frac{\\sqrt{3}}{4}'), 9: texRaw('-\\frac{1}{2}'), 10: texRaw('-\\frac{\\sqrt{3}}{4}'), 12: '0',
+        14: texRaw('\\frac{\\sqrt{3}}{4}'), 15: texRaw('\\frac{1}{2}'), 16: texRaw('\\frac{\\sqrt{3}}{4}'), 18: '0',
+        20: texRaw('-\\frac{\\sqrt{3}}{4}'), 21: texRaw('-\\frac{1}{2}'), 22: texRaw('-\\frac{\\sqrt{3}}{4}'), 24: '0'
+      };
+      return valueObj(s * c, table[((k % 24) + 24) % 24] || numberTex(s * c));
+    }
+
+    function exactSinPlusCos(k) {
+      const s = exactTrigAtom('sin', k).decimal;
+      const c = exactTrigAtom('cos', k).decimal;
+      const table = {
+        0: '1', 2: texRaw('\\frac{1+\\sqrt{3}}{2}'), 3: texRaw('\\sqrt{2}'), 4: texRaw('\\frac{1+\\sqrt{3}}{2}'), 6: '1',
+        8: texRaw('\\frac{\\sqrt{3}-1}{2}'), 9: '0', 10: texRaw('\\frac{1-\\sqrt{3}}{2}'), 12: '-1',
+        14: texRaw('-\\frac{1+\\sqrt{3}}{2}'), 15: texRaw('-\\sqrt{2}'), 16: texRaw('-\\frac{1+\\sqrt{3}}{2}'), 18: '-1',
+        20: texRaw('\\frac{1-\\sqrt{3}}{2}'), 21: '0', 22: texRaw('\\frac{\\sqrt{3}-1}{2}'), 24: '1'
+      };
+      return valueObj(s + c, table[((k % 24) + 24) % 24] || numberTex(s + c));
+    }
+
+    function multiplyValueTex(v, c) {
+      return valueObj(c * v.decimal, c === 1 ? v.tex : `${c < 0 ? '-' : ''}${Math.abs(c)}${v.tex === '1' ? '' : v.tex === '-1' ? '(-1)' : `\\left(${v.tex}\\right)`}`);
+    }
+
+    function integerIntervalContaining(points, minWidth = 4) {
+      const lowPoint = Math.min(...points);
+      const highPoint = Math.max(...points);
+      let left = Math.max(-10, Math.floor(lowPoint) - randomInteger(1, 3));
+      let right = Math.min(10, Math.ceil(highPoint) + randomInteger(1, 3));
+      while (right - left < minWidth) {
+        if (left > -10) left--;
+        if (right - left >= minWidth) break;
+        if (right < 10) right++;
+        if (left === -10 && right === 10) break;
+      }
+      return { a: left, b: right, aTex: numberTex(left), bTex: numberTex(right) };
+    }
+
+    function trigAllowedKValues() {
+      return Array.from({ length: 25 }, (_, i) => i).filter(k => gcd(k, 12) > 1 || k === 0 || k === 24);
+    }
+
+    function trigIntervalContaining(criticalK) {
+      const allowed = trigAllowedKValues();
+      const all = Array.from(new Set([...allowed, ...criticalK])).sort((a,b)=>a-b);
+      const usableCriticals = criticalK.filter(x => x > 0 && x < 24 && allowed.includes(x));
+      const k = randomChoice(usableCriticals.length ? usableCriticals : criticalK.filter(x => x > 0 && x < 24));
+      const possibleLeft = all.filter(x => x < k && x >= 0 && allowed.includes(x));
+      const possibleRight = all.filter(x => x > k && x <= 24 && allowed.includes(x));
+      const left = randomChoice(possibleLeft.slice(Math.max(0, possibleLeft.length - 5)));
+      const right = randomChoice(possibleRight.slice(0, 5));
+      return { a: left, b: right, aTex: piMultipleToTex(left), bTex: piMultipleToTex(right) };
+    }
+
+    function coefficientTex(c) {
+      if (c === 1) return '';
+      if (c === -1) return '-';
+      return `${c}`;
+    }
+
+    function coefficientFactorTex(c) {
+      if (c === 1) return '';
+      if (c === -1) return '-';
+      return `${c}`;
+    }
+
+    function factorWithCoefficientTex(c, body) {
+      if (c === 1) return body;
+      if (c === -1) return `-${body}`;
+      return `${c}${body}`;
+    }
+
+    function linearExpressionTex(m, h) {
+      if (m === 1) return linearFactorTex(h);
+      if (m === -1) return `-${linearFactorTex(h)}`;
+      return `${m}${linearFactorTex(h)}`;
+    }
+
+    function powerTex(base, exponent) {
+      if (exponent === 0) return '1';
+      if (exponent === 1) return base;
+      return `${base}^{${exponent}}`;
+    }
+
+    function trigPowerTex(name, exponent) {
+      if (exponent === 0) return '1';
+      if (exponent === 1) return `\\${name}x`;
+      return `\\${name}^{${exponent}}x`;
+    }
+
+    function orListTex(items) {
+      return items.map(x => `${x}`).join('\\text{ or }');
+    }
+
+    function buildProblem({ family, tex, continuity, derivativeHints, criticals, interval, evalAt }) {
+      const candidateItems = [
+        { x: interval.a, xTex: interval.aTex },
+        { x: interval.b, xTex: interval.bTex },
+        ...criticals.filter(item => item.x > interval.a + 1e-10 && item.x < interval.b - 1e-10)
+      ];
+      const evaluations = candidateItems.map(item => ({ ...item, value: evalAt(item.x, item) }));
+      const maxVal = evaluations.reduce((best, item) => item.value.decimal > best.value.decimal ? item : best, evaluations[0]);
+      const minVal = evaluations.reduce((best, item) => item.value.decimal < best.value.decimal ? item : best, evaluations[0]);
+      const evalTex = evaluations.map(item => `f(${item.xTex || numberTex(item.x)})=${item.value.tex}`).join(',\\quad ');
+      return {
+        family,
+        questionTex: `\\text{Find the absolute maximum and absolute minimum values of } f(x)=${tex} \\text{ on } [${interval.aTex},${interval.bTex}].`,
+        maxValue: maxVal.value,
+        minValue: minVal.value,
+        hints: [
+          `f(x)=${tex}\\text{ is continuous on }[${interval.aTex},${interval.bTex}]\\text{ because }${continuity}\\text{, so the Extreme Value Theorem applies.}`,
+          ...derivativeHints,
+          `\\text{Evaluate }f\\text{ at the endpoints and at the critical points in the interval:}`,
+          `${evalTex}.`,
+          `\\text{The absolute maximum occurs at }(${maxVal.xTex || numberTex(maxVal.x)},${maxVal.value.tex})\\text{ and the absolute minimum occurs at }(${minVal.xTex || numberTex(minVal.x)},${minVal.value.tex}).`
+        ]
+      };
+    }
+
+    function generateQuadraticProblem() {
+      let r = randomInteger(-7, 7);
+      let s;
+      do { s = randomInteger(-7, 7); } while (s === r || ((r + s) % 2 !== 0));
+      const a = randomChoice([-3, -2, -1, 1, 2, 3]);
+      const h = (r + s) / 2;
+      const tex = simplePolynomialTex([{ c: a, p: 2 }, { c: -a * (r + s), p: 1 }, { c: a * r * s, p: 0 }]);
+      const interval = integerIntervalContaining([r, s, h]);
+      const evalAt = x => valueObj(a * (x - r) * (x - s));
+      const derivativeBody = simplePolynomialTex([{ c: 2 * a, p: 1 }, { c: -a * (r + s), p: 0 }]);
+      return buildProblem({
+        family: 'quadratic', tex, interval, evalAt,
+        continuity: '\\text{it is a polynomial}',
+        derivativeHints: [
+          `f'(x)=${derivativeBody}`,
+          `${derivativeBody}=0\\implies x=${numberTex(h)}.`
+        ],
+        criticals: [{ x: h, xTex: numberTex(h) }]
+      });
+    }
+
+    function generateCubicProblem() {
+      let p = randomInteger(-5, 4), q;
+      do { q = randomInteger(p + 1, 6); } while (q === p);
+      const A = randomChoice([-12, -6, 6, 12]);
+      const C = randomInteger(-10, 10);
+      const terms = [{ c: A/3, p: 3 }, { c: -A*(p+q)/2, p: 2 }, { c: A*p*q, p: 1 }, { c: C, p: 0 }];
+      const tex = simplePolynomialTex(terms);
+      const interval = integerIntervalContaining([p, q]);
+      const evalAt = x => valueObj(A/3*x*x*x - A*(p+q)/2*x*x + A*p*q*x + C);
+      const derivativeExpanded = simplePolynomialTex([{ c: A, p: 2 }, { c: -A*(p+q), p: 1 }, { c: A*p*q, p: 0 }]);
+      const factored = `${A}${linearFactorTex(p)}${linearFactorTex(q)}`;
+      return buildProblem({
+        family: 'cubic', tex, interval, evalAt,
+        continuity: '\\text{it is a polynomial}',
+        derivativeHints: [
+          `f'(x)=${derivativeExpanded}`,
+          `f'(x)=${factored}`,
+          `${factored}=0\\implies x=${p}\\text{ or }x=${q}.`
+        ],
+        criticals: [{ x: p, xTex: `${p}` }, { x: q, xTex: `${q}` }]
+      });
+    }
+
+    function generateQuarticProblem() {
+      let p = randomInteger(-5, 4), q;
+      do { q = randomInteger(p + 1, 6); } while ((p + q) % 2 !== 0);
+      const a = randomChoice([-2, -1, 1, 2]);
+      const C = randomInteger(-10, 10);
+      const mid = (p + q) / 2;
+      const leading = coefficientFactorTex(a);
+      const tex = `${leading}${linearFactorTex(p)}^2${linearFactorTex(q)}^2${C ? ` ${signedTex(C)}` : ''}`;
+      const interval = integerIntervalContaining([p, q, mid]);
+      const evalAt = x => valueObj(a * Math.pow(x - p, 2) * Math.pow(x - q, 2) + C);
+      let firstLine;
+      let secondLine;
+      if (a === 1) {
+        firstLine = `f'(x)=(${linearFactorTex(p)}^2)'\\cdot ${linearFactorTex(q)}^2+${linearFactorTex(p)}^2\\cdot (${linearFactorTex(q)}^2)'`;
+        secondLine = `=2${linearFactorTex(p)}${linearFactorTex(q)}^2+2${linearFactorTex(p)}^2${linearFactorTex(q)}`;
+      } else if (a === -1) {
+        firstLine = `f'(x)=-\\left((${linearFactorTex(p)}^2)'\\cdot ${linearFactorTex(q)}^2+${linearFactorTex(p)}^2\\cdot (${linearFactorTex(q)}^2)'\\right)`;
+        secondLine = `=-\\left(2${linearFactorTex(p)}${linearFactorTex(q)}^2+2${linearFactorTex(p)}^2${linearFactorTex(q)}\\right)`;
+      } else {
+        firstLine = `f'(x)=${a}\\left((${linearFactorTex(p)}^2)'\\cdot ${linearFactorTex(q)}^2+${linearFactorTex(p)}^2\\cdot (${linearFactorTex(q)}^2)'\\right)`;
+        secondLine = `=${a}\\left(2${linearFactorTex(p)}${linearFactorTex(q)}^2+2${linearFactorTex(p)}^2${linearFactorTex(q)}\\right)`;
+      }
+      const thirdCoeff = 2 * a;
+      const fourthCoeff = 2 * a;
+      const finalCoeff = 4 * a;
+      return buildProblem({
+        family: 'quartic', tex, interval, evalAt,
+        continuity: '\\text{it is a polynomial}',
+        derivativeHints: [
+          firstLine,
+          secondLine,
+          `=${thirdCoeff}${linearFactorTex(p)}${linearFactorTex(q)}\\left(${linearFactorTex(q)}+${linearFactorTex(p)}\\right)`,
+          `=${fourthCoeff}${linearFactorTex(p)}${linearFactorTex(q)}(${simplePolynomialTex([{ c: 2, p: 1 }, { c: -(p+q), p: 0 }])})`,
+          `=${finalCoeff}${linearFactorTex(p)}${linearFactorTex(q)}${linearFactorTex(mid)}`,
+          `f'(x)=0\\implies x=${p}\\text{ or }x=${numberTex(mid)}\\text{ or }x=${q}.`
+        ],
+        criticals: [{ x: p, xTex: `${p}` }, { x: mid, xTex: numberTex(mid) }, { x: q, xTex: `${q}` }]
+      });
+    }
+
+    function generateLinearPowerProblem() {
+      const m = randomChoice([-3, -2, -1, 1, 2, 3]);
+      const h = randomInteger(-6, 6);
+      const n = randomInteger(2, 5);
+      const inner = linearExpressionTex(m, h);
+      const tex = `(${inner})^{${n}}`;
+      const interval = integerIntervalContaining([h]);
+      const evalAt = x => valueObj(Math.pow(m * (x - h), n));
+      const derivativeFactor = n * m;
+      return buildProblem({
+        family: 'linear power', tex, interval, evalAt,
+        continuity: '\\text{it is a power of a polynomial}',
+        derivativeHints: [
+          `f'(x)=${n}(${inner})^{${n-1}}\\cdot (${inner})'`,
+          `=${derivativeFactor}(${inner})${n-1 === 1 ? '' : `^{${n-1}}`}`,
+          `f'(x)=0\\implies ${inner}=0\\implies x=${h}.`
+        ],
+        criticals: [{ x: h, xTex: `${h}` }]
+      });
+    }
+
+    function generateReciprocalQuadraticProblem() {
+      const h = randomInteger(-6, 6);
+      const k = randomInteger(1, 9);
+      const den = `${linearFactorTex(h)}^2+${k}`;
+      const tex = `\\frac{1}{${den}}`;
+      const interval = integerIntervalContaining([h]);
+      const evalAt = x => fracValue(1, (x-h)*(x-h)+k);
+      return buildProblem({
+        family: 'reciprocal quadratic', tex, interval, evalAt,
+        continuity: `\\text{the denominator }${den}\\text{ is always positive}`,
+        derivativeHints: [
+          `f(x)=\\left(${den}\\right)^{-1}`,
+          `f'(x)=-\\left(${den}\\right)^{-2}\\cdot \\left(${den}\\right)'`,
+          `=-\\left(${den}\\right)^{-2}\\cdot 2${linearFactorTex(h)}`,
+          `=\\frac{-2${linearFactorTex(h)}}{\\left(${den}\\right)^2}`,
+          `f'(x)=0\\implies -2${linearFactorTex(h)}=0\\implies x=${h}.`
+        ],
+        criticals: [{ x: h, xTex: `${h}` }]
+      });
+    }
+
+    function trigXTex(k) { return piMultipleToTex(k); }
+
+    function generateTrigProblem() {
+      const kind = randomChoice(['sin', 'cos', 'sinPower', 'cosPower', 'sincos', 'sinpluscos']);
+      let tex, derivativeHints, criticalKs, evalAt, continuity;
+      continuity = '\\text{sine and cosine are continuous everywhere}';
+      if (kind === 'sin') {
+        tex = '\\sin x'; derivativeHints = [`f'(x)=\\cos x`, `\\cos x=0\\implies x=\\frac{\\pi}{2}\\text{ or }x=\\frac{3\\pi}{2}.`]; criticalKs = [6,18]; evalAt = k => exactTrigAtom('sin', k);
+      } else if (kind === 'cos') {
+        tex = '\\cos x'; derivativeHints = [`f'(x)=-\\sin x`, `\\sin x=0\\implies x=0\\text{ or }x=\\pi\\text{ or }x=2\\pi.`]; criticalKs = [0,12,24]; evalAt = k => exactTrigAtom('cos', k);
+      } else if (kind === 'sinPower') {
+        const n = randomInteger(2, 5); tex = `\\sin^{${n}}x`; derivativeHints = [`f'(x)=${n}${trigPowerTex('sin', n-1)}\\cdot(\\sin x)'`, `=${n}${trigPowerTex('sin', n-1)}\\cos x`, `${n}${trigPowerTex('sin', n-1)}\\cos x=0\\implies x=0,\\frac{\\pi}{2},\\pi,\\frac{3\\pi}{2},2\\pi.`]; criticalKs = [0,6,12,18,24]; evalAt = k => exactTrigPower('sin', k, n);
+      } else if (kind === 'cosPower') {
+        const n = randomInteger(2, 5); tex = `\\cos^{${n}}x`; derivativeHints = [`f'(x)=${n}${trigPowerTex('cos', n-1)}\\cdot(\\cos x)'`, `=-${n}${trigPowerTex('cos', n-1)}\\sin x`, `-${n}${trigPowerTex('cos', n-1)}\\sin x=0\\implies x=0,\\frac{\\pi}{2},\\pi,\\frac{3\\pi}{2},2\\pi.`]; criticalKs = [0,6,12,18,24]; evalAt = k => exactTrigPower('cos', k, n);
+      } else if (kind === 'sincos') {
+        tex = '\\sin x\\cos x'; derivativeHints = [`f'(x)=(\\sin x)'\\cos x+\\sin x(\\cos x)'`, `=\\cos^2x-\\sin^2x`, `\\cos^2x-\\sin^2x=0\\implies x=\\frac{\\pi}{4},\\frac{3\\pi}{4},\\frac{5\\pi}{4},\\frac{7\\pi}{4}.`]; criticalKs = [3,9,15,21]; evalAt = k => exactSinCosProduct(k);
+      } else {
+        tex = '\\sin x+\\cos x'; derivativeHints = [`f'(x)=\\cos x-\\sin x`, `\\cos x-\\sin x=0\\implies x=\\frac{\\pi}{4}\\text{ or }x=\\frac{5\\pi}{4}.`]; criticalKs = [3,15]; evalAt = k => exactSinPlusCos(k);
+      }
+      const interval = trigIntervalContaining(criticalKs);
+      const criticals = criticalKs.map(k => ({ x: k / 12 * Math.PI, xTex: trigXTex(k), k }));
+      const wrappedEvalAt = (x, item) => {
+        const k = item && item.k !== undefined ? item.k : Math.round(x / Math.PI * 12);
+        return evalAt(k);
+      };
+      return buildProblem({ family: 'trig', tex, interval: { a: interval.a/12*Math.PI, b: interval.b/12*Math.PI, aTex: interval.aTex, bTex: interval.bTex }, evalAt: wrappedEvalAt, continuity, derivativeHints, criticals });
+    }
+
+    function generateEVTProblem() {
+      const generators = [
+        generateQuadraticProblem,
+        generateCubicProblem,
+        generateQuarticProblem,
+        generateLinearPowerProblem,
+        generateReciprocalQuadraticProblem,
+        generateTrigProblem,
+        generateTrigProblem
+      ];
+      return randomChoice(generators)();
+    }
+
+    function evaluateFlexibleNumericAnswer(input) {
+      if (!input) return NaN;
+      let expr = input.trim().toLowerCase();
+      expr = expr.replace(/−/g, '-');
+      expr = expr.replace(/π/g, 'pi');
+      expr = expr.replace(/\\pi/g, 'pi');
+      expr = expr.replace(/sqrt/g, 'Math.sqrt');
+      expr = expr.replace(/\\sqrt\s*\{([^{}]+)\}/g, 'Math.sqrt($1)');
+      expr = expr.replace(/\\frac\s*\{([^{}]+)\}\s*\{([^{}]+)\}/g, '($1)/($2)');
+      expr = expr.replace(/\^/g, '**');
+      expr = expr.replace(/pi/g, 'Math.PI');
+      expr = expr.replace(/[^0-9+\-*/(). MathPIsqrt]/g, '');
+      try {
+        const value = Function(`"use strict"; return (${expr});`)();
+        return Number.isFinite(value) ? value : NaN;
+      } catch (e) {
+        return NaN;
+      }
+    }
+
+    function setupAnswerEditor() {
+      finalAnswerInput.innerHTML = `
+        <div class="answer-group-grid">
+          <div class="answer-group-card">
+            <div class="answer-group-card-title">Absolute maximum value</div>
+            <input id="max-answer" class="asymptote-value-input" style="width: 170px;" autocomplete="off">
+          </div>
+          <div class="answer-group-card">
+            <div class="answer-group-card-title">Absolute minimum value</div>
+            <input id="min-answer" class="asymptote-value-input" style="width: 170px;" autocomplete="off">
+          </div>
+        </div>`;
+    }
+
+    function checkUserAnswer() {
+      if (!currentProblem) return;
+      const maxInput = document.getElementById('max-answer');
+      const minInput = document.getElementById('min-answer');
+      const userMax = evaluateFlexibleNumericAnswer(maxInput ? maxInput.value : '');
+      const userMin = evaluateFlexibleNumericAnswer(minInput ? minInput.value : '');
+      const maxCorrect = Number.isFinite(userMax) && Math.abs(userMax - currentProblem.maxValue.decimal) < 1e-8;
+      const minCorrect = Number.isFinite(userMin) && Math.abs(userMin - currentProblem.minValue.decimal) < 1e-8;
+      feedbackText.textContent = maxCorrect && minCorrect ? 'Correct!' : 'Incorrect, try again.';
+      feedbackText.style.color = maxCorrect && minCorrect ? 'green' : 'red';
+    }
+
+    function clearOldActivityState() {
+      feedbackText.textContent = '';
+      finalAnswerInput.innerHTML = '';
+      hintArea.innerHTML = '';
+      hintStep = 0;
+      hintBtn.disabled = true;
+      checkBtn.style.display = 'none';
+    }
+
+    function advanceHint() {
+      if (!currentProblem || hintStep >= currentProblem.hints.length) return;
+      const line = document.createElement('p');
+      line.innerHTML = `\\[${currentProblem.hints[hintStep]}\\]`;
+      hintArea.appendChild(line);
+      hintStep++;
+      if (hintStep >= currentProblem.hints.length) hintBtn.disabled = true;
+      typesetElement(hintArea);
+    }
+
+    startBtn.addEventListener('click', () => {
+      clearOldActivityState();
+      const sound = document.getElementById('click-sound');
+      if (sound) {
+        sound.currentTime = 0;
+        sound.play();
+      }
+      currentProblem = generateEVTProblem();
+      questionText.innerHTML = `\\[${currentProblem.questionTex}\\]`;
+      setupAnswerEditor();
+      checkBtn.style.display = 'inline-block';
+      hintBtn.disabled = false;
+      typesetElement(questionText);
+    });
+
+    hintBtn.addEventListener('click', advanceHint);
+    checkBtn.addEventListener('click', checkUserAnswer);
+  </script>
+
+  <audio id="click-sound" src="button.mp3" preload="auto"></audio>
+  <audio id="set-sound" src="set2.mp3" preload="auto"></audio>
+
+</body>
+</html>

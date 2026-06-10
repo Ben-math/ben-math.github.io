@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -567,9 +568,53 @@ fetch("/nav.html")
       return { a: left, b: right, aTex: piMultipleToTex(left), bTex: piMultipleToTex(right) };
     }
 
-    function buildProblem({ family, tex, continuity, derivativeTex, criticalTex, criticals, interval, evalAt }) {
-      const candidates = [interval.a, interval.b, ...criticals.filter(x => x > interval.a + 1e-10 && x < interval.b - 1e-10)];
-      const evaluations = candidates.map(x => ({ x, value: evalAt(x) }));
+    function coefficientTex(c) {
+      if (c === 1) return '';
+      if (c === -1) return '-';
+      return `${c}`;
+    }
+
+    function coefficientFactorTex(c) {
+      if (c === 1) return '';
+      if (c === -1) return '-';
+      return `${c}`;
+    }
+
+    function factorWithCoefficientTex(c, body) {
+      if (c === 1) return body;
+      if (c === -1) return `-${body}`;
+      return `${c}${body}`;
+    }
+
+    function linearExpressionTex(m, h) {
+      if (m === 1) return linearFactorTex(h);
+      if (m === -1) return `-${linearFactorTex(h)}`;
+      return `${m}${linearFactorTex(h)}`;
+    }
+
+    function powerTex(base, exponent) {
+      if (exponent === 0) return '1';
+      if (exponent === 1) return base;
+      return `${base}^{${exponent}}`;
+    }
+
+    function trigPowerTex(name, exponent) {
+      if (exponent === 0) return '1';
+      if (exponent === 1) return `\\${name}x`;
+      return `\\${name}^{${exponent}}x`;
+    }
+
+    function orListTex(items) {
+      return items.map(x => `${x}`).join('\\text{ or }');
+    }
+
+    function buildProblem({ family, tex, continuity, derivativeHints, criticals, interval, evalAt }) {
+      const candidateItems = [
+        { x: interval.a, xTex: interval.aTex },
+        { x: interval.b, xTex: interval.bTex },
+        ...criticals.filter(item => item.x > interval.a + 1e-10 && item.x < interval.b - 1e-10)
+      ];
+      const evaluations = candidateItems.map(item => ({ ...item, value: evalAt(item.x, item) }));
       const maxVal = evaluations.reduce((best, item) => item.value.decimal > best.value.decimal ? item : best, evaluations[0]);
       const minVal = evaluations.reduce((best, item) => item.value.decimal < best.value.decimal ? item : best, evaluations[0]);
       const evalTex = evaluations.map(item => `f(${item.xTex || numberTex(item.x)})=${item.value.tex}`).join(',\\quad ');
@@ -580,9 +625,10 @@ fetch("/nav.html")
         minValue: minVal.value,
         hints: [
           `f(x)=${tex}\\text{ is continuous on }[${interval.aTex},${interval.bTex}]\\text{ because }${continuity}\\text{, so the Extreme Value Theorem applies.}`,
-          `${derivativeTex}\\quad ${criticalTex}`,
-          `\\text{Evaluate }f\\text{ at the endpoints and at the critical points in the interval: }${evalTex}.`,
-          `\\text{The absolute maximum value is }${maxVal.value.tex}\\text{ and the absolute minimum value is }${minVal.value.tex}.`
+          ...derivativeHints,
+          `\\text{Evaluate }f\\text{ at the endpoints and at the critical points in the interval:}`,
+          `${evalTex}.`,
+          `\\text{The absolute maximum occurs at }(${maxVal.xTex || numberTex(maxVal.x)},${maxVal.value.tex})\\text{ and the absolute minimum occurs at }(${minVal.xTex || numberTex(minVal.x)},${minVal.value.tex}).`
         ]
       };
     }
@@ -600,9 +646,11 @@ fetch("/nav.html")
       return buildProblem({
         family: 'quadratic', tex, interval, evalAt,
         continuity: '\\text{it is a polynomial}',
-        derivativeTex: `f'(x)=${derivativeBody}`,
-        criticalTex: `f'(x)=0\\text{ gives }x=${numberTex(h)}.`,
-        criticals: [h]
+        derivativeHints: [
+          `f'(x)=${derivativeBody}`,
+          `${derivativeBody}=0\\implies x=${numberTex(h)}.`
+        ],
+        criticals: [{ x: h, xTex: numberTex(h) }]
       });
     }
 
@@ -615,12 +663,17 @@ fetch("/nav.html")
       const tex = simplePolynomialTex(terms);
       const interval = integerIntervalContaining([p, q]);
       const evalAt = x => valueObj(A/3*x*x*x - A*(p+q)/2*x*x + A*p*q*x + C);
+      const derivativeExpanded = simplePolynomialTex([{ c: A, p: 2 }, { c: -A*(p+q), p: 1 }, { c: A*p*q, p: 0 }]);
+      const factored = `${A}${linearFactorTex(p)}${linearFactorTex(q)}`;
       return buildProblem({
         family: 'cubic', tex, interval, evalAt,
         continuity: '\\text{it is a polynomial}',
-        derivativeTex: `f'(x)=${A}${linearFactorTex(p)}${linearFactorTex(q)}`,
-        criticalTex: `f'(x)=0\\text{ gives }x=${p},${q}.`,
-        criticals: [p, q]
+        derivativeHints: [
+          `f'(x)=${derivativeExpanded}`,
+          `f'(x)=${factored}`,
+          `${factored}=0\\implies x=${p}\\text{ or }x=${q}.`
+        ],
+        criticals: [{ x: p, xTex: `${p}` }, { x: q, xTex: `${q}` }]
       });
     }
 
@@ -630,15 +683,37 @@ fetch("/nav.html")
       const a = randomChoice([-2, -1, 1, 2]);
       const C = randomInteger(-10, 10);
       const mid = (p + q) / 2;
-      const tex = `${a === 1 ? '' : a === -1 ? '-' : a}${linearFactorTex(p)}^2${linearFactorTex(q)}^2${C ? ` ${signedTex(C)}` : ''}`;
+      const leading = coefficientFactorTex(a);
+      const tex = `${leading}${linearFactorTex(p)}^2${linearFactorTex(q)}^2${C ? ` ${signedTex(C)}` : ''}`;
       const interval = integerIntervalContaining([p, q, mid]);
       const evalAt = x => valueObj(a * Math.pow(x - p, 2) * Math.pow(x - q, 2) + C);
+      let firstLine;
+      let secondLine;
+      if (a === 1) {
+        firstLine = `f'(x)=(${linearFactorTex(p)}^2)'\\cdot ${linearFactorTex(q)}^2+${linearFactorTex(p)}^2\\cdot (${linearFactorTex(q)}^2)'`;
+        secondLine = `=2${linearFactorTex(p)}${linearFactorTex(q)}^2+2${linearFactorTex(p)}^2${linearFactorTex(q)}`;
+      } else if (a === -1) {
+        firstLine = `f'(x)=-\\left((${linearFactorTex(p)}^2)'\\cdot ${linearFactorTex(q)}^2+${linearFactorTex(p)}^2\\cdot (${linearFactorTex(q)}^2)'\\right)`;
+        secondLine = `=-\\left(2${linearFactorTex(p)}${linearFactorTex(q)}^2+2${linearFactorTex(p)}^2${linearFactorTex(q)}\\right)`;
+      } else {
+        firstLine = `f'(x)=${a}\\left((${linearFactorTex(p)}^2)'\\cdot ${linearFactorTex(q)}^2+${linearFactorTex(p)}^2\\cdot (${linearFactorTex(q)}^2)'\\right)`;
+        secondLine = `=${a}\\left(2${linearFactorTex(p)}${linearFactorTex(q)}^2+2${linearFactorTex(p)}^2${linearFactorTex(q)}\\right)`;
+      }
+      const thirdCoeff = 2 * a;
+      const fourthCoeff = 2 * a;
+      const finalCoeff = 4 * a;
       return buildProblem({
         family: 'quartic', tex, interval, evalAt,
         continuity: '\\text{it is a polynomial}',
-        derivativeTex: `f'(x)=${4*a}${linearFactorTex(p)}${linearFactorTex(q)}\\left(x-${numberTex(mid)}\\right)`,
-        criticalTex: `f'(x)=0\\text{ gives }x=${p},${numberTex(mid)},${q}.`,
-        criticals: [p, mid, q]
+        derivativeHints: [
+          firstLine,
+          secondLine,
+          `=${thirdCoeff}${linearFactorTex(p)}${linearFactorTex(q)}\\left(${linearFactorTex(q)}+${linearFactorTex(p)}\\right)`,
+          `=${fourthCoeff}${linearFactorTex(p)}${linearFactorTex(q)}(${simplePolynomialTex([{ c: 2, p: 1 }, { c: -(p+q), p: 0 }])})`,
+          `=${finalCoeff}${linearFactorTex(p)}${linearFactorTex(q)}${linearFactorTex(mid)}`,
+          `f'(x)=0\\implies x=${p}\\text{ or }x=${numberTex(mid)}\\text{ or }x=${q}.`
+        ],
+        criticals: [{ x: p, xTex: `${p}` }, { x: mid, xTex: numberTex(mid) }, { x: q, xTex: `${q}` }]
       });
     }
 
@@ -646,45 +721,41 @@ fetch("/nav.html")
       const m = randomChoice([-3, -2, -1, 1, 2, 3]);
       const h = randomInteger(-6, 6);
       const n = randomInteger(2, 5);
-      const tex = `(${m === 1 ? '' : m === -1 ? '-' : m}${linearFactorTex(h)})^{${n}}`;
+      const inner = linearExpressionTex(m, h);
+      const tex = `(${inner})^{${n}}`;
       const interval = integerIntervalContaining([h]);
       const evalAt = x => valueObj(Math.pow(m * (x - h), n));
+      const derivativeFactor = n * m;
       return buildProblem({
         family: 'linear power', tex, interval, evalAt,
         continuity: '\\text{it is a power of a polynomial}',
-        derivativeTex: `f'(x)=${n*m}(${m === 1 ? '' : m === -1 ? '-' : m}${linearFactorTex(h)})^{${n-1}}`,
-        criticalTex: `f'(x)=0\\text{ gives }x=${h}.`,
-        criticals: [h]
-      });
-    }
-
-    function generateAbsoluteValueProblem() {
-      const m = randomChoice([-4, -3, -2, -1, 1, 2, 3, 4]);
-      const h = randomInteger(-6, 6);
-      const tex = `\\left|${m === 1 ? '' : m === -1 ? '-' : m}${linearFactorTex(h)}\\right|`;
-      const interval = integerIntervalContaining([h]);
-      const evalAt = x => valueObj(Math.abs(m * (x - h)));
-      return buildProblem({
-        family: 'absolute value', tex, interval, evalAt,
-        continuity: '\\text{absolute value functions are continuous}',
-        derivativeTex: `f'(x)\\text{ is undefined at }x=${h}\\text{ and nonzero elsewhere on each side of }${h}.`,
-        criticalTex: `\\text{Thus the only critical point is }x=${h}.`,
-        criticals: [h]
+        derivativeHints: [
+          `f'(x)=${n}(${inner})^{${n-1}}\\cdot (${inner})'`,
+          `=${derivativeFactor}(${inner})${n-1 === 1 ? '' : `^{${n-1}}`}`,
+          `f'(x)=0\\implies ${inner}=0\\implies x=${h}.`
+        ],
+        criticals: [{ x: h, xTex: `${h}` }]
       });
     }
 
     function generateReciprocalQuadraticProblem() {
       const h = randomInteger(-6, 6);
       const k = randomInteger(1, 9);
-      const tex = `\\frac{1}{${linearFactorTex(h)}^2+${k}}`;
+      const den = `${linearFactorTex(h)}^2+${k}`;
+      const tex = `\\frac{1}{${den}}`;
       const interval = integerIntervalContaining([h]);
       const evalAt = x => fracValue(1, (x-h)*(x-h)+k);
       return buildProblem({
         family: 'reciprocal quadratic', tex, interval, evalAt,
-        continuity: `\\text{the denominator }${linearFactorTex(h)}^2+${k}\\text{ is always positive}`,
-        derivativeTex: `f'(x)=\\frac{-2${linearFactorTex(h)}}{(${linearFactorTex(h)}^2+${k})^2}`,
-        criticalTex: `f'(x)=0\\text{ gives }x=${h}.`,
-        criticals: [h]
+        continuity: `\\text{the denominator }${den}\\text{ is always positive}`,
+        derivativeHints: [
+          `f(x)=\\left(${den}\\right)^{-1}`,
+          `f'(x)=-\\left(${den}\\right)^{-2}\\cdot \\left(${den}\\right)'`,
+          `=-\\left(${den}\\right)^{-2}\\cdot 2${linearFactorTex(h)}`,
+          `=\\frac{-2${linearFactorTex(h)}}{\\left(${den}\\right)^2}`,
+          `f'(x)=0\\implies -2${linearFactorTex(h)}=0\\implies x=${h}.`
+        ],
+        criticals: [{ x: h, xTex: `${h}` }]
       });
     }
 
@@ -692,32 +763,28 @@ fetch("/nav.html")
 
     function generateTrigProblem() {
       const kind = randomChoice(['sin', 'cos', 'sinPower', 'cosPower', 'sincos', 'sinpluscos']);
-      let tex, derivativeTex, criticalTex, criticalKs, evalAt, continuity;
+      let tex, derivativeHints, criticalKs, evalAt, continuity;
       continuity = '\\text{sine and cosine are continuous everywhere}';
       if (kind === 'sin') {
-        tex = '\\sin x'; derivativeTex = `f'(x)=\\cos x`; criticalTex = `\\cos x=0\\text{ gives }x=\\frac{\\pi}{2},\\frac{3\\pi}{2}.`; criticalKs = [6,18]; evalAt = k => exactTrigAtom('sin', k);
+        tex = '\\sin x'; derivativeHints = [`f'(x)=\\cos x`, `\\cos x=0\\implies x=\\frac{\\pi}{2}\\text{ or }x=\\frac{3\\pi}{2}.`]; criticalKs = [6,18]; evalAt = k => exactTrigAtom('sin', k);
       } else if (kind === 'cos') {
-        tex = '\\cos x'; derivativeTex = `f'(x)=-\\sin x`; criticalTex = `\\sin x=0\\text{ gives }x=0,\\pi,2\\pi.`; criticalKs = [0,12,24]; evalAt = k => exactTrigAtom('cos', k);
+        tex = '\\cos x'; derivativeHints = [`f'(x)=-\\sin x`, `\\sin x=0\\implies x=0\\text{ or }x=\\pi\\text{ or }x=2\\pi.`]; criticalKs = [0,12,24]; evalAt = k => exactTrigAtom('cos', k);
       } else if (kind === 'sinPower') {
-        const n = randomInteger(2, 5); tex = `\\sin^{${n}}x`; derivativeTex = `f'(x)=${n}\\sin^{${n-1}}x\\cos x`; criticalTex = `f'(x)=0\\text{ gives }x=0,\\frac{\\pi}{2},\\pi,\\frac{3\\pi}{2},2\\pi.`; criticalKs = [0,6,12,18,24]; evalAt = k => exactTrigPower('sin', k, n);
+        const n = randomInteger(2, 5); tex = `\\sin^{${n}}x`; derivativeHints = [`f'(x)=${n}${trigPowerTex('sin', n-1)}\\cdot(\\sin x)'`, `=${n}${trigPowerTex('sin', n-1)}\\cos x`, `${n}${trigPowerTex('sin', n-1)}\\cos x=0\\implies x=0,\\frac{\\pi}{2},\\pi,\\frac{3\\pi}{2},2\\pi.`]; criticalKs = [0,6,12,18,24]; evalAt = k => exactTrigPower('sin', k, n);
       } else if (kind === 'cosPower') {
-        const n = randomInteger(2, 5); tex = `\\cos^{${n}}x`; derivativeTex = `f'(x)=-${n}\\cos^{${n-1}}x\\sin x`; criticalTex = `f'(x)=0\\text{ gives }x=0,\\frac{\\pi}{2},\\pi,\\frac{3\\pi}{2},2\\pi.`; criticalKs = [0,6,12,18,24]; evalAt = k => exactTrigPower('cos', k, n);
+        const n = randomInteger(2, 5); tex = `\\cos^{${n}}x`; derivativeHints = [`f'(x)=${n}${trigPowerTex('cos', n-1)}\\cdot(\\cos x)'`, `=-${n}${trigPowerTex('cos', n-1)}\\sin x`, `-${n}${trigPowerTex('cos', n-1)}\\sin x=0\\implies x=0,\\frac{\\pi}{2},\\pi,\\frac{3\\pi}{2},2\\pi.`]; criticalKs = [0,6,12,18,24]; evalAt = k => exactTrigPower('cos', k, n);
       } else if (kind === 'sincos') {
-        tex = '\\sin x\\cos x'; derivativeTex = `f'(x)=\\cos^2x-\\sin^2x`; criticalTex = `f'(x)=0\\text{ gives }x=\\frac{\\pi}{4},\\frac{3\\pi}{4},\\frac{5\\pi}{4},\\frac{7\\pi}{4}.`; criticalKs = [3,9,15,21]; evalAt = k => exactSinCosProduct(k);
+        tex = '\\sin x\\cos x'; derivativeHints = [`f'(x)=(\\sin x)'\\cos x+\\sin x(\\cos x)'`, `=\\cos^2x-\\sin^2x`, `\\cos^2x-\\sin^2x=0\\implies x=\\frac{\\pi}{4},\\frac{3\\pi}{4},\\frac{5\\pi}{4},\\frac{7\\pi}{4}.`]; criticalKs = [3,9,15,21]; evalAt = k => exactSinCosProduct(k);
       } else {
-        tex = '\\sin x+\\cos x'; derivativeTex = `f'(x)=\\cos x-\\sin x`; criticalTex = `f'(x)=0\\text{ gives }x=\\frac{\\pi}{4},\\frac{5\\pi}{4}.`; criticalKs = [3,15]; evalAt = k => exactSinPlusCos(k);
+        tex = '\\sin x+\\cos x'; derivativeHints = [`f'(x)=\\cos x-\\sin x`, `\\cos x-\\sin x=0\\implies x=\\frac{\\pi}{4}\\text{ or }x=\\frac{5\\pi}{4}.`]; criticalKs = [3,15]; evalAt = k => exactSinPlusCos(k);
       }
       const interval = trigIntervalContaining(criticalKs);
-      const crits = criticalKs.map(k => k / 12 * Math.PI);
-      const wrappedEvalAt = x => {
-        const k = Math.round(x / Math.PI * 12);
+      const criticals = criticalKs.map(k => ({ x: k / 12 * Math.PI, xTex: trigXTex(k), k }));
+      const wrappedEvalAt = (x, item) => {
+        const k = item && item.k !== undefined ? item.k : Math.round(x / Math.PI * 12);
         return evalAt(k);
       };
-      const problem = buildProblem({ tex, interval: { a: interval.a/12*Math.PI, b: interval.b/12*Math.PI, aTex: interval.aTex, bTex: interval.bTex }, evalAt: wrappedEvalAt, continuity, derivativeTex, criticalTex, criticals: crits });
-      problem.hints[2] = `\\text{Evaluate }f\\text{ at the endpoints and at the critical points in the interval: }` +
-        [interval.a, interval.b, ...criticalKs.filter(k => k > interval.a && k < interval.b)]
-        .map(k => `f(${trigXTex(k)})=${evalAt(k).tex}`).join(',\\quad ') + '.';
-      return problem;
+      return buildProblem({ family: 'trig', tex, interval: { a: interval.a/12*Math.PI, b: interval.b/12*Math.PI, aTex: interval.aTex, bTex: interval.bTex }, evalAt: wrappedEvalAt, continuity, derivativeHints, criticals });
     }
 
     function generateEVTProblem() {

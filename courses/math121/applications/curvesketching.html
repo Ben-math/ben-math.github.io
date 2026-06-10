@@ -301,7 +301,22 @@ fetch("/nav.html")
     <p>I love it when a plan comes together.</p>
 
     <p>In the following activity, user input would clearly be impossible to implement, so you will want to follow the steps to sketch a curve below (many of 
-    which can be completed in any order) and sketch it on a piece of paper, then compare your work to what is generated:</p>
+    which can be completed in any order) and sketch it on a piece of paper, then compare your work to what is generated:
+    <ul>
+      <li>Find the domain of \(f\) (this will be all of \(\mathbb{R}\) if a polynomial, but is relevant if we are dealing with a rational or root function)</li>
+      <li>Find the \(y\)-intercept of the function by finding \(f(0)\), and the \(x\)-intercepts by factoring the function and solving \(f(x) = 0\)</li>
+      <li>Identify asymptotes (there will be none in a polynomial, but relevant for rational functions).  Horizontal asymptotes can be found by determining the 
+      end behaviour, \(\lim_{x \to \pm\infty}f(x)\), and vertical asymptotes can be found for a rational by cancelling any common factors and determining for 
+      which \(x\) the denominator is zero - if we cancel a factor from the numerator and denominator we have a hole there)</li>
+      <li>Find the first derivative, and use it to determine intervals of increase (\(f'(x) > 0\)), intervals of decrease (\(f'(x) < 0\)), and local maximums 
+      and minimums at critical points (\(f'(x) = 0\), or potentially where \(f'(x)\) is not defined).  To determine whether a critical point is a 
+      maximum or a minimum, use either the first derivative test (from left-to-right, if it switches from increasing to decreasing at a point, we have a 
+      local maximum, and if it switches from decreasing to increasing, we have a local minimum) or the second derivative test (if concave down, we have a 
+      local maximum, and if concave up, we have a local minimum)</li>
+      <li>Find the second derivative, and use it to determine intervals on which \(f\) is concave up (\(f''(x) > 0\)), concave down (\(f''(x) < 0\)), and 
+      points of inflection (\(f''(x) = 0\))</li>
+      <li>Sketch the curve.</li>
+    </ul></p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -264,6 +265,20 @@
       padding: 0.18em 0.65em;
       font-size: 1.15em;
       cursor: pointer;
+    }
+
+
+    .coordinate-answer-editor {
+      min-width: 92px;
+      width: 92px;
+      min-height: 1.45em;
+      font-size: 1.05em;
+      padding: 0.18em 0.35em;
+      text-align: center;
+    }
+
+    .coordinate-answer-editor .fraction-entry {
+      font-size: 0.95em;
     }
 
   </style>
@@ -838,6 +853,8 @@ fetch("/nav.html")
       }
     }
 
+    let activeMathEditor = null;
+
     function setupAnswerEditor() {
       finalAnswerInput.innerHTML = `
         <div class="answer-group-grid">
@@ -845,9 +862,9 @@ fetch("/nav.html")
             <div class="answer-group-card-title">Absolute maximum</div>
             <div style="display:flex; align-items:center; justify-content:center; gap:0.25em; font-size:1.2em;">
               <span>(</span>
-              <input id="max-x-answer" class="asymptote-value-input" style="width: 95px;" autocomplete="off" aria-label="absolute maximum x-coordinate">
+              <div id="max-x-answer" class="polynomial-answer-editor coordinate-answer-editor" contenteditable="true" role="textbox" aria-label="absolute maximum x-coordinate"></div>
               <span>,</span>
-              <input id="max-y-answer" class="asymptote-value-input" style="width: 95px;" autocomplete="off" aria-label="absolute maximum y-coordinate">
+              <div id="max-y-answer" class="polynomial-answer-editor coordinate-answer-editor" contenteditable="true" role="textbox" aria-label="absolute maximum y-coordinate"></div>
               <span>)</span>
             </div>
           </div>
@@ -855,13 +872,116 @@ fetch("/nav.html")
             <div class="answer-group-card-title">Absolute minimum</div>
             <div style="display:flex; align-items:center; justify-content:center; gap:0.25em; font-size:1.2em;">
               <span>(</span>
-              <input id="min-x-answer" class="asymptote-value-input" style="width: 95px;" autocomplete="off" aria-label="absolute minimum x-coordinate">
+              <div id="min-x-answer" class="polynomial-answer-editor coordinate-answer-editor" contenteditable="true" role="textbox" aria-label="absolute minimum x-coordinate"></div>
               <span>,</span>
-              <input id="min-y-answer" class="asymptote-value-input" style="width: 95px;" autocomplete="off" aria-label="absolute minimum y-coordinate">
+              <div id="min-y-answer" class="polynomial-answer-editor coordinate-answer-editor" contenteditable="true" role="textbox" aria-label="absolute minimum y-coordinate"></div>
               <span>)</span>
             </div>
           </div>
+        </div>
+        <div class="answer-toolbar" aria-label="math input toolbar">
+          <button type="button" class="math-symbol-button" id="fraction-input-btn" aria-label="insert fraction">
+            <span class="fraction-button-display"><span class="fraction-button-top">□</span><span class="fraction-button-bottom">□</span></span>
+          </button>
+          <button type="button" class="math-symbol-button" id="pi-input-btn" aria-label="insert pi">π</button>
         </div>`;
+
+      document.querySelectorAll('.coordinate-answer-editor').forEach(editor => {
+        editor.addEventListener('focus', () => { activeMathEditor = editor; });
+        editor.addEventListener('mousedown', () => { activeMathEditor = editor; });
+        editor.addEventListener('keydown', event => {
+          if (event.key === 'Enter') event.preventDefault();
+        });
+      });
+      activeMathEditor = document.getElementById('max-x-answer');
+
+      document.getElementById('fraction-input-btn').addEventListener('click', () => insertFractionIntoActiveEditor());
+      document.getElementById('pi-input-btn').addEventListener('click', () => insertTextIntoActiveEditor('π'));
+    }
+
+    function getActiveMathEditor() {
+      if (activeMathEditor && document.body.contains(activeMathEditor)) return activeMathEditor;
+      activeMathEditor = document.querySelector('.coordinate-answer-editor');
+      return activeMathEditor;
+    }
+
+    function focusAtEnd(element) {
+      element.focus();
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      range.collapse(false);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    function insertNodeAtCursor(node, fallbackEditor) {
+      const editor = getActiveMathEditor();
+      if (!editor) return;
+      editor.focus();
+      const selection = window.getSelection();
+      if (!selection.rangeCount || !editor.contains(selection.anchorNode)) {
+        focusAtEnd(editor);
+      }
+      const range = window.getSelection().getRangeAt(0);
+      range.deleteContents();
+      range.insertNode(node);
+      const spacer = document.createTextNode('');
+      node.parentNode.insertBefore(spacer, node.nextSibling);
+      range.setStartAfter(node);
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    function insertTextIntoActiveEditor(text) {
+      insertNodeAtCursor(document.createTextNode(text));
+    }
+
+    function insertFractionIntoActiveEditor() {
+      const frac = document.createElement('span');
+      frac.className = 'fraction-entry';
+      frac.contentEditable = 'false';
+
+      const numerator = document.createElement('span');
+      numerator.className = 'fraction-numerator';
+      numerator.contentEditable = 'true';
+      numerator.dataset.fractionPart = 'numerator';
+
+      const denominator = document.createElement('span');
+      denominator.className = 'fraction-denominator';
+      denominator.contentEditable = 'true';
+      denominator.dataset.fractionPart = 'denominator';
+
+      frac.appendChild(numerator);
+      frac.appendChild(denominator);
+      insertNodeAtCursor(frac);
+      numerator.focus();
+      const range = document.createRange();
+      range.selectNodeContents(numerator);
+      range.collapse(false);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    function serializeMathEditorNode(node) {
+      if (!node) return '';
+      if (node.nodeType === Node.TEXT_NODE) return node.textContent;
+      if (node.nodeType !== Node.ELEMENT_NODE) return '';
+      if (node.classList.contains('fraction-entry')) {
+        const numerator = node.querySelector('.fraction-numerator');
+        const denominator = node.querySelector('.fraction-denominator');
+        return `((${serializeMathEditorNode(numerator)}))/((${serializeMathEditorNode(denominator)}))`;
+      }
+      let out = '';
+      node.childNodes.forEach(child => { out += serializeMathEditorNode(child); });
+      return out;
+    }
+
+    function getMathEditorValue(id) {
+      const editor = document.getElementById(id);
+      return serializeMathEditorNode(editor).replace(/ /g, ' ').trim();
     }
 
     function coordinateCorrect(userX, userY, correctPoint) {
@@ -872,14 +992,10 @@ fetch("/nav.html")
 
     function checkUserAnswer() {
       if (!currentProblem) return;
-      const maxXInput = document.getElementById('max-x-answer');
-      const maxYInput = document.getElementById('max-y-answer');
-      const minXInput = document.getElementById('min-x-answer');
-      const minYInput = document.getElementById('min-y-answer');
-      const userMaxX = evaluateFlexibleNumericAnswer(maxXInput ? maxXInput.value : '');
-      const userMaxY = evaluateFlexibleNumericAnswer(maxYInput ? maxYInput.value : '');
-      const userMinX = evaluateFlexibleNumericAnswer(minXInput ? minXInput.value : '');
-      const userMinY = evaluateFlexibleNumericAnswer(minYInput ? minYInput.value : '');
+      const userMaxX = evaluateFlexibleNumericAnswer(getMathEditorValue('max-x-answer'));
+      const userMaxY = evaluateFlexibleNumericAnswer(getMathEditorValue('max-y-answer'));
+      const userMinX = evaluateFlexibleNumericAnswer(getMathEditorValue('min-x-answer'));
+      const userMinY = evaluateFlexibleNumericAnswer(getMathEditorValue('min-y-answer'));
       const maxCorrect = coordinateCorrect(userMaxX, userMaxY, currentProblem.maxPoint);
       const minCorrect = coordinateCorrect(userMinX, userMinY, currentProblem.minPoint);
       feedbackText.textContent = maxCorrect && minCorrect ? 'Correct!' : 'Incorrect, try again.';

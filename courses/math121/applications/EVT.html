@@ -6,7 +6,7 @@
 <head>
   <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
   <meta charset="UTF-8" />
-  <title>The Extreme Value Theorem</title>
+  <title>Extreme Value Theorem</title>
   <link rel="stylesheet" href="/style.css" />
 
   <script id="MathJax-script" async
@@ -269,7 +269,7 @@
 </head>
 <body>
   <header>
-    <h1>The Extreme Value Theorem</h1>
+    <h1>Extreme Value Theorem</h1>
     <div id="nav-placeholder"></div>
     <script>
 fetch("/nav.html")
@@ -298,8 +298,23 @@ fetch("/nav.html")
   </header>
 
   <main>
-    <p>I don't have time to create the initial lesson here right now, but will get the activity below working so you can practice using the Extreme Value 
-    Theorem.</p>
+    <p>This is an activity designed for Sith lords, because only a Sith deals in absolutes.</p>
+
+    <p>The Extreme Value Theorem states that if a function is continuous on a closed interval, then it attains an absolute maximum and absolute minimum 
+    somewhere in that interval.  To find these, we check the values of the function at the endpoints of the interval, as well as at any critical points within 
+    that interval.  So the work is finding those critical points.  Since the function is continuous on the interval, we need not worry about the derivative 
+    not being defined within it, so the critical points are precisely where the derivative is equal to zero.</p>
+
+    <p>For example, suppose we want to find the absolute maximum and minimum of the function \[f(x) = \frac{1}{(x-4)^2+7} \hspace{3mm} \text{ on } \hspace{3mm} 
+    [1,5]\]  First, we note that the denominator of \(f\) is always positive, so its domain is \(\mathbb{R}\), and hence it is continuous on \(\mathbb{R}\).  
+    So, the Extreme Value Theorem applies.</p>
+
+    <p>We next find the critical points in the interval by finding the derivative: \[f(x) = ((x-4)^2+7)^{-1} \implies f'(x) = -((x-4)^2+7)^{-2} \cdot 2(x-4) 
+    = \frac{-2(x-4)}{((x-4)^2+7)^2} = 0 \implies x = 4\]  So, we evaluate the function at the endpoints and at the critical point which lands within the 
+    interval: \[f(1) = \frac{1}{16}, \hspace{5mm} f(4) = \frac{1}{7}, \hspace{5mm} f(5) = \frac{1}{8}\]  The smallest of these is the absolute minimum, which 
+    occurs at the point \(\left(1, \frac{1}{16}\right)\), and the largest is the absolute maximum, occurring at the point \(\left(4, \frac{1}{7}\right)\).</p>
+
+    <p>Now you try!</p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

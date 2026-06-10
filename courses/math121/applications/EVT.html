@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -638,6 +639,8 @@ fetch("/nav.html")
         questionTex: `\\text{Find the absolute maximum and absolute minimum values of } f(x)=${tex} \\text{ on } [${interval.aTex},${interval.bTex}].`,
         maxValue: maxVal.value,
         minValue: minVal.value,
+        maxPoint: { x: maxVal.x, xTex: maxVal.xTex || numberTex(maxVal.x), y: maxVal.value.decimal, yTex: maxVal.value.tex },
+        minPoint: { x: minVal.x, xTex: minVal.xTex || numberTex(minVal.x), y: minVal.value.decimal, yTex: minVal.value.tex },
         hints: [
           `f(x)=${tex}\\text{ is continuous on }[${interval.aTex},${interval.bTex}]\\text{ because }${continuity}\\text{, so the Extreme Value Theorem applies.}`,
           ...derivativeHints,
@@ -839,24 +842,46 @@ fetch("/nav.html")
       finalAnswerInput.innerHTML = `
         <div class="answer-group-grid">
           <div class="answer-group-card">
-            <div class="answer-group-card-title">Absolute maximum value</div>
-            <input id="max-answer" class="asymptote-value-input" style="width: 170px;" autocomplete="off">
+            <div class="answer-group-card-title">Absolute maximum</div>
+            <div style="display:flex; align-items:center; justify-content:center; gap:0.25em; font-size:1.2em;">
+              <span>(</span>
+              <input id="max-x-answer" class="asymptote-value-input" style="width: 95px;" autocomplete="off" aria-label="absolute maximum x-coordinate">
+              <span>,</span>
+              <input id="max-y-answer" class="asymptote-value-input" style="width: 95px;" autocomplete="off" aria-label="absolute maximum y-coordinate">
+              <span>)</span>
+            </div>
           </div>
           <div class="answer-group-card">
-            <div class="answer-group-card-title">Absolute minimum value</div>
-            <input id="min-answer" class="asymptote-value-input" style="width: 170px;" autocomplete="off">
+            <div class="answer-group-card-title">Absolute minimum</div>
+            <div style="display:flex; align-items:center; justify-content:center; gap:0.25em; font-size:1.2em;">
+              <span>(</span>
+              <input id="min-x-answer" class="asymptote-value-input" style="width: 95px;" autocomplete="off" aria-label="absolute minimum x-coordinate">
+              <span>,</span>
+              <input id="min-y-answer" class="asymptote-value-input" style="width: 95px;" autocomplete="off" aria-label="absolute minimum y-coordinate">
+              <span>)</span>
+            </div>
           </div>
         </div>`;
     }
 
+    function coordinateCorrect(userX, userY, correctPoint) {
+      return Number.isFinite(userX) && Number.isFinite(userY)
+        && Math.abs(userX - correctPoint.x) < 1e-8
+        && Math.abs(userY - correctPoint.y) < 1e-8;
+    }
+
     function checkUserAnswer() {
       if (!currentProblem) return;
-      const maxInput = document.getElementById('max-answer');
-      const minInput = document.getElementById('min-answer');
-      const userMax = evaluateFlexibleNumericAnswer(maxInput ? maxInput.value : '');
-      const userMin = evaluateFlexibleNumericAnswer(minInput ? minInput.value : '');
-      const maxCorrect = Number.isFinite(userMax) && Math.abs(userMax - currentProblem.maxValue.decimal) < 1e-8;
-      const minCorrect = Number.isFinite(userMin) && Math.abs(userMin - currentProblem.minValue.decimal) < 1e-8;
+      const maxXInput = document.getElementById('max-x-answer');
+      const maxYInput = document.getElementById('max-y-answer');
+      const minXInput = document.getElementById('min-x-answer');
+      const minYInput = document.getElementById('min-y-answer');
+      const userMaxX = evaluateFlexibleNumericAnswer(maxXInput ? maxXInput.value : '');
+      const userMaxY = evaluateFlexibleNumericAnswer(maxYInput ? maxYInput.value : '');
+      const userMinX = evaluateFlexibleNumericAnswer(minXInput ? minXInput.value : '');
+      const userMinY = evaluateFlexibleNumericAnswer(minYInput ? minYInput.value : '');
+      const maxCorrect = coordinateCorrect(userMaxX, userMaxY, currentProblem.maxPoint);
+      const minCorrect = coordinateCorrect(userMinX, userMinY, currentProblem.minPoint);
       feedbackText.textContent = maxCorrect && minCorrect ? 'Correct!' : 'Incorrect, try again.';
       feedbackText.style.color = maxCorrect && minCorrect ? 'green' : 'red';
     }

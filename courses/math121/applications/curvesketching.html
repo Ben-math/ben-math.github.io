@@ -4,6 +4,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1048,9 +1049,9 @@ fetch("/nav.html")
     }
 
     function transformedYFactory(problem) {
-      const compressed = !!(problem.window && problem.window.yCompressed);
+      const nonlinear = !!(problem.window && problem.window.yNonlinear);
       const scale = problem.window && problem.window.yScale ? problem.window.yScale : 1;
-      if (!compressed) return y => y;
+      if (!nonlinear) return y => y;
       return y => Math.sign(y) * Math.log1p(Math.abs(y) / scale);
     }
 
@@ -1083,28 +1084,33 @@ fetch("/nav.html")
       const allYs = finiteNumbers([...featureYs, ...sampleYs, 0]);
       let rawMin = allYs.length ? Math.min(...allYs) : -5;
       let rawMax = allYs.length ? Math.max(...allYs) : 5;
-      if (Math.abs(rawMax - rawMin) < 4) { rawMin -= 3; rawMax += 3; }
 
-      const nonzeroAbs = allYs.map(y => Math.abs(y)).filter(y => y > 1e-8).sort((a,b)=>a-b);
+      const nonzeroAbs = allYs.map(y => Math.abs(y)).filter(y => y > 1e-10).sort((a,b)=>a-b);
       const largest = nonzeroAbs.length ? nonzeroAbs[nonzeroAbs.length-1] : 1;
-      const typicalFeature = median(featureYs.map(y => Math.abs(y)).filter(y => y > 1e-8));
-      const typicalSample = median(sampleYs.map(y => Math.abs(y)).filter(y => y > 1e-8));
-      const typical = Math.max(1, Math.min(typicalFeature || 1, typicalSample || typicalFeature || 1));
-      const yCompressed = largest / typical > 35 || rawMax - rawMin > 80;
-      const yScale = Math.max(1, typical);
+      const typicalFeature = median(featureYs.map(y => Math.abs(y)).filter(y => y > 1e-10));
+      const typicalSample = median(sampleYs.map(y => Math.abs(y)).filter(y => y > 1e-10));
+      const typical = Math.max(1e-6, Math.min(typicalFeature || Infinity, typicalSample || typicalFeature || 1));
 
-      const transform = yCompressed
+      // Use a nonlinear vertical scale only when large values would otherwise flatten the important parts.
+      // If all important y-values are very small, keep a tight ordinary scale instead of padding out to ±3.
+      const yNonlinear = largest / typical > 35 || rawMax - rawMin > 80;
+      const yScale = Math.max(1e-6, typical);
+
+      const transform = yNonlinear
         ? (y => Math.sign(y) * Math.log1p(Math.abs(y) / yScale))
         : (y => y);
 
       const transformed = allYs.map(transform).filter(Number.isFinite);
       let yMin = transformed.length ? Math.min(...transformed) : -5;
       let yMax = transformed.length ? Math.max(...transformed) : 5;
-      if (Math.abs(yMax - yMin) < 4) { yMin -= 2; yMax += 2; }
-      const pad = 0.12 * (yMax - yMin || 1);
+      if (Math.abs(yMax - yMin) < 1e-8) {
+        yMin -= 1;
+        yMax += 1;
+      }
+      const pad = Math.max(0.08 * (yMax - yMin || 1), 0.02);
       yMin -= pad;
       yMax += pad;
-      problem.window = { xMin, xMax, yMin, yMax, rawMin, rawMax, yCompressed, yScale };
+      problem.window = { xMin, xMax, yMin, yMax, rawMin, rawMax, yNonlinear, yScale };
     }
 
     function svgTextEscape(text) {
@@ -1138,26 +1144,7 @@ fetch("/nav.html")
         if (y0 >= top && y0 <= top+plotH) svg += line(X(x), y0-4, X(x), y0+4, `stroke="#222" stroke-width="1"`);
       }
 
-      if (problem.window.yCompressed) {
-        const yMarks = [];
-        problem.knownPoints.forEach(p => { if (Number.isFinite(p.y)) yMarks.push(p.y); });
-        yMarks.push(0);
-        dedupeNumbers(yMarks, 1e-8).forEach(y => {
-          const yy = Y(y);
-          if (yy >= top && yy <= top+plotH) {
-            svg += line(left-4, yy, left+4, yy, `stroke="#777" stroke-width="1"`);
-            svg += `<text x="${left-8}" y="${yy+4}" font-size="10" text-anchor="end">${svgTextEscape(numberTex(y))}</text>`;
-          }
-        });
-        svg += `<text x="${W-right}" y="${top+14}" font-size="11" text-anchor="end">compressed vertical scale</text>`;
-      } else {
-        const rawRange = problem.window.rawMax - problem.window.rawMin;
-        const yTickStep = Math.max(1, Math.ceil(rawRange / 20));
-        for (let y=Math.ceil(problem.window.rawMin / yTickStep) * yTickStep; y<=Math.floor(problem.window.rawMax); y += yTickStep) {
-          const yy = Y(y);
-          if (yy >= top && yy <= top+plotH) svg += line(x0-4, yy, x0+4, yy, `stroke="#222" stroke-width="1"`);
-        }
-      }
+      // y-values are shown by labels on points and asymptotes, so avoid y-axis tick labels.
       svg += `<text x="${W/2}" y="${H-8}" text-anchor="middle" font-size="13">x</text>`;
       svg += `<text x="15" y="${top+12}" font-size="13">y</text>`;
 
@@ -1186,14 +1173,22 @@ fetch("/nav.html")
       }
       if (stage >= 2) {
         problem.verticalAsymptotes.forEach(a => {
-          if (a > xMin && a < xMax) svg += line(X(a), top, X(a), top+plotH, `stroke="#d33" stroke-width="2" stroke-dasharray="7 6"`);
+          if (a > xMin && a < xMax) {
+            const xa = X(a);
+            svg += line(xa, top, xa, top+plotH, `stroke="#d33" stroke-width="2" stroke-dasharray="7 6"`);
+            svg += `<text x="${xa+5}" y="${top+16}" font-size="12" fill="#d33">x=${svgTextEscape(numberTex(a))}</text>`;
+          }
         });
-        if (problem.horizontalAsymptote === 'y=0' && y0 >= top && y0 <= top+plotH) svg += line(left, y0, W-right, y0, `stroke="#d33" stroke-width="2" stroke-dasharray="7 6"`);
+        if (problem.horizontalAsymptote === 'y=0' && y0 >= top && y0 <= top+plotH) {
+          svg += line(left, y0, W-right, y0, `stroke="#d33" stroke-width="2" stroke-dasharray="7 6"`);
+          svg += `<text x="${W-right-5}" y="${y0-6}" font-size="12" text-anchor="end" fill="#d33">y=0</text>`;
+        }
         if (problem.slantAsymptote) {
           const hMatch = problem.slantAsymptote.match(/y=x ([+-]) (\d+)/);
           let c = 0;
           if (hMatch) c = (hMatch[1] === '-' ? -1 : 1) * Number(hMatch[2]);
           svg += line(left, Y(xMin+c), W-right, Y(xMax+c), `stroke="#d33" stroke-width="2" stroke-dasharray="7 6"`);
+          svg += `<text x="${W-right-5}" y="${Math.max(top+14, Math.min(top+plotH-8, Y(xMax+c)-6))}" font-size="12" text-anchor="end" fill="#d33">${svgTextEscape(problem.slantAsymptote)}</text>`;
         }
       }
       if (stage >= 3) {

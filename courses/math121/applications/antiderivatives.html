@@ -336,7 +336,8 @@ fetch("/nav.html")
   </header>
 
 <main>
-    <p>Antiderivatives activity - a work in progress!</p>
+    <p>The following is a table of <i>some</i> antiderivatives (every differentiation formula we have learned has a corresponding antidifferentiation 
+    formula):</p>
 
   <div id="lesson-intro" style="text-align:center; margin:1em 0;">
 \[
@@ -364,42 +365,6 @@ F(x)\pm G(x)+C
 cx & c
 &
 c & cx+C
-\\
-
-x^n\ (n\neq0)
-&
-nx^{n-1}
-&
-x^n\ (n\neq-1)
-&
-\frac{x^{n+1}}{n+1}+C
-\\
-
-\ln(x)
-&
-\frac1x
-&
-\frac1x
-&
-\ln|x|+C
-\\
-
-e^{kx}
-&
-ke^{kx}
-&
-e^{kx}
-&
-\frac1k e^{kx}+C
-\\
-
-a^{kx}
-&
-ka^{kx}\ln(a)
-&
-a^{kx}
-&
-\frac1{k\ln(a)}a^{kx}+C
 \\
 
 x^n\ (n\neq0)
@@ -470,6 +435,12 @@ a^{kx}
 \end{array}
 \]
 </div>
+
+  <p>Note that all of the above include a constant \(C\): this is because the derivative of a constant is zero, so for example, both \(x^2\) and \(x^2 + 3\) 
+  have the same derivative, \(2x\).  So in a way, we lose a bit of information when we take the derivative of a function - to recover the original function 
+  by going in the reverse direction, we need some additional information.  That is, the general antiderivative of \(f(x) = 2x\) is \[F(x) = x^2 + C\] and 
+  unless we know a point on \(F\), we have only reduced the possibilities for \(F\) to a set of vertical translates of \(x^2\).  If we are also given that 
+  \(F(2) = 7\), then we can solve for the unknown constant \(C\):</p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

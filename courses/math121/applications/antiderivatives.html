@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -334,7 +335,7 @@ fetch("/nav.html")
   </header>
 
 <main>
-    <p>Placeholder page - final topic for the course!</p>
+    <p>Antiderivatives activity - a work in progress!</p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
@@ -1104,6 +1105,463 @@ fetch("/nav.html")
       return makeRootLinearizationProblem();
     }
 
+
+    // ---------- Antiderivatives activity ----------
+    function multiplyFractions(a, b) { return frac(a.num * b.num, a.den * b.den); }
+    function divideFractionByInteger(a, n) { return frac(a.num, a.den * n); }
+    function negateFraction(a) { return { num: -a.num, den: a.den }; }
+    function fractionValue(f) { return f.num / f.den; }
+    function fractionIsOne(f) { return f.num === f.den; }
+    function fractionIsMinusOne(f) { return f.num === -f.den; }
+    function fractionIsZero(f) { return f.num === 0; }
+    function fractionAbsTex(f) { return fractionTexFromIntegers(Math.abs(f.num), f.den); }
+    function fractionSign(f) { return f.num < 0 ? -1 : (f.num > 0 ? 1 : 0); }
+
+    function coefficientTimesTex(coef, body, isFirst = false) {
+      if (fractionIsZero(coef)) return '';
+      const sign = fractionSign(coef);
+      const absCoef = { num: Math.abs(coef.num), den: coef.den };
+      let term;
+      if (body && fractionIsOne(absCoef)) term = body;
+      else if (body && absCoef.den !== 1) term = `\\frac{${absCoef.num === 1 ? body : (/^[0-9]/.test(body) ? absCoef.num + '\\cdot ' + body : absCoef.num + body)}}{${absCoef.den}}`;
+      else if (body) term = /^[0-9]/.test(body) ? `${fractionAbsTex(absCoef)}\\cdot ${body}` : `${fractionAbsTex(absCoef)}${body}`;
+      else term = fractionAbsTex(absCoef);
+      if (isFirst) return sign < 0 ? `-${term}` : term;
+      return `${sign < 0 ? '-' : '+'} ${term}`;
+    }
+
+    function termLikeTex(t, isFirst = false) {
+      if (t.extraDen) {
+        const sign = fractionSign(t.coef);
+        const absCoef = { num: Math.abs(t.coef.num), den: t.coef.den };
+        const top = absCoef.num === 1 ? t.body : (/^[0-9]/.test(t.body) ? `${absCoef.num}\\cdot ${t.body}` : `${absCoef.num}${t.body}`);
+        const denPrefix = absCoef.den === 1 ? '' : `${absCoef.den}`;
+        const term = `\\frac{${top}}{${denPrefix}${t.extraDen}}`;
+        if (isFirst) return sign < 0 ? `-${term}` : term;
+        return `${sign < 0 ? '-' : '+'} ${term}`;
+      }
+      return coefficientTimesTex(t.coef, t.body, isFirst);
+    }
+
+    function joinTermTex(terms) {
+      const filtered = terms.filter(t => t && !fractionIsZero(t.coef));
+      if (!filtered.length) return '0';
+      return filtered.map((t, i) => termLikeTex(t, i === 0)).filter(Boolean).join(' ') || '0';
+    }
+
+    function randomSmallNonzero() { return randomNonzeroInteger(-6, 6); }
+    function randomPositiveBase() { return randomChoice([2,3,4,5,6,7,8,9]); }
+    function randomPositiveK() { return randomNonzeroInteger(-5, 5); }
+
+    function randomCoefficient() {
+      const r = Math.random();
+      if (r < 0.50) return { coef: frac(randomSmallNonzero(), 1), mode: 'integer' };
+      if (r < 0.70) return { coef: frac(randomSmallNonzero(), randomChoice([2,3,4,5,6,7,8,9])), mode: 'rational' };
+      return { coef: frac(1, randomChoice([2,3,4,5,6,7,8,9])), mode: 'denominator' };
+    }
+
+    function makeBaseTerm(type) {
+      if (type === 'power') return { type, n: randomNonzeroInteger(-9, 9) };
+      if (type === 'reciprocal') return { type };
+      if (type === 'exp') return { type, k: randomPositiveK() };
+      if (type === 'aexp') return { type, a: randomPositiveBase(), k: randomPositiveK() };
+      if (['sin','cos','sec2'].includes(type)) return { type, k: randomPositiveK() };
+      return { type: 'power', n: 1 };
+    }
+
+    function makeTerm(type) {
+      const base = makeBaseTerm(type);
+      const c = randomCoefficient();
+      return { ...base, coef: c.coef, coeffMode: c.mode };
+    }
+
+    function linearKxTex(k) {
+      if (k === 1) return 'x';
+      if (k === -1) return '-x';
+      return `${k}x`;
+    }
+
+    function termBodyTex(term) {
+      if (term.type === 'power') {
+        if (term.n === 1) return 'x';
+        return `x^{${term.n}}`;
+      }
+      if (term.type === 'reciprocal') return '\\frac{1}{x}';
+      if (term.type === 'exp') return `e^{${linearKxTex(term.k)}}`;
+      if (term.type === 'aexp') return `${term.a}^{${linearKxTex(term.k)}}`;
+      if (term.type === 'sin') return `\\sin(${linearKxTex(term.k)})`;
+      if (term.type === 'cos') return `\\cos(${linearKxTex(term.k)})`;
+      if (term.type === 'sec2') return `\\sec^{2}(${linearKxTex(term.k)})`;
+      if (term.type === 'lnabs') return '\\ln|x|';
+      if (term.type === 'tan') return `\\tan(${linearKxTex(term.k)})`;
+      return 'x';
+    }
+
+    function termTex(term, isFirst = false) {
+      if (term.type === 'aexp' && term.extraDen) {
+        return termLikeTex({ coef: term.coef, body: termBodyTex(term), extraDen: term.extraDen }, isFirst);
+      }
+      if (term.type === 'xlnxminusx') {
+        return coefficientTimesTex(term.coef, '(x\\ln|x|-x)', isFirst);
+      }
+      if (term.type === 'reciprocal') {
+        const c = term.coef;
+        if (term.coeffMode === 'denominator') return isFirst ? `\\frac{1}{${c.den}x}` : `+ \\frac{1}{${c.den}x}`;
+        if (c.den === 1) return isFirst ? `${c.num < 0 ? '-' : ''}\\frac{${Math.abs(c.num)}}{x}` : `${c.num < 0 ? '-' : '+'} \\frac{${Math.abs(c.num)}}{x}`;
+        const sign = c.num < 0 ? '-' : '+';
+        return `${isFirst && sign === '+' ? '' : sign + ' '}\\frac{${Math.abs(c.num)}}{${c.den}x}`;
+      }
+      if (term.coeffMode === 'denominator' && term.coef.num === 1 && term.coef.den !== 1) {
+        const body = termBodyTex(term);
+        return `${isFirst ? '' : '+ '}\\frac{${body}}{${term.coef.den}}`;
+      }
+      return coefficientTimesTex(term.coef, termBodyTex(term), isFirst);
+    }
+
+    function termsTex(terms) { return terms.map((t, i) => termTex(t, i === 0)).join(' ') || '0'; }
+
+    function termExpression(term) {
+      const c = `(${term.coef.num}/${term.coef.den})`;
+      if (term.type === 'aexp' && term.extraDen) return `${c}*(${term.a}**(${term.k}*x))/(${term.k}*Math.log(${term.a}))`;
+      if (term.type === 'xlnxminusx') return `${c}*(x*Math.log(Math.abs(x))-x)`;
+      if (term.type === 'power') return `${c}*x**(${term.n})`;
+      if (term.type === 'reciprocal') return `${c}/x`;
+      if (term.type === 'exp') return `${c}*Math.exp(${term.k}*x)`;
+      if (term.type === 'aexp') return `${c}*(${term.a}**(${term.k}*x))`;
+      if (term.type === 'sin') return `${c}*Math.sin(${term.k}*x)`;
+      if (term.type === 'cos') return `${c}*Math.cos(${term.k}*x)`;
+      if (term.type === 'sec2') return `${c}*(1/(Math.cos(${term.k}*x)**2))`;
+      if (term.type === 'lnabs') return `${c}*Math.log(Math.abs(x))`;
+      if (term.type === 'tan') return `${c}*Math.tan(${term.k}*x)`;
+      return '0';
+    }
+
+    function termsExpression(terms) { return terms.map(termExpression).join('+') || '0'; }
+
+    function antiderivativeTerm(term) {
+      const c = term.coef;
+      if (term.type === 'power') {
+        if (term.n === -1) return { type: 'lnabs', coef: c };
+        return { type: 'power', n: term.n + 1, coef: divideFractionByInteger(c, term.n + 1) };
+      }
+      if (term.type === 'reciprocal') return { type: 'lnabs', coef: c };
+      if (term.type === 'exp') return { type: 'exp', k: term.k, coef: divideFractionByInteger(c, term.k) };
+      if (term.type === 'aexp') return { type: 'aexp', a: term.a, k: term.k, coef: c, extraDen: term.extraDen ? `${term.extraDen}${term.k}\\ln(${term.a})` : `${term.k}\\ln(${term.a})` };
+      if (term.type === 'sin') return { type: 'cos', k: term.k, coef: divideFractionByInteger(negateFraction(c), term.k) };
+      if (term.type === 'cos') return { type: 'sin', k: term.k, coef: divideFractionByInteger(c, term.k) };
+      if (term.type === 'sec2') return { type: 'tan', k: term.k, coef: divideFractionByInteger(c, term.k) };
+      if (term.type === 'lnabs') return { type: 'xlnxminusx', coef: c };
+      if (term.type === 'tan') return { type: 'unsupported', coef: c };
+      return { type: 'power', n: 1, coef: frac(0,1) };
+    }
+
+    function antiderivativeTerms(terms) {
+      return terms.map(antiderivativeTerm).filter(t => t.type !== 'unsupported');
+    }
+
+    function termBodyTexForIntegral(term) {
+      if (term.type === 'aexp' && term.extraDen) {
+        const body = `${term.a}^{${linearKxTex(term.k)}}`;
+        const c = term.coef;
+        const sign = c.num < 0 ? '-' : '';
+        const absNum = Math.abs(c.num);
+        const top = absNum === 1 ? body : (/^[0-9]/.test(body) ? `${absNum}\\cdot ${body}` : `${absNum}${body}`);
+        const denPrefix = c.den === 1 ? '' : `${c.den}`;
+        return { custom: `${sign}\\frac{${top}}{${denPrefix}${term.extraDen}}` };
+      }
+      if (term.type === 'xlnxminusx') {
+        return { custom: coefficientTimesTex(term.coef, '(x\\ln|x|-x)', true) };
+      }
+      return { body: termBodyTex(term) };
+    }
+
+    function antiderivativeTex(terms, constantName = 'C') {
+      const parts = [];
+      terms.forEach(t => {
+        const info = termBodyTexForIntegral(t);
+        if (info.custom) parts.push(info.custom);
+        else parts.push({ coef: t.coef, body: info.body });
+      });
+      const regular = parts.filter(p => typeof p !== 'string');
+      const custom = parts.filter(p => typeof p === 'string');
+      let tex = joinTermTex(regular);
+      if (custom.length) tex = (tex === '0' ? '' : tex + ' + ') + custom.join(' + ');
+      if (!tex) tex = '0';
+      return `${tex} + ${constantName}`;
+    }
+
+    function antiderivativeExpression(terms, constantName = '0') {
+      return terms.map(t => {
+        if (t.type === 'aexp' && t.extraDen) return `(${t.coef.num}/${t.coef.den})*(${t.a}**(${t.k}*x))/(${t.k}*Math.log(${t.a}))`;
+        if (t.type === 'xlnxminusx') return `(${t.coef.num}/${t.coef.den})*(x*Math.log(Math.abs(x))-x)`;
+        return termExpression(t);
+      }).join('+') + `+(${constantName})`;
+    }
+
+    function chooseTermTypes(typeNumber) {
+      let pool = ['power','reciprocal','exp','aexp','sin','cos','sec2'];
+      if (typeNumber === 3) pool = ['power','exp','sin','cos'];
+      const count = randomInteger(2,4);
+      const chosen = [];
+      const available = pool.slice();
+      while (chosen.length < count && available.length) {
+        const idx = randomInteger(0, available.length - 1);
+        const t = available.splice(idx, 1)[0];
+        chosen.push(t);
+      }
+      return chosen;
+    }
+
+    function generateInitialTerms(typeNumber) {
+      for (let attempt = 0; attempt < 100; attempt++) {
+        const terms = chooseTermTypes(typeNumber).map(makeTerm);
+        if (typeNumber === 3 && terms.some(t => (t.type === 'power' && t.n === -1) || t.type === 'reciprocal' || t.type === 'sec2')) continue;
+        return terms;
+      }
+      return [makeTerm('power'), makeTerm('exp')];
+    }
+
+    function hasTrigTerm(terms) { return terms.some(t => ['sin','cos','sec2','tan'].includes(t.type)); }
+    function pointArgTex(k, xTex) {
+      if (k === 1) return xTex;
+      if (xTex === 'x') return `${k}x`;
+      return `${k}\\left(${xTex}\\right)`;
+    }
+
+    function chooseConditionPoint(terms) {
+      if (hasTrigTerm(terms)) {
+        if (Math.random() < 0.60) return { value: 0, tex: '0' };
+        const choices = [Math.PI/6, Math.PI/4, Math.PI/3, Math.PI/2, Math.PI];
+        const v = randomChoice(choices);
+        return { value: v, tex: piMultipleTex(v) };
+      }
+      const v = randomInteger(-5, 5);
+      return { value: v, tex: `${v}` };
+    }
+
+    function exactTrigPiece(kind, k, point) {
+      const value = kind === 'sin' ? Math.sin(k * point.value) : kind === 'cos' ? Math.cos(k * point.value) : Math.tan(k * point.value);
+      const table = [
+        { v: 0, coef: frac(0,1), body: '' },
+        { v: 1, coef: frac(1,1), body: '' },
+        { v: -1, coef: frac(-1,1), body: '' },
+        { v: 0.5, coef: frac(1,2), body: '' },
+        { v: -0.5, coef: frac(-1,2), body: '' },
+        { v: Math.sqrt(2)/2, coef: frac(1,2), body: '\\sqrt{2}' },
+        { v: -Math.sqrt(2)/2, coef: frac(-1,2), body: '\\sqrt{2}' },
+        { v: Math.sqrt(3)/2, coef: frac(1,2), body: '\\sqrt{3}' },
+        { v: -Math.sqrt(3)/2, coef: frac(-1,2), body: '\\sqrt{3}' },
+        { v: Math.sqrt(3), coef: frac(1,1), body: '\\sqrt{3}' },
+        { v: -Math.sqrt(3), coef: frac(-1,1), body: '\\sqrt{3}' },
+        { v: 1/Math.sqrt(3), coef: frac(1,3), body: '\\sqrt{3}' },
+        { v: -1/Math.sqrt(3), coef: frac(-1,3), body: '\\sqrt{3}' }
+      ];
+      const hit = table.find(item => Math.abs(value - item.v) < 1e-9);
+      if (hit) return hit;
+      return { coef: frac(1,1), body: `${kind === 'sin' ? '\\sin' : kind === 'cos' ? '\\cos' : '\\tan'}(${pointArgTex(k, point.tex)})` };
+    }
+
+    function exactTrigTex(kind, k, point) {
+      const value = point.value * k;
+      const candidates = [0, Math.PI/6, Math.PI/4, Math.PI/3, Math.PI/2, 2*Math.PI/3, 3*Math.PI/4, 5*Math.PI/6, Math.PI, 3*Math.PI/2, 2*Math.PI, -Math.PI/6, -Math.PI/4, -Math.PI/3, -Math.PI/2, -Math.PI];
+      const m = candidates.find(a => Math.abs(Math.sin(value - a)) < 1e-10 && Math.abs(Math.cos(value - a) - 1) < 1e-10);
+      const v = kind === 'sin' ? Math.sin(value) : kind === 'cos' ? Math.cos(value) : Math.tan(value);
+      const table = [
+        [0, '0'], [1, '1'], [-1, '-1'], [0.5, '\\frac{1}{2}'], [-0.5, '-\\frac{1}{2}'],
+        [Math.sqrt(2)/2, '\\frac{\\sqrt{2}}{2}'], [-Math.sqrt(2)/2, '-\\frac{\\sqrt{2}}{2}'],
+        [Math.sqrt(3)/2, '\\frac{\\sqrt{3}}{2}'], [-Math.sqrt(3)/2, '-\\frac{\\sqrt{3}}{2}'],
+        [Math.sqrt(3), '\\sqrt{3}'], [-Math.sqrt(3), '-\\sqrt{3}'],
+        [1/Math.sqrt(3), '\\frac{\\sqrt{3}}{3}'], [-1/Math.sqrt(3), '-\\frac{\\sqrt{3}}{3}']
+      ];
+      const hit = table.find(([num]) => Math.abs(v - num) < 1e-9);
+      return hit ? hit[1] : `${kind === 'sin' ? '\\sin' : kind === 'cos' ? '\\cos' : '\\tan'}(${k === 1 ? point.tex : k + point.tex})`;
+    }
+
+    function evalTermAtTex(term, point) {
+      const xTex = point.tex;
+      if (term.type === 'power') {
+        if (point.value === 0 && term.n < 0) return null;
+        const val = Math.pow(point.value, term.n);
+        if (Number.isFinite(val) && Math.abs(val - Math.round(val)) < 1e-10) return { coef: frac(term.coef.num * Math.round(val), term.coef.den), body: '' };
+        return { coef: term.coef, body: `(${xTex})^{${term.n}}` };
+      }
+      if (term.type === 'reciprocal') {
+        if (point.value === 0) return null;
+        if (Math.abs(point.value - Math.round(point.value)) < 1e-10) return { coef: divideFractionByInteger(term.coef, Math.round(point.value)), body: '' };
+        return { coef: term.coef, body: `\\frac{1}{${xTex}}` };
+      }
+      if (term.type === 'exp') {
+        if (Math.abs(term.k * point.value) < 1e-10) return { coef: term.coef, body: '' };
+        const arg = pointArgTex(term.k, xTex);
+        return { coef: term.coef, body: `e^{${arg}}` };
+      }
+      if (term.type === 'aexp') {
+        if (Math.abs(term.k * point.value) < 1e-10) {
+          if (term.extraDen) return { coef: term.coef, body: '1', extraDen: term.extraDen };
+          return { coef: term.coef, body: '' };
+        }
+        if (Math.abs(point.value - Math.round(point.value)) < 1e-10) {
+          const val = Math.pow(term.a, term.k * Math.round(point.value));
+          if (Number.isFinite(val) && Math.abs(val - Math.round(val)) < 1e-10) {
+            if (term.extraDen) return { coef: frac(term.coef.num * Math.round(val), term.coef.den), body: '1', extraDen: term.extraDen };
+            return { coef: frac(term.coef.num * Math.round(val), term.coef.den), body: '' };
+          }
+        }
+        const arg = pointArgTex(term.k, xTex);
+        return { coef: term.coef, body: `${term.a}^{${arg}}`, extraDen: term.extraDen || null };
+      }
+      if (['sin','cos','tan'].includes(term.type)) {
+        if (term.type === 'tan' && Math.abs(Math.cos(term.k * point.value)) < 1e-10) return null;
+        const piece = exactTrigPiece(term.type, term.k, point);
+        return { coef: multiplyFractions(term.coef, piece.coef), body: piece.body };
+      }
+      if (term.type === 'sec2') {
+        const cos = Math.cos(term.k * point.value);
+        if (Math.abs(cos) < 1e-10) return null;
+        const val = 1/(cos*cos);
+        if (Math.abs(val - Math.round(val)) < 1e-8) return { coef: frac(term.coef.num * Math.round(val), term.coef.den), body: '' };
+        return { coef: term.coef, body: `\\sec^{2}(${term.k === 1 ? xTex : term.k + xTex})` };
+      }
+      if (term.type === 'lnabs') {
+        if (Math.abs(point.value) < 1e-10) return null;
+        if (Math.abs(Math.abs(point.value) - 1) < 1e-10) return { coef: frac(0,1), body: '' };
+        return { coef: term.coef, body: `\\ln|${xTex}|` };
+      }
+      if (term.type === 'xlnxminusx') {
+        if (point.value === 0) return null;
+        if (Math.abs(Math.abs(point.value) - 1) < 1e-10) return { coef: frac(term.coef.num * Math.round(-point.value), term.coef.den), body: '' };
+        return { coef: term.coef, body: `(${xTex}\\ln|${xTex}|-${xTex})` };
+      }
+      return { coef: frac(0,1), body: '' };
+    }
+
+    function exactEvaluateTermsTex(terms, point) {
+      const pieces = [];
+      let numeric = frac(0,1);
+      for (const t of terms) {
+        const piece = evalTermAtTex(t, point);
+        if (!piece) return '\\text{undefined}';
+        if (fractionIsZero(piece.coef)) continue;
+        if (!piece.body) numeric = frac(numeric.num * piece.coef.den + piece.coef.num * numeric.den, numeric.den * piece.coef.den);
+        else pieces.push(piece);
+      }
+      if (!fractionIsZero(numeric)) pieces.unshift({ coef: numeric, body: '' });
+      return joinTermTex(pieces);
+    }
+
+    function computeConstantNumerically(terms, point, givenValueNumeric) {
+      const fn = Function('x', `"use strict"; return (${termsExpression(terms)});`);
+      return givenValueNumeric - fn(point.value);
+    }
+
+    function randomGivenValue() { return randomInteger(-8, 8); }
+
+    function texPlusConstant(tex, k) {
+      if (k === 0) return tex;
+      if (tex === '0') return `${k}`;
+      return `${tex} ${k < 0 ? '- ' + Math.abs(k) : '+ ' + k}`;
+    }
+
+    function makeType1AntiderivativeProblem() {
+      const given = generateInitialTerms(1);
+      const anti = antiderivativeTerms(given);
+      const givenTex = termsTex(given);
+      const ansTex = antiderivativeTex(anti, 'C');
+      return {
+        questionTex: `\\text{Find the general antiderivative of }${givenTex}.`,
+        stages: [{
+          kind: 'antiderivative-general',
+          promptTex: `\\text{Find the general antiderivative.}`,
+          labelTex: `F(x)=`,
+          targetDerivativeExpression: termsExpression(given),
+          expectedTex: ansTex,
+          hints: [
+            `\\text{Take the antiderivative term-by-term.}`,
+            `F(x)=${ansTex}`
+          ]
+        }]
+      };
+    }
+
+    function makeType2AntiderivativeProblem() {
+      for (let attempt = 0; attempt < 100; attempt++) {
+        const derivativeTerms = generateInitialTerms(2);
+        const fNoC = antiderivativeTerms(derivativeTerms);
+        const point = chooseConditionPoint(fNoC);
+        const valueTexNoC = exactEvaluateTermsTex(fNoC, point);
+        if (valueTexNoC === '\\text{undefined}') continue;
+        const cValue = randomInteger(-8, 8);
+        const givenTex = texPlusConstant(valueTexNoC, cValue);
+        const finalExpression = antiderivativeExpression(fNoC, String(cValue));
+        const cTex = `${cValue}`;
+        const finalTex = `${termsTex(fNoC)} ${cValue < 0 ? '- ' + Math.abs(cValue) : '+ ' + cValue}`;
+        return {
+          questionTex: `\\text{Find }f(x)\\text{ if }f'(x)=${termsTex(derivativeTerms)}\\text{ and }f(${point.tex})=${givenTex}.`,
+          stages: [{
+            kind: 'antiderivative-specific',
+            promptTex: `\\text{Find }f(x).`,
+            labelTex: `f(x)=`,
+            expectedExpression: finalExpression,
+            hints: [
+              `f(x)=${antiderivativeTex(fNoC, 'C')}`,
+              `\\begin{aligned}f(${point.tex})&=${valueTexNoC}+C\\\\${givenTex}&=${valueTexNoC}+C\\end{aligned}`,
+              `C=${cTex}`,
+              `f(x)=${finalTex}`
+            ]
+          }]
+        };
+      }
+      return makeType1AntiderivativeProblem();
+    }
+
+    function makeType3AntiderivativeProblem() {
+      for (let attempt = 0; attempt < 100; attempt++) {
+        const secondTerms = generateInitialTerms(3);
+        const fpNoC = antiderivativeTerms(secondTerms);
+        const cPoint = chooseConditionPoint(fpNoC);
+        const fpValueTexNoC = exactEvaluateTermsTex(fpNoC, cPoint);
+        if (fpValueTexNoC === '\\text{undefined}') continue;
+        const c1 = randomInteger(-8, 8);
+        const fpGivenTex = texPlusConstant(fpValueTexNoC, c1);
+        const fNoC2Base = antiderivativeTerms(fpNoC);
+        if (c1 !== 0) fNoC2Base.push({ type: 'power', n: 1, coef: frac(c1, 1) });
+        const dPoint = chooseConditionPoint(fNoC2Base);
+        const fValueTexNoC2 = exactEvaluateTermsTex(fNoC2Base, dPoint);
+        if (fValueTexNoC2 === '\\text{undefined}') continue;
+        const c2 = randomInteger(-8, 8);
+        const fGivenTex = texPlusConstant(fValueTexNoC2, c2);
+        const finalExpression = antiderivativeExpression(fNoC2Base, String(c2));
+        const finalTex = `${termsTex(fNoC2Base)} ${c2 < 0 ? '- ' + Math.abs(c2) : '+ ' + c2}`;
+        return {
+          questionTex: `\\text{Find }f(x)\\text{ if }f''(x)=${termsTex(secondTerms)}\\text{, }f'(${cPoint.tex})=${fpGivenTex}\\text{, and }f(${dPoint.tex})=${fGivenTex}.`,
+          stages: [{
+            kind: 'antiderivative-specific',
+            promptTex: `\\text{Find }f(x).`,
+            labelTex: `f(x)=`,
+            expectedExpression: finalExpression,
+            hints: [
+              `f'(x)=${antiderivativeTex(fpNoC, 'C_1')}`,
+              `\\begin{aligned}f'(${cPoint.tex})&=${fpValueTexNoC}+C_1\\\\${fpGivenTex}&=${fpValueTexNoC}+C_1\\end{aligned}`,
+              `C_1=${c1}`,
+              `f'(x)=${termsTex(fpNoC)} ${c1 < 0 ? '- ' + Math.abs(c1) : '+ ' + c1}`,
+              `f(x)=${termsTex(fNoC2Base)} + C_2`,
+              `\\begin{aligned}f(${dPoint.tex})&=${fValueTexNoC2}+C_2\\\\${fGivenTex}&=${fValueTexNoC2}+C_2\\end{aligned}`,
+              `C_2=${c2}`,
+              `f(x)=${finalTex}`
+            ]
+          }]
+        };
+      }
+      return makeType2AntiderivativeProblem();
+    }
+
+    function generateAntiderivativeProblem() {
+      const r = Math.random();
+      if (r < 1/3) return makeType1AntiderivativeProblem();
+      if (r < 2/3) return makeType2AntiderivativeProblem();
+      return makeType3AntiderivativeProblem();
+    }
+
     function normalizeAnswerText(raw) {
       return String(raw || '')
         .replace(/−/g, '-')
@@ -1120,10 +1578,33 @@ fetch("/nav.html")
     function expressionToJs(raw) {
       let s = normalizeAnswerText(raw);
       if (s.startsWith('y=')) s = s.slice(2);
+      if (s.startsWith('f(x)=')) s = s.slice(5);
+      if (s.startsWith('f=')) s = s.slice(2);
+      if (s.startsWith('F(x)=')) s = s.slice(5);
+      s = s.replace(/\ln\|([^|]+)\|/g, 'ln(abs($1))')
+           .replace(/ln\|([^|]+)\|/g, 'ln(abs($1))')
+           .replace(/\left\|([^|]+)\right\|/g, 'abs($1)')
+           .replace(/\ln/g, 'ln')
+           .replace(/\tan/g, 'tan')
+           .replace(/\sin/g, 'sin')
+           .replace(/\cos/g, 'cos')
+           .replace(/\sec/g, 'sec')
+           .replace(/\csc/g, 'csc')
+           .replace(/\cot/g, 'cot')
+           .replace(/\cdot/g, '*')
+           .replace(/\left/g, '')
+           .replace(/\right/g, '')
+           .replace(/\,/g, '')
+           .replace(/\mathrm\{e\}/g, 'e')
+           .replace(/\operatorname\{ln\}/g, 'ln')
+           .replace(/\abs/g, 'abs');
+      s = s.replace(/\bC_?\d*\b/g, '0').replace(/\bc_?\d*\b/g, '0');
       const trigNames = '(sin|cos|tan|sec|csc|cot)';
       s = s
         .replace(new RegExp(`${trigNames}\\*\\*\\(([^()]+)\\)\\(([^()]+)\\)`, 'g'), '($1($3))**($2)')
         .replace(new RegExp(`${trigNames}\\*\\*([0-9]+)\\(([^()]+)\\)`, 'g'), '($1($3))**($2)')
+        .replace(/ln/g, 'Math.log')
+        .replace(/abs/g, 'Math.abs')
         .replace(/sqrt/g, 'Math.sqrt')
         .replace(/sin/g, 'Math.sin')
         .replace(/cos/g, 'Math.cos')
@@ -1131,9 +1612,9 @@ fetch("/nav.html")
         .replace(/sec\(([^()]+)\)/g, '(1/Math.cos($1))')
         .replace(/csc\(([^()]+)\)/g, '(1/Math.sin($1))')
         .replace(/cot\(([^()]+)\)/g, '(1/Math.tan($1))')
-        .replace(/pi/g, 'Math.PI');
-      // insert common implicit multiplication: 2x, 2(x+1), x(x+1), )(x), 2sqrt(x), xsqrt(x), 2pi
-      s = s.replace(/(\d|x|\))(?=(x|Math\.sqrt|Math\.sin|Math\.cos|Math\.tan|Math\.PI|\())/g, '$1*');
+        .replace(/pi/g, 'Math.PI')
+        .replace(/\be\b/g, 'Math.E');
+      s = s.replace(/(\d|x|\)|Math\.E|Math\.PI)(?=(x|Math\.sqrt|Math\.log|Math\.abs|Math\.sin|Math\.cos|Math\.tan|Math\.PI|Math\.E|\())/g, '$1*');
       s = s.replace(/(x|\))(?=\d)/g, '$1*');
       return s;
     }
@@ -1182,6 +1663,9 @@ fetch("/nav.html")
         <div class="answer-toolbar">
           <button type="button" class="math-symbol-button" data-insert-text="x">x</button>
           <button type="button" class="math-symbol-button" data-insert-text="π">π</button>
+          <button type="button" class="math-symbol-button" data-insert-text="e">e</button>
+          <button type="button" class="math-symbol-button" data-insert-text="ln(">ln</button>
+          <button type="button" class="math-symbol-button" data-insert-text="C">C</button>
           <button type="button" class="math-symbol-button" data-insert-text="sin(">sin</button>
           <button type="button" class="math-symbol-button" data-insert-text="cos(">cos</button>
           <button type="button" class="math-symbol-button" data-insert-text="tan(">tan</button>
@@ -1493,346 +1977,52 @@ fetch("/nav.html")
       if (activeInput) activeInput.focus();
     }
 
+    function derivativeMatches(raw, targetExpression) {
+      const points = [-4, -2, -1, 1, 2, 4, 6];
+      const h = 1e-5;
+      let checked = 0;
+      for (const x of points) {
+        const up = evaluateUserExpression(raw, x + h);
+        const down = evaluateUserExpression(raw, x - h);
+        const target = Function('x', `"use strict"; return (${targetExpression});`)(x);
+        if (Number.isFinite(up) && Number.isFinite(down) && Number.isFinite(target)) {
+          checked++;
+          const userDer = (up - down) / (2 * h);
+          if (Math.abs(userDer - target) > 1e-4 * Math.max(1, Math.abs(target))) return false;
+        }
+      }
+      return checked >= 4;
+    }
+
+    function expressionMatchesJs(raw, expectedJs) {
+      const points = [-5, -3, -2, -1, 1, 2, 4, 6];
+      let checked = 0;
+      let expectedFn;
+      try { expectedFn = Function('x', `"use strict"; return (${expectedJs});`); }
+      catch (e) { return false; }
+      for (const x of points) {
+        const user = evaluateUserExpression(raw, x);
+        let expected = NaN;
+        try { expected = expectedFn(x); } catch (e) { expected = NaN; }
+        if (Number.isFinite(user) && Number.isFinite(expected)) {
+          checked++;
+          if (Math.abs(user - expected) > 1e-6 * Math.max(1, Math.abs(expected))) return false;
+        }
+      }
+      return checked >= 4;
+    }
+
     function currentStageIsCorrect(stage, raw) {
+      if (stage.kind === 'antiderivative-general') {
+        const hasC = /(^|[^a-zA-Z])C(_?\d*)?([^a-zA-Z]|$)/.test(String(raw || '')) || /\bc\b/.test(String(raw || ''));
+        return hasC && derivativeMatches(raw, stage.targetDerivativeExpression);
+      }
+      if (stage.kind === 'antiderivative-specific') return expressionMatchesJs(raw, stage.expectedExpression);
       if (stage.kind === 'function') return expressionMatches(raw, stage.expectedExpression);
       if (stage.kind === 'a') return numericAnswerMatches(raw, stage.expectedValue);
       if (stage.kind === 'linearization') return lineAnswerMatches(raw, stage.expectedM, stage.expectedB);
       if (stage.kind === 'approximation') return numericAnswerMatches(raw, stage.expectedValue);
-      if (stage.kind === 'derivative-function') return expressionMatches(raw, stage.expectedExpression);
-      if (stage.kind === 'slope') return numericAnswerMatches(raw, stage.expectedValue);
-      if (stage.kind === 'line') return lineAnswerMatches(raw, stage.expectedM, stage.expectedB);
       return false;
-    }
-
-
-    function finiteGraphValue(problem, x) {
-      if (!problem || typeof problem.graphFn !== 'function') return NaN;
-      try {
-        const y = problem.graphFn(x);
-        return Number.isFinite(y) && Math.abs(y) < 1e5 ? y : NaN;
-      } catch (error) {
-        return NaN;
-      }
-    }
-
-    function collectGraphSamples(problem, xmin, xmax, n = 520) {
-      const samples = [];
-      for (let i = 0; i <= n; i++) {
-        const x = xmin + (xmax - xmin) * i / n;
-        const y = finiteGraphValue(problem, x);
-        const lineY = problem.graphM * x + problem.graphB;
-        samples.push({ x, y, lineY: Number.isFinite(lineY) ? lineY : NaN });
-      }
-      return samples;
-    }
-
-    function finiteSampleYs(samples, includeLine = true) {
-      const ys = [];
-      samples.forEach(p => {
-        if (Number.isFinite(p.y)) ys.push(p.y);
-        if (includeLine && Number.isFinite(p.lineY)) ys.push(p.lineY);
-      });
-      return ys;
-    }
-
-    function paddedBoundsFromValues(values, minPad = 0.15) {
-      let ys = values.filter(Number.isFinite);
-      if (!ys.length) return { ymin: -1, ymax: 1 };
-      ys.sort((a, b) => a - b);
-      const lowIndex = Math.floor(ys.length * 0.03);
-      const highIndex = Math.ceil(ys.length * 0.97) - 1;
-      let ymin = ys[Math.max(0, lowIndex)];
-      let ymax = ys[Math.min(ys.length - 1, highIndex)];
-      if (!Number.isFinite(ymin) || !Number.isFinite(ymax) || Math.abs(ymax - ymin) < 1e-8) {
-        const centre = Number.isFinite(ys[0]) ? ys[0] : 0;
-        ymin = centre - 1;
-        ymax = centre + 1;
-      }
-      const pad = Math.max(minPad, 0.12 * (ymax - ymin));
-      return { ymin: ymin - pad, ymax: ymax + pad };
-    }
-
-    function polynomialOverviewWindow(problem) {
-      const notable = Array.isArray(problem.graphNotableXs) ? problem.graphNotableXs.filter(Number.isFinite) : [];
-      notable.push(Number.isFinite(problem.graphA) ? problem.graphA : 0);
-      let xmin = Math.min(...notable);
-      let xmax = Math.max(...notable);
-      if (!Number.isFinite(xmin) || !Number.isFinite(xmax) || Math.abs(xmax - xmin) < 1e-8) {
-        xmin = -5;
-        xmax = 5;
-      }
-      const centre = (xmin + xmax) / 2;
-      const halfWidth = Math.max(4, 1.4 * (xmax - xmin) / 2);
-      xmin = centre - halfWidth;
-      xmax = centre + halfWidth;
-      const samples = collectGraphSamples(problem, xmin, xmax);
-      const ys = finiteSampleYs(samples, true);
-      return { xmin, xmax, ...paddedBoundsFromValues(ys, 1), samples };
-    }
-
-    function trigOverviewWindow(problem) {
-      const xmin = -2 * Math.PI;
-      const xmax = 2 * Math.PI;
-      const samples = collectGraphSamples(problem, xmin, xmax);
-      const ymin = problem.graphInfiniteRange ? -10 : (problem.graphSquared ? -0.15 : -1.2);
-      const ymax = problem.graphInfiniteRange ? 10 : 1.2;
-      return { xmin, xmax, ymin, ymax, samples };
-    }
-
-    function rootOverviewWindow(problem) {
-      const q = problem.graphRootDenominator || 2;
-      const p = problem.graphRootNumerator || 1;
-      const a = Number.isFinite(problem.graphA) && Math.abs(problem.graphA) > 1e-8 ? problem.graphA : 1;
-      let xmin, xmax;
-
-      if (p < 0) {
-        // Negative fractional powers have a vertical blow-up at x=0, so showing all the
-        // way to 0 makes the rest of the graph useless.  Instead, show the branch
-        // containing the selected value a.
-        if (a > 0 || q % 2 === 0) {
-          xmin = Math.max(0.0001, Math.abs(a) / 4);
-          xmax = Math.max(1, 4 * Math.abs(a));
-        } else {
-          xmin = -Math.max(1, 4 * Math.abs(a));
-          xmax = -Math.max(0.0001, Math.abs(a) / 4);
-        }
-      } else if (q % 2 === 0) {
-        xmin = 0;
-        xmax = Math.max(1, 2 * Math.abs(a));
-      } else {
-        const bound = Math.max(1, 2 * Math.abs(a));
-        xmin = -bound;
-        xmax = bound;
-      }
-
-      const samples = collectGraphSamples(problem, xmin, xmax, 900);
-      const ys = finiteSampleYs(samples, true);
-      return { xmin, xmax, ...paddedBoundsFromValues(ys, 0.25), samples };
-    }
-
-    function overviewGraphWindow(problem) {
-      if (problem.graphKind === 'root') return rootOverviewWindow(problem);
-      if (problem.graphKind === 'trig') return trigOverviewWindow(problem);
-      if (problem.graphKind === 'polynomial') return polynomialOverviewWindow(problem);
-      const a = Number.isFinite(problem.graphA) ? problem.graphA : 0;
-      const xmin = a - 4, xmax = a + 4;
-      const samples = collectGraphSamples(problem, xmin, xmax);
-      return { xmin, xmax, ...paddedBoundsFromValues(finiteSampleYs(samples, true)), samples };
-    }
-
-    function zoomGraphWindow(problem) {
-      const a = Number.isFinite(problem.graphA) ? problem.graphA : 0;
-      const target = Number.isFinite(problem.graphTarget) ? problem.graphTarget : a + 0.05;
-      const delta = Math.abs(target - a);
-      const trueTarget = finiteGraphValue(problem, target);
-      const tangentTarget = problem.graphM * target + problem.graphB;
-      const y0 = Number.isFinite(problem.graphY0) ? problem.graphY0 : finiteGraphValue(problem, a);
-      const error = Math.abs(trueTarget - tangentTarget);
-
-      if (Number.isFinite(error) && error > 1e-12 && Number.isFinite(trueTarget) && Number.isFinite(tangentTarget)) {
-        const mid = (trueTarget + tangentTarget) / 2;
-        const height = Math.max(8 * error, 1e-7);
-        const ymin = mid - height / 2;
-        const ymax = mid + height / 2;
-
-        let xmin, xmax;
-        const m = Number.isFinite(problem.graphM) ? problem.graphM : 0;
-        if (Math.abs(m) > 1e-12) {
-          const lowLineY = ymin + height / 8;
-          const highLineY = ymax - height / 8;
-          if (m > 0) {
-            xmin = (lowLineY - problem.graphB) / m;
-            xmax = (highLineY - problem.graphB) / m;
-          } else {
-            xmin = (highLineY - problem.graphB) / m;
-            xmax = (lowLineY - problem.graphB) / m;
-          }
-          if (xmin > xmax) [xmin, xmax] = [xmax, xmin];
-          // Make sure the actual approximation point is visible even in very asymmetric cases.
-          if (target <= xmin || target >= xmax) {
-            const span = xmax - xmin;
-            xmin = Math.min(xmin, target - 0.15 * span);
-            xmax = Math.max(xmax, target + 0.15 * span);
-          }
-        } else {
-          const xPad = Math.max(0.002, 0.35 * delta);
-          xmin = Math.min(a, target) - xPad;
-          xmax = Math.max(a, target) + xPad;
-        }
-
-        if (!Number.isFinite(xmin) || !Number.isFinite(xmax) || Math.abs(xmax - xmin) < 1e-12) {
-          const xPad = Math.max(0.002, 0.35 * delta);
-          xmin = Math.min(a, target) - xPad;
-          xmax = Math.max(a, target) + xPad;
-        }
-
-        const samples = collectGraphSamples(problem, xmin, xmax, 5000);
-        return { xmin, xmax, ymin, ymax, samples };
-      }
-
-      const xPad = Math.max(0.002, 0.35 * delta);
-      const xmin = Math.min(a, target) - xPad;
-      const xmax = Math.max(a, target) + xPad;
-      const samples = collectGraphSamples(problem, xmin, xmax, 5000);
-      const ys = [];
-      if (Number.isFinite(trueTarget)) ys.push(trueTarget);
-      if (Number.isFinite(tangentTarget)) ys.push(tangentTarget);
-      if (Number.isFinite(y0)) ys.push(y0);
-      return { xmin, xmax, ...paddedBoundsFromValues(ys.length ? ys : finiteSampleYs(samples, true), 0.05), samples };
-    }
-
-    function graphWindow(problem, zoomed) {
-      return zoomed ? zoomGraphWindow(problem) : overviewGraphWindow(problem);
-    }
-
-    function drawGraphAxes(ctx, toCanvasX, toCanvasY, xmin, xmax, ymin, ymax, width, height, margin) {
-      ctx.strokeStyle = '#dddddd';
-      ctx.lineWidth = 1;
-      for (let i = 0; i <= 4; i++) {
-        const x = margin.left + (width - margin.left - margin.right) * i / 4;
-        ctx.beginPath(); ctx.moveTo(x, margin.top); ctx.lineTo(x, height - margin.bottom); ctx.stroke();
-        const y = margin.top + (height - margin.top - margin.bottom) * i / 4;
-        ctx.beginPath(); ctx.moveTo(margin.left, y); ctx.lineTo(width - margin.right, y); ctx.stroke();
-      }
-      ctx.strokeStyle = '#888888';
-      ctx.lineWidth = 1.2;
-      if (xmin < 0 && xmax > 0) {
-        const x0 = toCanvasX(0);
-        ctx.beginPath(); ctx.moveTo(x0, margin.top); ctx.lineTo(x0, height - margin.bottom); ctx.stroke();
-      }
-      if (ymin < 0 && ymax > 0) {
-        const y0 = toCanvasY(0);
-        ctx.beginPath(); ctx.moveTo(margin.left, y0); ctx.lineTo(width - margin.right, y0); ctx.stroke();
-      }
-    }
-
-    function formatGraphLabel(value) {
-      if (!Number.isFinite(value)) return '';
-      if (Math.abs(value) >= 1000 || (Math.abs(value) > 0 && Math.abs(value) < 0.001)) {
-        return value.toExponential(2);
-      }
-      const rounded = Math.round(value);
-      if (Math.abs(value - rounded) < 1e-9) return `${rounded}`;
-      return Number(value).toPrecision(4).replace(/\.?0+$/,'');
-    }
-
-    function drawBoundaryLabels(ctx, xmin, xmax, ymin, ymax, width, height, margin) {
-      ctx.save();
-      ctx.font = '12px sans-serif';
-      ctx.fillStyle = '#444444';
-      ctx.textBaseline = 'top';
-      ctx.textAlign = 'left';
-      ctx.fillText(formatGraphLabel(xmin), margin.left + 2, height - margin.bottom + 5);
-      ctx.textAlign = 'right';
-      ctx.fillText(formatGraphLabel(xmax), width - margin.right - 2, height - margin.bottom + 5);
-
-      ctx.textAlign = 'right';
-      ctx.textBaseline = 'bottom';
-      ctx.fillText(formatGraphLabel(ymin), margin.left - 6, height - margin.bottom);
-      ctx.textBaseline = 'top';
-      ctx.fillText(formatGraphLabel(ymax), margin.left - 6, margin.top);
-      ctx.restore();
-    }
-
-    function drawSamplePath(ctx, samples, toCanvasX, toCanvasY, which, strokeStyle, lineWidth, ymin, ymax, allowLargeJumps = false) {
-      ctx.strokeStyle = strokeStyle;
-      ctx.lineWidth = lineWidth;
-      ctx.beginPath();
-      let drawing = false;
-      let previousY = NaN;
-      const jumpLimit = allowLargeJumps ? Infinity : 0.55 * (ymax - ymin);
-      samples.forEach(p => {
-        const y = p[which];
-        if (!Number.isFinite(y) || y < ymin - 2 * (ymax - ymin) || y > ymax + 2 * (ymax - ymin) || (Number.isFinite(previousY) && Math.abs(y - previousY) > jumpLimit)) {
-          drawing = false;
-          previousY = NaN;
-          return;
-        }
-        const cx = toCanvasX(p.x), cy = toCanvasY(y);
-        if (!drawing) { ctx.moveTo(cx, cy); drawing = true; }
-        else ctx.lineTo(cx, cy);
-        previousY = y;
-      });
-      ctx.stroke();
-    }
-
-    function drawPoint(ctx, x, y, toCanvasX, toCanvasY, fillStyle, radius = 4) {
-      if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-      ctx.fillStyle = fillStyle;
-      ctx.beginPath();
-      ctx.arc(toCanvasX(x), toCanvasY(y), radius, 0, 2 * Math.PI);
-      ctx.fill();
-    }
-
-    function drawLinearizationGraph(canvas, problem, zoomed) {
-      const ctx = canvas.getContext('2d');
-      const width = canvas.width, height = canvas.height;
-      ctx.clearRect(0, 0, width, height);
-      const margin = { left: 45, right: 18, top: 20, bottom: 34 };
-      const { xmin, xmax, ymin, ymax, samples } = graphWindow(problem, zoomed);
-      const toCanvasX = x => margin.left + (x - xmin) / (xmax - xmin) * (width - margin.left - margin.right);
-      const toCanvasY = y => height - margin.bottom - (y - ymin) / (ymax - ymin) * (height - margin.top - margin.bottom);
-
-      drawGraphAxes(ctx, toCanvasX, toCanvasY, xmin, xmax, ymin, ymax, width, height, margin);
-      drawBoundaryLabels(ctx, xmin, xmax, ymin, ymax, width, height, margin);
-      drawSamplePath(ctx, samples, toCanvasX, toCanvasY, 'y', '#2563eb', 2.2, ymin, ymax, zoomed);
-      drawSamplePath(ctx, samples, toCanvasX, toCanvasY, 'lineY', '#dc2626', 2, ymin, ymax, zoomed);
-
-      const a = problem.graphA;
-      const y0 = problem.graphY0;
-      drawPoint(ctx, a, y0, toCanvasX, toCanvasY, '#111111', zoomed ? 5 : 4);
-
-      if (Number.isFinite(problem.graphTarget)) {
-        const target = problem.graphTarget;
-        const trueY = finiteGraphValue(problem, target);
-        const tangentY = problem.graphM * target + problem.graphB;
-        if (Number.isFinite(trueY) && Number.isFinite(tangentY)) {
-          ctx.strokeStyle = '#16a34a';
-          ctx.lineWidth = 2;
-          ctx.setLineDash([6, 4]);
-          ctx.beginPath();
-          ctx.moveTo(toCanvasX(target), toCanvasY(trueY));
-          ctx.lineTo(toCanvasX(target), toCanvasY(tangentY));
-          ctx.stroke();
-          ctx.setLineDash([]);
-          drawPoint(ctx, target, tangentY, toCanvasX, toCanvasY, '#dc2626', zoomed ? 5 : 4);
-          drawPoint(ctx, target, trueY, toCanvasX, toCanvasY, '#2563eb', zoomed ? 5 : 4);
-        }
-      }
-
-      ctx.font = '13px sans-serif';
-      ctx.fillStyle = '#2563eb';
-      ctx.fillText('f(x)', margin.left + 8, margin.top + 15);
-      ctx.fillStyle = '#dc2626';
-      ctx.fillText('L(x)', margin.left + 58, margin.top + 15);
-      if (zoomed && Number.isFinite(problem.graphTarget)) {
-        ctx.fillStyle = '#16a34a';
-        ctx.fillText('error', margin.left + 112, margin.top + 15);
-      }
-    }
-
-    function showLinearizationGraphs() {
-      if (!currentProblem || !graphArea || typeof currentProblem.graphFn !== 'function') return;
-      const hasApproximationGraph = Number.isFinite(currentProblem.graphTarget);
-      graphArea.style.display = 'block';
-      graphArea.innerHTML = `
-        <div class="linearization-graph-grid" style="${hasApproximationGraph ? '' : 'grid-template-columns: minmax(300px, 560px); justify-content: center;'}">
-          <div class="linearization-graph-card">
-            <div class="linearization-graph-card-title">Function and linearization</div>
-            <canvas id="linearization-overview-canvas" width="520" height="360"></canvas>
-            <div class="linearization-graph-note">Blue: original function. Red: tangent line from the linearization.</div>
-          </div>
-          ${hasApproximationGraph ? `
-          <div class="linearization-graph-card">
-            <div class="linearization-graph-card-title">Zoom near the approximation</div>
-            <canvas id="linearization-zoom-canvas" width="520" height="360"></canvas>
-            <div class="linearization-graph-note">The dashed green segment shows the difference between the true value and the linear approximation.</div>
-          </div>` : ''}
-        </div>`;
-      const overviewCanvas = document.getElementById('linearization-overview-canvas');
-      const zoomCanvas = document.getElementById('linearization-zoom-canvas');
-      if (overviewCanvas) drawLinearizationGraph(overviewCanvas, currentProblem, false);
-      if (zoomCanvas) drawLinearizationGraph(zoomCanvas, currentProblem, true);
     }
 
     function checkUserAnswer() {
@@ -1856,7 +2046,6 @@ fetch("/nav.html")
         renderStages();
         checkBtn.style.display = 'none';
         hintBtn.disabled = true;
-        showLinearizationGraphs();
         return;
       }
       renderStages();
@@ -1903,7 +2092,7 @@ fetch("/nav.html")
       clearOldActivityState();
       const sound = document.getElementById('click-sound');
       if (sound) { sound.currentTime = 0; sound.play(); }
-      currentProblem = generateLinearApproximationProblem();
+      currentProblem = generateAntiderivativeProblem();
       questionText.innerHTML = `\\[${currentProblem.questionTex}\\]`;
       renderStages();
       checkBtn.style.display = 'inline-block';

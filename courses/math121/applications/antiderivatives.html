@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1299,15 +1300,37 @@ fetch("/nav.html")
     }
 
     function chooseTermTypes(typeNumber) {
-      let pool = ['power','reciprocal','exp','aexp','sin','cos','sec2'];
-      if (typeNumber === 3) pool = ['power','exp','sin','cos'];
+      // Weighted without-replacement selection.  The messier antiderivatives
+      // (1/x, e^(kx), and a^(kx)) are kept possible, but less frequent.
+      let weightedPool = [
+        { type: 'power', weight: 7 },
+        { type: 'sin', weight: 5 },
+        { type: 'cos', weight: 5 },
+        { type: 'sec2', weight: 4 },
+        { type: 'exp', weight: 2 },
+        { type: 'aexp', weight: 1 },
+        { type: 'reciprocal', weight: 1 }
+      ];
+      if (typeNumber === 3) {
+        weightedPool = [
+          { type: 'power', weight: 7 },
+          { type: 'sin', weight: 5 },
+          { type: 'cos', weight: 5 },
+          { type: 'exp', weight: 2 }
+        ];
+      }
       const count = randomInteger(2,4);
       const chosen = [];
-      const available = pool.slice();
+      const available = weightedPool.slice();
       while (chosen.length < count && available.length) {
-        const idx = randomInteger(0, available.length - 1);
-        const t = available.splice(idx, 1)[0];
-        chosen.push(t);
+        const totalWeight = available.reduce((sum, item) => sum + item.weight, 0);
+        let r = Math.random() * totalWeight;
+        let idx = 0;
+        while (idx < available.length - 1 && r >= available[idx].weight) {
+          r -= available[idx].weight;
+          idx++;
+        }
+        chosen.push(available.splice(idx, 1)[0].type);
       }
       return chosen;
     }
@@ -1329,13 +1352,25 @@ fetch("/nav.html")
     }
 
     function chooseConditionPoint(terms) {
+      const hasLogLike = terms.some(t => t.type === 'lnabs' || t.type === 'xlnxminusx' || t.type === 'aexp');
+      const hasExp = terms.some(t => t.type === 'exp');
+
       if (hasTrigTerm(terms)) {
-        if (Math.random() < 0.60) return { value: 0, tex: '0' };
-        const choices = [Math.PI/6, Math.PI/4, Math.PI/3, Math.PI/2, Math.PI];
-        const v = randomChoice(choices);
+        // Keep trig evaluation points calculator-free, with extra preference for 0
+        // when exponentials are present.  Avoid 0 if a logarithmic term would be undefined.
+        const choices = hasLogLike
+          ? [Math.PI/6, Math.PI/4, Math.PI/3, Math.PI/2, Math.PI]
+          : [0, Math.PI/6, Math.PI/4, Math.PI/3, Math.PI/2, Math.PI];
+        if (!hasLogLike && (hasExp || Math.random() < 0.60)) return { value: 0, tex: '0' };
+        const v = randomChoice(choices.filter(x => Math.abs(x) > 1e-10));
         return { value: v, tex: piMultipleTex(v) };
       }
-      const v = randomInteger(-5, 5);
+
+      if (hasLogLike && Math.random() < 0.70) return { value: 1, tex: '1' };
+      if (hasExp && Math.random() < 0.70) return { value: 0, tex: '0' };
+
+      let v;
+      do { v = randomInteger(-5, 5); } while (hasLogLike && v === 0);
       return { value: v, tex: `${v}` };
     }
 
@@ -1449,6 +1484,20 @@ fetch("/nav.html")
       return joinTermTex(pieces);
     }
 
+    function exactEvaluateTermsTexPlusInteger(terms, point, integerConstant) {
+      const pieces = [];
+      let numeric = frac(integerConstant, 1);
+      for (const t of terms) {
+        const piece = evalTermAtTex(t, point);
+        if (!piece) return '\\text{undefined}';
+        if (fractionIsZero(piece.coef)) continue;
+        if (!piece.body) numeric = frac(numeric.num * piece.coef.den + piece.coef.num * numeric.den, numeric.den * piece.coef.den);
+        else pieces.push(piece);
+      }
+      if (!fractionIsZero(numeric)) pieces.unshift({ coef: numeric, body: '' });
+      return joinTermTex(pieces);
+    }
+
     function computeConstantNumerically(terms, point, givenValueNumeric) {
       const fn = Function('x', `"use strict"; return (${termsExpression(terms)});`);
       return givenValueNumeric - fn(point.value);
@@ -1491,7 +1540,7 @@ fetch("/nav.html")
         const valueTexNoC = exactEvaluateTermsTex(fNoC, point);
         if (valueTexNoC === '\\text{undefined}') continue;
         const cValue = randomInteger(-8, 8);
-        const givenTex = texPlusConstant(valueTexNoC, cValue);
+        const givenTex = exactEvaluateTermsTexPlusInteger(fNoC, point, cValue);
         const finalExpression = antiderivativeExpression(fNoC, String(cValue));
         const cTex = `${cValue}`;
         const finalTex = `${termsTex(fNoC)} ${cValue < 0 ? '- ' + Math.abs(cValue) : '+ ' + cValue}`;
@@ -1522,14 +1571,14 @@ fetch("/nav.html")
         const fpValueTexNoC = exactEvaluateTermsTex(fpNoC, cPoint);
         if (fpValueTexNoC === '\\text{undefined}') continue;
         const c1 = randomInteger(-8, 8);
-        const fpGivenTex = texPlusConstant(fpValueTexNoC, c1);
+        const fpGivenTex = exactEvaluateTermsTexPlusInteger(fpNoC, cPoint, c1);
         const fNoC2Base = antiderivativeTerms(fpNoC);
         if (c1 !== 0) fNoC2Base.push({ type: 'power', n: 1, coef: frac(c1, 1) });
         const dPoint = chooseConditionPoint(fNoC2Base);
         const fValueTexNoC2 = exactEvaluateTermsTex(fNoC2Base, dPoint);
         if (fValueTexNoC2 === '\\text{undefined}') continue;
         const c2 = randomInteger(-8, 8);
-        const fGivenTex = texPlusConstant(fValueTexNoC2, c2);
+        const fGivenTex = exactEvaluateTermsTexPlusInteger(fNoC2Base, dPoint, c2);
         const finalExpression = antiderivativeExpression(fNoC2Base, String(c2));
         const finalTex = `${termsTex(fNoC2Base)} ${c2 < 0 ? '- ' + Math.abs(c2) : '+ ' + c2}`;
         return {

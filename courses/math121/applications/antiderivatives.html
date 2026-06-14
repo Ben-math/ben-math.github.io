@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1259,6 +1260,23 @@ a^{kx}
     function randomPositiveBase() { return randomChoice([2,3,4,5,6,7,8,9]); }
     function randomPositiveK() { return randomNonzeroInteger(-5, 5); }
 
+    function randomFractionalPowerExponent() {
+      let num, den;
+      do {
+        num = randomNonzeroInteger(-9, 9);
+        den = randomChoice([2,3,4,5,6,7,8,9]);
+      } while (gcd(num, den) !== 1);
+      return { num, den };
+    }
+
+    function fractionalExponentTex(num, den) {
+      return `\\frac{${num}}{${den}}`;
+    }
+
+    function divideFractionByFraction(a, b) {
+      return frac(a.num * b.den, a.den * b.num);
+    }
+
     function randomCoefficient() {
       const r = Math.random();
       if (r < 0.50) return { coef: frac(randomSmallNonzero(), 1), mode: 'integer' };
@@ -1266,8 +1284,14 @@ a^{kx}
       return { coef: frac(1, randomChoice([2,3,4,5,6,7,8,9])), mode: 'denominator' };
     }
 
-    function makeBaseTerm(type) {
-      if (type === 'power') return { type, n: randomNonzeroInteger(-9, 9) };
+    function makeBaseTerm(type, typeNumber = null) {
+      if (type === 'power') {
+        if (typeNumber === 1 && Math.random() < 0.35) {
+          const exponent = randomFractionalPowerExponent();
+          return { type, n: exponent.num / exponent.den, nNum: exponent.num, nDen: exponent.den };
+        }
+        return { type, n: randomNonzeroInteger(-9, 9) };
+      }
       if (type === 'reciprocal') return { type };
       if (type === 'exp') return { type, k: randomPositiveK() };
       if (type === 'aexp') return { type, a: randomPositiveBase(), k: randomPositiveK() };
@@ -1275,8 +1299,8 @@ a^{kx}
       return { type: 'power', n: 1 };
     }
 
-    function makeTerm(type) {
-      const base = makeBaseTerm(type);
+    function makeTerm(type, typeNumber = null) {
+      const base = makeBaseTerm(type, typeNumber);
       const c = randomCoefficient();
       return { ...base, coef: c.coef, coeffMode: c.mode };
     }
@@ -1289,6 +1313,10 @@ a^{kx}
 
     function termBodyTex(term) {
       if (term.type === 'power') {
+        if (term.nDen) {
+          if (term.nNum === term.nDen) return 'x';
+          return `x^{${fractionalExponentTex(term.nNum, term.nDen)}}`;
+        }
         if (term.n === 1) return 'x';
         return `x^{${term.n}}`;
       }
@@ -1330,7 +1358,10 @@ a^{kx}
       const c = `(${term.coef.num}/${term.coef.den})`;
       if (term.type === 'aexp' && term.extraDen) return `${c}*(${term.a}**(${term.k}*x))/(${term.k}*Math.log(${term.a}))`;
       if (term.type === 'xlnxminusx') return `${c}*(x*Math.log(Math.abs(x))-x)`;
-      if (term.type === 'power') return `${c}*x**(${term.n})`;
+      if (term.type === 'power') {
+        if (term.nDen) return `${c}*x**(${term.nNum}/${term.nDen})`;
+        return `${c}*x**(${term.n})`;
+      }
       if (term.type === 'reciprocal') return `${c}/x`;
       if (term.type === 'exp') return `${c}*Math.exp(${term.k}*x)`;
       if (term.type === 'aexp') return `${c}*(${term.a}**(${term.k}*x))`;
@@ -1347,6 +1378,16 @@ a^{kx}
     function antiderivativeTerm(term) {
       const c = term.coef;
       if (term.type === 'power') {
+        if (term.nDen) {
+          const newExponent = frac(term.nNum + term.nDen, term.nDen);
+          return {
+            type: 'power',
+            n: newExponent.num / newExponent.den,
+            nNum: newExponent.num,
+            nDen: newExponent.den,
+            coef: divideFractionByFraction(c, newExponent)
+          };
+        }
         if (term.n === -1) return { type: 'lnabs', coef: c };
         return { type: 'power', n: term.n + 1, coef: divideFractionByInteger(c, term.n + 1) };
       }
@@ -1442,11 +1483,11 @@ a^{kx}
 
     function generateInitialTerms(typeNumber) {
       for (let attempt = 0; attempt < 100; attempt++) {
-        const terms = chooseTermTypes(typeNumber).map(makeTerm);
+        const terms = chooseTermTypes(typeNumber).map(t => makeTerm(t, typeNumber));
         if (typeNumber === 3 && terms.some(t => (t.type === 'power' && t.n === -1) || t.type === 'reciprocal' || t.type === 'sec2')) continue;
         return terms;
       }
-      return [makeTerm('power'), makeTerm('exp')];
+      return [makeTerm('power', typeNumber), makeTerm('exp', typeNumber)];
     }
 
     function hasTrigTerm(terms) { return terms.some(t => ['sin','cos','sec2','tan'].includes(t.type)); }

@@ -338,6 +338,75 @@ fetch("/nav.html")
 <main>
     <p>Antiderivatives activity - a work in progress!</p>
 
+  <div id="lesson-intro" style="text-align:center; margin:1em 0;">
+\[
+\begin{array}{||c|c||c|c||}
+\hline
+\text{Function} & \text{Derivative} &
+\text{Function} & \text{Antiderivative}
+\\
+\hline
+
+cf(x) & cf'(x)
+&
+cf(x) & cF(x)+C
+\\
+
+f(x)\pm g(x)
+&
+f'(x)\pm g'(x)
+&
+f(x)\pm g(x)
+&
+F(x)\pm G(x)+C
+\\
+
+cx & c
+&
+c & cx+C
+\\
+
+x^n\ (n\neq0)
+&
+nx^{n-1}
+&
+x^n\ (n\neq-1)
+&
+\frac{x^{n+1}}{n+1}+C
+\\
+
+\ln(x)
+&
+\frac1x
+&
+\frac1x
+&
+\ln|x|+C
+\\
+
+e^{kx}
+&
+ke^{kx}
+&
+e^{kx}
+&
+\frac1k e^{kx}+C
+\\
+
+a^{kx}
+&
+ka^{kx}\ln(a)
+&
+a^{kx}
+&
+\frac1{k\ln(a)}a^{kx}+C
+\\
+
+\hline
+\end{array}
+\]
+</div>
+
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>

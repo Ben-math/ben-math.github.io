@@ -4,6 +4,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2436,8 +2437,331 @@ fetch("/nav.html")
       };
     }
 
+    function nonzeroNotOneInteger(min = -9, max = 9) {
+      const values = [];
+      for (let k = min; k <= max; k++) if (k !== 0 && k !== 1) values.push(k);
+      return randomChoice(values);
+    }
+
+    function fractionMultiplyInt(frac, n) {
+      return exactFraction(frac.num * n, frac.den);
+    }
+
+    function fractionNeg(frac) {
+      return { num: -frac.num, den: frac.den };
+    }
+
+    function signedTexFromFraction(frac, forcePlus = true) {
+      const f = exactFraction(frac.num, frac.den);
+      if (f.num === 0) return '';
+      const body = fractionToTex({ num: Math.abs(f.num), den: f.den });
+      return f.num < 0 ? `- ${body}` : (forcePlus ? `+ ${body}` : body);
+    }
+
+    function linearExpandedArgTex(bFrac, root, shiftTex = '') {
+      const b = exactFraction(bFrac.num, bFrac.den);
+      const constFrac = fractionNeg(fractionMultiplyInt(b, root));
+      let xPart;
+      if (b.num === 1 && b.den === 1) xPart = 'x';
+      else if (b.num === -1 && b.den === 1) xPart = '-x';
+      else xPart = `${fractionToTex(b)}x`;
+      let out = xPart;
+      if (shiftTex) out += ` ${shiftTex}`;
+      const cTex = signedTexFromFraction(constFrac, true);
+      if (cTex) out += ` ${cTex}`;
+      return out.replace(/\+ -/g, '- ');
+    }
+
+    function properDivisorsGreaterThanOne(n) {
+      const out = [];
+      const a = Math.abs(n);
+      for (let d = 2; d < a; d++) if (a % d === 0) out.push(d);
+      return out;
+    }
+
+    function randomFiniteType3PolynomialData() {
+      const type = randomChoice([2, 3, 7]);
+      if (type === 2) {
+        const a = nonzeroNotOneInteger();
+        const n = randomNonzeroInteger(-9, 9);
+        let m;
+        do { m = randomNonzeroInteger(-9, 9); } while (m === n);
+        const poly = scalePolynomial(multiplyPolynomials(polynomialFromRoot(n), polynomialFromRoot(m)), a);
+        return { type, poly, root: n, rootTex: numberTex(n) };
+      }
+      if (type === 3) {
+        const a = nonzeroNotOneInteger();
+        const n = randomNonzeroInteger(-9, 9);
+        return { type, poly: scalePolynomial(polynomialFromRoot(n), a), root: n, rootTex: numberTex(n) };
+      }
+      const a = nonzeroNotOneInteger();
+      const k = randomInteger(2, 5);
+      const maybeZeroRoot = () => Math.random() < 0.8 ? 0 : randomNonzeroInteger(-9, 9);
+      let n = maybeZeroRoot();
+      let m = maybeZeroRoot();
+      // Keep the x -> n branch simple when possible; the x -> 0 branch may intentionally have higher multiplicity.
+      const useZeroLimit = Math.random() < 0.5 || n === 0;
+      if (!useZeroLimit && m === n) m = 0;
+      let poly = [makeTerm(a, k)];
+      poly = multiplyPolynomials(poly, polynomialFromRoot(n));
+      poly = multiplyPolynomials(poly, polynomialFromRoot(m));
+      const root = useZeroLimit ? 0 : n;
+      return { type, poly, root, rootTex: numberTex(root), n, m, k };
+    }
+
+    function polynomialZeroMultiplicity(poly, root) {
+      let current = poly;
+      for (let order = 0; order < 12; order++) {
+        const val = evaluatePolynomial(current, root);
+        if (Math.abs(val) > 1e-9) return { order, derivativePoly: current, derivativeValue: val };
+        current = derivativePolynomial(current);
+      }
+      return { order: 12, derivativePoly: current, derivativeValue: evaluatePolynomial(current, root) };
+    }
+
+    function slopeNumber(num, den = 1) {
+      const f = exactFraction(num, den);
+      return { kind: 'number', num: f.num, den: f.den };
+    }
+
+    function slopeLn(coeff, base) {
+      const c = exactFraction(coeff.num ?? coeff, coeff.den ?? 1);
+      if (base === 'e') return slopeNumber(c.num, c.den);
+      return { kind: 'ln', coeff: c, base };
+    }
+
+    function slopeInvLn(coeff, base) {
+      const c = exactFraction(coeff.num ?? coeff, coeff.den ?? 1);
+      if (base === 'e') return slopeNumber(c.num, c.den);
+      return { kind: 'invln', coeff: c, base };
+    }
+
+    function slopeNeg(s) {
+      if (s.kind === 'number') return slopeNumber(-s.num, s.den);
+      return { ...s, coeff: exactFraction(-s.coeff.num, s.coeff.den) };
+    }
+
+    function slopeToTex(s) {
+      if (s.kind === 'number') return fractionToTex({ num: s.num, den: s.den });
+      const c = exactFraction(s.coeff.num, s.coeff.den);
+      const absC = exactFraction(Math.abs(c.num), c.den);
+      const coeffTex = absC.num === absC.den ? '' : `${fractionToTex(absC)}`;
+      const sign = c.num < 0 ? '-' : '';
+      if (s.kind === 'ln') return `${sign}${coeffTex}\\ln(${s.base})`;
+      if (coeffTex === '') return `${sign}\\frac{1}{\\ln(${s.base})}`;
+      return `${sign}\\frac{${coeffTex}}{\\ln(${s.base})}`;
+    }
+
+    function slopeNumericSign(s) {
+      if (s.kind === 'number') return Math.sign(s.num / s.den);
+      return Math.sign(s.coeff.num / s.coeff.den);
+    }
+
+    function slopeNumericValue(s) {
+      if (s.kind === 'number') return s.num / s.den;
+      if (s.kind === 'ln') return (s.coeff.num / s.coeff.den) * Math.log(s.base);
+      return (s.coeff.num / s.coeff.den) / Math.log(s.base);
+    }
+
+    function ratioSlopeTex(a, b) {
+      if (a.kind === 'number' && b.kind === 'number') return fractionToTex(exactFraction(a.num * b.den, a.den * b.num));
+      if (a.kind === 'number' && b.kind === 'ln') {
+        const num = exactFraction(a.num * b.coeff.den, a.den * b.coeff.num);
+        const ntex = fractionToTex(num);
+        if (ntex === '1') return `\\frac{1}{\\ln(${b.base})}`;
+        if (ntex === '-1') return `-\\frac{1}{\\ln(${b.base})}`;
+        return `\\frac{${ntex}}{\\ln(${b.base})}`;
+      }
+      if (a.kind === 'ln' && b.kind === 'number') {
+        const coeff = exactFraction(a.coeff.num * b.den, a.coeff.den * b.num);
+        const ctex = fractionToTex(coeff);
+        if (ctex === '1') return `\\ln(${a.base})`;
+        if (ctex === '-1') return `-\\ln(${a.base})`;
+        return `${ctex}\\ln(${a.base})`;
+      }
+      if (a.kind === 'number' && b.kind === 'invln') {
+        const coeff = exactFraction(a.num * b.coeff.den, a.den * b.coeff.num);
+        const ctex = fractionToTex(coeff);
+        if (ctex === '1') return `\\ln(${b.base})`;
+        if (ctex === '-1') return `-\\ln(${b.base})`;
+        return `${ctex}\\ln(${b.base})`;
+      }
+      if (a.kind === 'invln' && b.kind === 'number') {
+        const coeff = exactFraction(a.coeff.num * b.den, a.coeff.den * b.num);
+        const ctex = fractionToTex(coeff);
+        if (ctex === '1') return `\\frac{1}{\\ln(${a.base})}`;
+        if (ctex === '-1') return `-\\frac{1}{\\ln(${a.base})}`;
+        return `\\frac{${ctex}}{\\ln(${a.base})}`;
+      }
+      return `\\frac{${slopeToTex(a)}}{${slopeToTex(b)}}`;
+    }
+
+    function finiteAnswerFromTex(tex, decimalValue = null) {
+      return { kind: 'finite', tex, value: decimalValue === null ? { symbolic: tex } : { decimal: decimalValue } };
+    }
+
+    function rootShiftTex(root) {
+      if (root === 0) return 'x';
+      return `x ${root < 0 ? '+ ' + Math.abs(root) : '- ' + root}`;
+    }
+
+    function onePlusRootShiftTex(root) {
+      const constant = 1 - root;
+      if (constant === 0) return 'x';
+      return `x ${constant < 0 ? '- ' + Math.abs(constant) : '+ ' + constant}`;
+    }
+
+    function randomFiniteTrigZeroPartner(root) {
+      let bFrac = slopeNumber(1);
+      const scaled = Math.random() < 0.5;
+      if (scaled) {
+        const choices = [];
+        for (let b = -9; b <= 9; b++) if (b !== 0 && b !== 1) choices.push(slopeNumber(b));
+        if (Number.isInteger(root) && root !== 0) {
+          properDivisorsGreaterThanOne(root).forEach(d => choices.push(slopeNumber(1, d)));
+        }
+        bFrac = randomChoice(choices);
+      }
+      const bAsFrac = { num: bFrac.num, den: bFrac.den };
+      const options = [
+        { name: 'sin', shift: '', slopeSign: 1 },
+        { name: 'sin', shift: '+ \\pi', slopeSign: -1 },
+        { name: 'cos', shift: '+ \\frac{\\pi}{2}', slopeSign: -1 },
+        { name: 'cos', shift: '+ \\frac{3\\pi}{2}', slopeSign: 1 },
+        { name: 'tan', shift: '', slopeSign: 1 },
+        { name: 'tan', shift: '+ \\pi', slopeSign: 1 }
+      ];
+      const o = randomChoice(options);
+      const inner = scaled ? linearExpandedArgTex(bAsFrac, root, o.shift) : linearExpandedArgTex({ num: 1, den: 1 }, root, o.shift);
+      const bSlope = scaled ? bFrac : slopeNumber(1);
+      const slope = o.slopeSign === 1 ? bSlope : slopeNeg(bSlope);
+      return {
+        type: 4,
+        tex: trigTex(o.name, inner),
+        derivativeTex: trigDerivativeTex(o.name, inner, slopeToTex(bSlope)),
+        slope,
+        zeroText: `\\text{The trigonometric argument was chosen so the trigonometric factor approaches }0.`
+      };
+    }
+
+    function randomLinearWithRootValue(root, valueAtRoot) {
+      const a = nonzeroNotOneInteger();
+      return { poly: polynomialFromAxPlusC(a, valueAtRoot - a * root), primeAtRoot: a };
+    }
+
+    function randomQuadraticWithValueAtRoot(root, valueAtRoot) {
+      const a = nonzeroNotOneInteger();
+      const b = nonzeroNotOneInteger();
+      const y = polynomialFromRoot(root);
+      let poly = addPolynomials(addPolynomials(scalePolynomial(multiplyPolynomials(y, y), a), scalePolynomial(y, b)), polynomialFromConstant(valueAtRoot));
+      return { poly, primeAtRoot: b };
+    }
+
+    function randomFiniteExponentialZeroPartner(root) {
+      const r = Math.random();
+      const base = (r < 0.50 || (r >= 0.70 && r < 0.85)) ? 'e' : randomInteger(2, 9);
+      let innerTex, innerPrime;
+      if (r < 0.70) {
+        innerTex = rootShiftTex(root);
+        innerPrime = slopeNumber(1);
+      } else {
+        const h = Math.random() < 0.5 ? randomLinearWithRootValue(root, 0) : randomQuadraticWithValueAtRoot(root, 0);
+        innerTex = polynomialToTex(h.poly);
+        innerPrime = slopeNumber(h.primeAtRoot);
+      }
+      return {
+        type: 5,
+        tex: `${expTex(base, innerTex)} - 1`,
+        derivativeTex: expDerivativeTex(base, innerTex, slopeToTex(innerPrime)),
+        slope: slopeLn(innerPrime, base),
+        zeroText: `${expTex(base, '0')}-1=0`
+      };
+    }
+
+    function randomFiniteLogZeroPartner(root) {
+      const r = Math.random();
+      const base = (r < 0.50 || (r >= 0.70 && r < 0.85)) ? 'e' : randomInteger(2, 9);
+      let innerTex, innerPrime;
+      if (r < 0.70) {
+        innerTex = onePlusRootShiftTex(root);
+        innerPrime = slopeNumber(1);
+      } else {
+        const h = Math.random() < 0.5 ? randomLinearWithRootValue(root, 1) : randomQuadraticWithValueAtRoot(root, 1);
+        innerTex = polynomialToTex(h.poly);
+        innerPrime = slopeNumber(h.primeAtRoot);
+      }
+      return {
+        type: 6,
+        tex: logTex(base, innerTex),
+        derivativeTex: logDerivativeTex(base, innerTex, slopeToTex(innerPrime)),
+        slope: slopeInvLn(innerPrime, base),
+        zeroText: `${logTex(base, '1')}=0`
+      };
+    }
+
+    function randomFinitePartnerForRoot(root) {
+      const t = randomChoice([4, 5, 6]);
+      if (t === 4) return randomFiniteTrigZeroPartner(root);
+      if (t === 5) return randomFiniteExponentialZeroPartner(root);
+      return randomFiniteLogZeroPartner(root);
+    }
+
+    function answerForFiniteRootQuotient(poly, root, partner, polynomialInNumerator) {
+      const mult = polynomialZeroMultiplicity(poly, root);
+      const cSlope = slopeNumber(Math.round(mult.derivativeValue));
+      if (polynomialInNumerator) {
+        if (mult.order > 1) return { answer: { kind: 'finite', value: exactFraction(0, 1), tex: '0' }, reason: 'zero' };
+        return { answer: finiteAnswerFromTex(ratioSlopeTex(cSlope, partner.slope), slopeNumericValue(cSlope) / slopeNumericValue(partner.slope)), reason: 'finite' };
+      }
+      if (mult.order > 1) {
+        const sign = slopeNumericSign(partner.slope) * Math.sign(mult.derivativeValue);
+        if ((mult.order - 1) % 2 === 1) return { answer: { kind: 'dne' }, reason: 'vertical-dne' };
+        return { answer: infinityAnswerFromSign(sign), reason: 'vertical-infinite' };
+      }
+      return { answer: finiteAnswerFromTex(ratioSlopeTex(partner.slope, cSlope), slopeNumericValue(partner.slope) / slopeNumericValue(cSlope)), reason: 'finite' };
+    }
+
+    function generateType3FiniteRootProblem() {
+      const polyData = randomFiniteType3PolynomialData();
+      const partner = randomFinitePartnerForRoot(polyData.root);
+      const polynomialInNumerator = Math.random() < 0.5;
+      const polyTex = polynomialToTex(polyData.poly);
+      const numTex = polynomialInNumerator ? polyTex : partner.tex;
+      const denTex = polynomialInNumerator ? partner.tex : polyTex;
+      const limitData = finiteLimitData(polyData.root);
+      const result = answerForFiniteRootQuotient(polyData.poly, polyData.root, partner, polynomialInNumerator);
+      const answerEntry = { labelTex: limitData.labelTex, answer: result.answer };
+      const polyPrime = derivativePolynomial(polyData.poly);
+      const polyPrimeTex = polynomialToTex(polyPrime);
+      const hints = [
+        `\\text{Both numerator and denominator approach }0\\text{ as }x\\to ${limitData.limitTex}\\text{, so this is an indeterminate form of type }\\frac{0}{0}.`,
+        `\\text{Apply L'Hôpital's Rule by differentiating the numerator and denominator.}`,
+        polynomialInNumerator
+          ? `\\lim_{x\\to ${limitData.limitTex}}f(x)=\\lim_{x\\to ${limitData.limitTex}}\\frac{${polyPrimeTex}}{${partner.derivativeTex}}`
+          : `\\lim_{x\\to ${limitData.limitTex}}f(x)=\\lim_{x\\to ${limitData.limitTex}}\\frac{${partner.derivativeTex}}{${polyPrimeTex}}`
+      ];
+      const mult = polynomialZeroMultiplicity(polyData.poly, polyData.root);
+      if (result.reason === 'finite') {
+        hints.push(`\\text{Now substitute }x=${limitData.limitTex}\\text{ into the differentiated quotient.}`);
+      } else if (result.reason === 'zero') {
+        hints.push(`\\text{After differentiating, the polynomial part still approaches }0\\text{ while the other derivative is nonzero, so the limit is }0.`);
+      } else if (result.reason === 'vertical-dne') {
+        hints.push(`\\text{After differentiating, the denominator still approaches }0\\text{ while the numerator approaches a nonzero value. The two one-sided limits have opposite signs, so the two-sided limit does not exist.}`);
+      } else {
+        hints.push(`\\text{After differentiating, the denominator still approaches }0\\text{ while the numerator approaches a nonzero value, so the limit is infinite.}`);
+      }
+      hints.push(`${answerEquationTexExtended(answerEntry)}`);
+      return {
+        type: 3,
+        questionTex: type3LimitQuestion(numTex, denTex, limitData),
+        answers: [answerEntry],
+        hints
+      };
+    }
+
+
     function generateSimpleIndeterminateQuotientProblem() {
-      return type3PolynomialSlotProblem();
+      return Math.random() < 0.25 ? type3PolynomialSlotProblem() : generateType3FiniteRootProblem();
     }
 
 
@@ -2900,8 +3224,11 @@ fetch("/nav.html")
     function evaluateFlexibleNumericAnswer(raw) {
       const text = normalizeAnswerText(raw)
         .replace(/sqrt/g, 'Math.sqrt')
+        .replace(/\bln/g, 'LOGFUNC')
+        .replace(/\blog/g, 'LOGFUNC')
+        .replace(/LOGFUNC/g, 'Math.log')
         .replace(/pi/g, 'Math.PI');
-      if (!text || /[^0-9+\-*/().MathsqrtPI]/.test(text)) return NaN;
+      if (!text || /[^0-9+\-*/().MathsqrtPIlog]/.test(text)) return NaN;
       try {
         const value = Function(`"use strict"; return (${text});`)();
         return Number.isFinite(value) ? value : NaN;

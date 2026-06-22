@@ -5,6 +5,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2770,6 +2771,217 @@ fetch("/nav.html")
       if (r < 0.05) return generateRenamedType1LimitProblem();
       if (r < 0.10) return generateRenamedType2LimitProblem();
       return generateSimpleIndeterminateQuotientProblem();
+    }
+
+
+    // --- Type 3 finite-root expansion/fixes: factored h(x), compound-fraction rewrites, and 4/5/6 pairings ---
+
+    function coefficientTimesFactoredQuadraticTex(a, root, m) {
+      const factors = `${linearFactorTex(root)}${linearFactorTex(m)}`;
+      if (a === 1) return factors;
+      if (a === -1) return `-${factors}`;
+      return `${a}${factors}`;
+    }
+
+    function plusOneFactoredQuadraticTex(a, root, m) {
+      const factored = coefficientTimesFactoredQuadraticTex(a, root, m);
+      return `1 ${a < 0 ? '- ' + coefficientTimesFactoredQuadraticTex(-a, root, m) : '+ ' + factored}`;
+    }
+
+    function randomFactoredQuadraticData(root, valueAtRoot) {
+      const a = nonzeroNotOneInteger();
+      let m;
+      do { m = randomInteger(-9, 9); } while (m === root);
+      const factorPoly = scalePolynomial(multiplyPolynomials(polynomialFromRoot(root), polynomialFromRoot(m)), a);
+      const poly = valueAtRoot === 0 ? factorPoly : addPolynomials(factorPoly, polynomialFromConstant(valueAtRoot));
+      const primePoly = derivativePolynomial(factorPoly);
+      const primeAtRoot = evaluatePolynomial(primePoly, root);
+      const factorTex = coefficientTimesFactoredQuadraticTex(a, root, m);
+      const tex = valueAtRoot === 0 ? factorTex : `${factorTex} + 1`;
+      return { poly, primePoly, primeAtRoot, tex, factorTex, a, m };
+    }
+
+    function randomFiniteExponentialZeroPartner(root) {
+      const r = Math.random();
+      const base = (r < 0.50 || (r >= 0.70 && r < 0.85)) ? 'e' : randomInteger(2, 9);
+      let innerTex, innerPrime, innerPrimeTex;
+      if (r < 0.70) {
+        innerTex = rootShiftTex(root);
+        innerPrime = slopeNumber(1);
+        innerPrimeTex = '1';
+      } else {
+        const h = Math.random() < 0.5
+          ? (() => {
+              const lin = randomLinearWithRootValue(root, 0);
+              return { tex: polynomialToTex(lin.poly), primeAtRoot: lin.primeAtRoot, primeTex: polynomialToTex(derivativePolynomial(lin.poly)) };
+            })()
+          : (() => {
+              const q = randomFactoredQuadraticData(root, 0);
+              return { tex: q.tex, primeAtRoot: q.primeAtRoot, primeTex: polynomialToTex(q.primePoly) };
+            })();
+        innerTex = h.tex;
+        innerPrime = slopeNumber(h.primeAtRoot);
+        innerPrimeTex = h.primeTex;
+      }
+      return {
+        type: 5,
+        tex: `${expTex(base, innerTex)} - 1`,
+        derivativeTex: expDerivativeTex(base, innerTex, innerPrimeTex),
+        slope: slopeLn(innerPrime, base),
+        zeroText: `${expTex(base, '0')}-1=0`
+      };
+    }
+
+    function randomFiniteLogZeroPartner(root) {
+      const r = Math.random();
+      const base = (r < 0.50 || (r >= 0.70 && r < 0.85)) ? 'e' : randomInteger(2, 9);
+      let innerTex, innerPrime, innerPrimeTex, derivativeNumeratorTex, derivativeDenominatorTex;
+      if (r < 0.70) {
+        innerTex = onePlusRootShiftTex(root);
+        innerPrime = slopeNumber(1);
+        innerPrimeTex = '1';
+        derivativeNumeratorTex = '1';
+      } else {
+        const h = Math.random() < 0.5
+          ? (() => {
+              const lin = randomLinearWithRootValue(root, 1);
+              return { tex: polynomialToTex(lin.poly), primeAtRoot: lin.primeAtRoot, primeTex: polynomialToTex(derivativePolynomial(lin.poly)) };
+            })()
+          : (() => {
+              const q = randomFactoredQuadraticData(root, 1);
+              return { tex: q.tex, primeAtRoot: q.primeAtRoot, primeTex: polynomialToTex(q.primePoly) };
+            })();
+        innerTex = h.tex;
+        innerPrime = slopeNumber(h.primeAtRoot);
+        innerPrimeTex = h.primeTex;
+        derivativeNumeratorTex = innerPrimeTex;
+      }
+      const denominatorInner = innerTex === 'x' ? 'x' : `\\left(${innerTex}\\right)`;
+      derivativeDenominatorTex = base === 'e'
+        ? denominatorInner
+        : `${denominatorInner}\\ln(${base})`;
+      return {
+        type: 6,
+        tex: logTex(base, innerTex),
+        derivativeTex: logDerivativeTex(base, innerTex, innerPrimeTex),
+        derivativeFraction: { numeratorTex: derivativeNumeratorTex, denominatorTex: derivativeDenominatorTex },
+        slope: slopeInvLn(innerPrime, base),
+        zeroText: `${logTex(base, '1')}=0`
+      };
+    }
+
+    function normalDerivativeQuotientTex(numeratorDerivativeTex, denominatorDerivativeTex, numeratorPartner, denominatorPartner) {
+      const nf = numeratorPartner && numeratorPartner.derivativeFraction;
+      const df = denominatorPartner && denominatorPartner.derivativeFraction;
+      if (!nf && !df) return null;
+
+      if (nf && !df) {
+        return `\\frac{${nf.numeratorTex}}{\\left(${nf.denominatorTex}\\right)\\left(${denominatorDerivativeTex}\\right)}`;
+      }
+      if (!nf && df) {
+        return `\\left(${numeratorDerivativeTex}\\right)\\cdot \\frac{${df.denominatorTex}}{${df.numeratorTex}}`;
+      }
+      return `\\frac{\\left(${nf.numeratorTex}\\right)\\left(${df.denominatorTex}\\right)}{\\left(${nf.denominatorTex}\\right)\\left(${df.numeratorTex}\\right)}`;
+    }
+
+    function finiteRootLhopitalHints(numTex, denTex, limitData, numeratorDerivativeTex, denominatorDerivativeTex, answerEntry, resultReason, numeratorPartner = null, denominatorPartner = null) {
+      const hints = [
+        `\\text{Both numerator and denominator approach }0\\text{ as }x\\to ${limitData.limitTex}\\text{, so this is an indeterminate form of type }\\frac{0}{0}.`,
+        `\\text{Apply L'Hôpital's Rule by differentiating the numerator and denominator.}`,
+        `\\lim_{x\\to ${limitData.limitTex}}f(x)=\\lim_{x\\to ${limitData.limitTex}}\\frac{${numeratorDerivativeTex}}{${denominatorDerivativeTex}}`
+      ];
+      const normalTex = normalDerivativeQuotientTex(numeratorDerivativeTex, denominatorDerivativeTex, numeratorPartner, denominatorPartner);
+      if (normalTex) {
+        hints.push(`\\text{Rewrite the compound fraction as a single fraction before evaluating.}`);
+        hints.push(`\\lim_{x\\to ${limitData.limitTex}}f(x)=\\lim_{x\\to ${limitData.limitTex}}${normalTex}`);
+      }
+      if (resultReason === 'finite') {
+        hints.push(`\\text{Now substitute }x=${limitData.limitTex}\\text{ into the differentiated quotient.}`);
+      } else if (resultReason === 'zero') {
+        hints.push(`\\text{After differentiating, the polynomial part still approaches }0\\text{ while the other derivative is nonzero, so the limit is }0.`);
+      } else if (resultReason === 'vertical-dne') {
+        hints.push(`\\text{After differentiating, the denominator still approaches }0\\text{ while the numerator approaches a nonzero value. The two one-sided limits have opposite signs, so the two-sided limit does not exist.}`);
+      } else {
+        hints.push(`\\text{After differentiating, the denominator still approaches }0\\text{ while the numerator approaches a nonzero value, so the limit is infinite.}`);
+      }
+      hints.push(`${answerEquationTexExtended(answerEntry)}`);
+      return hints;
+    }
+
+    function generateType3FiniteRootProblem() {
+      const polyData = randomFiniteType3PolynomialData();
+      const partner = randomFinitePartnerForRoot(polyData.root);
+      const polynomialInNumerator = Math.random() < 0.5;
+      const polyTex = polynomialToTex(polyData.poly);
+      const numTex = polynomialInNumerator ? polyTex : partner.tex;
+      const denTex = polynomialInNumerator ? partner.tex : polyTex;
+      const limitData = finiteLimitData(polyData.root);
+      const result = answerForFiniteRootQuotient(polyData.poly, polyData.root, partner, polynomialInNumerator);
+      const answerEntry = { labelTex: limitData.labelTex, answer: result.answer };
+      const polyPrime = derivativePolynomial(polyData.poly);
+      const polyPrimeTex = polynomialToTex(polyPrime);
+      const numeratorDerivativeTex = polynomialInNumerator ? polyPrimeTex : partner.derivativeTex;
+      const denominatorDerivativeTex = polynomialInNumerator ? partner.derivativeTex : polyPrimeTex;
+      const numeratorPartner = polynomialInNumerator ? null : partner;
+      const denominatorPartner = polynomialInNumerator ? partner : null;
+      const hints = finiteRootLhopitalHints(numTex, denTex, limitData, numeratorDerivativeTex, denominatorDerivativeTex, answerEntry, result.reason, numeratorPartner, denominatorPartner);
+      return {
+        type: 3,
+        questionTex: type3LimitQuestion(numTex, denTex, limitData),
+        answers: [answerEntry],
+        hints
+      };
+    }
+
+    function randomFinitePartnerOfTypeForRoot(type, root) {
+      if (type === 4) return randomFiniteTrigZeroPartner(root);
+      if (type === 5) return randomFiniteExponentialZeroPartner(root);
+      return randomFiniteLogZeroPartner(root);
+    }
+
+    function generateType3TranscendentalPairProblem() {
+      const root = Math.random() < 0.5 ? 0 : randomNonzeroInteger(-9, 9);
+      let typeA = randomChoice([4, 5, 6]);
+      let typeB = randomChoice([4, 5, 6]);
+      // Avoid too many visually identical pairs, but still allow same broad type occasionally.
+      if (typeB === typeA && Math.random() < 0.65) typeB = randomChoice([4, 5, 6].filter(t => t !== typeA));
+      const a = randomFinitePartnerOfTypeForRoot(typeA, root);
+      const b = randomFinitePartnerOfTypeForRoot(typeB, root);
+      const swap = Math.random() < 0.5;
+      const numeratorPartner = swap ? b : a;
+      const denominatorPartner = swap ? a : b;
+      const numTex = numeratorPartner.tex;
+      const denTex = denominatorPartner.tex;
+      const limitData = finiteLimitData(root);
+      const answerTex = ratioSlopeTex(numeratorPartner.slope, denominatorPartner.slope);
+      const answerEntry = {
+        labelTex: limitData.labelTex,
+        answer: finiteAnswerFromTex(answerTex, slopeNumericValue(numeratorPartner.slope) / slopeNumericValue(denominatorPartner.slope))
+      };
+      const hints = finiteRootLhopitalHints(
+        numTex,
+        denTex,
+        limitData,
+        numeratorPartner.derivativeTex,
+        denominatorPartner.derivativeTex,
+        answerEntry,
+        'finite',
+        numeratorPartner,
+        denominatorPartner
+      );
+      return {
+        type: 3,
+        questionTex: type3LimitQuestion(numTex, denTex, limitData),
+        answers: [answerEntry],
+        hints
+      };
+    }
+
+    function generateSimpleIndeterminateQuotientProblem() {
+      const r = Math.random();
+      if (r < 0.22) return type3PolynomialSlotProblem();
+      if (r < 0.72) return generateType3FiniteRootProblem();
+      return generateType3TranscendentalPairProblem();
     }
 
     function createHintStepBlock(extraClass = '') {

@@ -8,6 +8,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2551,9 +2552,9 @@ fetch("/nav.html")
       const absC = exactFraction(Math.abs(c.num), c.den);
       const coeffTex = absC.num === absC.den ? '' : `${fractionToTex(absC)}`;
       const sign = c.num < 0 ? '-' : '';
-      if (s.kind === 'ln') return `${sign}${coeffTex}\ln(${s.base})`;
-      if (coeffTex === '') return `${sign}\frac{1}{\ln(${s.base})}`;
-      return `${sign}\frac{${coeffTex}}{\ln(${s.base})}`;
+      if (s.kind === 'ln') return `${sign}${coeffTex}\\ln(${s.base})`;
+      if (coeffTex === '') return `${sign}\\frac{1}{\\ln(${s.base})}`;
+      return `${sign}\\frac{${coeffTex}}{\\ln(${s.base})}`;
     }
 
     function slopeNumericSign(s) {

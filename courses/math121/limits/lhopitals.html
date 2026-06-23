@@ -7,6 +7,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2545,22 +2546,25 @@ fetch("/nav.html")
 
     function slopeToTex(s) {
       if (s.kind === 'number') return fractionToTex({ num: s.num, den: s.den });
+      if (s.kind === 'symbolic') return s.tex;
       const c = exactFraction(s.coeff.num, s.coeff.den);
       const absC = exactFraction(Math.abs(c.num), c.den);
       const coeffTex = absC.num === absC.den ? '' : `${fractionToTex(absC)}`;
       const sign = c.num < 0 ? '-' : '';
-      if (s.kind === 'ln') return `${sign}${coeffTex}\\ln(${s.base})`;
-      if (coeffTex === '') return `${sign}\\frac{1}{\\ln(${s.base})}`;
-      return `${sign}\\frac{${coeffTex}}{\\ln(${s.base})}`;
+      if (s.kind === 'ln') return `${sign}${coeffTex}\ln(${s.base})`;
+      if (coeffTex === '') return `${sign}\frac{1}{\ln(${s.base})}`;
+      return `${sign}\frac{${coeffTex}}{\ln(${s.base})}`;
     }
 
     function slopeNumericSign(s) {
       if (s.kind === 'number') return Math.sign(s.num / s.den);
+      if (s.kind === 'symbolic') return Math.sign(s.value);
       return Math.sign(s.coeff.num / s.coeff.den);
     }
 
     function slopeNumericValue(s) {
       if (s.kind === 'number') return s.num / s.den;
+      if (s.kind === 'symbolic') return s.value;
       if (s.kind === 'ln') return (s.coeff.num / s.coeff.den) * Math.log(s.base);
       return (s.coeff.num / s.coeff.den) / Math.log(s.base);
     }
@@ -2613,6 +2617,108 @@ fetch("/nav.html")
       return `x ${constant < 0 ? '- ' + Math.abs(constant) : '+ ' + constant}`;
     }
 
+    
+function exactTrigSpecialValue(name, angleKey) {
+      const table = {
+        '0': {
+          sin: { tex: '0', value: 0 }, cos: { tex: '1', value: 1 }, tan: { tex: '0', value: 0 },
+          sec: { tex: '1', value: 1 }, csc: null, cot: null
+        },
+        'pi/6': {
+          sin: { tex: '\\frac{1}{2}', value: 1/2 }, cos: { tex: '\\frac{\\sqrt{3}}{2}', value: Math.sqrt(3)/2 }, tan: { tex: '\\frac{\\sqrt{3}}{3}', value: Math.sqrt(3)/3 },
+          sec: { tex: '\\frac{2\\sqrt{3}}{3}', value: 2*Math.sqrt(3)/3 }, csc: { tex: '2', value: 2 }, cot: { tex: '\\sqrt{3}', value: Math.sqrt(3) }
+        },
+        'pi/4': {
+          sin: { tex: '\\frac{\\sqrt{2}}{2}', value: Math.sqrt(2)/2 }, cos: { tex: '\\frac{\\sqrt{2}}{2}', value: Math.sqrt(2)/2 }, tan: { tex: '1', value: 1 },
+          sec: { tex: '\\sqrt{2}', value: Math.sqrt(2) }, csc: { tex: '\\sqrt{2}', value: Math.sqrt(2) }, cot: { tex: '1', value: 1 }
+        },
+        'pi/3': {
+          sin: { tex: '\\frac{\\sqrt{3}}{2}', value: Math.sqrt(3)/2 }, cos: { tex: '\\frac{1}{2}', value: 1/2 }, tan: { tex: '\\sqrt{3}', value: Math.sqrt(3) },
+          sec: { tex: '2', value: 2 }, csc: { tex: '\\frac{2\\sqrt{3}}{3}', value: 2*Math.sqrt(3)/3 }, cot: { tex: '\\frac{\\sqrt{3}}{3}', value: Math.sqrt(3)/3 }
+        },
+        'pi/2': {
+          sin: { tex: '1', value: 1 }, cos: { tex: '0', value: 0 }, tan: null,
+          sec: null, csc: { tex: '1', value: 1 }, cot: { tex: '0', value: 0 }
+        },
+        'pi': {
+          sin: { tex: '0', value: 0 }, cos: { tex: '-1', value: -1 }, tan: { tex: '0', value: 0 },
+          sec: { tex: '-1', value: -1 }, csc: null, cot: null
+        },
+        '3pi/2': {
+          sin: { tex: '-1', value: -1 }, cos: { tex: '0', value: 0 }, tan: null,
+          sec: null, csc: { tex: '-1', value: -1 }, cot: { tex: '0', value: 0 }
+        }
+      };
+      return table[angleKey][name];
+    }
+
+    function exactTrigDerivativeValue(name, angleKey) {
+      const sin = exactTrigSpecialValue('sin', angleKey);
+      const cos = exactTrigSpecialValue('cos', angleKey);
+      const tan = exactTrigSpecialValue('tan', angleKey);
+      const sec = exactTrigSpecialValue('sec', angleKey);
+      const csc = exactTrigSpecialValue('csc', angleKey);
+      const cot = exactTrigSpecialValue('cot', angleKey);
+      if (name === 'sin') return cos;
+      if (name === 'cos') return sin ? exactNegSpecial(sin) : null;
+      if (name === 'tan') return sec ? exactSquareSpecial(sec) : null;
+      if (name === 'sec') return (sec && tan) ? exactMulSpecial(sec, tan) : null;
+      if (name === 'csc') return (csc && cot) ? exactNegSpecial(exactMulSpecial(csc, cot)) : null;
+      if (name === 'cot') return csc ? exactNegSpecial(exactSquareSpecial(csc)) : null;
+      return null;
+    }
+
+    function exactNegSpecial(v) {
+      if (!v) return null;
+      if (Math.abs(v.value) < 1e-12) return { tex: '0', value: 0 };
+      if (v.tex.startsWith('-')) return { tex: v.tex.slice(1), value: -v.value };
+      return { tex: `-${v.tex}`, value: -v.value };
+    }
+
+    function exactMulSpecial(a, b) {
+      const value = a.value * b.value;
+      if (Math.abs(value) < 1e-12) return { tex: '0', value: 0 };
+      const candidates = [
+        { value: 1, tex: '1' }, { value: -1, tex: '-1' },
+        { value: 2, tex: '2' }, { value: -2, tex: '-2' },
+        { value: 3, tex: '3' }, { value: -3, tex: '-3' },
+        { value: 4, tex: '4' }, { value: -4, tex: '-4' },
+        { value: Math.sqrt(2), tex: '\\sqrt{2}' }, { value: -Math.sqrt(2), tex: '-\\sqrt{2}' },
+        { value: Math.sqrt(3), tex: '\\sqrt{3}' }, { value: -Math.sqrt(3), tex: '-\\sqrt{3}' },
+        { value: Math.sqrt(2)/2, tex: '\\frac{\\sqrt{2}}{2}' }, { value: -Math.sqrt(2)/2, tex: '-\\frac{\\sqrt{2}}{2}' },
+        { value: Math.sqrt(3)/2, tex: '\\frac{\\sqrt{3}}{2}' }, { value: -Math.sqrt(3)/2, tex: '-\\frac{\\sqrt{3}}{2}' },
+        { value: Math.sqrt(3)/3, tex: '\\frac{\\sqrt{3}}{3}' }, { value: -Math.sqrt(3)/3, tex: '-\\frac{\\sqrt{3}}{3}' },
+        { value: 2*Math.sqrt(3)/3, tex: '\\frac{2\\sqrt{3}}{3}' }, { value: -2*Math.sqrt(3)/3, tex: '-\\frac{2\\sqrt{3}}{3}' }
+      ];
+      const match = candidates.find(item => Math.abs(item.value - value) < 1e-10);
+      if (match) return { tex: match.tex, value };
+      return { tex: `\\left(${a.tex}\\right)\\left(${b.tex}\\right)`, value };
+    }
+
+    function exactSquareSpecial(v) {
+      return exactMulSpecial(v, v);
+    }
+
+    function slopeSpecialTimesNumber(special, coeff) {
+      const c = exactFraction(coeff.num, coeff.den);
+      const value = special.value * c.num / c.den;
+      if (Math.abs(value) < 1e-12) return slopeNumber(0);
+      if (Math.abs(special.value - 1) < 1e-12) return slopeNumber(c.num, c.den);
+      if (Math.abs(special.value + 1) < 1e-12) return slopeNumber(-c.num, c.den);
+      const coeffTex = fractionToTex(c);
+      let tex;
+      if (coeffTex === '1') tex = special.tex;
+      else if (coeffTex === '-1') tex = exactNegSpecial(special).tex;
+      else tex = `${coeffTex}\\left(${special.tex}\\right)`;
+      return { kind: 'symbolic', tex, value };
+    }
+
+    function subtractExactValueTex(exprTex, valueTex) {
+      if (valueTex === '0') return exprTex;
+      if (valueTex.startsWith('-')) return `${exprTex} + ${valueTex.slice(1)}`;
+      return `${exprTex} - ${valueTex}`;
+    }
+
     function randomFiniteTrigZeroPartner(root) {
       let bFrac = slopeNumber(1);
       const scaled = Math.random() < 0.5;
@@ -2625,24 +2731,34 @@ fetch("/nav.html")
         bFrac = randomChoice(choices);
       }
       const bAsFrac = { num: bFrac.num, den: bFrac.den };
-      const options = [
-        { name: 'sin', shift: '', slopeSign: 1 },
-        { name: 'sin', shift: '+ \\pi', slopeSign: -1 },
-        { name: 'cos', shift: '+ \\frac{\\pi}{2}', slopeSign: -1 },
-        { name: 'cos', shift: '+ \\frac{3\\pi}{2}', slopeSign: 1 },
-        { name: 'tan', shift: '', slopeSign: 1 },
-        { name: 'tan', shift: '+ \\pi', slopeSign: 1 }
+      const angleOptions = [
+        { key: '0', shift: '' },
+        { key: 'pi/6', shift: '+ \\frac{\\pi}{6}' },
+        { key: 'pi/4', shift: '+ \\frac{\\pi}{4}' },
+        { key: 'pi/3', shift: '+ \\frac{\\pi}{3}' },
+        { key: 'pi/2', shift: '+ \\frac{\\pi}{2}' },
+        { key: 'pi', shift: '+ \\pi' },
+        { key: '3pi/2', shift: '+ \\frac{3\\pi}{2}' }
       ];
+      const options = [];
+      ['sin', 'cos', 'tan', 'sec', 'csc', 'cot'].forEach(name => {
+        angleOptions.forEach(angle => {
+          const value = exactTrigSpecialValue(name, angle.key);
+          const derivativeValue = exactTrigDerivativeValue(name, angle.key);
+          if (value && derivativeValue && Math.abs(derivativeValue.value) > 1e-12) options.push({ name, angle, value, derivativeValue });
+        });
+      });
       const o = randomChoice(options);
-      const inner = scaled ? linearExpandedArgTex(bAsFrac, root, o.shift) : linearExpandedArgTex({ num: 1, den: 1 }, root, o.shift);
+      const inner = scaled ? linearExpandedArgTex(bAsFrac, root, o.angle.shift) : linearExpandedArgTex({ num: 1, den: 1 }, root, o.angle.shift);
       const bSlope = scaled ? bFrac : slopeNumber(1);
-      const slope = o.slopeSign === 1 ? bSlope : slopeNeg(bSlope);
+      const slope = slopeSpecialTimesNumber(o.derivativeValue, bSlope);
+      const trigExpression = trigTex(o.name, inner);
       return {
         type: 4,
-        tex: trigTex(o.name, inner),
+        tex: subtractExactValueTex(trigExpression, o.value.tex),
         derivativeTex: trigDerivativeTex(o.name, inner, slopeToTex(bSlope)),
         slope,
-        zeroText: `\\text{The trigonometric argument was chosen so the trigonometric factor approaches }0.`
+        zeroText: `\\text{The trigonometric argument was chosen so }${trigExpression}\\to ${o.value.tex}\\text{, making the numerator/denominator approach }0.`
       };
     }
 

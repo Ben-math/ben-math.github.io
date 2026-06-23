@@ -1,14 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -3100,6 +3089,158 @@ function exactTrigSpecialValue(name, angleKey) {
       if (r < 0.22) return type3PolynomialSlotProblem();
       if (r < 0.72) return generateType3FiniteRootProblem();
       return generateType3TranscendentalPairProblem();
+    }
+
+
+
+    // --- Type 4 split: indeterminate products generated from eligible Type 3 quotients ---
+
+    const originalType3QuotientGeneratorForType4 = generateSimpleIndeterminateQuotientProblem;
+
+    function stripOuterTexParens(tex) {
+      let s = (tex || '').trim();
+      if (s.startsWith('\left(') && s.endsWith('\right)')) return s.slice(6, -7).trim();
+      return s;
+    }
+
+    function parseLeadingBracedTex(source, startIndex) {
+      if (source[startIndex] !== '{') return null;
+      let depth = 0;
+      for (let i = startIndex; i < source.length; i++) {
+        const ch = source[i];
+        if (ch === '{') depth++;
+        else if (ch === '}') {
+          depth--;
+          if (depth === 0) return { content: source.slice(startIndex + 1, i), end: i + 1 };
+        }
+      }
+      return null;
+    }
+
+    function parseQuestionQuotientTex(questionTex) {
+      const marker = 'f(x)=\\frac{';
+      const start = questionTex.indexOf(marker);
+      if (start < 0) return null;
+      const numStart = start + 'f(x)=\\frac'.length;
+      const numerator = parseLeadingBracedTex(questionTex, numStart);
+      if (!numerator) return null;
+      const denominator = parseLeadingBracedTex(questionTex, numerator.end);
+      if (!denominator) return null;
+      return { numeratorTex: numerator.content, denominatorTex: denominator.content };
+    }
+
+    function parsePureTrigDenominator(tex) {
+      const match = (tex || '').trim().match(/^\\(sin|cos|tan|sec|csc|cot)\\left\((.*)\\right\)$/);
+      if (!match) return null;
+      return { name: match[1], innerTex: match[2] };
+    }
+
+    function parsePureExponentialDenominator(tex) {
+      const s = (tex || '').trim();
+      let m = s.match(/^e\^{(.+)}$/);
+      if (m) return { base: 'e', innerTex: m[1] };
+      m = s.match(/^([2-9])\^{(.+)}$/);
+      if (m) return { base: m[1], innerTex: m[2] };
+      return null;
+    }
+
+    function parseMonomialDenominator(tex) {
+      const s = (tex || '').trim().replace(/\s+/g, ' ');
+      if (s.includes('+')) return null;
+      const withoutLeading = s.replace(/^- /, '').replace(/^-/, '');
+      if (withoutLeading.includes(' - ')) return null;
+      const compact = s.replace(/\s+/g, '');
+      let m = compact.match(/^(-?)(\d*)x(?:\^{(-?\d+)})?$/);
+      if (!m) return null;
+      const sign = m[1] === '-' ? -1 : 1;
+      const coeff = m[2] === '' ? 1 : parseInt(m[2], 10);
+      const power = m[3] === undefined ? 1 : parseInt(m[3], 10);
+      if (!Number.isFinite(coeff) || !Number.isFinite(power) || power === 0) return null;
+      return { coefficient: sign * coeff, power };
+    }
+
+    function reciprocalTrigTex(name, innerTex) {
+      const reciprocalName = { sin: 'csc', cos: 'sec', tan: 'cot', sec: 'cos', csc: 'sin', cot: 'tan' }[name];
+      return trigTex(reciprocalName, innerTex);
+    }
+
+    function negateExponentTex(innerTex) {
+      const s = stripOuterTexParens(innerTex);
+      if (s === 'x') return '-x';
+      if (s === '-x') return 'x';
+      if (/^-?\d+x$/.test(s)) {
+        if (s.startsWith('-')) return s.slice(1);
+        return `-${s}`;
+      }
+      return String.raw`-\left(${s}\right)`;
+    }
+
+    function reciprocalExponentialTex(base, innerTex) {
+      return expTex(base, negateExponentTex(innerTex));
+    }
+
+    function reciprocalMonomialTex(data) {
+      const { coefficient, power } = data;
+      const absCoeff = Math.abs(coefficient);
+      const sign = coefficient < 0 ? '-' : '';
+      const powerTex = power === 1 ? 'x^{-1}' : `x^{-${power}}`;
+      if (absCoeff === 1) return `${sign}${powerTex}`;
+      return `${sign}${fractionToTex(exactFraction(1, absCoeff))}${powerTex}`;
+    }
+
+    function eligibleType4DenominatorData(denominatorTex) {
+      const trig = parsePureTrigDenominator(denominatorTex);
+      if (trig) return { kind: 'trig', reciprocalTex: reciprocalTrigTex(trig.name, trig.innerTex) };
+      const exp = parsePureExponentialDenominator(denominatorTex);
+      if (exp) return { kind: 'exp', reciprocalTex: reciprocalExponentialTex(exp.base, exp.innerTex) };
+      const monomial = parseMonomialDenominator(denominatorTex);
+      if (monomial) return { kind: 'monomial', reciprocalTex: reciprocalMonomialTex(monomial) };
+      return null;
+    }
+
+    function type4FormFromType3Problem(problem) {
+      const hintText = (problem.hints || []).join(' ');
+      const isIndeterminateQuotient = hintText.includes('\\frac{0}{0}') || hintText.includes('\\frac{\\infty}{\\infty}');
+      if (!isIndeterminateQuotient) return null;
+      const quotient = parseQuestionQuotientTex(problem.questionTex || '');
+      if (!quotient) return null;
+      const denominatorData = eligibleType4DenominatorData(quotient.denominatorTex);
+      if (!denominatorData) return null;
+      const productTex = String.raw`\left(${quotient.numeratorTex}\right)\left(${denominatorData.reciprocalTex}\right)`;
+      const labelTex = problem.answers && problem.answers[0] ? problem.answers[0].labelTex : String.raw`\lim f(x)`;
+      const limitOperatorTex = labelTex.replace(/f\(x\)$/, '').trim() || String.raw`\lim`;
+      const firstHint = hintText.includes('\\frac{0}{0}')
+        ? String.raw`\text{This is an indeterminate product of the form }0\cdot\infty\text{.  Rephrase as an indeterminate quotient.}`
+        : String.raw`\text{This is an indeterminate product of the form }\infty\cdot 0\text{.  Rephrase as an indeterminate quotient.}`;
+      return {
+        type: 4,
+        questionTex: String.raw`f(x)=${productTex}.\quad \text{Evaluate }${labelTex}.`,
+        answers: problem.answers,
+        hints: [
+          firstHint,
+          String.raw`${labelTex}=${limitOperatorTex}${productTex}=${limitOperatorTex}\frac{${quotient.numeratorTex}}{${quotient.denominatorTex}}`,
+          ...(problem.hints || [])
+        ],
+        sourceType3: problem
+      };
+    }
+
+    function generateType4ProductProblem() {
+      for (let attempt = 0; attempt < 400; attempt++) {
+        const candidate = originalType3QuotientGeneratorForType4();
+        const type4 = type4FormFromType3Problem(candidate);
+        if (type4) return type4;
+      }
+      // Extremely unlikely fallback: keep the activity responsive rather than risking an infinite loop.
+      return originalType3QuotientGeneratorForType4();
+    }
+
+    function generateLimitProblem() {
+      const r = Math.random();
+      if (r < 0.05) return generateRenamedType1LimitProblem();
+      if (r < 0.10) return generateRenamedType2LimitProblem();
+      if (r < 0.80) return originalType3QuotientGeneratorForType4();
+      return generateType4ProductProblem();
     }
 
     function createHintStepBlock(extraClass = '') {

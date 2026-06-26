@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -3093,6 +3094,68 @@ function exactTrigSpecialValue(name, angleKey) {
 
 
 
+
+
+
+    // --- Type 5: indeterminate differences of rational functions ---
+
+    function polynomialDifferenceFactorTex(a, b) {
+      return linearFactorTex(a) + linearFactorTex(b);
+    }
+
+    function type5DifferenceQuestion(termATex, termBTex, limitData) {
+      return String.raw`f(x)=${termATex} - ${termBTex}.\quad \text{Evaluate }${limitData.labelTex}.`;
+    }
+
+    function type5DifferenceHints(termATex, termBTex, combinedNumeratorTex, combinedDenominatorTex, cancelledTex, quotientTex, limitData, answerEntry) {
+      return [
+        String.raw`\text{This is an indeterminate difference of the form }\infty-\infty\text{.  First combine the two fractions using a common denominator.}`,
+        String.raw`${limitData.labelTex}=\lim_{x\to ${limitData.limitTex}}\left(${termATex} - ${termBTex}\right)=\lim_{x\to ${limitData.limitTex}}\frac{${combinedNumeratorTex}}{${combinedDenominatorTex}}`,
+        String.raw`\text{This quotient is an indeterminate form of type }\frac{0}{0}\text{, so we can apply L'Hôpital's Rule.}`,
+        String.raw`${limitData.labelTex}=\lim_{x\to ${limitData.limitTex}}${quotientTex}`,
+        String.raw`\text{Now substitute }x=${limitData.limitTex}\text{ into the differentiated quotient.}`,
+        `${answerEquationTexExtended(answerEntry)}`,
+        String.raw`\text{Alternate solution: after combining the fractions, cancel the common factor before evaluating.}`,
+        String.raw`\lim_{x\to ${limitData.limitTex}}\frac{${combinedNumeratorTex}}{${combinedDenominatorTex}}=\lim_{x\to ${limitData.limitTex}}${cancelledTex}`,
+        `${answerEquationTexExtended(answerEntry)}`
+      ];
+    }
+
+    function generateType5DifferenceProblem() {
+      let n, p;
+      do { n = randomNonzeroInteger(-10, 10); } while (n === 0);
+      do { p = randomNonzeroInteger(-10, 10); } while (p === 0 || p === n || p === -n);
+      const m = n + p;
+      const side = n > 0 ? '^+' : '^-';
+      const limitData = finiteLimitData(n, side);
+
+      const firstDenTex = linearFactorTex(n);
+      const secondDenPoly = multiplyPolynomials(polynomialFromRoot(n), polynomialFromRoot(m));
+      const secondDenTex = polynomialToTex(secondDenPoly);
+      const secondNumerator = -n * p;
+      const termATex = String.raw`\frac{x}{${firstDenTex}}`;
+      const termBTex = String.raw`\frac{${numberTex(secondNumerator)}}{${secondDenTex}}`;
+
+      const combinedNumeratorPoly = multiplyPolynomials(polynomialFromRoot(n), polynomialFromRoot(p));
+      const combinedDenominatorPoly = secondDenPoly;
+      const combinedNumeratorTex = polynomialDifferenceFactorTex(n, p);
+      const combinedDenominatorTex = polynomialDifferenceFactorTex(n, m);
+      const cancelledTex = String.raw`\frac{${linearFactorTex(p)}}{${linearFactorTex(m)}}`;
+      const derivativeNumeratorTex = polynomialToTex(derivativePolynomial(combinedNumeratorPoly));
+      const derivativeDenominatorTex = polynomialToTex(derivativePolynomial(combinedDenominatorPoly));
+      const quotientTex = String.raw`\frac{${derivativeNumeratorTex}}{${derivativeDenominatorTex}}`;
+      const answerValue = exactFraction(n - p, n - m);
+      const answerEntry = { labelTex: limitData.labelTex, answer: { kind: 'finite', value: answerValue, tex: fractionToTex(answerValue) } };
+
+      return {
+        type: 5,
+        questionTex: type5DifferenceQuestion(termATex, termBTex, limitData),
+        answers: [answerEntry],
+        hints: type5DifferenceHints(termATex, termBTex, combinedNumeratorTex, combinedDenominatorTex, cancelledTex, quotientTex, limitData, answerEntry)
+      };
+    }
+
+
     // --- Type 4 split: indeterminate products generated from eligible Type 3 quotients ---
 
     const originalType3QuotientGeneratorForType4 = generateSimpleIndeterminateQuotientProblem;
@@ -3239,8 +3302,9 @@ function exactTrigSpecialValue(name, angleKey) {
       const r = Math.random();
       if (r < 0.05) return generateRenamedType1LimitProblem();
       if (r < 0.10) return generateRenamedType2LimitProblem();
-      if (r < 0.80) return originalType3QuotientGeneratorForType4();
-      return generateType4ProductProblem();
+      if (r < 0.60) return originalType3QuotientGeneratorForType4();
+      if (r < 0.80) return generateType4ProductProblem();
+      return generateType5DifferenceProblem();
     }
 
     function createHintStepBlock(extraClass = '') {

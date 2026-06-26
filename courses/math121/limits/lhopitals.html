@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -3216,7 +3217,7 @@ function exactTrigSpecialValue(name, angleKey) {
       } = data;
 
       const hints = [
-        String.raw`\text{This is an indeterminate difference of the form }\infty-\infty\text{.  First combine the two fractions using a common denominator.}`,
+        String.raw`\text{This is an indeterminate difference.  First combine the two fractions using a common denominator.}`,
         factoredDenominatorHint,
         multiplyHint,
         String.raw`${limitData.labelTex}=\lim_{x\to ${limitData.limitTex}}\left(${termATex} - ${termBTex}\right)=\lim_{x\to ${limitData.limitTex}}${combinedRawTex}`,
@@ -3416,8 +3417,151 @@ function exactTrigSpecialValue(name, angleKey) {
       };
     }
 
-    function generateType5DifferenceProblem() {
+
+    function parseFiniteRootFromLabelTex(labelTex) {
+      const m = (labelTex || '').match(/\\lim_\{x \\to ([^\}\^]+)(?:\^\+|\^-)?\}f\(x\)/);
+      if (!m) return null;
+      const raw = m[1].trim();
+      if (/^-?\d+$/.test(raw)) return Number(raw);
+      return null;
+    }
+
+    function type5GeneralDifferenceHints(data) {
+      const { introTex, combineSteps, quotientTex, limitData, answerEntry, followupHints, alternateHint } = data;
+      const hints = [
+        introTex || String.raw`\text{This is an indeterminate difference.  Rephrase it as an indeterminate quotient.}`,
+        ...combineSteps,
+        String.raw`\text{Now we have an indeterminate quotient, so continue as before.}`
+      ];
+      hints.push(...(followupHints || []));
+      if (alternateHint) hints.push(alternateHint);
+      if (answerEntry) hints.push(`${answerEquationTexExtended(answerEntry)}`);
+      return hints;
+    }
+
+    function generateType5FromExistingQuotientProblem() {
+      for (let attempt = 0; attempt < 250; attempt++) {
+        const baseProblem = generateType3FiniteRootProblem();
+        const quotient = parseQuestionQuotientTex(baseProblem.questionTex || '');
+        if (!quotient || !baseProblem.answers || !baseProblem.answers[0]) continue;
+        const root = parseFiniteRootFromLabelTex(baseProblem.answers[0].labelTex);
+        if (root === null) continue;
+        const limitData = finiteLimitData(root);
+        const hTex = linearFactorTex(root);
+        const augmentedNumerator = String.raw`\left(${quotient.numeratorTex}\right)${hTex}+\left(${quotient.denominatorTex}\right)`;
+        const termATex = String.raw`\frac{${augmentedNumerator}}{\left(${quotient.denominatorTex}\right)${hTex}}`;
+        const termBTex = String.raw`\frac{1}{${hTex}}`;
+        const productDenTex = String.raw`\left(${quotient.denominatorTex}\right)${hTex}`;
+        return {
+          type: 5,
+          questionTex: type5DifferenceQuestion(termATex, termBTex, limitData),
+          answers: baseProblem.answers,
+          hints: [
+            String.raw`\text{This is an indeterminate difference.  Combine the two fractions using a common denominator.}`,
+            String.raw`${limitData.labelTex}=\lim_{x\to ${limitData.limitTex}}\left(${termATex}-${termBTex}\right)`,
+            String.raw`=\lim_{x\to ${limitData.limitTex}}\frac{${augmentedNumerator}-\left(${quotient.denominatorTex}\right)}{${productDenTex}}`,
+            String.raw`=\lim_{x\to ${limitData.limitTex}}\frac{\left(${quotient.numeratorTex}\right)${hTex}}{\left(${quotient.denominatorTex}\right)${hTex}}`,
+            String.raw`=\lim_{x\to ${limitData.limitTex}}\frac{${quotient.numeratorTex}}{${quotient.denominatorTex}}`,
+            ...(baseProblem.hints || [])
+          ]
+        };
+      }
+      return generateType5SimpleDifferenceProblem();
+    }
+
+    function generateType5ReciprocalTrigDifferenceProblem() {
+      const a = randomInteger(-4, 4);
+      const useSecTan = Math.random() < 0.5;
+      const side = useSecTan ? 'left' : 'right';
+      const limitData = oneSidedLimitData(a, side);
+      limitData.point = a;
+      const shiftTex = rootShiftTex(a);
+      const innerTex = useSecTan
+        ? (a === 0 ? String.raw`x+\frac{\pi}{2}` : String.raw`x+\frac{\pi}{2}${a > 0 ? '-' + a : '+' + Math.abs(a)}`)
+        : shiftTex;
+      const termATex = useSecTan ? trigTex('sec', innerTex) : trigTex('csc', innerTex);
+      const termBTex = useSecTan ? trigTex('tan', innerTex) : trigTex('cot', innerTex);
+      const quotientTex = useSecTan
+        ? String.raw`\frac{1-\sin\left(${innerTex}\right)}{\cos\left(${innerTex}\right)}`
+        : String.raw`\frac{1-\cos\left(${innerTex}\right)}{\sin\left(${innerTex}\right)}`;
+      const derivativeQuotient = useSecTan
+        ? String.raw`\frac{-\cos\left(${innerTex}\right)}{-\sin\left(${innerTex}\right)}`
+        : String.raw`\frac{\sin\left(${innerTex}\right)}{\cos\left(${innerTex}\right)}`;
+      const answerEntry = { labelTex: limitData.labelTex, answer: { kind: 'finite', value: exactFraction(0, 1), tex: '0' } };
+      const identityHint = useSecTan
+        ? String.raw`\sec u-\tan u=\frac{1}{\cos u}-\frac{\sin u}{\cos u}=\frac{1-\sin u}{\cos u}.`
+        : String.raw`\csc u-\cot u=\frac{1}{\sin u}-\frac{\cos u}{\sin u}=\frac{1-\cos u}{\sin u}.`;
+      return {
+        type: 5,
+        questionTex: type5DifferenceQuestion(termATex, termBTex, limitData),
+        answers: [answerEntry],
+        hints: [
+          String.raw`\text{This is an indeterminate difference of the form }\infty-\infty\text{.  Rewrite the reciprocal trigonometric functions using a common denominator.}`,
+          identityHint,
+          String.raw`${limitData.labelTex}=\lim_{x\to ${limitData.limitTex}}\left(${termATex}-${termBTex}\right)=\lim_{x\to ${limitData.limitTex}}${quotientTex}`,
+          String.raw`\text{This quotient is an indeterminate form of type }\frac{0}{0}\text{, so apply L'Hôpital's Rule.}`,
+          String.raw`${limitData.labelTex}=\lim_{x\to ${limitData.limitTex}}${derivativeQuotient}`,
+          String.raw`\text{Now substitute into the differentiated quotient.}`,
+          `${answerEquationTexExtended(answerEntry)}`
+        ]
+      };
+    }
+
+    function generatePositivePolynomialForInfinity(degree, leadCoeff) {
+      const poly = [makeTerm(leadCoeff, degree)];
+      const lowerTerms = randomInteger(1, Math.min(3, degree));
+      for (let i = 0; i < lowerTerms; i++) {
+        const pow = randomInteger(0, degree - 1);
+        poly.push(makeTerm(randomInteger(-6, 6), pow));
+      }
+      const minAtZero = evaluatePolynomial(poly, 0);
+      if (minAtZero <= 0) poly.push(makeTerm(Math.abs(minAtZero) + randomInteger(2, 8), 0));
+      return combineLikeTerms(poly);
+    }
+
+    function generateType5LogDifferenceProblem() {
+      const degree = randomInteger(1, 5);
+      let leadA, leadB;
+      do { leadA = randomInteger(1, 9); leadB = randomInteger(1, 9); } while (leadA === leadB);
+      const polyA = generatePositivePolynomialForInfinity(degree, leadA);
+      const polyB = generatePositivePolynomialForInfinity(degree, leadB);
+      const ATex = polynomialToTex(polyA);
+      const BTex = polynomialToTex(polyB);
+      const termATex = String.raw`\ln\left(${ATex}\right)`;
+      const termBTex = String.raw`\ln\left(${BTex}\right)`;
+      const limitData = { limitTex: '\\infty', labelTex: String.raw`\lim_{x \to \infty}f(x)`, point: Infinity };
+      const ratio = exactFraction(leadA, leadB);
+      const ratioTex = fractionToTex(ratio);
+      const ansTex = ratioTex === '1' ? '0' : String.raw`\ln\left(${ratioTex}\right)`;
+      const ansVal = Math.log(leadA / leadB);
+      const answerEntry = { labelTex: limitData.labelTex, answer: finiteAnswerFromTex(ansTex, ansVal) };
+      return {
+        type: 5,
+        questionTex: type5DifferenceQuestion(termATex, termBTex, limitData),
+        answers: [answerEntry],
+        hints: [
+          String.raw`\text{This is an indeterminate difference of logarithms.  Use the logarithm law }\ln A-\ln B=\ln\left(\frac{A}{B}\right).`,
+          String.raw`${limitData.labelTex}=\lim_{x\to\infty}\ln\left(\frac{${ATex}}{${BTex}}\right)`,
+          String.raw`\text{Now evaluate the rational function inside the logarithm.  The degrees are the same, so the leading coefficients determine the limit.}`,
+          String.raw`\lim_{x\to\infty}\frac{${ATex}}{${BTex}}=\frac{${leadA}}{${leadB}}=${ratioTex}`,
+          String.raw`${limitData.labelTex}=\ln\left(${ratioTex}\right)=${ansTex}`,
+          `${answerEquationTexExtended(answerEntry)}`
+        ]
+      };
+    }
+
+    function generateType5ReciprocalPolynomialDifferenceProblem() {
       return Math.random() < 0.5 ? generateType5SimpleDifferenceProblem() : generateType5PoweredDifferenceProblem();
+    }
+
+    function generateType5DifferenceProblem() {
+      return randomChoice([
+        generateType5SimpleDifferenceProblem,
+        generateType5PoweredDifferenceProblem,
+        generateType5FromExistingQuotientProblem,
+        generateType5ReciprocalTrigDifferenceProblem,
+        generateType5LogDifferenceProblem
+      ])();
     }
 
 

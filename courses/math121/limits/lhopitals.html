@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -3469,24 +3470,44 @@ function exactTrigSpecialValue(name, angleKey) {
       return generateType5SimpleDifferenceProblem();
     }
 
+    function quadraticShiftPolynomialTex(root, scale = 1) {
+      const poly = scalePolynomial(multiplyPolynomials(polynomialFromRoot(root), polynomialFromRoot(root)), scale);
+      return polynomialToTex(poly);
+    }
+
     function generateType5ReciprocalTrigDifferenceProblem() {
       const a = randomInteger(-4, 4);
       const useSecTan = Math.random() < 0.5;
+      const useQuadraticArgument = Math.random() < 0.5;
       const side = useSecTan ? 'left' : 'right';
       const limitData = oneSidedLimitData(a, side);
       limitData.point = a;
       const shiftTex = rootShiftTex(a);
-      const innerTex = useSecTan
-        ? (a === 0 ? String.raw`x+\frac{\pi}{2}` : String.raw`x+\frac{\pi}{2}${a > 0 ? '-' + a : '+' + Math.abs(a)}`)
-        : shiftTex;
+      let innerTex;
+      let derivativeQuotient;
+
+      if (useQuadraticArgument) {
+        const qTex = quadraticShiftPolynomialTex(a, 1);
+        innerTex = useSecTan
+          ? String.raw`\frac{\pi}{2}-\left(${qTex}\right)`
+          : String.raw`${qTex}`;
+        derivativeQuotient = useSecTan
+          ? String.raw`\frac{-\cos\left(${innerTex}\right)\cdot u'(x)}{-\sin\left(${innerTex}\right)\cdot u'(x)}=\frac{\cos\left(${innerTex}\right)}{\sin\left(${innerTex}\right)}`
+          : String.raw`\frac{\sin\left(${innerTex}\right)\cdot u'(x)}{\cos\left(${innerTex}\right)\cdot u'(x)}=\frac{\sin\left(${innerTex}\right)}{\cos\left(${innerTex}\right)}`;
+      } else {
+        innerTex = useSecTan
+          ? (a === 0 ? String.raw`x+\frac{\pi}{2}` : String.raw`x+\frac{\pi}{2}${a > 0 ? '-' + a : '+' + Math.abs(a)}`)
+          : shiftTex;
+        derivativeQuotient = useSecTan
+          ? String.raw`\frac{-\cos\left(${innerTex}\right)}{-\sin\left(${innerTex}\right)}`
+          : String.raw`\frac{\sin\left(${innerTex}\right)}{\cos\left(${innerTex}\right)}`;
+      }
+
       const termATex = useSecTan ? trigTex('sec', innerTex) : trigTex('csc', innerTex);
       const termBTex = useSecTan ? trigTex('tan', innerTex) : trigTex('cot', innerTex);
       const quotientTex = useSecTan
         ? String.raw`\frac{1-\sin\left(${innerTex}\right)}{\cos\left(${innerTex}\right)}`
         : String.raw`\frac{1-\cos\left(${innerTex}\right)}{\sin\left(${innerTex}\right)}`;
-      const derivativeQuotient = useSecTan
-        ? String.raw`\frac{-\cos\left(${innerTex}\right)}{-\sin\left(${innerTex}\right)}`
-        : String.raw`\frac{\sin\left(${innerTex}\right)}{\cos\left(${innerTex}\right)}`;
       const answerEntry = { labelTex: limitData.labelTex, answer: { kind: 'finite', value: exactFraction(0, 1), tex: '0' } };
       const identityHint = useSecTan
         ? String.raw`\sec u-\tan u=\frac{1}{\cos u}-\frac{\sin u}{\cos u}=\frac{1-\sin u}{\cos u}.`
@@ -3500,6 +3521,7 @@ function exactTrigSpecialValue(name, angleKey) {
           identityHint,
           String.raw`${limitData.labelTex}=\lim_{x\to ${limitData.limitTex}}\left(${termATex}-${termBTex}\right)=\lim_{x\to ${limitData.limitTex}}${quotientTex}`,
           String.raw`\text{This quotient is an indeterminate form of type }\frac{0}{0}\text{, so apply L'Hôpital's Rule.}`,
+          useQuadraticArgument ? String.raw`\text{Let }u(x)=${innerTex}\text{.  The common factor }u'(x)\text{ cancels after differentiating.}` : String.raw`\text{Differentiate the numerator and denominator.}`,
           String.raw`${limitData.labelTex}=\lim_{x\to ${limitData.limitTex}}${derivativeQuotient}`,
           String.raw`\text{Now substitute into the differentiated quotient.}`,
           `${answerEquationTexExtended(answerEntry)}`
@@ -3520,21 +3542,48 @@ function exactTrigSpecialValue(name, angleKey) {
     }
 
     function generateType5LogDifferenceProblem() {
-      const degree = randomInteger(1, 5);
+      const relation = randomChoice(['numeratorHigher', 'denominatorHigher', 'sameDegree']);
+      let degreeA, degreeB;
+      if (relation === 'numeratorHigher') {
+        degreeB = randomInteger(1, 4);
+        degreeA = randomInteger(degreeB + 1, 6);
+      } else if (relation === 'denominatorHigher') {
+        degreeA = randomInteger(1, 4);
+        degreeB = randomInteger(degreeA + 1, 6);
+      } else {
+        degreeA = degreeB = randomInteger(1, 6);
+      }
       let leadA, leadB;
-      do { leadA = randomInteger(1, 9); leadB = randomInteger(1, 9); } while (leadA === leadB);
-      const polyA = generatePositivePolynomialForInfinity(degree, leadA);
-      const polyB = generatePositivePolynomialForInfinity(degree, leadB);
+      do { leadA = randomInteger(1, 9); leadB = randomInteger(1, 9); } while (relation === 'sameDegree' && leadA === leadB);
+      const polyA = generatePositivePolynomialForInfinity(degreeA, leadA);
+      const polyB = generatePositivePolynomialForInfinity(degreeB, leadB);
       const ATex = polynomialToTex(polyA);
       const BTex = polynomialToTex(polyB);
       const termATex = String.raw`\ln\left(${ATex}\right)`;
       const termBTex = String.raw`\ln\left(${BTex}\right)`;
       const limitData = { limitTex: '\\infty', labelTex: String.raw`\lim_{x \to \infty}f(x)`, point: Infinity };
-      const ratio = exactFraction(leadA, leadB);
-      const ratioTex = fractionToTex(ratio);
-      const ansTex = ratioTex === '1' ? '0' : String.raw`\ln\left(${ratioTex}\right)`;
-      const ansVal = Math.log(leadA / leadB);
-      const answerEntry = { labelTex: limitData.labelTex, answer: finiteAnswerFromTex(ansTex, ansVal) };
+      let answerEntry;
+      let rationalLimitHint;
+      let finalLogHint;
+
+      if (degreeA > degreeB) {
+        answerEntry = { labelTex: limitData.labelTex, answer: { kind: 'infinity' } };
+        rationalLimitHint = String.raw`\lim_{x\to\infty}\frac{${ATex}}{${BTex}}=\infty\text{ since the numerator has larger degree.}`;
+        finalLogHint = String.raw`${limitData.labelTex}=\ln\left(\infty\right)=\infty`;
+      } else if (degreeA < degreeB) {
+        answerEntry = { labelTex: limitData.labelTex, answer: { kind: 'negativeInfinity' } };
+        rationalLimitHint = String.raw`\lim_{x\to\infty}\frac{${ATex}}{${BTex}}=0\text{ since the denominator has larger degree.}`;
+        finalLogHint = String.raw`${limitData.labelTex}=\ln\left(0^+\right)=-\infty`;
+      } else {
+        const ratio = exactFraction(leadA, leadB);
+        const ratioTex = fractionToTex(ratio);
+        const ansTex = ratioTex === '1' ? '0' : String.raw`\ln\left(${ratioTex}\right)`;
+        const ansVal = Math.log(leadA / leadB);
+        answerEntry = { labelTex: limitData.labelTex, answer: finiteAnswerFromTex(ansTex, ansVal) };
+        rationalLimitHint = String.raw`\lim_{x\to\infty}\frac{${ATex}}{${BTex}}=\frac{${leadA}}{${leadB}}=${ratioTex}\text{ since the degrees are the same.}`;
+        finalLogHint = String.raw`${limitData.labelTex}=\ln\left(${ratioTex}\right)=${ansTex}`;
+      }
+
       return {
         type: 5,
         questionTex: type5DifferenceQuestion(termATex, termBTex, limitData),
@@ -3542,9 +3591,9 @@ function exactTrigSpecialValue(name, angleKey) {
         hints: [
           String.raw`\text{This is an indeterminate difference of logarithms.  Use the logarithm law }\ln A-\ln B=\ln\left(\frac{A}{B}\right).`,
           String.raw`${limitData.labelTex}=\lim_{x\to\infty}\ln\left(\frac{${ATex}}{${BTex}}\right)`,
-          String.raw`\text{Now evaluate the rational function inside the logarithm.  The degrees are the same, so the leading coefficients determine the limit.}`,
-          String.raw`\lim_{x\to\infty}\frac{${ATex}}{${BTex}}=\frac{${leadA}}{${leadB}}=${ratioTex}`,
-          String.raw`${limitData.labelTex}=\ln\left(${ratioTex}\right)=${ansTex}`,
+          String.raw`\text{Now evaluate the rational function inside the logarithm by comparing degrees.}`,
+          rationalLimitHint,
+          finalLogHint,
           `${answerEquationTexExtended(answerEntry)}`
         ]
       };

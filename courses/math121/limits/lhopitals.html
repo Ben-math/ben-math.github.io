@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -3103,47 +3104,156 @@ function exactTrigSpecialValue(name, angleKey) {
       return linearFactorTex(a) + linearFactorTex(b);
     }
 
+    function productTexFactors(factors) {
+      return factors.filter(Boolean).join('');
+    }
+
+    function coefficientTimesTex(coefficient, tex) {
+      if (coefficient === 1) return tex;
+      if (coefficient === -1) return `-${tex}`;
+      return `${coefficient}${tex}`;
+    }
+
+    function powerOfXTex(power) {
+      if (power === 0) return '';
+      if (power === 1) return 'x';
+      return `x^{${power}}`;
+    }
+
+    function maybeTimesTex(a, b) {
+      if (!a) return b;
+      if (!b) return a;
+      return `${a}${b}`;
+    }
+
+    function monomialFactorTex(coefficient, power) {
+      const xPart = powerOfXTex(power);
+      if (!xPart) return `${coefficient}`;
+      if (coefficient === 1) return xPart;
+      if (coefficient === -1) return `-${xPart}`;
+      return `${coefficient}${xPart}`;
+    }
+
+    function monomialDenominatorTex(coefficient, xPower, extraFactorTex = '') {
+      const coeffTex = coefficient === 1 ? '' : `${coefficient}`;
+      const xTex = powerOfXTex(xPower);
+      return `${coeffTex}${xTex}${extraFactorTex}` || '1';
+    }
+
+    function polynomialPowerShift(poly, shift) {
+      if (shift === 0) return combineLikeTerms(poly);
+      return combineLikeTerms(poly.map(term => makeTerm(term.coefficient, term.power + shift)));
+    }
+
+    function oneSidedLimitData(point, side) {
+      return finiteLimitData(point, side === 'right' ? '^+' : '^-');
+    }
+
+    function sideSign(side) {
+      return side === 'right' ? 1 : -1;
+    }
+
+    function multiplicityAndCoefficientAt(poly, point) {
+      let current = combineLikeTerms(poly);
+      let order = 0;
+      while (Math.abs(evaluatePolynomial(current, point)) < 1e-10 && degreeOfPolynomial(current) > -Infinity && order < 30) {
+        current = derivativePolynomial(current);
+        order++;
+      }
+      const value = evaluatePolynomial(current, point);
+      const factorial = Array.from({ length: Math.max(0, order) }, (_, i) => i + 1).reduce((a, b) => a * b, 1);
+      return { order, coefficient: value / factorial };
+    }
+
+    function quotientOneSidedAnswer(numeratorPoly, denominatorPoly, point, side) {
+      const numInfo = multiplicityAndCoefficientAt(numeratorPoly, point);
+      const denInfo = multiplicityAndCoefficientAt(denominatorPoly, point);
+      if (numInfo.order > denInfo.order) return { kind: 'finite', value: exactFraction(0, 1), tex: '0' };
+      if (numInfo.order === denInfo.order) {
+        const value = exactFraction(Math.round(numInfo.coefficient * 1000000000), Math.round(denInfo.coefficient * 1000000000));
+        return { kind: 'finite', value, tex: fractionToTex(value) };
+      }
+      const powerDifference = denInfo.order - numInfo.order;
+      const localSideSign = Math.pow(sideSign(side), powerDifference);
+      const sign = Math.sign(numInfo.coefficient / denInfo.coefficient) * localSideSign;
+      return sign > 0 ? { kind: 'infinity' } : { kind: 'negativeInfinity' };
+    }
+
+    function differentiatedQuotientHints(numeratorPoly, denominatorPoly, limitData, answerEntry) {
+      const hints = [];
+      let currentNumerator = combineLikeTerms(numeratorPoly);
+      let currentDenominator = combineLikeTerms(denominatorPoly);
+      let step = 0;
+      while (
+        Math.abs(evaluatePolynomial(currentNumerator, limitData.point)) < 1e-10 &&
+        Math.abs(evaluatePolynomial(currentDenominator, limitData.point)) < 1e-10 &&
+        step < 15
+      ) {
+        currentNumerator = derivativePolynomial(currentNumerator);
+        currentDenominator = derivativePolynomial(currentDenominator);
+        step++;
+        hints.push(String.raw`${limitData.labelTex}=\lim_{x\to ${limitData.limitTex}}\frac{${polynomialToTex(currentNumerator)}}{${polynomialToTex(currentDenominator)}}`);
+      }
+      if (Math.abs(evaluatePolynomial(currentDenominator, limitData.point)) > 1e-10) {
+        hints.push(String.raw`\text{Now substitute }x=${limitData.limitTex}\text{ into this quotient.}`);
+      } else {
+        hints.push(String.raw`\text{The numerator now approaches a nonzero value while the denominator approaches }0\text{, so use the selected side to determine the sign.}`);
+      }
+      hints.push(`${answerEquationTexExtended(answerEntry)}`);
+      return hints;
+    }
+
     function type5DifferenceQuestion(termATex, termBTex, limitData) {
       return String.raw`f(x)=${termATex} - ${termBTex}.\quad \text{Evaluate }${limitData.labelTex}.`;
     }
 
-    function type5DifferenceHints(termATex, termBTex, combinedNumeratorTex, combinedDenominatorTex, cancelledTex, quotientTex, limitData, answerEntry) {
-      return [
+    function type5DifferenceHints(data) {
+      const {
+        termATex, termBTex, limitData, answerEntry,
+        factoredDenominatorHint, multiplyHint, combinedRawTex,
+        algebraNumeratorTex, factoredNumeratorTex, combinedDenominatorTex,
+        cancelledTex, combinedNumeratorPoly, combinedDenominatorPoly
+      } = data;
+
+      const hints = [
         String.raw`\text{This is an indeterminate difference of the form }\infty-\infty\text{.  First combine the two fractions using a common denominator.}`,
-        String.raw`${limitData.labelTex}=\lim_{x\to ${limitData.limitTex}}\left(${termATex} - ${termBTex}\right)=\lim_{x\to ${limitData.limitTex}}\frac{${combinedNumeratorTex}}{${combinedDenominatorTex}}`,
-        String.raw`\text{This quotient is an indeterminate form of type }\frac{0}{0}\text{, so we can apply L'Hôpital's Rule.}`,
-        String.raw`${limitData.labelTex}=\lim_{x\to ${limitData.limitTex}}${quotientTex}`,
-        String.raw`\text{Now substitute }x=${limitData.limitTex}\text{ into the differentiated quotient.}`,
-        `${answerEquationTexExtended(answerEntry)}`,
-        String.raw`\text{Alternate solution: after combining the fractions, cancel the common factor before evaluating.}`,
-        String.raw`\lim_{x\to ${limitData.limitTex}}\frac{${combinedNumeratorTex}}{${combinedDenominatorTex}}=\lim_{x\to ${limitData.limitTex}}${cancelledTex}`,
-        `${answerEquationTexExtended(answerEntry)}`
+        factoredDenominatorHint,
+        multiplyHint,
+        String.raw`${limitData.labelTex}=\lim_{x\to ${limitData.limitTex}}\left(${termATex} - ${termBTex}\right)=\lim_{x\to ${limitData.limitTex}}${combinedRawTex}`,
+        String.raw`=\lim_{x\to ${limitData.limitTex}}\frac{${algebraNumeratorTex}}{${combinedDenominatorTex}}`,
+        String.raw`=\lim_{x\to ${limitData.limitTex}}\frac{${factoredNumeratorTex}}{${combinedDenominatorTex}}`,
+        String.raw`\text{This quotient is an indeterminate form of type }\frac{0}{0}\text{, so we can apply L'Hôpital's Rule.}`
       ];
+
+      hints.push(...differentiatedQuotientHints(combinedNumeratorPoly, combinedDenominatorPoly, limitData, answerEntry));
+      hints.push(String.raw`\text{Alternate solution: after combining the fractions, cancel the common factor before evaluating.}`);
+      hints.push(String.raw`\lim_{x\to ${limitData.limitTex}}\frac{${factoredNumeratorTex}}{${combinedDenominatorTex}}=\lim_{x\to ${limitData.limitTex}}${cancelledTex}`);
+      hints.push(`${answerEquationTexExtended(answerEntry)}`);
+      return hints;
     }
 
-    function generateType5DifferenceProblem() {
+    function generateType5SimpleDifferenceProblem() {
       let n, p;
       do { n = randomNonzeroInteger(-10, 10); } while (n === 0);
       do { p = randomNonzeroInteger(-10, 10); } while (p === 0 || p === n || p === -n);
       const m = n + p;
-      const side = n > 0 ? '^+' : '^-';
-      const limitData = finiteLimitData(n, side);
+      const side = n > 0 ? 'right' : 'left';
+      const limitData = oneSidedLimitData(n, side);
+      limitData.point = n;
 
       const firstDenTex = linearFactorTex(n);
       const secondDenPoly = multiplyPolynomials(polynomialFromRoot(n), polynomialFromRoot(m));
-      const secondDenTex = polynomialToTex(secondDenPoly);
+      const secondDenExpandedTex = polynomialToTex(secondDenPoly);
       const secondNumerator = -n * p;
-      const termATex = String.raw`\frac{x}{${firstDenTex}}`;
-      const termBTex = String.raw`\frac{${numberTex(secondNumerator)}}{${secondDenTex}}`;
+      let termATex = String.raw`\frac{x}{${firstDenTex}}`;
+      let termBTex = String.raw`\frac{${numberTex(secondNumerator)}}{${secondDenExpandedTex}}`;
 
       const combinedNumeratorPoly = multiplyPolynomials(polynomialFromRoot(n), polynomialFromRoot(p));
       const combinedDenominatorPoly = secondDenPoly;
-      const combinedNumeratorTex = polynomialDifferenceFactorTex(n, p);
       const combinedDenominatorTex = polynomialDifferenceFactorTex(n, m);
+      const algebraNumeratorTex = polynomialToTex(combinedNumeratorPoly);
+      const factoredNumeratorTex = polynomialDifferenceFactorTex(n, p);
       const cancelledTex = String.raw`\frac{${linearFactorTex(p)}}{${linearFactorTex(m)}}`;
-      const derivativeNumeratorTex = polynomialToTex(derivativePolynomial(combinedNumeratorPoly));
-      const derivativeDenominatorTex = polynomialToTex(derivativePolynomial(combinedDenominatorPoly));
-      const quotientTex = String.raw`\frac{${derivativeNumeratorTex}}{${derivativeDenominatorTex}}`;
       const answerValue = exactFraction(n - p, n - m);
       const answerEntry = { labelTex: limitData.labelTex, answer: { kind: 'finite', value: answerValue, tex: fractionToTex(answerValue) } };
 
@@ -3151,8 +3261,163 @@ function exactTrigSpecialValue(name, angleKey) {
         type: 5,
         questionTex: type5DifferenceQuestion(termATex, termBTex, limitData),
         answers: [answerEntry],
-        hints: type5DifferenceHints(termATex, termBTex, combinedNumeratorTex, combinedDenominatorTex, cancelledTex, quotientTex, limitData, answerEntry)
+        hints: type5DifferenceHints({
+          termATex,
+          termBTex,
+          limitData,
+          answerEntry,
+          factoredDenominatorHint: String.raw`\text{Factor the quadratic denominator: }\quad ${secondDenExpandedTex}=${combinedDenominatorTex}.`,
+          multiplyHint: String.raw`\text{Multiply the first fraction by }\frac{${linearFactorTex(m)}}{${linearFactorTex(m)}}\text{, then combine over the common denominator.}`,
+          combinedRawTex: String.raw`\frac{x${linearFactorTex(m)}-\left(${numberTex(secondNumerator)}\right)}{${combinedDenominatorTex}}`,
+          algebraNumeratorTex,
+          factoredNumeratorTex,
+          combinedDenominatorTex,
+          cancelledTex,
+          combinedNumeratorPoly,
+          combinedDenominatorPoly
+        })
       };
+    }
+
+    function properDivisors(n) {
+      const divs = [];
+      for (let d = 2; d <= Math.abs(n) - 1; d++) {
+        if (n % d === 0) divs.push(d);
+      }
+      return divs;
+    }
+
+    function randomCompositeInteger(min = 4, max = 36) {
+      const composites = [];
+      for (let n = min; n <= max; n++) {
+        if (properDivisors(n).length) composites.push(n);
+      }
+      return randomChoice(composites);
+    }
+
+    function randomSplitSum(total) {
+      const a = randomInteger(0, total);
+      return [a, total - a];
+    }
+
+    function termPowerTex(power) {
+      return powerOfXTex(power) || '1';
+    }
+
+    function integerPowerSign(baseSign, exponent) {
+      return exponent % 2 === 0 ? 1 : baseSign;
+    }
+
+    function type5PoweredTermSignsAt(n, p, m, k, l, point, side) {
+      const s = sideSign(side);
+      if (point === 0) {
+        const termAExponent = k - l + 1;
+        const termBExponent = k - l;
+        if (termAExponent >= 0 || termBExponent >= 0) return null;
+        const termASign = integerPowerSign(s, termAExponent) * Math.sign(-n);
+        const termBSign = Math.sign(-n * p) * integerPowerSign(s, termBExponent) * Math.sign(n * m);
+        return { termA: termASign, termB: termBSign };
+      }
+      const nSignPowerA = integerPowerSign(Math.sign(n), k - l + 1);
+      const nSignPowerB = integerPowerSign(Math.sign(n), k - l);
+      const termASign = nSignPowerA * s;
+      const termBSign = Math.sign(-n * p) * nSignPowerB * s * Math.sign(n - m);
+      return { termA: termASign, termB: termBSign };
+    }
+
+    function validInfinityMinusInfinitySides(n, p, m, k, l, point) {
+      return ['right', 'left'].filter(side => {
+        const signs = type5PoweredTermSignsAt(n, p, m, k, l, point, side);
+        return signs && signs.termA > 0 && signs.termB > 0;
+      });
+    }
+
+    function generateType5PoweredDifferenceProblem() {
+      let n, p;
+      do { n = randomNonzeroInteger(-10, 10); } while (n === 0);
+      do { p = randomNonzeroInteger(-10, 10); } while (p === 0 || p === n || p === -n);
+      const m = n + p;
+
+      const b = randomCompositeInteger(4, 36);
+      const divs = properDivisors(b);
+      const b1 = randomChoice(divs);
+      const b2 = b / b1;
+
+      const useZeroLimit = Math.random() < 0.45;
+      let k, l;
+      if (useZeroLimit) {
+        k = randomInteger(1, 7);
+        l = randomInteger(k + 2, 9);
+      } else {
+        k = randomInteger(1, 9);
+        l = randomInteger(1, 9);
+      }
+      let l1, l2;
+      [l1, l2] = randomSplitSum(l);
+
+      const point = useZeroLimit ? 0 : n;
+      const validSides = validInfinityMinusInfinitySides(n, p, m, k, l, point);
+      if (!validSides.length) return generateType5PoweredDifferenceProblem();
+      const side = randomChoice(validSides);
+      const limitData = oneSidedLimitData(point, side);
+      limitData.point = point;
+
+      const firstExponent = k - l2 + 1;
+      const secondExponent = k - l1;
+      const firstDenTex = monomialDenominatorTex(b1, l1, linearFactorTex(n));
+      const secondQuadraticPoly = multiplyPolynomials(polynomialFromRoot(n), polynomialFromRoot(m));
+      const secondQuadraticExpandedTex = polynomialToTex(secondQuadraticPoly);
+      const secondDenExpandedTex = monomialDenominatorTex(b2, l2, `(${secondQuadraticExpandedTex})`);
+      const secondDenFactoredTex = monomialDenominatorTex(b2, l2, polynomialDifferenceFactorTex(n, m));
+      const firstNumeratorTex = monomialFactorTex(b1, firstExponent);
+      const secondNumeratorTex = monomialFactorTex(b2 * (-n * p), secondExponent);
+
+      const commonDenominatorTex = monomialDenominatorTex(b, l, polynomialDifferenceFactorTex(n, m));
+      const firstMultiplierTex = `${b2}${powerOfXTex(l2)}${linearFactorTex(m)}`;
+      const secondMultiplierTex = `${b1}${powerOfXTex(l1)}`;
+      const rawFirstNumeratorTex = String.raw`\left(${firstNumeratorTex}\right)\left(${firstMultiplierTex}\right)`;
+      const rawSecondNumeratorTex = String.raw`\left(${secondNumeratorTex}\right)\left(${secondMultiplierTex}\right)`;
+      const combinedRawTex = String.raw`\frac{${rawFirstNumeratorTex}-${rawSecondNumeratorTex}}{${commonDenominatorTex}}`;
+
+      const baseNumeratorPoly = multiplyPolynomials(polynomialFromRoot(n), polynomialFromRoot(p));
+      const combinedNumeratorPoly = scalePolynomial(polynomialPowerShift(baseNumeratorPoly, k), b);
+      const combinedDenominatorPoly = scalePolynomial(polynomialPowerShift(multiplyPolynomials(polynomialFromRoot(n), polynomialFromRoot(m)), l), b);
+      const algebraNumeratorTex = polynomialToTex(combinedNumeratorPoly);
+      const factoredNumeratorTex = `${b}${powerOfXTex(k)}${polynomialDifferenceFactorTex(n, p)}`;
+      const cancelledNumeratorPoly = scalePolynomial(polynomialPowerShift(polynomialFromRoot(p), k), b);
+      const cancelledDenominatorPoly = scalePolynomial(polynomialPowerShift(polynomialFromRoot(m), l), b);
+      const cancelledTex = String.raw`\frac{${b}${powerOfXTex(k)}${linearFactorTex(p)}}{${b}${powerOfXTex(l)}${linearFactorTex(m)}}`;
+      const answer = quotientOneSidedAnswer(cancelledNumeratorPoly, cancelledDenominatorPoly, point, side);
+      const answerEntry = { labelTex: limitData.labelTex, answer };
+
+      return {
+        type: 5,
+        questionTex: type5DifferenceQuestion(
+          String.raw`\frac{${firstNumeratorTex}}{${firstDenTex}}`,
+          String.raw`\frac{${secondNumeratorTex}}{${secondDenExpandedTex}}`,
+          limitData
+        ),
+        answers: [answerEntry],
+        hints: type5DifferenceHints({
+          termATex: String.raw`\frac{${firstNumeratorTex}}{${firstDenTex}}`,
+          termBTex: String.raw`\frac{${secondNumeratorTex}}{${secondDenExpandedTex}}`,
+          limitData,
+          answerEntry,
+          factoredDenominatorHint: String.raw`\text{Factor the quadratic denominator: }\quad ${secondDenExpandedTex}=${secondDenFactoredTex}.`,
+          multiplyHint: String.raw`\text{Multiply the first fraction by }\frac{${firstMultiplierTex}}{${firstMultiplierTex}}\text{ and the second by }\frac{${secondMultiplierTex}}{${secondMultiplierTex}}.`,
+          combinedRawTex,
+          algebraNumeratorTex,
+          factoredNumeratorTex,
+          combinedDenominatorTex: commonDenominatorTex,
+          cancelledTex,
+          combinedNumeratorPoly,
+          combinedDenominatorPoly
+        })
+      };
+    }
+
+    function generateType5DifferenceProblem() {
+      return Math.random() < 0.5 ? generateType5SimpleDifferenceProblem() : generateType5PoweredDifferenceProblem();
     }
 
 

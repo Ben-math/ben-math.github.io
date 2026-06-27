@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -3543,6 +3544,8 @@ function exactTrigSpecialValue(name, angleKey) {
 
     function generateType5LogDifferenceProblem() {
       const relation = randomChoice(['numeratorHigher', 'denominatorHigher', 'sameDegree']);
+      const direction = randomChoice(['positive', 'negative']);
+      const infinityTex = direction === 'positive' ? String.raw`\infty` : String.raw`-\infty`;
       let degreeA, degreeB;
       if (relation === 'numeratorHigher') {
         degreeB = randomInteger(1, 4);
@@ -3561,18 +3564,40 @@ function exactTrigSpecialValue(name, angleKey) {
       const BTex = polynomialToTex(polyB);
       const termATex = String.raw`\ln\left(${ATex}\right)`;
       const termBTex = String.raw`\ln\left(${BTex}\right)`;
-      const limitData = { limitTex: '\\infty', labelTex: String.raw`\lim_{x \to \infty}f(x)`, point: Infinity };
+      const limitData = { limitTex: infinityTex, labelTex: String.raw`\lim_{x \to ${infinityTex}}f(x)`, point: direction === 'positive' ? Infinity : -Infinity };
+      const APositiveEventually = direction === 'positive' || degreeA % 2 === 0;
+      const BPositiveEventually = direction === 'positive' || degreeB % 2 === 0;
       let answerEntry;
       let rationalLimitHint;
       let finalLogHint;
 
+      if (!APositiveEventually || !BPositiveEventually) {
+        answerEntry = { labelTex: limitData.labelTex, answer: { kind: 'dne' } };
+        const badPart = !APositiveEventually && !BPositiveEventually
+          ? String.raw`\text{both logarithm arguments are eventually negative}`
+          : !APositiveEventually
+            ? String.raw`${ATex}\text{ is eventually negative}`
+            : String.raw`${BTex}\text{ is eventually negative}`;
+        return {
+          type: 5,
+          questionTex: type5DifferenceQuestion(termATex, termBTex, limitData),
+          answers: [answerEntry],
+          hints: [
+            String.raw`\text{Check the domains of the logarithms as }x\to ${infinityTex}\text{.}`,
+            String.raw`\text{As }x\to ${infinityTex}\text{, }${badPart}\text{, so the original logarithmic difference is not defined for all sufficiently large }|x|\text{.}`,
+            String.raw`${limitData.labelTex}=\text{DNE}`,
+            `${answerEquationTexExtended(answerEntry)}`
+          ]
+        };
+      }
+
       if (degreeA > degreeB) {
         answerEntry = { labelTex: limitData.labelTex, answer: { kind: 'infinity' } };
-        rationalLimitHint = String.raw`\lim_{x\to\infty}\frac{${ATex}}{${BTex}}=\infty\text{ since the numerator has larger degree.}`;
+        rationalLimitHint = String.raw`\lim_{x\to ${infinityTex}}\frac{${ATex}}{${BTex}}=\infty\text{ since the numerator has larger degree and the quotient is positive.}`;
         finalLogHint = String.raw`${limitData.labelTex}=\ln\left(\infty\right)=\infty`;
       } else if (degreeA < degreeB) {
         answerEntry = { labelTex: limitData.labelTex, answer: { kind: 'negativeInfinity' } };
-        rationalLimitHint = String.raw`\lim_{x\to\infty}\frac{${ATex}}{${BTex}}=0\text{ since the denominator has larger degree.}`;
+        rationalLimitHint = String.raw`\lim_{x\to ${infinityTex}}\frac{${ATex}}{${BTex}}=0^+\text{ since the denominator has larger degree and the quotient is positive.}`;
         finalLogHint = String.raw`${limitData.labelTex}=\ln\left(0^+\right)=-\infty`;
       } else {
         const ratio = exactFraction(leadA, leadB);
@@ -3580,7 +3605,7 @@ function exactTrigSpecialValue(name, angleKey) {
         const ansTex = ratioTex === '1' ? '0' : String.raw`\ln\left(${ratioTex}\right)`;
         const ansVal = Math.log(leadA / leadB);
         answerEntry = { labelTex: limitData.labelTex, answer: finiteAnswerFromTex(ansTex, ansVal) };
-        rationalLimitHint = String.raw`\lim_{x\to\infty}\frac{${ATex}}{${BTex}}=\frac{${leadA}}{${leadB}}=${ratioTex}\text{ since the degrees are the same.}`;
+        rationalLimitHint = String.raw`\lim_{x\to ${infinityTex}}\frac{${ATex}}{${BTex}}=\frac{${leadA}}{${leadB}}=${ratioTex}\text{ since the degrees are the same.}`;
         finalLogHint = String.raw`${limitData.labelTex}=\ln\left(${ratioTex}\right)=${ansTex}`;
       }
 
@@ -3590,7 +3615,7 @@ function exactTrigSpecialValue(name, angleKey) {
         answers: [answerEntry],
         hints: [
           String.raw`\text{This is an indeterminate difference of logarithms.  Use the logarithm law }\ln A-\ln B=\ln\left(\frac{A}{B}\right).`,
-          String.raw`${limitData.labelTex}=\lim_{x\to\infty}\ln\left(\frac{${ATex}}{${BTex}}\right)`,
+          String.raw`${limitData.labelTex}=\lim_{x\to ${infinityTex}}\ln\left(\frac{${ATex}}{${BTex}}\right)`,
           String.raw`\text{Now evaluate the rational function inside the logarithm by comparing degrees.}`,
           rationalLimitHint,
           finalLogHint,

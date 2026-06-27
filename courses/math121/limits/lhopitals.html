@@ -3,6 +3,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -3781,13 +3782,134 @@ function exactTrigSpecialValue(name, angleKey) {
       return originalType3QuotientGeneratorForType4();
     }
 
+    // --- Type 6: differences generated from Type 3-style 0/0 quotients ---
+
+    function type6NonzeroCoefficient() {
+      return randomNonzeroInteger(-9, 9);
+    }
+
+    function type6SignedMultiplierTex(coefficient, bodyTex, isFirst = true) {
+      const absCoefficient = Math.abs(coefficient);
+      const body = absCoefficient === 1 ? `\\left(${bodyTex}\\right)` : `${absCoefficient}\\left(${bodyTex}\\right)`;
+      if (coefficient < 0) return isFirst ? `-${body}` : `- ${body}`;
+      return isFirst ? body : `+ ${body}`;
+    }
+
+    function type6SubtractProductTex(c1, dTex, c2, nTex) {
+      const first = type6SignedMultiplierTex(c1, dTex, true);
+      const second = type6SignedMultiplierTex(-c2, nTex, false);
+      return `${first} ${second}`;
+    }
+
+    function type6LinearZeroExpression(root) {
+      const a = nonzeroNotOneInteger();
+      const poly = scalePolynomial(polynomialFromRoot(root), a);
+      return {
+        tex: polynomialToTex(poly),
+        derivativeTex: numberTex(a),
+        slope: slopeNumber(a)
+      };
+    }
+
+    function type6QuadraticZeroExpression(root) {
+      const a = nonzeroNotOneInteger();
+      let m;
+      do { m = randomNonzeroInteger(-9, 9); } while (m === root);
+      const poly = scalePolynomial(multiplyPolynomials(polynomialFromRoot(root), polynomialFromRoot(m)), a);
+      const primePoly = derivativePolynomial(poly);
+      const primeAtRoot = evaluatePolynomial(primePoly, root);
+      return {
+        tex: polynomialToTex(poly),
+        derivativeTex: polynomialToTex(primePoly),
+        slope: slopeNumber(primeAtRoot)
+      };
+    }
+
+    function type6RandomZeroExpression(root) {
+      const choice = randomChoice(['linear', 'quadratic', 'trig', 'exp', 'log']);
+      if (choice === 'linear') return type6LinearZeroExpression(root);
+      if (choice === 'quadratic') return type6QuadraticZeroExpression(root);
+      if (choice === 'trig') return randomFiniteTrigZeroPartner(root);
+      if (choice === 'exp') return randomFiniteExponentialZeroPartner(root);
+      return randomFiniteLogZeroPartner(root);
+    }
+
+    function type6TermBehaviourTex(coefficient, expression) {
+      const sign = Math.sign(coefficient) * slopeNumericSign(expression.slope);
+      return sign > 0 ? '\\infty' : '-\\infty';
+    }
+
+    function type6DifferenceFormTex(firstBehaviour, secondBehaviour) {
+      return `${firstBehaviour} - \\left(${secondBehaviour}\\right)`;
+    }
+
+    function type6AnswerForOneSidedDifference(c1, numeratorExpr, c2, denominatorExpr, side) {
+      const nSlope = slopeNumericValue(numeratorExpr.slope);
+      const dSlope = slopeNumericValue(denominatorExpr.slope);
+      const coefficient = (c1 * dSlope - c2 * nSlope) / (nSlope * dSlope);
+      const sideSign = side === '+' ? 1 : -1;
+      const finalSign = Math.sign(coefficient) * sideSign;
+      return finalSign > 0 ? { kind: 'infinity', tex: '\\infty' } : { kind: 'negativeInfinity', tex: '-\\infty' };
+    }
+
+    function generateType6DifferenceFromType3Problem() {
+      for (let attempt = 0; attempt < 300; attempt++) {
+        const root = Math.random() < 0.5 ? 0 : randomNonzeroInteger(-9, 9);
+        const side = Math.random() < 0.5 ? '+' : '-';
+        const limitData = finiteLimitData(root, side);
+        const numeratorExpr = type6RandomZeroExpression(root);
+        const denominatorExpr = type6RandomZeroExpression(root);
+        const nSlope = slopeNumericValue(numeratorExpr.slope);
+        const dSlope = slopeNumericValue(denominatorExpr.slope);
+        if (Math.abs(nSlope) < 1e-10 || Math.abs(dSlope) < 1e-10) continue;
+
+        const c1 = type6NonzeroCoefficient();
+        const c2 = type6NonzeroCoefficient();
+        const lhopitalNumeratorSlope = c1 * dSlope - c2 * nSlope;
+        if (Math.abs(lhopitalNumeratorSlope) < 1e-10) continue;
+
+        const term1Tex = `\\frac{${numberTex(c1)}}{${numeratorExpr.tex}}`;
+        const term2Tex = `\\frac{${numberTex(c2)}}{${denominatorExpr.tex}}`;
+        const combinedNumeratorTex = type6SubtractProductTex(c1, denominatorExpr.tex, c2, numeratorExpr.tex);
+        const combinedDenominatorTex = `\\left(${numeratorExpr.tex}\\right)\\left(${denominatorExpr.tex}\\right)`;
+        const differentiatedNumeratorTex = type6SubtractProductTex(c1, denominatorExpr.derivativeTex, c2, numeratorExpr.derivativeTex);
+        const differentiatedDenominatorTex = `\\left(${numeratorExpr.derivativeTex}\\right)\\left(${denominatorExpr.tex}\\right)+\\left(${numeratorExpr.tex}\\right)\\left(${denominatorExpr.derivativeTex}\\right)`;
+        const answer = type6AnswerForOneSidedDifference(c1, numeratorExpr, c2, denominatorExpr, side);
+        const answerEntry = { labelTex: limitData.labelTex, answer };
+        const firstBehaviour = type6TermBehaviourTex(c1, numeratorExpr);
+        const secondBehaviour = type6TermBehaviourTex(c2, denominatorExpr);
+        const differenceFormTex = type6DifferenceFormTex(firstBehaviour, secondBehaviour);
+        const isIndeterminateDifference = firstBehaviour === secondBehaviour;
+        const initialHint = isIndeterminateDifference
+          ? `\\text{The two terms have the form }${differenceFormTex}\\text{, so this is an indeterminate difference.  Give the fractions a common denominator.}`
+          : `\\text{The two terms have the form }${differenceFormTex}\\text{, so this is not an indeterminate difference.  We can already predict the limit, but we will also confirm it by combining the fractions.}`;
+
+        return {
+          type: 6,
+          questionTex: `f(x)=${term1Tex}-${term2Tex}.\\quad \\text{Evaluate }${limitData.labelTex}.`,
+          answers: [answerEntry],
+          hints: [
+            initialHint,
+            `${limitData.labelTex}=\\lim_{x\\to ${limitData.limitTex}}\\left(${term1Tex}-${term2Tex}\\right)`,
+            `=\\lim_{x\\to ${limitData.limitTex}}\\frac{${combinedNumeratorTex}}{${combinedDenominatorTex}}`,
+            `\\text{Now this is an indeterminate quotient of type }\\frac{0}{0}\\text{, so apply L'Hôpital's Rule.}`,
+            `\\lim_{x\\to ${limitData.limitTex}}f(x)=\\lim_{x\\to ${limitData.limitTex}}\\frac{${differentiatedNumeratorTex}}{${differentiatedDenominatorTex}}`,
+            `\\text{The numerator now approaches a nonzero value, while the denominator still approaches }0\\text{, so the one-sided limit is infinite.}`,
+            `${answerEquationTexExtended(answerEntry)}`
+          ]
+        };
+      }
+      return generateType5DifferenceProblem();
+    }
+
     function generateLimitProblem() {
       const r = Math.random();
       if (r < 0.05) return generateRenamedType1LimitProblem();
       if (r < 0.10) return generateRenamedType2LimitProblem();
-      if (r < 0.60) return originalType3QuotientGeneratorForType4();
-      if (r < 0.80) return generateType4ProductProblem();
-      return generateType5DifferenceProblem();
+      if (r < 0.50) return originalType3QuotientGeneratorForType4();
+      if (r < 0.70) return generateType4ProductProblem();
+      if (r < 0.90) return generateType5DifferenceProblem();
+      return generateType6DifferenceFromType3Problem();
     }
 
     function createHintStepBlock(extraClass = '') {

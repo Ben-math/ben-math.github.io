@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1023,9 +1024,12 @@ fetch("/nav.html")
 
     function sketchBreaks(problem) {
       if (!problem.plotModel) computeWindow(problem);
-      const xs = (problem.plotModel && problem.plotModel.curveNodes ? problem.plotModel.curveNodes.map(n => n.plotX) : [-11, 11]);
-      const sorted = dedupeNumbers(xs).sort((a,b)=>a-b);
-      return sorted.map((x, i, arr) => i < arr.length - 1 ? {a:x, b:arr[i+1]} : null).filter(Boolean);
+      const nodes = (problem.plotModel && problem.plotModel.curveNodes) ? problem.plotModel.curveNodes : [];
+      const pieces = [];
+      for (let i = 0; i < nodes.length - 1; i++) {
+        if (shouldConnectNodes(problem, nodes[i], nodes[i+1])) pieces.push({ a: nodes[i].plotX, b: nodes[i+1].plotX });
+      }
+      return pieces;
     }
 
     function finiteNumbers(values) {
@@ -1227,7 +1231,9 @@ fetch("/nav.html")
             plotY: limitY,
             slope: limitY > 0 ? 10 : -10,
             virtual: true,
-            role: 'vertical-asymptote-approach'
+            role: 'vertical-asymptote-approach',
+            asymptoteRaw: a,
+            side
           });
         });
       });
@@ -1362,32 +1368,83 @@ fetch("/nav.html")
       return out;
     }
 
+    function shouldConnectNodes(problem, leftNode, rightNode) {
+      if (!leftNode || !rightNode) return false;
+      if (!Number.isFinite(leftNode.plotX) || !Number.isFinite(rightNode.plotX)) return false;
+      if (rightNode.plotX <= leftNode.plotX + 1e-8) return false;
+      // Do not connect the two artificial approach points on opposite sides of the same vertical asymptote.
+      if (leftNode.role === 'vertical-asymptote-approach' && rightNode.role === 'vertical-asymptote-approach' &&
+          Math.abs(leftNode.asymptoteRaw - rightNode.asymptoteRaw) < 1e-8 && leftNode.side !== rightNode.side) return false;
+      // More generally, do not draw a curve segment across a vertical asymptote/domain break.
+      const breaks = [...(problem.verticalAsymptotes || []), ...(problem.domainBreaks || [])]
+        .map(x => problem.plotModel.mapX(x))
+        .filter(Number.isFinite);
+      return !breaks.some(x => x > leftNode.plotX + 1e-8 && x < rightNode.plotX - 1e-8);
+    }
+
+    function intervalSignAtPlotSegment(problem, leftNode, rightNode, derivativeName) {
+      const rawMid = (() => {
+        const lx = Number.isFinite(leftNode.rawX) ? leftNode.rawX : null;
+        const rx = Number.isFinite(rightNode.rawX) ? rightNode.rawX : null;
+        if (lx !== null && rx !== null) return (lx + rx) / 2;
+        if (lx !== null) return lx + (rightNode.plotX > leftNode.plotX ? 1 : -1);
+        if (rx !== null) return rx - (rightNode.plotX > leftNode.plotX ? 1 : -1);
+        return 0;
+      })();
+      const intervals = derivativeName === 'second' ? (problem.concIntervals || []) : (problem.incIntervals || []);
+      const I = intervals.find(item => rawMid > item.a && rawMid < item.b);
+      return I ? I.sign : 0;
+    }
+
+    function quadraticGraphPathThroughEndpoints(leftNode, rightNode, problem, X, Y) {
+      const x1 = leftNode.plotX, y1 = leftNode.plotY;
+      const x2 = rightNode.plotX, y2 = rightNode.plotY;
+      const dx = x2 - x1;
+      if (Math.abs(dx) < 1e-8) return '';
+      const secant = (y2 - y1) / dx;
+      const concSign = intervalSignAtPlotSegment(problem, leftNode, rightNode, 'second');
+      const mLeft = Number.isFinite(leftNode.slope) ? leftNode.slope : secant;
+      const mRight = Number.isFinite(rightNode.slope) ? rightNode.slope : secant;
+      // A quadratic cannot, in general, hit both endpoints and match both endpoint slopes.
+      // We therefore force it to hit both endpoints, then choose the endpoint slope that best agrees with the desired concavity.
+      const candidateStarts = [mLeft, 2 * secant - mRight, secant];
+      let startSlope = candidateStarts[0];
+      let bestScore = Infinity;
+      candidateStarts.forEach(m => {
+        const l = 2 * (y2 - y1 - m * dx) / (dx * dx);
+        const signPenalty = concSign && l ? (Math.sign(l) === concSign ? 0 : 100) : 0;
+        const slopePenalty = Math.abs(m - mLeft) + Math.abs((m + l * dx) - mRight);
+        const sizePenalty = 0.02 * Math.abs(l);
+        const score = signPenalty + slopePenalty + sizePenalty;
+        if (score < bestScore) { bestScore = score; startSlope = m; }
+      });
+      let l = 2 * (y2 - y1 - startSlope * dx) / (dx * dx);
+      const n = startSlope - l * x1;
+      const m = y1 - (l / 2) * x1 * x1 - n * x1;
+      let d = '';
+      const N = 60;
+      for (let i = 0; i <= N; i++) {
+        const x = x1 + dx * i / N;
+        let y = (l / 2) * x * x + n * x + m;
+        y = Math.max(-11, Math.min(11, y));
+        d += `${i === 0 ? 'M' : 'L'}${X(x).toFixed(2)},${Y(y).toFixed(2)} `;
+      }
+      return `<path d="${d}" fill="none" stroke="#111" stroke-width="3"/>`;
+    }
+
     function curvePath(problem, a, b, X, Y) {
       if (!problem.plotModel) computeWindow(problem);
       const nodes = problem.plotModel.curveNodes;
       let leftNode = null, rightNode = null;
-      for (let i=0; i<nodes.length-1; i++) {
+      for (let i = 0; i < nodes.length - 1; i++) {
         if (Math.abs(nodes[i].plotX - a) < 1e-8 && Math.abs(nodes[i+1].plotX - b) < 1e-8) {
-          leftNode = nodes[i]; rightNode = nodes[i+1]; break;
+          leftNode = nodes[i];
+          rightNode = nodes[i+1];
+          break;
         }
       }
-      if (!leftNode || !rightNode || Math.abs(rightNode.plotX-leftNode.plotX) < 1e-8) return '';
-      const x1 = leftNode.plotX, y1 = leftNode.plotY;
-      const x2 = rightNode.plotX, y2 = rightNode.plotY;
-      const m1 = Number.isFinite(leftNode.slope) ? leftNode.slope : 0;
-      const m2 = Number.isFinite(rightNode.slope) ? rightNode.slope : 0;
-      let qx, qy;
-      if (Math.abs(m1 - m2) > 1e-8) {
-        qx = (y2 - y1 + m1 * x1 - m2 * x2) / (m1 - m2);
-        qy = y1 + m1 * (qx - x1);
-      } else {
-        qx = (x1 + x2) / 2;
-        qy = (y1 + y2) / 2 + m1 * (x2 - x1) / 4;
-      }
-      // Keep absurd control points from making the visible piece disappear, while still allowing strong asymptote bends.
-      qx = Math.max(-25, Math.min(25, qx));
-      qy = Math.max(-25, Math.min(25, qy));
-      return `<path d="M${X(x1).toFixed(2)},${Y(y1).toFixed(2)} Q${X(qx).toFixed(2)},${Y(qy).toFixed(2)} ${X(x2).toFixed(2)},${Y(y2).toFixed(2)}" fill="none" stroke="#111" stroke-width="3"/>`;
+      if (!shouldConnectNodes(problem, leftNode, rightNode)) return '';
+      return quadraticGraphPathThroughEndpoints(leftNode, rightNode, problem, X, Y);
     }
 
     function clearOldActivityState() {

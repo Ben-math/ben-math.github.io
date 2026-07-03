@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1010,17 +1011,58 @@ fetch("/nav.html")
       return problem;
     }
 
-    function generateCurveProblem() {
-      const generators = [
-        makeCubicZeroAtOrigin,
-        makeEvenQuartic,
-        makeShiftedEvenQuartic,
-        makeProductPower,
-        makeReciprocalQuadratic,
-        makeLinearOverQuadratic,
-        makeLinearPlusReciprocal
+    function makeDebugQuartic() {
+      const a = -1;
+      const r = 12;
+      const tex = `-(x^2-${r})^2`;
+      const f = x => a * Math.pow(x*x-r, 2);
+      const f1 = x => 4*a*x*(x*x-r);
+      const f2 = x => 4*a*(3*x*x-r);
+      const roots = [
+        { kind:'sqrt', sign:-1, n:r },
+        { kind:'sqrt', sign:1, n:r }
       ];
-      return randomChoice(generators)();
+      const infR = r/3;
+      return finishProblem({
+        family: 'debug even quartic',
+        tex, f, f1, f2,
+        domainBreaks: [],
+        extraSignBreaks: [],
+        xIntercepts: roots.map(r0 => makePolynomialPoint(rootDecimal(r0), rootTex(r0), 0, '0')),
+        yIntercept: makePolynomialPoint(0, '0', f(0), numberTex(f(0))),
+        verticalAsymptotes: [],
+        horizontalAsymptote: null,
+        slantAsymptote: null,
+        criticalPoints: [
+          { x: -Math.sqrt(r), xTex: signedSqrtTex(r, -1) },
+          { x: 0, xTex: '0' },
+          { x: Math.sqrt(r), xTex: signedSqrtTex(r, 1) }
+        ],
+        inflectionPoints: [
+          { x: -Math.sqrt(infR), xTex: signedSqrtTex(infR, -1) },
+          { x: Math.sqrt(infR), xTex: signedSqrtTex(infR, 1) }
+        ],
+        criticalNumbers: [-Math.sqrt(r),0,Math.sqrt(r)],
+        inflectionNumbers: [-Math.sqrt(infR), Math.sqrt(infR)],
+        yTex: x => numberTex(f(x)),
+        domainHint: `\text{Since }f\text{ is a polynomial, its domain is }(-\infty,\infty).`,
+        interceptHint: `f(x)=${tex}=0\implies x^2-${r}=0\implies x=\pm ${sqrtTex(r)}.\quad f(0)=${numberTex(f(0))}.`,
+        asymptoteHint: `\text{Since }f\text{ is a polynomial, it has no vertical, horizontal, or slant asymptotes.}`,
+        firstDerivativeHints: [
+          `f'(x)=-2(x^2-${r})(x^2-${r})'`,
+          `=-4x(x^2-${r})`,
+          `-4x(x^2-${r})=0\implies x=0\text{ or }x=\pm ${sqrtTex(r)}.`
+        ],
+        secondDerivativeHints: [
+          `f''(x)=-4(3x^2-${r})`,
+          `-4(3x^2-${r})=0\implies 3x^2=${r}\implies x=\pm ${sqrtTex(infR)}.`
+        ]
+      });
+    }
+
+    function generateCurveProblem() {
+      // Temporary debugging restriction requested: always use f(x)=-(x^2-12)^2.
+      return makeDebugQuartic();
     }
 
     function sketchBreaks(problem) {
@@ -1248,7 +1290,7 @@ fetch("/nav.html")
       // If there is no horizontal asymptote, extend the extreme segments to the left/right edges by reusing nearest-neighbour quadratic behaviour.
       if (hAsym === null && nodes.length >= 2) {
         const first = nodes[0], second = nodes[1], last = nodes[nodes.length-1], prev = nodes[nodes.length-2];
-        if (first.plotX > -10.5) nodes.unshift(extendQuadraticEndpoint(second, first, -11, 'left-end'));
+        if (first.plotX > -10.5) nodes.unshift(extendQuadraticEndpoint(first, second, -11, 'left-end'));
         if (last.plotX < 10.5) nodes.push(extendQuadraticEndpoint(prev, last, 11, 'right-end'));
       }
       nodes = nodes.sort((a,b)=>a.plotX-b.plotX);
@@ -1279,6 +1321,43 @@ fetch("/nav.html")
         role,
         continuationCoeffs: coeffs
       };
+    }
+
+    function nodeRawLabel(node) {
+      if (!node) return '';
+      if (node.virtual) {
+        if (node.role === 'left-end' || node.role === 'right-end') return node.role;
+        if (node.role === 'vertical-asymptote-approach') return `VA approach x=${formatDebugNumber(node.asymptoteRaw)}${node.side < 0 ? '^-' : '^+'}`;
+        if (node.role === 'horizontal-asymptote-approach') return node.rawX < 0 ? '-∞ HA approach' : '∞ HA approach';
+        return node.role || 'virtual';
+      }
+      const x = node.xTex || numberTex(node.rawX);
+      const y = node.yTex || numberTex(node.rawY);
+      return `(${x},${y})`;
+    }
+
+    function nodePlotLabel(node) {
+      return `(${formatDebugNumber(node.plotX)},${formatDebugNumber(node.plotY)})`;
+    }
+
+    function makePlotMachineryDebug(problem) {
+      if (!problem.plotModel) computeWindow(problem);
+      const displayNodes = [...(problem.plotModel.displayPoints || [])]
+        .sort((a,b)=>a.plotX-b.plotX || a.plotY-b.plotY);
+      const curveNodes = [...(problem.plotModel.curveNodes || [])]
+        .sort((a,b)=>a.plotX-b.plotX || a.plotY-b.plotY);
+      let html = `<div style="max-width:720px;margin:0.75em auto 0;text-align:left;font-size:0.95em;">`;
+      html += `<strong>Feature placement:</strong><ol style="margin-top:0.35em;">`;
+      displayNodes.forEach(node => {
+        html += `<li><code>${svgTextEscape(nodeRawLabel(node))} -&gt; ${svgTextEscape(nodePlotLabel(node))}</code> <span style="color:#555">(${svgTextEscape(node.role || 'feature')})</span></li>`;
+      });
+      html += `</ol>`;
+      html += `<strong>Desired slopes at curve nodes:</strong><ol style="margin-top:0.35em;">`;
+      curveNodes.forEach(node => {
+        html += `<li><code>f'(${svgTextEscape(formatDebugNumber(node.plotX))}) = ${svgTextEscape(formatDebugNumber(node.slope || 0))}</code> <span style="color:#555">at ${svgTextEscape(nodeRawLabel(node))} placed at ${svgTextEscape(nodePlotLabel(node))}</span></li>`;
+      });
+      html += `</ol></div>`;
+      return html;
     }
 
     function svgTextEscape(text) {
@@ -1352,6 +1431,7 @@ fetch("/nav.html")
         }
       }
       svg += `</svg></div>`;
+      svg += makePlotMachineryDebug(problem);
       if (segmentDebug.length) {
         svg += `<div style="max-width:720px;margin:0.75em auto 0;text-align:left;font-size:0.95em;"><strong>Segment functions used so far:</strong><ol style="margin-top:0.35em;">`;
         segmentDebug.forEach(item => { svg += `<li><code>${svgTextEscape(item)}</code></li>`; });

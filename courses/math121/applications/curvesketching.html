@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1045,17 +1046,17 @@ fetch("/nav.html")
         criticalNumbers: [-Math.sqrt(r),0,Math.sqrt(r)],
         inflectionNumbers: [-Math.sqrt(infR), Math.sqrt(infR)],
         yTex: x => numberTex(f(x)),
-        domainHint: `\text{Since }f\text{ is a polynomial, its domain is }(-\infty,\infty).`,
-        interceptHint: `f(x)=${tex}=0\implies x^2-${r}=0\implies x=\pm ${sqrtTex(r)}.\quad f(0)=${numberTex(f(0))}.`,
-        asymptoteHint: `\text{Since }f\text{ is a polynomial, it has no vertical, horizontal, or slant asymptotes.}`,
+        domainHint: `\\text{Since }f\\text{ is a polynomial, its domain is }(-\\infty,\\infty).`,
+        interceptHint: `f(x)=${tex}=0\\implies x^2-${r}=0\\implies x=\\pm ${sqrtTex(r)}.\\quad f(0)=${numberTex(f(0))}.`,
+        asymptoteHint: `\\text{Since }f\\text{ is a polynomial, it has no vertical, horizontal, or slant asymptotes.}`,
         firstDerivativeHints: [
           `f'(x)=-2(x^2-${r})(x^2-${r})'`,
           `=-4x(x^2-${r})`,
-          `-4x(x^2-${r})=0\implies x=0\text{ or }x=\pm ${sqrtTex(r)}.`
+          `-4x(x^2-${r})=0\\implies x=0\\text{ or }x=\\pm ${sqrtTex(r)}.`
         ],
         secondDerivativeHints: [
           `f''(x)=-4(3x^2-${r})`,
-          `-4(3x^2-${r})=0\implies 3x^2=${r}\implies x=\pm ${sqrtTex(infR)}.`
+          `-4(3x^2-${r})=0\\implies 3x^2=${r}\\implies x=\\pm ${sqrtTex(infR)}.`
         ]
       });
     }

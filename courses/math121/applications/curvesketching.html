@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1263,18 +1264,20 @@ fetch("/nav.html")
     }
 
     function extendQuadraticEndpoint(aNode, cNode, newX, role) {
-      const l = (cNode.slope - aNode.slope) / (cNode.plotX - aNode.plotX || 1);
-      const n = aNode.slope - l * aNode.plotX;
-      const m = aNode.plotY - (l/2) * aNode.plotX * aNode.plotX - n * aNode.plotX;
-      const y = (l/2) * newX * newX + n * newX + m;
+      const coeffs = quadraticCoefficientsFromLeftSlope(aNode, cNode);
+      if (!coeffs) {
+        return { plotX:newX, plotY:cNode.plotY, rawX:newX < 0 ? -Infinity : Infinity, rawY:cNode.plotY, slope:cNode.slope || 0, virtual:true, role };
+      }
+      const y = quadraticValue(coeffs, newX);
       return {
         plotX: newX,
         plotY: Math.max(-11, Math.min(11, y)),
         rawX: newX < 0 ? -Infinity : Infinity,
         rawY: y,
-        slope: l * newX + n,
+        slope: coeffs.l * newX + coeffs.n,
         virtual: true,
-        role
+        role,
+        continuationCoeffs: coeffs
       };
     }
 
@@ -1338,8 +1341,22 @@ fetch("/nav.html")
       if (stage >= 3) svg += behaviourBars(problem, X, left, W-right, top+plotH+28, top+plotH+56, -11, 11);
       const pieces = sketchBreaks(problem);
       const piecesToDraw = Math.max(0, stage - 3);
-      for (let i=0; i<Math.min(piecesToDraw, pieces.length); i++) svg += curvePath(problem, pieces[i].a, pieces[i].b, X, Y);
+      const segmentDebug = [];
+      for (let i=0; i<Math.min(piecesToDraw, pieces.length); i++) {
+        const result = curvePath(problem, pieces[i].a, pieces[i].b, X, Y, true);
+        if (result && typeof result === 'object') {
+          svg += result.path;
+          if (result.debug) segmentDebug.push(result.debug);
+        } else {
+          svg += result || '';
+        }
+      }
       svg += `</svg></div>`;
+      if (segmentDebug.length) {
+        svg += `<div style="max-width:720px;margin:0.75em auto 0;text-align:left;font-size:0.95em;"><strong>Segment functions used so far:</strong><ol style="margin-top:0.35em;">`;
+        segmentDebug.forEach(item => { svg += `<li><code>${svgTextEscape(item)}</code></li>`; });
+        svg += `</ol></div>`;
+      }
       if (stage === 0) svg += `<p style="text-align:center;">Start with the axes.</p>`;
       else if (stage === 1) svg += `<p style="text-align:center;">Add all known points: intercepts, local extrema, and inflection points.</p>`;
       else if (stage === 2) svg += `<p style="text-align:center;">Add any asymptotes as dashed lines.</p>`;
@@ -1396,43 +1413,86 @@ fetch("/nav.html")
       return I ? I.sign : 0;
     }
 
-    function quadraticGraphPathThroughEndpoints(leftNode, rightNode, problem, X, Y) {
+    function formatDebugNumber(value) {
+      if (!Number.isFinite(value)) return value > 0 ? '\infty' : '-\infty';
+      if (Math.abs(value) < 1e-10) value = 0;
+      const rounded = Math.round(value);
+      if (Math.abs(value - rounded) < 1e-10) return String(rounded);
+      const sign = value < 0 ? -1 : 1;
+      const abs = Math.abs(value);
+      let bestNum = 0, bestDen = 1, bestErr = Infinity;
+      for (let den = 1; den <= 60; den++) {
+        const num = Math.round(abs * den);
+        const err = Math.abs(abs - num / den);
+        if (err < bestErr) { bestNum = num; bestDen = den; bestErr = err; }
+      }
+      if (bestErr < 1e-8) {
+        const f = exactFraction(sign * bestNum, bestDen);
+        return f.den === 1 ? String(f.num) : `${f.num}/${f.den}`;
+      }
+      return String(Math.round(value * 1000) / 1000);
+    }
+
+    function quadraticCoefficientsFromLeftSlope(leftNode, rightNode) {
       const x1 = leftNode.plotX, y1 = leftNode.plotY;
       const x2 = rightNode.plotX, y2 = rightNode.plotY;
       const dx = x2 - x1;
-      if (Math.abs(dx) < 1e-8) return '';
-      const secant = (y2 - y1) / dx;
-      const concSign = intervalSignAtPlotSegment(problem, leftNode, rightNode, 'second');
-      const mLeft = Number.isFinite(leftNode.slope) ? leftNode.slope : secant;
-      const mRight = Number.isFinite(rightNode.slope) ? rightNode.slope : secant;
-      // A quadratic cannot, in general, hit both endpoints and match both endpoint slopes.
-      // We therefore force it to hit both endpoints, then choose the endpoint slope that best agrees with the desired concavity.
-      const candidateStarts = [mLeft, 2 * secant - mRight, secant];
-      let startSlope = candidateStarts[0];
-      let bestScore = Infinity;
-      candidateStarts.forEach(m => {
-        const l = 2 * (y2 - y1 - m * dx) / (dx * dx);
-        const signPenalty = concSign && l ? (Math.sign(l) === concSign ? 0 : 100) : 0;
-        const slopePenalty = Math.abs(m - mLeft) + Math.abs((m + l * dx) - mRight);
-        const sizePenalty = 0.02 * Math.abs(l);
-        const score = signPenalty + slopePenalty + sizePenalty;
-        if (score < bestScore) { bestScore = score; startSlope = m; }
-      });
-      let l = 2 * (y2 - y1 - startSlope * dx) / (dx * dx);
+      if (Math.abs(dx) < 1e-8) return null;
+      const startSlope = Number.isFinite(leftNode.slope) ? leftNode.slope : (y2 - y1) / dx;
+      const l = 2 * (y2 - y1 - startSlope * dx) / (dx * dx);
       const n = startSlope - l * x1;
       const m = y1 - (l / 2) * x1 * x1 - n * x1;
+      return { l, n, m, a: l / 2, startSlope };
+    }
+
+    function quadraticValue(coeffs, x) {
+      return coeffs.a * x * x + coeffs.n * x + coeffs.m;
+    }
+
+    function quadraticDebugTex(coeffs) {
+      const A = coeffs.a, B = coeffs.n, C = coeffs.m;
+      const parts = [];
+      function pushTerm(coef, body) {
+        if (Math.abs(coef) < 1e-10) return;
+        const sign = coef < 0 ? '-' : (parts.length ? '+' : '');
+        const abs = Math.abs(coef);
+        const c = Math.abs(abs - 1) < 1e-10 && body ? '' : formatDebugNumber(abs);
+        parts.push(`${sign}${c}${body}`);
+      }
+      pushTerm(A, 'x^2');
+      pushTerm(B, 'x');
+      if (Math.abs(C) > 1e-10 || !parts.length) parts.push(`${C < 0 ? '-' : (parts.length ? '+' : '')}${formatDebugNumber(Math.abs(C))}`);
+      return parts.join(' ').replace(/^\+/, '').trim();
+    }
+
+    function segmentDomainText(leftNode, rightNode) {
+      const left = formatDebugNumber(leftNode.plotX);
+      const right = formatDebugNumber(rightNode.plotX);
+      const openLeft = leftNode.role === 'vertical-asymptote-approach' && leftNode.side > 0;
+      const openRight = rightNode.role === 'vertical-asymptote-approach' && rightNode.side < 0;
+      return `${openLeft ? '(' : '['}${left},${right}${openRight ? ')' : ']'}`;
+    }
+
+    function quadraticGraphPathThroughEndpoints(leftNode, rightNode, problem, X, Y, includeDebug = false) {
+      const coeffs = leftNode.continuationCoeffs || rightNode.continuationCoeffs || quadraticCoefficientsFromLeftSlope(leftNode, rightNode);
+      if (!coeffs) return includeDebug ? { path:'', debug:'' } : '';
+      const x1 = leftNode.plotX, x2 = rightNode.plotX;
+      const dx = x2 - x1;
       let d = '';
-      const N = 60;
+      const N = 80;
       for (let i = 0; i <= N; i++) {
         const x = x1 + dx * i / N;
-        let y = (l / 2) * x * x + n * x + m;
+        let y = quadraticValue(coeffs, x);
         y = Math.max(-11, Math.min(11, y));
         d += `${i === 0 ? 'M' : 'L'}${X(x).toFixed(2)},${Y(y).toFixed(2)} `;
       }
-      return `<path d="${d}" fill="none" stroke="#111" stroke-width="3"/>`;
+      const path = `<path d="${d}" fill="none" stroke="#111" stroke-width="3"/>`;
+      if (!includeDebug) return path;
+      const debug = `${quadraticDebugTex(coeffs)} on ${segmentDomainText(leftNode, rightNode)}`;
+      return { path, debug };
     }
 
-    function curvePath(problem, a, b, X, Y) {
+    function curvePath(problem, a, b, X, Y, includeDebug = false) {
       if (!problem.plotModel) computeWindow(problem);
       const nodes = problem.plotModel.curveNodes;
       let leftNode = null, rightNode = null;
@@ -1443,8 +1503,8 @@ fetch("/nav.html")
           break;
         }
       }
-      if (!shouldConnectNodes(problem, leftNode, rightNode)) return '';
-      return quadraticGraphPathThroughEndpoints(leftNode, rightNode, problem, X, Y);
+      if (!shouldConnectNodes(problem, leftNode, rightNode)) return includeDebug ? { path:'', debug:'' } : '';
+      return quadraticGraphPathThroughEndpoints(leftNode, rightNode, problem, X, Y, includeDebug);
     }
 
     function clearOldActivityState() {

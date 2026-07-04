@@ -1183,7 +1183,7 @@ fetch("/nav.html")
 
     function slopeWeightValues(n, greaterThanOne) {
       if (greaterThanOne) {
-        if (n === 1) return [2];
+        if (n === 1) return [1];
         if (n === 2) return [2/3, 4/3];
         if (n === 3) return [1/2, 1, 3/2];
         return Array.from({length:n}, (_, i) => (i + 1) / 2);
@@ -1230,6 +1230,81 @@ fetch("/nav.html")
       return set;
     }
 
+    function assignCompatibleFeatureSlopes(plotPoints, problem) {
+      // Keep the plotted feature locations fixed, but choose slopes so that each adjacent
+      // pair of plotted feature points can be joined by a true quadratic segment.
+      // For a segment from (x_i,y_i) to (x_{i+1},y_{i+1}), quadratic compatibility is
+      // m_i + m_{i+1} = 2(y_{i+1}-y_i)/(x_{i+1}-x_i).
+      const sorted = [...plotPoints].sort((a,b)=>a.plotX-b.plotX || a.plotY-b.plotY);
+      const components = [];
+      let current = [];
+      sorted.forEach(node => {
+        if (!current.length) {
+          current.push(node);
+          return;
+        }
+        const prev = current[current.length - 1];
+        const crossesBreak = [...(problem.verticalAsymptotes || []), ...(problem.domainBreaks || [])]
+          .some(rawBreak => rawBreak > Math.min(prev.rawX, node.rawX) + 1e-8 && rawBreak < Math.max(prev.rawX, node.rawX) - 1e-8);
+        if (crossesBreak) {
+          components.push(current);
+          current = [node];
+        } else {
+          current.push(node);
+        }
+      });
+      if (current.length) components.push(current);
+
+      function secantSlope(a, b) {
+        const dx = b.plotX - a.plotX;
+        if (Math.abs(dx) < 1e-8) return 0;
+        return (b.plotY - a.plotY) / dx;
+      }
+      function propagateRight(nodes, startIndex, stopIndex) {
+        for (let i = startIndex; i < stopIndex; i++) {
+          nodes[i+1].slope = 2 * secantSlope(nodes[i], nodes[i+1]) - nodes[i].slope;
+        }
+      }
+      function propagateLeft(nodes, startIndex, stopIndex) {
+        for (let i = startIndex; i > stopIndex; i--) {
+          nodes[i-1].slope = 2 * secantSlope(nodes[i-1], nodes[i]) - nodes[i].slope;
+        }
+      }
+
+      components.forEach(nodes => {
+        if (!nodes.length) return;
+        const anchors = [];
+        nodes.forEach((node, i) => { if (node.slopeFixed) anchors.push(i); });
+        if (!anchors.length) {
+          // No local extremum fixes the component. Use the ranked/preferred slope nearest
+          // the middle, then let compatibility determine the rest.
+          const pivot = Math.floor(nodes.length / 2);
+          nodes[pivot].slope = Number.isFinite(nodes[pivot].preferredSlope) ? nodes[pivot].preferredSlope : 0;
+          propagateLeft(nodes, pivot, 0);
+          propagateRight(nodes, pivot, nodes.length - 1);
+          return;
+        }
+
+        // Left of the first fixed slope: extend the first adjacent quadratic leftward.
+        propagateLeft(nodes, anchors[0], 0);
+
+        // Between fixed slopes: let the left fixed slope determine the intermediate slopes.
+        // If the right fixed value is compatible, it is preserved; otherwise the displayed
+        // diagnostics will expose the incompatibility for later manual adjustment.
+        for (let a = 0; a < anchors.length - 1; a++) {
+          const leftAnchor = anchors[a];
+          const rightAnchor = anchors[a+1];
+          propagateRight(nodes, leftAnchor, rightAnchor);
+          if (Math.abs(nodes[rightAnchor].slope - (nodes[rightAnchor].slopeFixed ? 0 : nodes[rightAnchor].slope)) < 1e-8) {
+            nodes[rightAnchor].slope = nodes[rightAnchor].slopeFixed ? 0 : nodes[rightAnchor].slope;
+          }
+        }
+
+        // Right of the final fixed slope: extend the final adjacent quadratic rightward.
+        propagateRight(nodes, anchors[anchors.length - 1], nodes.length - 1);
+      });
+    }
+
     function computeWindow(problem) {
       const displayPoints = collectDisplayPoints(problem);
       const xValues = displayPoints.map(p => p.x);
@@ -1260,9 +1335,12 @@ fetch("/nav.html")
           plotX: mapX(p.x),
           plotY: mapY(p.y),
           slope: isExtremum ? 0 : mapSlope(rawSlope),
+          preferredSlope: isExtremum ? 0 : mapSlope(rawSlope),
+          slopeFixed: isExtremum,
           rawSlope
         };
       });
+      assignCompatibleFeatureSlopes(plotPoints, problem);
       const virtualNodes = [];
       problem.verticalAsymptotes.forEach(a => {
         const ax = mapX(a);
@@ -1355,7 +1433,11 @@ fetch("/nav.html")
       html += `</ol>`;
       html += `<strong>Desired slopes at curve nodes:</strong><ol style="margin-top:0.35em;">`;
       curveNodes.forEach(node => {
-        html += `<li><code>f'(${svgTextEscape(formatDebugNumber(node.plotX))}) = ${svgTextEscape(formatDebugNumber(node.slope || 0))}</code> <span style="color:#555">at ${svgTextEscape(nodeRawLabel(node))} placed at ${svgTextEscape(nodePlotLabel(node))}</span></li>`;
+        if (node.role === 'left-end' || node.role === 'right-end') {
+          html += `<li><code>${svgTextEscape(nodeRawLabel(node))}</code> <span style="color:#555">placed at ${svgTextEscape(nodePlotLabel(node))}; no desired slope, continuing adjacent quadratic</span></li>`;
+        } else {
+          html += `<li><code>f'(${svgTextEscape(formatDebugNumber(node.plotX))}) = ${svgTextEscape(formatDebugNumber(node.slope || 0))}</code> <span style="color:#555">at ${svgTextEscape(nodeRawLabel(node))} placed at ${svgTextEscape(nodePlotLabel(node))}</span></li>`;
+        }
       });
       html += `</ol></div>`;
       return html;

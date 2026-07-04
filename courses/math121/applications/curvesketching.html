@@ -9,6 +9,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -740,9 +741,9 @@ fetch("/nav.html")
     }
 
     function makeShiftedEvenQuartic() {
-      const h = randomInteger(-3, 3);
-      const a = randomChoice([-1, 1]);
-      const r = randomChoice([3, 12]);
+      const h = -1;
+      const a = -1;
+      const r = 12;
       const u = `(x ${h < 0 ? '+ ' + Math.abs(h) : '- ' + h})`;
       const tex = `${a === -1 ? '-' : ''}(${u}^2-${r})^2`;
       const f = x => a * Math.pow((x-h)*(x-h)-r, 2);
@@ -1068,7 +1069,7 @@ fetch("/nav.html")
     }
 
     function generateCurveProblem() {
-      return makeProductPower();
+      return makeShiftedEvenQuartic();
     }
 
     function sketchBreaks(problem) {
@@ -1316,6 +1317,88 @@ fetch("/nav.html")
       });
     }
 
+
+    function adjustFlexibleTwoNodesBetweenFixedSlopes(plotPoints, problem) {
+      // Handles the next debugging case: two flexible features between two fixed
+      // extrema.  The first flexible point is allowed to slide vertically, while
+      // the second is allowed to slide horizontally.  We choose these so that one
+      // quadratic runs through left fixed -> first flexible -> second flexible,
+      // and the next quadratic runs from second flexible -> right fixed, with
+      // matching slope at the second flexible point.
+      const sorted = [...plotPoints].sort((a,b)=>a.plotX-b.plotX || a.plotY-b.plotY);
+      const components = [];
+      let current = [];
+      sorted.forEach(node => {
+        if (!current.length) {
+          current.push(node);
+          return;
+        }
+        const prev = current[current.length - 1];
+        const crossesBreak = [...(problem.verticalAsymptotes || []), ...(problem.domainBreaks || [])]
+          .some(rawBreak => rawBreak > Math.min(prev.rawX, node.rawX) + 1e-8 && rawBreak < Math.max(prev.rawX, node.rawX) - 1e-8);
+        if (crossesBreak) {
+          components.push(current);
+          current = [node];
+        } else {
+          current.push(node);
+        }
+      });
+      if (current.length) components.push(current);
+
+      function solveMiddleX(left, second, right) {
+        const mL = Number.isFinite(left.slope) ? left.slope : 0;
+        const mR = Number.isFinite(right.slope) ? right.slope : 0;
+        const yC = second.plotY;
+        function gap(xC) {
+          const leftDx = xC - left.plotX;
+          const rightDx = right.plotX - xC;
+          if (leftDx <= 1e-8 || rightDx <= 1e-8) return NaN;
+          const slopeFromLeftQuad = 2 * (yC - left.plotY) / leftDx - mL;
+          const slopeNeededByRightQuad = 2 * (right.plotY - yC) / rightDx - mR;
+          return slopeFromLeftQuad - slopeNeededByRightQuad;
+        }
+        const lo = left.plotX + 1e-5;
+        const hi = right.plotX - 1e-5;
+        let glo = gap(lo), ghi = gap(hi);
+        if (!Number.isFinite(glo) || !Number.isFinite(ghi) || glo * ghi > 0) return null;
+        let a = lo, b = hi;
+        for (let iter = 0; iter < 80; iter++) {
+          const mid = (a + b) / 2;
+          const gm = gap(mid);
+          if (!Number.isFinite(gm)) break;
+          if (Math.abs(gm) < 1e-11) { a = b = mid; break; }
+          if (glo * gm <= 0) {
+            b = mid;
+            ghi = gm;
+          } else {
+            a = mid;
+            glo = gm;
+          }
+        }
+        return (a + b) / 2;
+      }
+
+      components.forEach(nodes => {
+        for (let i = 0; i < nodes.length - 3; i++) {
+          const left = nodes[i], first = nodes[i+1], second = nodes[i+2], right = nodes[i+3];
+          if (!left.slopeFixed || first.slopeFixed || second.slopeFixed || !right.slopeFixed) continue;
+          // The first flexible node must remain vertically aligned with its ranked
+          // x-position; the second must remain on its ranked y-level.
+          const newSecondX = solveMiddleX(left, second, right);
+          if (newSecondX === null) continue;
+          if (!(first.plotX > left.plotX + 1e-8 && first.plotX < newSecondX - 1e-8 && newSecondX < right.plotX - 1e-8)) continue;
+          second.plotX = newSecondX;
+          const coeffs = quadraticCoefficientsFromLeftSlope(left, second);
+          if (!coeffs) continue;
+          first.plotY = quadraticValue(coeffs, first.plotX);
+          first.slope = coeffs.l * first.plotX + coeffs.n;
+          first.preferredSlope = first.slope;
+          second.slope = coeffs.l * second.plotX + coeffs.n;
+          second.preferredSlope = second.slope;
+        }
+      });
+    }
+
     function assignCompatibleFeatureSlopes(plotPoints, problem) {
       // Keep the plotted feature locations fixed, but choose slopes so that each adjacent
       // pair of plotted feature points can be joined by a true quadratic segment.
@@ -1427,6 +1510,7 @@ fetch("/nav.html")
         };
       });
       adjustFlexibleSingleNodesBetweenFixedSlopes(plotPoints, problem);
+      adjustFlexibleTwoNodesBetweenFixedSlopes(plotPoints, problem);
       assignCompatibleFeatureSlopes(plotPoints, problem);
       // Local maxima/minima are non-negotiable: their desired schematic slope must remain 0.
       // The compatibility pass may temporarily propagate through a fixed node while choosing

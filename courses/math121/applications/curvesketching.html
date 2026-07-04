@@ -5,6 +5,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1071,8 +1072,16 @@ fetch("/nav.html")
       if (!problem.plotModel) computeWindow(problem);
       const nodes = (problem.plotModel && problem.plotModel.curveNodes) ? problem.plotModel.curveNodes : [];
       const pieces = [];
+      const hAsym = rawHorizontalAsymptoteValue(problem);
       for (let i = 0; i < nodes.length - 1; i++) {
-        if (shouldConnectNodes(problem, nodes[i], nodes[i+1])) pieces.push({ a: nodes[i].plotX, b: nodes[i+1].plotX });
+        if (!shouldConnectNodes(problem, nodes[i], nodes[i+1])) continue;
+        if (hAsym === null && i === 0 && nodes[i].plotX > -10.5) {
+          pieces.push({ a: -11, b: nodes[i+1].plotX, extension: 'left' });
+        } else if (hAsym === null && i === nodes.length - 2 && nodes[i+1].plotX < 10.5) {
+          pieces.push({ a: nodes[i].plotX, b: 11, extension: 'right' });
+        } else {
+          pieces.push({ a: nodes[i].plotX, b: nodes[i+1].plotX });
+        }
       }
       return pieces;
     }
@@ -1370,16 +1379,9 @@ fetch("/nav.html")
       const rightH = horizontalApproachPoint(problem, 1, mapY);
       if (leftH) virtualNodes.push(leftH);
       if (rightH) virtualNodes.push(rightH);
-      let nodes = [...plotPoints, ...virtualNodes]
+      const nodes = [...plotPoints, ...virtualNodes]
         .filter(n => Number.isFinite(n.plotX) && Number.isFinite(n.plotY))
         .sort((a,b)=>a.plotX-b.plotX);
-      // If there is no horizontal asymptote, extend the extreme segments to the left/right edges by reusing nearest-neighbour quadratic behaviour.
-      if (hAsym === null && nodes.length >= 2) {
-        const first = nodes[0], second = nodes[1], last = nodes[nodes.length-1], prev = nodes[nodes.length-2];
-        if (first.plotX > -10.5) nodes.unshift(extendQuadraticEndpoint(first, second, -11, 'left-end'));
-        if (last.plotX < 10.5) nodes.push(extendQuadraticEndpoint(prev, last, 11, 'right-end'));
-      }
-      nodes = nodes.sort((a,b)=>a.plotX-b.plotX);
       problem.plotModel = {
         displayPoints: plotPoints,
         curveNodes: nodes,
@@ -1440,11 +1442,7 @@ fetch("/nav.html")
       html += `</ol>`;
       html += `<strong>Desired slopes at curve nodes:</strong><ol style="margin-top:0.35em;">`;
       curveNodes.forEach(node => {
-        if (node.role === 'left-end' || node.role === 'right-end') {
-          html += `<li><code>${svgTextEscape(nodeRawLabel(node))}</code> <span style="color:#555">placed at ${svgTextEscape(nodePlotLabel(node))}; no desired slope, continuing adjacent quadratic</span></li>`;
-        } else {
-          html += `<li><code>f'(${svgTextEscape(formatDebugNumber(node.plotX))}) = ${svgTextEscape(formatDebugNumber(node.slope || 0))}</code> <span style="color:#555">at ${svgTextEscape(nodeRawLabel(node))} placed at ${svgTextEscape(nodePlotLabel(node))}</span></li>`;
-        }
+        html += `<li><code>f'(${svgTextEscape(formatDebugNumber(node.plotX))}) = ${svgTextEscape(formatDebugNumber(node.slope || 0))}</code> <span style="color:#555">at ${svgTextEscape(nodeRawLabel(node))} placed at ${svgTextEscape(nodePlotLabel(node))}</span></li>`;
       });
       html += `</ol></div>`;
       return html;
@@ -1643,10 +1641,11 @@ fetch("/nav.html")
       return `${openLeft ? '(' : '['}${left},${right}${openRight ? ')' : ']'}`;
     }
 
-    function quadraticGraphPathThroughEndpoints(leftNode, rightNode, problem, X, Y, includeDebug = false) {
+    function quadraticGraphPathThroughEndpoints(leftNode, rightNode, problem, X, Y, includeDebug = false, drawLeftX = null, drawRightX = null) {
       const coeffs = leftNode.continuationCoeffs || rightNode.continuationCoeffs || quadraticCoefficientsFromLeftSlope(leftNode, rightNode);
       if (!coeffs) return includeDebug ? { path:'', debug:'' } : '';
-      const x1 = leftNode.plotX, x2 = rightNode.plotX;
+      const x1 = drawLeftX !== null ? drawLeftX : leftNode.plotX;
+      const x2 = drawRightX !== null ? drawRightX : rightNode.plotX;
       const dx = x2 - x1;
       let d = '';
       const N = 80;
@@ -1658,7 +1657,9 @@ fetch("/nav.html")
       }
       const path = `<path d="${d}" fill="none" stroke="#111" stroke-width="3"/>`;
       if (!includeDebug) return path;
-      const debug = `${quadraticDebugTex(coeffs)} on ${segmentDomainText(leftNode, rightNode)}`;
+      const debugLeft = drawLeftX !== null ? drawLeftX : leftNode.plotX;
+      const debugRight = drawRightX !== null ? drawRightX : rightNode.plotX;
+      const debug = `${quadraticDebugTex(coeffs)} on [${formatDebugNumber(debugLeft)},${formatDebugNumber(debugRight)}]`;
       return { path, debug };
     }
 
@@ -1666,15 +1667,21 @@ fetch("/nav.html")
       if (!problem.plotModel) computeWindow(problem);
       const nodes = problem.plotModel.curveNodes;
       let leftNode = null, rightNode = null;
+      let drawLeftX = null, drawRightX = null;
       for (let i = 0; i < nodes.length - 1; i++) {
-        if (Math.abs(nodes[i].plotX - a) < 1e-8 && Math.abs(nodes[i+1].plotX - b) < 1e-8) {
+        const normalMatch = Math.abs(nodes[i].plotX - a) < 1e-8 && Math.abs(nodes[i+1].plotX - b) < 1e-8;
+        const leftExtensionMatch = Math.abs(a + 11) < 1e-8 && Math.abs(nodes[i+1].plotX - b) < 1e-8 && i === 0;
+        const rightExtensionMatch = Math.abs(nodes[i].plotX - a) < 1e-8 && Math.abs(b - 11) < 1e-8 && i === nodes.length - 2;
+        if (normalMatch || leftExtensionMatch || rightExtensionMatch) {
           leftNode = nodes[i];
           rightNode = nodes[i+1];
+          if (leftExtensionMatch) drawLeftX = -11;
+          if (rightExtensionMatch) drawRightX = 11;
           break;
         }
       }
       if (!shouldConnectNodes(problem, leftNode, rightNode)) return includeDebug ? { path:'', debug:'' } : '';
-      return quadraticGraphPathThroughEndpoints(leftNode, rightNode, problem, X, Y, includeDebug);
+      return quadraticGraphPathThroughEndpoints(leftNode, rightNode, problem, X, Y, includeDebug, drawLeftX, drawRightX);
     }
 
     function clearOldActivityState() {

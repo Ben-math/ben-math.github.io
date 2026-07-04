@@ -13,6 +13,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -650,8 +651,8 @@ fetch("/nav.html")
     }
 
     function makeCubicZeroAtOrigin() {
-      const a = randomChoice([-2, -1, 1, 2]);
-      const d = randomChoice([3, 12, 27]);
+      const a = randomChoice([-4, -3, -2, -1, 1, 2, 3, 4]);
+      const d = randomChoice([3, 6, 12, 15, 24, 27, 48, 75]);
       const tex = polynomialTex([{c:a,p:3},{c:-a*d,p:1}]);
       const f = x => a * x * (x*x - d);
       const f1 = x => a * (3*x*x - d);
@@ -695,9 +696,9 @@ fetch("/nav.html")
     }
 
     function makeEvenQuartic() {
-      const a = randomChoice([-1, 1]);
-      const r = randomChoice([3, 12]);
-      const tex = a === 1 ? `(x^2-${r})^2` : `-(x^2-${r})^2`;
+      const a = randomChoice([-3, -2, -1, 1, 2, 3]);
+      const r = randomChoice([2, 3, 4, 5, 6, 8, 9, 12, 16, 18, 25, 27]);
+      const tex = a === 1 ? `(x^2-${r})^2` : `${a === -1 ? '-' : numberTex(a)}(x^2-${r})^2`;
       const f = x => a * Math.pow(x*x-r, 2);
       const f1 = x => 4*a*x*(x*x-r);
       const f2 = x => 4*a*(3*x*x-r);
@@ -744,9 +745,9 @@ fetch("/nav.html")
     }
 
     function makeShiftedEvenQuartic() {
-      const h = randomInteger(-3, 3);
-      const a = randomChoice([-1, 1]);
-      const r = randomChoice([3, 12]);
+      const h = randomInteger(-6, 6);
+      const a = randomChoice([-3, -2, -1, 1, 2, 3]);
+      const r = randomChoice([2, 3, 4, 5, 6, 8, 9, 12, 16, 18, 25, 27]);
       const u = `(x ${h < 0 ? '+ ' + Math.abs(h) : '- ' + h})`;
       const tex = `${a === -1 ? '-' : ''}(${u}^2-${r})^2`;
       const f = x => a * Math.pow((x-h)*(x-h)-r, 2);
@@ -795,9 +796,9 @@ fetch("/nav.html")
     }
 
     function makeProductPower() {
-      const r = randomChoice([-4, -3, -2, -1, 1, 2, 3, 4]);
-      const m = randomChoice([1, 2, 3]);
-      const n = randomChoice([1, 2, 3]);
+      const r = randomChoice([-8, -7, -6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6, 7, 8]);
+      const m = randomChoice([1, 2, 3, 4]);
+      const n = randomChoice([1, 2, 3, 4]);
       const tex = `x^{${m}}${linearFactorTex(r)}^{${n}}`;
       const f = x => Math.pow(x,m)*Math.pow(x-r,n);
       const f1 = x => Math.pow(x,m-1)*Math.pow(x-r,n-1)*((m+n)*x-m*r);
@@ -876,8 +877,8 @@ fetch("/nav.html")
     }
 
     function makeReciprocalQuadratic() {
-      const h = randomInteger(-3,3);
-      const k = randomChoice([3,12,27]);
+      const h = randomInteger(-6, 6);
+      const k = randomChoice([1, 2, 3, 4, 5, 6, 8, 9, 12, 16, 18, 25, 27]);
       const u = linearFactorTex(h);
       const tex = `\\frac{1}{${u}^2+${k}}`;
       const f = x => 1/((x-h)*(x-h)+k);
@@ -919,8 +920,8 @@ fetch("/nav.html")
     }
 
     function makeLinearOverQuadratic() {
-      const h = randomInteger(-2, 2);
-      const k = randomChoice([1, 3]);
+      const h = randomInteger(-6, 6);
+      const k = randomChoice([1, 2, 3, 4, 5, 6, 8, 9, 12, 16]);
       const u = linearFactorTex(h);
       const tex = `\\frac{${u}}{${u}^2+${k}}`;
       const f = x => (x-h)/((x-h)*(x-h)+k);
@@ -966,8 +967,8 @@ fetch("/nav.html")
     }
 
     function makeLinearPlusReciprocal() {
-      const h = randomInteger(-3,3);
-      const k = randomChoice([1,4,9]);
+      const h = randomInteger(-6, 6);
+      const k = randomChoice([1, 2, 3, 4, 5, 6, 8, 9, 12, 16, 25]);
       const u = linearFactorTex(h);
       const tex = `${u}+\\frac{${k}}{${u}}`;
       const f = x => (x-h) + k/(x-h);

@@ -1,19 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -745,9 +729,9 @@ fetch("/nav.html")
     }
 
     function makeShiftedEvenQuartic() {
-      const h = randomInteger(-6, 6);
-      const a = randomChoice([-3, -2, -1, 1, 2, 3]);
-      const r = randomChoice([2, 3, 4, 5, 6, 8, 9, 12, 16, 18, 25, 27]);
+      const h = 1;
+      const a = -1;
+      const r = 12;
       const u = `(x ${h < 0 ? '+ ' + Math.abs(h) : '- ' + h})`;
       const tex = `${a === -1 ? '-' : ''}(${u}^2-${r})^2`;
       const f = x => a * Math.pow((x-h)*(x-h)-r, 2);
@@ -1073,16 +1057,7 @@ fetch("/nav.html")
     }
 
     function generateCurveProblem() {
-      const generators = [
-        makeCubicZeroAtOrigin,
-        makeEvenQuartic,
-        makeShiftedEvenQuartic,
-        makeProductPower,
-        makeReciprocalQuadratic,
-        makeLinearOverQuadratic,
-        makeLinearPlusReciprocal
-      ];
-      return randomChoice(generators)();
+      return makeShiftedEvenQuartic();
     }
 
     function sketchBreaks(problem) {
@@ -1271,6 +1246,84 @@ fetch("/nav.html")
     }
 
 
+
+
+    function nodeAllowsHorizontalFlex(node) {
+      const role = node && node.role ? String(node.role) : '';
+      if (role === 'y-intercept') return false;
+      return true;
+    }
+
+    function nodeAllowsVerticalFlex(node) {
+      const role = node && node.role ? String(node.role) : '';
+      if (role === 'x-intercept') return false;
+      return true;
+    }
+
+    function adjustSingleVerticalNode(left, middle, right) {
+      const mL = Number.isFinite(left.slope) ? left.slope : 0;
+      const mR = Number.isFinite(right.slope) ? right.slope : 0;
+      const dxL = middle.plotX - left.plotX;
+      const dxR = right.plotX - middle.plotX;
+      if (dxL <= 1e-8 || dxR <= 1e-8) return false;
+      const yM = (2*left.plotY/dxL + 2*right.plotY/dxR + mL - mR) / (2/dxL + 2/dxR);
+      middle.plotY = yM;
+      const mM = 2 * (middle.plotY - left.plotY) / dxL - mL;
+      middle.slope = mM;
+      middle.preferredSlope = mM;
+      return true;
+    }
+
+    function adjustTwoNodesHorizontalThenVertical(left, first, second, right) {
+      // first slides horizontally (for example, an inflection point),
+      // second slides vertically (for example, a y-intercept).
+      // The first quadratic is determined by left fixed slope and the first point;
+      // the second point is then placed on that quadratic.  The first point's x-value
+      // is chosen so that the slope passed to the second quadratic is compatible
+      // with the right fixed slope.
+      const mL = Number.isFinite(left.slope) ? left.slope : 0;
+      const mR = Number.isFinite(right.slope) ? right.slope : 0;
+      function gap(xFirst) {
+        if (xFirst <= left.plotX + 1e-8 || xFirst >= second.plotX - 1e-8) return NaN;
+        const trialFirst = { ...first, plotX: xFirst, slope: undefined };
+        const coeffs = quadraticCoefficientsFromLeftSlope(left, trialFirst);
+        if (!coeffs) return NaN;
+        const ySecond = quadraticValue(coeffs, second.plotX);
+        const slopeSecond = coeffs.l * second.plotX + coeffs.n;
+        const dxR = right.plotX - second.plotX;
+        if (dxR <= 1e-8) return NaN;
+        const neededByRight = 2 * (right.plotY - ySecond) / dxR - mR;
+        return slopeSecond - neededByRight;
+      }
+      const lo = left.plotX + 1e-5;
+      const hi = second.plotX - 1e-5;
+      let glo = gap(lo), ghi = gap(hi);
+      if (!Number.isFinite(glo) || !Number.isFinite(ghi) || glo * ghi > 0) return false;
+      let a = lo, b = hi;
+      for (let iter = 0; iter < 80; iter++) {
+        const mid = (a + b) / 2;
+        const gm = gap(mid);
+        if (!Number.isFinite(gm)) break;
+        if (Math.abs(gm) < 1e-11) { a = b = mid; break; }
+        if (glo * gm <= 0) {
+          b = mid;
+          ghi = gm;
+        } else {
+          a = mid;
+          glo = gm;
+        }
+      }
+      first.plotX = (a + b) / 2;
+      const coeffs = quadraticCoefficientsFromLeftSlope(left, first);
+      if (!coeffs) return false;
+      first.slope = coeffs.l * first.plotX + coeffs.n;
+      first.preferredSlope = first.slope;
+      second.plotY = quadraticValue(coeffs, second.plotX);
+      second.slope = coeffs.l * second.plotX + coeffs.n;
+      second.preferredSlope = second.slope;
+      return true;
+    }
+
     function adjustFlexibleSingleNodesBetweenFixedSlopes(plotPoints, problem) {
       // Keep fixed-slope nodes (local extrema) exactly where they are, but allow a
       // single flexible feature between two fixed nodes to slide horizontally so that
@@ -1312,6 +1365,10 @@ fetch("/nav.html")
         for (let i = 0; i < nodes.length - 2; i++) {
           const left = nodes[i], middle = nodes[i+1], right = nodes[i+2];
           if (!left.slopeFixed || middle.slopeFixed || !right.slopeFixed) continue;
+          if (!nodeAllowsHorizontalFlex(middle) && nodeAllowsVerticalFlex(middle)) {
+            adjustSingleVerticalNode(left, middle, right);
+            continue;
+          }
           const lo = left.plotX + 1e-5;
           const hi = right.plotX - 1e-5;
           if (!(lo < middle.plotX && middle.plotX < hi)) continue;
@@ -1402,19 +1459,24 @@ fetch("/nav.html")
         for (let i = 0; i < nodes.length - 3; i++) {
           const left = nodes[i], first = nodes[i+1], second = nodes[i+2], right = nodes[i+3];
           if (!left.slopeFixed || first.slopeFixed || second.slopeFixed || !right.slopeFixed) continue;
-          // The first flexible node must remain vertically aligned with its ranked
-          // x-position; the second must remain on its ranked y-level.
-          const newSecondX = solveMiddleX(left, second, right);
-          if (newSecondX === null) continue;
-          if (!(first.plotX > left.plotX + 1e-8 && first.plotX < newSecondX - 1e-8 && newSecondX < right.plotX - 1e-8)) continue;
-          second.plotX = newSecondX;
-          const coeffs = quadraticCoefficientsFromLeftSlope(left, second);
-          if (!coeffs) continue;
-          first.plotY = quadraticValue(coeffs, first.plotX);
-          first.slope = coeffs.l * first.plotX + coeffs.n;
-          first.preferredSlope = first.slope;
-          second.slope = coeffs.l * second.plotX + coeffs.n;
-          second.preferredSlope = second.slope;
+          if (nodeAllowsHorizontalFlex(first) && !nodeAllowsHorizontalFlex(second) && nodeAllowsVerticalFlex(second)) {
+            if (adjustTwoNodesHorizontalThenVertical(left, first, second, right)) continue;
+          }
+          if (nodeAllowsVerticalFlex(first) && nodeAllowsHorizontalFlex(second)) {
+            // The first flexible node remains vertically aligned with its ranked
+            // x-position; the second remains on its ranked y-level.
+            const newSecondX = solveMiddleX(left, second, right);
+            if (newSecondX === null) continue;
+            if (!(first.plotX > left.plotX + 1e-8 && first.plotX < newSecondX - 1e-8 && newSecondX < right.plotX - 1e-8)) continue;
+            second.plotX = newSecondX;
+            const coeffs = quadraticCoefficientsFromLeftSlope(left, second);
+            if (!coeffs) continue;
+            first.plotY = quadraticValue(coeffs, first.plotX);
+            first.slope = coeffs.l * first.plotX + coeffs.n;
+            first.preferredSlope = first.slope;
+            second.slope = coeffs.l * second.plotX + coeffs.n;
+            second.preferredSlope = second.slope;
+          }
         }
       });
     }

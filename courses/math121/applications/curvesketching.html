@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1331,6 +1332,76 @@ fetch("/nav.html")
     }
 
 
+    function adjustLeftHAFlexibleMiddleToFixedExtremum(plotPoints, problem) {
+      // For a horizontal-asymptote approach point followed by one flexible feature
+      // and then a fixed local extremum, allow the middle feature to slide horizontally
+      // so that the approach slope can have the correct sign while both adjacent
+      // quadratic pieces still satisfy the endpoint slope conditions.
+      const sorted = [...plotPoints].sort((a,b)=>a.plotX-b.plotX || a.plotY-b.plotY);
+      const components = [];
+      let current = [];
+      sorted.forEach(node => {
+        if (!current.length) { current.push(node); return; }
+        const prev = current[current.length - 1];
+        const crossesBreak = [...(problem.verticalAsymptotes || []), ...(problem.domainBreaks || [])]
+          .some(rawBreak => rawBreak > Math.min(prev.rawX, node.rawX) + 1e-8 && rawBreak < Math.max(prev.rawX, node.rawX) - 1e-8);
+        if (crossesBreak) { components.push(current); current = [node]; }
+        else current.push(node);
+      });
+      if (current.length) components.push(current);
+
+      components.forEach(nodes => {
+        for (let i = 0; i < nodes.length - 2; i++) {
+          const left = nodes[i], middle = nodes[i+1], right = nodes[i+2];
+          if (left.role !== 'horizontal-asymptote-approach' || !(left.rawX < 0)) continue;
+          if (middle.slopeFixed || !right.slopeFixed) continue;
+          if (!nodeAllowsHorizontalFlex(middle)) continue;
+          const targetLeftSlope = middle.plotY >= left.plotY ? 0.1 : -0.1;
+          const rightSlope = Number.isFinite(right.slope) ? right.slope : 0;
+          const lo = left.plotX + 1e-5;
+          const hi = right.plotX - 1e-5;
+          if (!(lo < hi)) continue;
+          function gap(xMiddle) {
+            const dxLeft = xMiddle - left.plotX;
+            const dxRight = right.plotX - xMiddle;
+            if (dxLeft <= 1e-8 || dxRight <= 1e-8) return NaN;
+            const middleSlopeFromRight = 2 * (right.plotY - middle.plotY) / dxRight - rightSlope;
+            return targetLeftSlope + middleSlopeFromRight - 2 * (middle.plotY - left.plotY) / dxLeft;
+          }
+          const samples = [];
+          const N = 160;
+          for (let j = 0; j <= N; j++) {
+            const x = lo + (hi - lo) * j / N;
+            const g = gap(x);
+            if (Number.isFinite(g)) samples.push({x,g});
+          }
+          let bracket = null;
+          for (let j = 0; j < samples.length - 1; j++) {
+            if (samples[j].g === 0 || samples[j].g * samples[j+1].g <= 0) {
+              bracket = [samples[j].x, samples[j+1].x, samples[j].g, samples[j+1].g];
+              break;
+            }
+          }
+          if (!bracket) continue;
+          let [a,b,ga,gb] = bracket;
+          for (let iter = 0; iter < 80; iter++) {
+            const mid = (a + b) / 2;
+            const gm = gap(mid);
+            if (!Number.isFinite(gm)) break;
+            if (Math.abs(gm) < 1e-11) { a = b = mid; break; }
+            if (ga * gm <= 0) { b = mid; gb = gm; }
+            else { a = mid; ga = gm; }
+          }
+          middle.plotX = (a + b) / 2;
+          left.slope = targetLeftSlope;
+          left.preferredSlope = targetLeftSlope;
+          middle.slope = 2 * (right.plotY - middle.plotY) / (right.plotX - middle.plotX) - rightSlope;
+          middle.preferredSlope = middle.slope;
+        }
+      });
+    }
+
+
     function adjustFlexibleSingleNodesBetweenFixedSlopes(plotPoints, problem) {
       // Keep fixed-slope nodes (local extrema) exactly where they are, but allow a
       // single flexible feature between two fixed nodes to slide horizontally so that
@@ -1636,6 +1707,7 @@ fetch("/nav.html")
       const allCurveNodes = [...plotPoints, ...virtualNodes]
         .filter(n => Number.isFinite(n.plotX) && Number.isFinite(n.plotY))
         .sort((a,b)=>a.plotX-b.plotX || a.plotY-b.plotY);
+      adjustLeftHAFlexibleMiddleToFixedExtremum(allCurveNodes, problem);
       adjustFlexibleSingleNodesBetweenFixedSlopes(allCurveNodes, problem);
       adjustFlexibleTwoNodesBetweenFixedSlopes(allCurveNodes, problem);
       assignCompatibleFeatureSlopes(allCurveNodes, problem);

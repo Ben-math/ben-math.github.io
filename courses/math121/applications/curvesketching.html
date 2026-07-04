@@ -12,6 +12,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -794,9 +795,9 @@ fetch("/nav.html")
     }
 
     function makeProductPower() {
-      const r = 2;
-      const m = 2;
-      const n = 2;
+      const r = randomChoice([-4, -3, -2, -1, 1, 2, 3, 4]);
+      const m = randomChoice([1, 2, 3]);
+      const n = randomChoice([1, 2, 3]);
       const tex = `x^{${m}}${linearFactorTex(r)}^{${n}}`;
       const f = x => Math.pow(x,m)*Math.pow(x-r,n);
       const f1 = x => Math.pow(x,m-1)*Math.pow(x-r,n-1)*((m+n)*x-m*r);

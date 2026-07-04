@@ -4,6 +4,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1062,17 +1063,63 @@ fetch("/nav.html")
       });
     }
 
-    function generateCurveProblem() {
-      const generators = [
-        makeCubicZeroAtOrigin,
-        makeEvenQuartic,
-        makeShiftedEvenQuartic,
-        makeProductPower,
-        makeReciprocalQuadratic,
-        makeLinearOverQuadratic,
-        makeLinearPlusReciprocal
+    
+    function makeDebugProductPower() {
+      const r = 2;
+      const m = 2;
+      const n = 2;
+      const tex = `x^2(x-2)^2`;
+      const f = x => x*x*(x-2)*(x-2);
+      const f1 = x => 4*x*(x-1)*(x-2);
+      const f2 = x => 12*x*x - 24*x + 8;
+      const infA = 1 - Math.sqrt(3)/3;
+      const infB = 1 + Math.sqrt(3)/3;
+      const infPts = [
+        { x: infA, xTex: numberTex(infA) },
+        { x: infB, xTex: numberTex(infB) }
       ];
-      return randomChoice(generators)();
+      return finishProblem({
+        family: 'debug product powers',
+        tex, f, f1, f2,
+        domainBreaks: [],
+        extraSignBreaks: [],
+        xIntercepts: [
+          makePolynomialPoint(0,'0',0,'0'),
+          makePolynomialPoint(2,'2',0,'0')
+        ],
+        yIntercept: makePolynomialPoint(0,'0',0,'0'),
+        verticalAsymptotes: [],
+        horizontalAsymptote: null,
+        slantAsymptote: null,
+        criticalPoints: [
+          {x:0, xTex:'0'},
+          {x:1, xTex:'1'},
+          {x:2, xTex:'2'}
+        ],
+        inflectionPoints: infPts,
+        criticalNumbers: [0,1,2],
+        inflectionNumbers: [infA, infB],
+        yTex: x => numberTex(f(x)),
+        domainHint: `\\text{Since }f\\text{ is a polynomial, its domain is }(-\\infty,\\infty).`,
+        interceptHint: `x^2(x-2)^2=0\\implies x=0\\text{ or }x=2.\\quad f(0)=0.`,
+        asymptoteHint: `\\text{Since }f\\text{ is a polynomial, it has no vertical, horizontal, or slant asymptotes.}`,
+        firstDerivativeHints: [
+          `f'(x)=(x^2)'(x-2)^2+x^2((x-2)^2)'`,
+          `=2x(x-2)^2+2x^2(x-2)`,
+          `=2x(x-2)((x-2)+x)`,
+          `=4x(x-1)(x-2)`,
+          `f'(x)=0\\implies x=0\\text{ or }x=1\\text{ or }x=2.`
+        ],
+        secondDerivativeHints: [
+          `f''(x)=12x^2-24x+8`,
+          `12x^2-24x+8=0\\implies x=${numberTex(infA)}\\text{ or }x=${numberTex(infB)}.`
+        ]
+      });
+    }
+
+function generateCurveProblem() {
+      // Temporary debugging restriction requested: always use f(x)=x^2(x-2)^2.
+      return makeDebugProductPower();
     }
 
     function sketchBreaks(problem) {
@@ -1119,9 +1166,25 @@ fetch("/nav.html")
       if (!absValues.length) return value => 0;
       const gaps = absValues.map((v, i) => ({ index: i, gap: i === 0 ? v : v - absValues[i-1] }));
       const weights = rankGapWeights(gaps.length);
-      const ranked = [...gaps].sort((a,b)=>a.gap-b.gap).map((g, rank) => ({...g, weight: weights[rank]}));
+      const ranked = [...gaps].sort((a,b)=>a.gap-b.gap);
       const gapWeights = Array(gaps.length).fill(1);
-      ranked.forEach(item => gapWeights[item.index] = item.weight);
+
+      // If the smallest gaps are tied, split the first available ranks between them.
+      // For x^2(x-2)^2 this turns the two equal shortest gaps into weights 1.5 and 1.5.
+      let rank = 0;
+      const tieTol = 1e-6;
+      while (rank < ranked.length) {
+        let end = rank + 1;
+        while (end < ranked.length && Math.abs(ranked[end].gap - ranked[rank].gap) < tieTol) end++;
+        if (rank === 0 && end - rank > 1) {
+          const avg = weights.slice(rank, end).reduce((s, w) => s + w, 0) / (end - rank);
+          for (let j = rank; j < end; j++) gapWeights[ranked[j].index] = avg;
+        } else {
+          for (let j = rank; j < end; j++) gapWeights[ranked[j].index] = weights[j];
+        }
+        rank = end;
+      }
+
       let pos = 0;
       absValues.forEach((v, i) => {
         pos += gapWeights[i];

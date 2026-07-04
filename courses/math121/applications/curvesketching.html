@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -423,7 +424,7 @@ fetch("/nav.html")
       if (n === 1) return '1';
       const s = Math.sqrt(n);
       if (Math.abs(s - Math.round(s)) < 1e-10) return String(Math.round(s));
-      return `\\sqrt{${n}}`;
+      return `\\sqrt{${numberTex(n)}}`;
     }
 
     function signedSqrtTex(n, sign) {
@@ -864,8 +865,8 @@ fetch("/nav.html")
     }
 
     function makeReciprocalQuadratic() {
-      const h = randomInteger(-6, 6);
-      const k = randomChoice([1, 2, 3, 4, 5, 6, 8, 9, 12, 16, 18, 25, 27]);
+      const h = -6;
+      const k = 5;
       const u = linearFactorTex(h);
       const tex = `\\frac{1}{${u}^2+${k}}`;
       const f = x => 1/((x-h)*(x-h)+k);
@@ -1060,16 +1061,7 @@ fetch("/nav.html")
     }
 
     function generateCurveProblem() {
-      const generators = [
-        makeCubicZeroAtOrigin,
-        makeEvenQuartic,
-        makeShiftedEvenQuartic,
-        makeProductPower,
-        makeReciprocalQuadratic,
-        makeLinearOverQuadratic,
-        makeLinearPlusReciprocal
-      ];
-      return randomChoice(generators)();
+      return makeReciprocalQuadratic();
     }
 
     function sketchBreaks(problem) {
@@ -1202,7 +1194,7 @@ fetch("/nav.html")
         plotY,
         slope,
         preferredSlope: slope,
-        slopeFixed: true,
+        slopeFixed: false,
         role: 'horizontal-asymptote-approach',
         virtual: true
       };
@@ -1272,69 +1264,72 @@ fetch("/nav.html")
       return true;
     }
 
-    function adjustSingleVerticalNode(left, middle, right) {
-      const mL = Number.isFinite(left.slope) ? left.slope : 0;
-      const mR = Number.isFinite(right.slope) ? right.slope : 0;
-      const dxL = middle.plotX - left.plotX;
-      const dxR = right.plotX - middle.plotX;
-      if (dxL <= 1e-8 || dxR <= 1e-8) return false;
-      const yM = (2*left.plotY/dxL + 2*right.plotY/dxR + mL - mR) / (2/dxL + 2/dxR);
-      middle.plotY = yM;
-      const mM = 2 * (middle.plotY - left.plotY) / dxL - mL;
-      middle.slope = mM;
-      middle.preferredSlope = mM;
-      return true;
+
+    function quadraticCoefficientsThroughThreePoints(p1, p2, p3) {
+      const x1 = p1.plotX, y1 = p1.plotY;
+      const x2 = p2.plotX, y2 = p2.plotY;
+      const x3 = p3.plotX, y3 = p3.plotY;
+      const d12 = x1 - x2, d13 = x1 - x3, d23 = x2 - x3;
+      if (Math.abs(d12 * d13 * d23) < 1e-8) return null;
+      const A = y1 / ((x1 - x2) * (x1 - x3)) + y2 / ((x2 - x1) * (x2 - x3)) + y3 / ((x3 - x1) * (x3 - x2));
+      const B = -y1 * (x2 + x3) / ((x1 - x2) * (x1 - x3)) - y2 * (x1 + x3) / ((x2 - x1) * (x2 - x3)) - y3 * (x1 + x2) / ((x3 - x1) * (x3 - x2));
+      const C = y1 * x2 * x3 / ((x1 - x2) * (x1 - x3)) + y2 * x1 * x3 / ((x2 - x1) * (x2 - x3)) + y3 * x1 * x2 / ((x3 - x1) * (x3 - x2));
+      return { a: A, n: B, m: C, l: 2 * A };
     }
 
-    function adjustTwoNodesHorizontalThenVertical(left, first, second, right) {
-      // first slides horizontally (for example, an inflection point),
-      // second slides vertically (for example, a y-intercept).
-      // The first quadratic is determined by left fixed slope and the first point;
-      // the second point is then placed on that quadratic.  The first point's x-value
-      // is chosen so that the slope passed to the second quadratic is compatible
-      // with the right fixed slope.
-      const mL = Number.isFinite(left.slope) ? left.slope : 0;
-      const mR = Number.isFinite(right.slope) ? right.slope : 0;
-      function gap(xFirst) {
+    function adjustLeftFixedTwoFlexibleRightFree(left, first, second, right) {
+      if (!left.slopeFixed || first.slopeFixed || second.slopeFixed || right.slopeFixed) return false;
+      if (!nodeAllowsHorizontalFlex(first) || nodeAllowsHorizontalFlex(second) || !nodeAllowsVerticalFlex(second)) return false;
+      if (right.role !== 'horizontal-asymptote-approach') return false;
+      const leftSlope = Number.isFinite(left.slope) ? left.slope : 0;
+      const targetSecondSlope = right.plotY < second.plotY ? -0.2 : 0.2;
+      const originalFirstX = first.plotX;
+      function yInterceptSlopeFromLeft(xFirst) {
         if (xFirst <= left.plotX + 1e-8 || xFirst >= second.plotX - 1e-8) return NaN;
-        const trialFirst = { ...first, plotX: xFirst, slope: undefined };
-        const coeffs = quadraticCoefficientsFromLeftSlope(left, trialFirst);
-        if (!coeffs) return NaN;
-        const ySecond = quadraticValue(coeffs, second.plotX);
-        const slopeSecond = coeffs.l * second.plotX + coeffs.n;
-        const dxR = right.plotX - second.plotX;
-        if (dxR <= 1e-8) return NaN;
-        const neededByRight = 2 * (right.plotY - ySecond) / dxR - mR;
-        return slopeSecond - neededByRight;
+        const firstSlope = 2 * (first.plotY - left.plotY) / (xFirst - left.plotX) - leftSlope;
+        return 2 * (second.plotY - first.plotY) / (second.plotX - xFirst) - firstSlope;
       }
       const lo = left.plotX + 1e-5;
       const hi = second.plotX - 1e-5;
-      let glo = gap(lo), ghi = gap(hi);
-      if (!Number.isFinite(glo) || !Number.isFinite(ghi) || glo * ghi > 0) return false;
-      let a = lo, b = hi;
-      for (let iter = 0; iter < 80; iter++) {
-        const mid = (a + b) / 2;
-        const gm = gap(mid);
-        if (!Number.isFinite(gm)) break;
-        if (Math.abs(gm) < 1e-11) { a = b = mid; break; }
-        if (glo * gm <= 0) {
-          b = mid;
-          ghi = gm;
-        } else {
-          a = mid;
-          glo = gm;
+      let samples = [];
+      const N = 100;
+      for (let j = 0; j <= N; j++) {
+        const x = lo + (hi - lo) * j / N;
+        const g = yInterceptSlopeFromLeft(x) - targetSecondSlope;
+        if (Number.isFinite(g)) samples.push({x, g});
+      }
+      let bracket = null;
+      for (let j = 0; j < samples.length - 1; j++) {
+        if (samples[j].g === 0 || samples[j].g * samples[j+1].g <= 0) {
+          bracket = [samples[j].x, samples[j+1].x, samples[j].g, samples[j+1].g];
+          break;
         }
       }
+      if (!bracket) return false;
+      let [a, b, ga, gb] = bracket;
+      for (let iter = 0; iter < 80; iter++) {
+        const mid = (a + b) / 2;
+        const gm = yInterceptSlopeFromLeft(mid) - targetSecondSlope;
+        if (!Number.isFinite(gm)) break;
+        if (Math.abs(gm) < 1e-11) { a = b = mid; break; }
+        if (ga * gm <= 0) { b = mid; gb = gm; }
+        else { a = mid; ga = gm; }
+      }
       first.plotX = (a + b) / 2;
-      const coeffs = quadraticCoefficientsFromLeftSlope(left, first);
-      if (!coeffs) return false;
-      first.slope = coeffs.l * first.plotX + coeffs.n;
+      first.slope = 2 * (first.plotY - left.plotY) / (first.plotX - left.plotX) - leftSlope;
+      second.slope = 2 * (second.plotY - first.plotY) / (second.plotX - first.plotX) - first.slope;
+      // Give the horizontal-asymptote approach point slope flexibility so that the
+      // final segment keeps the correct concavity while the point remains fixed.
+      right.slope = 2 * (right.plotY - second.plotY) / (right.plotX - second.plotX) - second.slope;
       first.preferredSlope = first.slope;
-      second.plotY = quadraticValue(coeffs, second.plotX);
-      second.slope = coeffs.l * second.plotX + coeffs.n;
       second.preferredSlope = second.slope;
+      right.preferredSlope = right.slope;
+      const minY = Math.min(first.plotY, right.plotY);
+      const maxY = Math.max(first.plotY, right.plotY);
+      if (second.plotY < minY - 1e-8 || second.plotY > maxY + 1e-8) { first.plotX = originalFirstX; return false; }
       return true;
     }
+
 
     function adjustFlexibleSingleNodesBetweenFixedSlopes(plotPoints, problem) {
       // Keep fixed-slope nodes (local extrema) exactly where they are, but allow a
@@ -1470,6 +1465,7 @@ fetch("/nav.html")
       components.forEach(nodes => {
         for (let i = 0; i < nodes.length - 3; i++) {
           const left = nodes[i], first = nodes[i+1], second = nodes[i+2], right = nodes[i+3];
+          if (adjustLeftFixedTwoFlexibleRightFree(left, first, second, right)) continue;
           if (!left.slopeFixed || first.slopeFixed || second.slopeFixed || !right.slopeFixed) continue;
           if (nodeAllowsHorizontalFlex(first) && !nodeAllowsHorizontalFlex(second) && nodeAllowsVerticalFlex(second)) {
             if (adjustTwoNodesHorizontalThenVertical(left, first, second, right)) continue;

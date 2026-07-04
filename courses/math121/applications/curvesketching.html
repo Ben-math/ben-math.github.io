@@ -1,3 +1,9 @@
+
+
+
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1057,8 +1063,16 @@ fetch("/nav.html")
     }
 
     function generateCurveProblem() {
-      // Temporary debugging restriction requested: always use f(x)=-(x^2-12)^2.
-      return makeDebugQuartic();
+      const generators = [
+        makeCubicZeroAtOrigin,
+        makeEvenQuartic,
+        makeShiftedEvenQuartic,
+        makeProductPower,
+        makeReciprocalQuadratic,
+        makeLinearOverQuadratic,
+        makeLinearPlusReciprocal
+      ];
+      return randomChoice(generators)();
     }
 
     function sketchBreaks(problem) {

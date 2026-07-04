@@ -7,6 +7,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1358,6 +1359,12 @@ fetch("/nav.html")
         };
       });
       assignCompatibleFeatureSlopes(plotPoints, problem);
+      // Local maxima/minima are non-negotiable: their desired schematic slope must remain 0.
+      // The compatibility pass may temporarily propagate through a fixed node while choosing
+      // neighbouring flexible slopes, so reset fixed extrema before drawing/debug output.
+      plotPoints.forEach(node => {
+        if (node.slopeFixed) node.slope = 0;
+      });
       const virtualNodes = [];
       problem.verticalAsymptotes.forEach(a => {
         const ax = mapX(a);

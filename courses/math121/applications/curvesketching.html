@@ -10,6 +10,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -916,8 +917,8 @@ fetch("/nav.html")
     }
 
     function makeLinearOverQuadratic() {
-      const h = randomInteger(-2,2);
-      const k = randomChoice([1,3]);
+      const h = 2;
+      const k = 1;
       const u = linearFactorTex(h);
       const tex = `\\frac{${u}}{${u}^2+${k}}`;
       const f = x => (x-h)/((x-h)*(x-h)+k);
@@ -1069,7 +1070,7 @@ fetch("/nav.html")
     }
 
     function generateCurveProblem() {
-      return makeShiftedEvenQuartic();
+      return makeLinearOverQuadratic();
     }
 
     function sketchBreaks(problem) {
@@ -1112,6 +1113,7 @@ fetch("/nav.html")
       if (n === 3) return [1.5, 3, 4.5];
       if (n === 4) return [1, 2, 3, 4];
       if (n === 5) return [0.7, 1.4, 2.1, 2.8, 3.5];
+      if (n === 6) return [0.5, 1, 1.5, 2, 2.5, 3];
       const scale = 10 / (n * (n + 1) / 2);
       return Array.from({length:n}, (_, i) => (i + 1) * scale);
     }
@@ -1189,13 +1191,19 @@ fetch("/nav.html")
       const xProbe = direction < 0 ? -1000 : 1000;
       const yProbe = problem.f(xProbe);
       const above = Number.isFinite(yProbe) ? yProbe > yRaw : false;
-      const plotY = Math.max(-10.5, Math.min(10.5, mapY(yRaw) + (above ? -0.45 : 0.45)));
+      const derivativeProbe = problem.f1 ? problem.f1(xProbe) : NaN;
+      const slope = Number.isFinite(derivativeProbe) && Math.abs(derivativeProbe) > 1e-12
+        ? (derivativeProbe > 0 ? 0.1 : -0.1)
+        : (above ? -0.1 : 0.1);
+      const plotY = Math.max(-10.5, Math.min(10.5, mapY(yRaw) + (above ? 0.1 : -0.1)));
       return {
         rawX: direction < 0 ? -Infinity : Infinity,
         rawY: yRaw,
         plotX: direction < 0 ? -11 : 11,
         plotY,
-        slope: direction < 0 ? (above ? -0.1 : 0.1) : (above ? 0.1 : -0.1),
+        slope,
+        preferredSlope: slope,
+        slopeFixed: true,
         role: 'horizontal-asymptote-approach',
         virtual: true
       };
@@ -1480,6 +1488,12 @@ fetch("/nav.html")
       problem.verticalAsymptotes.forEach(x => xValues.push(x));
       problem.domainBreaks.forEach(x => xValues.push(x));
       const hAsym = rawHorizontalAsymptoteValue(problem);
+      if (hAsym !== null) {
+        // Treat the two points at infinity used for horizontal-asymptote behaviour as
+        // genuine x-placement features.  This gives the final finite feature a real
+        // schematic gap from the HA approach point, rather than squeezing both near x=11.
+        xValues.push(-1e6, 1e6);
+      }
       const yValues = displayPoints.map(p => p.y);
       if (hAsym !== null) yValues.push(hAsym);
       if (!xValues.length) xValues.push(-1,1);
@@ -1509,15 +1523,6 @@ fetch("/nav.html")
           rawSlope
         };
       });
-      adjustFlexibleSingleNodesBetweenFixedSlopes(plotPoints, problem);
-      adjustFlexibleTwoNodesBetweenFixedSlopes(plotPoints, problem);
-      assignCompatibleFeatureSlopes(plotPoints, problem);
-      // Local maxima/minima are non-negotiable: their desired schematic slope must remain 0.
-      // The compatibility pass may temporarily propagate through a fixed node while choosing
-      // neighbouring flexible slopes, so reset fixed extrema before drawing/debug output.
-      plotPoints.forEach(node => {
-        if (node.slopeFixed) node.slope = 0;
-      });
       const virtualNodes = [];
       problem.verticalAsymptotes.forEach(a => {
         const ax = mapX(a);
@@ -1529,6 +1534,8 @@ fetch("/nav.html")
             plotX: Math.max(-10.8, Math.min(10.8, ax + side * 0.35)),
             plotY: limitY,
             slope: limitY > 0 ? 10 : -10,
+            preferredSlope: limitY > 0 ? 10 : -10,
+            slopeFixed: true,
             virtual: true,
             role: 'vertical-asymptote-approach',
             asymptoteRaw: a,
@@ -1540,12 +1547,23 @@ fetch("/nav.html")
       const rightH = horizontalApproachPoint(problem, 1, mapY);
       if (leftH) virtualNodes.push(leftH);
       if (rightH) virtualNodes.push(rightH);
-      const nodes = [...plotPoints, ...virtualNodes]
+
+      // Positional/slope flexibility must see horizontal-asymptote approach nodes as
+      // fixed important points, just like local extrema.  The visible feature list below
+      // still only reports ordinary function features; the curve node debug reports HA nodes.
+      const allCurveNodes = [...plotPoints, ...virtualNodes]
         .filter(n => Number.isFinite(n.plotX) && Number.isFinite(n.plotY))
-        .sort((a,b)=>a.plotX-b.plotX);
+        .sort((a,b)=>a.plotX-b.plotX || a.plotY-b.plotY);
+      adjustFlexibleSingleNodesBetweenFixedSlopes(allCurveNodes, problem);
+      adjustFlexibleTwoNodesBetweenFixedSlopes(allCurveNodes, problem);
+      assignCompatibleFeatureSlopes(allCurveNodes, problem);
+      allCurveNodes.forEach(node => {
+        if (node.slopeFixed && !node.virtual) node.slope = 0;
+        if (node.slopeFixed && node.virtual && Number.isFinite(node.preferredSlope)) node.slope = node.preferredSlope;
+      });
       problem.plotModel = {
         displayPoints: plotPoints,
-        curveNodes: nodes,
+        curveNodes: allCurveNodes,
         verticalAsymptotes: problem.verticalAsymptotes.map(a => ({raw:a, plotX:mapX(a), label:numberTex(a)})),
         horizontalAsymptote: hAsym === null ? null : { raw:hAsym, plotY:mapY(hAsym), label:numberTex(hAsym) },
         mapX,

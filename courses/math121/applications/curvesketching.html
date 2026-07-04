@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -668,7 +669,7 @@ fetch("/nav.html")
         yTex: x => numberTex(f(x)),
         domainHint: `\\text{Since }f\\text{ is a polynomial, its domain is }(-\\infty,\\infty).`,
         interceptHint: `f(x)=${a}x(x^2-${d})=0\\implies x=${texList(zeros.map(rootTex))}.\\quad f(0)=0.`,
-        asymptoteHint: `\\text{Since }f\\text{ is a polynomial, it has no vertical, horizontal, or slant asymptotes.}`,
+        asymptoteHint: `\\text{Since }f\\text{ is a polynomial, it has no vertical or horizontal asymptotes.}`,
         firstDerivativeHints: [
           `f'(x)=${a}\\left(3x^2-${d}\\right)`,
           `${a}\\left(3x^2-${d}\\right)=0\\implies 3x^2=${d}\\implies x=\\pm ${sqrtTex(critRoot)}.`
@@ -716,7 +717,7 @@ fetch("/nav.html")
         yTex: x => numberTex(f(x)),
         domainHint: `\\text{Since }f\\text{ is a polynomial, its domain is }(-\\infty,\\infty).`,
         interceptHint: `f(x)=${tex}=0\\implies x^2-${r}=0\\implies x=\\pm ${sqrtTex(r)}.\\quad f(0)=${numberTex(f(0))}.`,
-        asymptoteHint: `\\text{Since }f\\text{ is a polynomial, it has no vertical, horizontal, or slant asymptotes.}`,
+        asymptoteHint: `\\text{Since }f\\text{ is a polynomial, it has no vertical or horizontal asymptotes.}`,
         firstDerivativeHints: [
           `f'(x)=${a === -1 ? '-' : ''}2(x^2-${r})(x^2-${r})'`,
           `=${4*a}x(x^2-${r})`,
@@ -767,7 +768,7 @@ fetch("/nav.html")
         yTex: x => numberTex(f(x)),
         domainHint: `\\text{Since }f\\text{ is a polynomial, its domain is }(-\\infty,\\infty).`,
         interceptHint: `f(x)=0\\implies ${u}^2-${r}=0\\implies x=${shiftSqrtTex(h,r,-1)}\\text{ or }x=${shiftSqrtTex(h,r,1)}.\\quad f(0)=${numberTex(f(0))}.`,
-        asymptoteHint: `\\text{Since }f\\text{ is a polynomial, it has no vertical, horizontal, or slant asymptotes.}`,
+        asymptoteHint: `\\text{Since }f\\text{ is a polynomial, it has no vertical or horizontal asymptotes.}`,
         firstDerivativeHints: [
           `f'(x)=${a === -1 ? '-' : ''}2(${u}^2-${r})(${u}^2-${r})'`,
           `=${4*a}${u}(${u}^2-${r})`,
@@ -815,7 +816,7 @@ fetch("/nav.html")
         yTex: x => numberTex(f(x)),
         domainHint: `\\text{Since }f\\text{ is a polynomial, its domain is }(-\\infty,\\infty).`,
         interceptHint: `x^{${m}}${linearFactorTex(r)}^{${n}}=0\\implies x=0\\text{ or }x=${numberTex(r)}.\\quad f(0)=0.`,
-        asymptoteHint: `\\text{Since }f\\text{ is a polynomial, it has no vertical, horizontal, or slant asymptotes.}`,
+        asymptoteHint: `\\text{Since }f\\text{ is a polynomial, it has no vertical or horizontal asymptotes.}`,
         firstDerivativeHints: [
           `f'(x)=(x^{${m}})'${linearFactorTex(r)}^{${n}}+x^{${m}}(${linearFactorTex(r)}^{${n}})'`,
           `=${m}x^{${m-1}}${linearFactorTex(r)}^{${n}}+${n}x^{${m}}${linearFactorTex(r)}^{${n-1}}`,
@@ -952,8 +953,8 @@ fetch("/nav.html")
     }
 
     function makeLinearPlusReciprocal() {
-      const h = randomInteger(-6, 6);
-      const k = randomChoice([1, 2, 3, 4, 5, 6, 8, 9, 12, 16, 25]);
+      const h = -4;
+      const k = 8;
       const u = linearFactorTex(h);
       const tex = `${u}+\\frac{${k}}{${u}}`;
       const f = x => (x-h) + k/(x-h);
@@ -968,7 +969,7 @@ fetch("/nav.html")
         yIntercept: h === 0 ? null : makePolynomialPoint(0,'0',f(0),numberTex(f(0))),
         verticalAsymptotes: [h],
         horizontalAsymptote: null,
-        slantAsymptote: `y=x ${-h < 0 ? '- ' + Math.abs(h) : '+ ' + (-h)}`,
+        slantAsymptote: null,
         criticalPoints: [
           {x:h-Math.sqrt(k), xTex:shiftSqrtTex(h,k,-1)},
           {x:h+Math.sqrt(k), xTex:shiftSqrtTex(h,k,1)}
@@ -979,7 +980,7 @@ fetch("/nav.html")
         yTex: x => numberTex(f(x)),
         domainHint: `\\text{The denominator is }${u},\\text{ so }x\\ne ${numberTex(h)}.\\text{ The domain is }(-\\infty,${numberTex(h)})\\cup(${numberTex(h)},\\infty).`,
         interceptHint: `f(x)=0\\implies ${u}+\\frac{${k}}{${u}}=0\\implies ${u}^2+${k}=0,\\text{ which has no real solutions.}` + (h === 0 ? `\\text{ There is no }y\\text{-intercept because }0\\text{ is not in the domain.}` : `\\quad f(0)=${numberTex(f(0))}.`),
-        asymptoteHint: `x=${numberTex(h)}\\text{ is a vertical asymptote. Since }f(x)=${u}+\\frac{${k}}{${u}},\\text{ the slant asymptote is }${`y=x ${-h < 0 ? '- ' + Math.abs(h) : '+ ' + (-h)}`}.`,
+        asymptoteHint: `x=${numberTex(h)}\\text{ is a vertical asymptote. There is no horizontal asymptote.`,
         firstDerivativeHints: [
           `f'(x)=1-${k}${u}^{-2}`,
           `=1-\\frac{${k}}{${u}^2}`,
@@ -1044,7 +1045,7 @@ fetch("/nav.html")
         yTex: x => numberTex(f(x)),
         domainHint: `\\text{Since }f\\text{ is a polynomial, its domain is }(-\\infty,\\infty).`,
         interceptHint: `f(x)=${tex}=0\\implies x^2-${r}=0\\implies x=\\pm ${sqrtTex(r)}.\\quad f(0)=${numberTex(f(0))}.`,
-        asymptoteHint: `\\text{Since }f\\text{ is a polynomial, it has no vertical, horizontal, or slant asymptotes.}`,
+        asymptoteHint: `\\text{Since }f\\text{ is a polynomial, it has no vertical or horizontal asymptotes.}`,
         firstDerivativeHints: [
           `f'(x)=-2(x^2-${r})(x^2-${r})'`,
           `=-4x(x^2-${r})`,
@@ -1058,16 +1059,7 @@ fetch("/nav.html")
     }
 
     function generateCurveProblem() {
-      const generators = [
-        makeCubicZeroAtOrigin,
-        makeEvenQuartic,
-        makeShiftedEvenQuartic,
-        makeProductPower,
-        makeReciprocalQuadratic,
-        makeLinearOverQuadratic,
-        makeLinearPlusReciprocal
-      ];
-      return randomChoice(generators)();
+      return makeLinearPlusReciprocal();
     }
 
     function sketchBreaks(problem) {
@@ -1615,11 +1607,11 @@ fetch("/nav.html")
           virtualNodes.push({
             rawX: a + side * 1e-4,
             rawY: limitY > 0 ? Infinity : -Infinity,
-            plotX: Math.max(-10.8, Math.min(10.8, ax + side * 0.35)),
+            plotX: Math.max(-10.8, Math.min(10.8, a + side * 0.1)),
             plotY: limitY,
             slope: limitY > 0 ? 10 : -10,
             preferredSlope: limitY > 0 ? 10 : -10,
-            slopeFixed: true,
+            slopeFixed: false,
             virtual: true,
             role: 'vertical-asymptote-approach',
             asymptoteRaw: a,
@@ -1648,7 +1640,7 @@ fetch("/nav.html")
       problem.plotModel = {
         displayPoints: plotPoints,
         curveNodes: allCurveNodes,
-        verticalAsymptotes: problem.verticalAsymptotes.map(a => ({raw:a, plotX:mapX(a), label:numberTex(a)})),
+        verticalAsymptotes: problem.verticalAsymptotes.map(a => ({raw:a, plotX:Math.max(-10.8, Math.min(10.8, a)), label:numberTex(a)})),
         horizontalAsymptote: hAsym === null ? null : { raw:hAsym, plotY:mapY(hAsym), label:numberTex(hAsym) },
         mapX,
         mapY
@@ -1765,9 +1757,6 @@ fetch("/nav.html")
           svg += line(left, yy, W-right, yy, `stroke="#d33" stroke-width="2" stroke-dasharray="7 6"`);
           svg += `<text x="${W-right-5}" y="${yy-6}" font-size="12" text-anchor="end" fill="#d33">y=${svgTextEscape(problem.plotModel.horizontalAsymptote.label)}</text>`;
         }
-        if (problem.slantAsymptote) {
-          svg += `<text x="${W-right-5}" y="${top+plotH-8}" font-size="12" text-anchor="end" fill="#d33">${svgTextEscape(problem.slantAsymptote)}</text>`;
-        }
       }
       if (stage >= 3) svg += behaviourBars(problem, X, left, W-right, top+plotH+28, top+plotH+56, -11, 11);
       const pieces = sketchBreaks(problem);
@@ -1825,9 +1814,12 @@ fetch("/nav.html")
       if (leftNode.role === 'vertical-asymptote-approach' && rightNode.role === 'vertical-asymptote-approach' &&
           Math.abs(leftNode.asymptoteRaw - rightNode.asymptoteRaw) < 1e-8 && leftNode.side !== rightNode.side) return false;
       // More generally, do not draw a curve segment across a vertical asymptote/domain break.
-      const breaks = [...(problem.verticalAsymptotes || []), ...(problem.domainBreaks || [])]
-        .map(x => problem.plotModel.mapX(x))
-        .filter(Number.isFinite);
+      const vaPlotBreaks = (problem.plotModel && problem.plotModel.verticalAsymptotes) ? problem.plotModel.verticalAsymptotes.map(a => a.plotX) : [];
+      const domainPlotBreaks = (problem.domainBreaks || []).map(x => {
+        const va = (problem.plotModel && problem.plotModel.verticalAsymptotes || []).find(a => Math.abs(a.raw - x) < 1e-8);
+        return va ? va.plotX : problem.plotModel.mapX(x);
+      });
+      const breaks = [...vaPlotBreaks, ...domainPlotBreaks].filter(Number.isFinite);
       return !breaks.some(x => x > leftNode.plotX + 1e-8 && x < rightNode.plotX - 1e-8);
     }
 

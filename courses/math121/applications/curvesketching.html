@@ -8,6 +8,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1248,6 +1249,73 @@ fetch("/nav.html")
       return set;
     }
 
+
+    function adjustFlexibleSingleNodesBetweenFixedSlopes(plotPoints, problem) {
+      // Keep fixed-slope nodes (local extrema) exactly where they are, but allow a
+      // single flexible feature between two fixed nodes to slide horizontally so that
+      // the two adjacent quadratic segments can both satisfy endpoint positions and
+      // the fixed endpoint slopes.  This keeps intercepts on the x-axis and preserves
+      // the left-to-right ordering of the ranked feature placement.
+      const sorted = [...plotPoints].sort((a,b)=>a.plotX-b.plotX || a.plotY-b.plotY);
+      const components = [];
+      let current = [];
+      sorted.forEach(node => {
+        if (!current.length) {
+          current.push(node);
+          return;
+        }
+        const prev = current[current.length - 1];
+        const crossesBreak = [...(problem.verticalAsymptotes || []), ...(problem.domainBreaks || [])]
+          .some(rawBreak => rawBreak > Math.min(prev.rawX, node.rawX) + 1e-8 && rawBreak < Math.max(prev.rawX, node.rawX) - 1e-8);
+        if (crossesBreak) {
+          components.push(current);
+          current = [node];
+        } else {
+          current.push(node);
+        }
+      });
+      if (current.length) components.push(current);
+
+      function compatibilityGap(left, middle, right, xMiddle) {
+        const leftSlope = Number.isFinite(left.slope) ? left.slope : 0;
+        const rightSlope = Number.isFinite(right.slope) ? right.slope : 0;
+        const leftDx = xMiddle - left.plotX;
+        const rightDx = right.plotX - xMiddle;
+        if (leftDx <= 1e-8 || rightDx <= 1e-8) return NaN;
+        const middleFromLeft = 2 * (middle.plotY - left.plotY) / leftDx - leftSlope;
+        const middleFromRight = 2 * (right.plotY - middle.plotY) / rightDx - rightSlope;
+        return middleFromLeft - middleFromRight;
+      }
+
+      components.forEach(nodes => {
+        for (let i = 0; i < nodes.length - 2; i++) {
+          const left = nodes[i], middle = nodes[i+1], right = nodes[i+2];
+          if (!left.slopeFixed || middle.slopeFixed || !right.slopeFixed) continue;
+          const lo = left.plotX + 1e-5;
+          const hi = right.plotX - 1e-5;
+          if (!(lo < middle.plotX && middle.plotX < hi)) continue;
+          let glo = compatibilityGap(left, middle, right, lo);
+          let ghi = compatibilityGap(left, middle, right, hi);
+          if (!Number.isFinite(glo) || !Number.isFinite(ghi) || glo * ghi > 0) continue;
+          let a = lo, b = hi;
+          for (let iter = 0; iter < 70; iter++) {
+            const mid = (a + b) / 2;
+            const gm = compatibilityGap(left, middle, right, mid);
+            if (!Number.isFinite(gm)) break;
+            if (Math.abs(gm) < 1e-10) { a = b = mid; break; }
+            if (glo * gm <= 0) {
+              b = mid;
+              ghi = gm;
+            } else {
+              a = mid;
+              glo = gm;
+            }
+          }
+          middle.plotX = (a + b) / 2;
+        }
+      });
+    }
+
     function assignCompatibleFeatureSlopes(plotPoints, problem) {
       // Keep the plotted feature locations fixed, but choose slopes so that each adjacent
       // pair of plotted feature points can be joined by a true quadratic segment.
@@ -1358,6 +1426,7 @@ fetch("/nav.html")
           rawSlope
         };
       });
+      adjustFlexibleSingleNodesBetweenFixedSlopes(plotPoints, problem);
       assignCompatibleFeatureSlopes(plotPoints, problem);
       // Local maxima/minima are non-negotiable: their desired schematic slope must remain 0.
       // The compatibility pass may temporarily propagate through a fixed node while choosing

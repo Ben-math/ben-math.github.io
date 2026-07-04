@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1057,7 +1058,16 @@ fetch("/nav.html")
     }
 
     function generateCurveProblem() {
-      return makeShiftedEvenQuartic();
+      const generators = [
+        makeCubicZeroAtOrigin,
+        makeEvenQuartic,
+        makeShiftedEvenQuartic,
+        makeProductPower,
+        makeReciprocalQuadratic,
+        makeLinearOverQuadratic,
+        makeLinearPlusReciprocal
+      ];
+      return randomChoice(generators)();
     }
 
     function sketchBreaks(problem) {

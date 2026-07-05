@@ -4,6 +4,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -867,8 +868,8 @@ fetch("/nav.html")
     }
 
     function makeReciprocalQuadratic() {
-      const h = randomInteger(-6, 6);
-      const k = randomChoice([1, 2, 3, 4, 5, 6, 8, 9, 12, 16, 18, 25, 27]);
+      const h = 0;
+      const k = 3;
       const u = linearFactorTex(h);
       const tex = `\\frac{1}{${u}^2+${k}}`;
       const f = x => 1/((x-h)*(x-h)+k);
@@ -1063,16 +1064,7 @@ fetch("/nav.html")
     }
 
     function generateCurveProblem() {
-      const generators = [
-        makeCubicZeroAtOrigin,
-        makeEvenQuartic,
-        makeShiftedEvenQuartic,
-        makeProductPower,
-        makeReciprocalQuadratic,
-        makeLinearOverQuadratic,
-        makeLinearPlusReciprocal
-      ];
-      return randomChoice(generators)();
+      return makeReciprocalQuadratic();
     }
 
     function sketchBreaks(problem) {
@@ -1343,10 +1335,13 @@ fetch("/nav.html")
 
 
     function adjustLeftHAFlexibleMiddleToFixedExtremum(plotPoints, problem) {
-      // For a horizontal-asymptote approach point followed by one flexible feature
-      // and then a fixed local extremum, allow the middle feature to slide horizontally
-      // so that the approach slope can have the correct sign while both adjacent
-      // quadratic pieces still satisfy the endpoint slope conditions.
+      // For a horizontal-asymptote approach point, a single flexible feature,
+      // and a fixed local extremum, allow the middle feature to slide horizontally
+      // so that the HA approach slope has the correct sign while both adjacent
+      // quadratic pieces satisfy their endpoint position/slope conditions.
+      // This is intentionally symmetric: it handles HA -> feature -> extremum
+      // on the left and extremum -> feature -> HA on the right using the same
+      // compatibility equation.
       const sorted = [...plotPoints].sort((a,b)=>a.plotX-b.plotX || a.plotY-b.plotY);
       const components = [];
       let current = [];
@@ -1360,53 +1355,92 @@ fetch("/nav.html")
       });
       if (current.length) components.push(current);
 
+      function solveBracketed(samples) {
+        let bracket = null;
+        for (let j = 0; j < samples.length - 1; j++) {
+          if (samples[j].g === 0 || samples[j].g * samples[j+1].g <= 0) {
+            bracket = [samples[j].x, samples[j+1].x, samples[j].g, samples[j+1].g];
+            break;
+          }
+        }
+        if (!bracket) return null;
+        let [a,b,ga,gb] = bracket;
+        for (let iter = 0; iter < 80; iter++) {
+          const mid = (a + b) / 2;
+          const gm = samples.gap(mid);
+          if (!Number.isFinite(gm)) break;
+          if (Math.abs(gm) < 1e-11) { a = b = mid; break; }
+          if (ga * gm <= 0) { b = mid; gb = gm; }
+          else { a = mid; ga = gm; }
+        }
+        return (a + b) / 2;
+      }
+
       components.forEach(nodes => {
         for (let i = 0; i < nodes.length - 2; i++) {
           const left = nodes[i], middle = nodes[i+1], right = nodes[i+2];
-          if (left.role !== 'horizontal-asymptote-approach' || !(left.rawX < 0)) continue;
-          if (middle.slopeFixed || !right.slopeFixed) continue;
-          if (!nodeAllowsHorizontalFlex(middle)) continue;
-          const targetLeftSlope = middle.plotY >= left.plotY ? 0.1 : -0.1;
-          const rightSlope = Number.isFinite(right.slope) ? right.slope : 0;
+          if (middle.slopeFixed || !nodeAllowsHorizontalFlex(middle)) continue;
           const lo = left.plotX + 1e-5;
           const hi = right.plotX - 1e-5;
           if (!(lo < hi)) continue;
-          function gap(xMiddle) {
-            const dxLeft = xMiddle - left.plotX;
-            const dxRight = right.plotX - xMiddle;
-            if (dxLeft <= 1e-8 || dxRight <= 1e-8) return NaN;
-            const middleSlopeFromRight = 2 * (right.plotY - middle.plotY) / dxRight - rightSlope;
-            return targetLeftSlope + middleSlopeFromRight - 2 * (middle.plotY - left.plotY) / dxLeft;
-          }
-          const samples = [];
-          const N = 160;
-          for (let j = 0; j <= N; j++) {
-            const x = lo + (hi - lo) * j / N;
-            const g = gap(x);
-            if (Number.isFinite(g)) samples.push({x,g});
-          }
-          let bracket = null;
-          for (let j = 0; j < samples.length - 1; j++) {
-            if (samples[j].g === 0 || samples[j].g * samples[j+1].g <= 0) {
-              bracket = [samples[j].x, samples[j+1].x, samples[j].g, samples[j+1].g];
-              break;
+
+          // Left-side case: HA approach -> flexible feature -> fixed extremum.
+          if (left.role === 'horizontal-asymptote-approach' && right.slopeFixed) {
+            const targetLeftSlope = middle.plotY >= left.plotY ? 0.1 : -0.1;
+            const rightSlope = Number.isFinite(right.slope) ? right.slope : 0;
+            function gap(xMiddle) {
+              const dxLeft = xMiddle - left.plotX;
+              const dxRight = right.plotX - xMiddle;
+              if (dxLeft <= 1e-8 || dxRight <= 1e-8) return NaN;
+              const middleSlopeFromRight = 2 * (right.plotY - middle.plotY) / dxRight - rightSlope;
+              return targetLeftSlope + middleSlopeFromRight - 2 * (middle.plotY - left.plotY) / dxLeft;
             }
+            const samples = [];
+            samples.gap = gap;
+            const N = 200;
+            for (let j = 0; j <= N; j++) {
+              const x = lo + (hi - lo) * j / N;
+              const g = gap(x);
+              if (Number.isFinite(g)) samples.push({x,g});
+            }
+            const solvedX = solveBracketed(samples);
+            if (solvedX === null) continue;
+            middle.plotX = solvedX;
+            left.slope = targetLeftSlope;
+            left.preferredSlope = targetLeftSlope;
+            middle.slope = 2 * (right.plotY - middle.plotY) / (right.plotX - middle.plotX) - rightSlope;
+            middle.preferredSlope = middle.slope;
+            continue;
           }
-          if (!bracket) continue;
-          let [a,b,ga,gb] = bracket;
-          for (let iter = 0; iter < 80; iter++) {
-            const mid = (a + b) / 2;
-            const gm = gap(mid);
-            if (!Number.isFinite(gm)) break;
-            if (Math.abs(gm) < 1e-11) { a = b = mid; break; }
-            if (ga * gm <= 0) { b = mid; gb = gm; }
-            else { a = mid; ga = gm; }
+
+          // Right-side case: fixed extremum -> flexible feature -> HA approach.
+          if (left.slopeFixed && right.role === 'horizontal-asymptote-approach') {
+            const targetRightSlope = middle.plotY >= right.plotY ? -0.1 : 0.1;
+            const leftSlope = Number.isFinite(left.slope) ? left.slope : 0;
+            function gap(xMiddle) {
+              const dxLeft = xMiddle - left.plotX;
+              const dxRight = right.plotX - xMiddle;
+              if (dxLeft <= 1e-8 || dxRight <= 1e-8) return NaN;
+              const middleSlopeFromLeft = 2 * (middle.plotY - left.plotY) / dxLeft - leftSlope;
+              const rightSlopeNeeded = 2 * (right.plotY - middle.plotY) / dxRight - middleSlopeFromLeft;
+              return rightSlopeNeeded - targetRightSlope;
+            }
+            const samples = [];
+            samples.gap = gap;
+            const N = 200;
+            for (let j = 0; j <= N; j++) {
+              const x = lo + (hi - lo) * j / N;
+              const g = gap(x);
+              if (Number.isFinite(g)) samples.push({x,g});
+            }
+            const solvedX = solveBracketed(samples);
+            if (solvedX === null) continue;
+            middle.plotX = solvedX;
+            middle.slope = 2 * (middle.plotY - left.plotY) / (middle.plotX - left.plotX) - leftSlope;
+            middle.preferredSlope = middle.slope;
+            right.slope = targetRightSlope;
+            right.preferredSlope = targetRightSlope;
           }
-          middle.plotX = (a + b) / 2;
-          left.slope = targetLeftSlope;
-          left.preferredSlope = targetLeftSlope;
-          middle.slope = 2 * (right.plotY - middle.plotY) / (right.plotX - middle.plotX) - rightSlope;
-          middle.preferredSlope = middle.slope;
         }
       });
     }

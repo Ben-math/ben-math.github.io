@@ -7,6 +7,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1100,19 +1101,19 @@ fetch("/nav.html")
         criticalNumbers: dedupeNumbers([0,r,c]),
         inflectionNumbers: infs,
         yTex: x => numberTex(f(x)),
-        domainHint: `\text{Since }f\text{ is a polynomial, its domain is }(-\infty,\infty).`,
-        interceptHint: `x^{${m}}${linearFactorTex(r)}^{${n}}=0\implies x=0\text{ or }x=${numberTex(r)}.\quad f(0)=0.`,
-        asymptoteHint: `\text{Since }f\text{ is a polynomial, it has no vertical or horizontal asymptotes.}`,
+        domainHint: `\\text{Since }f\\text{ is a polynomial, its domain is }(-\\infty,\\infty).`,
+        interceptHint: `x^{${m}}${linearFactorTex(r)}^{${n}}=0\\implies x=0\\text{ or }x=${numberTex(r)}.\\quad f(0)=0.`,
+        asymptoteHint: `\\text{Since }f\\text{ is a polynomial, it has no vertical or horizontal asymptotes.}`,
         firstDerivativeHints: [
           `f'(x)=(x^{${m}})'${linearFactorTex(r)}^{${n}}+x^{${m}}(${linearFactorTex(r)}^{${n}})'`,
           `=${m}x^{${m-1}}${linearFactorTex(r)}^{${n}}+${n}x^{${m}}${linearFactorTex(r)}^{${n-1}}`,
-          `=x^{${m-1}}${linearFactorTex(r)}^{${n-1}}\left(${m}${linearFactorTex(r)}+${n}x\right)`,
-          `=x^{${m-1}}${linearFactorTex(r)}^{${n-1}}\left(${m+n}x ${-m*r < 0 ? '- ' + Math.abs(m*r) : '+ ' + (-m*r)}\right)`,
-          `f'(x)=0\implies x=0\text{ or }x=${numberTex(r)}\text{ or }x=${numberTex(c)}.`
+          `=x^{${m-1}}${linearFactorTex(r)}^{${n-1}}\\left(${m}${linearFactorTex(r)}+${n}x\\right)`,
+          `=x^{${m-1}}${linearFactorTex(r)}^{${n-1}}\\left(${m+n}x ${-m*r < 0 ? '- ' + Math.abs(m*r) : '+ ' + (-m*r)}\\right)`,
+          `f'(x)=0\\implies x=0\\text{ or }x=${numberTex(r)}\\text{ or }x=${numberTex(c)}.`
         ],
         secondDerivativeHints: [
-          `\text{Differentiating }f'(x)\text{ and simplifying gives }f''(x)\text{.}`,
-          `f''(x)=0\implies x=${texList(infPts.map(p=>p.xTex))}.`
+          `\\text{Differentiating }f'(x)\\text{ and simplifying gives }f''(x)\\text{.}`,
+          `f''(x)=0\\implies x=${texList(infPts.map(p=>p.xTex))}.`
         ]
       });
     }
@@ -1131,7 +1132,12 @@ fetch("/nav.html")
         if (hAsym === null && i === 0 && nodes[i].plotX > -10.5) {
           pieces.push({ a: -11, b: nodes[i+1].plotX, extension: 'left' });
         } else if (hAsym === null && i === nodes.length - 2 && nodes[i+1].plotX < 10.5) {
-          pieces.push({ a: nodes[i].plotX, b: 11, extension: 'right' });
+          if (nodes[i+1].reflectQuadraticRight) {
+            pieces.push({ a: nodes[i].plotX, b: nodes[i+1].plotX });
+            pieces.push({ a: nodes[i+1].plotX, b: 11, extension: 'right-reflect' });
+          } else {
+            pieces.push({ a: nodes[i].plotX, b: 11, extension: 'right' });
+          }
         } else {
           pieces.push({ a: nodes[i].plotX, b: nodes[i+1].plotX });
         }
@@ -1723,7 +1729,10 @@ fetch("/nav.html")
         const penultimate = finiteNodes[finiteNodes.length - 2];
         const antepenultimate = finiteNodes[finiteNodes.length - 3];
         if (antepenultimate && antepenultimate.slopeFixed && nodeMatchesActualInflection(problem, penultimate) && nodeMatchesActualInflection(problem, last)) {
-          solveMiddleBetweenZeroSlopeEndpoints(antepenultimate, penultimate, last);
+          if (solveMiddleBetweenZeroSlopeEndpoints(antepenultimate, penultimate, last)) {
+            last.reflectQuadraticRight = true;
+            penultimate.reflectPartnerRight = last;
+          }
         }
       });
     }
@@ -2085,7 +2094,7 @@ fetch("/nav.html")
     }
 
     function formatDebugNumber(value) {
-      if (!Number.isFinite(value)) return value > 0 ? '\infty' : '-\infty';
+      if (!Number.isFinite(value)) return value > 0 ? '\\infty' : '-\\infty';
       if (Math.abs(value) < 1e-10) value = 0;
       const rounded = Math.round(value);
       if (Math.abs(value - rounded) < 1e-10) return String(rounded);
@@ -2180,6 +2189,26 @@ fetch("/nav.html")
           if (leftExtensionMatch) drawLeftX = -11;
           if (rightExtensionMatch) drawRightX = 11;
           break;
+        }
+      }
+      if (!leftNode && Math.abs(b - 11) < 1e-8) {
+        for (let i = 0; i < nodes.length - 1; i++) {
+          if (Math.abs(nodes[i+1].plotX - a) < 1e-8 && nodes[i+1].reflectQuadraticRight) {
+            const baseLeft = nodes[i];
+            const baseRight = nodes[i+1];
+            const baseCoeffs = quadraticCoefficientsFromLeftSlope(baseLeft, baseRight);
+            if (!baseCoeffs) return includeDebug ? { path:'', debug:'' } : '';
+            const reflCoeffs = {
+              ...baseCoeffs,
+              a: -baseCoeffs.a,
+              l: -baseCoeffs.l,
+              n: -baseCoeffs.n,
+              m: -baseCoeffs.m
+            };
+            const fakeLeft = { ...baseRight, slope: 0, continuationCoeffs: reflCoeffs };
+            const fakeRight = { ...baseRight, plotX: b, slope: reflCoeffs.l * b + reflCoeffs.n, continuationCoeffs: reflCoeffs };
+            return quadraticGraphPathThroughEndpoints(fakeLeft, fakeRight, problem, X, Y, includeDebug, a, b);
+          }
         }
       }
       if (!shouldConnectNodes(problem, leftNode, rightNode)) return includeDebug ? { path:'', debug:'' } : '';

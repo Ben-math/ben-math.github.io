@@ -8,6 +8,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1119,7 +1120,17 @@ fetch("/nav.html")
     }
 
     function generateCurveProblem() {
-      return makeForcedEndpointInflectionProductPower();
+      const generators = [
+        makeCubicZeroAtOrigin,
+        makeEvenQuartic,
+        makeShiftedEvenQuartic,
+        makeProductPower,
+        makeReciprocalQuadratic,
+        makeLinearOverQuadratic,
+        makeLinearPlusReciprocal
+      ];
+
+      return randomChoice(generators)();
     }
 
     function sketchBreaks(problem) {
@@ -1130,7 +1141,12 @@ fetch("/nav.html")
       for (let i = 0; i < nodes.length - 1; i++) {
         if (!shouldConnectNodes(problem, nodes[i], nodes[i+1])) continue;
         if (hAsym === null && i === 0 && nodes[i].plotX > -10.5) {
-          pieces.push({ a: -11, b: nodes[i+1].plotX, extension: 'left' });
+          if (nodes[i].reflectQuadraticLeft) {
+            pieces.push({ a: -11, b: nodes[i].plotX, extension: 'left-reflect' });
+            pieces.push({ a: nodes[i].plotX, b: nodes[i+1].plotX });
+          } else {
+            pieces.push({ a: -11, b: nodes[i+1].plotX, extension: 'left' });
+          }
         } else if (hAsym === null && i === nodes.length - 2 && nodes[i+1].plotX < 10.5) {
           if (nodes[i+1].reflectQuadraticRight) {
             pieces.push({ a: nodes[i].plotX, b: nodes[i+1].plotX });
@@ -1722,7 +1738,10 @@ fetch("/nav.html")
         const second = finiteNodes[1];
         const third = finiteNodes[2];
         if (nodeMatchesActualInflection(problem, first) && nodeMatchesActualInflection(problem, second) && third.slopeFixed) {
-          solveMiddleBetweenZeroSlopeEndpoints(first, second, third);
+          if (solveMiddleBetweenZeroSlopeEndpoints(first, second, third)) {
+            first.reflectQuadraticLeft = true;
+            second.reflectPartnerLeft = first;
+          }
         }
 
         const last = finiteNodes[finiteNodes.length - 1];
@@ -2189,6 +2208,26 @@ fetch("/nav.html")
           if (leftExtensionMatch) drawLeftX = -11;
           if (rightExtensionMatch) drawRightX = 11;
           break;
+        }
+      }
+      if (!leftNode && Math.abs(a + 11) < 1e-8) {
+        for (let i = 0; i < nodes.length - 1; i++) {
+          if (Math.abs(nodes[i].plotX - b) < 1e-8 && nodes[i].reflectQuadraticLeft) {
+            const baseLeft = nodes[i];
+            const baseRight = nodes[i+1];
+            const baseCoeffs = quadraticCoefficientsFromLeftSlope(baseLeft, baseRight);
+            if (!baseCoeffs) return includeDebug ? { path:'', debug:'' } : '';
+            const reflCoeffs = {
+              ...baseCoeffs,
+              a: -baseCoeffs.a,
+              l: -baseCoeffs.l,
+              n: -baseCoeffs.n,
+              m: -baseCoeffs.m
+            };
+            const fakeLeft = { ...baseLeft, plotX: a, slope: reflCoeffs.l * a + reflCoeffs.n, continuationCoeffs: reflCoeffs };
+            const fakeRight = { ...baseLeft, slope: 0, continuationCoeffs: reflCoeffs };
+            return quadraticGraphPathThroughEndpoints(fakeLeft, fakeRight, problem, X, Y, includeDebug, a, b);
+          }
         }
       }
       if (!leftNode && Math.abs(b - 11) < 1e-8) {

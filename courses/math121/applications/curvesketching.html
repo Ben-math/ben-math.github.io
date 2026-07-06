@@ -1,3 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1192,7 +1208,59 @@ fetch("/nav.html")
           `f''(x)=0\\text{ has no solutions, so there are no points of inflection.}`
         ]
       });
+
     }
+
+    function makeForcedTripleProductPower() {
+      const r = -1;
+      const m = 3;
+      const n = 3;
+      const tex = `x^{${m}}${linearFactorTex(r)}^{${n}}`;
+      const f = x => Math.pow(x,m)*Math.pow(x-r,n);
+      const f1 = x => Math.pow(x,m-1)*Math.pow(x-r,n-1)*((m+n)*x-m*r);
+      const f2 = numericSecondDerivative(f);
+      const c = m*r/(m+n);
+      const infs = findRootsNumeric(f2, -12, 12).filter(x => Math.abs(x) < 50);
+      const infPts = infs.map(x => ({x, xTex:numberTex(x)}));
+      return finishProblem({
+        family: 'product powers',
+        tex, f, f1, f2,
+        domainBreaks: [],
+        extraSignBreaks: [],
+        xIntercepts: [
+          makePolynomialPoint(0,'0',0,'0'),
+          makePolynomialPoint(r,numberTex(r),0,'0')
+        ],
+        yIntercept: makePolynomialPoint(0,'0',0,'0'),
+        verticalAsymptotes: [],
+        horizontalAsymptote: null,
+        slantAsymptote: null,
+        criticalPoints: [
+          {x:0, xTex:'0'},
+          {x:r, xTex:numberTex(r)},
+          {x:c, xTex:numberTex(c)}
+        ],
+        inflectionPoints: infPts,
+        criticalNumbers: dedupeNumbers([0,r,c]),
+        inflectionNumbers: infs,
+        yTex: x => numberTex(f(x)),
+        domainHint: `\\text{Since }f\\text{ is a polynomial, its domain is }(-\\infty,\\infty).`,
+        interceptHint: `x^{${m}}${linearFactorTex(r)}^{${n}}=0\\implies x=0\\text{ or }x=${numberTex(r)}.\\quad f(0)=0.`,
+        asymptoteHint: `\\text{Since }f\\text{ is a polynomial, it has no vertical or horizontal asymptotes.}`,
+        firstDerivativeHints: [
+          `f'(x)=(x^{${m}})'${linearFactorTex(r)}^{${n}}+x^{${m}}(${linearFactorTex(r)}^{${n}})'`,
+          `=${m}x^{${m-1}}${linearFactorTex(r)}^{${n}}+${n}x^{${m}}${linearFactorTex(r)}^{${n-1}}`,
+          `=x^{${m-1}}${linearFactorTex(r)}^{${n-1}}\\left(${m}${linearFactorTex(r)}+${n}x\\right)`,
+          `=x^{${m-1}}${linearFactorTex(r)}^{${n-1}}\\left(${m+n}x ${-m*r < 0 ? '- ' + Math.abs(m*r) : '+ ' + (-m*r)}\\right)`,
+          `f'(x)=0\\implies x=0\\text{ or }x=${numberTex(r)}\\text{ or }x=${numberTex(c)}.`
+        ],
+        secondDerivativeHints: [
+          `\\text{Differentiating }f'(x)\\text{ and simplifying gives }f''(x)\\text{.}`,
+          `f''(x)=0\\implies x=${texList(infPts.map(p=>p.xTex))}.`
+        ]
+      });
+    }
+
 
     function generateCurveProblem() {
       const generators = [
@@ -1205,7 +1273,7 @@ fetch("/nav.html")
         makeLinearPlusReciprocal
       ];
 
-      return randomChoice(generators)();
+      return makeForcedTripleProductPower();
     }
 
     function sketchBreaks(problem) {
@@ -1299,19 +1367,48 @@ fetch("/nav.html")
       return `${Math.round(p.x*1e8)}:${Math.round(p.y*1e8)}`;
     }
 
-    function collectDisplayPoints(problem) {
-      const pts = [];
-      problem.xIntercepts.forEach(p => pts.push({...p, role:p.role || 'x-intercept'}));
-      if (problem.yIntercept) pts.push({...problem.yIntercept, role:'y-intercept'});
-      (problem.extrema || []).forEach(p => pts.push({...p, role:p.type === 'max' ? 'local maximum' : 'local minimum'}));
-      (problem.actualInflections || []).forEach(p => pts.push({...p, role:'inflection point'}));
-      const seen = new Set();
-      return pts.filter(p => Number.isFinite(p.x) && Number.isFinite(p.y)).filter(p => {
-        const k = pointKey(p);
-        if (seen.has(k)) return false;
-        seen.add(k);
-        return true;
+    function mergeFeatureRoles(oldRole, newRole) {
+      const pieces = [];
+      [oldRole, newRole].forEach(role => {
+        String(role || '').split(/\s+and\s+/).forEach(part => {
+          const cleaned = part.trim();
+          if (cleaned && !pieces.includes(cleaned)) pieces.push(cleaned);
+        });
       });
+      return pieces.join(' and ');
+    }
+
+    function collectDisplayPoints(problem) {
+      const candidates = [];
+      problem.xIntercepts.forEach(p => candidates.push({...p, role:p.role || 'x-intercept'}));
+      if (problem.yIntercept) candidates.push({...problem.yIntercept, role:'y-intercept'});
+      (problem.extrema || []).forEach(p => candidates.push({...p, role:p.type === 'max' ? 'local maximum' : 'local minimum'}));
+      (problem.actualInflections || []).forEach(p => candidates.push({...p, role:'inflection point'}));
+
+      // A point can legitimately have more than one role: for example, in
+      // x^3(x+1)^3 both x-intercepts are also points of inflection.  The old
+      // exact-key de-dupe missed numerically-found inflection points that were
+      // only approximately equal to the exact intercepts, so the sketch treated
+      // a single graphical feature as two nearby nodes.  Merge such near-equal
+      // features into one displayed/curve node while preserving all roles.
+      const pts = [];
+      candidates.filter(p => Number.isFinite(p.x) && Number.isFinite(p.y)).forEach(p => {
+        const existing = pts.find(q => Math.abs(q.x - p.x) < 1e-4 && Math.abs(q.y - p.y) < 1e-4);
+        if (existing) {
+          existing.role = mergeFeatureRoles(existing.role, p.role);
+          if (String(p.role || '').includes('inflection')) existing.isInflection = true;
+          if (String(p.role || '').includes('x-intercept')) existing.isXIntercept = true;
+          if (String(p.role || '').includes('local')) existing.isExtremum = true;
+        } else {
+          pts.push({
+            ...p,
+            isInflection: String(p.role || '').includes('inflection'),
+            isXIntercept: String(p.role || '').includes('x-intercept'),
+            isExtremum: String(p.role || '').includes('local')
+          });
+        }
+      });
+      return pts;
     }
 
     function rawHorizontalAsymptoteValue(problem) {
@@ -1813,8 +1910,9 @@ fetch("/nav.html")
 
     function nodeMatchesActualInflection(problem, node) {
       if (!node || node.virtual) return false;
+      if (node.isInflection || String(node.role || '').includes('inflection')) return true;
       return (problem.actualInflections || []).some(p =>
-        Math.abs(p.x - node.rawX) < 1e-7 && Math.abs(p.y - node.rawY) < 1e-5
+        Math.abs(p.x - node.rawX) < 1e-4 && Math.abs(p.y - node.rawY) < 1e-4
       );
     }
 

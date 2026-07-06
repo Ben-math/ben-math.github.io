@@ -11,6 +11,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1165,18 +1166,50 @@ fetch("/nav.html")
       });
     }
 
-    function generateCurveProblem() {
-      const generators = [
-        makeCubicZeroAtOrigin,
-        makeEvenQuartic,
-        makeShiftedEvenQuartic,
-        makeProductPower,
-        makeReciprocalQuadratic,
-        makeLinearOverQuadratic,
-        makeLinearPlusReciprocal
-      ];
 
-      return randomChoice(generators)();
+    function makeForcedLinearPlusReciprocalVAFlex() {
+      const h = 2;
+      const k = 5;
+      const u = linearFactorTex(h);
+      const tex = `${u}+\\frac{${k}}{${u}}`;
+      const f = x => (x-h) + k/(x-h);
+      const f1 = x => 1 - k/((x-h)*(x-h));
+      const f2 = x => 2*k/Math.pow(x-h,3);
+      return finishProblem({
+        family: 'linear plus reciprocal',
+        tex, f, f1, f2,
+        domainBreaks: [h],
+        extraSignBreaks: [],
+        xIntercepts: [],
+        yIntercept: makePolynomialPoint(0,'0',f(0),numberTex(f(0))),
+        verticalAsymptotes: [h],
+        horizontalAsymptote: null,
+        slantAsymptote: null,
+        criticalPoints: [
+          {x:h-Math.sqrt(k), xTex:shiftSqrtTex(h,k,-1)},
+          {x:h+Math.sqrt(k), xTex:shiftSqrtTex(h,k,1)}
+        ],
+        inflectionPoints: [],
+        criticalNumbers: [h-Math.sqrt(k), h+Math.sqrt(k)],
+        inflectionNumbers: [],
+        yTex: x => numberTex(f(x)),
+        domainHint: `\\text{The denominator is }${u},\\text{ so }x\\ne ${numberTex(h)}.\\text{ The domain is }(-\\infty,${numberTex(h)})\\cup(${numberTex(h)},\\infty).`,
+        interceptHint: `f(x)=0\\implies ${u}+\\frac{${k}}{${u}}=0\\implies ${u}^2+${k}=0,\\text{ which has no real solutions.}\\quad f(0)=${numberTex(f(0))}.`,
+        asymptoteHint: `x=${numberTex(h)}\\text{ is a vertical asymptote. There is no horizontal asymptote.`,
+        firstDerivativeHints: [
+          `f'(x)=1-${k}${u}^{-2}`,
+          `=1-\\frac{${k}}{${u}^2}`,
+          `f'(x)=0\\implies ${u}^2=${k}\\implies x=${shiftSqrtTex(h,k,-1)}\\text{ or }x=${shiftSqrtTex(h,k,1)}.`
+        ],
+        secondDerivativeHints: [
+          `f''(x)=\\frac{${2*k}}{${u}^3}`,
+          `f''(x)=0\\text{ has no solutions, so there are no points of inflection.}`
+        ]
+      });
+    }
+
+    function generateCurveProblem() {
+      return makeForcedLinearPlusReciprocalVAFlex();
     }
 
     function sketchBreaks(problem) {
@@ -1856,6 +1889,58 @@ fetch("/nav.html")
       });
     }
 
+
+    function adjustLinearPlusReciprocalVAComponents(plotPoints, problem) {
+      if (problem.family !== 'linear plus reciprocal') return;
+      const sorted = [...plotPoints].sort((a,b)=>a.plotX-b.plotX || a.plotY-b.plotY);
+      const leftVA = sorted.find(n => n.role === 'vertical-asymptote-approach' && n.side < 0);
+      const rightVA = sorted.find(n => n.role === 'vertical-asymptote-approach' && n.side > 0);
+      const extrema = sorted.filter(n => n.slopeFixed && !n.virtual).sort((a,b)=>a.plotX-b.plotX);
+      const yInt = sorted.find(n => n.role === 'y-intercept');
+      if (!leftVA || !rightVA || extrema.length < 2) return;
+      const leftExt = extrema[0];
+      const rightExt = extrema[extrema.length - 1];
+
+      // The schematic VA itself is fixed by the ranked axis map; the approach nodes
+      // are placed one tenth of a unit to either side of that schematic asymptote.
+      const vaPlotX = (leftVA.plotX + rightVA.plotX) / 2;
+      leftVA.plotX = vaPlotX - 0.1;
+      rightVA.plotX = vaPlotX + 0.1;
+      leftVA.plotY = -11;
+      rightVA.plotY = 11;
+      leftVA.slope = leftVA.preferredSlope = -10;
+      rightVA.slope = rightVA.preferredSlope = -10;
+
+      // With so few finite features in this family, the default ranked vertical
+      // placement makes the parabolas too steep or misaligned.  Keep the vertical
+      // order, but pull the extrema and y-intercept closer to the x-axis.
+      leftExt.plotY = -4;
+      rightExt.plotY = 4;
+      leftExt.slope = leftExt.preferredSlope = 0;
+      rightExt.slope = rightExt.preferredSlope = 0;
+      if (yInt && yInt.plotX > leftExt.plotX && yInt.plotX < leftVA.plotX) {
+        // Force the left branch to be one concave-down quadratic through
+        // leftExt, yInt, and the left VA approach, with slope 0 at the maximum.
+        const dxV = leftVA.plotX - leftExt.plotX;
+        const A = (leftVA.plotY - leftExt.plotY) / (dxV * dxV);
+        yInt.plotY = A * Math.pow(yInt.plotX - leftExt.plotX, 2) + leftExt.plotY;
+        yInt.slope = yInt.preferredSlope = 2 * A * (yInt.plotX - leftExt.plotX);
+        leftVA.slope = leftVA.preferredSlope = Math.min(-0.1, 2 * A * (leftVA.plotX - leftExt.plotX));
+      }
+      // Force the right branch to be one concave-up quadratic through the right
+      // VA approach and the local minimum, with slope 0 at the minimum.
+      const dxR = rightVA.plotX - rightExt.plotX;
+      if (Math.abs(dxR) > 1e-8) {
+        const A = (rightVA.plotY - rightExt.plotY) / (dxR * dxR);
+        rightVA.slope = rightVA.preferredSlope = Math.min(-0.1, 2 * A * dxR);
+      }
+      leftExt.forceSlope = true;
+      rightExt.forceSlope = true;
+      if (yInt) yInt.forceSlope = true;
+      leftVA.forceSlope = true;
+      rightVA.forceSlope = true;
+    }
+
     function assignCompatibleFeatureSlopes(plotPoints, problem) {
       // Keep the plotted feature locations fixed, but choose slopes so that each adjacent
       // pair of plotted feature points can be joined by a true quadratic segment.
@@ -1896,6 +1981,8 @@ fetch("/nav.html")
           nodes[i-1].slope = 2 * secantSlope(nodes[i-1], nodes[i]) - nodes[i].slope;
         }
       }
+
+      if (problem.family === 'linear plus reciprocal') return;
 
       components.forEach(nodes => {
         if (!nodes.length) return;
@@ -1977,13 +2064,14 @@ fetch("/nav.html")
         const ax = mapX(a);
         [-1, 1].forEach(side => {
           const limitY = evaluateNearDomainBreak(problem, a, side);
+          const vaSlope = problem.family === 'linear plus reciprocal' ? -10 : (limitY > 0 ? 10 : -10);
           virtualNodes.push({
             rawX: a + side * 1e-4,
             rawY: limitY > 0 ? Infinity : -Infinity,
-            plotX: Math.max(-10.8, Math.min(10.8, a + side * 0.1)),
+            plotX: Math.max(-10.8, Math.min(10.8, ax + side * 0.1)),
             plotY: limitY,
-            slope: limitY > 0 ? 10 : -10,
-            preferredSlope: limitY > 0 ? 10 : -10,
+            slope: vaSlope,
+            preferredSlope: vaSlope,
             slopeFixed: false,
             virtual: true,
             role: 'vertical-asymptote-approach',
@@ -2007,6 +2095,7 @@ fetch("/nav.html")
       adjustFlexibleSingleNodesBetweenFixedSlopes(allCurveNodes, problem);
       adjustFlexibleTwoNodesBetweenFixedSlopes(allCurveNodes, problem);
       adjustEndpointInflectionQuadraticReflection(allCurveNodes, problem);
+      adjustLinearPlusReciprocalVAComponents(allCurveNodes, problem);
       assignCompatibleFeatureSlopes(allCurveNodes, problem);
       allCurveNodes.forEach(node => {
         if (node.slopeFixed && !node.virtual) node.slope = 0;
@@ -2015,7 +2104,7 @@ fetch("/nav.html")
       problem.plotModel = {
         displayPoints: plotPoints,
         curveNodes: allCurveNodes,
-        verticalAsymptotes: problem.verticalAsymptotes.map(a => ({raw:a, plotX:Math.max(-10.8, Math.min(10.8, a)), label:numberTex(a)})),
+        verticalAsymptotes: problem.verticalAsymptotes.map(a => ({raw:a, plotX:Math.max(-10.8, Math.min(10.8, mapX(a))), label:numberTex(a)})),
         horizontalAsymptote: hAsym === null ? null : { raw:hAsym, plotY:mapY(hAsym), label:numberTex(hAsym) },
         mapX,
         mapY

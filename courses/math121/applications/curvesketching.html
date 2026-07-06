@@ -3,6 +3,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -866,8 +867,8 @@ fetch("/nav.html")
     }
 
     function makeReciprocalQuadratic() {
-      const h = randomInteger(-6, 6);
-      const k = randomChoice([1, 2, 3, 4, 5, 6, 8, 9, 12, 16, 18, 25, 27]);
+      const h = -2;
+      const k = 8;
       const u = linearFactorTex(h);
       const tex = `\\frac{1}{${u}^2+${k}}`;
       const f = x => 1/((x-h)*(x-h)+k);
@@ -2143,7 +2144,7 @@ fetch("/nav.html")
 
 
     function adjustLinearOverQuadraticHATails(plotPoints, problem) {
-      if (problem.family !== 'linear over quadratic') return;
+      if (problem.family !== 'linear over quadratic' && problem.family !== 'reciprocal quadratic') return;
       const sorted = [...plotPoints].sort((a,b)=>a.plotX-b.plotX || a.plotY-b.plotY);
       function isHA(n) { return n && n.role === 'horizontal-asymptote-approach'; }
       function isYInt(n) { return n && String(n.role || '').includes('y-intercept'); }

@@ -20,6 +20,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -926,8 +927,8 @@ fetch("/nav.html")
     }
 
     function makeLinearOverQuadratic() {
-      const h = randomInteger(-6, 6);
-      const k = randomChoice([1, 2, 3, 4, 5, 6, 8, 9, 12, 16]);
+      const h = 6;
+      const k = 5;
       const u = linearFactorTex(h);
       const tex = `\\frac{${u}}{${u}^2+${k}}`;
       const f = x => (x-h)/((x-h)*(x-h)+k);
@@ -1364,16 +1365,7 @@ fetch("/nav.html")
     }
 
     function generateCurveProblem() {
-      const generators = [
-        makeCubicZeroAtOrigin,
-        makeEvenQuartic,
-        makeShiftedEvenQuartic,
-        makeProductPower,
-        makeReciprocalQuadratic,
-        makeLinearOverQuadratic,
-        makeLinearPlusReciprocal
-      ];
-      return randomChoice(generators)();
+      return makeLinearOverQuadratic();
     }
 
     function sketchBreaks(problem) {
@@ -2199,31 +2191,75 @@ fetch("/nav.html")
       }
       function applyLeftTail(ha, yint, inf, ext) {
         if (!ext || !inf || !yint || !ha || !ext.slopeFixed) return false;
-        const x0 = ha.plotX, y0 = ha.plotY, x2 = yint.plotX, xR = ext.plotX, yR = ext.plotY;
-        if (!(x0 < x2 && x2 < inf.plotX && inf.plotX < xR)) return false;
-        const m0 = -0.1;
-        let x1 = clampBetween((x2 + xR) / 2, x2, xR, 0.08);
-        let denom = 2/(x1-x0) + 2/(xR-x1);
-        if (!Number.isFinite(denom) || Math.abs(denom) < 1e-8) return false;
-        let y1 = (2*y0/(x1-x0) + 2*yR/(xR-x1) - 0) / denom;
-        y1 = clampBetween(y1, yint.plotY, yR, 0.25);
-        const m1 = 2*(yR-y1)/(xR-x1); // ext slope is 0
-        const A1 = (m1 - m0)/(2*(x1-x0));
-        const B1 = m0 - 2*A1*x0;
-        const C1 = y0 - A1*x0*x0 - B1*x0;
-        const y2 = A1*x2*x2 + B1*x2 + C1;
-        inf.plotX = x1;
-        inf.plotY = y1;
-        inf.slope = inf.preferredSlope = m1;
-        yint.plotY = y2;
-        yint.slope = yint.preferredSlope = 2*A1*x2 + B1;
-        ha.slope = ha.preferredSlope = m0;
+        if (!(isHA(ha) && isYInt(yint) && isInf(inf))) return false;
+        if (!(ha.plotX < yint.plotX && yint.plotX < inf.plotX && inf.plotX < ext.plotX)) return false;
+
+        // Left-tail order: HA approach -> y-intercept -> inflection -> fixed minimum.
+        // Make HA/y-intercept/inflection one concave-down quadratic, then make
+        // inflection/minimum one concave-up quadratic.  The y-intercept remains at
+        // x = 0; the HA slope remains negative.
+        const xH = ha.plotX, yH = ha.plotY;
+        const xY = yint.plotX;
+        const xE = ext.plotX, yE = ext.plotY;
+        const loX = xY + 0.08;
+        const hiX = xE - 0.08;
+        if (!(loX < hiX)) return false;
+
+        const originalInfX = inf.plotX;
+        const originalInfY = inf.plotY;
+        const originalYIntY = yint.plotY;
+        let best = null;
+
+        for (let ix = 0; ix <= 500; ix++) {
+          const xI = loX + (hiX - loX) * ix / 500;
+          const dxRight = xE - xI;
+          const dxLeft = xH - xI;
+          if (dxRight <= 1e-8 || Math.abs(dxLeft) < 1e-8) continue;
+
+          // Try a small vertical adjustment of the inflection point, but keep the
+          // ranking HA above y-intercept above inflection above the minimum.
+          const lowI = yE + 0.15;
+          const highI = yH - 0.3;
+          for (let iy = 0; iy <= 500; iy++) {
+            const yI = lowI + (highI - lowI) * iy / 500;
+            const mI = 2 * (yE - yI) / dxRight;
+            const A2 = (0 - mI) / (2 * dxRight);
+            if (!(A2 > 1e-8)) continue;
+
+            const A1 = (yH - yI - mI * dxLeft) / (dxLeft * dxLeft);
+            if (!(A1 < -1e-8)) continue;
+            const mH = 2 * A1 * dxLeft + mI;
+            if (!(mH < -1e-8)) continue;
+
+            const yY = A1 * Math.pow(xY - xI, 2) + mI * (xY - xI) + yI;
+            if (!(yH > yY && yY > yI && yI > yE)) continue;
+            const mY = 2 * A1 * (xY - xI) + mI;
+
+            const score = Math.abs(mH + 0.1)
+              + 0.02 * Math.abs(xI - originalInfX)
+              + 0.02 * Math.abs(yI - originalInfY)
+              + 0.02 * Math.abs(yY - originalYIntY);
+            if (!best || score < best.score) best = { xI, yI, yY, mH, mY, mI, score };
+          }
+        }
+        if (!best) return false;
+
+        inf.plotX = best.xI;
+        inf.plotY = best.yI;
+        inf.slope = inf.preferredSlope = best.mI;
+        yint.plotY = best.yY;
+        yint.slope = yint.preferredSlope = best.mY;
+        ha.slope = ha.preferredSlope = best.mH;
+        ext.slope = ext.preferredSlope = 0;
         ha.slopeFixed = true;
+        ext.slopeFixed = true;
         ha.forceSlope = true;
-        inf.forceSlope = true;
         yint.forceSlope = true;
+        inf.forceSlope = true;
+        ext.forceSlope = true;
         return true;
       }
+
       function applyRightMergedYInfTail(ext, mid, ha) {
         if (!ext || !mid || !ha || !ext.slopeFixed || !isYInt(mid) || !isInf(mid) || !isHA(ha)) return false;
         if (!(ext.plotX < mid.plotX && mid.plotX < ha.plotX)) return false;

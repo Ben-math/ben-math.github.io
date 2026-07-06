@@ -15,6 +15,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1263,18 +1264,55 @@ fetch("/nav.html")
     }
 
 
-    function generateCurveProblem() {
-      const generators = [
-        makeCubicZeroAtOrigin,
-        makeEvenQuartic,
-        makeShiftedEvenQuartic,
-        makeProductPower,
-        makeReciprocalQuadratic,
-        makeLinearOverQuadratic,
-        makeLinearPlusReciprocal
-      ];
+    function makeForcedLinearOverQuadraticRightTail() {
+      const h = -2;
+      const k = 1;
+      const u = linearFactorTex(h);
+      const tex = `\\frac{${u}}{${u}^2+${k}}`;
+      const f = x => (x-h)/((x-h)*(x-h)+k);
+      const f1 = x => (k-(x-h)*(x-h))/Math.pow((x-h)*(x-h)+k,2);
+      const f2 = x => 2*(x-h)*((x-h)*(x-h)-3*k)/Math.pow((x-h)*(x-h)+k,3);
+      return finishProblem({
+        family: 'linear over quadratic',
+        tex, f, f1, f2,
+        domainBreaks: [],
+        extraSignBreaks: [],
+        xIntercepts: [makePolynomialPoint(h, numberTex(h), 0, '0')],
+        yIntercept: makePolynomialPoint(0,'0',f(0),numberTex(f(0))),
+        verticalAsymptotes: [],
+        horizontalAsymptote: 'y=0',
+        slantAsymptote: null,
+        criticalPoints: [
+          {x:h-Math.sqrt(k), xTex:shiftSqrtTex(h,k,-1)},
+          {x:h+Math.sqrt(k), xTex:shiftSqrtTex(h,k,1)}
+        ],
+        inflectionPoints: [
+          {x:h-Math.sqrt(3*k), xTex:shiftSqrtTex(h,3*k,-1)},
+          {x:h, xTex:numberTex(h)},
+          {x:h+Math.sqrt(3*k), xTex:shiftSqrtTex(h,3*k,1)}
+        ],
+        criticalNumbers: [h-Math.sqrt(k), h+Math.sqrt(k)],
+        inflectionNumbers: [h-Math.sqrt(3*k), h, h+Math.sqrt(3*k)],
+        yTex: x => numberTex(f(x)),
+        domainHint: `\\text{The denominator }${u}^2+${k}\\text{ is always positive, so the domain is }(-\\infty,\\infty).`,
+        interceptHint: `\\frac{${u}}{${u}^2+${k}}=0\\implies ${u}=0\\implies x=${numberTex(h)}.\\quad f(0)=${numberTex(f(0))}.`,
+        asymptoteHint: `\\lim_{x\\to\\pm\\infty}\\frac{${u}}{${u}^2+${k}}=0,\\text{ so }y=0\\text{ is a horizontal asymptote. There are no vertical asymptotes.}`,
+        firstDerivativeHints: [
+          `f'(x)=\\frac{(${u})'(${u}^2+${k})-${u}(${u}^2+${k})'}{(${u}^2+${k})^2}`,
+          `=\\frac{${u}^2+${k}-2${u}^2}{(${u}^2+${k})^2}`,
+          `=\\frac{${k}-${u}^2}{(${u}^2+${k})^2}`,
+          `f'(x)=0\\implies ${u}^2=${k}\\implies x=${shiftSqrtTex(h,k,-1)}\\text{ or }x=${shiftSqrtTex(h,k,1)}.`
+        ],
+        secondDerivativeHints: [
+          `f''(x)=\\frac{2${u}(${u}^2-${3*k})}{(${u}^2+${k})^3}`,
+          `f''(x)=0\\implies ${u}=0\\text{ or }${u}^2=${3*k}`,
+          `x=${numberTex(h)}\\text{ or }x=${shiftSqrtTex(h,3*k,-1)}\\text{ or }x=${shiftSqrtTex(h,3*k,1)}.`
+        ]
+      });
+    }
 
-      return randomChoice(generators)();
+    function generateCurveProblem() {
+      return makeForcedLinearOverQuadraticRightTail();
     }
 
     function sketchBreaks(problem) {
@@ -2036,6 +2074,96 @@ fetch("/nav.html")
       rightVA.forceSlope = true;
     }
 
+
+    function adjustLinearOverQuadraticHATails(plotPoints, problem) {
+      if (problem.family !== 'linear over quadratic') return;
+      const sorted = [...plotPoints].sort((a,b)=>a.plotX-b.plotX || a.plotY-b.plotY);
+      function isHA(n) { return n && n.role === 'horizontal-asymptote-approach'; }
+      function isYInt(n) { return n && n.role === 'y-intercept'; }
+      function isInf(n) { return nodeMatchesActualInflection(problem, n); }
+      function clampBetween(v, a, b, margin = 0.05) {
+        const lo = Math.min(a, b) + margin;
+        const hi = Math.max(a, b) - margin;
+        if (lo > hi) return (a + b) / 2;
+        return Math.max(lo, Math.min(hi, v));
+      }
+      function applyRightTail(ext, inf, yint, ha) {
+        if (!ext || !inf || !yint || !ha || !ext.slopeFixed) return false;
+        const x0 = ext.plotX, y0 = ext.plotY, x2 = yint.plotX, xR = ha.plotX, yR = ha.plotY;
+        if (!(x0 < inf.plotX && inf.plotX < x2 && x2 < xR)) return false;
+        const mR = -0.1;
+        let x1 = clampBetween((x0 + x2) / 2, x0, x2, 0.08);
+        let denom = 2/(x1-x0) + 2/(xR-x1);
+        if (!Number.isFinite(denom) || Math.abs(denom) < 1e-8) return false;
+        let y1 = (2*y0/(x1-x0) + 2*yR/(xR-x1) - mR) / denom;
+        y1 = clampBetween(y1, y0, yint.plotY, 0.25);
+        // Recompute x1 after clamping y1, so the two quadratics still have matching slope.
+        function gap(x) {
+          if (!(x > x0 + 1e-8 && x < x2 - 1e-8)) return NaN;
+          const mFromLeft = 2*(y1-y0)/(x-x0);
+          const mFromRight = 2*(yR-y1)/(xR-x) - mR;
+          return mFromLeft - mFromRight;
+        }
+        let bestX = x1, bestErr = Infinity;
+        for (let j=0; j<=200; j++) {
+          const x = x0 + 0.08 + (x2 - x0 - 0.16) * j / 200;
+          const g = gap(x);
+          if (Number.isFinite(g) && Math.abs(g) < bestErr) { bestErr = Math.abs(g); bestX = x; }
+        }
+        x1 = bestX;
+        const m1 = 2*(y1-y0)/(x1-x0);
+        const A2 = (mR - m1)/(2*(xR-x1));
+        const B2 = m1 - 2*A2*x1;
+        const C2 = y1 - A2*x1*x1 - B2*x1;
+        if (!(A2 > 0)) return false;
+        const y2 = A2*x2*x2 + B2*x2 + C2;
+        if (!(y2 > yR && y2 < y1)) return false;
+        inf.plotX = x1;
+        inf.plotY = y1;
+        inf.slope = inf.preferredSlope = m1;
+        yint.plotY = y2;
+        yint.slope = yint.preferredSlope = 2*A2*x2 + B2;
+        ha.slope = ha.preferredSlope = mR;
+        ha.slopeFixed = true;
+        ha.forceSlope = true;
+        inf.forceSlope = true;
+        yint.forceSlope = true;
+        return true;
+      }
+      function applyLeftTail(ha, yint, inf, ext) {
+        if (!ext || !inf || !yint || !ha || !ext.slopeFixed) return false;
+        const x0 = ha.plotX, y0 = ha.plotY, x2 = yint.plotX, xR = ext.plotX, yR = ext.plotY;
+        if (!(x0 < x2 && x2 < inf.plotX && inf.plotX < xR)) return false;
+        const m0 = -0.1;
+        let x1 = clampBetween((x2 + xR) / 2, x2, xR, 0.08);
+        let denom = 2/(x1-x0) + 2/(xR-x1);
+        if (!Number.isFinite(denom) || Math.abs(denom) < 1e-8) return false;
+        let y1 = (2*y0/(x1-x0) + 2*yR/(xR-x1) - 0) / denom;
+        y1 = clampBetween(y1, yint.plotY, yR, 0.25);
+        const m1 = 2*(yR-y1)/(xR-x1); // ext slope is 0
+        const A1 = (m1 - m0)/(2*(x1-x0));
+        const B1 = m0 - 2*A1*x0;
+        const C1 = y0 - A1*x0*x0 - B1*x0;
+        const y2 = A1*x2*x2 + B1*x2 + C1;
+        inf.plotX = x1;
+        inf.plotY = y1;
+        inf.slope = inf.preferredSlope = m1;
+        yint.plotY = y2;
+        yint.slope = yint.preferredSlope = 2*A1*x2 + B1;
+        ha.slope = ha.preferredSlope = m0;
+        ha.slopeFixed = true;
+        ha.forceSlope = true;
+        inf.forceSlope = true;
+        yint.forceSlope = true;
+        return true;
+      }
+      for (let i=0; i<sorted.length-3; i++) {
+        const a=sorted[i], b=sorted[i+1], c=sorted[i+2], d=sorted[i+3];
+        if (a.slopeFixed && isInf(b) && isYInt(c) && isHA(d)) applyRightTail(a,b,c,d);
+        if (isHA(a) && isYInt(b) && isInf(c) && d.slopeFixed) applyLeftTail(a,b,c,d);
+      }
+    }
+
     function assignCompatibleFeatureSlopes(plotPoints, problem) {
       // Keep the plotted feature locations fixed, but choose slopes so that each adjacent
       // pair of plotted feature points can be joined by a true quadratic segment.
@@ -2192,6 +2320,7 @@ fetch("/nav.html")
       adjustEndpointInflectionQuadraticReflection(allCurveNodes, problem);
       adjustLinearPlusReciprocalVAComponents(allCurveNodes, problem);
       assignCompatibleFeatureSlopes(allCurveNodes, problem);
+      adjustLinearOverQuadraticHATails(allCurveNodes, problem);
       allCurveNodes.forEach(node => {
         if (node.slopeFixed && !node.virtual) node.slope = 0;
         if (node.slopeFixed && node.virtual && Number.isFinite(node.preferredSlope)) node.slope = node.preferredSlope;

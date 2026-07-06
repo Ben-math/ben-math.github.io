@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -954,8 +955,8 @@ fetch("/nav.html")
     }
 
     function makeLinearPlusReciprocal() {
-      const h = -1;
-      const k = 5;
+      const h = 6;
+      const k = 12;
       const u = linearFactorTex(h);
       const tex = `${u}+\\frac{${k}}{${u}}`;
       const f = x => (x-h) + k/(x-h);
@@ -2107,6 +2108,18 @@ fetch("/nav.html")
         yInt.plotY = A * Math.pow(yInt.plotX - leftExt.plotX, 2) + leftExt.plotY;
         yInt.slope = yInt.preferredSlope = 2 * A * (yInt.plotX - leftExt.plotX);
         leftVA.slope = leftVA.preferredSlope = Math.min(-0.1, 2 * A * (leftVA.plotX - leftExt.plotX));
+      } else if (yInt && yInt.plotX < leftExt.plotX && leftExt.plotX < leftVA.plotX) {
+        // Same left-side VA pattern, but with the y-intercept before the maximum:
+        // y-intercept -> local maximum -> VA approach.  Keep the maximum's slope
+        // fixed at 0 and place the y-intercept on the same concave-down quadratic
+        // as the left VA approach.
+        const dxV = leftVA.plotX - leftExt.plotX;
+        if (Math.abs(dxV) > 1e-8) {
+          const A = (leftVA.plotY - leftExt.plotY) / (dxV * dxV);
+          yInt.plotY = A * Math.pow(yInt.plotX - leftExt.plotX, 2) + leftExt.plotY;
+          yInt.slope = yInt.preferredSlope = 2 * A * (yInt.plotX - leftExt.plotX);
+          leftVA.slope = leftVA.preferredSlope = Math.min(-0.1, 2 * A * (leftVA.plotX - leftExt.plotX));
+        }
       }
       // Force the right branch to be one concave-up quadratic.  If a y-intercept
       // lies between the right VA approach and the local minimum, keep its x-value

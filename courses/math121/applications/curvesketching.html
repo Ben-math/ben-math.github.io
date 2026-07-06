@@ -17,6 +17,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1312,17 +1313,56 @@ fetch("/nav.html")
       });
     }
 
+
+    function makeForcedLinearOverQuadraticYInterceptInflectionTail() {
+      const h = -6;
+      const k = 12;
+      const u = linearFactorTex(h);
+      const tex = `\frac{${u}}{${u}^2+${k}}`;
+      const f = x => (x-h)/((x-h)*(x-h)+k);
+      const f1 = x => (k-(x-h)*(x-h))/Math.pow((x-h)*(x-h)+k,2);
+      const f2 = x => 2*(x-h)*((x-h)*(x-h)-3*k)/Math.pow((x-h)*(x-h)+k,3);
+      return finishProblem({
+        family: 'linear over quadratic',
+        tex, f, f1, f2,
+        domainBreaks: [],
+        extraSignBreaks: [],
+        xIntercepts: [makePolynomialPoint(h, numberTex(h), 0, '0')],
+        yIntercept: makePolynomialPoint(0,'0',f(0),numberTex(f(0))),
+        verticalAsymptotes: [],
+        horizontalAsymptote: 'y=0',
+        slantAsymptote: null,
+        criticalPoints: [
+          {x:h-Math.sqrt(k), xTex:shiftSqrtTex(h,k,-1)},
+          {x:h+Math.sqrt(k), xTex:shiftSqrtTex(h,k,1)}
+        ],
+        inflectionPoints: [
+          {x:h-Math.sqrt(3*k), xTex:shiftSqrtTex(h,3*k,-1)},
+          {x:h, xTex:numberTex(h)},
+          {x:h+Math.sqrt(3*k), xTex:shiftSqrtTex(h,3*k,1)}
+        ],
+        criticalNumbers: [h-Math.sqrt(k), h+Math.sqrt(k)],
+        inflectionNumbers: [h-Math.sqrt(3*k), h, h+Math.sqrt(3*k)],
+        yTex: x => numberTex(f(x)),
+        domainHint: `\text{The denominator }${u}^2+${k}\text{ is always positive, so the domain is }(-\infty,\infty).`,
+        interceptHint: `\frac{${u}}{${u}^2+${k}}=0\implies ${u}=0\implies x=${numberTex(h)}.\quad f(0)=${numberTex(f(0))}.`,
+        asymptoteHint: `\lim_{x\to\pm\infty}\frac{${u}}{${u}^2+${k}}=0,\text{ so }y=0\text{ is a horizontal asymptote. There are no vertical asymptotes.}`,
+        firstDerivativeHints: [
+          `f'(x)=\frac{(${u})'(${u}^2+${k})-${u}(${u}^2+${k})'}{(${u}^2+${k})^2}`,
+          `=\frac{${u}^2+${k}-2${u}^2}{(${u}^2+${k})^2}`,
+          `=\frac{${k}-${u}^2}{(${u}^2+${k})^2}`,
+          `f'(x)=0\implies ${u}^2=${k}\implies x=${shiftSqrtTex(h,k,-1)}\text{ or }x=${shiftSqrtTex(h,k,1)}.`
+        ],
+        secondDerivativeHints: [
+          `f''(x)=\frac{2${u}(${u}^2-${3*k})}{(${u}^2+${k})^3}`,
+          `f''(x)=0\implies ${u}=0\text{ or }${u}^2=${3*k}`,
+          `x=${numberTex(h)}\text{ or }x=${shiftSqrtTex(h,3*k,-1)}\text{ or }x=${shiftSqrtTex(h,3*k,1)}.`
+        ]
+      });
+    }
+
     function generateCurveProblem() {
-      const generators = [
-        makeCubicZeroAtOrigin,
-        makeEvenQuartic,
-        makeShiftedEvenQuartic,
-        makeProductPower,
-        makeReciprocalQuadratic,
-        makeLinearOverQuadratic,
-        makeLinearPlusReciprocal
-      ];
-      return randomChoice(generators)();
+      return makeForcedLinearOverQuadraticYInterceptInflectionTail();
     }
 
     function sketchBreaks(problem) {
@@ -1554,13 +1594,19 @@ fetch("/nav.html")
 
     function nodeAllowsHorizontalFlex(node) {
       const role = node && node.role ? String(node.role) : '';
-      if (role === 'y-intercept') return false;
+      // Merged roles such as "y-intercept and inflection point" must still
+      // behave like y-intercepts: x=0 is fixed, only vertical/slope flexibility
+      // is allowed.
+      if (role.includes('y-intercept')) return false;
       return true;
     }
 
     function nodeAllowsVerticalFlex(node) {
       const role = node && node.role ? String(node.role) : '';
-      if (role === 'x-intercept') return false;
+      // Merged roles such as "x-intercept and inflection point" must still
+      // behave like x-intercepts: y=0 is fixed, only horizontal/slope flexibility
+      // is allowed.
+      if (role.includes('x-intercept')) return false;
       return true;
     }
 
@@ -2089,7 +2135,7 @@ fetch("/nav.html")
       if (problem.family !== 'linear over quadratic') return;
       const sorted = [...plotPoints].sort((a,b)=>a.plotX-b.plotX || a.plotY-b.plotY);
       function isHA(n) { return n && n.role === 'horizontal-asymptote-approach'; }
-      function isYInt(n) { return n && n.role === 'y-intercept'; }
+      function isYInt(n) { return n && String(n.role || '').includes('y-intercept'); }
       function isInf(n) { return nodeMatchesActualInflection(problem, n); }
       function clampBetween(v, a, b, margin = 0.05) {
         const lo = Math.min(a, b) + margin;
@@ -2166,6 +2212,79 @@ fetch("/nav.html")
         inf.forceSlope = true;
         yint.forceSlope = true;
         return true;
+      }
+      function applyRightMergedYInfTail(ext, mid, ha) {
+        if (!ext || !mid || !ha || !ext.slopeFixed || !isYInt(mid) || !isInf(mid) || !isHA(ha)) return false;
+        if (!(ext.plotX < mid.plotX && mid.plotX < ha.plotX)) return false;
+        const x0 = ext.plotX, y0 = ext.plotY, x1 = mid.plotX, x2 = ha.plotX, y2 = ha.plotY;
+        const dx1 = x1 - x0;
+        const dx2 = x2 - x1;
+        if (dx1 <= 1e-8 || dx2 <= 1e-8) return false;
+
+        // Choose the y-intercept height (vertical flexibility only) so that:
+        //   ext -> mid is concave down,
+        //   mid -> HA is concave up,
+        //   the HA approach slope stays negative.
+        // Keep the point within its vertical ranking: below the maximum and above the HA.
+        const low = Math.min(y0, y2) + 0.25;
+        const high = Math.max(y0, y2) - 0.25;
+        let best = null;
+        for (let j=0; j<=400; j++) {
+          const y1 = low + (high - low) * j / 400;
+          const m1 = 2 * (y1 - y0) / dx1; // ext slope is 0
+          const m2 = 2 * (y2 - y1) / dx2 - m1;
+          const Aleft = (y1 - y0) / (dx1 * dx1);
+          const Aright = (m2 - m1) / (2 * dx2);
+          if (!(Aleft < -1e-8 && Aright > 1e-8 && m2 < -1e-8)) continue;
+          const score = Math.abs(m2 + 0.1) + 0.02 * Math.abs(y1 - mid.plotY);
+          if (!best || score < best.score) best = {y1, m1, m2, score};
+        }
+        if (!best) return false;
+        mid.plotY = best.y1;
+        mid.slope = mid.preferredSlope = best.m1;
+        ha.slope = ha.preferredSlope = best.m2;
+        ha.slopeFixed = true;
+        mid.forceSlope = true;
+        ha.forceSlope = true;
+        return true;
+      }
+
+      function applyLeftMergedYInfTail(ha, mid, ext) {
+        if (!ha || !mid || !ext || !ext.slopeFixed || !isHA(ha) || !isYInt(mid) || !isInf(mid)) return false;
+        if (!(ha.plotX < mid.plotX && mid.plotX < ext.plotX)) return false;
+        const x0 = ha.plotX, y0 = ha.plotY, x1 = mid.plotX, x2 = ext.plotX, y2 = ext.plotY;
+        const dx1 = x1 - x0;
+        const dx2 = x2 - x1;
+        if (dx1 <= 1e-8 || dx2 <= 1e-8) return false;
+        let best = null;
+        const low = Math.min(y0, y2) + 0.25;
+        const high = Math.max(y0, y2) - 0.25;
+        for (let j=0; j<=400; j++) {
+          const y1 = low + (high - low) * j / 400;
+          // Use negative HA slope on the left when the branch approaches y=0 from below.
+          const m0 = -0.1;
+          const m1 = 2 * (y1 - y0) / dx1 - m0;
+          const neededAtExt = 2 * (y2 - y1) / dx2 - m1;
+          const Aleft = (m1 - m0) / (2 * dx1);
+          const Aright = (neededAtExt - m1) / (2 * dx2);
+          if (!(Aleft > 1e-8 && Aright < -1e-8 && Math.abs(neededAtExt) < 0.2)) continue;
+          const score = Math.abs(neededAtExt) + 0.02 * Math.abs(y1 - mid.plotY);
+          if (!best || score < best.score) best = {y1, m0, m1, score};
+        }
+        if (!best) return false;
+        mid.plotY = best.y1;
+        ha.slope = ha.preferredSlope = best.m0;
+        mid.slope = mid.preferredSlope = best.m1;
+        ha.slopeFixed = true;
+        mid.forceSlope = true;
+        ha.forceSlope = true;
+        return true;
+      }
+
+      for (let i=0; i<sorted.length-2; i++) {
+        const a=sorted[i], b=sorted[i+1], c=sorted[i+2];
+        if (a.slopeFixed && isYInt(b) && isInf(b) && isHA(c)) applyRightMergedYInfTail(a,b,c);
+        if (isHA(a) && isYInt(b) && isInf(b) && c.slopeFixed) applyLeftMergedYInfTail(a,b,c);
       }
       for (let i=0; i<sorted.length-3; i++) {
         const a=sorted[i], b=sorted[i+1], c=sorted[i+2], d=sorted[i+3];

@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -953,8 +954,8 @@ fetch("/nav.html")
     }
 
     function makeLinearPlusReciprocal() {
-      const h = randomInteger(-6, 6);
-      const k = randomChoice([1, 2, 3, 4, 5, 6, 8, 9, 12, 16, 25]);
+      const h = -1;
+      const k = 5;
       const u = linearFactorTex(h);
       const tex = `${u}+\\frac{${k}}{${u}}`;
       const f = x => (x-h) + k/(x-h);
@@ -2107,12 +2108,17 @@ fetch("/nav.html")
         yInt.slope = yInt.preferredSlope = 2 * A * (yInt.plotX - leftExt.plotX);
         leftVA.slope = leftVA.preferredSlope = Math.min(-0.1, 2 * A * (leftVA.plotX - leftExt.plotX));
       }
-      // Force the right branch to be one concave-up quadratic through the right
-      // VA approach and the local minimum, with slope 0 at the minimum.
+      // Force the right branch to be one concave-up quadratic.  If a y-intercept
+      // lies between the right VA approach and the local minimum, keep its x-value
+      // fixed and place it on that same quadratic (vertical flexibility only).
       const dxR = rightVA.plotX - rightExt.plotX;
       if (Math.abs(dxR) > 1e-8) {
         const A = (rightVA.plotY - rightExt.plotY) / (dxR * dxR);
         rightVA.slope = rightVA.preferredSlope = Math.min(-0.1, 2 * A * dxR);
+        if (yInt && yInt.plotX > rightVA.plotX && yInt.plotX < rightExt.plotX) {
+          yInt.plotY = A * Math.pow(yInt.plotX - rightExt.plotX, 2) + rightExt.plotY;
+          yInt.slope = yInt.preferredSlope = 2 * A * (yInt.plotX - rightExt.plotX);
+        }
       }
       leftExt.forceSlope = true;
       rightExt.forceSlope = true;

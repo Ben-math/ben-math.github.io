@@ -1,3 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1058,6 +1070,50 @@ fetch("/nav.html")
 
 
 
+
+    function makeForcedReciprocalQuadraticRightFlex() {
+      const h = -1;
+      const k = 18;
+      const u = linearFactorTex(h);
+      const tex = `\\frac{1}{${u}^2+${k}}`;
+      const f = x => 1/((x-h)*(x-h)+k);
+      const f1 = x => -2*(x-h)/Math.pow((x-h)*(x-h)+k,2);
+      const f2 = x => 2*(3*(x-h)*(x-h)-k)/Math.pow((x-h)*(x-h)+k,3);
+      const infR = k/3;
+      return finishProblem({
+        family: 'reciprocal quadratic',
+        tex, f, f1, f2,
+        domainBreaks: [],
+        extraSignBreaks: [],
+        xIntercepts: [],
+        yIntercept: makePolynomialPoint(0,'0',f(0),numberTex(f(0))),
+        verticalAsymptotes: [],
+        horizontalAsymptote: 'y=0',
+        slantAsymptote: null,
+        criticalPoints: [{x:h, xTex:numberTex(h)}],
+        inflectionPoints: [
+          {x:h-Math.sqrt(infR), xTex:shiftSqrtTex(h, infR, -1)},
+          {x:h+Math.sqrt(infR), xTex:shiftSqrtTex(h, infR, 1)}
+        ],
+        criticalNumbers: [h],
+        inflectionNumbers: [h-Math.sqrt(infR), h+Math.sqrt(infR)],
+        yTex: x => numberTex(f(x)),
+        domainHint: `\\text{The denominator }${u}^2+${k}\\text{ is always positive, so the domain is }(-\\infty,\\infty).`,
+        interceptHint: `\\frac{1}{${u}^2+${k}}=0\\text{ has no solutions, so there are no }x\\text{-intercepts.}\\quad f(0)=${numberTex(f(0))}.`,
+        asymptoteHint: `\\lim_{x\\to\\pm\\infty}\\frac{1}{${u}^2+${k}}=0,\\text{ so }y=0\\text{ is a horizontal asymptote. There are no vertical asymptotes.}`,
+        firstDerivativeHints: [
+          `f(x)=(${u}^2+${k})^{-1}`,
+          `f'(x)=-(${u}^2+${k})^{-2}\\cdot 2${u}`,
+          `=\\frac{-2${u}}{(${u}^2+${k})^2}`,
+          `f'(x)=0\\implies -2${u}=0\\implies x=${numberTex(h)}.`
+        ],
+        secondDerivativeHints: [
+          `f''(x)=\\frac{2(3${u}^2-${k})}{(${u}^2+${k})^3}`,
+          `f''(x)=0\\implies 3${u}^2=${k}\\implies x=${shiftSqrtTex(h, infR, -1)}\\text{ or }x=${shiftSqrtTex(h, infR, 1)}.`
+        ]
+      });
+    }
+
     function makeForcedEndpointInflectionProductPower() {
       const r = 4;
       const m = 4;
@@ -1109,17 +1165,7 @@ fetch("/nav.html")
     }
 
     function generateCurveProblem() {
-      const generators = [
-        makeCubicZeroAtOrigin,
-        makeEvenQuartic,
-        makeShiftedEvenQuartic,
-        makeProductPower,
-        makeReciprocalQuadratic,
-        makeLinearOverQuadratic,
-        makeLinearPlusReciprocal
-      ];
-
-      return randomChoice(generators)();
+      return makeForcedReciprocalQuadraticRightFlex();
     }
 
     function sketchBreaks(problem) {
@@ -1582,6 +1628,59 @@ fetch("/nav.html")
     }
 
 
+
+    function adjustLeftFixedVerticalThenHorizontalToHA(left, first, second, right) {
+      // Pattern: fixed extremum -> vertically flexible point (usually y-intercept)
+      // -> horizontally flexible inflection -> horizontal-asymptote approach.
+      // Use one concave-down quadratic through the fixed extremum, the vertical-flex
+      // point, and the horizontal-flex point; then use a second concave-up quadratic
+      // from the horizontal-flex point to the HA approach.  The HA slope is flexible
+      // but must keep the correct approach direction.
+      if (!left.slopeFixed || first.slopeFixed || second.slopeFixed || right.slopeFixed) return false;
+      if (!nodeAllowsVerticalFlex(first) || nodeAllowsHorizontalFlex(first)) return false;
+      if (!nodeAllowsHorizontalFlex(second)) return false;
+      if (right.role !== 'horizontal-asymptote-approach') return false;
+      const leftSlope = Number.isFinite(left.slope) ? left.slope : 0;
+      if (Math.abs(leftSlope) > 1e-8) return false;
+      const xFirst = first.plotX;
+      const yLeft = left.plotY;
+      const ySecond = second.plotY;
+      const yRight = right.plotY;
+      const lo = Math.max(first.plotX + 1e-4, left.plotX + 1e-4);
+      const hi = right.plotX - 1e-4;
+      if (!(lo < hi)) return false;
+
+      let best = null;
+      const N = 600;
+      for (let j = 0; j <= N; j++) {
+        const xSecond = lo + (hi - lo) * j / N;
+        if (!(left.plotX < xFirst && xFirst < xSecond && xSecond < right.plotX)) continue;
+        const A = (ySecond - yLeft) / Math.pow(xSecond - left.plotX, 2);
+        if (!(A < -1e-8)) continue; // max -> down to inflection should be concave down here
+        const yFirst = yLeft + A * Math.pow(xFirst - left.plotX, 2);
+        const lowRank = Math.min(yLeft, ySecond), highRank = Math.max(yLeft, ySecond);
+        if (yFirst < lowRank - 1e-8 || yFirst > highRank + 1e-8) continue;
+        const mFirst = 2 * A * (xFirst - left.plotX);
+        const mSecond = 2 * A * (xSecond - left.plotX);
+        const mRight = 2 * (yRight - ySecond) / (right.plotX - xSecond) - mSecond;
+        const finalConcavity = (mRight - mSecond) / (2 * (right.plotX - xSecond));
+        if (!(finalConcavity > 1e-8)) continue;
+        if (!(mRight < -1e-8)) continue;
+        const score = Math.abs(mRight + 0.1) + 0.03 * Math.abs(xSecond - second.plotX) + 0.03 * Math.abs(yFirst - first.plotY);
+        if (!best || score < best.score) best = {xSecond, yFirst, mFirst, mSecond, mRight, score};
+      }
+      if (!best) return false;
+      first.plotY = best.yFirst;
+      first.slope = best.mFirst;
+      first.preferredSlope = best.mFirst;
+      second.plotX = best.xSecond;
+      second.slope = best.mSecond;
+      second.preferredSlope = best.mSecond;
+      right.slope = best.mRight;
+      right.preferredSlope = best.mRight;
+      return true;
+    }
+
     function adjustFlexibleTwoNodesBetweenFixedSlopes(plotPoints, problem) {
       // Handles the next debugging case: two flexible features between two fixed
       // extrema.  The first flexible point is allowed to slide vertically, while
@@ -1646,6 +1745,7 @@ fetch("/nav.html")
         for (let i = 0; i < nodes.length - 3; i++) {
           const left = nodes[i], first = nodes[i+1], second = nodes[i+2], right = nodes[i+3];
           if (adjustLeftFixedTwoFlexibleRightFree(left, first, second, right)) continue;
+          if (adjustLeftFixedVerticalThenHorizontalToHA(left, first, second, right)) continue;
           if (!left.slopeFixed || first.slopeFixed || second.slopeFixed || !right.slopeFixed) continue;
           if (nodeAllowsHorizontalFlex(first) && !nodeAllowsHorizontalFlex(second) && nodeAllowsVerticalFlex(second)) {
             if (adjustTwoNodesHorizontalThenVertical(left, first, second, right)) continue;

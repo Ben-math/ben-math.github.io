@@ -1,26 +1,4 @@
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -927,8 +905,8 @@ fetch("/nav.html")
     }
 
     function makeLinearOverQuadratic() {
-      const h = 6;
-      const k = 5;
+      const h = randomInteger(-6, 6);
+      const k = randomChoice([1, 2, 3, 4, 5, 6, 8, 9, 12, 16]);
       const u = linearFactorTex(h);
       const tex = `\\frac{${u}}{${u}^2+${k}}`;
       const f = x => (x-h)/((x-h)*(x-h)+k);
@@ -1365,7 +1343,16 @@ fetch("/nav.html")
     }
 
     function generateCurveProblem() {
-      return makeLinearOverQuadratic();
+      const generators = [
+        makeCubicZeroAtOrigin,
+        makeEvenQuartic,
+        makeShiftedEvenQuartic,
+        makeProductPower,
+        makeReciprocalQuadratic,
+        makeLinearOverQuadratic,
+        makeLinearPlusReciprocal
+      ];
+      return randomChoice(generators)();
     }
 
     function sketchBreaks(problem) {

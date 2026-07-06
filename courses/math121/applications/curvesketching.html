@@ -12,6 +12,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1209,7 +1210,17 @@ fetch("/nav.html")
     }
 
     function generateCurveProblem() {
-      return makeForcedLinearPlusReciprocalVAFlex();
+      const generators = [
+        makeCubicZeroAtOrigin,
+        makeEvenQuartic,
+        makeShiftedEvenQuartic,
+        makeProductPower,
+        makeReciprocalQuadratic,
+        makeLinearOverQuadratic,
+        makeLinearPlusReciprocal
+      ];
+
+      return randomChoice(generators)();
     }
 
     function sketchBreaks(problem) {

@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -979,7 +980,7 @@ fetch("/nav.html")
         yTex: x => numberTex(f(x)),
         domainHint: `\\text{The denominator is }${u},\\text{ so }x\\ne ${numberTex(h)}.\\text{ The domain is }(-\\infty,${numberTex(h)})\\cup(${numberTex(h)},\\infty).`,
         interceptHint: `f(x)=0\\implies ${u}+\\frac{${k}}{${u}}=0\\implies ${u}^2+${k}=0,\\text{ which has no real solutions.}` + (h === 0 ? `\\text{ There is no }y\\text{-intercept because }0\\text{ is not in the domain.}` : `\\quad f(0)=${numberTex(f(0))}.`),
-        asymptoteHint: `x=${numberTex(h)}\\text{ is a vertical asymptote. There is no horizontal asymptote.`,
+        asymptoteHint: `x=${numberTex(h)}\\text{ is a vertical asymptote. There is no horizontal asymptote.}`,
         firstDerivativeHints: [
           `f'(x)=1-${k}${u}^{-2}`,
           `=1-\\frac{${k}}{${u}^2}`,
@@ -1182,7 +1183,7 @@ fetch("/nav.html")
         yTex: x => numberTex(f(x)),
         domainHint: `\\text{The denominator is }${u},\\text{ so }x\\ne ${numberTex(h)}.\\text{ The domain is }(-\\infty,${numberTex(h)})\\cup(${numberTex(h)},\\infty).`,
         interceptHint: `f(x)=0\\implies ${u}+\\frac{${k}}{${u}}=0\\implies ${u}^2+${k}=0,\\text{ which has no real solutions.}\\quad f(0)=${numberTex(f(0))}.`,
-        asymptoteHint: `x=${numberTex(h)}\\text{ is a vertical asymptote. There is no horizontal asymptote.`,
+        asymptoteHint: `x=${numberTex(h)}\\text{ is a vertical asymptote. There is no horizontal asymptote.}`,
         firstDerivativeHints: [
           `f'(x)=1-${k}${u}^{-2}`,
           `=1-\\frac{${k}}{${u}^2}`,

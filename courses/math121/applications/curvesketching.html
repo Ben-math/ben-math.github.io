@@ -18,6 +18,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1318,7 +1319,7 @@ fetch("/nav.html")
       const h = -6;
       const k = 12;
       const u = linearFactorTex(h);
-      const tex = `\frac{${u}}{${u}^2+${k}}`;
+      const tex = `\\frac{${u}}{${u}^2+${k}}`;
       const f = x => (x-h)/((x-h)*(x-h)+k);
       const f1 = x => (k-(x-h)*(x-h))/Math.pow((x-h)*(x-h)+k,2);
       const f2 = x => 2*(x-h)*((x-h)*(x-h)-3*k)/Math.pow((x-h)*(x-h)+k,3);
@@ -1344,19 +1345,19 @@ fetch("/nav.html")
         criticalNumbers: [h-Math.sqrt(k), h+Math.sqrt(k)],
         inflectionNumbers: [h-Math.sqrt(3*k), h, h+Math.sqrt(3*k)],
         yTex: x => numberTex(f(x)),
-        domainHint: `\text{The denominator }${u}^2+${k}\text{ is always positive, so the domain is }(-\infty,\infty).`,
-        interceptHint: `\frac{${u}}{${u}^2+${k}}=0\implies ${u}=0\implies x=${numberTex(h)}.\quad f(0)=${numberTex(f(0))}.`,
-        asymptoteHint: `\lim_{x\to\pm\infty}\frac{${u}}{${u}^2+${k}}=0,\text{ so }y=0\text{ is a horizontal asymptote. There are no vertical asymptotes.}`,
+        domainHint: `\\text{The denominator }${u}^2+${k}\\text{ is always positive, so the domain is }(-\\infty,\\infty).`,
+        interceptHint: `\\frac{${u}}{${u}^2+${k}}=0\\implies ${u}=0\\implies x=${numberTex(h)}.\\quad f(0)=${numberTex(f(0))}.`,
+        asymptoteHint: `\\lim_{x\\to\\pm\\infty}\\frac{${u}}{${u}^2+${k}}=0,\\text{ so }y=0\\text{ is a horizontal asymptote. There are no vertical asymptotes.}`,
         firstDerivativeHints: [
-          `f'(x)=\frac{(${u})'(${u}^2+${k})-${u}(${u}^2+${k})'}{(${u}^2+${k})^2}`,
-          `=\frac{${u}^2+${k}-2${u}^2}{(${u}^2+${k})^2}`,
-          `=\frac{${k}-${u}^2}{(${u}^2+${k})^2}`,
-          `f'(x)=0\implies ${u}^2=${k}\implies x=${shiftSqrtTex(h,k,-1)}\text{ or }x=${shiftSqrtTex(h,k,1)}.`
+          `f'(x)=\\frac{(${u})'(${u}^2+${k})-${u}(${u}^2+${k})'}{(${u}^2+${k})^2}`,
+          `=\\frac{${u}^2+${k}-2${u}^2}{(${u}^2+${k})^2}`,
+          `=\\frac{${k}-${u}^2}{(${u}^2+${k})^2}`,
+          `f'(x)=0\\implies ${u}^2=${k}\\implies x=${shiftSqrtTex(h,k,-1)}\\text{ or }x=${shiftSqrtTex(h,k,1)}.`
         ],
         secondDerivativeHints: [
-          `f''(x)=\frac{2${u}(${u}^2-${3*k})}{(${u}^2+${k})^3}`,
-          `f''(x)=0\implies ${u}=0\text{ or }${u}^2=${3*k}`,
-          `x=${numberTex(h)}\text{ or }x=${shiftSqrtTex(h,3*k,-1)}\text{ or }x=${shiftSqrtTex(h,3*k,1)}.`
+          `f''(x)=\\frac{2${u}(${u}^2-${3*k})}{(${u}^2+${k})^3}`,
+          `f''(x)=0\\implies ${u}=0\\text{ or }${u}^2=${3*k}`,
+          `x=${numberTex(h)}\\text{ or }x=${shiftSqrtTex(h,3*k,-1)}\\text{ or }x=${shiftSqrtTex(h,3*k,1)}.`
         ]
       });
     }

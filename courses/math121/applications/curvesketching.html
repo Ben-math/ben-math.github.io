@@ -12,6 +12,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2835,7 +2836,10 @@ fetch("/nav.html")
       return `(${formatDebugNumber(node.plotX)},${formatDebugNumber(node.plotY)})`;
     }
 
+    const SHOW_PLOT_DEBUG = false;
+
     function makePlotMachineryDebug(problem) {
+      if (!SHOW_PLOT_DEBUG) return '';
       if (!problem.plotModel) computeWindow(problem);
       const displayNodes = [...(problem.plotModel.displayPoints || [])]
         .sort((a,b)=>a.plotX-b.plotX || a.plotY-b.plotY);
@@ -2923,7 +2927,7 @@ fetch("/nav.html")
       }
       svg += `</svg></div>`;
       svg += makePlotMachineryDebug(problem);
-      if (segmentDebug.length) {
+      if (SHOW_PLOT_DEBUG && segmentDebug.length) {
         svg += `<div style="max-width:720px;margin:0.75em auto 0;text-align:left;font-size:0.95em;"><strong>Segment functions used so far:</strong><ol style="margin-top:0.35em;">`;
         segmentDebug.forEach(item => { svg += `<li><code>${svgTextEscape(item)}</code></li>`; });
         svg += `</ol></div>`;

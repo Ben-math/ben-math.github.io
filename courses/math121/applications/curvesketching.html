@@ -9,6 +9,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1068,8 +1069,8 @@ fetch("/nav.html")
     }
 
     function makeScaledXSquareOverQuadratic() {
-      const c = 5;
-      const d = 4;
+      const c = randomChoice([2, 3, 4, 5]);
+      const d = randomChoice([1, 4, 9, 16, 25]);
       const tex = `\\frac{${c}x^2}{x^2-${d}}`;
       const f = x => c*x*x/(x*x-d);
       const f1 = x => -2*c*d*x/Math.pow(x*x-d,2);
@@ -1456,7 +1457,17 @@ fetch("/nav.html")
     }
 
     function generateCurveProblem() {
-      return makeScaledXSquareOverQuadratic();
+      return randomChoice([
+        makeCubicZeroAtOrigin,
+        makeEvenQuartic,
+        makeShiftedEvenQuartic,
+        makeProductPower,
+        makeReciprocalQuadratic,
+        makeLinearOverQuadratic,
+        makeLinearPlusReciprocal,
+        makeCubicOverQuadraticVA,
+        makeScaledXSquareOverQuadratic
+      ])();
     }
 
     function sketchBreaks(problem) {

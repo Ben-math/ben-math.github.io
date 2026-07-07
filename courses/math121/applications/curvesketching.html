@@ -5,6 +5,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -868,8 +869,8 @@ fetch("/nav.html")
     }
 
     function makeReciprocalQuadratic() {
-      const h = randomInteger(-6, 6);
-      const k = randomChoice([1, 2, 3, 4, 5, 6, 8, 9, 12, 16, 18, 25, 27]);
+      const h = 5;
+      const k = 6;
       const u = linearFactorTex(h);
       const tex = `\\frac{1}{${u}^2+${k}}`;
       const f = x => 1/((x-h)*(x-h)+k);
@@ -2150,6 +2151,7 @@ fetch("/nav.html")
       function isHA(n) { return n && n.role === 'horizontal-asymptote-approach'; }
       function isYInt(n) { return n && String(n.role || '').includes('y-intercept'); }
       function isInf(n) { return nodeMatchesActualInflection(problem, n); }
+      function isMax(n) { return (problem.extrema || []).some(p => p.type === 'max' && Math.abs(p.x - n.rawX) < 1e-8 && Math.abs(p.y - n.rawY) < 1e-8); }
       function clampBetween(v, a, b, margin = 0.05) {
         const lo = Math.min(a, b) + margin;
         const hi = Math.max(a, b) - margin;
@@ -2338,6 +2340,78 @@ fetch("/nav.html")
         return true;
       }
 
+      function applyLeftTailToMaximum(ha, yint, inf, ext) {
+        if (!ha || !yint || !inf || !ext || !ext.slopeFixed) return false;
+        if (problem.family !== 'reciprocal quadratic') return false;
+        if (!(isHA(ha) && isYInt(yint) && isInf(inf) && isMax(ext))) return false;
+        if (!(ha.plotX < yint.plotX && yint.plotX < inf.plotX && inf.plotX < ext.plotX)) return false;
+
+        // Reciprocal-quadratic left tail:
+        // HA approach -> y-intercept -> inflection -> local maximum.
+        // Use one concave-up quadratic through HA/y-intercept/inflection,
+        // followed by one concave-down quadratic from inflection to the maximum.
+        const xH = ha.plotX, yH = ha.plotY;
+        const xY = yint.plotX;
+        const xE = ext.plotX, yE = ext.plotY;
+        const originalInfX = inf.plotX;
+        const originalInfY = inf.plotY;
+        const originalYIntY = yint.plotY;
+        const loX = xY + 0.08;
+        const hiX = xE - 0.08;
+        if (!(loX < hiX)) return false;
+
+        let best = null;
+        const lowI = Math.max(yH + 0.25, Math.min(originalYIntY, originalInfY) + 0.25);
+        const highI = yE - 0.25;
+        for (let ix = 0; ix <= 500; ix++) {
+          const xI = loX + (hiX - loX) * ix / 500;
+          const dxRight = xE - xI;
+          const dxLeft = xH - xI;
+          if (dxRight <= 1e-8 || Math.abs(dxLeft) < 1e-8) continue;
+
+          for (let iy = 0; iy <= 500; iy++) {
+            const yI = lowI + (highI - lowI) * iy / 500;
+
+            // Right segment is forced to arrive at the maximum with slope 0.
+            const mI = 2 * (yE - yI) / dxRight;
+            const A2 = (0 - mI) / (2 * dxRight);
+            if (!(A2 < -1e-8)) continue;
+
+            // Left segment is determined by HA, the inflection node and mI.
+            const A1 = (yH - yI - mI * dxLeft) / (dxLeft * dxLeft);
+            if (!(A1 > 1e-8)) continue;
+            const mH = 2 * A1 * dxLeft + mI;
+            if (!(mH > 1e-8)) continue;
+
+            const yY = A1 * Math.pow(xY - xI, 2) + mI * (xY - xI) + yI;
+            if (!(yH < yY && yY < yI && yI < yE)) continue;
+            const mY = 2 * A1 * (xY - xI) + mI;
+
+            const score = Math.abs(mH - 0.1)
+              + 0.02 * Math.abs(xI - originalInfX)
+              + 0.02 * Math.abs(yI - originalInfY)
+              + 0.02 * Math.abs(yY - originalYIntY);
+            if (!best || score < best.score) best = { xI, yI, yY, mH, mY, mI, score };
+          }
+        }
+        if (!best) return false;
+
+        inf.plotX = best.xI;
+        inf.plotY = best.yI;
+        inf.slope = inf.preferredSlope = best.mI;
+        yint.plotY = best.yY;
+        yint.slope = yint.preferredSlope = best.mY;
+        ha.slope = ha.preferredSlope = best.mH;
+        ext.slope = ext.preferredSlope = 0;
+        ha.slopeFixed = true;
+        ext.slopeFixed = true;
+        ha.forceSlope = true;
+        yint.forceSlope = true;
+        inf.forceSlope = true;
+        ext.forceSlope = true;
+        return true;
+      }
+
       for (let i=0; i<sorted.length-2; i++) {
         const a=sorted[i], b=sorted[i+1], c=sorted[i+2];
         if (a.slopeFixed && isYInt(b) && isInf(b) && isHA(c)) applyRightMergedYInfTail(a,b,c);
@@ -2346,7 +2420,9 @@ fetch("/nav.html")
       for (let i=0; i<sorted.length-3; i++) {
         const a=sorted[i], b=sorted[i+1], c=sorted[i+2], d=sorted[i+3];
         if (a.slopeFixed && isInf(b) && isYInt(c) && isHA(d)) applyRightTail(a,b,c,d);
-        if (isHA(a) && isYInt(b) && isInf(c) && d.slopeFixed) applyLeftTail(a,b,c,d);
+        if (isHA(a) && isYInt(b) && isInf(c) && d.slopeFixed) {
+          if (!applyLeftTailToMaximum(a,b,c,d)) applyLeftTail(a,b,c,d);
+        }
       }
     }
 

@@ -6,6 +6,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -869,8 +870,8 @@ fetch("/nav.html")
     }
 
     function makeReciprocalQuadratic() {
-      const h = 5;
-      const k = 6;
+      const h = randomInteger(-6, 6);
+      const k = randomChoice([1, 2, 3, 4, 5, 6, 8, 9, 12, 16, 18, 25, 27]);
       const u = linearFactorTex(h);
       const tex = `\\frac{1}{${u}^2+${k}}`;
       const f = x => 1/((x-h)*(x-h)+k);

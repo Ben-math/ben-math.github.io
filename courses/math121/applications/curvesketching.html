@@ -10,6 +10,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -916,8 +917,8 @@ fetch("/nav.html")
     }
 
     function makeLinearOverQuadratic() {
-      const h = randomInteger(-6, 6);
-      const k = randomChoice([1, 2, 3, 4, 5, 6, 8, 9, 12, 16]);
+      const h = 2;
+      const k = 2;
       const u = linearFactorTex(h);
       const tex = `\\frac{${u}}{${u}^2+${k}}`;
       const f = x => (x-h)/((x-h)*(x-h)+k);
@@ -1457,17 +1458,7 @@ fetch("/nav.html")
     }
 
     function generateCurveProblem() {
-      return randomChoice([
-        makeCubicZeroAtOrigin,
-        makeEvenQuartic,
-        makeShiftedEvenQuartic,
-        makeProductPower,
-        makeReciprocalQuadratic,
-        makeLinearOverQuadratic,
-        makeLinearPlusReciprocal,
-        makeCubicOverQuadraticVA,
-        makeScaledXSquareOverQuadratic
-      ])();
+      return makeLinearOverQuadratic();
     }
 
     function sketchBreaks(problem) {
@@ -2448,6 +2439,77 @@ fetch("/nav.html")
         return true;
       }
 
+
+      function applyLeftInfYTail(ha, inf, yint, ext) {
+        if (!ha || !inf || !yint || !ext || !ext.slopeFixed) return false;
+        if (!(isHA(ha) && isInf(inf) && isYInt(yint))) return false;
+        if (!(ha.plotX < inf.plotX && inf.plotX < yint.plotX && yint.plotX < ext.plotX)) return false;
+
+        // Left-tail order: HA approach -> inflection -> y-intercept -> fixed minimum.
+        // The first piece is concave down from the HA approach to the inflection.
+        // The second piece is concave up from the inflection through the y-intercept
+        // to the local minimum, with slope 0 at the minimum.  The y-intercept keeps
+        // x = 0 and only moves vertically; the HA slope remains negative.
+        const xH = ha.plotX, yH = ha.plotY;
+        const xY = yint.plotX;
+        const xE = ext.plotX, yE = ext.plotY;
+        const originalInfX = inf.plotX;
+        const originalInfY = inf.plotY;
+        const originalYIntY = yint.plotY;
+        const loX = xH + 0.2;
+        const hiX = xY - 0.08;
+        if (!(loX < hiX)) return false;
+
+        let best = null;
+        const lowI = yE + 0.25;
+        const highI = yH - 0.25;
+        for (let ix = 0; ix <= 600; ix++) {
+          const xI = loX + (hiX - loX) * ix / 600;
+          const dxIE = xI - xE;
+          const dxHI = xI - xH;
+          if (Math.abs(dxIE) < 1e-8 || dxHI <= 1e-8) continue;
+
+          for (let iy = 0; iy <= 600; iy++) {
+            const yI = lowI + (highI - lowI) * iy / 600;
+
+            // Right piece: vertex/slope 0 at the fixed minimum.
+            const A2 = (yI - yE) / (dxIE * dxIE);
+            if (!(A2 > 1e-8)) continue;
+            const mI = 2 * A2 * dxIE;
+            const yY = A2 * Math.pow(xY - xE, 2) + yE;
+            if (!(yH > yI && yI > yY && yY > yE)) continue;
+            const mY = 2 * A2 * (xY - xE);
+
+            // Left piece: connect HA to the same inflection slope, aiming for -1/10.
+            const mH = 2 * (yI - yH) / dxHI - mI;
+            const A1 = (mI - mH) / (2 * dxHI);
+            if (!(mH < -1e-8 && A1 < -1e-8)) continue;
+
+            const score = Math.abs(mH + 0.1)
+              + 0.02 * Math.abs(xI - originalInfX)
+              + 0.02 * Math.abs(yI - originalInfY)
+              + 0.02 * Math.abs(yY - originalYIntY);
+            if (!best || score < best.score) best = { xI, yI, yY, mH, mI, mY, score };
+          }
+        }
+        if (!best) return false;
+
+        inf.plotX = best.xI;
+        inf.plotY = best.yI;
+        inf.slope = inf.preferredSlope = best.mI;
+        yint.plotY = best.yY;
+        yint.slope = yint.preferredSlope = best.mY;
+        ha.slope = ha.preferredSlope = best.mH;
+        ext.slope = ext.preferredSlope = 0;
+        ha.slopeFixed = true;
+        ext.slopeFixed = true;
+        ha.forceSlope = true;
+        yint.forceSlope = true;
+        inf.forceSlope = true;
+        ext.forceSlope = true;
+        return true;
+      }
+
       function applyLeftTailToMaximum(ha, yint, inf, ext) {
         if (!ha || !yint || !inf || !ext || !ext.slopeFixed) return false;
         if (problem.family !== 'reciprocal quadratic') return false;
@@ -2528,6 +2590,7 @@ fetch("/nav.html")
       for (let i=0; i<sorted.length-3; i++) {
         const a=sorted[i], b=sorted[i+1], c=sorted[i+2], d=sorted[i+3];
         if (a.slopeFixed && isInf(b) && isYInt(c) && isHA(d)) applyRightTail(a,b,c,d);
+        if (isHA(a) && isInf(b) && isYInt(c) && d.slopeFixed) applyLeftInfYTail(a,b,c,d);
         if (isHA(a) && isYInt(b) && isInf(c) && d.slopeFixed) {
           if (!applyLeftTailToMaximum(a,b,c,d)) applyLeftTail(a,b,c,d);
         }

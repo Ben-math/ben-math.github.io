@@ -11,6 +11,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -917,8 +918,8 @@ fetch("/nav.html")
     }
 
     function makeLinearOverQuadratic() {
-      const h = 2;
-      const k = 2;
+      const h = randomInteger(-6, 6);
+      const k = randomChoice([1, 2, 3, 4, 5, 6, 8, 9, 12, 16]);
       const u = linearFactorTex(h);
       const tex = `\\frac{${u}}{${u}^2+${k}}`;
       const f = x => (x-h)/((x-h)*(x-h)+k);
@@ -1458,7 +1459,18 @@ fetch("/nav.html")
     }
 
     function generateCurveProblem() {
-      return makeLinearOverQuadratic();
+      const generators = [
+        makeCubicZeroAtOrigin,
+        makeEvenQuartic,
+        makeShiftedEvenQuartic,
+        makeProductPower,
+        makeReciprocalQuadratic,
+        makeLinearOverQuadratic,
+        makeLinearPlusReciprocal,
+        makeCubicOverQuadraticVA,
+        makeScaledXSquareOverQuadratic
+      ];
+      return randomChoice(generators)();
     }
 
     function sketchBreaks(problem) {
@@ -2866,8 +2878,6 @@ fetch("/nav.html")
       svg += `<rect x="0" y="0" width="${W}" height="${H}" fill="white"/>`;
       svg += line(left, Y(0), W-right, Y(0), `stroke="#222" stroke-width="2"`);
       svg += line(X(0), top, X(0), top+plotH, `stroke="#222" stroke-width="2"`);
-      for (let x=-10; x<=10; x++) svg += line(X(x), Y(0)-4, X(x), Y(0)+4, `stroke="#222" stroke-width="1"`);
-      for (let y=-10; y<=10; y++) svg += line(X(0)-4, Y(y), X(0)+4, Y(y), `stroke="#222" stroke-width="1"`);
       svg += `<text x="${W/2}" y="${H-8}" text-anchor="middle" font-size="13">x</text>`;
       svg += `<text x="15" y="${top+12}" font-size="13">y</text>`;
 

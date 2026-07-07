@@ -8,6 +8,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1067,8 +1068,8 @@ fetch("/nav.html")
     }
 
     function makeScaledXSquareOverQuadratic() {
-      const c = randomChoice([2, 3, 4, 5]);
-      const d = randomChoice([1, 4, 9, 16, 25]);
+      const c = 5;
+      const d = 4;
       const tex = `\\frac{${c}x^2}{x^2-${d}}`;
       const f = x => c*x*x/(x*x-d);
       const f1 = x => -2*c*d*x/Math.pow(x*x-d,2);
@@ -1455,18 +1456,7 @@ fetch("/nav.html")
     }
 
     function generateCurveProblem() {
-      const generators = [
-        makeCubicZeroAtOrigin,
-        makeEvenQuartic,
-        makeShiftedEvenQuartic,
-        makeProductPower,
-        makeReciprocalQuadratic,
-        makeLinearOverQuadratic,
-        makeLinearPlusReciprocal,
-        makeCubicOverQuadraticVA,
-        makeScaledXSquareOverQuadratic
-      ];
-      return randomChoice(generators)();
+      return makeScaledXSquareOverQuadratic();
     }
 
     function sketchBreaks(problem) {
@@ -2533,6 +2523,24 @@ fetch("/nav.html")
       }
     }
 
+    function adjustScaledXSquareOverQuadraticHATails(plotPoints, problem) {
+      if (problem.family !== 'scaled x squared over quadratic') return;
+      const leftH = plotPoints.find(n => n.role === 'horizontal-asymptote-approach' && n.plotX < 0);
+      const rightH = plotPoints.find(n => n.role === 'horizontal-asymptote-approach' && n.plotX > 0);
+      if (leftH) {
+        leftH.slope = 0.1;
+        leftH.preferredSlope = 0.1;
+        leftH.slopeFixed = true;
+        leftH.forceSlope = true;
+      }
+      if (rightH) {
+        rightH.slope = -0.1;
+        rightH.preferredSlope = -0.1;
+        rightH.slopeFixed = true;
+        rightH.forceSlope = true;
+      }
+    }
+
     function assignCompatibleFeatureSlopes(plotPoints, problem) {
       // Keep the plotted feature locations fixed, but choose slopes so that each adjacent
       // pair of plotted feature points can be joined by a true quadratic segment.
@@ -2688,6 +2696,7 @@ fetch("/nav.html")
       adjustFlexibleTwoNodesBetweenFixedSlopes(allCurveNodes, problem);
       adjustEndpointInflectionQuadraticReflection(allCurveNodes, problem);
       adjustLinearPlusReciprocalVAComponents(allCurveNodes, problem);
+      adjustScaledXSquareOverQuadraticHATails(allCurveNodes, problem);
       assignCompatibleFeatureSlopes(allCurveNodes, problem);
       adjustLinearOverQuadraticHATails(allCurveNodes, problem);
       allCurveNodes.forEach(node => {

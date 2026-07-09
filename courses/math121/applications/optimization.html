@@ -294,7 +294,29 @@ fetch("/nav.html")
   </header>
 
 <main>
-    <p>Placeholder page!  Note this'll be one of the last activities I attempt to make - word problems aren't well-suited to random generation.</p>
+    <p>Often one wants to solve a problem involving "optimizing" a particular quantity: finding under what circumstances it is largest or smallest.  We see 
+    that calculus can help us in this endeavour, as the first derivative (in particular the Extreme Value Theorem) can be used to locate absolute 
+    maxima/minima.</p>
+
+    <p>Word problems present the additional challenge that we must first extract the "mathematics" (variables, functions, etc.) from a paragraph.  A good 
+      general set of steps to follow is:
+    <ul>
+      <li><b>Understand the problem.</b>  Read the problem.  Then read it again.  Then again.  You may have to read the problem through in its entirety 
+      4 or 5 times before you can confidently say "I understand what I'm trying to do."  I can't stress enough the importance of <i>taking it slow</i> at 
+      this stage.  Often people are inclined to skim the paragraph quickly and underline all the numbers, then stare at it thinking "What am I <i>supposed</i> 
+      to do?"  This approach tends to lead one down an incorrect path and wastes significant time.</li>
+      <li><b>Draw a picture.</b>  Often, understanding the problem would be easier if you drew a picture: especially if there's some geometry involved.  This 
+      step goes hand-in-hand with the previous one.  Leave room to label edges in your diagram for when you later use "let" statements to assign names to the 
+      variables.</li>
+      <li><b>Introduce notation.</b>  Assign a name to the quantity we seek to mazimize or minimize (say, \(Q\)).  Also use "let" statements to assign names 
+      to other quantities in the problem.  Try to use intuitive variable names, like \(h\) for height and \(A\) for area, to make things easier to 
+      understand.</li>
+      <li>Express \(Q\) in terms of the other variables.</li>
+      <li>If \(Q\) has been expressed in terms of more than 1 variable, then use the relationships between the variables to express \(Q\) in terms of only 
+      a single variable.  That is, \(Q\) should now be a <i>function</i> of one variable (say \(x\)), so \(f(x) = Q\).</li>
+      <li>Find the absolute maximum or minimum value for \(Q\) (use the Closed Interval Method/Extreme Value Theorem where the domain of \(f\) is a closed 
+      interval).</li>
+    </ul></p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

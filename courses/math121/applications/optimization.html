@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -261,6 +262,128 @@
       }
     }
 
+
+    .optimization-question-card {
+      max-width: 880px;
+      margin: 1.2em auto;
+      padding: 1em 1.2em;
+      border: 2px solid #ddd;
+      border-radius: 14px;
+      background: #fafafa;
+    }
+
+    .optimization-type-label {
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 0.65em;
+    }
+
+    .optimization-question-body {
+      font-size: 1.08em;
+      line-height: 1.55;
+    }
+
+    .optimization-answer-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1em;
+      justify-content: center;
+      align-items: stretch;
+      max-width: 920px;
+      margin: 1em auto;
+    }
+
+    .optimization-answer-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      min-width: 210px;
+      padding: 0.8em;
+      border: 2px solid #ddd;
+      border-radius: 12px;
+      background: #fafafa;
+      text-align: center;
+    }
+
+    .optimization-answer-label {
+      font-weight: bold;
+      margin-bottom: 0.45em;
+    }
+
+    .optimization-answer-entry {
+      display: flex;
+      gap: 0.3em;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .optimization-number-input {
+      width: 145px;
+      padding: 0.42em 0.5em;
+      border: 2px solid #777;
+      border-radius: 8px;
+      font-size: 1.1em;
+      text-align: center;
+    }
+
+    .optimization-number-input:focus {
+      outline: 3px solid rgba(80, 140, 255, 0.35);
+    }
+
+    .optimization-number-input.answer-correct {
+      border-color: #188038;
+      background: #effaf2;
+    }
+
+    .optimization-number-input.answer-incorrect {
+      border-color: #b3261e;
+      background: #fff3f2;
+    }
+
+    .optimization-answer-unit {
+      margin-top: 0.35em;
+      font-size: 0.92em;
+    }
+
+    .optimization-field-status {
+      min-height: 1.3em;
+      margin-top: 0.3em;
+      font-size: 0.9em;
+      font-weight: bold;
+    }
+
+    .optimization-field-status.is-correct { color: #188038; }
+    .optimization-field-status.is-incorrect { color: #b3261e; }
+
+    .optimization-diagram-wrap {
+      display: flex;
+      justify-content: center;
+      margin: 1em auto 0;
+    }
+
+    .optimization-diagram {
+      width: min(100%, 520px);
+      height: auto;
+      padding: 0.5em;
+      border: 2px solid #ddd;
+      border-radius: 12px;
+      background: white;
+    }
+
+    .optimization-diagram text {
+      font-size: 17px;
+      fill: currentColor;
+    }
+
+    .optimization-hint-step {
+      max-width: 850px;
+      margin: 0.65em auto;
+      padding: 0.75em 0.95em;
+      border-left: 4px solid #777;
+      background: #fafafa;
+      line-height: 1.5;
+    }
+
   </style>
 </head>
 <body>
@@ -346,1011 +469,354 @@ fetch("/nav.html")
   </main>
 
   <script>
-    const hintBtn = document.getElementById('hint-btn');
-    const hintArea = document.getElementById('hint-area');
     const startBtn = document.getElementById('start-btn');
-    const questionText = document.getElementById('question-text');
     const checkBtn = document.getElementById('check-btn');
-    const feedbackText = document.getElementById('feedbackText');
+    const hintBtn = document.getElementById('hint-btn');
+    const questionText = document.getElementById('question-text');
     const finalAnswerInput = document.getElementById('final-answer-input');
+    const feedbackText = document.getElementById('feedbackText');
+    const hintArea = document.getElementById('hint-area');
 
+    const RELATIVE_TOLERANCE = 0.001; // 0.1%
     let currentProblem = null;
-    let currentStageIndex = 0;
     let hintStep = 0;
-    let mathJaxTypesetPromise = Promise.resolve();
+    let mathJaxQueue = Promise.resolve();
     let hintIsTypesetting = false;
-    let activeMathEditor = null;
+
+    function randomInteger(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function randomChoice(items) {
+      return items[randomInteger(0, items.length - 1)];
+    }
 
     function typesetElement(element) {
-      if (!window.MathJax || !MathJax.typesetPromise) {
-        if (window.MathJax && MathJax.typeset) MathJax.typeset([element]);
-        return Promise.resolve();
-      }
-      mathJaxTypesetPromise = mathJaxTypesetPromise
+      if (!window.MathJax || !MathJax.typesetPromise) return Promise.resolve();
+      mathJaxQueue = mathJaxQueue
         .then(() => MathJax.typesetPromise([element]))
         .catch(error => console.error('MathJax typesetting failed:', error));
-      return mathJaxTypesetPromise;
+      return mathJaxQueue;
     }
 
-    function randomInteger(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
-    function randomNonzeroInteger(min, max) { let n; do { n = randomInteger(min, max); } while (n === 0); return n; }
-    function randomChoice(items) { return items[randomInteger(0, items.length - 1)]; }
-
-    function gcd(a, b) {
-      a = Math.abs(Math.round(a));
-      b = Math.abs(Math.round(b));
-      while (b !== 0) { const t = b; b = a % b; a = t; }
-      return a || 1;
+    function weightedProblemType() {
+      const roll = Math.random();
+      if (roll < 0.15) return 1;
+      if (roll < 0.30) return 2;
+      if (roll < 0.65) return 3;
+      return 4;
     }
 
-    function frac(num, den = 1) {
-      if (den < 0) { num = -num; den = -den; }
-      if (num === 0) return { num: 0, den: 1 };
-      const d = gcd(num, den);
-      return { num: num / d, den: den / d };
+    function formatNumber(value, decimals = 6) {
+      if (!Number.isFinite(value)) return '';
+      if (Math.abs(value - Math.round(value)) < 1e-10) return String(Math.round(value));
+      return value.toFixed(decimals).replace(/0+$/, '').replace(/\.$/, '');
     }
 
-
-    function fractionTexFromIntegers(num, den = 1) {
-      if (!Number.isFinite(num) || !Number.isFinite(den) || den === 0) return null;
-      if (Math.abs(num - Math.round(num)) > 1e-10 || Math.abs(den - Math.round(den)) > 1e-10) return null;
-      const f = frac(Math.round(num), Math.round(den));
-      return f.den === 1 ? `${f.num}` : `\\frac{${f.num}}{${f.den}}`;
-    }
-
-    function signedSlopeInterceptTex(mTex, bTex, bValue) {
-      if (Math.abs(bValue) < 1e-10) return `${mTex}x`;
-      const cleanB = String(bTex).replace(/^-/,'');
-      return `${mTex}x ${bValue < 0 ? '-' : '+'} ${cleanB}`;
-    }
-
-    function pointSlopeLeftSideTex(yValueTex, yValue) {
-      const cleanY = String(yValueTex).replace(/^-/,'');
-      if (Math.abs(yValue) < 1e-10) return 'y';
-      return `y ${yValue < 0 ? '+' : '-'} ${cleanY}`;
-    }
-
-    function pointSlopeXFactorTex(xValue) {
-      if (xValue === 0) return 'x';
-      return `x ${xValue < 0 ? '+' : '-'} ${Math.abs(xValue)}`;
-    }
-
-    function numberTex(value) {
-      if (Object.is(value, -0)) value = 0;
-      if (!Number.isFinite(value)) return value > 0 ? '\\infty' : '-\\infty';
-      const rounded = Math.round(value);
-      if (Math.abs(value - rounded) < 1e-10) return `${rounded}`;
-      let bestNum = 0, bestDen = 1, bestErr = Infinity;
-      const sign = value < 0 ? -1 : 1;
-      const abs = Math.abs(value);
-      for (let den = 1; den <= 1000; den++) {
-        const num = Math.round(abs * den);
-        const err = Math.abs(abs - num / den);
-        if (err < bestErr) { bestErr = err; bestNum = num; bestDen = den; }
-      }
-      const f = frac(sign * bestNum, bestDen);
-      return f.den === 1 ? `${f.num}` : `\\frac{${f.num}}{${f.den}}`;
-    }
-
-    function decimalIfNeeded(value) {
-      if (!Number.isFinite(value)) return '\\text{undefined}';
-      if (Math.abs(value - Math.round(value)) < 1e-10) return `${Math.round(value)}`;
-      return numberTex(value);
-    }
-
-
-    function exactRootSlopeTex(numerator, radicand) {
-      if (!Number.isFinite(numerator) || !Number.isFinite(radicand) || radicand <= 0) return null;
-      if (Math.abs(numerator - Math.round(numerator)) > 1e-10 || Math.abs(radicand - Math.round(radicand)) > 1e-10) return null;
-      numerator = Math.round(numerator);
-      radicand = Math.round(radicand);
-      if (numerator === 0) return '0';
-      const denominatorCoeff = 2;
-      const sign = numerator < 0 ? '-' : '';
-      const absNum = Math.abs(numerator);
-      const numTex = absNum === 1 ? '' : `${absNum}`;
-      const numeratorTex = `${sign}${numTex}`;
-      const denominatorTex = denominatorCoeff === 1 ? `\\sqrt{${radicand}}` : `${denominatorCoeff}\\sqrt{${radicand}}`;
-      return `${numeratorTex}\\frac{1}{${denominatorTex}}`;
-    }
-
-    function exactRootSlopeFractionTex(numerator, radicand) {
-      if (!Number.isFinite(numerator) || !Number.isFinite(radicand) || radicand <= 0) return null;
-      if (Math.abs(numerator - Math.round(numerator)) > 1e-10 || Math.abs(radicand - Math.round(radicand)) > 1e-10) return null;
-      numerator = Math.round(numerator);
-      radicand = Math.round(radicand);
-      if (numerator === 0) return '0';
-      const sign = numerator < 0 ? '-' : '';
-      const absNum = Math.abs(numerator);
-      const topTex = absNum === 1 ? '1' : `${absNum}`;
-      return `${sign}\\frac{${topTex}}{2\\sqrt{${radicand}}}`;
-    }
-
-    
-    function exactRootValueTex(radicand) {
-      if (!Number.isFinite(radicand) || radicand < 0) return null;
-      if (Math.abs(radicand - Math.round(radicand)) > 1e-10) return null;
-      radicand = Math.round(radicand);
-      const root = Math.round(Math.sqrt(radicand));
-      if (root * root === radicand) return `${root}`;
-      return `\\sqrt{${radicand}}`;
-    }
-
-    function exactRootInterceptTex(numerator, radicand) {
-      if (!Number.isFinite(numerator) || !Number.isFinite(radicand) || radicand <= 0) return null;
-      if (Math.abs(numerator - Math.round(numerator)) > 1e-10 || Math.abs(radicand - Math.round(radicand)) > 1e-10) return null;
-      numerator = Math.round(numerator);
-      radicand = Math.round(radicand);
-      if (numerator === 0) return '0';
-      const root = Math.round(Math.sqrt(radicand));
-      if (root * root === radicand) return fractionTexFromIntegers(numerator, 2 * root);
-      const g = gcd(Math.abs(numerator), 2);
-      const reducedNum = numerator / g;
-      const reducedDenCoeff = 2 / g;
-      const sign = reducedNum < 0 ? '-' : '';
-      const absNum = Math.abs(reducedNum);
-      const topTex = absNum === 1 ? '1' : `${absNum}`;
-      const denTex = reducedDenCoeff === 1 ? `\\sqrt{${radicand}}` : `${reducedDenCoeff}\\sqrt{${radicand}}`;
-      return `${sign}\\frac{${topTex}}{${denTex}}`;
-    }
-
-    function coefficientTermTex(coeff, body, isFirst = false) {
-      if (coeff === 0) return '';
-      const sign = coeff < 0 ? '-' : (isFirst ? '' : '+');
-      const abs = Math.abs(coeff);
-      const term = abs === 1 && body ? body : `${abs}${body}`;
-      if (sign === '-') return isFirst ? `-${term}` : `- ${term}`;
-      if (sign === '+') return `+ ${term}`;
-      return term;
-    }
-
-    function polynomialTex(a, b, c) {
-      const parts = [];
-      if (a) parts.push(coefficientTermTex(a, 'x^{2}', true));
-      if (b) parts.push(coefficientTermTex(b, 'x', parts.length === 0));
-      if (c) parts.push(coefficientTermTex(c, '', parts.length === 0));
-      return parts.length ? parts.join(' ') : '0';
-    }
-
-    function linearTex(a, b) {
-      const parts = [];
-      if (a) parts.push(coefficientTermTex(a, 'x', true));
-      if (b) parts.push(coefficientTermTex(b, '', parts.length === 0));
-      return parts.length ? parts.join(' ') : '0';
-    }
-
-    function substituteQuadraticTex(a, b, c, xTex) {
-      const pieces = [];
-      if (a) pieces.push(`${a}(${xTex})^{2}`);
-      if (b) pieces.push(`${b < 0 ? '- ' + Math.abs(b) : (pieces.length ? '+ ' : '') + b}(${xTex})`);
-      if (c) pieces.push(`${c < 0 ? '- ' + Math.abs(c) : (pieces.length ? '+ ' : '') + c}`);
-      return pieces.join(' ') || '0';
-    }
-
-    function evaluateQuadratic(a, b, c, x) { return a * x * x + b * x + c; }
-    function evaluateLinear(a, b, x) { return a * x + b; }
-
-
-    function parensTex(tex) {
-      return `\\left(${tex}\\right)`;
-    }
-
-    function signedCoeffTex(n) {
-      if (n === 0) return '';
-      return n > 0 ? `+${n}` : `${n}`;
-    }
-
-    function linearSubTex(a, b, xTex) {
-      return `${a}${parensTex(xTex)}${b ? signedCoeffTex(b) : ''}`;
-    }
-
-    function quadraticSubTex(a, b, c, xTex) {
-      const pieces = [];
-      if (a) pieces.push(`${a}${parensTex(xTex)}^{2}`);
-      if (b) pieces.push(`${b > 0 && pieces.length ? '+' : ''}${b}${parensTex(xTex)}`);
-      if (c) pieces.push(`${c > 0 && pieces.length ? '+' : ''}${c}`);
-      return pieces.join('') || '0';
-    }
-
-    function limitAligned(lines) {
-      return `\\begin{aligned}${lines.join('\\\\')}\\end{aligned}`;
-    }
-
-    function quadraticDerivativeChainTex(a, b, c) {
-      const fx = polynomialTex(a, b, c);
-      const fxh = `${a}(x+h)^2${b ? signedCoeffTex(b) + '(x+h)' : ''}${c ? signedCoeffTex(c) : ''}`;
-      const expanded = `${a}x^2${2*a >= 0 ? '+' : ''}${2*a}xh${a >= 0 ? '+' : ''}${a}h^2${b ? signedCoeffTex(b) + 'x' + signedCoeffTex(b) + 'h' : ''}${c ? signedCoeffTex(c) : ''}`;
-      const afterSubtract = `${2*a}xh${a >= 0 ? '+' : ''}${a}h^2${b ? signedCoeffTex(b) + 'h' : ''}`;
-      const factored = `h(${linearTex(2*a, b)}${a >= 0 ? '+' : ''}${a}h)`;
-      return limitAligned([
-        `f'(x)=\\lim_{h\\to 0}\\frac{f(x+h)-f(x)}{h}`,
-        `=\\lim_{h\\to 0}\\frac{${fxh}-(${fx})}{h}`,
-        `=\\lim_{h\\to 0}\\frac{${expanded}-(${fx})}{h}`,
-        `=\\lim_{h\\to 0}\\frac{${afterSubtract}}{h}`,
-        `=\\lim_{h\\to 0}\\frac{${factored}}{h}`,
-        `=\\lim_{h\\to 0}(${linearTex(2*a, b)}${a >= 0 ? '+' : ''}${a}h)`,
-        `=${linearTex(2*a, b)}`
-      ]);
-    }
-
-    function quadraticSlopeChainTex(a, b, c, x0) {
-      const fx0h = `${a}(${x0}+h)^2${b ? signedCoeffTex(b) + `(${x0}+h)` : ''}${c ? signedCoeffTex(c) : ''}`;
-      const y0 = evaluateQuadratic(a, b, c, x0);
-      const slope = 2*a*x0 + b;
-      const h2 = a;
-      const linearH = slope;
-      const numerator = `${linearH}h${h2 >= 0 ? '+' : ''}${h2}h^2`;
-      return limitAligned([
-        `m=f'(${x0})=\\lim_{h\\to 0}\\frac{f(${x0}+h)-f(${x0})}{h}`,
-        `=\\lim_{h\\to 0}\\frac{${fx0h}-(${numberTex(y0)})}{h}`,
-        `=\\lim_{h\\to 0}\\frac{${numberTex(y0)}${linearH >= 0 ? '+' : ''}${linearH}h${h2 >= 0 ? '+' : ''}${h2}h^2-(${numberTex(y0)})}{h}`,
-        `=\\lim_{h\\to 0}\\frac{${numerator}}{h}`,
-        `=\\lim_{h\\to 0}(${linearH}${h2 >= 0 ? '+' : ''}${h2}h)`,
-        `=${numberTex(slope)}`
-      ]);
-    }
-
-    function rootLinearDerivativeChainTex(a, b) {
-      const rad = linearTex(a, b);
-      const radH = `${a}(x+h)${b ? signedCoeffTex(b) : ''}`;
-      return limitAligned([
-        `f'(x)=\\lim_{h\\to 0}\\frac{\\sqrt{${radH}}-\\sqrt{${rad}}}{h}`,
-        `=\\lim_{h\\to 0}\\frac{(\\sqrt{${radH}}-\\sqrt{${rad}})(\\sqrt{${radH}}+\\sqrt{${rad}})}{h(\\sqrt{${radH}}+\\sqrt{${rad}})}`,
-        `=\\lim_{h\\to 0}\\frac{${radH}-(${rad})}{h(\\sqrt{${radH}}+\\sqrt{${rad}})}`,
-        `=\\lim_{h\\to 0}\\frac{${a}h}{h(\\sqrt{${radH}}+\\sqrt{${rad}})}`,
-        `=\\lim_{h\\to 0}\\frac{${a}}{\\sqrt{${radH}}+\\sqrt{${rad}}}`,
-        `=\\frac{${a}}{2\\sqrt{${rad}}}`
-      ]);
-    }
-
-    function rootLinearSlopeChainTex(a, b, x0) {
-      const rad0 = evaluateLinear(a, b, x0);
-      const radH = `${a}(${x0}+h)${b ? signedCoeffTex(b) : ''}`;
-      const rad0Tex = numberTex(rad0);
-      const slopeTex = exactRootSlopeFractionTex(a, rad0) || decimalIfNeeded(a/(2*Math.sqrt(rad0)));
-      return limitAligned([
-        `m=f'(${x0})=\\lim_{h\\to 0}\\frac{\\sqrt{${radH}}-\\sqrt{${rad0Tex}}}{h}`,
-        `=\\lim_{h\\to 0}\\frac{(\\sqrt{${radH}}-\\sqrt{${rad0Tex}})(\\sqrt{${radH}}+\\sqrt{${rad0Tex}})}{h(\\sqrt{${radH}}+\\sqrt{${rad0Tex}})}`,
-        `=\\lim_{h\\to 0}\\frac{${radH}-${rad0Tex}}{h(\\sqrt{${radH}}+\\sqrt{${rad0Tex}})}`,
-        `=\\lim_{h\\to 0}\\frac{${a}h}{h(\\sqrt{${radH}}+\\sqrt{${rad0Tex}})}`,
-        `=\\lim_{h\\to 0}\\frac{${a}}{\\sqrt{${radH}}+\\sqrt{${rad0Tex}}}`,
-        `=${slopeTex}`
-      ]);
-    }
-
-    function rootQuadraticDerivativeChainTex(a, b, c) {
-      const rad = polynomialTex(a, b, c);
-      const radH = quadraticSubTex(a, b, c, 'x+h');
-      const diff = `h(${linearTex(2*a, b)}${a >= 0 ? '+' : ''}${a}h)`;
-      return limitAligned([
-        `f'(x)=\\lim_{h\\to 0}\\frac{\\sqrt{${radH}}-\\sqrt{${rad}}}{h}`,
-        `=\\lim_{h\\to 0}\\frac{(\\sqrt{${radH}}-\\sqrt{${rad}})(\\sqrt{${radH}}+\\sqrt{${rad}})}{h(\\sqrt{${radH}}+\\sqrt{${rad}})}`,
-        `=\\lim_{h\\to 0}\\frac{${radH}-(${rad})}{h(\\sqrt{${radH}}+\\sqrt{${rad}})}`,
-        `=\\lim_{h\\to 0}\\frac{${diff}}{h(\\sqrt{${radH}}+\\sqrt{${rad}})}`,
-        `=\\lim_{h\\to 0}\\frac{${linearTex(2*a, b)}${a >= 0 ? '+' : ''}${a}h}{\\sqrt{${radH}}+\\sqrt{${rad}}}`,
-        `=\\frac{${linearTex(2*a, b)}}{2\\sqrt{${rad}}}`
-      ]);
-    }
-
-    function rootQuadraticSlopeChainTex(a, b, c, x0) {
-      const radH = quadraticSubTex(a, b, c, `${x0}+h`);
-      const rad0 = evaluateQuadratic(a, b, c, x0);
-      const numeratorValue = 2*a*x0 + b;
-      const slopeTex = exactRootSlopeFractionTex(numeratorValue, rad0) || decimalIfNeeded(numeratorValue/(2*Math.sqrt(rad0)));
-      return limitAligned([
-        `m=f'(${x0})=\\lim_{h\\to 0}\\frac{\\sqrt{${radH}}-\\sqrt{${numberTex(rad0)}}}{h}`,
-        `=\\lim_{h\\to 0}\\frac{(\\sqrt{${radH}}-\\sqrt{${numberTex(rad0)}})(\\sqrt{${radH}}+\\sqrt{${numberTex(rad0)}})}{h(\\sqrt{${radH}}+\\sqrt{${numberTex(rad0)}})}`,
-        `=\\lim_{h\\to 0}\\frac{${radH}-${numberTex(rad0)}}{h(\\sqrt{${radH}}+\\sqrt{${numberTex(rad0)}})}`,
-        `=\\lim_{h\\to 0}\\frac{h(${numberTex(numeratorValue)}${a >= 0 ? '+' : ''}${a}h)}{h(\\sqrt{${radH}}+\\sqrt{${numberTex(rad0)}})}`,
-        `=\\lim_{h\\to 0}\\frac{${numberTex(numeratorValue)}${a >= 0 ? '+' : ''}${a}h}{\\sqrt{${radH}}+\\sqrt{${numberTex(rad0)}}}`,
-        `=${slopeTex}`
-      ]);
-    }
-
-    function rationalLinearDerivativeChainTex(d, a, b) {
-      const den = linearTex(a, b);
-      const denH = `${a}(x+h)${b ? signedCoeffTex(b) : ''}`;
-      return limitAligned([
-        `f'(x)=\\lim_{h\\to 0}\\frac{\\frac{${d}}{${denH}}-\\frac{${d}}{${den}}}{h}`,
-        `=\\lim_{h\\to 0}\\frac{${d}(${den})-${d}(${denH})}{h(${denH})(${den})}`,
-        `=\\lim_{h\\to 0}\\frac{${-d*a}h}{h(${denH})(${den})}`,
-        `=\\lim_{h\\to 0}\\frac{${-d*a}}{(${denH})(${den})}`,
-        `=\\frac{${-d*a}}{(${den})^{2}}`
-      ]);
-    }
-
-    function rationalLinearSlopeChainTex(d, a, b, x0) {
-      const den0 = evaluateLinear(a, b, x0);
-      const denH = `${a}(${x0}+h)${b ? signedCoeffTex(b) : ''}`;
-      const slopeTex = fractionTexFromIntegers(-d*a, den0*den0) || decimalIfNeeded(-d*a/(den0*den0));
-      return limitAligned([
-        `m=f'(${x0})=\\lim_{h\\to 0}\\frac{\\frac{${d}}{${denH}}-\\frac{${d}}{${den0}}}{h}`,
-        `=\\lim_{h\\to 0}\\frac{${d}(${den0})-${d}(${denH})}{h(${denH})(${den0})}`,
-        `=\\lim_{h\\to 0}\\frac{${-d*a}h}{h(${denH})(${den0})}`,
-        `=\\lim_{h\\to 0}\\frac{${-d*a}}{(${denH})(${den0})}`,
-        `=${slopeTex}`
-      ]);
-    }
-
-    function rationalQuadraticDerivativeChainTex(d, a, b, c) {
-      const den = polynomialTex(a, b, c);
-      const denH = quadraticSubTex(a, b, c, 'x+h');
-      return limitAligned([
-        `f'(x)=\\lim_{h\\to 0}\\frac{\\frac{${d}}{${denH}}-\\frac{${d}}{${den}}}{h}`,
-        `=\\lim_{h\\to 0}\\frac{${d}(${den})-${d}(${denH})}{h(${denH})(${den})}`,
-        `=\\lim_{h\\to 0}\\frac{${-d}h(${linearTex(2*a, b)}${a >= 0 ? '+' : ''}${a}h)}{h(${denH})(${den})}`,
-        `=\\lim_{h\\to 0}\\frac{${-d}(${linearTex(2*a, b)}${a >= 0 ? '+' : ''}${a}h)}{(${denH})(${den})}`,
-        `=\\frac{${-d}(${linearTex(2*a, b)})}{(${den})^{2}}`
-      ]);
-    }
-
-    function rationalQuadraticSlopeChainTex(d, a, b, c, x0) {
-      const den0 = evaluateQuadratic(a, b, c, x0);
-      const denH = quadraticSubTex(a, b, c, `${x0}+h`);
-      const lin = 2*a*x0 + b;
-      const slopeTex = fractionTexFromIntegers(-d*lin, den0*den0) || decimalIfNeeded(-d*lin/(den0*den0));
-      return limitAligned([
-        `m=f'(${x0})=\\lim_{h\\to 0}\\frac{\\frac{${d}}{${denH}}-\\frac{${d}}{${den0}}}{h}`,
-        `=\\lim_{h\\to 0}\\frac{${d}(${den0})-${d}(${denH})}{h(${denH})(${den0})}`,
-        `=\\lim_{h\\to 0}\\frac{${-d}h(${numberTex(lin)}${a >= 0 ? '+' : ''}${a}h)}{h(${denH})(${den0})}`,
-        `=\\lim_{h\\to 0}\\frac{${-d}(${numberTex(lin)}${a >= 0 ? '+' : ''}${a}h)}{(${denH})(${den0})}`,
-        `=${slopeTex}`
-      ]);
-    }
-
-    function makeQuadraticFunction() {
-      const a = randomNonzeroInteger(-9, 9);
-      const b = randomInteger(-9, 9);
-      const c = randomInteger(-9, 9);
-      return {
-        kind: 'quadratic',
-        tex: polynomialTex(a, b, c),
-        value: x => evaluateQuadratic(a, b, c, x),
-        derivative: x => 2 * a * x + b,
-        derivativeTex: `${linearTex(2 * a, b)}`,
-        derivativeExpression: `${2 * a}*x+${b}`,
-        validAt: () => true,
-        derivativeHints: [quadraticDerivativeChainTex(a, b, c)],
-        slopeHints: x0 => [quadraticSlopeChainTex(a, b, c, x0)]
-      };
-    }
-
-    function makeRootFunction() {
-      const isLinear = Math.random() < 0.5;
-      if (isLinear) {
-        const a = randomNonzeroInteger(-9, 9);
-        const b = randomInteger(-9, 9);
-        const radTex = linearTex(a, b);
-        return {
-          kind: 'root-linear',
-          tex: `\\sqrt{${radTex}}`,
-          value: x => Math.sqrt(evaluateLinear(a, b, x)),
-          derivative: x => a / (2 * Math.sqrt(evaluateLinear(a, b, x))),
-          derivativeTex: `\\frac{${a}}{2\\sqrt{${radTex}}}`,
-          derivativeExpression: `(${a})/(2*sqrt(${a}*x+${b}))`,
-          validAt: x => evaluateLinear(a, b, x) > 0,
-          valueTex: x => exactRootValueTex(evaluateLinear(a, b, x)) || decimalIfNeeded(Math.sqrt(evaluateLinear(a, b, x))),
-          derivativeAtTex: x => exactRootSlopeFractionTex(a, evaluateLinear(a, b, x)) || decimalIfNeeded(a / (2 * Math.sqrt(evaluateLinear(a, b, x)))),
-          interceptTex: x => {
-            const rad = evaluateLinear(a, b, x);
-            return exactRootInterceptTex(2 * rad - a * x, rad) || decimalIfNeeded(Math.sqrt(rad) - (a / (2 * Math.sqrt(rad))) * x);
-          },
-          derivativeHints: [rootLinearDerivativeChainTex(a, b)],
-          slopeHints: x0 => [rootLinearSlopeChainTex(a, b, x0)]
-        };
-      }
-      const a = randomNonzeroInteger(-9, 9);
-      const b = randomInteger(-9, 9);
-      const c = randomInteger(-9, 9);
-      const radTex = polynomialTex(a, b, c);
-      return {
-        kind: 'root-quadratic',
-        tex: `\\sqrt{${radTex}}`,
-        value: x => Math.sqrt(evaluateQuadratic(a, b, c, x)),
-        derivative: x => (2 * a * x + b) / (2 * Math.sqrt(evaluateQuadratic(a, b, c, x))),
-        derivativeTex: `\\frac{${linearTex(2 * a, b)}}{2\\sqrt{${radTex}}}`,
-        derivativeExpression: `(${2*a}*x+${b})/(2*sqrt(${a}*x*x+${b}*x+${c}))`,
-        validAt: x => evaluateQuadratic(a, b, c, x) > 0,
-        valueTex: x => exactRootValueTex(evaluateQuadratic(a, b, c, x)) || decimalIfNeeded(Math.sqrt(evaluateQuadratic(a, b, c, x))),
-        derivativeAtTex: x => exactRootSlopeFractionTex(2 * a * x + b, evaluateQuadratic(a, b, c, x)) || decimalIfNeeded((2 * a * x + b) / (2 * Math.sqrt(evaluateQuadratic(a, b, c, x)))),
-        interceptTex: x => {
-          const rad = evaluateQuadratic(a, b, c, x);
-          const numerator = 2 * rad - (2 * a * x + b) * x;
-          return exactRootInterceptTex(numerator, rad) || decimalIfNeeded(Math.sqrt(rad) - ((2 * a * x + b) / (2 * Math.sqrt(rad))) * x);
-        },
-        derivativeHints: [rootQuadraticDerivativeChainTex(a, b, c)],
-        slopeHints: x0 => [rootQuadraticSlopeChainTex(a, b, c, x0)]
-      };
-    }
-
-    function makeRationalFunction() {
-      const isLinear = Math.random() < 0.5;
-      const d = randomNonzeroInteger(-9, 9);
-      if (isLinear) {
-        const a = randomNonzeroInteger(-9, 9);
-        const b = randomInteger(-9, 9);
-        const denTex = linearTex(a, b);
-        return {
-          kind: 'rational-linear',
-          tex: `\\frac{${d}}{${denTex}}`,
-          value: x => d / evaluateLinear(a, b, x),
-          derivative: x => -d * a / Math.pow(evaluateLinear(a, b, x), 2),
-          derivativeTex: `\\frac{${-d * a}}{(${denTex})^{2}}`,
-          derivativeExpression: `(${-d*a})/((${a}*x+${b})^2)`,
-          validAt: x => Math.abs(evaluateLinear(a, b, x)) > 1e-9,
-          valueTex: x => fractionTexFromIntegers(d, evaluateLinear(a, b, x)) || decimalIfNeeded(d / evaluateLinear(a, b, x)),
-          derivativeAtTex: x => fractionTexFromIntegers(-d * a, Math.pow(evaluateLinear(a, b, x), 2)) || decimalIfNeeded(-d * a / Math.pow(evaluateLinear(a, b, x), 2)),
-          interceptTex: x => {
-            const den = evaluateLinear(a, b, x);
-            return fractionTexFromIntegers(d * den + d * a * x, den * den) || decimalIfNeeded(d / den - (-d * a / (den * den)) * x);
-          },
-          derivativeHints: [rationalLinearDerivativeChainTex(d, a, b)],
-          slopeHints: x0 => [rationalLinearSlopeChainTex(d, a, b, x0)]
-        };
-      }
-      const a = randomNonzeroInteger(-9, 9);
-      const b = randomInteger(-9, 9);
-      const c = randomInteger(-9, 9);
-      const denTex = polynomialTex(a, b, c);
-      return {
-        kind: 'rational-quadratic',
-        tex: `\\frac{${d}}{${denTex}}`,
-        value: x => d / evaluateQuadratic(a, b, c, x),
-        derivative: x => -d * (2 * a * x + b) / Math.pow(evaluateQuadratic(a, b, c, x), 2),
-        derivativeTex: `\\frac{${-d}(${linearTex(2 * a, b)})}{(${denTex})^{2}}`,
-        derivativeExpression: `(${-d})*(${2*a}*x+${b})/((${a}*x*x+${b}*x+${c})^2)`,
-        validAt: x => Math.abs(evaluateQuadratic(a, b, c, x)) > 1e-9,
-        valueTex: x => fractionTexFromIntegers(d, evaluateQuadratic(a, b, c, x)) || decimalIfNeeded(d / evaluateQuadratic(a, b, c, x)),
-        derivativeAtTex: x => {
-          const den = evaluateQuadratic(a, b, c, x);
-          return fractionTexFromIntegers(-d * (2 * a * x + b), den * den) || decimalIfNeeded(-d * (2 * a * x + b) / Math.pow(den, 2));
-        },
-        interceptTex: x => {
-          const den = evaluateQuadratic(a, b, c, x);
-          const slopeNum = -d * (2 * a * x + b);
-          return fractionTexFromIntegers(d * den - slopeNum * x, den * den) || decimalIfNeeded(d / den - (slopeNum / (den * den)) * x);
-        },
-        derivativeHints: [rationalQuadraticDerivativeChainTex(d, a, b, c)],
-        slopeHints: x0 => [rationalQuadraticSlopeChainTex(d, a, b, c, x0)]
-      };
-    }
-
-    function makeFunction() {
-      return randomChoice([makeQuadraticFunction, makeRationalFunction, makeRootFunction])();
-    }
-
-    function chooseValidX0(fn) {
-      const candidates = [];
-      for (let x = -9; x <= 9; x++) {
-        const y = fn.value(x);
-        const m = fn.derivative(x);
-        if (fn.validAt(x) && Number.isFinite(y) && Number.isFinite(m)) candidates.push(x);
-      }
-      return candidates.length ? randomChoice(candidates) : null;
-    }
-
-    function lineSlopeIntercept(m, x0, y0) { return y0 - m * x0; }
-
-    function generateDerivativeProblem() {
-      for (let attempt = 0; attempt < 400; attempt++) {
-        const fn = makeFunction();
-        const x0 = chooseValidX0(fn);
-        if (x0 === null) continue;
-        const y0 = fn.value(x0);
-        const slope = fn.derivative(x0);
-        const intercept = lineSlopeIntercept(slope, x0, y0);
-        if (!Number.isFinite(y0) || !Number.isFinite(slope) || !Number.isFinite(intercept)) continue;
-        const y0Tex = fn.valueTex ? fn.valueTex(x0) : decimalIfNeeded(y0);
-        const slopeTex = fn.derivativeAtTex ? fn.derivativeAtTex(x0) : decimalIfNeeded(slope);
-        const interceptTex = fn.interceptTex ? fn.interceptTex(x0) : decimalIfNeeded(intercept);
-        const absInterceptTex = fn.interceptTex ? String(interceptTex).replace(/^-/,'') : decimalIfNeeded(Math.abs(intercept));
-        const askDerivativeFunction = Math.random() < 0.5;
-        const stages = [];
-        if (askDerivativeFunction) {
-          stages.push({
-            kind: 'derivative-function',
-            promptTex: `\\text{First find }f'(x).`,
-            labelTex: `f'(x)=`,
-            expectedExpression: fn.derivativeExpression,
-            expectedTex: fn.derivativeTex,
-            hints: fn.derivativeHints.concat([`f'(x)=${fn.derivativeTex}`])
-          });
-        }
-        const slopeStageHints = askDerivativeFunction
-          ? [
-              `\\begin{aligned}m&=f'(${x0})\\\\&=${fn.derivativeTex.replaceAll('x', `(${x0})`)}\\\\&=${slopeTex}\\end{aligned}`
-            ]
-          : fn.slopeHints(x0);
-        const askInstantaneousRate = Math.random() < 0.5;
-        stages.push({
-          kind: 'slope',
-          promptTex: askInstantaneousRate
-            ? `\\text{Find the instantaneous rate of change of }f(x)\\text{ at }x=${x0}.`
-            : `\\text{Find the slope of the tangent line to }f(x)\\text{ at }x=${x0}.`,
-          labelTex: `m=`,
-          expectedValue: slope,
-          expectedTex: slopeTex,
-          hints: slopeStageHints
-        });
-        stages.push({
-          kind: 'line',
-          promptTex: `\\text{Find the equation of the tangent line to }f(x)\\text{ at }x=${x0}. \\text{ Give your answer in the form }y=mx+b.`,
-          labelTex: `y=`,
-          expectedM: slope,
-          expectedB: intercept,
-          expectedTex: signedSlopeInterceptTex(slopeTex, interceptTex, intercept),
-          hints: [
-            `\\text{The point on the curve is }(${x0},${y0Tex})\\text{ and the slope is }m=${slopeTex}.`,
-            `${pointSlopeLeftSideTex(y0Tex, y0)}=${slopeTex}(${pointSlopeXFactorTex(x0)})`,
-            `y=${signedSlopeInterceptTex(slopeTex, interceptTex, intercept)}`
-          ]
-        });
-        return {
-          functionTex: fn.tex,
-          x0, y0, slope, intercept,
-          askDerivativeFunction,
-          stages,
-          questionTex: `f(x)=${fn.tex}`
-        };
-      }
-      return generateDerivativeProblem();
-    }
-
-    function normalizeAnswerText(raw) {
-      return String(raw || '')
+    function normalizeNumericText(raw) {
+      return String(raw ?? '')
+        .trim()
         .replace(/−/g, '-')
-        .replace(/\s+/g, '')
-        .replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, '(($1)/($2))')
-        .replace(/\\sqrt\{([^{}]+)\}/g, 'sqrt($1)')
-        .replace(/√\(/g, 'sqrt(')
-        .replace(/√([0-9.]+|x)/g, 'sqrt($1)')
+        .replace(/,/g, '')
+        .replace(/\$/g, '')
+        .replace(/π/gi, 'pi')
+        .replace(/√/g, 'sqrt')
         .replace(/\^/g, '**')
+        .replace(/\s+/g, '')
         .toLowerCase();
     }
 
-    function expressionToJs(raw) {
-      let s = normalizeAnswerText(raw);
-      if (s.startsWith('y=')) s = s.slice(2);
-      s = s.replace(/sqrt/g, 'Math.sqrt').replace(/pi/g, 'Math.PI');
-      // insert common implicit multiplication: 2x, 2(x+1), x(x+1), )(x), 2sqrt(x), xsqrt(x), 2pi
-      s = s.replace(/(\d|x|\))(?=(x|Math\.sqrt|Math\.PI|\())/g, '$1*');
-      s = s.replace(/(x|\))(?=\d)/g, '$1*');
-      return s;
-    }
-
-    function evaluateUserExpression(raw, x) {
-      const js = expressionToJs(raw);
-      if (!js || /[^0-9x+\-*/().,MathsqrtPIe]/.test(js)) return NaN;
+    function evaluateNumericAnswer(raw) {
+      let expression = normalizeNumericText(raw);
+      if (!expression) return NaN;
+      expression = expression
+        .replace(/pi/g, 'Math.PI')
+        .replace(/sqrt/g, 'Math.sqrt');
+      expression = expression.replace(/(\d|\))(?=(Math\.PI|Math\.sqrt|\())/g, '$1*');
+      expression = expression.replace(/(Math\.PI|\))(?=\d|\()/g, '$1*');
+      if (/[^0-9+\-*/().MathePIsqrt]/.test(expression)) return NaN;
       try {
-        const value = Function('x', `"use strict"; return (${js});`)(x);
+        const value = Function(`"use strict"; return (${expression});`)();
         return Number.isFinite(value) ? value : NaN;
       } catch (error) {
         return NaN;
       }
     }
 
-    function expressionMatches(raw, expectedRaw) {
-      const points = [-7, -3, -1, 0, 2, 5, 8];
-      let checked = 0;
-      for (const x of points) {
-        const user = evaluateUserExpression(raw, x);
-        const expected = evaluateUserExpression(expectedRaw, x);
-        if (Number.isFinite(user) && Number.isFinite(expected)) {
-          checked++;
-          if (Math.abs(user - expected) > 1e-6 * Math.max(1, Math.abs(expected))) return false;
-        }
+    function answersMatch(userValue, expectedValue, tolerance = RELATIVE_TOLERANCE) {
+      if (!Number.isFinite(userValue) || !Number.isFinite(expectedValue)) return false;
+      const scale = Math.max(Math.abs(expectedValue), 1e-9);
+      return Math.abs(userValue - expectedValue) <= tolerance * scale;
+    }
+
+    function makeAnswerField({
+      id,
+      label,
+      expected,
+      unit = '',
+      prefix = '',
+      suffix = '',
+      tolerance = RELATIVE_TOLERANCE,
+      placeholder = '',
+      equivalentAnswers = null
+    }) {
+      return { id, label, expected, unit, prefix, suffix, tolerance, placeholder, equivalentAnswers };
+    }
+
+    function makeFrameworkProblem(type) {
+      // Temporary representative problems exercise the common engine. Each will be
+      // replaced by its full generator in the next milestones without changing the UI.
+      if (type === 1) {
+        const n = randomInteger(2, 50);
+        const answer = n / 2;
+        return {
+          type: 1,
+          title: 'Type 1: Number problem',
+          questionHtml: `<p>Find the two numbers whose sum is ${n} and whose product is as large as possible.</p>`,
+          answers: [
+            makeAnswerField({ id: 'number-1', label: 'First number', expected: answer }),
+            makeAnswerField({ id: 'number-2', label: 'Second number', expected: answer })
+          ],
+          hints: [
+            { kind: 'text', content: 'Let one number be x. Then the other number is the total minus x.' },
+            { kind: 'math', content: `P(x)=x(${n}-x)` },
+            { kind: 'math', content: `P'(x)=${n}-2x` },
+            { kind: 'math', content: `P'(x)=0\Rightarrow x=${formatNumber(answer)}` }
+          ]
+        };
       }
-      return checked >= 3;
+
+      if (type === 2) {
+        const basePrice = randomInteger(12, 30);
+        const baseSales = randomInteger(80, 180);
+        const increase = randomChoice([1, 2, 5]);
+        const lostSales = randomInteger(3, 10);
+        const unitCost = randomInteger(2, Math.max(3, basePrice - 5));
+        const xVertex = (baseSales * increase - lostSales * (basePrice - unitCost)) / (2 * lostSales);
+        const price = basePrice + increase * xVertex;
+        return {
+          type: 2,
+          title: 'Type 2: Profit problem',
+          questionHtml: `<p>A temporary framework problem uses a selling price of $${basePrice}, sales of ${baseSales} units, a $${increase} price step, ${lostSales} fewer sales per step, and a unit cost of $${unitCost}. Find the profit-maximizing price.</p>`,
+          answers: [makeAnswerField({ id: 'price', label: 'Price', expected: price, prefix: '$' })],
+          hints: [
+            { kind: 'math', content: `p(x)=${basePrice}+${increase}x` },
+            { kind: 'math', content: `q(x)=${baseSales}-${lostSales}x` },
+            { kind: 'math', content: `P(x)=(p(x)-${unitCost})q(x)-D` },
+            { kind: 'text', content: 'Differentiate the quadratic profit function and solve P\'(x)=0.' }
+          ]
+        };
+      }
+
+      if (type === 3) {
+        const volume = randomInteger(8, 125);
+        const side = Math.cbrt(volume);
+        return {
+          type: 3,
+          title: 'Type 3: Box problem',
+          questionHtml: `<p>A closed rectangular box with a square base has volume ${volume} cubic units. In this temporary framework problem, find the dimensions of the cube with that volume.</p>`,
+          diagram: { kind: 'box', labels: { length: 'x', width: 'x', height: 'h' } },
+          answers: [
+            makeAnswerField({ id: 'length', label: 'Length', expected: side, unit: 'units' }),
+            makeAnswerField({ id: 'width', label: 'Width', expected: side, unit: 'units' }),
+            makeAnswerField({ id: 'height', label: 'Height', expected: side, unit: 'units' })
+          ],
+          hints: [
+            { kind: 'text', content: 'Assign variables to the dimensions shown in the diagram.' },
+            { kind: 'math', content: `x^2h=${volume}` },
+            { kind: 'math', content: `h=\frac{${volume}}{x^2}` },
+            { kind: 'text', content: 'The complete box generators will replace this representative framework problem.' }
+          ]
+        };
+      }
+
+      const speed = randomInteger(2, 8);
+      const targetX = randomInteger(5, 25);
+      const targetY = randomInteger(2, 12);
+      const time = targetX / speed;
+      const distance = Math.abs(targetY);
+      return {
+        type: 4,
+        title: 'Type 4: Distance problem',
+        questionHtml: `<p>A particle moves along the x-axis with position \(P(t)=(${speed}t,0)\). Find when it is closest to the fixed point \(A=(${targetX},${targetY})\), and find that minimum distance.</p>`,
+        diagram: { kind: 'distance', movingLabel: 'P(t)', targetLabel: 'A' },
+        answers: [
+          makeAnswerField({ id: 'time', label: 'Time', expected: time, unit: 'time units' }),
+          makeAnswerField({ id: 'distance', label: 'Minimum distance', expected: distance, unit: 'units' })
+        ],
+        hints: [
+          { kind: 'text', content: 'Use the distance formula, or minimize the square of the distance.' },
+          { kind: 'math', content: `D^2(t)=(${speed}t-${targetX})^2+${targetY}^2` },
+          { kind: 'math', content: `\frac{d}{dt}D^2(t)=2${speed}(${speed}t-${targetX})` },
+          { kind: 'math', content: `t=${formatNumber(time)},\qquad D=${formatNumber(distance)}` }
+        ]
+      };
     }
 
-    function numericAnswerMatches(raw, expected) {
-      const user = evaluateUserExpression(raw, 0);
-      return Number.isFinite(user) && Math.abs(user - expected) < 1e-6 * Math.max(1, Math.abs(expected));
+    function generateOptimizationProblem() {
+      return makeFrameworkProblem(weightedProblemType());
     }
 
-    function lineAnswerMatches(raw, m, b) {
-      const points = [-5, -1, 0, 3, 7];
-      return points.every(x => {
-        const user = evaluateUserExpression(raw, x);
-        const expected = m * x + b;
-        return Number.isFinite(user) && Math.abs(user - expected) < 1e-6 * Math.max(1, Math.abs(expected));
-      });
-    }
-
-    function answerToolbarHtml() {
+    function boxDiagramSvg(labels = {}) {
       return `
-        <div class="answer-toolbar">
-          <button type="button" class="math-symbol-button" data-insert-text="x">x</button>
-          <button type="button" class="math-symbol-button" data-insert-exponent="true">x<sup>□</sup></button>
-          <button type="button" class="math-symbol-button" data-insert-radical="true">√</button>
-          <button type="button" class="math-symbol-button" data-insert-fraction="true"><span class="fraction-button-display"><span class="fraction-button-top">a</span><span class="fraction-button-bottom">b</span></span></button>
-          <button type="button" class="math-symbol-button" data-insert-text="/">/</button>
-          <button type="button" class="math-symbol-button" data-insert-text="(">(</button>
-          <button type="button" class="math-symbol-button" data-insert-text=")">)</button>
+        <svg viewBox="0 0 420 260" class="optimization-diagram" role="img" aria-label="Rectangular box diagram">
+          <polygon points="95,75 275,75 335,120 155,120" fill="none" stroke="currentColor" stroke-width="3"/>
+          <polygon points="95,75 155,120 155,220 95,175" fill="none" stroke="currentColor" stroke-width="3"/>
+          <polygon points="155,120 335,120 335,220 155,220" fill="none" stroke="currentColor" stroke-width="3"/>
+          <line x1="275" y1="75" x2="275" y2="175" stroke="currentColor" stroke-width="3"/>
+          <line x1="275" y1="175" x2="335" y2="220" stroke="currentColor" stroke-width="3"/>
+          <line x1="95" y1="175" x2="275" y2="175" stroke="currentColor" stroke-width="3"/>
+          <text x="235" y="245" text-anchor="middle">${labels.length || 'length'}</text>
+          <text x="115" y="218" text-anchor="middle">${labels.width || 'width'}</text>
+          <text x="355" y="175" text-anchor="middle">${labels.height || 'height'}</text>
+        </svg>`;
+    }
+
+    function distanceDiagramSvg(problem) {
+      return `
+        <svg viewBox="0 0 520 260" class="optimization-diagram" role="img" aria-label="Distance between a moving particle and a fixed point">
+          <line x1="45" y1="205" x2="485" y2="205" stroke="currentColor" stroke-width="3"/>
+          <line x1="65" y1="230" x2="65" y2="30" stroke="currentColor" stroke-width="3"/>
+          <line x1="195" y1="205" x2="390" y2="75" stroke="currentColor" stroke-width="3" stroke-dasharray="8 7"/>
+          <circle cx="195" cy="205" r="7" fill="currentColor"/>
+          <circle cx="390" cy="75" r="7" fill="currentColor"/>
+          <text x="195" y="235" text-anchor="middle">${problem.movingLabel || 'P(t)'}</text>
+          <text x="405" y="68">${problem.targetLabel || 'A'}</text>
+          <text x="300" y="125" text-anchor="middle">distance</text>
+        </svg>`;
+    }
+
+    function renderDiagram(diagram) {
+      if (!diagram) return '';
+      if (diagram.kind === 'box') return `<div class="optimization-diagram-wrap">${boxDiagramSvg(diagram.labels)}</div>`;
+      if (diagram.kind === 'distance') return `<div class="optimization-diagram-wrap">${distanceDiagramSvg(diagram)}</div>`;
+      return '';
+    }
+
+    function renderAnswerInputs(problem) {
+      finalAnswerInput.innerHTML = `
+        <div class="optimization-answer-grid">
+          ${problem.answers.map(field => `
+            <label class="optimization-answer-card" for="answer-${field.id}">
+              <span class="optimization-answer-label">${field.label}</span>
+              <span class="optimization-answer-entry">
+                ${field.prefix ? `<span>${field.prefix}</span>` : ''}
+                <input id="answer-${field.id}" class="optimization-number-input" type="text" inputmode="decimal" autocomplete="off" placeholder="${field.placeholder || ''}">
+                ${field.suffix ? `<span>${field.suffix}</span>` : ''}
+              </span>
+              ${field.unit ? `<span class="optimization-answer-unit">${field.unit}</span>` : ''}
+              <span id="status-${field.id}" class="optimization-field-status" aria-live="polite"></span>
+            </label>`).join('')}
         </div>`;
-    }
 
-    function getActiveEditor() {
-      return document.getElementById(`answer-editor-${currentStageIndex}`);
-    }
-
-    function getInsertionEditor() {
-      const outer = getActiveEditor();
-      if (!outer) return null;
-      if (activeMathEditor && outer.contains(activeMathEditor) && activeMathEditor.isContentEditable) return activeMathEditor;
-      return outer;
-    }
-
-    function getEditorRange(editor) {
-      const selection = window.getSelection();
-      if (selection.rangeCount) {
-        const range = selection.getRangeAt(0);
-        const container = range.commonAncestorContainer.nodeType === Node.TEXT_NODE
-          ? range.commonAncestorContainer.parentElement
-          : range.commonAncestorContainer;
-        if (editor.contains(container) || editor === container) return range;
-      }
-      const range = document.createRange();
-      range.selectNodeContents(editor);
-      range.collapse(false);
-      return range;
-    }
-
-    function placeCaretInside(element) {
-      const range = document.createRange();
-      range.selectNodeContents(element);
-      range.collapse(false);
-      const selection = window.getSelection();
-      selection.removeAllRanges();
-      selection.addRange(range);
-      activeMathEditor = element;
-      element.focus();
-    }
-
-    function placeCaretInTextNode(node, offset) {
-      const range = document.createRange();
-      range.setStart(node, offset);
-      range.collapse(true);
-      const selection = window.getSelection();
-      selection.removeAllRanges();
-      selection.addRange(range);
-      const outer = getActiveEditor();
-      if (outer) outer.focus();
-    }
-
-    function makeCaretSpacer() {
-      return document.createTextNode('\u200b');
-    }
-
-    function insertTextAtSelection(text, editor = getInsertionEditor()) {
-      if (!editor) return;
-      const range = getEditorRange(editor);
-      range.deleteContents();
-      const node = document.createTextNode(text);
-      range.insertNode(node);
-      placeCaretInTextNode(node, node.textContent.length);
-    }
-
-    function insertExponentAtSelection(editor = getInsertionEditor()) {
-      if (!editor) return;
-      const range = getEditorRange(editor);
-      range.deleteContents();
-      const exponent = document.createElement('span');
-      exponent.className = 'exponent-entry special-wrapper special-entry';
-      exponent.setAttribute('data-special-wrapper', 'exponent');
-      exponent.setAttribute('data-special-entry', 'exponent');
-      exponent.contentEditable = 'true';
-      range.insertNode(exponent);
-      placeCaretInside(exponent);
-    }
-
-    function insertFractionAtSelection(editor = getInsertionEditor()) {
-      if (!editor) return;
-      const range = getEditorRange(editor);
-      range.deleteContents();
-      const wrapper = document.createElement('span');
-      wrapper.className = 'fraction-entry special-wrapper';
-      wrapper.setAttribute('data-special-wrapper', 'fraction');
-      wrapper.innerHTML = '<span class="fraction-numerator special-entry" contenteditable="true" data-special-entry="fraction-numerator"></span><span class="fraction-denominator special-entry" contenteditable="true" data-special-entry="fraction-denominator"></span>';
-      range.insertNode(wrapper);
-      placeCaretInside(wrapper.querySelector('.fraction-numerator'));
-    }
-
-    function insertRadicalAtSelection(editor = getInsertionEditor()) {
-      if (!editor) return;
-      const range = getEditorRange(editor);
-      range.deleteContents();
-      const wrapper = document.createElement('span');
-      wrapper.className = 'math-radical special-wrapper';
-      wrapper.setAttribute('data-special-wrapper', 'radical');
-      wrapper.innerHTML = '<span class="radical-symbol">√</span><span class="radical-entry special-entry" contenteditable="true" data-special-entry="radical"></span>';
-      range.insertNode(wrapper);
-      placeCaretInside(wrapper.querySelector('.radical-entry'));
-    }
-
-    function editorToPlainText(editor) {
-      function walk(node) {
-        if (!node) return '';
-        if (node.nodeType === Node.TEXT_NODE) return node.textContent.replace(/\u200b/g, '').replace(/​/g, '');
-        if (node.nodeType !== Node.ELEMENT_NODE) return '';
-        if (node.matches && node.matches('.fraction-entry')) {
-          return `((${walk(node.querySelector('.fraction-numerator'))})/(${walk(node.querySelector('.fraction-denominator'))}))`;
-        }
-        if (node.matches && node.matches('.math-radical')) {
-          return `sqrt(${walk(node.querySelector('.radical-entry'))})`;
-        }
-        if (node.matches && node.matches('.exponent-entry')) {
-          return `**(${Array.from(node.childNodes).map(walk).join('')})`;
-        }
-        return Array.from(node.childNodes).map(walk).join('');
-      }
-      return Array.from(editor.childNodes).map(walk).join('').replace(/\u200b/g, '').replace(/​/g, '').trim();
-    }
-
-    function closestMathWidget(node) {
-      if (!node) return null;
-      const element = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
-      return element ? element.closest('.fraction-entry, .math-radical, .exponent-entry') : null;
-    }
-
-    function visibleTextAfterCaretInside(element) {
-      const selection = window.getSelection();
-      if (!selection.rangeCount) return '';
-      const range = selection.getRangeAt(0);
-      if (!range.collapsed) return 'not-collapsed';
-      const testRange = document.createRange();
-      testRange.selectNodeContents(element);
-      try {
-        testRange.setStart(range.startContainer, range.startOffset);
-      } catch (e) {
-        return 'outside';
-      }
-      return testRange.toString().replace(/\u200b/g, '').replace(/​/g, '');
-    }
-
-    function visibleTextBeforeCaretInside(element) {
-      const selection = window.getSelection();
-      if (!selection.rangeCount) return '';
-      const range = selection.getRangeAt(0);
-      if (!range.collapsed) return 'not-collapsed';
-      const testRange = document.createRange();
-      testRange.selectNodeContents(element);
-      try {
-        testRange.setEnd(range.startContainer, range.startOffset);
-      } catch (e) {
-        return 'outside';
-      }
-      return testRange.toString().replace(/\u200b/g, '').replace(/​/g, '');
-    }
-
-    function moveCursorAfterElement(element) {
-      let next = element.nextSibling;
-      if (!next || next.nodeType !== Node.TEXT_NODE) {
-        next = makeCaretSpacer();
-        element.parentNode.insertBefore(next, element.nextSibling);
-      }
-      placeCaretInTextNode(next, next.textContent.length);
-      const outer = getActiveEditor();
-      activeMathEditor = outer && outer.contains(next) ? outer : null;
-    }
-
-    function moveCursorBeforeElement(element) {
-      let previous = element.previousSibling;
-      if (!previous || previous.nodeType !== Node.TEXT_NODE) {
-        previous = makeCaretSpacer();
-        element.parentNode.insertBefore(previous, element);
-      }
-      placeCaretInTextNode(previous, 0);
-      const outer = getActiveEditor();
-      activeMathEditor = outer && outer.contains(previous) ? outer : null;
-    }
-
-    function previousNodeBeforeCaret(range) {
-      const container = range.startContainer;
-      const offset = range.startOffset;
-      if (container.nodeType === Node.TEXT_NODE) {
-        if (offset > 0 && container.textContent.slice(0, offset).replace(/\u200b/g, '').replace(/​/g, '').length > 0) return null;
-        return container.previousSibling;
-      }
-      if (offset > 0) return container.childNodes[offset - 1];
-      return container.previousSibling;
-    }
-
-    function handleBackspaceDeleteWidget(event) {
-      const selection = window.getSelection();
-      if (!selection.rangeCount || !selection.getRangeAt(0).collapsed) return false;
-      const range = selection.getRangeAt(0);
-      let previous = previousNodeBeforeCaret(range);
-      while (previous && previous.nodeType === Node.TEXT_NODE && previous.textContent.replace(/\u200b/g, '').replace(/​/g, '') === '') {
-        previous = previous.previousSibling;
-      }
-      if (previous && previous.nodeType === Node.ELEMENT_NODE && previous.matches('.fraction-entry, .math-radical, .exponent-entry')) {
-        event.preventDefault();
-        previous.remove();
-        return true;
-      }
-      return false;
-    }
-
-    function handleMathEditorKeydown(event) {
-      const target = event.target.closest && event.target.closest('.polynomial-answer-editor, .special-entry');
-      if (target && target.isContentEditable) activeMathEditor = target;
-
-      if (event.key === '^') {
-        event.preventDefault();
-        insertExponentAtSelection(getInsertionEditor());
-        return;
-      }
-
-      if (event.key === 'ArrowRight') {
-        const selection = window.getSelection();
-        if (selection.rangeCount) {
-          const widget = closestMathWidget(selection.getRangeAt(0).startContainer);
-          if (widget && visibleTextAfterCaretInside(widget) === '') {
-            event.preventDefault();
-            moveCursorAfterElement(widget);
-            return;
-          }
-        }
-      }
-
-      if (event.key === 'ArrowLeft') {
-        const selection = window.getSelection();
-        if (selection.rangeCount) {
-          const widget = closestMathWidget(selection.getRangeAt(0).startContainer);
-          if (widget && visibleTextBeforeCaretInside(widget) === '') {
-            event.preventDefault();
-            moveCursorBeforeElement(widget);
-            return;
-          }
-        }
-      }
-
-      if (event.key === 'Backspace' && handleBackspaceDeleteWidget(event)) return;
-      if (event.key === 'Enter') event.preventDefault();
-    }
-
-    function renderStages() {
-      finalAnswerInput.innerHTML = currentProblem.stages.map((stage, index) => {
-        const locked = index < currentStageIndex;
-        const active = index === currentStageIndex;
-        const hidden = index > currentStageIndex;
-        if (hidden) return '';
-        return `
-          <div class="derivative-stage-row" data-stage-index="${index}" style="margin: 0.85em auto; text-align: center;">
-            <div style="margin-bottom: 0.35em;">\\[${stage.promptTex}\\]</div>
-            <span>\\(${stage.labelTex}\\)</span>
-            <span id="answer-editor-${index}" class="polynomial-answer-editor" contenteditable="${locked ? 'false' : 'true'}" role="textbox" aria-label="Derivative answer" style="min-width: 320px;"></span>
-            ${locked ? '<span style="color: green; margin-left: 0.5em; font-weight: bold;">Correct!</span>' : ''}
-            ${active ? answerToolbarHtml() : ''}
-          </div>`;
-      }).join('');
-
-      currentProblem.stages.forEach((stage, index) => {
-        const editor = document.getElementById(`answer-editor-${index}`);
-        if (editor && stage.savedAnswerHtml !== undefined) editor.innerHTML = stage.savedAnswerHtml;
-      });
-
-      const activeInput = getActiveEditor();
-      activeMathEditor = activeInput;
-
-      finalAnswerInput.onfocusin = event => {
-        const editable = event.target.closest && event.target.closest('.special-entry, .polynomial-answer-editor');
-        const outer = getActiveEditor();
-        if (editable && outer && outer.contains(editable) && editable.isContentEditable) activeMathEditor = editable;
-      };
-      finalAnswerInput.onmousedown = event => {
-        const editable = event.target.closest && event.target.closest('.special-entry, .polynomial-answer-editor');
-        const outer = getActiveEditor();
-        if (editable && outer && outer.contains(editable) && editable.isContentEditable) activeMathEditor = editable;
-      };
-      finalAnswerInput.onkeydown = event => {
-        if (event.target.closest && event.target.closest('.polynomial-answer-editor, .special-entry')) {
-          handleMathEditorKeydown(event);
-        }
-      };
-
-      finalAnswerInput.querySelectorAll('.math-symbol-button').forEach(button => {
-        button.addEventListener('mousedown', event => event.preventDefault());
-        button.addEventListener('click', () => {
-          const editor = getInsertionEditor();
-          if (!editor) return;
-          if (button.dataset.insertExponent) insertExponentAtSelection(editor);
-          else if (button.dataset.insertFraction) insertFractionAtSelection(editor);
-          else if (button.dataset.insertRadical) insertRadicalAtSelection(editor);
-          else insertTextAtSelection(button.dataset.insertText || '', editor);
+      finalAnswerInput.querySelectorAll('input').forEach(input => {
+        input.addEventListener('keydown', event => {
+          if (event.key === 'Enter') checkUserAnswer();
         });
       });
-
-      typesetElement(finalAnswerInput);
-      if (activeInput) activeInput.focus();
+      const firstInput = finalAnswerInput.querySelector('input');
+      if (firstInput) firstInput.focus();
     }
 
-    function currentStageIsCorrect(stage, raw) {
-      if (stage.kind === 'derivative-function') return expressionMatches(raw, stage.expectedExpression);
-      if (stage.kind === 'slope') return numericAnswerMatches(raw, stage.expectedValue);
-      if (stage.kind === 'line') return lineAnswerMatches(raw, stage.expectedM, stage.expectedB);
-      return false;
+    function fieldIsCorrect(field, raw) {
+      const value = evaluateNumericAnswer(raw);
+      const candidates = Array.isArray(field.equivalentAnswers)
+        ? [field.expected, ...field.equivalentAnswers]
+        : [field.expected];
+      return candidates.some(expected => answersMatch(value, expected, field.tolerance));
     }
 
     function checkUserAnswer() {
       if (!currentProblem) return;
-      const stage = currentProblem.stages[currentStageIndex];
-      const input = document.getElementById(`answer-editor-${currentStageIndex}`);
-      if (!stage || !input) return;
-      const rawAnswer = editorToPlainText(input);
-      if (!currentStageIsCorrect(stage, rawAnswer)) {
-        feedbackText.textContent = 'Incorrect, try again.';
-        feedbackText.style.color = 'red';
-        return;
-      }
-      stage.savedAnswerHtml = input.innerHTML;
-      feedbackText.textContent = 'Correct!';
-      feedbackText.style.color = 'green';
-      currentStageIndex++;
-      hintStep = 0;
-      hintArea.innerHTML = '';
-      if (currentStageIndex >= currentProblem.stages.length) {
-        renderStages();
+      let allCorrect = true;
+      let anyBlank = false;
+
+      currentProblem.answers.forEach(field => {
+        const input = document.getElementById(`answer-${field.id}`);
+        const status = document.getElementById(`status-${field.id}`);
+        const raw = input ? input.value : '';
+        const correct = raw.trim() !== '' && fieldIsCorrect(field, raw);
+        if (!raw.trim()) anyBlank = true;
+        if (!correct) allCorrect = false;
+
+        if (input) input.classList.toggle('answer-incorrect', raw.trim() !== '' && !correct);
+        if (input) input.classList.toggle('answer-correct', correct);
+        if (status) {
+          status.textContent = correct ? 'Correct' : (raw.trim() ? 'Check this value' : '');
+          status.className = `optimization-field-status ${correct ? 'is-correct' : (raw.trim() ? 'is-incorrect' : '')}`;
+        }
+      });
+
+      if (allCorrect) {
+        feedbackText.textContent = 'Correct!';
+        feedbackText.style.color = 'green';
         checkBtn.style.display = 'none';
         hintBtn.disabled = true;
-        return;
+        finalAnswerInput.querySelectorAll('input').forEach(input => input.disabled = true);
+      } else {
+        feedbackText.textContent = anyBlank ? 'Enter an answer in every box.' : 'At least one answer is incorrect. Try again.';
+        feedbackText.style.color = 'red';
       }
-      renderStages();
-      hintBtn.disabled = false;
     }
 
-    function appendMathHint(tex) {
+    function appendHint(hint) {
       const block = document.createElement('div');
-      block.style.textAlign = 'center';
-      block.style.margin = '0.55em auto';
-      block.innerHTML = `\\[${tex}\\]`;
+      block.className = 'optimization-hint-step';
+      if (hint.kind === 'math') block.innerHTML = `\\[${hint.content}\\]`;
+      else if (hint.kind === 'html') block.innerHTML = hint.content;
+      else block.textContent = hint.content;
       hintArea.appendChild(block);
-      return typesetElement(block);
+      return hint.kind === 'math' || hint.kind === 'html' ? typesetElement(block) : Promise.resolve();
     }
 
     async function advanceHint() {
-      if (!currentProblem || hintIsTypesetting) return;
-      const stage = currentProblem.stages[currentStageIndex];
-      if (!stage || hintStep >= stage.hints.length) return;
+      if (!currentProblem || hintIsTypesetting || hintStep >= currentProblem.hints.length) return;
       const sound = document.getElementById('click-sound');
-      if (sound) { sound.currentTime = 0; sound.play(); }
+      if (sound) { sound.currentTime = 0; sound.play().catch(() => {}); }
       hintIsTypesetting = true;
       hintBtn.disabled = true;
-      await appendMathHint(stage.hints[hintStep]);
-      hintStep++;
+      await appendHint(currentProblem.hints[hintStep]);
+      hintStep += 1;
       hintIsTypesetting = false;
-      hintBtn.disabled = hintStep >= stage.hints.length;
+      hintBtn.disabled = hintStep >= currentProblem.hints.length;
     }
 
-    function clearOldActivityState() {
-      feedbackText.textContent = '';
-      finalAnswerInput.innerHTML = '';
-      hintArea.innerHTML = '';
-      questionText.innerHTML = '';
+    function clearActivity() {
+      currentProblem = null;
       hintStep = 0;
-      currentStageIndex = 0;
-      hintBtn.disabled = true;
+      questionText.innerHTML = '';
+      finalAnswerInput.innerHTML = '';
+      feedbackText.textContent = '';
+      hintArea.innerHTML = '';
       checkBtn.style.display = 'none';
+      hintBtn.disabled = true;
       hintIsTypesetting = false;
     }
 
-    startBtn.addEventListener('click', () => {
-      clearOldActivityState();
+    async function startNewProblem() {
+      clearActivity();
       const sound = document.getElementById('click-sound');
-      if (sound) { sound.currentTime = 0; sound.play(); }
-      currentProblem = generateDerivativeProblem();
-      questionText.innerHTML = `\\[${currentProblem.questionTex}\\]`;
-      renderStages();
-      checkBtn.style.display = 'inline-block';
-      hintBtn.disabled = false;
-      typesetElement(questionText);
-    });
+      if (sound) { sound.currentTime = 0; sound.play().catch(() => {}); }
 
-    hintBtn.addEventListener('click', advanceHint);
+      currentProblem = generateOptimizationProblem();
+      questionText.innerHTML = `
+        <section class="optimization-question-card" data-problem-type="${currentProblem.type}">
+          <div class="optimization-type-label">${currentProblem.title}</div>
+          <div class="optimization-question-body">${currentProblem.questionHtml}</div>
+          ${renderDiagram(currentProblem.diagram)}
+        </section>`;
+      renderAnswerInputs(currentProblem);
+      checkBtn.style.display = 'inline-block';
+      hintBtn.disabled = currentProblem.hints.length === 0;
+      await typesetElement(questionText);
+    }
+
+    startBtn.addEventListener('click', startNewProblem);
     checkBtn.addEventListener('click', checkUserAnswer);
-  
+    hintBtn.addEventListener('click', advanceHint);
+    hintBtn.disabled = true;
   </script>
+
 
   <audio id="click-sound" src="button.mp3" preload="auto"></audio>
   <audio id="set-sound" src="set2.mp3" preload="auto"></audio>

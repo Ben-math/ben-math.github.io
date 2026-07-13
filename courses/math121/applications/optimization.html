@@ -7,6 +7,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -973,27 +974,238 @@ fetch("/nav.html")
         };
       }
 
-      const speed = randomInteger(2, 8);
-      const targetX = randomInteger(5, 25);
-      const targetY = randomInteger(2, 12);
-      const time = targetX / speed;
-      const distance = Math.abs(targetY);
-      return {
-        type: 4,
-        title: 'Type 4: Distance problem',
-        questionHtml: `<p>A particle moves along the x-axis with position \\(P(t)=(${speed}t,0)\\). Find when it is closest to the fixed point \\(A=(${targetX},${targetY})\\), and find that minimum distance.</p>`,
-        diagram: { kind: 'distance', movingLabel: 'P(t)', targetLabel: 'A' },
-        answers: [
-          makeAnswerField({ id: 'time', label: 'Time', expected: time, unit: 'time units' }),
-          makeAnswerField({ id: 'distance', label: 'Minimum distance', expected: distance, unit: 'units' })
-        ],
-        hints: [
-          { kind: 'text', content: 'Use the distance formula, or minimize the square of the distance.' },
-          { kind: 'math', content: `D^2(t)=(${speed}t-${targetX})^2+${targetY}^2` },
-          { kind: 'math', content: `\\frac{d}{dt}D^2(t)=2${speed}(${speed}t-${targetX})` },
-          { kind: 'math', content: `t=${formatNumber(time)},\\qquad D=${formatNumber(distance)}` }
-        ]
-      };
+
+      if (type === 4) {
+        const subtype = randomInteger(1, 5);
+
+        function signedTerm(coefficient, variable, isFirst = false) {
+          if (Math.abs(coefficient) < 1e-12) return '';
+          const sign = coefficient < 0 ? '-' : (isFirst ? '' : '+');
+          const abs = Math.abs(coefficient);
+          const body = abs === 1 && variable ? variable : `${formatNumber(abs)}${variable}`;
+          return `${sign}${body}`;
+        }
+
+        function polynomialTex3(a, b, c, d) {
+          const terms = [];
+          if (a) terms.push(signedTerm(a, 't^{3}', true));
+          if (b) terms.push(signedTerm(b, 't^{2}', terms.length === 0));
+          if (c) terms.push(signedTerm(c, 't', terms.length === 0));
+          if (d || terms.length === 0) terms.push(signedTerm(d, '', terms.length === 0) || '0');
+          return terms.join('');
+        }
+
+        function polynomialTex2(a, b, c) {
+          const terms = [];
+          if (a) terms.push(signedTerm(a, 't^{2}', true));
+          if (b) terms.push(signedTerm(b, 't', terms.length === 0));
+          if (c || terms.length === 0) terms.push(signedTerm(c, '', terms.length === 0) || '0');
+          return terms.join('');
+        }
+
+        function clockLabel(hour) {
+          const normalized = ((hour - 1) % 12) + 1;
+          return `${normalized}:00`;
+        }
+
+        if (subtype === 1) {
+          const vx = randomChoice([-4, -3, -2, 2, 3, 4]);
+          const vy = randomChoice([-4, -3, -2, 2, 3, 4]);
+          const x0 = randomInteger(-8, 8);
+          const y0 = randomInteger(-8, 8);
+          const tOpt = randomInteger(1, 8);
+          const offsetX = -vy;
+          const offsetY = vx;
+          const scale = randomInteger(1, 4);
+          const ax = x0 + vx * tOpt + scale * offsetX;
+          const ay = y0 + vy * tOpt + scale * offsetY;
+          const minDistance = Math.abs(scale) * Math.sqrt(vx * vx + vy * vy);
+          const dx0 = x0 - ax;
+          const dy0 = y0 - ay;
+          const linearCoeff = 2 * (dx0 * vx + dy0 * vy);
+          const quadraticCoeff = vx * vx + vy * vy;
+          const constantTerm = dx0 * dx0 + dy0 * dy0;
+
+          return {
+            type: 4,
+            subtype: 1,
+            title: 'Type 4: Distance problem',
+            questionHtml: `<p>A particle moves in the plane according to \\(P(t)=(${x0}+${vx}t,${y0}+${vy}t)\\), where \\(t\\ge 0\\). Find when the particle is closest to the fixed point \\(A=(${ax},${ay})\\), and find the minimum distance.</p>`,
+            answers: [
+              makeAnswerField({ id: 'time', label: 'Time', expected: tOpt, unit: 'time units' }),
+              makeAnswerField({ id: 'distance', label: 'Minimum distance', expected: minDistance, unit: 'units' })
+            ],
+            hints: [
+              { kind: 'diagram', content: 'Let D(t) denote the distance from the moving particle P(t) to the fixed point A, as shown:', diagram: { kind: 'motion-point' } },
+              { kind: 'math', content: `\\begin{aligned}D(t)&=\\sqrt{\\left(${x0}+${vx}t-${ax}\\right)^{2}+\\left(${y0}+${vy}t-${ay}\\right)^{2}}\\end{aligned}` },
+              { kind: 'math', content: `\\text{It is equivalent and simpler to minimize }Q(t)=D(t)^{2}.` },
+              { kind: 'math', content: `Q(t)=${formatNumber(quadraticCoeff)}t^{2}${signedTerm(linearCoeff, 't')}${signedTerm(constantTerm, '')}` },
+              { kind: 'math', content: `Q'(t)=${formatNumber(2 * quadraticCoeff)}t${signedTerm(linearCoeff, '')}` },
+              { kind: 'math', content: `\\begin{aligned}Q'(t)&=0\\\\t&=${formatNumber(tOpt)}\\end{aligned}` },
+              { kind: 'math', content: `Q''(t)=${formatNumber(2 * quadraticCoeff)}>0,\\text{ so this gives the minimum distance.}` },
+              { kind: 'math', content: `\\begin{aligned}D\\left(${formatNumber(tOpt)}\\right)&=\\sqrt{Q\\left(${formatNumber(tOpt)}\\right)}\\\\&=${formatNumber(minDistance)}\\end{aligned}` },
+              { kind: 'math', content: `\\boxed{t=${formatNumber(tOpt)},\\qquad D_{\\min}=${formatNumber(minDistance)}}` }
+            ]
+          };
+        }
+
+        if (subtype === 2) {
+          const startHour = randomInteger(7, 10);
+          const delay = randomInteger(1, 3);
+          const h = randomInteger(delay + 1, delay + 6);
+          const aGap = randomInteger(1, 3);
+          const kGap = randomInteger(2, 8);
+          const fa = randomChoice([-2, -1, 1, 2]);
+          const fb = randomInteger(-5, 5);
+          const fc = randomInteger(-8, 8);
+          const ga = fa + aGap;
+          const gb = fb - 2 * aGap * h;
+          const gc = fc + aGap * h * h + kGap;
+          const fTex = polynomialTex2(fa, fb, fc);
+          const gTex = polynomialTex2(ga, gb, gc);
+
+          return {
+            type: 4,
+            subtype: 2,
+            title: 'Type 4: Particle-distance problem',
+            questionHtml: `<p>Particle A starts moving at ${clockLabel(startHour)}, and Particle B starts moving at ${clockLabel(startHour + delay)}. Their positions along a line, measured \\(t\\) hours after ${clockLabel(startHour)}, are \\(f(t)=${fTex}\\) and \\(g(t)=${gTex}\\), respectively. Find when the particles are closest after Particle B begins moving, and find the distance between them then.</p>`,
+            answers: [
+              makeAnswerField({ id: 'time', label: `Time after ${clockLabel(startHour)}`, expected: h, unit: 'hours' }),
+              makeAnswerField({ id: 'distance', label: 'Minimum distance', expected: kGap, unit: 'units' })
+            ],
+            hints: [
+              { kind: 'diagram', content: 'The particles move along the same line; their separation is the vertical gap between their position graphs:', diagram: { kind: 'two-particles' } },
+              { kind: 'math', content: `D(t)=\\left|g(t)-f(t)\\right|,\\qquad t\\ge ${delay}` },
+              { kind: 'math', content: `\\begin{aligned}g(t)-f(t)&=${aGap}(t-${h})^{2}+${kGap}>0\\end{aligned}` },
+              { kind: 'math', content: `\\text{Therefore }D(t)=${aGap}(t-${h})^{2}+${kGap}.` },
+              { kind: 'math', content: `D'(t)=${2 * aGap}(t-${h})` },
+              { kind: 'math', content: `\\begin{aligned}D'(t)&=0\\\\t&=${h}\\end{aligned}` },
+              { kind: 'math', content: `D''(t)=${2 * aGap}>0,\\text{ so the distance is minimized.}` },
+              { kind: 'math', content: `D(${h})=${kGap}` },
+              { kind: 'math', content: `\\boxed{t=${h}\\text{ hours after ${clockLabel(startHour)}},\\qquad D_{\\min}=${kGap}}` }
+            ]
+          };
+        }
+
+        if (subtype === 3) {
+          const startHour = randomInteger(7, 10);
+          const delay = randomInteger(1, 3);
+          const h = randomInteger(delay + 1, delay + 5);
+          const aGap = randomInteger(1, 3);
+          const kGap = randomInteger(2, 7);
+          const fa = randomChoice([-2, -1, 1, 2]);
+          const fb = randomInteger(-4, 4);
+          const fc = randomInteger(-6, 6);
+          const fd = randomInteger(-8, 8);
+          const ga = fa + aGap / 3;
+          const gb = fb - aGap * h;
+          const gc = fc + aGap * h * h + kGap;
+          const gd = fd + randomInteger(2, 8);
+          const fTex = polynomialTex3(fa, fb, fc, fd);
+          const gTex = polynomialTex3(ga, gb, gc, gd);
+          const positionGapAtH = (ga-fa)*h**3 + (gb-fb)*h**2 + (gc-fc)*h + (gd-fd);
+
+          return {
+            type: 4,
+            subtype: 3,
+            title: 'Type 4: Velocity-distance problem',
+            questionHtml: `<p>Particle A starts moving at ${clockLabel(startHour)}, and Particle B starts moving at ${clockLabel(startHour + delay)}. Their positions along a line, measured \\(t\\) hours after ${clockLabel(startHour)}, are \\(f(t)=${fTex}\\) and \\(g(t)=${gTex}\\). Find when their velocities are closest after Particle B begins moving, and find the distance between the particles at that moment.</p>`,
+            answers: [
+              makeAnswerField({ id: 'time', label: `Time after ${clockLabel(startHour)}`, expected: h, unit: 'hours' }),
+              makeAnswerField({ id: 'distance', label: 'Distance between particles', expected: Math.abs(positionGapAtH), unit: 'units' })
+            ],
+            hints: [
+              { kind: 'diagram', content: 'Compare the particles’ velocity graphs, then evaluate their position separation at the minimizing time:', diagram: { kind: 'velocity-gap' } },
+              { kind: 'math', content: `v_A(t)=f'(t),\\qquad v_B(t)=g'(t)` },
+              { kind: 'math', content: `\\begin{aligned}v_B(t)-v_A(t)&=${aGap}(t-${h})^{2}+${kGap}>0\\end{aligned}` },
+              { kind: 'math', content: `V(t)=\\left|v_B(t)-v_A(t)\\right|=${aGap}(t-${h})^{2}+${kGap}` },
+              { kind: 'math', content: `V'(t)=${2 * aGap}(t-${h})` },
+              { kind: 'math', content: `\\begin{aligned}V'(t)&=0\\\\t&=${h}\\end{aligned}` },
+              { kind: 'math', content: `V''(t)=${2 * aGap}>0,\\text{ so the velocities are closest then.}` },
+              { kind: 'math', content: `\\begin{aligned}\\text{Distance}&=\\left|g(${h})-f(${h})\\right|\\\\&=${formatNumber(Math.abs(positionGapAtH))}\\end{aligned}` },
+              { kind: 'math', content: `\\boxed{t=${h}\\text{ hours after ${clockLabel(startHour)}},\\qquad D=${formatNumber(Math.abs(positionGapAtH))}}` }
+            ]
+          };
+        }
+
+        if (subtype === 4) {
+          const h = randomInteger(1, 7);
+          const aGap = randomInteger(1, 4);
+          const kGap = randomInteger(2, 9);
+          const fa = randomChoice([-2, -1, 1, 2]);
+          const fb = randomInteger(-4, 4);
+          const fc = randomInteger(-6, 6);
+          const fd = randomInteger(-8, 8);
+          const ga = fa;
+          const gb = fb + aGap;
+          const gc = fc - 2 * aGap * h;
+          const gd = fd + aGap * h * h + kGap;
+          const fTex = polynomialTex3(fa, fb, fc, fd);
+          const gTex = polynomialTex3(ga, gb, gc, gd);
+
+          return {
+            type: 4,
+            subtype: 4,
+            title: 'Type 4: Vertical-distance problem',
+            questionHtml: `<p>The heights of two particles at time \\(t\\ge 0\\) are \\(f(t)=${fTex}\\) and \\(g(t)=${gTex}\\). Find the minimum vertical distance between the particles.</p>`,
+            answers: [
+              makeAnswerField({ id: 'time', label: 'Time', expected: h, unit: 'time units' }),
+              makeAnswerField({ id: 'distance', label: 'Minimum vertical distance', expected: kGap, unit: 'units' })
+            ],
+            hints: [
+              { kind: 'diagram', content: 'The vertical distance is the vertical gap between the two height graphs:', diagram: { kind: 'vertical-gap' } },
+              { kind: 'math', content: `D(t)=\\left|g(t)-f(t)\\right|` },
+              { kind: 'math', content: `g(t)-f(t)=${aGap}(t-${h})^{2}+${kGap}>0` },
+              { kind: 'math', content: `D(t)=${aGap}(t-${h})^{2}+${kGap}` },
+              { kind: 'math', content: `D'(t)=${2 * aGap}(t-${h})` },
+              { kind: 'math', content: `\\begin{aligned}D'(t)&=0\\\\t&=${h}\\end{aligned}` },
+              { kind: 'math', content: `D''(t)=${2 * aGap}>0,\\text{ so the vertical distance is minimized.}` },
+              { kind: 'math', content: `\\boxed{t=${h},\\qquad D_{\\min}=${kGap}}` }
+            ]
+          };
+        }
+
+        const left = randomInteger(0, 4);
+        const right = left + randomInteger(4, 8);
+        const h = randomInteger(left + 1, right - 1);
+        const aGap = randomInteger(1, 4);
+        const kGap = randomInteger(2, 8);
+        const fa = randomChoice([-2, -1, 1, 2]);
+        const fb = randomInteger(-4, 4);
+        const fc = randomInteger(-6, 6);
+        const fd = randomInteger(-8, 8);
+        const ga = fa;
+        const gb = fb + aGap;
+        const gc = fc - 2 * aGap * h;
+        const gd = fd + aGap * h * h + kGap;
+        const fTex = polynomialTex3(fa, fb, fc, fd);
+        const gTex = polynomialTex3(ga, gb, gc, gd);
+        const leftDistance = aGap * (left - h) * (left - h) + kGap;
+        const rightDistance = aGap * (right - h) * (right - h) + kGap;
+        const maxTime = leftDistance >= rightDistance ? left : right;
+        const maxDistance = Math.max(leftDistance, rightDistance);
+
+        return {
+          type: 4,
+          subtype: 5,
+          title: 'Type 4: Vertical-distance problem',
+          questionHtml: `<p>The heights of two particles are \\(f(t)=${fTex}\\) and \\(g(t)=${gTex}\\). Find the maximum vertical distance between them on the interval \\([${left},${right}]\\).</p>`,
+          answers: [
+            makeAnswerField({ id: 'time', label: 'Time', expected: maxTime, unit: 'time units' }),
+            makeAnswerField({ id: 'distance', label: 'Maximum vertical distance', expected: maxDistance, unit: 'units' })
+          ],
+          hints: [
+            { kind: 'diagram', content: 'The vertical distance is the gap between the two graphs; on a closed interval, check critical points and endpoints:', diagram: { kind: 'vertical-gap-interval' } },
+            { kind: 'math', content: `D(t)=\\left|g(t)-f(t)\\right|` },
+            { kind: 'math', content: `g(t)-f(t)=${aGap}(t-${h})^{2}+${kGap}>0` },
+            { kind: 'math', content: `D(t)=${aGap}(t-${h})^{2}+${kGap}` },
+            { kind: 'math', content: `D'(t)=${2 * aGap}(t-${h})=0\\quad\\Longrightarrow\\quad t=${h}` },
+            { kind: 'math', content: `\\begin{aligned}D(${left})&=${formatNumber(leftDistance)}\\\\D(${h})&=${kGap}\\\\D(${right})&=${formatNumber(rightDistance)}\\end{aligned}` },
+            { kind: 'math', content: `\\boxed{t=${maxTime},\\qquad D_{\\max}=${formatNumber(maxDistance)}}` }
+          ]
+        };
+      }
+
     }
 
     function generateOptimizationProblem() {
@@ -1069,6 +1281,43 @@ fetch("/nav.html")
         </svg>`;
     }
 
+
+    function motionOptimizationDiagramSvg(diagram) {
+      const kind = diagram.kind;
+      if (kind === 'motion-point') {
+        return `
+          <svg viewBox="0 0 520 280" class="optimization-diagram" role="img" aria-label="Moving particle and fixed point">
+            <line x1="65" y1="235" x2="480" y2="235" stroke="currentColor" stroke-width="2"/>
+            <line x1="65" y1="235" x2="65" y2="35" stroke="currentColor" stroke-width="2"/>
+            <line x1="105" y1="215" x2="405" y2="75" stroke="currentColor" stroke-width="3"/>
+            <circle cx="245" cy="150" r="7" fill="currentColor"/>
+            <circle cx="410" cy="185" r="7" fill="currentColor"/>
+            <line x1="245" y1="150" x2="410" y2="185" stroke="currentColor" stroke-width="3" stroke-dasharray="8 7"/>
+            <text x="225" y="135">P(t)</text>
+            <text x="425" y="190">A</text>
+            <text x="330" y="150">D(t)</text>
+          </svg>`;
+      }
+      const intervalMarks = kind === 'vertical-gap-interval'
+        ? '<line x1="120" y1="235" x2="120" y2="225" stroke="currentColor" stroke-width="2"/><line x1="430" y1="235" x2="430" y2="225" stroke="currentColor" stroke-width="2"/><text x="120" y="258" text-anchor="middle">N</text><text x="430" y="258" text-anchor="middle">M</text>'
+        : '';
+      const velocityLabels = kind === 'velocity-gap'
+        ? '<text x="375" y="78">v_B(t)</text><text x="375" y="175">v_A(t)</text>'
+        : '<text x="375" y="78">g(t)</text><text x="375" y="175">f(t)</text>';
+      return `
+        <svg viewBox="0 0 520 280" class="optimization-diagram" role="img" aria-label="Gap between two particle graphs">
+          <line x1="55" y1="235" x2="485" y2="235" stroke="currentColor" stroke-width="2"/>
+          <line x1="70" y1="250" x2="70" y2="30" stroke="currentColor" stroke-width="2"/>
+          <path d="M85 175 C170 90, 245 205, 455 105" fill="none" stroke="currentColor" stroke-width="3"/>
+          <path d="M85 80 C180 30, 260 145, 455 55" fill="none" stroke="currentColor" stroke-width="3"/>
+          <line x1="275" y1="112" x2="275" y2="171" stroke="currentColor" stroke-width="3" stroke-dasharray="8 7"/>
+          <text x="288" y="145">D(t)</text>
+          ${velocityLabels}
+          ${intervalMarks}
+        </svg>`;
+    }
+
+
     function distanceDiagramSvg(problem) {
       return `
         <svg viewBox="0 0 520 260" class="optimization-diagram" role="img" aria-label="Distance between a moving particle and a fixed point">
@@ -1089,6 +1338,7 @@ fetch("/nav.html")
       if (diagram.kind === 'rectangular-box') return `<div class="optimization-diagram-wrap">${rectangularBoxDiagramSvg(diagram)}</div>`;
       if (diagram.kind === 'triangular-box') return `<div class="optimization-diagram-wrap">${triangularBoxDiagramSvg(diagram)}</div>`;
       if (diagram.kind === 'cylinder-box') return `<div class="optimization-diagram-wrap">${cylinderBoxDiagramSvg(diagram)}</div>`;
+      if (['motion-point', 'two-particles', 'velocity-gap', 'vertical-gap', 'vertical-gap-interval'].includes(diagram.kind)) return `<div class="optimization-diagram-wrap">${motionOptimizationDiagramSvg(diagram)}</div>`;
       if (diagram.kind === 'distance') return `<div class="optimization-diagram-wrap">${distanceDiagramSvg(diagram)}</div>`;
       return '';
     }

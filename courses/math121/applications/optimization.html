@@ -10,7 +10,6 @@
 
 
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -516,75 +515,10 @@ fetch("/nav.html")
       return 4;
     }
 
-    function gcd(a, b) {
-      a = Math.abs(Math.round(a));
-      b = Math.abs(Math.round(b));
-      while (b) {
-        const temp = a % b;
-        a = b;
-        b = temp;
-      }
-      return a || 1;
-    }
-
-    function rationalApproximation(value, maxDenominator = 1000, tolerance = 1e-10) {
-      if (!Number.isFinite(value)) return null;
-      for (let denominator = 1; denominator <= maxDenominator; denominator++) {
-        const numerator = Math.round(value * denominator);
-        if (Math.abs(value - numerator / denominator) <= tolerance) {
-          const divisor = gcd(numerator, denominator);
-          return { numerator: numerator / divisor, denominator: denominator / divisor };
-        }
-      }
-      return null;
-    }
-
-    function rationalTex(value) {
-      const fraction = rationalApproximation(value);
-      if (!fraction) return null;
-      if (fraction.denominator === 1) return String(fraction.numerator);
-      return `\\frac{${fraction.numerator}}{${fraction.denominator}}`;
-    }
-
-    function exactTex(value) {
+    function formatNumber(value, decimals = 6) {
       if (!Number.isFinite(value)) return '';
-      if (Math.abs(value) < 1e-12) return '0';
-
-      const rational = rationalTex(value);
-      if (rational) return rational;
-
-      const piMultiple = rationalApproximation(value / Math.PI, 200, 1e-10);
-      if (piMultiple) {
-        const { numerator, denominator } = piMultiple;
-        if (denominator === 1) {
-          if (numerator === 1) return '\\pi';
-          if (numerator === -1) return '-\\pi';
-          return `${numerator}\\pi`;
-        }
-        return `\\frac{${numerator}\\pi}{${denominator}}`;
-      }
-
-      const square = rationalApproximation(value * value, 1000, 1e-9);
-      if (square && value > 0) {
-        const radicand = square.denominator === 1
-          ? String(square.numerator)
-          : `\\frac{${square.numerator}}{${square.denominator}}`;
-        return `\\sqrt{${radicand}}`;
-      }
-
-      const cube = rationalApproximation(value * value * value, 1000, 1e-8);
-      if (cube) {
-        const radicand = cube.denominator === 1
-          ? String(cube.numerator)
-          : `\\frac{${cube.numerator}}{${cube.denominator}}`;
-        return `\\sqrt[3]{${radicand}}`;
-      }
-
-      return value.toString();
-    }
-
-    function formatNumber(value) {
-      return exactTex(value);
+      if (Math.abs(value - Math.round(value)) < 1e-10) return String(Math.round(value));
+      return value.toFixed(decimals).replace(/0+$/, '').replace(/\.$/, '');
     }
 
     function normalizeNumericText(raw) {
@@ -847,9 +781,6 @@ fetch("/nav.html")
         let surfaceFormula = '';
         let costFormula = '';
         let diagramIntroduction = '';
-        let volumeCoefficientTex = '';
-        let baseAreaCoefficientTex = '';
-        let sideAreaCoefficientTex = '';
 
         if (shape === 'rectangular') {
           const k = relation.k;
@@ -857,9 +788,6 @@ fetch("/nav.html")
           volumeCoefficient = k;
           baseAreaCoefficient = baseCount * k;
           sideAreaCoefficient = 2 * (1 + k);
-          volumeCoefficientTex = relation.tex;
-          baseAreaCoefficientTex = baseCount === 1 ? relation.tex : `2\\left(${relation.tex}\\right)`;
-          sideAreaCoefficientTex = `2\\left(1+${relation.tex}\\right)`;
           questionShape = `${isOpen ? 'an open-topped' : 'a closed'} rectangular prism`;
           relationSentence = `The length is ${relation.text} the width.`;
           relationHint = `\\ell=${relation.tex}w`;
@@ -882,11 +810,6 @@ fetch("/nav.html")
           volumeCoefficient = 0.5 * k;
           baseAreaCoefficient = k;
           sideAreaCoefficient = isOpen ? (k + 1) : (k + 1 + hyp);
-          volumeCoefficientTex = `\\frac{1}{2}\\left(${relation.tex}\\right)`;
-          baseAreaCoefficientTex = relation.tex;
-          sideAreaCoefficientTex = isOpen
-            ? `1+${relation.tex}`
-            : `1+${relation.tex}+\\sqrt{1+\\left(${relation.tex}\\right)^{2}}`;
           questionShape = `${isOpen ? 'an open-topped' : 'a closed'} right triangular prism`;
           relationSentence = `The base of each triangular end is ${relation.text} its height.`;
           relationHint = `b=${relation.tex}a`;
@@ -911,9 +834,6 @@ fetch("/nav.html")
           volumeCoefficient = Math.PI;
           baseAreaCoefficient = baseCount * Math.PI;
           sideAreaCoefficient = 2 * Math.PI;
-          volumeCoefficientTex = '\\pi';
-          baseAreaCoefficientTex = baseCount === 1 ? '\\pi' : '2\\pi';
-          sideAreaCoefficientTex = '2\\pi';
           questionShape = `${isOpen ? 'an open-topped' : 'a closed'} cylinder`;
           variables = { x: 'r', y: 'h' };
           volumeFormula = `V=\\pi r^{2}h`;
@@ -935,11 +855,6 @@ fetch("/nav.html")
           const xOpt = Math.cbrt(bCost / (2 * aCost));
           const yOpt = volumeTarget / (volumeCoefficient * xOpt * xOpt);
           const minCost = aCost * xOpt * xOpt + bCost / xOpt;
-          const aCostTex = `${basePrice}\\left(${baseAreaCoefficientTex}\\right)`;
-          const bCostTex = `\\frac{${sidePrice}\\left(${sideAreaCoefficientTex}\\right)(${volumeTarget})}{${volumeCoefficientTex}}`;
-          const xOptTex = `\\sqrt[3]{\\frac{${bCostTex}}{2\\left(${aCostTex}\\right)}}`;
-          const yOptTex = `\\frac{${volumeTarget}}{${volumeCoefficientTex}\\left(${xOptTex}\\right)^{2}}`;
-          const minCostTex = `${aCostTex}\\left(${xOptTex}\\right)^{2}+\\frac{${bCostTex}}{${xOptTex}}`;
 
           const answers = [
             makeAnswerField({
@@ -968,14 +883,14 @@ fetch("/nav.html")
               { kind: 'diagram', content: diagramIntroduction, diagram },
               ...relationSteps,
               { kind: 'math', content: volumeFormula },
-              { kind: 'math', content: `${yName}=\\frac{${volumeTarget}}{${volumeCoefficientTex}${xName}^{2}}` },
-              { kind: 'math', content: `\\begin{aligned}${costFormula}\\\\&=${aCostTex}${xName}^{2}+${sidePrice}\\left(${sideAreaCoefficientTex}\\right)${xName}${yName}\\end{aligned}` },
-              { kind: 'math', content: `C(${xName})=${aCostTex}${xName}^{2}+\\frac{${bCostTex}}{${xName}}` },
-              { kind: 'math', content: `C'(${xName})=2\\left(${aCostTex}\\right)${xName}-\\frac{${bCostTex}}{${xName}^{2}}` },
-              { kind: 'math', content: `\\begin{aligned}C'(${xName})&=0\\\\2\\left(${aCostTex}\\right)${xName}^{3}&=${bCostTex}\\\\${xName}&=${xOptTex}\\end{aligned}` },
-              { kind: 'math', content: `${yName}=\\frac{${volumeTarget}}{${volumeCoefficientTex}\\left(${xOptTex}\\right)^{2}}=${yOptTex}` },
-              { kind: 'math', content: `C''(${xName})=2\\left(${aCostTex}\\right)+\\frac{2\\left(${bCostTex}\\right)}{${xName}^{3}}>0,\\text{ so the cost is minimized.}` },
-              { kind: 'math', content: `\\text{The minimum cost is }C\\left(${xOptTex}\\right)=${minCostTex}.` }
+              { kind: 'math', content: `${yName}=\\frac{${volumeTarget}}{${formatNumber(volumeCoefficient)}${xName}^{2}}` },
+              { kind: 'math', content: `\\begin{aligned}${costFormula}\\\\&=${formatNumber(aCost)}${xName}^{2}+${formatNumber(sidePrice * sideAreaCoefficient)}${xName}${yName}\\end{aligned}` },
+              { kind: 'math', content: `C(${xName})=${formatNumber(aCost)}${xName}^{2}+\\frac{${formatNumber(bCost)}}{${xName}}` },
+              { kind: 'math', content: `C'(${xName})=${formatNumber(2 * aCost)}${xName}-\\frac{${formatNumber(bCost)}}{${xName}^{2}}` },
+              { kind: 'math', content: `\\begin{aligned}C'(${xName})&=0\\\\${formatNumber(2 * aCost)}${xName}^{3}&=${formatNumber(bCost)}\\\\${xName}&=${formatNumber(xOpt)}\\end{aligned}` },
+              { kind: 'math', content: `${yName}=\\frac{${volumeTarget}}{${formatNumber(volumeCoefficient)}(${formatNumber(xOpt)})^{2}}=${formatNumber(yOpt)}` },
+              { kind: 'math', content: `C''(${xName})=${formatNumber(2 * aCost)}+\\frac{${formatNumber(2 * bCost)}}{${xName}^{3}}>0,\\text{ so the cost is minimized.}` },
+              { kind: 'math', content: `C_{\\min}=\\$${formatNumber(minCost, 2)}` }
             ]
           };
         }
@@ -986,9 +901,6 @@ fetch("/nav.html")
           const yOpt = volumeTarget / (volumeCoefficient * xOpt * xOpt);
           const minArea = baseAreaCoefficient * xOpt * xOpt
             + sideAreaCoefficient * xOpt * yOpt;
-          const xOptTex = `\\sqrt[3]{\\frac{${sideAreaCoefficientTex}(${volumeTarget})}{2\\left(${baseAreaCoefficientTex}\\right)${volumeCoefficientTex}}}`;
-          const yOptTex = `\\frac{${volumeTarget}}{${volumeCoefficientTex}\\left(${xOptTex}\\right)^{2}}`;
-          const minAreaTex = `${baseAreaCoefficientTex}\\left(${xOptTex}\\right)^{2}+${sideAreaCoefficientTex}\\left(${xOptTex}\\right)\\left(${yOptTex}\\right)`;
 
           const rawDims = dimensionAnswers(xOpt);
           rawDims[rawDims.length - 1] = yOpt;
@@ -1013,14 +925,14 @@ fetch("/nav.html")
               { kind: 'diagram', content: diagramIntroduction, diagram },
               ...(relationSentence ? [{ kind: 'math', content: `\\text{The given relationship is }${relationHint}.` }] : []),
               { kind: 'math', content: volumeFormula },
-              { kind: 'math', content: `${variables.y}=\\frac{${volumeTarget}}{${volumeCoefficientTex}${variables.x}^{2}}` },
-              { kind: 'math', content: `\\begin{aligned}${surfaceFormula}\\\\&=${baseAreaCoefficientTex}${variables.x}^{2}+${sideAreaCoefficientTex}${variables.x}${variables.y}\\end{aligned}` },
-              { kind: 'math', content: `S(${variables.x})=${baseAreaCoefficientTex}${variables.x}^{2}+\\frac{${sideAreaCoefficientTex}(${volumeTarget})}{${volumeCoefficientTex}${variables.x}}` },
-              { kind: 'math', content: `S'(${variables.x})=2\\left(${baseAreaCoefficientTex}\\right)${variables.x}-\\frac{${sideAreaCoefficientTex}(${volumeTarget})}{${volumeCoefficientTex}${variables.x}^{2}}` },
-              { kind: 'math', content: `\\begin{aligned}S'(${variables.x})&=0\\\\2\\left(${baseAreaCoefficientTex}\\right)${variables.x}^{3}&=\\frac{${sideAreaCoefficientTex}(${volumeTarget})}{${volumeCoefficientTex}}\\\\${variables.x}&=${xOptTex}\\end{aligned}` },
-              { kind: 'math', content: `${variables.y}=\\frac{${volumeTarget}}{${volumeCoefficientTex}\\left(${xOptTex}\\right)^{2}}=${yOptTex}` },
-              { kind: 'math', content: `S''(${variables.x})=2\\left(${baseAreaCoefficientTex}\\right)+\\frac{2\\left(${sideAreaCoefficientTex}\\right)(${volumeTarget})}{${volumeCoefficientTex}${variables.x}^{3}}>0,\\text{ so the surface area is minimized.}` },
-              { kind: 'math', content: `\\text{The minimum surface area is }S\\left(${xOptTex}\\right)=${minAreaTex}.` }
+              { kind: 'math', content: `${variables.y}=\\frac{${volumeTarget}}{${formatNumber(volumeCoefficient)}${variables.x}^{2}}` },
+              { kind: 'math', content: `\\begin{aligned}${surfaceFormula}\\\\&=${formatNumber(baseAreaCoefficient)}${variables.x}^{2}+${formatNumber(sideAreaCoefficient)}${variables.x}${variables.y}\\end{aligned}` },
+              { kind: 'math', content: `S(${variables.x})=${formatNumber(baseAreaCoefficient)}${variables.x}^{2}+\\frac{${formatNumber(sideAreaCoefficient * volumeTarget / volumeCoefficient)}}{${variables.x}}` },
+              { kind: 'math', content: `S'(${variables.x})=${formatNumber(2 * baseAreaCoefficient)}${variables.x}-\\frac{${formatNumber(sideAreaCoefficient * volumeTarget / volumeCoefficient)}}{${variables.x}^{2}}` },
+              { kind: 'math', content: `\\begin{aligned}S'(${variables.x})&=0\\\\${formatNumber(2 * baseAreaCoefficient)}${variables.x}^{3}&=${formatNumber(sideAreaCoefficient * volumeTarget / volumeCoefficient)}\\\\${variables.x}&=${formatNumber(xOpt)}\\end{aligned}` },
+              { kind: 'math', content: `${variables.y}=\\frac{${volumeTarget}}{${formatNumber(volumeCoefficient)}(${formatNumber(xOpt)})^{2}}=${formatNumber(yOpt)}` },
+              { kind: 'math', content: `S''(${variables.x})=${formatNumber(2 * baseAreaCoefficient)}+\\frac{${formatNumber(2 * sideAreaCoefficient * volumeTarget / volumeCoefficient)}}{${variables.x}^{3}}>0,\\text{ so the surface area is minimized.}` },
+              { kind: 'math', content: `S_{\\min}=${formatNumber(minArea)}` }
             ]
           };
         }
@@ -1029,9 +941,6 @@ fetch("/nav.html")
         const yOpt = (areaTarget - baseAreaCoefficient * xOpt * xOpt)
           / (sideAreaCoefficient * xOpt);
         const maxVolume = volumeCoefficient * xOpt * xOpt * yOpt;
-        const xOptTex = `\\sqrt{\\frac{${areaTarget}}{3\\left(${baseAreaCoefficientTex}\\right)}}`;
-        const yOptTex = `\\frac{${areaTarget}-${baseAreaCoefficientTex}\\left(${xOptTex}\\right)^{2}}{${sideAreaCoefficientTex}\\left(${xOptTex}\\right)}`;
-        const maxVolumeTex = `${volumeCoefficientTex}\\left(${xOptTex}\\right)^{2}\\left(${yOptTex}\\right)`;
         const rawDims = dimensionAnswers(xOpt);
         rawDims[rawDims.length - 1] = yOpt;
         const answers = rawDims.map((value, index) =>
@@ -1054,15 +963,15 @@ fetch("/nav.html")
           hints: [
             { kind: 'diagram', content: diagramIntroduction, diagram },
             ...(relationSentence ? [{ kind: 'math', content: `\\text{The given relationship is }${relationHint}.` }] : []),
-            { kind: 'math', content: `\\begin{aligned}${surfaceFormula}\\\\${areaTarget}&=${baseAreaCoefficientTex}${variables.x}^{2}+${sideAreaCoefficientTex}${variables.x}${variables.y}\\end{aligned}` },
-            { kind: 'math', content: `${variables.y}=\\frac{${areaTarget}-${baseAreaCoefficientTex}${variables.x}^{2}}{${sideAreaCoefficientTex}${variables.x}}` },
+            { kind: 'math', content: `\\begin{aligned}${surfaceFormula}\\\\${areaTarget}&=${formatNumber(baseAreaCoefficient)}${variables.x}^{2}+${formatNumber(sideAreaCoefficient)}${variables.x}${variables.y}\\end{aligned}` },
+            { kind: 'math', content: `${variables.y}=\\frac{${areaTarget}-${formatNumber(baseAreaCoefficient)}${variables.x}^{2}}{${formatNumber(sideAreaCoefficient)}${variables.x}}` },
             { kind: 'math', content: volumeFormula },
-            { kind: 'math', content: `V(${variables.x})=\\frac{${volumeCoefficientTex}}{${sideAreaCoefficientTex}}${variables.x}\\left(${areaTarget}-${baseAreaCoefficientTex}${variables.x}^{2}\\right)` },
-            { kind: 'math', content: `V'(${variables.x})=\\frac{${volumeCoefficientTex}}{${sideAreaCoefficientTex}}\\left(${areaTarget}-3\\left(${baseAreaCoefficientTex}\\right)${variables.x}^{2}\\right)` },
-            { kind: 'math', content: `\\begin{aligned}V'(${variables.x})&=0\\\\${areaTarget}-3\\left(${baseAreaCoefficientTex}\\right)${variables.x}^{2}&=0\\\\${variables.x}&=${xOptTex}\\end{aligned}` },
-            { kind: 'math', content: `${variables.y}=\\frac{${areaTarget}-${baseAreaCoefficientTex}\\left(${xOptTex}\\right)^{2}}{${sideAreaCoefficientTex}\\left(${xOptTex}\\right)}=${yOptTex}` },
-            { kind: 'math', content: `V''(${variables.x})=-\\frac{6\\left(${baseAreaCoefficientTex}\\right)${volumeCoefficientTex}}{${sideAreaCoefficientTex}}${variables.x}<0,\\text{ so the volume is maximized.}` },
-            { kind: 'math', content: `\\text{The maximum volume is }V\\left(${xOptTex}\\right)=${maxVolumeTex}.` }
+            { kind: 'math', content: `V(${variables.x})=${formatNumber(volumeCoefficient / sideAreaCoefficient)}${variables.x}\\left(${areaTarget}-${formatNumber(baseAreaCoefficient)}${variables.x}^{2}\\right)` },
+            { kind: 'math', content: `V'(${variables.x})=${formatNumber(volumeCoefficient / sideAreaCoefficient)}\\left(${areaTarget}-${formatNumber(3 * baseAreaCoefficient)}${variables.x}^{2}\\right)` },
+            { kind: 'math', content: `\\begin{aligned}V'(${variables.x})&=0\\\\${areaTarget}-${formatNumber(3 * baseAreaCoefficient)}${variables.x}^{2}&=0\\\\${variables.x}&=${formatNumber(xOpt)}\\end{aligned}` },
+            { kind: 'math', content: `${variables.y}=\\frac{${areaTarget}-${formatNumber(baseAreaCoefficient)}(${formatNumber(xOpt)})^{2}}{${formatNumber(sideAreaCoefficient)}(${formatNumber(xOpt)})}=${formatNumber(yOpt)}` },
+            { kind: 'math', content: `V''(${variables.x})=-${formatNumber(6 * baseAreaCoefficient * volumeCoefficient / sideAreaCoefficient)}${variables.x}<0,\\text{ so the volume is maximized.}` },
+            { kind: 'math', content: `V_{\\max}=${formatNumber(maxVolume)}` }
           ]
         };
       }

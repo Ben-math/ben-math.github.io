@@ -4,6 +4,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -721,17 +722,17 @@ fetch("/nav.html")
               makeAnswerField({ id: 'price', label: 'Price to charge', expected: optimalPrice, prefix: '$' })
             ],
             hints: [
-              { kind: 'math', content: `\text{Let }x\text{ be the number of }$${B}\text{ price increases.}` },
-              { kind: 'math', content: `p(x)=${M}+${B}x` },
-              { kind: 'math', content: `q(x)=${A}-${C}x` },
-              { kind: 'math', content: `R(x)=p(x)q(x)=(${M}+${B}x)(${A}-${C}x)` },
-              { kind: 'math', content: `C(x)=${D}+${E}(${A}-${C}x)` },
-              { kind: 'math', content: `\begin{aligned}P(x)&=R(x)-C(x)\\&=(${M}+${B}x)(${A}-${C}x)-\left(${D}+${E}(${A}-${C}x)\right)\\&=-${B * C}x^{2}+${linearCoeff}x+${constantTerm}\end{aligned}` },
+              { kind: 'math', content: `\\text{Let }x\\text{ be the number of }\\$${B}\\text{ price increases.}` },
+              { kind: 'math', content: `\\begin{aligned}p(x)&=${M}+${B}x\\\\&=\\text{the price, in dollars, charged per ${product.singular} after }x\\text{ price increases.}\\end{aligned}` },
+              { kind: 'math', content: `\\begin{aligned}q(x)&=${A}-${C}x\\\\&=\\text{the number of ${product.plural} sold after }x\\text{ price increases.}\\end{aligned}` },
+              { kind: 'math', content: `\\begin{aligned}R(x)&=\\text{price per ${product.singular}}\\times\\text{number sold}\\\\&=p(x)q(x)\\\\&=(${M}+${B}x)(${A}-${C}x)\\end{aligned}` },
+              { kind: 'math', content: `\\begin{aligned}C(x)&=\\text{fixed expenses}+\\text{variable expenses}\\\\&=${D}+\\left(\\text{cost per ${product.singular}}\\right)\\left(\\text{number sold}\\right)\\\\&=${D}+${E}q(x)\\\\&=${D}+${E}(${A}-${C}x)\\end{aligned}` },
+              { kind: 'math', content: `\\begin{aligned}P(x)&=\\text{revenue}-\\text{cost}\\\\&=R(x)-C(x)\\\\&=(${M}+${B}x)(${A}-${C}x)-\\left(${D}+${E}(${A}-${C}x)\\right)\\\\&=-${B * C}x^{2}+${linearCoeff}x+${constantTerm}\\end{aligned}` },
               { kind: 'math', content: `P'(x)=-${2 * B * C}x+${linearCoeff}` },
-              { kind: 'math', content: `\begin{aligned}P'(x)&=0\\-${2 * B * C}x+${linearCoeff}&=0\\x&=${formatNumber(xVertex)}\end{aligned}` },
-              { kind: 'math', content: `P''(x)=-${2 * B * C}<0,\text{ so this critical point gives a maximum profit.}` },
-              { kind: 'math', content: `\begin{aligned}p&=${M}+${B}x\\&=${M}+${B}(${formatNumber(xVertex)})\\&=${formatNumber(optimalPrice)}\end{aligned}` },
-              { kind: 'math', content: `\boxed{\$${formatNumber(optimalPrice)}}\qquad\left(P_{\max}=\$${formatNumber(maxProfit, 2)}\right)` }
+              { kind: 'math', content: `\\begin{aligned}P'(x)&=0\\\\-${2 * B * C}x+${linearCoeff}&=0\\\\x&=${formatNumber(xVertex)}\\end{aligned}` },
+              { kind: 'math', content: `P''(x)=-${2 * B * C}<0,\\text{ so this critical point gives a maximum profit.}` },
+              { kind: 'math', content: `\\begin{aligned}p\\left(${formatNumber(xVertex)}\\right)&=${M}+${B}\\left(${formatNumber(xVertex)}\\right)\\\\&=${formatNumber(optimalPrice)}\\end{aligned}` },
+              { kind: 'math', content: `\\boxed{\\$${formatNumber(optimalPrice)}}\\qquad\\left(P_{\\max}=\\$${formatNumber(maxProfit, 2)}\\right)` }
             ]
           };
         }

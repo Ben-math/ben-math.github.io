@@ -6,6 +6,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -776,6 +777,7 @@ fetch("/nav.html")
         let volumeFormula = '';
         let surfaceFormula = '';
         let costFormula = '';
+        let diagramIntroduction = '';
 
         if (shape === 'rectangular') {
           const k = relation.k;
@@ -793,8 +795,9 @@ fetch("/nav.html")
           diagram = {
             kind: 'rectangular-box',
             open: isOpen,
-            labels: { length: '\\ell', width: 'w', height: 'h' }
+            labels: { length: 'l', width: 'w', height: 'h' }
           };
+          diagramIntroduction = 'Let w, l, and h denote the width, length, and height, respectively, in the following diagram:';
           dimensionLabels = ['Width', 'Length', 'Height'];
           dimensionAnswers = x => [x, k * x, null];
         } else if (shape === 'triangular') {
@@ -820,6 +823,7 @@ fetch("/nav.html")
             open: isOpen,
             labels: { base: 'b', triangleHeight: 'a', length: 'L' }
           };
+          diagramIntroduction = 'Let a, b, and L denote the triangular height, triangular base, and prism length, respectively, in the following diagram:';
           dimensionLabels = ['Triangle height', 'Triangle base', 'Prism length'];
           dimensionAnswers = x => [x, k * x, null];
         } else {
@@ -837,6 +841,7 @@ fetch("/nav.html")
             open: isOpen,
             labels: { radius: 'r', height: 'h' }
           };
+          diagramIntroduction = 'Let r and h denote the radius and height, respectively, in the following diagram:';
           dimensionLabels = ['Radius', 'Height'];
           dimensionAnswers = x => [x, null];
         }
@@ -872,7 +877,7 @@ fetch("/nav.html")
             diagram,
             answers,
             hints: [
-              { kind: 'math', content: `\\text{Let }${xName}\\text{ and }${yName}\\text{ denote the dimensions shown in the diagram.}` },
+              { kind: 'diagram', content: diagramIntroduction, diagram },
               ...relationSteps,
               { kind: 'math', content: volumeFormula },
               { kind: 'math', content: `${yName}=\\frac{${volumeTarget}}{${formatNumber(volumeCoefficient)}${xName}^{2}}` },
@@ -914,7 +919,7 @@ fetch("/nav.html")
             diagram,
             answers,
             hints: [
-              { kind: 'math', content: `\\text{Let }${variables.x}\\text{ and }${variables.y}\\text{ denote the dimensions shown in the diagram.}` },
+              { kind: 'diagram', content: diagramIntroduction, diagram },
               ...(relationSentence ? [{ kind: 'math', content: `\\text{The given relationship is }${relationHint}.` }] : []),
               { kind: 'math', content: volumeFormula },
               { kind: 'math', content: `${variables.y}=\\frac{${volumeTarget}}{${formatNumber(volumeCoefficient)}${variables.x}^{2}}` },
@@ -953,7 +958,7 @@ fetch("/nav.html")
           diagram,
           answers,
           hints: [
-            { kind: 'math', content: `\\text{Let }${variables.x}\\text{ and }${variables.y}\\text{ denote the dimensions shown in the diagram.}` },
+            { kind: 'diagram', content: diagramIntroduction, diagram },
             ...(relationSentence ? [{ kind: 'math', content: `\\text{The given relationship is }${relationHint}.` }] : []),
             { kind: 'math', content: `\\begin{aligned}${surfaceFormula}\\\\${areaTarget}&=${formatNumber(baseAreaCoefficient)}${variables.x}^{2}+${formatNumber(sideAreaCoefficient)}${variables.x}${variables.y}\\end{aligned}` },
             { kind: 'math', content: `${variables.y}=\\frac{${areaTarget}-${formatNumber(baseAreaCoefficient)}${variables.x}^{2}}{${formatNumber(sideAreaCoefficient)}${variables.x}}` },
@@ -1014,7 +1019,7 @@ fetch("/nav.html")
     function rectangularBoxDiagramSvg(diagram) {
       const labels = diagram.labels || {};
       const top = diagram.open
-        ? '<polyline points="95,75 155,120 335,120 275,75" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="8 7"/>'
+        ? '<polygon points="95,75 275,75 335,120 155,120" fill="none" stroke="currentColor" stroke-width="3"/>'
         : '<polygon points="95,75 275,75 335,120 155,120" fill="none" stroke="currentColor" stroke-width="3"/>';
       return `
         <svg viewBox="0 0 420 260" class="optimization-diagram" role="img" aria-label="${diagram.open ? 'Open-topped' : 'Closed'} rectangular prism">
@@ -1157,9 +1162,18 @@ fetch("/nav.html")
     function appendHint(hint) {
       const block = document.createElement('div');
       block.className = 'optimization-hint-step';
-      if (hint.kind === 'math') block.innerHTML = `\\[${hint.content}\\]`;
-      else if (hint.kind === 'html') block.innerHTML = hint.content;
-      else block.textContent = hint.content;
+      if (hint.kind === 'math') {
+        block.innerHTML = `\\[${hint.content}\\]`;
+      } else if (hint.kind === 'html') {
+        block.innerHTML = hint.content;
+      } else if (hint.kind === 'diagram') {
+        const introduction = document.createElement('div');
+        introduction.textContent = hint.content;
+        block.appendChild(introduction);
+        block.insertAdjacentHTML('beforeend', renderDiagram(hint.diagram));
+      } else {
+        block.textContent = hint.content;
+      }
       hintArea.appendChild(block);
       return hint.kind === 'math' || hint.kind === 'html' ? typesetElement(block) : Promise.resolve();
     }
@@ -1198,7 +1212,7 @@ fetch("/nav.html")
         <section class="optimization-question-card" data-problem-type="${currentProblem.type}">
           <div class="optimization-type-label">${currentProblem.title}</div>
           <div class="optimization-question-body">${currentProblem.questionHtml}</div>
-          ${renderDiagram(currentProblem.diagram)}
+          ${currentProblem.type === 3 ? '' : renderDiagram(currentProblem.diagram)}
         </section>`;
       renderAnswerInputs(currentProblem);
       checkBtn.style.display = 'inline-block';

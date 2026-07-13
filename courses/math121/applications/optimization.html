@@ -9,6 +9,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -598,7 +599,7 @@ fetch("/nav.html")
               { kind: 'math', content: `\\begin{aligned}P'(x)&=0\\\\${n}-2x&=0\\\\x&=${formatNumber(optimalNumber)}\\end{aligned}` },
               { kind: 'math', content: `y=${n}-x=${n}-${formatNumber(optimalNumber)}=${formatNumber(optimalNumber)}` },
               { kind: 'math', content: `P''(x)=-2<0,\\text{ so the product is maximized.}` },
-              { kind: 'math', content: `${formatNumber(optimalNumber)}\\text{ and }${formatNumber(optimalNumber)}}\\qquad\\left(P_{\\max}=${formatNumber(maximumProduct)}\\right)` }
+              { kind: 'math', content: `${formatNumber(optimalNumber)}\\text{ and }${formatNumber(optimalNumber)}\\qquad\\left(P_{\\max}=${formatNumber(maximumProduct)}\\right)` }
             ]
           };
         }
@@ -625,7 +626,7 @@ fetch("/nav.html")
               { kind: 'math', content: `\\begin{aligned}P'(x)&=0\\\\2x+${n}&=0\\\\x&=${formatNumber(smallerNumber)}\\end{aligned}` },
               { kind: 'math', content: `y=x+${n}=${formatNumber(smallerNumber)}+${n}=${formatNumber(largerNumber)}` },
               { kind: 'math', content: `P''(x)=2>0,\\text{ so the product is minimized.}` },
-              { kind: 'math', content: `${formatNumber(smallerNumber)}\\text{ and }${formatNumber(largerNumber)}}\\qquad\\left(P_{\\min}=${formatNumber(minimumProduct)}\\right)` }
+              { kind: 'math', content: `${formatNumber(smallerNumber)}\\text{ and }${formatNumber(largerNumber)}\\qquad\\left(P_{\\min}=${formatNumber(minimumProduct)}\\right)` }
             ]
           };
         }
@@ -650,7 +651,7 @@ fetch("/nav.html")
             { kind: 'math', content: `\\begin{aligned}S'(x)&=0\\\\1-\\frac{${n}}{x^{2}}&=0\\\\x^{2}&=${n}\\\\x&=\\sqrt{${n}}\\end{aligned}` },
             { kind: 'math', content: `y=\\frac{${n}}{x}=\\frac{${n}}{\\sqrt{${n}}}=\\sqrt{${n}}` },
             { kind: 'math', content: `S''(x)=\\frac{${2 * n}}{x^{3}}>0\\text{ for }x>0,\\text{ so the sum is minimized.}` },
-            { kind: 'math', content: `\\sqrt{${n}}\\text{ and }\\sqrt{${n}}}\\qquad\\left(S_{\\min}=2\\sqrt{${n}}\\right)` }
+            { kind: 'math', content: `\\sqrt{${n}}\\text{ and }\\sqrt{${n}}\\qquad\\left(S_{\\min}=2\\sqrt{${n}}\\right)` }
           ]
         };
       }
@@ -720,7 +721,7 @@ fetch("/nav.html")
 
           return {
             type: 2,
-            title: 'Type 2: Profit problem',
+            title: '',
             questionHtml: `<p>You are selling ${product.plural}. When you charge $${M} per ${product.singular}, you sell ${A} of them. For every increase in price of $${B}, you sell ${C} fewer ${product.plural}. You have fixed expenses of $${D}, and it costs you $${E} to make each ${product.singular}. Find the price you should charge for your ${product.plural} to maximize your profit.</p>`,
             answers: [
               makeAnswerField({ id: 'price', label: 'Price to charge', expected: optimalPrice, prefix: '$' })
@@ -736,7 +737,7 @@ fetch("/nav.html")
               { kind: 'math', content: `\\begin{aligned}P'(x)&=0\\\\-${2 * B * C}x+${linearCoeff}&=0\\\\x&=${formatNumber(xVertex)}\\end{aligned}` },
               { kind: 'math', content: `P''(x)=-${2 * B * C}<0,\\text{ so this critical point gives a maximum profit.}` },
               { kind: 'math', content: `\\begin{aligned}p\\left(${formatNumber(xVertex)}\\right)&=${M}+${B}\\left(${formatNumber(xVertex)}\\right)\\\\&=${formatNumber(optimalPrice)}\\end{aligned}` },
-              { kind: 'math', content: `\\$${formatNumber(optimalPrice)}}\\qquad\\left(P_{\\max}=\\$${formatNumber(maxProfit, 2)}\\right)` }
+              { kind: 'math', content: `\\$${formatNumber(optimalPrice)}\\qquad\\left(P_{\\max}=\\$${formatNumber(maxProfit, 2)}\\right)` }
             ]
           };
         }
@@ -874,7 +875,7 @@ fetch("/nav.html")
             type: 3,
             subtype: 'cost',
             shape,
-            title: 'Type 3: Box cost problem',
+            title: '',
             questionHtml: `<p>${questionShape.charAt(0).toUpperCase() + questionShape.slice(1)} must have volume ${volumeTarget} cubic units. ${relationSentence} The material used for the base${shape === 'triangular' ? 's' : ''} costs $${basePrice} per square unit, while the material used for the sides costs $${sidePrice} per square unit. Find the minimum possible cost of the box.</p>`,
             diagram,
             answers,
@@ -889,7 +890,7 @@ fetch("/nav.html")
               { kind: 'math', content: `\\begin{aligned}C'(${xName})&=0\\\\${formatNumber(2 * aCost)}${xName}^{3}&=${formatNumber(bCost)}\\\\${xName}&=${formatNumber(xOpt)}\\end{aligned}` },
               { kind: 'math', content: `${yName}=\\frac{${volumeTarget}}{${formatNumber(volumeCoefficient)}(${formatNumber(xOpt)})^{2}}=${formatNumber(yOpt)}` },
               { kind: 'math', content: `C''(${xName})=${formatNumber(2 * aCost)}+\\frac{${formatNumber(2 * bCost)}}{${xName}^{3}}>0,\\text{ so the cost is minimized.}` },
-              { kind: 'math', content: `C_{\\min}=\\$${formatNumber(minCost, 2)}}` }
+              { kind: 'math', content: `C_{\\min}=\\$${formatNumber(minCost, 2)}` }
             ]
           };
         }
@@ -931,7 +932,7 @@ fetch("/nav.html")
               { kind: 'math', content: `\\begin{aligned}S'(${variables.x})&=0\\\\${formatNumber(2 * baseAreaCoefficient)}${variables.x}^{3}&=${formatNumber(sideAreaCoefficient * volumeTarget / volumeCoefficient)}\\\\${variables.x}&=${formatNumber(xOpt)}\\end{aligned}` },
               { kind: 'math', content: `${variables.y}=\\frac{${volumeTarget}}{${formatNumber(volumeCoefficient)}(${formatNumber(xOpt)})^{2}}=${formatNumber(yOpt)}` },
               { kind: 'math', content: `S''(${variables.x})=${formatNumber(2 * baseAreaCoefficient)}+\\frac{${formatNumber(2 * sideAreaCoefficient * volumeTarget / volumeCoefficient)}}{${variables.x}^{3}}>0,\\text{ so the surface area is minimized.}` },
-              { kind: 'math', content: `S_{\\min}=${formatNumber(minArea)}}` }
+              { kind: 'math', content: `S_{\\min}=${formatNumber(minArea)}` }
             ]
           };
         }
@@ -970,7 +971,7 @@ fetch("/nav.html")
             { kind: 'math', content: `\\begin{aligned}V'(${variables.x})&=0\\\\${areaTarget}-${formatNumber(3 * baseAreaCoefficient)}${variables.x}^{2}&=0\\\\${variables.x}&=${formatNumber(xOpt)}\\end{aligned}` },
             { kind: 'math', content: `${variables.y}=\\frac{${areaTarget}-${formatNumber(baseAreaCoefficient)}(${formatNumber(xOpt)})^{2}}{${formatNumber(sideAreaCoefficient)}(${formatNumber(xOpt)})}=${formatNumber(yOpt)}` },
             { kind: 'math', content: `V''(${variables.x})=-${formatNumber(6 * baseAreaCoefficient * volumeCoefficient / sideAreaCoefficient)}${variables.x}<0,\\text{ so the volume is maximized.}` },
-            { kind: 'math', content: `V_{\\max}=${formatNumber(maxVolume)}}` }
+            { kind: 'math', content: `V_{\\max}=${formatNumber(maxVolume)}` }
           ]
         };
       }
@@ -1030,7 +1031,7 @@ fetch("/nav.html")
           return {
             type: 4,
             subtype: 1,
-            title: 'Type 4: Distance problem',
+            title: '',
             questionHtml: `<p>A particle moves in the plane according to \\(P(t)=(${x0}+${vx}t,${y0}+${vy}t)\\), where \\(t\\ge 0\\). Find when the particle is closest to the fixed point \\(A=(${ax},${ay})\\), and find the minimum distance.</p>`,
             answers: [
               makeAnswerField({ id: 'time', label: 'Time', expected: tOpt, unit: 'time units' }),
@@ -1045,7 +1046,7 @@ fetch("/nav.html")
               { kind: 'math', content: `\\begin{aligned}Q'(t)&=0\\\\t&=${formatNumber(tOpt)}\\end{aligned}` },
               { kind: 'math', content: `Q''(t)=${formatNumber(2 * quadraticCoeff)}>0,\\text{ so this gives the minimum distance.}` },
               { kind: 'math', content: `\\begin{aligned}D\\left(${formatNumber(tOpt)}\\right)&=\\sqrt{Q\\left(${formatNumber(tOpt)}\\right)}\\\\&=${formatNumber(minDistance)}\\end{aligned}` },
-              { kind: 'math', content: `t=${formatNumber(tOpt)},\\qquad D_{\\min}=${formatNumber(minDistance)}}` }
+              { kind: 'math', content: `t=${formatNumber(tOpt)},\\qquad D_{\\min}=${formatNumber(minDistance)}` }
             ]
           };
         }
@@ -1068,7 +1069,7 @@ fetch("/nav.html")
           return {
             type: 4,
             subtype: 2,
-            title: 'Type 4: Particle-distance problem',
+            title: '',
             questionHtml: `<p>Particle A starts moving at ${clockLabel(startHour)}, and Particle B starts moving at ${clockLabel(startHour + delay)}. Their positions along a line, measured \\(t\\) hours after ${clockLabel(startHour)}, are \\(f(t)=${fTex}\\) and \\(g(t)=${gTex}\\), respectively. Find when the particles are closest after Particle B begins moving, and find the distance between them then.</p>`,
             answers: [
               makeAnswerField({ id: 'time', label: `Time after ${clockLabel(startHour)}`, expected: h, unit: 'hours' }),
@@ -1083,7 +1084,7 @@ fetch("/nav.html")
               { kind: 'math', content: `\\begin{aligned}D'(t)&=0\\\\t&=${h}\\end{aligned}` },
               { kind: 'math', content: `D''(t)=${2 * aGap}>0,\\text{ so the distance is minimized.}` },
               { kind: 'math', content: `D(${h})=${kGap}` },
-              { kind: 'math', content: `t=${h}\\text{ hours after ${clockLabel(startHour)}},\\qquad D_{\\min}=${kGap}}` }
+              { kind: 'math', content: `t=${h}\\text{ hours after ${clockLabel(startHour)}},\\qquad D_{\\min}=${kGap}` }
             ]
           };
         }
@@ -1109,7 +1110,7 @@ fetch("/nav.html")
           return {
             type: 4,
             subtype: 3,
-            title: 'Type 4: Velocity-distance problem',
+            title: '',
             questionHtml: `<p>Particle A starts moving at ${clockLabel(startHour)}, and Particle B starts moving at ${clockLabel(startHour + delay)}. Their positions along a line, measured \\(t\\) hours after ${clockLabel(startHour)}, are \\(f(t)=${fTex}\\) and \\(g(t)=${gTex}\\). Find when their velocities are closest after Particle B begins moving, and find the distance between the particles at that moment.</p>`,
             answers: [
               makeAnswerField({ id: 'time', label: `Time after ${clockLabel(startHour)}`, expected: h, unit: 'hours' }),
@@ -1124,7 +1125,7 @@ fetch("/nav.html")
               { kind: 'math', content: `\\begin{aligned}V'(t)&=0\\\\t&=${h}\\end{aligned}` },
               { kind: 'math', content: `V''(t)=${2 * aGap}>0,\\text{ so the velocities are closest then.}` },
               { kind: 'math', content: `\\begin{aligned}\\text{Distance}&=\\left|g(${h})-f(${h})\\right|\\\\&=${formatNumber(Math.abs(positionGapAtH))}\\end{aligned}` },
-              { kind: 'math', content: `t=${h}\\text{ hours after ${clockLabel(startHour)}},\\qquad D=${formatNumber(Math.abs(positionGapAtH))}}` }
+              { kind: 'math', content: `t=${h}\\text{ hours after ${clockLabel(startHour)}},\\qquad D=${formatNumber(Math.abs(positionGapAtH))}` }
             ]
           };
         }
@@ -1147,7 +1148,7 @@ fetch("/nav.html")
           return {
             type: 4,
             subtype: 4,
-            title: 'Type 4: Vertical-distance problem',
+            title: '',
             questionHtml: `<p>The heights of two particles at time \\(t\\ge 0\\) are \\(f(t)=${fTex}\\) and \\(g(t)=${gTex}\\). Find the minimum vertical distance between the particles.</p>`,
             answers: [
               makeAnswerField({ id: 'time', label: 'Time', expected: h, unit: 'time units' }),
@@ -1161,7 +1162,7 @@ fetch("/nav.html")
               { kind: 'math', content: `D'(t)=${2 * aGap}(t-${h})` },
               { kind: 'math', content: `\\begin{aligned}D'(t)&=0\\\\t&=${h}\\end{aligned}` },
               { kind: 'math', content: `D''(t)=${2 * aGap}>0,\\text{ so the vertical distance is minimized.}` },
-              { kind: 'math', content: `t=${h},\\qquad D_{\\min}=${kGap}}` }
+              { kind: 'math', content: `t=${h},\\qquad D_{\\min}=${kGap}` }
             ]
           };
         }
@@ -1189,7 +1190,7 @@ fetch("/nav.html")
         return {
           type: 4,
           subtype: 5,
-          title: 'Type 4: Vertical-distance problem',
+          title: '',
           questionHtml: `<p>The heights of two particles are \\(f(t)=${fTex}\\) and \\(g(t)=${gTex}\\). Find the maximum vertical distance between them on the interval \\([${left},${right}]\\).</p>`,
           answers: [
             makeAnswerField({ id: 'time', label: 'Time', expected: maxTime, unit: 'time units' }),
@@ -1202,7 +1203,7 @@ fetch("/nav.html")
             { kind: 'math', content: `D(t)=${aGap}(t-${h})^{2}+${kGap}` },
             { kind: 'math', content: `D'(t)=${2 * aGap}(t-${h})=0\\quad\\Longrightarrow\\quad t=${h}` },
             { kind: 'math', content: `\\begin{aligned}D(${left})&=${formatNumber(leftDistance)}\\\\D(${h})&=${kGap}\\\\D(${right})&=${formatNumber(rightDistance)}\\end{aligned}` },
-            { kind: 'math', content: `t=${maxTime},\\qquad D_{\\max}=${formatNumber(maxDistance)}}` }
+            { kind: 'math', content: `t=${maxTime},\\qquad D_{\\max}=${formatNumber(maxDistance)}` }
           ]
         };
       }
@@ -1420,6 +1421,7 @@ fetch("/nav.html")
       } else if (hint.kind === 'diagram') {
         const introduction = document.createElement('div');
         introduction.textContent = hint.content;
+        introduction.style.textAlign = 'center';
         block.appendChild(introduction);
         block.insertAdjacentHTML('beforeend', renderDiagram(hint.diagram));
       } else {
@@ -1461,7 +1463,6 @@ fetch("/nav.html")
       currentProblem = generateOptimizationProblem();
       questionText.innerHTML = `
         <section class="optimization-question-card" data-problem-type="${currentProblem.type}">
-          <div class="optimization-type-label">${currentProblem.title}</div>
           <div class="optimization-question-body">${currentProblem.questionHtml}</div>
           ${currentProblem.type === 3 ? '' : renderDiagram(currentProblem.diagram)}
         </section>`;

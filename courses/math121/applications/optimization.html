@@ -3,6 +3,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -650,25 +651,92 @@ fetch("/nav.html")
       }
 
       if (type === 2) {
-        const basePrice = randomInteger(12, 30);
-        const baseSales = randomInteger(80, 180);
-        const increase = randomChoice([1, 2, 5]);
-        const lostSales = randomInteger(3, 10);
-        const unitCost = randomInteger(2, Math.max(3, basePrice - 5));
-        const xVertex = (baseSales * increase - lostSales * (basePrice - unitCost)) / (2 * lostSales);
-        const price = basePrice + increase * xVertex;
-        return {
-          type: 2,
-          title: 'Type 2: Profit problem',
-          questionHtml: `<p>A temporary framework problem uses a selling price of $${basePrice}, sales of ${baseSales} units, a $${increase} price step, ${lostSales} fewer sales per step, and a unit cost of $${unitCost}. Find the profit-maximizing price.</p>`,
-          answers: [makeAnswerField({ id: 'price', label: 'Price', expected: price, prefix: '$' })],
-          hints: [
-            { kind: 'math', content: `p(x)=${basePrice}+${increase}x` },
-            { kind: 'math', content: `q(x)=${baseSales}-${lostSales}x` },
-            { kind: 'math', content: `P(x)=(p(x)-${unitCost})q(x)-D` },
-            { kind: 'text', content: 'Differentiate the quadratic profit function and solve P\'(x)=0.' }
-          ]
-        };
+        const products = [
+          {
+            plural: 'handmade candles', singular: 'candle',
+            priceRange: [18, 34], salesRange: [80, 180],
+            stepChoices: [1, 2], lostRange: [4, 10],
+            fixedRange: [300, 1200], unitCostRange: [4, 10]
+          },
+          {
+            plural: 'custom T-shirts', singular: 'T-shirt',
+            priceRange: [22, 45], salesRange: [100, 260],
+            stepChoices: [1, 2, 5], lostRange: [5, 14],
+            fixedRange: [500, 1800], unitCostRange: [7, 16]
+          },
+          {
+            plural: 'ceramic mugs', singular: 'mug',
+            priceRange: [16, 30], salesRange: [90, 220],
+            stepChoices: [1, 2], lostRange: [4, 12],
+            fixedRange: [400, 1500], unitCostRange: [5, 11]
+          },
+          {
+            plural: 'concert posters', singular: 'poster',
+            priceRange: [12, 28], salesRange: [120, 320],
+            stepChoices: [1, 2], lostRange: [6, 18],
+            fixedRange: [250, 1000], unitCostRange: [2, 7]
+          },
+          {
+            plural: 'wooden cutting boards', singular: 'cutting board',
+            priceRange: [35, 75], salesRange: [45, 130],
+            stepChoices: [2, 5], lostRange: [2, 7],
+            fixedRange: [700, 2600], unitCostRange: [12, 28]
+          },
+          {
+            plural: 'gift baskets', singular: 'gift basket',
+            priceRange: [40, 90], salesRange: [35, 110],
+            stepChoices: [2, 5], lostRange: [2, 6],
+            fixedRange: [600, 2400], unitCostRange: [16, 36]
+          }
+        ];
+
+        for (let attempt = 0; attempt < 300; attempt++) {
+          const product = randomChoice(products);
+          const M = randomInteger(...product.priceRange);
+          const A = randomInteger(...product.salesRange);
+          const B = randomChoice(product.stepChoices);
+          const C = randomInteger(...product.lostRange);
+          const D = randomInteger(...product.fixedRange);
+          const EUpper = Math.min(product.unitCostRange[1], M - 3);
+          if (EUpper < product.unitCostRange[0]) continue;
+          const E = randomInteger(product.unitCostRange[0], EUpper);
+
+          const xVertex = (A * B - C * (M - E)) / (2 * B * C);
+          const optimalPrice = M + B * xVertex;
+          const optimalSales = A - C * xVertex;
+
+          if (!Number.isFinite(xVertex) || !Number.isFinite(optimalPrice) || !Number.isFinite(optimalSales)) continue;
+          if (xVertex <= 0.25 || optimalSales <= 5 || optimalPrice <= E) continue;
+          if (optimalPrice > 2.5 * M) continue;
+
+          const linearCoeff = A * B - C * (M - E);
+          const constantTerm = A * (M - E) - D;
+          const maxProfit = -B * C * xVertex * xVertex + linearCoeff * xVertex + constantTerm;
+
+          return {
+            type: 2,
+            title: 'Type 2: Profit problem',
+            questionHtml: `<p>You are selling ${product.plural}. When you charge $${M} per ${product.singular}, you sell ${A} of them. For every increase in price of $${B}, you sell ${C} fewer ${product.plural}. You have fixed expenses of $${D}, and it costs you $${E} to make each ${product.singular}. Find the price you should charge for your ${product.plural} to maximize your profit.</p>`,
+            answers: [
+              makeAnswerField({ id: 'price', label: 'Price to charge', expected: optimalPrice, prefix: '$' })
+            ],
+            hints: [
+              { kind: 'math', content: `\text{Let }x\text{ be the number of }$${B}\text{ price increases.}` },
+              { kind: 'math', content: `p(x)=${M}+${B}x` },
+              { kind: 'math', content: `q(x)=${A}-${C}x` },
+              { kind: 'math', content: `R(x)=p(x)q(x)=(${M}+${B}x)(${A}-${C}x)` },
+              { kind: 'math', content: `C(x)=${D}+${E}(${A}-${C}x)` },
+              { kind: 'math', content: `\begin{aligned}P(x)&=R(x)-C(x)\\&=(${M}+${B}x)(${A}-${C}x)-\left(${D}+${E}(${A}-${C}x)\right)\\&=-${B * C}x^{2}+${linearCoeff}x+${constantTerm}\end{aligned}` },
+              { kind: 'math', content: `P'(x)=-${2 * B * C}x+${linearCoeff}` },
+              { kind: 'math', content: `\begin{aligned}P'(x)&=0\\-${2 * B * C}x+${linearCoeff}&=0\\x&=${formatNumber(xVertex)}\end{aligned}` },
+              { kind: 'math', content: `P''(x)=-${2 * B * C}<0,\text{ so this critical point gives a maximum profit.}` },
+              { kind: 'math', content: `\begin{aligned}p&=${M}+${B}x\\&=${M}+${B}(${formatNumber(xVertex)})\\&=${formatNumber(optimalPrice)}\end{aligned}` },
+              { kind: 'math', content: `\boxed{\$${formatNumber(optimalPrice)}}\qquad\left(P_{\max}=\$${formatNumber(maxProfit, 2)}\right)` }
+            ]
+          };
+        }
+
+        throw new Error('Unable to generate a valid Type 2 problem.');
       }
 
       if (type === 3) {

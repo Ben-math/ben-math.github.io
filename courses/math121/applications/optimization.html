@@ -5,6 +5,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -741,23 +742,228 @@ fetch("/nav.html")
       }
 
       if (type === 3) {
-        const volume = randomInteger(8, 125);
-        const side = Math.cbrt(volume);
+        const shape = randomChoice(['rectangular', 'triangular', 'cylinder']);
+        const isCostProblem = Math.random() < 0.5;
+        const isOpen = Math.random() < 0.75;
+        const relationshipChoices = [
+          { k: 0.5, text: 'half', tex: '\\frac{1}{2}' },
+          { k: 2 / 3, text: 'two-thirds', tex: '\\frac{2}{3}' },
+          { k: 1.5, text: 'one and a half times', tex: '\\frac{3}{2}' },
+          { k: 2, text: 'twice', tex: '2' },
+          { k: 3, text: 'three times', tex: '3' }
+        ];
+        const relation = randomChoice(relationshipChoices);
+        const basePrice = randomInteger(2, 8);
+        let sidePrice;
+        do {
+          sidePrice = randomInteger(2, 8);
+        } while (sidePrice === basePrice);
+
+        const volumeTarget = randomInteger(40, 300);
+        const areaTarget = randomInteger(80, 420);
+
+        let variables;
+        let volumeCoefficient;
+        let baseAreaCoefficient;
+        let sideAreaCoefficient;
+        let baseCount;
+        let questionShape;
+        let diagram;
+        let dimensionAnswers;
+        let dimensionLabels;
+        let relationSentence = '';
+        let relationHint = '';
+        let volumeFormula = '';
+        let surfaceFormula = '';
+        let costFormula = '';
+
+        if (shape === 'rectangular') {
+          const k = relation.k;
+          baseCount = isOpen ? 1 : 2;
+          volumeCoefficient = k;
+          baseAreaCoefficient = baseCount * k;
+          sideAreaCoefficient = 2 * (1 + k);
+          questionShape = `${isOpen ? 'an open-topped' : 'a closed'} rectangular prism`;
+          relationSentence = `The length is ${relation.text} the width.`;
+          relationHint = `\\ell=${relation.tex}w`;
+          variables = { x: 'w', y: 'h' };
+          volumeFormula = `V=\\ell wh=${relation.tex}w^{2}h`;
+          surfaceFormula = `S=${baseCount === 1 ? '' : '2'}\\ell w+2\\ell h+2wh`;
+          costFormula = `C=${basePrice}\\left(${baseCount === 1 ? '' : '2'}\\ell w\\right)+${sidePrice}\\left(2\\ell h+2wh\\right)`;
+          diagram = {
+            kind: 'rectangular-box',
+            open: isOpen,
+            labels: { length: '\\ell', width: 'w', height: 'h' }
+          };
+          dimensionLabels = ['Width', 'Length', 'Height'];
+          dimensionAnswers = x => [x, k * x, null];
+        } else if (shape === 'triangular') {
+          const k = relation.k;
+          const hyp = Math.sqrt(k * k + 1);
+          baseCount = 2;
+          volumeCoefficient = 0.5 * k;
+          baseAreaCoefficient = k;
+          sideAreaCoefficient = isOpen ? (k + 1) : (k + 1 + hyp);
+          questionShape = `${isOpen ? 'an open-topped' : 'a closed'} right triangular prism`;
+          relationSentence = `The base of each triangular end is ${relation.text} its height.`;
+          relationHint = `b=${relation.tex}a`;
+          variables = { x: 'a', y: 'L' };
+          volumeFormula = `V=\\frac{1}{2}baL=\\frac{1}{2}\\left(${relation.tex}a\\right)aL`;
+          surfaceFormula = isOpen
+            ? `S=ba+(b+a)L`
+            : `S=ba+\\left(b+a+\\sqrt{b^{2}+a^{2}}\\right)L`;
+          costFormula = isOpen
+            ? `C=${basePrice}(ba)+${sidePrice}\\left((b+a)L\\right)`
+            : `C=${basePrice}(ba)+${sidePrice}\\left(\\left(b+a+\\sqrt{b^{2}+a^{2}}\\right)L\\right)`;
+          diagram = {
+            kind: 'triangular-box',
+            open: isOpen,
+            labels: { base: 'b', triangleHeight: 'a', length: 'L' }
+          };
+          dimensionLabels = ['Triangle height', 'Triangle base', 'Prism length'];
+          dimensionAnswers = x => [x, k * x, null];
+        } else {
+          baseCount = isOpen ? 1 : 2;
+          volumeCoefficient = Math.PI;
+          baseAreaCoefficient = baseCount * Math.PI;
+          sideAreaCoefficient = 2 * Math.PI;
+          questionShape = `${isOpen ? 'an open-topped' : 'a closed'} cylinder`;
+          variables = { x: 'r', y: 'h' };
+          volumeFormula = `V=\\pi r^{2}h`;
+          surfaceFormula = `S=${baseCount === 1 ? '' : '2'}\\pi r^{2}+2\\pi rh`;
+          costFormula = `C=${basePrice}\\left(${baseCount === 1 ? '' : '2'}\\pi r^{2}\\right)+${sidePrice}\\left(2\\pi rh\\right)`;
+          diagram = {
+            kind: 'cylinder-box',
+            open: isOpen,
+            labels: { radius: 'r', height: 'h' }
+          };
+          dimensionLabels = ['Radius', 'Height'];
+          dimensionAnswers = x => [x, null];
+        }
+
+        if (isCostProblem) {
+          const aCost = basePrice * baseAreaCoefficient;
+          const bCost = sidePrice * sideAreaCoefficient * volumeTarget / volumeCoefficient;
+          const xOpt = Math.cbrt(bCost / (2 * aCost));
+          const yOpt = volumeTarget / (volumeCoefficient * xOpt * xOpt);
+          const minCost = aCost * xOpt * xOpt + bCost / xOpt;
+
+          const answers = [
+            makeAnswerField({
+              id: 'minimum-cost',
+              label: 'Minimum possible cost',
+              expected: minCost,
+              prefix: '$'
+            })
+          ];
+
+          const xName = variables.x;
+          const yName = variables.y;
+          const relationSteps = relationSentence
+            ? [{ kind: 'math', content: `\\text{The given relationship is }${relationHint}.` }]
+            : [];
+
+          return {
+            type: 3,
+            subtype: 'cost',
+            shape,
+            title: 'Type 3: Box cost problem',
+            questionHtml: `<p>${questionShape.charAt(0).toUpperCase() + questionShape.slice(1)} must have volume ${volumeTarget} cubic units. ${relationSentence} The material used for the base${shape === 'triangular' ? 's' : ''} costs $${basePrice} per square unit, while the material used for the sides costs $${sidePrice} per square unit. Find the minimum possible cost of the box.</p>`,
+            diagram,
+            answers,
+            hints: [
+              { kind: 'math', content: `\\text{Let }${xName}\\text{ and }${yName}\\text{ denote the dimensions shown in the diagram.}` },
+              ...relationSteps,
+              { kind: 'math', content: volumeFormula },
+              { kind: 'math', content: `${yName}=\\frac{${volumeTarget}}{${formatNumber(volumeCoefficient)}${xName}^{2}}` },
+              { kind: 'math', content: `\\begin{aligned}${costFormula}\\\\&=${formatNumber(aCost)}${xName}^{2}+${formatNumber(sidePrice * sideAreaCoefficient)}${xName}${yName}\\end{aligned}` },
+              { kind: 'math', content: `C(${xName})=${formatNumber(aCost)}${xName}^{2}+\\frac{${formatNumber(bCost)}}{${xName}}` },
+              { kind: 'math', content: `C'(${xName})=${formatNumber(2 * aCost)}${xName}-\\frac{${formatNumber(bCost)}}{${xName}^{2}}` },
+              { kind: 'math', content: `\\begin{aligned}C'(${xName})&=0\\\\${formatNumber(2 * aCost)}${xName}^{3}&=${formatNumber(bCost)}\\\\${xName}&=${formatNumber(xOpt)}\\end{aligned}` },
+              { kind: 'math', content: `${yName}=\\frac{${volumeTarget}}{${formatNumber(volumeCoefficient)}(${formatNumber(xOpt)})^{2}}=${formatNumber(yOpt)}` },
+              { kind: 'math', content: `C''(${xName})=${formatNumber(2 * aCost)}+\\frac{${formatNumber(2 * bCost)}}{${xName}^{3}}>0,\\text{ so the cost is minimized.}` },
+              { kind: 'math', content: `\\boxed{C_{\\min}=\\$${formatNumber(minCost, 2)}}` }
+            ]
+          };
+        }
+
+        const volumeGiven = Math.random() < 0.5;
+        if (volumeGiven) {
+          const xOpt = Math.cbrt((sideAreaCoefficient * volumeTarget / volumeCoefficient) / (2 * baseAreaCoefficient));
+          const yOpt = volumeTarget / (volumeCoefficient * xOpt * xOpt);
+          const minArea = baseAreaCoefficient * xOpt * xOpt
+            + sideAreaCoefficient * xOpt * yOpt;
+
+          const rawDims = dimensionAnswers(xOpt);
+          rawDims[rawDims.length - 1] = yOpt;
+          const answers = rawDims.map((value, index) =>
+            makeAnswerField({
+              id: `dimension-${index + 1}`,
+              label: dimensionLabels[index],
+              expected: value,
+              unit: 'units'
+            })
+          );
+
+          return {
+            type: 3,
+            subtype: 'surface-area',
+            shape,
+            title: 'Type 3: Box problem',
+            questionHtml: `<p>${questionShape.charAt(0).toUpperCase() + questionShape.slice(1)} has volume ${volumeTarget} cubic units. ${relationSentence} Find the dimensions that minimize its surface area.</p>`,
+            diagram,
+            answers,
+            hints: [
+              { kind: 'math', content: `\\text{Let }${variables.x}\\text{ and }${variables.y}\\text{ denote the dimensions shown in the diagram.}` },
+              ...(relationSentence ? [{ kind: 'math', content: `\\text{The given relationship is }${relationHint}.` }] : []),
+              { kind: 'math', content: volumeFormula },
+              { kind: 'math', content: `${variables.y}=\\frac{${volumeTarget}}{${formatNumber(volumeCoefficient)}${variables.x}^{2}}` },
+              { kind: 'math', content: `\\begin{aligned}${surfaceFormula}\\\\&=${formatNumber(baseAreaCoefficient)}${variables.x}^{2}+${formatNumber(sideAreaCoefficient)}${variables.x}${variables.y}\\end{aligned}` },
+              { kind: 'math', content: `S(${variables.x})=${formatNumber(baseAreaCoefficient)}${variables.x}^{2}+\\frac{${formatNumber(sideAreaCoefficient * volumeTarget / volumeCoefficient)}}{${variables.x}}` },
+              { kind: 'math', content: `S'(${variables.x})=${formatNumber(2 * baseAreaCoefficient)}${variables.x}-\\frac{${formatNumber(sideAreaCoefficient * volumeTarget / volumeCoefficient)}}{${variables.x}^{2}}` },
+              { kind: 'math', content: `\\begin{aligned}S'(${variables.x})&=0\\\\${formatNumber(2 * baseAreaCoefficient)}${variables.x}^{3}&=${formatNumber(sideAreaCoefficient * volumeTarget / volumeCoefficient)}\\\\${variables.x}&=${formatNumber(xOpt)}\\end{aligned}` },
+              { kind: 'math', content: `${variables.y}=\\frac{${volumeTarget}}{${formatNumber(volumeCoefficient)}(${formatNumber(xOpt)})^{2}}=${formatNumber(yOpt)}` },
+              { kind: 'math', content: `S''(${variables.x})=${formatNumber(2 * baseAreaCoefficient)}+\\frac{${formatNumber(2 * sideAreaCoefficient * volumeTarget / volumeCoefficient)}}{${variables.x}^{3}}>0,\\text{ so the surface area is minimized.}` },
+              { kind: 'math', content: `\\boxed{S_{\\min}=${formatNumber(minArea)}}` }
+            ]
+          };
+        }
+
+        const xOpt = Math.sqrt(areaTarget / (3 * baseAreaCoefficient));
+        const yOpt = (areaTarget - baseAreaCoefficient * xOpt * xOpt)
+          / (sideAreaCoefficient * xOpt);
+        const maxVolume = volumeCoefficient * xOpt * xOpt * yOpt;
+        const rawDims = dimensionAnswers(xOpt);
+        rawDims[rawDims.length - 1] = yOpt;
+        const answers = rawDims.map((value, index) =>
+          makeAnswerField({
+            id: `dimension-${index + 1}`,
+            label: dimensionLabels[index],
+            expected: value,
+            unit: 'units'
+          })
+        );
+
         return {
           type: 3,
+          subtype: 'volume',
+          shape,
           title: 'Type 3: Box problem',
-          questionHtml: `<p>A closed rectangular box with a square base has volume ${volume} cubic units. In this temporary framework problem, find the dimensions of the cube with that volume.</p>`,
-          diagram: { kind: 'box', labels: { length: 'x', width: 'x', height: 'h' } },
-          answers: [
-            makeAnswerField({ id: 'length', label: 'Length', expected: side, unit: 'units' }),
-            makeAnswerField({ id: 'width', label: 'Width', expected: side, unit: 'units' }),
-            makeAnswerField({ id: 'height', label: 'Height', expected: side, unit: 'units' })
-          ],
+          questionHtml: `<p>${questionShape.charAt(0).toUpperCase() + questionShape.slice(1)} has surface area ${areaTarget} square units. ${relationSentence} Find the dimensions that maximize its volume.</p>`,
+          diagram,
+          answers,
           hints: [
-            { kind: 'text', content: 'Assign variables to the dimensions shown in the diagram.' },
-            { kind: 'math', content: `x^2h=${volume}` },
-            { kind: 'math', content: `h=\\frac{${volume}}{x^2}` },
-            { kind: 'text', content: 'The complete box generators will replace this representative framework problem.' }
+            { kind: 'math', content: `\\text{Let }${variables.x}\\text{ and }${variables.y}\\text{ denote the dimensions shown in the diagram.}` },
+            ...(relationSentence ? [{ kind: 'math', content: `\\text{The given relationship is }${relationHint}.` }] : []),
+            { kind: 'math', content: `\\begin{aligned}${surfaceFormula}\\\\${areaTarget}&=${formatNumber(baseAreaCoefficient)}${variables.x}^{2}+${formatNumber(sideAreaCoefficient)}${variables.x}${variables.y}\\end{aligned}` },
+            { kind: 'math', content: `${variables.y}=\\frac{${areaTarget}-${formatNumber(baseAreaCoefficient)}${variables.x}^{2}}{${formatNumber(sideAreaCoefficient)}${variables.x}}` },
+            { kind: 'math', content: volumeFormula },
+            { kind: 'math', content: `V(${variables.x})=${formatNumber(volumeCoefficient / sideAreaCoefficient)}${variables.x}\\left(${areaTarget}-${formatNumber(baseAreaCoefficient)}${variables.x}^{2}\\right)` },
+            { kind: 'math', content: `V'(${variables.x})=${formatNumber(volumeCoefficient / sideAreaCoefficient)}\\left(${areaTarget}-${formatNumber(3 * baseAreaCoefficient)}${variables.x}^{2}\\right)` },
+            { kind: 'math', content: `\\begin{aligned}V'(${variables.x})&=0\\\\${areaTarget}-${formatNumber(3 * baseAreaCoefficient)}${variables.x}^{2}&=0\\\\${variables.x}&=${formatNumber(xOpt)}\\end{aligned}` },
+            { kind: 'math', content: `${variables.y}=\\frac{${areaTarget}-${formatNumber(baseAreaCoefficient)}(${formatNumber(xOpt)})^{2}}{${formatNumber(sideAreaCoefficient)}(${formatNumber(xOpt)})}=${formatNumber(yOpt)}` },
+            { kind: 'math', content: `V''(${variables.x})=-${formatNumber(6 * baseAreaCoefficient * volumeCoefficient / sideAreaCoefficient)}${variables.x}<0,\\text{ so the volume is maximized.}` },
+            { kind: 'math', content: `\\boxed{V_{\\max}=${formatNumber(maxVolume)}}` }
           ]
         };
       }
@@ -804,6 +1010,60 @@ fetch("/nav.html")
         </svg>`;
     }
 
+
+    function rectangularBoxDiagramSvg(diagram) {
+      const labels = diagram.labels || {};
+      const top = diagram.open
+        ? '<polyline points="95,75 155,120 335,120 275,75" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="8 7"/>'
+        : '<polygon points="95,75 275,75 335,120 155,120" fill="none" stroke="currentColor" stroke-width="3"/>';
+      return `
+        <svg viewBox="0 0 420 260" class="optimization-diagram" role="img" aria-label="${diagram.open ? 'Open-topped' : 'Closed'} rectangular prism">
+          ${top}
+          <polygon points="95,75 155,120 155,220 95,175" fill="none" stroke="currentColor" stroke-width="3"/>
+          <polygon points="155,120 335,120 335,220 155,220" fill="none" stroke="currentColor" stroke-width="3"/>
+          <line x1="275" y1="75" x2="275" y2="175" stroke="currentColor" stroke-width="3"/>
+          <line x1="275" y1="175" x2="335" y2="220" stroke="currentColor" stroke-width="3"/>
+          <line x1="95" y1="175" x2="275" y2="175" stroke="currentColor" stroke-width="3"/>
+          <text x="235" y="245" text-anchor="middle">${labels.length || 'l'}</text>
+          <text x="115" y="218" text-anchor="middle">${labels.width || 'w'}</text>
+          <text x="355" y="175" text-anchor="middle">${labels.height || 'h'}</text>
+        </svg>`;
+    }
+
+    function triangularBoxDiagramSvg(diagram) {
+      const labels = diagram.labels || {};
+      const missingFace = diagram.open ? ' stroke-dasharray="8 7"' : '';
+      return `
+        <svg viewBox="0 0 500 280" class="optimization-diagram" role="img" aria-label="${diagram.open ? 'Open-topped' : 'Closed'} triangular prism">
+          <polygon points="85,205 175,75 255,205" fill="none" stroke="currentColor" stroke-width="3"/>
+          <polygon points="245,225 335,95 415,225" fill="none" stroke="currentColor" stroke-width="3"/>
+          <line x1="85" y1="205" x2="245" y2="225" stroke="currentColor" stroke-width="3"/>
+          <line x1="255" y1="205" x2="415" y2="225" stroke="currentColor" stroke-width="3"/>
+          <line x1="175" y1="75" x2="335" y2="95" stroke="currentColor" stroke-width="3"${missingFace}/>
+          <line x1="175" y1="75" x2="255" y2="205" stroke="currentColor" stroke-width="3"${missingFace}/>
+          <line x1="335" y1="95" x2="415" y2="225" stroke="currentColor" stroke-width="3"${missingFace}/>
+          <line x1="175" y1="75" x2="175" y2="205" stroke="currentColor" stroke-width="2" stroke-dasharray="6 6"/>
+          <text x="170" y="235" text-anchor="middle">${labels.base || 'b'}</text>
+          <text x="155" y="145" text-anchor="end">${labels.triangleHeight || 'a'}</text>
+          <text x="335" y="265" text-anchor="middle">${labels.length || 'L'}</text>
+        </svg>`;
+    }
+
+    function cylinderBoxDiagramSvg(diagram) {
+      const labels = diagram.labels || {};
+      const topDash = diagram.open ? ' stroke-dasharray="8 7"' : '';
+      return `
+        <svg viewBox="0 0 420 280" class="optimization-diagram" role="img" aria-label="${diagram.open ? 'Open-topped' : 'Closed'} cylinder">
+          <ellipse cx="210" cy="65" rx="105" ry="34" fill="none" stroke="currentColor" stroke-width="3"${topDash}/>
+          <line x1="105" y1="65" x2="105" y2="220" stroke="currentColor" stroke-width="3"/>
+          <line x1="315" y1="65" x2="315" y2="220" stroke="currentColor" stroke-width="3"/>
+          <ellipse cx="210" cy="220" rx="105" ry="34" fill="none" stroke="currentColor" stroke-width="3"/>
+          <line x1="210" y1="65" x2="315" y2="65" stroke="currentColor" stroke-width="2" stroke-dasharray="6 6"/>
+          <text x="265" y="52" text-anchor="middle">${labels.radius || 'r'}</text>
+          <text x="338" y="150" text-anchor="middle">${labels.height || 'h'}</text>
+        </svg>`;
+    }
+
     function distanceDiagramSvg(problem) {
       return `
         <svg viewBox="0 0 520 260" class="optimization-diagram" role="img" aria-label="Distance between a moving particle and a fixed point">
@@ -821,6 +1081,9 @@ fetch("/nav.html")
     function renderDiagram(diagram) {
       if (!diagram) return '';
       if (diagram.kind === 'box') return `<div class="optimization-diagram-wrap">${boxDiagramSvg(diagram.labels)}</div>`;
+      if (diagram.kind === 'rectangular-box') return `<div class="optimization-diagram-wrap">${rectangularBoxDiagramSvg(diagram)}</div>`;
+      if (diagram.kind === 'triangular-box') return `<div class="optimization-diagram-wrap">${triangularBoxDiagramSvg(diagram)}</div>`;
+      if (diagram.kind === 'cylinder-box') return `<div class="optimization-diagram-wrap">${cylinderBoxDiagramSvg(diagram)}</div>`;
       if (diagram.kind === 'distance') return `<div class="optimization-diagram-wrap">${distanceDiagramSvg(diagram)}</div>`;
       return '';
     }

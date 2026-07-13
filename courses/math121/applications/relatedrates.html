@@ -294,7 +294,28 @@ fetch("/nav.html")
   </header>
 
 <main>
-    <p>Placeholder page!  Note this'll be one of the last activities I attempt to make - word problems aren't well-suited to random generation.</p>
+    <p>Many problems involve multiple quantities which are changing over time.  That is, for a quantity \(Q\), we can talk about its rate of change 
+    <i>with respect to time</i>, \(\frac{dQ}{dt}\).  Note that since multiple rates of change (and hence derivatives) can be involved in a problem, 
+    and they can change with respect to other variables (not just time), Leibniz notation is the appropriate way of expressing things.</p>
+
+    <p>Word problems present the additional challenge that we must first extract the "mathematics" (variables, functions, etc.) from a paragraph.  A good 
+      general set of steps to follow is:
+    <ul>
+      <li><b>Understand the problem.</b>  Read the problem.  Then read it again.  Then again.  You may have to read the problem through in its entirety 
+      4 or 5 times before you can confidently say "I understand what I'm trying to do."  I can't stress enough the importance of <i>taking it slow</i> at 
+      this stage.  Often people are inclined to skim the paragraph quickly and underline all the numbers, then stare at it thinking "What am I <i>supposed</i> 
+      to do?"  This approach tends to lead one down an incorrect path and wastes significant time.</li>
+      <li><b>Draw a picture.</b>  Often, understanding the problem would be easier if you drew a picture: especially if there's some geometry involved.  This 
+      step goes hand-in-hand with the previous one.  Leave room to label edges in your diagram for when you later use "let" statements to assign names to the 
+      variables.</li>
+      <li><b>Introduce notation.</b>  Use "let" statements to assign names to quantities in the problem.  Try to use intuitive variable names, like \(h\) for 
+      height and \(A\) for area, to make things easier to understand.</li>
+      <li>Lay out "what we know"/"what we want to know" in terms of derivatives (there may be some given rates of change, and some unknown rate of change).</li>
+      <li>Write an equation which relates the variables in the problem.  Possibly, use other relationships between the variables to eliminate one or more of 
+      them via substitution.</li>
+      <li>Differentiate implicitly with respect to time \(t\).</li>
+      <li>Substitute known quantities (including rates of change) to solve for the desired unknown.</li>
+    </ul></p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

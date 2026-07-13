@@ -8,6 +8,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -381,7 +382,7 @@
       fill: currentColor;
     }
 
-    .optimization-hint-step {
+    .optimization-hint-step-old {
       max-width: 850px;
       margin: 0.65em auto;
       padding: 0.75em 0.95em;
@@ -582,7 +583,7 @@ fetch("/nav.html")
           return {
             type: 1,
             subtype: 1,
-            title: 'Type 1: Number problem',
+            title: '',
             questionHtml: `<p>Find the numbers whose sum is ${n} and whose product is as large as possible.</p>`,
             answers: [
               makeAnswerField({ id: 'number-1', label: 'First number', expected: optimalNumber }),
@@ -597,7 +598,7 @@ fetch("/nav.html")
               { kind: 'math', content: `\\begin{aligned}P'(x)&=0\\\\${n}-2x&=0\\\\x&=${formatNumber(optimalNumber)}\\end{aligned}` },
               { kind: 'math', content: `y=${n}-x=${n}-${formatNumber(optimalNumber)}=${formatNumber(optimalNumber)}` },
               { kind: 'math', content: `P''(x)=-2<0,\\text{ so the product is maximized.}` },
-              { kind: 'math', content: `\\boxed{${formatNumber(optimalNumber)}\\text{ and }${formatNumber(optimalNumber)}}\\qquad\\left(P_{\\max}=${formatNumber(maximumProduct)}\\right)` }
+              { kind: 'math', content: `${formatNumber(optimalNumber)}\\text{ and }${formatNumber(optimalNumber)}}\\qquad\\left(P_{\\max}=${formatNumber(maximumProduct)}\\right)` }
             ]
           };
         }
@@ -609,7 +610,7 @@ fetch("/nav.html")
           return {
             type: 1,
             subtype: 2,
-            title: 'Type 1: Number problem',
+            title: '',
             questionHtml: `<p>Find the numbers whose difference is ${n} and whose product is as small as possible.</p>`,
             answers: [
               makeAnswerField({ id: 'smaller-number', label: 'Smaller number', expected: smallerNumber }),
@@ -624,7 +625,7 @@ fetch("/nav.html")
               { kind: 'math', content: `\\begin{aligned}P'(x)&=0\\\\2x+${n}&=0\\\\x&=${formatNumber(smallerNumber)}\\end{aligned}` },
               { kind: 'math', content: `y=x+${n}=${formatNumber(smallerNumber)}+${n}=${formatNumber(largerNumber)}` },
               { kind: 'math', content: `P''(x)=2>0,\\text{ so the product is minimized.}` },
-              { kind: 'math', content: `\\boxed{${formatNumber(smallerNumber)}\\text{ and }${formatNumber(largerNumber)}}\\qquad\\left(P_{\\min}=${formatNumber(minimumProduct)}\\right)` }
+              { kind: 'math', content: `${formatNumber(smallerNumber)}\\text{ and }${formatNumber(largerNumber)}}\\qquad\\left(P_{\\min}=${formatNumber(minimumProduct)}\\right)` }
             ]
           };
         }
@@ -634,7 +635,7 @@ fetch("/nav.html")
         return {
           type: 1,
           subtype: 3,
-          title: 'Type 1: Number problem',
+          title: '',
           questionHtml: `<p>Find the positive numbers whose product is ${n} and whose sum is as small as possible.</p>`,
           answers: [
             makeAnswerField({ id: 'number-1', label: 'First number', expected: optimalNumber }),
@@ -649,7 +650,7 @@ fetch("/nav.html")
             { kind: 'math', content: `\\begin{aligned}S'(x)&=0\\\\1-\\frac{${n}}{x^{2}}&=0\\\\x^{2}&=${n}\\\\x&=\\sqrt{${n}}\\end{aligned}` },
             { kind: 'math', content: `y=\\frac{${n}}{x}=\\frac{${n}}{\\sqrt{${n}}}=\\sqrt{${n}}` },
             { kind: 'math', content: `S''(x)=\\frac{${2 * n}}{x^{3}}>0\\text{ for }x>0,\\text{ so the sum is minimized.}` },
-            { kind: 'math', content: `\\boxed{\\sqrt{${n}}\\text{ and }\\sqrt{${n}}}\\qquad\\left(S_{\\min}=2\\sqrt{${n}}\\right)` }
+            { kind: 'math', content: `\\sqrt{${n}}\\text{ and }\\sqrt{${n}}}\\qquad\\left(S_{\\min}=2\\sqrt{${n}}\\right)` }
           ]
         };
       }
@@ -735,7 +736,7 @@ fetch("/nav.html")
               { kind: 'math', content: `\\begin{aligned}P'(x)&=0\\\\-${2 * B * C}x+${linearCoeff}&=0\\\\x&=${formatNumber(xVertex)}\\end{aligned}` },
               { kind: 'math', content: `P''(x)=-${2 * B * C}<0,\\text{ so this critical point gives a maximum profit.}` },
               { kind: 'math', content: `\\begin{aligned}p\\left(${formatNumber(xVertex)}\\right)&=${M}+${B}\\left(${formatNumber(xVertex)}\\right)\\\\&=${formatNumber(optimalPrice)}\\end{aligned}` },
-              { kind: 'math', content: `\\boxed{\\$${formatNumber(optimalPrice)}}\\qquad\\left(P_{\\max}=\\$${formatNumber(maxProfit, 2)}\\right)` }
+              { kind: 'math', content: `\\$${formatNumber(optimalPrice)}}\\qquad\\left(P_{\\max}=\\$${formatNumber(maxProfit, 2)}\\right)` }
             ]
           };
         }
@@ -888,7 +889,7 @@ fetch("/nav.html")
               { kind: 'math', content: `\\begin{aligned}C'(${xName})&=0\\\\${formatNumber(2 * aCost)}${xName}^{3}&=${formatNumber(bCost)}\\\\${xName}&=${formatNumber(xOpt)}\\end{aligned}` },
               { kind: 'math', content: `${yName}=\\frac{${volumeTarget}}{${formatNumber(volumeCoefficient)}(${formatNumber(xOpt)})^{2}}=${formatNumber(yOpt)}` },
               { kind: 'math', content: `C''(${xName})=${formatNumber(2 * aCost)}+\\frac{${formatNumber(2 * bCost)}}{${xName}^{3}}>0,\\text{ so the cost is minimized.}` },
-              { kind: 'math', content: `\\boxed{C_{\\min}=\\$${formatNumber(minCost, 2)}}` }
+              { kind: 'math', content: `C_{\\min}=\\$${formatNumber(minCost, 2)}}` }
             ]
           };
         }
@@ -915,7 +916,7 @@ fetch("/nav.html")
             type: 3,
             subtype: 'surface-area',
             shape,
-            title: 'Type 3: Box problem',
+            title: '',
             questionHtml: `<p>${questionShape.charAt(0).toUpperCase() + questionShape.slice(1)} has volume ${volumeTarget} cubic units. ${relationSentence} Find the dimensions that minimize its surface area.</p>`,
             diagram,
             answers,
@@ -930,7 +931,7 @@ fetch("/nav.html")
               { kind: 'math', content: `\\begin{aligned}S'(${variables.x})&=0\\\\${formatNumber(2 * baseAreaCoefficient)}${variables.x}^{3}&=${formatNumber(sideAreaCoefficient * volumeTarget / volumeCoefficient)}\\\\${variables.x}&=${formatNumber(xOpt)}\\end{aligned}` },
               { kind: 'math', content: `${variables.y}=\\frac{${volumeTarget}}{${formatNumber(volumeCoefficient)}(${formatNumber(xOpt)})^{2}}=${formatNumber(yOpt)}` },
               { kind: 'math', content: `S''(${variables.x})=${formatNumber(2 * baseAreaCoefficient)}+\\frac{${formatNumber(2 * sideAreaCoefficient * volumeTarget / volumeCoefficient)}}{${variables.x}^{3}}>0,\\text{ so the surface area is minimized.}` },
-              { kind: 'math', content: `\\boxed{S_{\\min}=${formatNumber(minArea)}}` }
+              { kind: 'math', content: `S_{\\min}=${formatNumber(minArea)}}` }
             ]
           };
         }
@@ -954,7 +955,7 @@ fetch("/nav.html")
           type: 3,
           subtype: 'volume',
           shape,
-          title: 'Type 3: Box problem',
+          title: '',
           questionHtml: `<p>${questionShape.charAt(0).toUpperCase() + questionShape.slice(1)} has surface area ${areaTarget} square units. ${relationSentence} Find the dimensions that maximize its volume.</p>`,
           diagram,
           answers,
@@ -969,7 +970,7 @@ fetch("/nav.html")
             { kind: 'math', content: `\\begin{aligned}V'(${variables.x})&=0\\\\${areaTarget}-${formatNumber(3 * baseAreaCoefficient)}${variables.x}^{2}&=0\\\\${variables.x}&=${formatNumber(xOpt)}\\end{aligned}` },
             { kind: 'math', content: `${variables.y}=\\frac{${areaTarget}-${formatNumber(baseAreaCoefficient)}(${formatNumber(xOpt)})^{2}}{${formatNumber(sideAreaCoefficient)}(${formatNumber(xOpt)})}=${formatNumber(yOpt)}` },
             { kind: 'math', content: `V''(${variables.x})=-${formatNumber(6 * baseAreaCoefficient * volumeCoefficient / sideAreaCoefficient)}${variables.x}<0,\\text{ so the volume is maximized.}` },
-            { kind: 'math', content: `\\boxed{V_{\\max}=${formatNumber(maxVolume)}}` }
+            { kind: 'math', content: `V_{\\max}=${formatNumber(maxVolume)}}` }
           ]
         };
       }
@@ -1044,7 +1045,7 @@ fetch("/nav.html")
               { kind: 'math', content: `\\begin{aligned}Q'(t)&=0\\\\t&=${formatNumber(tOpt)}\\end{aligned}` },
               { kind: 'math', content: `Q''(t)=${formatNumber(2 * quadraticCoeff)}>0,\\text{ so this gives the minimum distance.}` },
               { kind: 'math', content: `\\begin{aligned}D\\left(${formatNumber(tOpt)}\\right)&=\\sqrt{Q\\left(${formatNumber(tOpt)}\\right)}\\\\&=${formatNumber(minDistance)}\\end{aligned}` },
-              { kind: 'math', content: `\\boxed{t=${formatNumber(tOpt)},\\qquad D_{\\min}=${formatNumber(minDistance)}}` }
+              { kind: 'math', content: `t=${formatNumber(tOpt)},\\qquad D_{\\min}=${formatNumber(minDistance)}}` }
             ]
           };
         }
@@ -1082,7 +1083,7 @@ fetch("/nav.html")
               { kind: 'math', content: `\\begin{aligned}D'(t)&=0\\\\t&=${h}\\end{aligned}` },
               { kind: 'math', content: `D''(t)=${2 * aGap}>0,\\text{ so the distance is minimized.}` },
               { kind: 'math', content: `D(${h})=${kGap}` },
-              { kind: 'math', content: `\\boxed{t=${h}\\text{ hours after ${clockLabel(startHour)}},\\qquad D_{\\min}=${kGap}}` }
+              { kind: 'math', content: `t=${h}\\text{ hours after ${clockLabel(startHour)}},\\qquad D_{\\min}=${kGap}}` }
             ]
           };
         }
@@ -1123,7 +1124,7 @@ fetch("/nav.html")
               { kind: 'math', content: `\\begin{aligned}V'(t)&=0\\\\t&=${h}\\end{aligned}` },
               { kind: 'math', content: `V''(t)=${2 * aGap}>0,\\text{ so the velocities are closest then.}` },
               { kind: 'math', content: `\\begin{aligned}\\text{Distance}&=\\left|g(${h})-f(${h})\\right|\\\\&=${formatNumber(Math.abs(positionGapAtH))}\\end{aligned}` },
-              { kind: 'math', content: `\\boxed{t=${h}\\text{ hours after ${clockLabel(startHour)}},\\qquad D=${formatNumber(Math.abs(positionGapAtH))}}` }
+              { kind: 'math', content: `t=${h}\\text{ hours after ${clockLabel(startHour)}},\\qquad D=${formatNumber(Math.abs(positionGapAtH))}}` }
             ]
           };
         }
@@ -1160,7 +1161,7 @@ fetch("/nav.html")
               { kind: 'math', content: `D'(t)=${2 * aGap}(t-${h})` },
               { kind: 'math', content: `\\begin{aligned}D'(t)&=0\\\\t&=${h}\\end{aligned}` },
               { kind: 'math', content: `D''(t)=${2 * aGap}>0,\\text{ so the vertical distance is minimized.}` },
-              { kind: 'math', content: `\\boxed{t=${h},\\qquad D_{\\min}=${kGap}}` }
+              { kind: 'math', content: `t=${h},\\qquad D_{\\min}=${kGap}}` }
             ]
           };
         }
@@ -1201,7 +1202,7 @@ fetch("/nav.html")
             { kind: 'math', content: `D(t)=${aGap}(t-${h})^{2}+${kGap}` },
             { kind: 'math', content: `D'(t)=${2 * aGap}(t-${h})=0\\quad\\Longrightarrow\\quad t=${h}` },
             { kind: 'math', content: `\\begin{aligned}D(${left})&=${formatNumber(leftDistance)}\\\\D(${h})&=${kGap}\\\\D(${right})&=${formatNumber(rightDistance)}\\end{aligned}` },
-            { kind: 'math', content: `\\boxed{t=${maxTime},\\qquad D_{\\max}=${formatNumber(maxDistance)}}` }
+            { kind: 'math', content: `t=${maxTime},\\qquad D_{\\max}=${formatNumber(maxDistance)}}` }
           ]
         };
       }

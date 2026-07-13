@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -567,21 +568,83 @@ fetch("/nav.html")
       // Temporary representative problems exercise the common engine. Each will be
       // replaced by its full generator in the next milestones without changing the UI.
       if (type === 1) {
+        const subtype = randomInteger(1, 3);
         const n = randomInteger(2, 50);
-        const answer = n / 2;
+
+        if (subtype === 1) {
+          const optimalNumber = n / 2;
+          const maximumProduct = optimalNumber * optimalNumber;
+          return {
+            type: 1,
+            subtype: 1,
+            title: 'Type 1: Number problem',
+            questionHtml: `<p>Find the numbers whose sum is ${n} and whose product is as large as possible.</p>`,
+            answers: [
+              makeAnswerField({ id: 'number-1', label: 'First number', expected: optimalNumber }),
+              makeAnswerField({ id: 'number-2', label: 'Second number', expected: optimalNumber })
+            ],
+            hints: [
+              { kind: 'math', content: `\\text{Let }x\\text{ be the first number and }y\\text{ be the second number.}` },
+              { kind: 'math', content: `x+y=${n}\\quad\\Longrightarrow\\quad y=${n}-x` },
+              { kind: 'math', content: `P=xy` },
+              { kind: 'math', content: `P(x)=x(${n}-x)=${n}x-x^{2}` },
+              { kind: 'math', content: `P'(x)=${n}-2x` },
+              { kind: 'math', content: `\\begin{aligned}P'(x)&=0\\\\${n}-2x&=0\\\\x&=${formatNumber(optimalNumber)}\\end{aligned}` },
+              { kind: 'math', content: `y=${n}-x=${n}-${formatNumber(optimalNumber)}=${formatNumber(optimalNumber)}` },
+              { kind: 'math', content: `P''(x)=-2<0,\\text{ so the product is maximized.}` },
+              { kind: 'math', content: `\\boxed{${formatNumber(optimalNumber)}\\text{ and }${formatNumber(optimalNumber)}}\\qquad\\left(P_{\\max}=${formatNumber(maximumProduct)}\\right)` }
+            ]
+          };
+        }
+
+        if (subtype === 2) {
+          const smallerNumber = -n / 2;
+          const largerNumber = n / 2;
+          const minimumProduct = smallerNumber * largerNumber;
+          return {
+            type: 1,
+            subtype: 2,
+            title: 'Type 1: Number problem',
+            questionHtml: `<p>Find the numbers whose difference is ${n} and whose product is as small as possible.</p>`,
+            answers: [
+              makeAnswerField({ id: 'smaller-number', label: 'Smaller number', expected: smallerNumber }),
+              makeAnswerField({ id: 'larger-number', label: 'Larger number', expected: largerNumber })
+            ],
+            hints: [
+              { kind: 'math', content: `\\text{Let }x\\text{ be the smaller number and }y\\text{ be the larger number.}` },
+              { kind: 'math', content: `y-x=${n}\\quad\\Longrightarrow\\quad y=x+${n}` },
+              { kind: 'math', content: `P=xy` },
+              { kind: 'math', content: `P(x)=x(x+${n})=x^{2}+${n}x` },
+              { kind: 'math', content: `P'(x)=2x+${n}` },
+              { kind: 'math', content: `\\begin{aligned}P'(x)&=0\\\\2x+${n}&=0\\\\x&=${formatNumber(smallerNumber)}\\end{aligned}` },
+              { kind: 'math', content: `y=x+${n}=${formatNumber(smallerNumber)}+${n}=${formatNumber(largerNumber)}` },
+              { kind: 'math', content: `P''(x)=2>0,\\text{ so the product is minimized.}` },
+              { kind: 'math', content: `\\boxed{${formatNumber(smallerNumber)}\\text{ and }${formatNumber(largerNumber)}}\\qquad\\left(P_{\\min}=${formatNumber(minimumProduct)}\\right)` }
+            ]
+          };
+        }
+
+        const optimalNumber = Math.sqrt(n);
+        const minimumSum = 2 * optimalNumber;
         return {
           type: 1,
+          subtype: 3,
           title: 'Type 1: Number problem',
-          questionHtml: `<p>Find the two numbers whose sum is ${n} and whose product is as large as possible.</p>`,
+          questionHtml: `<p>Find the positive numbers whose product is ${n} and whose sum is as small as possible.</p>`,
           answers: [
-            makeAnswerField({ id: 'number-1', label: 'First number', expected: answer }),
-            makeAnswerField({ id: 'number-2', label: 'Second number', expected: answer })
+            makeAnswerField({ id: 'number-1', label: 'First number', expected: optimalNumber }),
+            makeAnswerField({ id: 'number-2', label: 'Second number', expected: optimalNumber })
           ],
           hints: [
-            { kind: 'text', content: 'Let one number be x. Then the other number is the total minus x.' },
-            { kind: 'math', content: `P(x)=x(${n}-x)` },
-            { kind: 'math', content: `P'(x)=${n}-2x` },
-            { kind: 'math', content: `P'(x)=0\Rightarrow x=${formatNumber(answer)}` }
+            { kind: 'math', content: `\\text{Let }x\\text{ be the first positive number and }y\\text{ be the second.}` },
+            { kind: 'math', content: `xy=${n}\\quad\\Longrightarrow\\quad y=\\frac{${n}}{x},\\qquad x>0` },
+            { kind: 'math', content: `S=x+y` },
+            { kind: 'math', content: `S(x)=x+\\frac{${n}}{x}` },
+            { kind: 'math', content: `S'(x)=1-\\frac{${n}}{x^{2}}` },
+            { kind: 'math', content: `\\begin{aligned}S'(x)&=0\\\\1-\\frac{${n}}{x^{2}}&=0\\\\x^{2}&=${n}\\\\x&=\\sqrt{${n}}\\end{aligned}` },
+            { kind: 'math', content: `y=\\frac{${n}}{x}=\\frac{${n}}{\\sqrt{${n}}}=\\sqrt{${n}}` },
+            { kind: 'math', content: `S''(x)=\\frac{${2 * n}}{x^{3}}>0\\text{ for }x>0,\\text{ so the sum is minimized.}` },
+            { kind: 'math', content: `\\boxed{\\sqrt{${n}}\\text{ and }\\sqrt{${n}}}\\qquad\\left(S_{\\min}=2\\sqrt{${n}}\\right)` }
           ]
         };
       }
@@ -624,7 +687,7 @@ fetch("/nav.html")
           hints: [
             { kind: 'text', content: 'Assign variables to the dimensions shown in the diagram.' },
             { kind: 'math', content: `x^2h=${volume}` },
-            { kind: 'math', content: `h=\frac{${volume}}{x^2}` },
+            { kind: 'math', content: `h=\\frac{${volume}}{x^2}` },
             { kind: 'text', content: 'The complete box generators will replace this representative framework problem.' }
           ]
         };
@@ -638,7 +701,7 @@ fetch("/nav.html")
       return {
         type: 4,
         title: 'Type 4: Distance problem',
-        questionHtml: `<p>A particle moves along the x-axis with position \(P(t)=(${speed}t,0)\). Find when it is closest to the fixed point \(A=(${targetX},${targetY})\), and find that minimum distance.</p>`,
+        questionHtml: `<p>A particle moves along the x-axis with position \\(P(t)=(${speed}t,0)\\). Find when it is closest to the fixed point \\(A=(${targetX},${targetY})\\), and find that minimum distance.</p>`,
         diagram: { kind: 'distance', movingLabel: 'P(t)', targetLabel: 'A' },
         answers: [
           makeAnswerField({ id: 'time', label: 'Time', expected: time, unit: 'time units' }),
@@ -647,8 +710,8 @@ fetch("/nav.html")
         hints: [
           { kind: 'text', content: 'Use the distance formula, or minimize the square of the distance.' },
           { kind: 'math', content: `D^2(t)=(${speed}t-${targetX})^2+${targetY}^2` },
-          { kind: 'math', content: `\frac{d}{dt}D^2(t)=2${speed}(${speed}t-${targetX})` },
-          { kind: 'math', content: `t=${formatNumber(time)},\qquad D=${formatNumber(distance)}` }
+          { kind: 'math', content: `\\frac{d}{dt}D^2(t)=2${speed}(${speed}t-${targetX})` },
+          { kind: 'math', content: `t=${formatNumber(time)},\\qquad D=${formatNumber(distance)}` }
         ]
       };
     }

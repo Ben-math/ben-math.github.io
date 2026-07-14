@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -473,37 +474,107 @@ fetch("/nav.html")
       return `${horizontal} and ${vertical}`;
     }
 
-    function makeSailingDiagram(problem) {
-      const { initialX, initialY, targetX, targetY } = problem.data;
-      const points = [[0,0], [initialX, initialY], [problem.data.vAx * problem.data.elapsed, problem.data.vAy * problem.data.elapsed], [initialX + problem.data.vBx * problem.data.elapsed, initialY + problem.data.vBy * problem.data.elapsed]];
-      const xs = points.map(p => p[0]), ys = points.map(p => p[1]);
-      const minX = Math.min(...xs), maxX = Math.max(...xs);
-      const minY = Math.min(...ys), maxY = Math.max(...ys);
-      const scaleX = v => 260 + (v - (minX + maxX)/2) * Math.min(5, 170 / Math.max(1, maxX-minX));
-      const scaleY = v => 170 - (v - (minY + maxY)/2) * Math.min(5, 110 / Math.max(1, maxY-minY));
-      const ax0 = scaleX(initialX), ay0 = scaleY(initialY);
-      const bx0 = scaleX(0), by0 = scaleY(0);
-      const ax1 = scaleX(problem.data.vAx * problem.data.elapsed), ay1 = scaleY(problem.data.vAy * problem.data.elapsed);
-      const bx1 = scaleX(initialX + problem.data.vBx * problem.data.elapsed), by1 = scaleY(initialY + problem.data.vBy * problem.data.elapsed);
+    function sailingCoordinateTex(initialValue, velocityValue, velocityTex, elapsed) {
+      if (Math.abs(velocityValue) < 1e-10) return `${initialValue}`;
+      const sign = velocityValue < 0 ? '-' : '+';
+      const absVelocityTex = velocityTex.startsWith('-') ? velocityTex.slice(1) : velocityTex;
+      return `${initialValue}${sign}${elapsed}\\left(${absVelocityTex}\\right)`;
+    }
+
+    function diagonalLegData(speed, direction) {
+      if (!['NE', 'SE', 'SW', 'NW'].includes(direction)) return null;
+      const radicand = speed * speed / 2;
+      const sx = DIRECTIONS[direction].x < 0 ? -1 : 1;
+      const sy = DIRECTIONS[direction].y < 0 ? -1 : 1;
+      return {
+        speed,
+        direction,
+        radicand,
+        xTex: `${sx < 0 ? '-' : ''}\\sqrt{${radicand}}`,
+        yTex: `${sy < 0 ? '-' : ''}\\sqrt{${radicand}}`
+      };
+    }
+
+    function velocityTriangleDiagramHtml(data) {
+      const descending = data.direction === 'SE' || data.direction === 'NW';
+      const x1 = descending ? 145 : 145;
+      const y1 = descending ? 70 : 245;
+      const x2 = 385;
+      const y2 = descending ? 245 : 70;
+      const cornerX = 385;
+      const cornerY = descending ? 70 : 245;
       return `
         <div class="optimization-diagram-wrap">
-          <svg class="optimization-diagram" viewBox="0 0 520 340" role="img" aria-label="Positions and motion of two ships">
+          <svg class="optimization-diagram" viewBox="0 0 520 300" role="img" aria-label="Right triangle resolving diagonal ship speed into horizontal and vertical components">
+            <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="currentColor" stroke-width="2.5"/>
+            <line x1="${x1}" y1="${y1}" x2="${cornerX}" y2="${cornerY}" stroke="currentColor" stroke-width="2"/>
+            <line x1="${cornerX}" y1="${cornerY}" x2="${x2}" y2="${y2}" stroke="currentColor" stroke-width="2"/>
+            <path d="M ${cornerX - 18} ${cornerY} L ${cornerX - 18} ${cornerY + (descending ? 18 : -18)} L ${cornerX} ${cornerY + (descending ? 18 : -18)}" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <text x="${(x1+x2)/2 - 12}" y="${(y1+y2)/2 - 12}">${data.speed}</text>
+            <text x="${(x1+cornerX)/2 - 4}" y="${cornerY + (descending ? -10 : 22)}">n</text>
+            <text x="${cornerX + 12}" y="${(cornerY+y2)/2 + 5}">n</text>
+          </svg>
+        </div>`;
+    }
+
+    function makeSailingDiagram(problem) {
+      const d = problem.data;
+      const a0 = [0, 0];
+      const b0 = [d.initialX, d.initialY];
+      const a1 = [d.vAx * d.elapsed, d.vAy * d.elapsed];
+      const b1 = [d.initialX + d.vBx * d.elapsed, d.initialY + d.vBy * d.elapsed];
+      const maxAbs = Math.max(1, ...[a0, b0, a1, b1].flat().map(Math.abs));
+      const axisLimit = 1.2 * maxAbs;
+      const sx = x => 260 + (x / axisLimit) * 220;
+      const sy = y => 170 - (y / axisLimit) * 140;
+      const ax0 = sx(a0[0]), ay0 = sy(a0[1]);
+      const bx0 = sx(b0[0]), by0 = sy(b0[1]);
+      const ax1 = sx(a1[0]), ay1 = sy(a1[1]);
+      const bx1 = sx(b1[0]), by1 = sy(b1[1]);
+
+      let angleMarkup = '';
+      if (d.askAngle) {
+        const dx = bx1 - ax1;
+        const dy = by1 - ay1;
+        const length = Math.hypot(dx, dy) || 1;
+        const ux = dx / length;
+        const uy = dy / length;
+        const radius = 30;
+        const startX = ax1;
+        const startY = ay1 - radius;
+        const endX = ax1 + radius * ux;
+        const endY = ay1 + radius * uy;
+        const sweep = dx >= 0 ? 1 : 0;
+        angleMarkup = `
+          <line x1="${ax1}" y1="${ay1}" x2="${ax1}" y2="${ay1 - 58}" stroke="black" stroke-width="2"/>
+          <path d="M ${startX} ${startY} A ${radius} ${radius} 0 0 ${sweep} ${endX} ${endY}" fill="none" stroke="black" stroke-width="2"/>
+          <text x="${ax1 + (dx >= 0 ? 18 : -30)}" y="${ay1 - 32}">θ</text>`;
+      }
+
+      return `
+        <div class="optimization-diagram-wrap">
+          <svg class="optimization-diagram" viewBox="0 0 520 340" role="img" aria-label="Initial and final positions of two ships">
             <defs>
-              <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <marker id="sailing-axis-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
                 <path d="M0,0 L0,6 L7,3 z" fill="currentColor"></path>
               </marker>
             </defs>
-            <line x1="260" y1="25" x2="260" y2="315" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"/>
-            <line x1="35" y1="170" x2="485" y2="170" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"/>
-            <text x="270" y="38">N</text><text x="470" y="158">E</text>
-            <line x1="${ax0}" y1="${ay0}" x2="${bx0}" y2="${by0}" stroke="currentColor" stroke-width="2" stroke-dasharray="6 5"/>
-            <circle cx="${ax0}" cy="${ay0}" r="6"/><text x="${ax0+9}" y="${ay0-8}">A at ${clockLabel(problem.data.startHour)}</text>
-            <circle cx="${bx0}" cy="${by0}" r="6"/><text x="${bx0+9}" y="${by0-8}">B at ${clockLabel(problem.data.startHour)}</text>
-            <line x1="${ax0}" y1="${ay0}" x2="${ax1}" y2="${ay1}" stroke="currentColor" stroke-width="2" marker-end="url(#arrow)"/>
-            <line x1="${bx0}" y1="${by0}" x2="${bx1}" y2="${by1}" stroke="currentColor" stroke-width="2" marker-end="url(#arrow)"/>
-            <line x1="${ax1}" y1="${ay1}" x2="${bx1}" y2="${by1}" stroke="currentColor" stroke-width="2.5"/>
-            <circle cx="${ax1}" cy="${ay1}" r="5"/><text x="${ax1+8}" y="${ay1+18}">A at ${clockLabel(problem.data.endHour)}</text>
-            <circle cx="${bx1}" cy="${by1}" r="5"/><text x="${bx1+8}" y="${by1+18}">B at ${clockLabel(problem.data.endHour)}</text>
+            <line x1="260" y1="315" x2="260" y2="25" stroke="currentColor" stroke-width="1.5" marker-end="url(#sailing-axis-arrow)"/>
+            <line x1="35" y1="170" x2="485" y2="170" stroke="currentColor" stroke-width="1.5" marker-end="url(#sailing-axis-arrow)"/>
+            <text x="270" y="38">N</text>
+            <text x="470" y="158">E</text>
+            <text x="270" y="307">S</text>
+            <text x="42" y="158">W</text>
+
+            <line x1="${ax0}" y1="${ay0}" x2="${ax1}" y2="${ay1}" stroke="#8ecae6" stroke-width="2"/>
+            <line x1="${bx0}" y1="${by0}" x2="${bx1}" y2="${by1}" stroke="#f4a6a6" stroke-width="2"/>
+            <line x1="${ax1}" y1="${ay1}" x2="${bx1}" y2="${by1}" stroke="black" stroke-width="2" stroke-dasharray="7 5"/>
+
+            <circle cx="${ax0}" cy="${ay0}" r="6" fill="#8ecae6"/>
+            <circle cx="${ax1}" cy="${ay1}" r="6" fill="#1565c0"/>
+            <circle cx="${bx0}" cy="${by0}" r="6" fill="#f4a6a6"/>
+            <circle cx="${bx1}" cy="${by1}" r="6" fill="#b71c1c"/>
+            ${angleMarkup}
           </svg>
         </div>`;
     }
@@ -514,8 +585,12 @@ fetch("/nav.html")
         const initialY = randomChoice([-1, 1]) * randomInteger(10, 60);
         const directionA = randomChoice(Object.keys(DIRECTIONS));
         const directionB = randomChoice(Object.keys(DIRECTIONS));
-        const speedA = randomInteger(10, 100);
-        const speedB = randomInteger(10, 100);
+        const speedA = ['NE', 'SE', 'SW', 'NW'].includes(directionA)
+          ? 2 * randomInteger(5, 50)
+          : randomInteger(10, 100);
+        const speedB = ['NE', 'SE', 'SW', 'NW'].includes(directionB)
+          ? 2 * randomInteger(5, 50)
+          : randomInteger(10, 100);
         const startHour = randomInteger(7, 14);
         const elapsed = randomInteger(1, 5);
         const endHour = startHour + elapsed;
@@ -526,8 +601,12 @@ fetch("/nav.html")
         const vBy = speedB * DIRECTIONS[directionB].y;
         const relVx = vBx - vAx;
         const relVy = vBy - vAy;
-        const relX = initialX + relVx * elapsed;
-        const relY = initialY + relVy * elapsed;
+        const aFinalX = vAx * elapsed;
+        const aFinalY = vAy * elapsed;
+        const bFinalX = initialX + vBx * elapsed;
+        const bFinalY = initialY + vBy * elapsed;
+        const relX = bFinalX - aFinalX;
+        const relY = bFinalY - aFinalY;
         const distance = Math.hypot(relX, relY);
         if (distance < 5 || !Number.isFinite(distance)) continue;
 
@@ -538,20 +617,60 @@ fetch("/nav.html")
           : (relX * relVx + relY * relVy) / distance;
         if (!Number.isFinite(rate) || Math.abs(rate) < 0.02) continue;
 
-        const targetX = relX;
-        const targetY = relY;
-        const xDotTex = `${componentTex(speedB, directionB, 'x')}-\\left(${componentTex(speedA, directionA, 'x')}\\right)`;
-        const yDotTex = `${componentTex(speedB, directionB, 'y')}-\\left(${componentTex(speedA, directionA, 'y')}\\right)`;
+        const aDiagonal = diagonalLegData(speedA, directionA);
+        const bDiagonal = diagonalLegData(speedB, directionB);
+        const aVxTex = aDiagonal ? aDiagonal.xTex : componentTex(speedA, directionA, 'x');
+        const aVyTex = aDiagonal ? aDiagonal.yTex : componentTex(speedA, directionA, 'y');
+        const bVxTex = bDiagonal ? bDiagonal.xTex : componentTex(speedB, directionB, 'x');
+        const bVyTex = bDiagonal ? bDiagonal.yTex : componentTex(speedB, directionB, 'y');
 
-        const data = { initialX, initialY, directionA, directionB, speedA, speedB, startHour, endHour, elapsed,
-          vAx, vAy, vBx, vBy, relVx, relVy, relX, relY, targetX, targetY, distance, rate, askAngle };
+        const data = {
+          initialX, initialY, directionA, directionB, speedA, speedB, startHour, endHour, elapsed,
+          vAx, vAy, vBx, vBy, relVx, relVy, relX, relY, distance, rate, askAngle,
+          aFinalX, aFinalY, bFinalX, bFinalY
+        };
+
+        const shipAHints = [];
+        if (aDiagonal) {
+          shipAHints.push(
+            { kind: 'velocity-triangle', content: `Ship A is travelling ${directionA}, so its horizontal and vertical speed components have equal magnitude:`, data: aDiagonal },
+            { kind: 'math', content: `n^{2}+n^{2}=${speedA}^{2}\\implies 2n^{2}=${speedA * speedA}\\implies n=\\sqrt{${aDiagonal.radicand}}` }
+          );
+        }
+        shipAHints.push(
+          { kind: 'math', content: `\\frac{dx_A}{dt}=${aVxTex}\\qquad\\text{and}\\qquad\\frac{dy_A}{dt}=${aVyTex}` },
+          { kind: 'math', content: `\\text{At ${clockLabel(endHour)}, Ship A has coordinates }\\left(${sailingCoordinateTex(0, vAx, aVxTex, elapsed)},${sailingCoordinateTex(0, vAy, aVyTex, elapsed)}\\right)\\approx\\left(${aFinalX.toFixed(2)},${aFinalY.toFixed(2)}\\right).` }
+        );
+
+        const shipBHints = [];
+        if (bDiagonal) {
+          shipBHints.push(
+            { kind: 'velocity-triangle', content: `Ship B is travelling ${directionB}, so its horizontal and vertical speed components have equal magnitude:`, data: bDiagonal },
+            { kind: 'math', content: `n^{2}+n^{2}=${speedB}^{2}\\implies 2n^{2}=${speedB * speedB}\\implies n=\\sqrt{${bDiagonal.radicand}}` }
+          );
+        }
+        shipBHints.push(
+          { kind: 'math', content: `\\frac{dx_B}{dt}=${bVxTex}\\qquad\\text{and}\\qquad\\frac{dy_B}{dt}=${bVyTex}` },
+          { kind: 'math', content: `\\text{At ${clockLabel(endHour)}, Ship B has coordinates }\\left(${sailingCoordinateTex(initialX, vBx, bVxTex, elapsed)},${sailingCoordinateTex(initialY, vBy, bVyTex, elapsed)}\\right)\\approx\\left(${bFinalX.toFixed(2)},${bFinalY.toFixed(2)}\\right).` }
+        );
+
+        const diagramText = [
+          `Let Ship A be the origin initially, with east as the positive horizontal direction and north as the positive vertical direction.`,
+          `Let Ship A's position at ${clockLabel(startHour)} be the light blue point and its position at ${clockLabel(endHour)} be the dark blue point.`,
+          `Let Ship B's position at ${clockLabel(startHour)} be the light red point and its position at ${clockLabel(endHour)} be the dark red point.`
+        ].map(line => `<div>${line}</div>`).join('');
 
         const commonHints = [
-          { kind: 'diagram', content: 'Let Ship A be the origin initially, with east as the positive horizontal direction and north as the positive vertical direction:', data },
-          { kind: 'math', content: `\\text{Let }x\\text{ be the east-west displacement from Ship A to Ship B, and }y\\text{ the north-south displacement.}` },
-          { kind: 'math', content: `x(0)=${initialX},\\qquad y(0)=${initialY}` },
-          { kind: 'math', content: `\\frac{dx}{dt}=${xDotTex}=${formatNumber(relVx)},\\qquad \\frac{dy}{dt}=${yDotTex}=${formatNumber(relVy)}` },
-          { kind: 'math', content: `x(${elapsed})=${initialX}+${formatNumber(relVx)}(${elapsed})=${formatNumber(relX)},\\qquad y(${elapsed})=${initialY}+${formatNumber(relVy)}(${elapsed})=${formatNumber(relY)}` }
+          { kind: 'diagram', content: diagramText, data },
+          { kind: 'math', content: `\\text{At ${clockLabel(startHour)}, Ship A has coordinates }(0,0)\\text{, and Ship B has coordinates }(${initialX},${initialY}).` },
+          ...shipAHints,
+          ...shipBHints,
+          { kind: 'math', content: `\\text{Let }x(t)\\text{ be the east-west displacement from Ship A to Ship B, where }t\\text{ is the number of hours since ${clockLabel(startHour)}.}` },
+          { kind: 'math', content: `\\text{Let }y(t)\\text{ be the north-south displacement from Ship A to Ship B.}` },
+          { kind: 'math', content: `x(0)=${initialX}-0=${initialX}\\qquad\\text{and}\\qquad y(0)=${initialY}-0=${initialY}` },
+          { kind: 'math', content: `x(${elapsed})=${bFinalX.toFixed(2)}-${aFinalX.toFixed(2)}=${relX.toFixed(2)}\\qquad\\text{and}\\qquad y(${elapsed})=${bFinalY.toFixed(2)}-${aFinalY.toFixed(2)}=${relY.toFixed(2)}` },
+          { kind: 'math', content: `\\frac{dx}{dt}=\\frac{dx_B}{dt}-\\frac{dx_A}{dt}=${bVxTex}-\\left(${aVxTex}\\right)=${formatNumber(relVx)}` },
+          { kind: 'math', content: `\\frac{dy}{dt}=\\frac{dy_B}{dt}-\\frac{dy_A}{dt}=${bVyTex}-\\left(${aVyTex}\\right)=${formatNumber(relVy)}` }
         ];
 
         const hints = askAngle ? [
@@ -559,13 +678,13 @@ fetch("/nav.html")
           { kind: 'math', content: `\\tan\\theta=\\frac{x}{y}` },
           { kind: 'math', content: `\\sec^{2}\\theta\\frac{d\\theta}{dt}=\\frac{y\\frac{dx}{dt}-x\\frac{dy}{dt}}{y^{2}}` },
           { kind: 'math', content: `\\frac{d\\theta}{dt}=\\frac{y\\frac{dx}{dt}-x\\frac{dy}{dt}}{x^{2}+y^{2}}` },
-          { kind: 'math', content: `\\left.\\frac{d\\theta}{dt}\\right|_{t=${elapsed}}=\\frac{(${formatNumber(relY)})(${formatNumber(relVx)})-(${formatNumber(relX)})(${formatNumber(relVy)})}{(${formatNumber(relX)})^{2}+(${formatNumber(relY)})^{2}}=${formatNumber(rate)}\\text{ radians per hour}.` }
+          { kind: 'math', content: `\\text{At }t=${elapsed},\\quad\\frac{d\\theta}{dt}=\\frac{(${relY.toFixed(2)})(${formatNumber(relVx)})-(${relX.toFixed(2)})(${formatNumber(relVy)})}{(${relX.toFixed(2)})^{2}+(${relY.toFixed(2)})^{2}}=${formatNumber(rate)}\\text{ radians per hour}.` }
         ] : [
           ...commonHints,
           { kind: 'math', content: `d^{2}=x^{2}+y^{2}` },
           { kind: 'math', content: `2d\\frac{dd}{dt}=2x\\frac{dx}{dt}+2y\\frac{dy}{dt}` },
           { kind: 'math', content: `\\frac{dd}{dt}=\\frac{x\\frac{dx}{dt}+y\\frac{dy}{dt}}{\\sqrt{x^{2}+y^{2}}}` },
-          { kind: 'math', content: `\\left.\\frac{dd}{dt}\\right|_{t=${elapsed}}=\\frac{(${formatNumber(relX)})(${formatNumber(relVx)})+(${formatNumber(relY)})(${formatNumber(relVy)})}{\\sqrt{(${formatNumber(relX)})^{2}+(${formatNumber(relY)})^{2}}}=${formatNumber(rate)}\\text{ km/h}.` }
+          { kind: 'math', content: `\\text{At }t=${elapsed},\\quad\\frac{dd}{dt}=\\frac{(${relX.toFixed(2)})(${formatNumber(relVx)})+(${relY.toFixed(2)})(${formatNumber(relVy)})}{\\sqrt{(${relX.toFixed(2)})^{2}+(${relY.toFixed(2)})^{2}}}=${formatNumber(rate)}\\text{ km/h}.` }
         ];
 
         return {
@@ -1140,6 +1259,8 @@ fetch("/nav.html")
       block.style.margin = '0.6em auto';
       if (hint.kind === 'diagram') {
         block.innerHTML = `<div style="text-align:center; margin-bottom:0.5em;">${hint.content}</div>${makeSailingDiagram(currentProblem)}`;
+      } else if (hint.kind === 'velocity-triangle') {
+        block.innerHTML = `<div style="text-align:center; margin-bottom:0.5em;">${hint.content}</div>${velocityTriangleDiagramHtml(hint.data)}`;
       } else if (hint.kind === 'shape-diagram') {
         block.innerHTML = `<div style="text-align:center; margin-bottom:0.5em;">${hint.content}</div>${shapeDiagramHtml(hint.data)}`;
       } else if (hint.kind === 'angle-diagram') {

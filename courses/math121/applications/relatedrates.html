@@ -4,6 +4,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -824,6 +825,133 @@ fetch("/nav.html")
       throw new Error('Unable to generate a valid particle movement problem.');
     }
 
+
+    function angleProblemDiagramHtml(data) {
+      const { ax, ay, bx, by, px, py, direction } = data;
+      const allX = [ax, bx, px], allY = [ay, by, py];
+      const minX = Math.min(...allX), maxX = Math.max(...allX);
+      const minY = Math.min(...allY), maxY = Math.max(...allY);
+      const spanX = Math.max(8, maxX - minX), spanY = Math.max(8, maxY - minY);
+      const scale = Math.min(24, 330 / spanX, 210 / spanY);
+      const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+      const sx = x => 260 + (x - cx) * scale;
+      const sy = y => 165 - (y - cy) * scale;
+      const aX = sx(ax), aY = sy(ay), bX = sx(bx), bY = sy(by), pX = sx(px), pY = sy(py);
+      const arrowDx = direction === 'right' ? 42 : direction === 'left' ? -42 : 0;
+      const arrowDy = direction === 'up' ? -42 : direction === 'down' ? 42 : 0;
+      return `
+        <div class="optimization-diagram-wrap">
+          <svg class="optimization-diagram" viewBox="0 0 520 330" role="img" aria-label="Observer and moving particle">
+            <defs>
+              <marker id="angle-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                <path d="M0,0 L0,6 L7,3 z" fill="currentColor"></path>
+              </marker>
+            </defs>
+            <line x1="${aX}" y1="25" x2="${aX}" y2="305" stroke="currentColor" stroke-width="1.5" stroke-dasharray="6 5"/>
+            <line x1="${aX}" y1="${aY}" x2="${pX}" y2="${pY}" stroke="currentColor" stroke-width="2.5"/>
+            <line x1="${bX}" y1="${bY}" x2="${pX}" y2="${pY}" stroke="currentColor" stroke-width="2" stroke-dasharray="5 4"/>
+            <line x1="${pX}" y1="${pY}" x2="${pX + arrowDx}" y2="${pY + arrowDy}" stroke="currentColor" stroke-width="2" marker-end="url(#angle-arrow)"/>
+            <circle cx="${aX}" cy="${aY}" r="6"/><text x="${aX + 9}" y="${aY - 9}">A (${ax}, ${ay})</text>
+            <circle cx="${bX}" cy="${bY}" r="5"/><text x="${bX + 8}" y="${bY + 18}">B (${bx}, ${by})</text>
+            <circle cx="${pX}" cy="${pY}" r="5"/><text x="${pX + 8}" y="${pY - 9}">P</text>
+            <text x="${aX + 10}" y="42">vertical through A</text>
+            <text x="${(aX+pX)/2 + 8}" y="${(aY+pY)/2 - 8}">d</text>
+            <text x="${aX + 14}" y="${aY - 22}">θ</text>
+          </svg>
+        </div>`;
+    }
+
+    function generateAngleProblem() {
+      const directionData = {
+        right: { vx: 1, vy: 0, phrase: 'to the right' },
+        left:  { vx: -1, vy: 0, phrase: 'to the left' },
+        up:    { vx: 0, vy: 1, phrase: 'upward' },
+        down:  { vx: 0, vy: -1, phrase: 'downward' }
+      };
+
+      for (let attempt = 0; attempt < 500; attempt++) {
+        const direction = randomChoice(Object.keys(directionData));
+        const dir = directionData[direction];
+        const speed = randomInteger(2, 15);
+        const vx = dir.vx * speed;
+        const vy = dir.vy * speed;
+        const ax = randomInteger(-8, 8);
+        const ay = randomInteger(-8, 8);
+        const tStar = randomInteger(1, 6);
+
+        let relX0, relY0;
+        if (vx !== 0) {
+          relX0 = Math.sign(vx) * randomInteger(2, 10);
+          relY0 = randomChoice([-1, 1]) * randomInteger(3, 15);
+        } else {
+          relX0 = randomChoice([-1, 1]) * randomInteger(3, 15);
+          relY0 = Math.sign(vy) * randomInteger(2, 10);
+        }
+
+        const bx = ax + relX0;
+        const by = ay + relY0;
+        const relX = relX0 + vx * tStar;
+        const relY = relY0 + vy * tStar;
+        const px = ax + relX;
+        const py = ay + relY;
+        const distance = Math.hypot(relX, relY);
+        const thetaRate = (relY * vx - relX * vy) / (distance * distance);
+        const distanceRate = (relX * vx + relY * vy) / distance;
+        if (!Number.isFinite(thetaRate) || !Number.isFinite(distanceRate) || Math.abs(thetaRate) < 0.005) continue;
+
+        const askThetaRate = Math.random() < 0.70;
+        const movingCoordinate = vx !== 0 ? 'x' : 'y';
+        const fixedCoordinate = vx !== 0 ? 'y' : 'x';
+        const movingInitial = vx !== 0 ? relX0 : relY0;
+        const movingValue = vx !== 0 ? relX : relY;
+        const fixedValue = vx !== 0 ? relY : relX;
+        const movingRate = vx !== 0 ? vx : vy;
+        const fixedRate = 0;
+        const thetaRateTex = formatNumber(thetaRate);
+        const distanceRateTex = formatNumber(distanceRate);
+
+        const data = { ax, ay, bx, by, px, py, direction, speed, vx, vy, relX0, relY0, relX, relY, distance, thetaRate, distanceRate, tStar };
+        const commonHints = [
+          { kind: 'angle-diagram', content: 'Let \\(x\\) and \\(y\\) denote the horizontal and vertical displacements from the observer to the particle, and let \\(d\\) denote the distance between them:', data },
+          { kind: 'math', content: `x(0)=${relX0},\\qquad y(0)=${relY0},\\qquad \\frac{dx}{dt}=${vx},\\qquad \\frac{dy}{dt}=${vy}` },
+          { kind: 'math', content: `x(t)=${relX0}+(${vx})t,\\qquad y(t)=${relY0}+(${vy})t` },
+          { kind: 'math', content: `d^{2}=x^{2}+y^{2}` },
+          { kind: 'math', content: `\\tan\\theta=\\frac{x}{y}` },
+          { kind: 'math', content: `\\sec^{2}\\theta\\frac{d\\theta}{dt}=\\frac{y\\frac{dx}{dt}-x\\frac{dy}{dt}}{y^{2}}\\implies \\frac{d\\theta}{dt}=\\frac{y\\frac{dx}{dt}-x\\frac{dy}{dt}}{x^{2}+y^{2}}` }
+        ];
+
+        const hints = askThetaRate ? [
+          ...commonHints,
+          { kind: 'math', content: `d=${formatNumber(distance)}\\implies (${relX0}+(${vx})t)^{2}+(${relY0}+(${vy})t)^{2}=${formatNumber(distance * distance)}\\implies t=${tStar}` },
+          { kind: 'math', content: `x(${tStar})=${relX0}+(${vx})(${tStar})=${relX},\\qquad y(${tStar})=${relY0}+(${vy})(${tStar})=${relY}` },
+          { kind: 'math', content: `\\frac{d\\theta}{dt}=\\frac{(${relY})(${vx})-(${relX})(${vy})}{(${relX})^{2}+(${relY})^{2}}=${thetaRateTex}` },
+          { kind: 'math', content: `\\text{Therefore, }\\theta\\text{ is changing at }${thetaRateTex}\\text{ radians per second}.` }
+        ] : [
+          ...commonHints,
+          { kind: 'math', content: `${thetaRateTex}=\\frac{(${relY0}+(${vy})t)(${vx})-(${relX0}+(${vx})t)(${vy})}{(${relX0}+(${vx})t)^{2}+(${relY0}+(${vy})t)^{2}}\\implies t=${tStar}` },
+          { kind: 'math', content: `x(${tStar})=${relX0}+(${vx})(${tStar})=${relX},\\qquad y(${tStar})=${relY0}+(${vy})(${tStar})=${relY},\\qquad d=${formatNumber(distance)}` },
+          { kind: 'math', content: `2d\\frac{dd}{dt}=2x\\frac{dx}{dt}+2y\\frac{dy}{dt}\\implies \\frac{dd}{dt}=\\frac{x\\frac{dx}{dt}+y\\frac{dy}{dt}}{d}` },
+          { kind: 'math', content: `\\frac{dd}{dt}=\\frac{(${relX})(${vx})+(${relY})(${vy})}{${formatNumber(distance)}}=${distanceRateTex}` },
+          { kind: 'math', content: `\\text{Therefore, the distance is changing at }${distanceRateTex}\\text{ units per second}.` }
+        ];
+
+        return {
+          type: 4,
+          data,
+          questionHtml: `<p>An observer is located at \\(A=(${ax},${ay})\\). A particle begins at \\(B=(${bx},${by})\\) and moves ${dir.phrase} at ${speed} units per second. Let \\(\\theta\\) be the angle between the vertical line through \\(A\\) and the line connecting the observer to the particle. ${askThetaRate
+            ? `How quickly is \\(\\theta\\) changing when the distance between the observer and particle is ${formatNumber(distance)} units?`
+            : `How quickly is the distance between the observer and particle changing when \\(\\frac{d\\theta}{dt}=${thetaRateTex}\\) radians per second?`}</p>`,
+          answer: {
+            label: askThetaRate ? 'Rate of change of angle' : 'Rate of change of distance',
+            expected: askThetaRate ? thetaRate : distanceRate,
+            unit: askThetaRate ? 'radians per second' : 'units per second'
+          },
+          hints
+        };
+      }
+      throw new Error('Unable to generate a valid angle problem.');
+    }
+
     function generatePlaceholder(type) {
       const names = {
         2: 'Shape problems',
@@ -844,6 +972,7 @@ fetch("/nav.html")
       if (type === 1) return generateSailingProblem();
       if (type === 2) return generateShapeProblem();
       if (type === 3) return generateParticleMovementProblem();
+      if (type === 4) return generateAngleProblem();
       return generatePlaceholder(type);
     }
 
@@ -932,6 +1061,8 @@ fetch("/nav.html")
         block.innerHTML = `<div style="text-align:center; margin-bottom:0.5em;">${hint.content}</div>${makeSailingDiagram(currentProblem)}`;
       } else if (hint.kind === 'shape-diagram') {
         block.innerHTML = `<div style="text-align:center; margin-bottom:0.5em;">${hint.content}</div>${shapeDiagramHtml(hint.data)}`;
+      } else if (hint.kind === 'angle-diagram') {
+        block.innerHTML = `<div style="text-align:center; margin-bottom:0.5em;">${hint.content}</div>${angleProblemDiagramHtml(hint.data)}`;
       } else if (hint.kind === 'math') {
         block.innerHTML = `\\[${hint.content}\\]`;
       } else {

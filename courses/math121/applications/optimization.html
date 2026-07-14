@@ -14,6 +14,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -636,7 +637,7 @@ fetch("/nav.html")
               { kind: 'math', content: `\\begin{aligned}P'(x)&=0\\\\${n}-2x&=0\\\\x&=${formatNumber(optimalNumber)}\\end{aligned}` },
               { kind: 'math', content: `y=${n}-x=${n}-${formatNumber(optimalNumber)}=${formatNumber(optimalNumber)}` },
               { kind: 'math', content: `P''(x)=-2<0,\\text{ so the product is maximized.}` },
-              { kind: 'math', content: `\text{The maximum product is }P(${formatNumber(optimalNumber)})=${formatNumber(optimalNumber)}\cdot${formatNumber(optimalNumber)}=${formatNumber(maximumProduct)}\text{, occurring when }x=${formatNumber(optimalNumber)}\text{ and }y=${formatNumber(optimalNumber)}.` }
+              { kind: 'math', content: `\\text{The maximum product is }P(${formatNumber(optimalNumber)})=${formatNumber(optimalNumber)}\\cdot${formatNumber(optimalNumber)}=${formatNumber(maximumProduct)}\\text{, occurring when }x=${formatNumber(optimalNumber)}\\text{ and }y=${formatNumber(optimalNumber)}.` }
             ]
           };
         }
@@ -664,7 +665,7 @@ fetch("/nav.html")
               { kind: 'math', content: `\\begin{aligned}P'(x)&=0\\\\2x+${n}&=0\\\\x&=${formatNumber(smallerNumber)}\\end{aligned}` },
               { kind: 'math', content: `y=x+${n}=${formatNumber(smallerNumber)}+${n}=${formatNumber(largerNumber)}` },
               { kind: 'math', content: `P''(x)=2>0,\\text{ so the product is minimized.}` },
-              { kind: 'math', content: `\text{The minimum product is }P(${formatNumber(smallerNumber)})=${formatNumber(smallerNumber)}\cdot${formatNumber(largerNumber)}=${formatNumber(minimumProduct)}\text{, occurring when }x=${formatNumber(smallerNumber)}\text{ and }y=${formatNumber(largerNumber)}.` }
+              { kind: 'math', content: `\\text{The minimum product is }P(${formatNumber(smallerNumber)})=${formatNumber(smallerNumber)}\\cdot${formatNumber(largerNumber)}=${formatNumber(minimumProduct)}\\text{, occurring when }x=${formatNumber(smallerNumber)}\\text{ and }y=${formatNumber(largerNumber)}.` }
             ]
           };
         }
@@ -690,7 +691,7 @@ fetch("/nav.html")
             { kind: 'math', content: `\\begin{aligned}S'(x)&=0\\\\1-\\frac{${n}}{x^{2}}&=0\\\\x^{2}&=${n}\\\\x&=\\sqrt{${n}}\\end{aligned}` },
             { kind: 'math', content: `y=\\frac{${n}}{x}=\\frac{${n}}{\\sqrt{${n}}}=\\sqrt{${n}}` },
             { kind: 'math', content: `S''(x)=\\frac{${2 * n}}{x^{3}}>0\\text{ for }x>0,\\text{ so the sum is minimized.}` },
-            { kind: 'math', content: `\text{The minimum sum is }S(\sqrt{${n}})=\sqrt{${n}}+\sqrt{${n}}=2\sqrt{${n}}\text{, occurring when }x=\sqrt{${n}}\text{ and }y=\sqrt{${n}}.` }
+            { kind: 'math', content: `\\text{The minimum sum is }S(\\sqrt{${n}})=\\sqrt{${n}}+\\sqrt{${n}}=2\\sqrt{${n}}\\text{, occurring when }x=\\sqrt{${n}}\\text{ and }y=\\sqrt{${n}}.` }
           ]
         };
       }

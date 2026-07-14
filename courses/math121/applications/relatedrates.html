@@ -3,6 +3,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -719,6 +720,110 @@ fetch("/nav.html")
       throw new Error('Unable to generate a valid shape problem.');
     }
 
+
+    function generateParticleMovementProblem() {
+      const variablePool = ['x', 'y', 'z', 'w', 'u'];
+      for (let attempt = 0; attempt < 500; attempt++) {
+        const dimensionCount = randomInteger(3, 5);
+        const variables = variablePool.slice(0, dimensionCount);
+        const terms = variables.map(variable => ({
+          variable,
+          coefficient: randomChoice([-4, -3, -2, -1, 1, 2, 3, 4]),
+          power: randomInteger(1, 3),
+          value: randomChoice([-3, -2, -1, 1, 2, 3])
+        }));
+
+        const unknownIndex = randomInteger(0, dimensionCount - 1);
+        const unknownTerm = terms[unknownIndex];
+        const rates = terms.map((term, index) => index === unknownIndex
+          ? null
+          : randomChoice([-1, 1]) * randomInteger(1, 8));
+
+        const unknownPartial = unknownTerm.coefficient * unknownTerm.power
+          * Math.pow(unknownTerm.value, unknownTerm.power - 1);
+        if (Math.abs(unknownPartial) < 1e-10) continue;
+
+        const knownContribution = terms.reduce((sum, term, index) => {
+          if (index === unknownIndex) return sum;
+          const partial = term.coefficient * term.power * Math.pow(term.value, term.power - 1);
+          return sum + partial * rates[index];
+        }, 0);
+        const unknownRate = -knownContribution / unknownPartial;
+        if (!Number.isFinite(unknownRate) || Math.abs(unknownRate) < 0.05 || Math.abs(unknownRate) > 200) continue;
+
+        const constant = terms.reduce((sum, term) =>
+          sum + term.coefficient * Math.pow(term.value, term.power), 0);
+
+        function termTex(term, isFirst = false) {
+          const sign = term.coefficient < 0 ? '-' : (isFirst ? '' : '+');
+          const absCoeff = Math.abs(term.coefficient);
+          const coefficientTex = absCoeff === 1 ? '' : `${absCoeff}`;
+          const powerTex = term.power === 1 ? term.variable : `${term.variable}^{${term.power}}`;
+          return `${sign}${coefficientTex}${powerTex}`;
+        }
+
+        function derivativeTermTex(term) {
+          const derivativeCoeff = term.coefficient * term.power;
+          const absCoeff = Math.abs(derivativeCoeff);
+          const sign = derivativeCoeff < 0 ? '-' : '+';
+          const coefficientTex = absCoeff === 1 ? '' : `${absCoeff}`;
+          const powerTex = term.power === 1 ? '' : (term.power === 2 ? term.variable : `${term.variable}^{${term.power - 1}}`);
+          return { sign, body: `${coefficientTex}${powerTex}\\frac{d${term.variable}}{dt}` };
+        }
+
+        const equationTex = terms.map((term, index) => termTex(term, index === 0)).join('') + `=${constant}`;
+        const derivativePieces = terms.map(derivativeTermTex);
+        const derivativeTex = derivativePieces.map((piece, index) => {
+          if (index === 0) return piece.sign === '-' ? `-${piece.body}` : piece.body;
+          return `${piece.sign}${piece.body}`;
+        }).join('') + '=0';
+
+        const pointTex = `(${terms.map(term => term.value).join(',')})`;
+        const knownRatesQuestion = terms.map((term, index) => {
+          if (index === unknownIndex) return null;
+          return `\\(\\frac{d${term.variable}}{dt}=${formatNumber(rates[index])}\\)`;
+        }).filter(Boolean).join(', ');
+        const knownRatesHint = terms.map((term, index) => {
+          if (index === unknownIndex) return null;
+          return `\\frac{d${term.variable}}{dt}=${formatNumber(rates[index])}`;
+        }).filter(Boolean).join(',\\qquad ');
+        const pointValuesTex = terms.map(term => `${term.variable}=${term.value}`).join(',\\qquad ');
+
+        const substitutedTerms = terms.map((term, index) => {
+          const derivativeCoeff = term.coefficient * term.power;
+          const variableFactor = term.power === 1 ? '' : `(${term.value})^{${term.power - 1}}`;
+          const rateTex = index === unknownIndex
+            ? `\\frac{d${term.variable}}{dt}`
+            : `(${formatNumber(rates[index])})`;
+          return `${derivativeCoeff}${variableFactor}${rateTex}`;
+        });
+        const substitutionTex = substitutedTerms.map((piece, index) => {
+          if (index === 0) return piece;
+          return piece.startsWith('-') ? piece : `+${piece}`;
+        }).join('') + '=0';
+
+        return {
+          type: 3,
+          questionHtml: `<p>The variables ${variables.map(v => `\\(${v}\\)`).join(', ')} satisfy the equation \\(${equationTex}\\). At the point \\(${pointTex}\\), ${knownRatesQuestion}. Find \\(\\frac{d${unknownTerm.variable}}{dt}\\).</p>`,
+          answer: {
+            label: `Rate of change of ${unknownTerm.variable}`,
+            expected: unknownRate,
+            unit: 'units per unit time'
+          },
+          hints: [
+            { kind: 'math', content: `\\text{Known point: }${pointValuesTex}` },
+            { kind: 'math', content: `\\text{Known rates: }${knownRatesHint}` },
+            { kind: 'math', content: `\\text{Relationship: }${equationTex}` },
+            { kind: 'math', content: `\\text{Differentiate implicitly with respect to }t:\\qquad ${derivativeTex}` },
+            { kind: 'math', content: `${substitutionTex}` },
+            { kind: 'math', content: `\\frac{d${unknownTerm.variable}}{dt}=${formatNumber(unknownRate)}` },
+            { kind: 'math', content: `\\text{Therefore, }${unknownTerm.variable}\\text{ is changing at }${formatNumber(unknownRate)}\\text{ units per unit time}.` }
+          ]
+        };
+      }
+      throw new Error('Unable to generate a valid particle movement problem.');
+    }
+
     function generatePlaceholder(type) {
       const names = {
         2: 'Shape problems',
@@ -738,6 +843,7 @@ fetch("/nav.html")
       const type = weightedProblemType();
       if (type === 1) return generateSailingProblem();
       if (type === 2) return generateShapeProblem();
+      if (type === 3) return generateParticleMovementProblem();
       return generatePlaceholder(type);
     }
 

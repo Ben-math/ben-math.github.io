@@ -5,6 +5,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -952,6 +953,91 @@ fetch("/nav.html")
       throw new Error('Unable to generate a valid angle problem.');
     }
 
+
+    function planetOrbitDiagramHtml(data) {
+      const { radiusA, radiusB, angleA, angleB } = data;
+      const maxRadius = Math.max(radiusA, radiusB);
+      const scale = 125 / maxRadius;
+      const cx = 260, cy = 165;
+      const rA = radiusA * scale;
+      const rB = radiusB * scale;
+      const ax = cx + rA * Math.cos(angleA);
+      const ay = cy - rA * Math.sin(angleA);
+      const bx = cx + rB * Math.cos(angleB);
+      const by = cy - rB * Math.sin(angleB);
+      return `
+        <div class="optimization-diagram-wrap">
+          <svg class="optimization-diagram" viewBox="0 0 520 330" role="img" aria-label="Two planets in circular orbits around a star">
+            <circle cx="${cx}" cy="${cy}" r="${rA}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="6 5"/>
+            <circle cx="${cx}" cy="${cy}" r="${rB}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="6 5"/>
+            <circle cx="${cx}" cy="${cy}" r="9" fill="currentColor"/>
+            <text x="${cx + 13}" y="${cy - 12}">star</text>
+            <line x1="${cx}" y1="${cy}" x2="${ax}" y2="${ay}" stroke="currentColor" stroke-width="2"/>
+            <line x1="${cx}" y1="${cy}" x2="${bx}" y2="${by}" stroke="currentColor" stroke-width="2"/>
+            <line x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" stroke="currentColor" stroke-width="2.5"/>
+            <circle cx="${ax}" cy="${ay}" r="6" fill="currentColor"/>
+            <circle cx="${bx}" cy="${by}" r="6" fill="currentColor"/>
+            <text x="${ax + 9}" y="${ay - 8}">A</text>
+            <text x="${bx + 9}" y="${by + 18}">B</text>
+            <text x="${(cx + ax)/2 + 6}" y="${(cy + ay)/2 - 6}">${radiusA}</text>
+            <text x="${(cx + bx)/2 + 6}" y="${(cy + by)/2 + 16}">${radiusB}</text>
+            <text x="${(ax + bx)/2 + 7}" y="${(ay + by)/2 - 7}">d</text>
+          </svg>
+        </div>`;
+    }
+
+    function generateCircleProblem() {
+      for (let attempt = 0; attempt < 500; attempt++) {
+        const radiusA = randomInteger(40, 500);
+        let radiusB;
+        do { radiusB = randomInteger(40, 500); } while (radiusB === radiusA);
+        const periodA = randomInteger(80, 700);
+        let periodB;
+        do { periodB = randomInteger(80, 700); } while (periodB === periodA);
+        const days = randomInteger(5, Math.min(250, Math.floor(Math.min(periodA, periodB) * 0.8)));
+
+        const omegaA = 2 * Math.PI / periodA;
+        const omegaB = 2 * Math.PI / periodB;
+        const angleA = omegaA * days;
+        const angleB = omegaB * days;
+        const phi = angleB - angleA;
+        const phiRate = omegaB - omegaA;
+        const distance = Math.sqrt(radiusA * radiusA + radiusB * radiusB - 2 * radiusA * radiusB * Math.cos(phi));
+        const distanceRate = radiusA * radiusB * Math.sin(phi) * phiRate / distance;
+        if (!Number.isFinite(distanceRate) || distance < 1 || Math.abs(distanceRate) < 0.001) continue;
+
+        const data = { radiusA, radiusB, periodA, periodB, days, omegaA, omegaB, angleA, angleB, phi, phiRate, distance, distanceRate };
+        const angleATex = `\\frac{2\\pi(${days})}{${periodA}}`;
+        const angleBTex = `\\frac{2\\pi(${days})}{${periodB}}`;
+        const phiTex = `2\\pi(${days})\\left(\\frac{1}{${periodB}}-\\frac{1}{${periodA}}\\right)`;
+        const phiRateTex = `2\\pi\\left(\\frac{1}{${periodB}}-\\frac{1}{${periodA}}\\right)`;
+
+        return {
+          type: 5,
+          data,
+          questionHtml: `<p>Planets A and B follow circular orbits around a star with radii ${radiusA} million km and ${radiusB} million km, respectively. Planet A completes one orbit every ${periodA} days, while Planet B completes one orbit every ${periodB} days. The planets are aligned with the star at time \\(t=0\\). How quickly is the distance between the planets changing ${days} days later?</p>`,
+          answer: {
+            label: 'Rate of change of distance',
+            expected: distanceRate,
+            unit: 'million km per day'
+          },
+          hints: [
+            { kind: 'orbit-diagram', content: 'Let \\(d\\) denote the distance between the planets and let \\(\\phi\\) denote the angle between their position vectors:', data },
+            { kind: 'math', content: `\\theta_A(t)=\\frac{2\\pi t}{${periodA}},\\qquad \\theta_B(t)=\\frac{2\\pi t}{${periodB}}` },
+            { kind: 'math', content: `\\phi(t)=\\theta_B(t)-\\theta_A(t)=2\\pi t\\left(\\frac{1}{${periodB}}-\\frac{1}{${periodA}}\\right)` },
+            { kind: 'math', content: `\\frac{d\\phi}{dt}=${phiRateTex}` },
+            { kind: 'math', content: `\\phi(${days})=${phiTex}=${formatNumber(phi)}` },
+            { kind: 'math', content: `d^{2}=${radiusA}^{2}+${radiusB}^{2}-2(${radiusA})(${radiusB})\\cos\\phi` },
+            { kind: 'math', content: `2d\\frac{dd}{dt}=2(${radiusA})(${radiusB})\\sin\\phi\\frac{d\\phi}{dt}` },
+            { kind: 'math', content: `d(${days})=\\sqrt{${radiusA}^{2}+${radiusB}^{2}-2(${radiusA})(${radiusB})\\cos\\left(${phiTex}\\right)}=${formatNumber(distance)}` },
+            { kind: 'math', content: `\\left.\\frac{dd}{dt}\\right|_{t=${days}}=\\frac{(${radiusA})(${radiusB})\\sin\\left(${phiTex}\\right)\\left(${phiRateTex}\\right)}{${formatNumber(distance)}}=${formatNumber(distanceRate)}` },
+            { kind: 'math', content: `\\text{Therefore, the distance between the planets is changing at }${formatNumber(distanceRate)}\\text{ million km per day}.` }
+          ]
+        };
+      }
+      throw new Error('Unable to generate a valid circle problem.');
+    }
+
     function generatePlaceholder(type) {
       const names = {
         2: 'Shape problems',
@@ -973,6 +1059,7 @@ fetch("/nav.html")
       if (type === 2) return generateShapeProblem();
       if (type === 3) return generateParticleMovementProblem();
       if (type === 4) return generateAngleProblem();
+      if (type === 5) return generateCircleProblem();
       return generatePlaceholder(type);
     }
 
@@ -1063,6 +1150,8 @@ fetch("/nav.html")
         block.innerHTML = `<div style="text-align:center; margin-bottom:0.5em;">${hint.content}</div>${shapeDiagramHtml(hint.data)}`;
       } else if (hint.kind === 'angle-diagram') {
         block.innerHTML = `<div style="text-align:center; margin-bottom:0.5em;">${hint.content}</div>${angleProblemDiagramHtml(hint.data)}`;
+      } else if (hint.kind === 'orbit-diagram') {
+        block.innerHTML = `<div style="text-align:center; margin-bottom:0.5em;">${hint.content}</div>${planetOrbitDiagramHtml(hint.data)}`;
       } else if (hint.kind === 'math') {
         block.innerHTML = `\\[${hint.content}\\]`;
       } else {

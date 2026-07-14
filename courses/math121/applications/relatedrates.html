@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -941,39 +942,67 @@ fetch("/nav.html")
 
 
     function angleProblemDiagramHtml(data) {
-      const { ax, ay, bx, by, px, py, direction } = data;
-      const allX = [ax, bx, px], allY = [ay, by, py];
-      const minX = Math.min(...allX), maxX = Math.max(...allX);
-      const minY = Math.min(...allY), maxY = Math.max(...allY);
-      const spanX = Math.max(8, maxX - minX), spanY = Math.max(8, maxY - minY);
-      const scale = Math.min(24, 330 / spanX, 210 / spanY);
-      const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
-      const sx = x => 260 + (x - cx) * scale;
-      const sy = y => 165 - (y - cy) * scale;
-      const aX = sx(ax), aY = sy(ay), bX = sx(bx), bY = sy(by), pX = sx(px), pY = sy(py);
-      const arrowDx = direction === 'right' ? 42 : direction === 'left' ? -42 : 0;
-      const arrowDy = direction === 'up' ? -42 : direction === 'down' ? 42 : 0;
+      const { ax, ay, bx, by, direction } = data;
+
+      // This is intentionally schematic rather than to scale.  A and B are
+      // placed at opposite corners of a fixed invisible square according to
+      // their actual left/right and above/below relationship.
+      const leftX = 175, rightX = 345;
+      const topY = 100, bottomY = 230;
+      const aX = ax < bx ? leftX : rightX;
+      const bX = ax < bx ? rightX : leftX;
+      const aY = ay > by ? topY : bottomY;
+      const bY = ay > by ? bottomY : topY;
+
+      const travelLength = 95;
+      const travelDx = direction === 'right' ? travelLength : direction === 'left' ? -travelLength : 0;
+      const travelDy = direction === 'up' ? -travelLength : direction === 'down' ? travelLength : 0;
+      const pX = bX + 0.72 * travelDx;
+      const pY = bY + 0.72 * travelDy;
+      const arrowX = bX + travelDx;
+      const arrowY = bY + travelDy;
+
+      const dx = pX - aX;
+      const dy = pY - aY;
+      const length = Math.hypot(dx, dy) || 1;
+      const ux = dx / length;
+      const uy = dy / length;
+      const radius = 31;
+      const startX = aX;
+      const startY = aY - radius;
+      const endX = aX + radius * ux;
+      const endY = aY + radius * uy;
+      const sweep = dx >= 0 ? 1 : 0;
+      const thetaX = aX + (dx >= 0 ? 17 : -31);
+      const thetaY = aY - 31;
+
       return `
         <div class="optimization-diagram-wrap">
-          <svg class="optimization-diagram" viewBox="0 0 520 330" role="img" aria-label="Observer and moving particle">
+          <svg class="optimization-diagram" viewBox="0 0 520 330" role="img" aria-label="Schematic diagram of an observer and a moving particle">
             <defs>
-              <marker id="angle-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-                <path d="M0,0 L0,6 L7,3 z" fill="currentColor"></path>
+              <marker id="observer-particle-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                <path d="M0,0 L0,6 L7,3 z" fill="#f4a6a6"></path>
               </marker>
             </defs>
-            <line x1="${aX}" y1="25" x2="${aX}" y2="305" stroke="currentColor" stroke-width="1.5" stroke-dasharray="6 5"/>
-            <line x1="${aX}" y1="${aY}" x2="${pX}" y2="${pY}" stroke="currentColor" stroke-width="2.5"/>
-            <line x1="${bX}" y1="${bY}" x2="${pX}" y2="${pY}" stroke="currentColor" stroke-width="2" stroke-dasharray="5 4"/>
-            <line x1="${pX}" y1="${pY}" x2="${pX + arrowDx}" y2="${pY + arrowDy}" stroke="currentColor" stroke-width="2" marker-end="url(#angle-arrow)"/>
-            <circle cx="${aX}" cy="${aY}" r="6"/><text x="${aX + 9}" y="${aY - 9}">A (${ax}, ${ay})</text>
-            <circle cx="${bX}" cy="${bY}" r="5"/><text x="${bX + 8}" y="${bY + 18}">B (${bx}, ${by})</text>
-            <circle cx="${pX}" cy="${pY}" r="5"/><text x="${pX + 8}" y="${pY - 9}">P</text>
-            <text x="${aX + 10}" y="42">vertical through A</text>
-            <text x="${(aX+pX)/2 + 8}" y="${(aY+pY)/2 - 8}">d</text>
-            <text x="${aX + 14}" y="${aY - 22}">θ</text>
+
+            <line x1="${aX}" y1="${aY}" x2="${pX}" y2="${pY}" stroke="black" stroke-width="2.4"/>
+            <line x1="${bX}" y1="${bY}" x2="${arrowX}" y2="${arrowY}" stroke="#f4a6a6" stroke-width="2.5" marker-end="url(#observer-particle-arrow)"/>
+
+            <circle cx="${aX}" cy="${aY}" r="7" fill="#1565c0"/>
+            <circle cx="${bX}" cy="${bY}" r="7" fill="#f4a6a6"/>
+            <circle cx="${pX}" cy="${pY}" r="7" fill="#b71c1c"/>
+
+            <text x="${aX + 10}" y="${aY + 4}">A</text>
+            <text x="${bX + 10}" y="${bY + 4}">B</text>
+            <text x="${pX + 10}" y="${pY + 4}">P</text>
+
+            <line x1="${aX}" y1="${aY}" x2="${aX}" y2="${aY - 62}" stroke="black" stroke-width="2"/>
+            <path d="M ${startX} ${startY} A ${radius} ${radius} 0 0 ${sweep} ${endX} ${endY}" fill="none" stroke="black" stroke-width="2"/>
+            <text x="${thetaX}" y="${thetaY}">θ</text>
           </svg>
         </div>`;
     }
+
 
     function generateAngleProblem() {
       const directionData = {
@@ -1002,6 +1031,7 @@ fetch("/nav.html")
           relY0 = Math.sign(vy) * randomInteger(2, 10);
         }
 
+        if (relX0 === 0 || relY0 === 0) continue;
         const bx = ax + relX0;
         const by = ay + relY0;
         const relX = relX0 + vx * tStar;

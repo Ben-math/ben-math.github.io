@@ -15,6 +15,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -774,10 +775,10 @@ fetch("/nav.html")
               { kind: 'math', content: `\\begin{aligned}C(x)&=\\text{fixed expenses}+\\text{variable expenses}\\\\&=${D}+\\left(\\text{cost per ${product.singular}}\\right)\\left(\\text{number sold}\\right)\\\\&=${D}+${E}q(x)\\\\&=${D}+${E}(${A}-${C}x)\\end{aligned}` },
               { kind: 'math', content: `\\begin{aligned}P(x)&=\\text{revenue}-\\text{cost}\\\\&=R(x)-C(x)\\\\&=(${M}+${B}x)(${A}-${C}x)-\\left(${D}+${E}(${A}-${C}x)\\right)\\\\&=-${B * C}x^{2}+${linearCoeff}x+${constantTerm}\\end{aligned}` },
               { kind: 'math', content: `P'(x)=-${2 * B * C}x+${linearCoeff}` },
-              { kind: 'math', content: `\\begin{aligned}P'(x)&=0\\\\-${2 * B * C}x+${linearCoeff}&=0\\\\x&=${formatNumber(xVertex)}\\end{aligned}` },
+              { kind: 'math', content: `P'(x)=0\\implies -${2 * B * C}x+${linearCoeff}=0\\implies x=${formatNumber(xVertex)}` },
               { kind: 'math', content: `P''(x)=-${2 * B * C}<0,\\text{ so this critical point gives a maximum profit.}` },
               { kind: 'math', content: `\\begin{aligned}p\\left(${formatNumber(xVertex)}\\right)&=${M}+${B}\\left(${formatNumber(xVertex)}\\right)\\\\&=${formatNumber(optimalPrice)}\\end{aligned}` },
-              { kind: 'math', content: `\\$${formatNumber(optimalPrice)}\\qquad\\left(P_{\\max}=\\$${formatNumber(maxProfit, 2)}\\right)` }
+              { kind: 'math', content: `\\text{The maximum profit of }P\\left(${formatNumber(xVertex)}\\right)=-${B * C}\\left(${formatNumber(xVertex)}\\right)^{2}+${linearCoeff}\\left(${formatNumber(xVertex)}\\right)+${constantTerm}=${formatNumber(maxProfit)}\\approx \\$${maxProfit.toFixed(2)}\\text{ occurs when you charge }${formatNumber(optimalPrice)}\\approx \\$${optimalPrice.toFixed(2)}.` }
             ]
           };
         }

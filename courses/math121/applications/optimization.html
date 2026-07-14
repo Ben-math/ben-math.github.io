@@ -12,6 +12,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -904,9 +905,9 @@ fetch("/nav.html")
           const relationSteps = relationSentence
             ? [{ kind: 'math', content: `\\text{The given relationship is }${relationHint}.` }]
             : [];
-          const prismNotationSteps = shape === 'cylinder'
-            ? []
-            : [{ kind: 'math', content: `\\text{Let }S\\text{ denote the surface area of the prism, and let }V\\text{ denote its volume.}` }];
+          const prismNotationSteps = [
+            { kind: 'math', content: `\\text{Let }C\\text{ denote the cost of the box, and }V\\text{ its volume.}` }
+          ];
 
           return {
             type: 3,
@@ -962,7 +963,9 @@ fetch("/nav.html")
             hints: [
               { kind: 'diagram', content: diagramIntroduction, diagram },
               ...(relationSentence ? [{ kind: 'math', content: `\\text{The given relationship is }${relationHint}.` }] : []),
-              ...(shape === 'cylinder' ? [] : [{ kind: 'math', content: `\\text{Let }S\\text{ denote the surface area of the prism, and let }V\\text{ denote its volume.}` }]),
+              { kind: 'math', content: shape === 'cylinder'
+                ? `\\text{Let }S\\text{ denote the surface area of the cylinder, and }V\\text{ its volume.}`
+                : `\\text{Let }S\\text{ denote the surface area of the prism, and }V\\text{ its volume.}` },
               { kind: 'math', content: volumeFormula },
               { kind: 'math', content: `${variables.y}=\\frac{${volumeTarget}}{${formatNumber(volumeCoefficient)}${variables.x}^{2}}` },
               { kind: 'math', content: `\\begin{aligned}&${surfaceFormula}\\\\&=${formatNumber(baseAreaCoefficient)}${variables.x}^{2}+${formatNumber(sideAreaCoefficient)}${variables.x}${variables.y}\\end{aligned}` },
@@ -1002,7 +1005,9 @@ fetch("/nav.html")
           hints: [
             { kind: 'diagram', content: diagramIntroduction, diagram },
             ...(relationSentence ? [{ kind: 'math', content: `\\text{The given relationship is }${relationHint}.` }] : []),
-            ...(shape === 'cylinder' ? [] : [{ kind: 'math', content: `\\text{Let }S\\text{ denote the surface area of the prism, and let }V\\text{ denote its volume.}` }]),
+            { kind: 'math', content: shape === 'cylinder'
+                ? `\\text{Let }S\\text{ denote the surface area of the cylinder, and }V\\text{ its volume.}`
+                : `\\text{Let }S\\text{ denote the surface area of the prism, and }V\\text{ its volume.}` },
             { kind: 'math', content: `\\begin{aligned}&${surfaceFormula}\\\\${areaTarget}&=${formatNumber(baseAreaCoefficient)}${variables.x}^{2}+${formatNumber(sideAreaCoefficient)}${variables.x}${variables.y}\\end{aligned}` },
             { kind: 'math', content: `${variables.y}=\\frac{${areaTarget}-${formatNumber(baseAreaCoefficient)}${variables.x}^{2}}{${formatNumber(sideAreaCoefficient)}${variables.x}}` },
             { kind: 'math', content: volumeFormula },

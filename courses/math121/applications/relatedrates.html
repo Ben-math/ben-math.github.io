@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -446,10 +447,10 @@ fetch("/nav.html")
 
     function weightedProblemType() {
       const roll = Math.random();
-      if (roll < 0.25) return 1;
-      if (roll < 0.50) return 2;
-      if (roll < 0.60) return 3;
-      if (roll < 0.80) return 4;
+      if (roll < 0.30) return 1;
+      if (roll < 0.55) return 2;
+      if (roll < 0.70) return 3;
+      if (roll < 0.90) return 4;
       return 5;
     }
 
@@ -721,7 +722,7 @@ fetch("/nav.html")
       if (data.shape === 'cone') {
         return `<div class="optimization-diagram-wrap"><svg class="optimization-diagram" viewBox="0 0 520 320" role="img" aria-label="Cone"><ellipse cx="260" cy="250" rx="115" ry="38" fill="none" stroke="currentColor" stroke-width="2"/><line x1="145" y1="250" x2="260" y2="45" stroke="currentColor" stroke-width="2"/><line x1="375" y1="250" x2="260" y2="45" stroke="currentColor" stroke-width="2"/><line x1="260" y1="45" x2="260" y2="250" stroke="currentColor" stroke-width="1.5" stroke-dasharray="6 5"/><line x1="260" y1="250" x2="375" y2="250" stroke="currentColor" stroke-width="2"/><text x="315" y="240">r</text><text x="270" y="150">h</text></svg></div>`;
       }
-      return `<div class="optimization-diagram-wrap"><svg class="optimization-diagram" viewBox="0 0 520 320" role="img" aria-label="Rectangular prism"><polygon points="135,95 340,95 410,145 205,145" fill="none" stroke="currentColor" stroke-width="2"/><polygon points="135,95 205,145 205,270 135,220" fill="none" stroke="currentColor" stroke-width="2"/><polygon points="205,145 410,145 410,270 205,270" fill="none" stroke="currentColor" stroke-width="2"/><line x1="135" y1="220" x2="340" y2="220" stroke="currentColor" stroke-width="2" stroke-dasharray="6 5"/><line x1="340" y1="95" x2="340" y2="220" stroke="currentColor" stroke-width="2" stroke-dasharray="6 5"/><line x1="340" y1="220" x2="410" y2="270" stroke="currentColor" stroke-width="2" stroke-dasharray="6 5"/><text x="295" y="288">l</text><text x="365" y="287">w</text><text x="420" y="210">h</text></svg></div>`;
+      return `<div class="optimization-diagram-wrap"><svg class="optimization-diagram" viewBox="0 0 520 320" role="img" aria-label="Rectangular prism"><polygon points="135,95 340,95 410,145 205,145" fill="none" stroke="currentColor" stroke-width="2"/><polygon points="135,95 205,145 205,270 135,220" fill="none" stroke="currentColor" stroke-width="2"/><polygon points="205,145 410,145 410,270 205,270" fill="none" stroke="currentColor" stroke-width="2"/><line x1="135" y1="220" x2="340" y2="220" stroke="currentColor" stroke-width="2" stroke-dasharray="6 5"/><line x1="340" y1="95" x2="340" y2="220" stroke="currentColor" stroke-width="2" stroke-dasharray="6 5"/><line x1="340" y1="220" x2="410" y2="270" stroke="currentColor" stroke-width="2" stroke-dasharray="6 5"/><text x="295" y="288">l</text><text x="165" y="252">w</text><text x="420" y="210">h</text></svg></div>`;
     }
 
     function generateShapeProblem() {
@@ -831,7 +832,9 @@ fetch("/nav.html")
             { kind: 'math', content: solveTex },
             { kind: 'math', content: inverseMode
               ? `\\text{Therefore, the ${dimensionNames[unknownKey]} is changing at }${formatNumber(finalUnknown)}\\text{ cm/s}.`
-              : `\\text{Therefore, the ${quantity} is changing at }${formatNumber(finalUnknown)}\\text{ ${quantity === 'volume' ? 'cm}^{3}\\text{/s' : 'cm}^{2}\\text{/s'}.` }
+              : (quantity === 'volume'
+                  ? `\\text{Therefore, the volume is changing at }${formatNumber(finalUnknown)}\\text{ cm}^{3}\\text{/s}.`
+                  : `\\text{Therefore, the surface area is changing at }${formatNumber(finalUnknown)}\\text{ cm}^{2}\\text{/s}.`) }
           ]
         };
       }

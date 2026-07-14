@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -589,6 +590,135 @@ fetch("/nav.html")
       throw new Error('Unable to generate a valid sailing problem.');
     }
 
+
+    function shapeDiagramHtml(data) {
+      const labels = data.dimensions;
+      if (data.shape === 'sphere') {
+        return `<div class="optimization-diagram-wrap"><svg class="optimization-diagram" viewBox="0 0 520 300" role="img" aria-label="Sphere"><ellipse cx="260" cy="150" rx="115" ry="115" fill="none" stroke="currentColor" stroke-width="2"/><ellipse cx="260" cy="150" rx="115" ry="38" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="6 5"/><line x1="260" y1="150" x2="365" y2="150" stroke="currentColor" stroke-width="2"/><text x="310" y="140">r</text></svg></div>`;
+      }
+      if (data.shape === 'cylinder') {
+        return `<div class="optimization-diagram-wrap"><svg class="optimization-diagram" viewBox="0 0 520 320" role="img" aria-label="Cylinder"><ellipse cx="260" cy="70" rx="105" ry="35" fill="none" stroke="currentColor" stroke-width="2"/><line x1="155" y1="70" x2="155" y2="250" stroke="currentColor" stroke-width="2"/><line x1="365" y1="70" x2="365" y2="250" stroke="currentColor" stroke-width="2"/><ellipse cx="260" cy="250" rx="105" ry="35" fill="none" stroke="currentColor" stroke-width="2"/><line x1="260" y1="70" x2="365" y2="70" stroke="currentColor" stroke-width="2"/><text x="310" y="58">r</text><text x="377" y="165">h</text></svg></div>`;
+      }
+      if (data.shape === 'cone') {
+        return `<div class="optimization-diagram-wrap"><svg class="optimization-diagram" viewBox="0 0 520 320" role="img" aria-label="Cone"><ellipse cx="260" cy="250" rx="115" ry="38" fill="none" stroke="currentColor" stroke-width="2"/><line x1="145" y1="250" x2="260" y2="45" stroke="currentColor" stroke-width="2"/><line x1="375" y1="250" x2="260" y2="45" stroke="currentColor" stroke-width="2"/><line x1="260" y1="45" x2="260" y2="250" stroke="currentColor" stroke-width="1.5" stroke-dasharray="6 5"/><line x1="260" y1="250" x2="375" y2="250" stroke="currentColor" stroke-width="2"/><text x="315" y="240">r</text><text x="270" y="150">h</text></svg></div>`;
+      }
+      return `<div class="optimization-diagram-wrap"><svg class="optimization-diagram" viewBox="0 0 520 320" role="img" aria-label="Rectangular prism"><polygon points="135,95 340,95 410,145 205,145" fill="none" stroke="currentColor" stroke-width="2"/><polygon points="135,95 205,145 205,270 135,220" fill="none" stroke="currentColor" stroke-width="2"/><polygon points="205,145 410,145 410,270 205,270" fill="none" stroke="currentColor" stroke-width="2"/><line x1="135" y1="220" x2="340" y2="220" stroke="currentColor" stroke-width="2" stroke-dasharray="6 5"/><line x1="340" y1="95" x2="340" y2="220" stroke="currentColor" stroke-width="2" stroke-dasharray="6 5"/><line x1="340" y1="220" x2="410" y2="270" stroke="currentColor" stroke-width="2" stroke-dasharray="6 5"/><text x="295" y="288">l</text><text x="365" y="287">w</text><text x="420" y="210">h</text></svg></div>`;
+    }
+
+    function generateShapeProblem() {
+      const shapes = ['prism', 'cylinder', 'sphere', 'cone'];
+      for (let attempt = 0; attempt < 500; attempt++) {
+        const shape = randomChoice(shapes);
+        const quantity = Math.random() < 0.5 ? 'volume' : 'surface area';
+        const inverseMode = Math.random() < 0.5;
+        let dims, rates, formulas, qValue, qRate, unknownKey = null;
+
+        if (shape === 'prism') {
+          dims = { l: randomInteger(3, 15), w: randomInteger(3, 15), h: randomInteger(3, 15) };
+          rates = { l: randomChoice([-1,1]) * randomInteger(1,5), w: randomChoice([-1,1]) * randomInteger(1,5), h: randomChoice([-1,1]) * randomInteger(1,5) };
+          if (quantity === 'volume') {
+            formulas = { base: 'V=lwh', derivative: '\\frac{dV}{dt}=wh\\frac{dl}{dt}+lh\\frac{dw}{dt}+lw\\frac{dh}{dt}' };
+            qValue = dims.l*dims.w*dims.h;
+            qRate = dims.w*dims.h*rates.l + dims.l*dims.h*rates.w + dims.l*dims.w*rates.h;
+          } else {
+            formulas = { base: 'S=2lw+2lh+2wh', derivative: '\\frac{dS}{dt}=2\\left(w\\frac{dl}{dt}+l\\frac{dw}{dt}\\right)+2\\left(h\\frac{dl}{dt}+l\\frac{dh}{dt}\\right)+2\\left(h\\frac{dw}{dt}+w\\frac{dh}{dt}\\right)' };
+            qValue = 2*(dims.l*dims.w+dims.l*dims.h+dims.w*dims.h);
+            qRate = 2*(dims.w*rates.l+dims.l*rates.w+dims.h*rates.l+dims.l*rates.h+dims.h*rates.w+dims.w*rates.h);
+          }
+        } else if (shape === 'cylinder') {
+          dims = { r: randomInteger(3, 15), h: randomInteger(3, 20) };
+          rates = { r: randomChoice([-1,1]) * randomInteger(1,5), h: randomChoice([-1,1]) * randomInteger(1,5) };
+          if (quantity === 'volume') {
+            formulas = { base: 'V=\\pi r^{2}h', derivative: '\\frac{dV}{dt}=2\\pi rh\\frac{dr}{dt}+\\pi r^{2}\\frac{dh}{dt}' };
+            qValue = Math.PI*dims.r*dims.r*dims.h;
+            qRate = 2*Math.PI*dims.r*dims.h*rates.r + Math.PI*dims.r*dims.r*rates.h;
+          } else {
+            formulas = { base: 'S=2\\pi r^{2}+2\\pi rh', derivative: '\\frac{dS}{dt}=4\\pi r\\frac{dr}{dt}+2\\pi\\left(h\\frac{dr}{dt}+r\\frac{dh}{dt}\\right)' };
+            qValue = 2*Math.PI*dims.r*dims.r+2*Math.PI*dims.r*dims.h;
+            qRate = 4*Math.PI*dims.r*rates.r+2*Math.PI*(dims.h*rates.r+dims.r*rates.h);
+          }
+        } else if (shape === 'sphere') {
+          dims = { r: randomInteger(3, 15) };
+          rates = { r: randomChoice([-1,1]) * randomInteger(1,5) };
+          if (quantity === 'volume') {
+            formulas = { base: 'V=\\frac{4}{3}\\pi r^{3}', derivative: '\\frac{dV}{dt}=4\\pi r^{2}\\frac{dr}{dt}' };
+            qValue = 4*Math.PI*dims.r**3/3;
+            qRate = 4*Math.PI*dims.r*dims.r*rates.r;
+          } else {
+            formulas = { base: 'S=4\\pi r^{2}', derivative: '\\frac{dS}{dt}=8\\pi r\\frac{dr}{dt}' };
+            qValue = 4*Math.PI*dims.r*dims.r;
+            qRate = 8*Math.PI*dims.r*rates.r;
+          }
+        } else {
+          dims = { r: randomInteger(3, 12), h: randomInteger(4, 16) };
+          rates = { r: randomChoice([-1,1]) * randomInteger(1,4), h: randomChoice([-1,1]) * randomInteger(1,4) };
+          const s = Math.hypot(dims.r, dims.h);
+          if (quantity === 'volume') {
+            formulas = { base: 'V=\\frac{1}{3}\\pi r^{2}h', derivative: '\\frac{dV}{dt}=\\frac{1}{3}\\pi\\left(2rh\\frac{dr}{dt}+r^{2}\\frac{dh}{dt}\\right)' };
+            qValue = Math.PI*dims.r*dims.r*dims.h/3;
+            qRate = Math.PI*(2*dims.r*dims.h*rates.r+dims.r*dims.r*rates.h)/3;
+          } else {
+            formulas = { base: 'S=\\pi r^{2}+\\pi r\\sqrt{r^{2}+h^{2}}', derivative: '\\frac{dS}{dt}=2\\pi r\\frac{dr}{dt}+\\pi\\sqrt{r^{2}+h^{2}}\\frac{dr}{dt}+\\frac{\\pi r\\left(r\\frac{dr}{dt}+h\\frac{dh}{dt}\\right)}{\\sqrt{r^{2}+h^{2}}}' };
+            qValue = Math.PI*dims.r*dims.r + Math.PI*dims.r*s;
+            qRate = 2*Math.PI*dims.r*rates.r + Math.PI*s*rates.r + Math.PI*dims.r*(dims.r*rates.r+dims.h*rates.h)/s;
+          }
+        }
+
+        const keys = Object.keys(dims);
+        if (inverseMode) unknownKey = randomChoice(keys);
+        const symbolName = quantity === 'volume' ? 'V' : 'S';
+        const quantityUnit = quantity === 'volume' ? 'cm^{3}' : 'cm^{2}';
+        const quantityRateUnit = quantity === 'volume' ? 'cm^{3}/s' : 'cm^{2}/s';
+        const dimensionNames = { l:'length', w:'width', h:'height', r:'radius' };
+
+        let knownPhrases = [];
+        for (const key of keys) {
+          if (key !== unknownKey) knownPhrases.push(`the ${dimensionNames[key]} is ${dims[key]} cm and is changing at ${rates[key]} cm/s`);
+        }
+        if (inverseMode) knownPhrases.push(`the ${quantity} is \\(${formatNumber(qValue)}\\,${quantityUnit}\\) and is changing at \\(${formatNumber(qRate)}\\,${quantityRateUnit}\\)`);
+        const question = inverseMode
+          ? `how quickly is the ${dimensionNames[unknownKey]} changing?`
+          : `how quickly is the ${quantity} changing?`;
+
+        const substitutionParts = [];
+        const finalUnknown = inverseMode ? rates[unknownKey] : qRate;
+        let solveTex;
+        if (!inverseMode) {
+          solveTex = `${formulas.derivative}\\implies \\frac{d${symbolName}}{dt}=${formatNumber(qRate)}`;
+        } else {
+          const unknownRateTex = `\\frac{d${unknownKey}}{dt}`;
+          solveTex = `${formulas.derivative}\\implies ${unknownRateTex}=${formatNumber(finalUnknown)}`;
+        }
+
+        const rateKnownTex = keys.filter(k=>k!==unknownKey).map(k=>`\\frac{d${k}}{dt}=${formatNumber(rates[k])}`).join(',\\qquad ');
+        const valueKnownTex = keys.filter(k=>k!==unknownKey).map(k=>`${k}=${dims[k]}`).join(',\\qquad ');
+        const inverseExtra = inverseMode ? `,\\qquad ${symbolName}=${formatNumber(qValue)},\\qquad \\frac{d${symbolName}}{dt}=${formatNumber(qRate)}` : '';
+
+        return {
+          type: 2,
+          data: { shape, dimensions: dims },
+          questionHtml: `<p>For a ${shape === 'prism' ? 'rectangular prism' : shape}, ${knownPhrases.join(', ')}. At this instant, ${question}</p>`,
+          answer: {
+            label: inverseMode ? `Rate of change of ${dimensionNames[unknownKey]}` : `Rate of change of ${quantity}`,
+            expected: finalUnknown,
+            unit: inverseMode ? 'cm/s' : (quantity === 'volume' ? 'cm³/s' : 'cm²/s')
+          },
+          hints: [
+            { kind: 'shape-diagram', content: `Let the dimensions be labelled as shown:`, data: { shape, dimensions: dims } },
+            { kind: 'math', content: `\\text{Known: }${valueKnownTex}${inverseExtra}` },
+            { kind: 'math', content: `\\text{Known rates: }${rateKnownTex}${inverseMode ? '' : ''}` },
+            { kind: 'math', content: `\\text{Relationship: }${formulas.base}` },
+            { kind: 'math', content: `\\text{Differentiate with respect to }t:\\qquad ${formulas.derivative}` },
+            { kind: 'math', content: solveTex },
+            { kind: 'math', content: inverseMode
+              ? `\\text{Therefore, the ${dimensionNames[unknownKey]} is changing at }${formatNumber(finalUnknown)}\\text{ cm/s}.`
+              : `\\text{Therefore, the ${quantity} is changing at }${formatNumber(finalUnknown)}\\text{ ${quantity === 'volume' ? 'cm}^{3}\\text{/s' : 'cm}^{2}\\text{/s'}.` }
+          ]
+        };
+      }
+      throw new Error('Unable to generate a valid shape problem.');
+    }
+
     function generatePlaceholder(type) {
       const names = {
         2: 'Shape problems',
@@ -606,7 +736,9 @@ fetch("/nav.html")
 
     function generateProblem() {
       const type = weightedProblemType();
-      return type === 1 ? generateSailingProblem() : generatePlaceholder(type);
+      if (type === 1) return generateSailingProblem();
+      if (type === 2) return generateShapeProblem();
+      return generatePlaceholder(type);
     }
 
     function normalizeNumericText(raw) {
@@ -692,6 +824,8 @@ fetch("/nav.html")
       block.style.margin = '0.6em auto';
       if (hint.kind === 'diagram') {
         block.innerHTML = `<div style="text-align:center; margin-bottom:0.5em;">${hint.content}</div>${makeSailingDiagram(currentProblem)}`;
+      } else if (hint.kind === 'shape-diagram') {
+        block.innerHTML = `<div style="text-align:center; margin-bottom:0.5em;">${hint.content}</div>${shapeDiagramHtml(hint.data)}`;
       } else if (hint.kind === 'math') {
         block.innerHTML = `\\[${hint.content}\\]`;
       } else {

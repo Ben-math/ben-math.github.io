@@ -13,6 +13,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -628,13 +629,14 @@ fetch("/nav.html")
             hints: [
               { kind: 'math', content: `\\text{Let }x\\text{ be the first number and }y\\text{ be the second number.}` },
               { kind: 'math', content: `x+y=${n}\\quad\\Longrightarrow\\quad y=${n}-x` },
+              { kind: 'math', content: `\\text{Let }P\\text{ denote the product of the two numbers.}` },
               { kind: 'math', content: `P=xy` },
               { kind: 'math', content: `P(x)=x(${n}-x)=${n}x-x^{2}` },
               { kind: 'math', content: `P'(x)=${n}-2x` },
               { kind: 'math', content: `\\begin{aligned}P'(x)&=0\\\\${n}-2x&=0\\\\x&=${formatNumber(optimalNumber)}\\end{aligned}` },
               { kind: 'math', content: `y=${n}-x=${n}-${formatNumber(optimalNumber)}=${formatNumber(optimalNumber)}` },
               { kind: 'math', content: `P''(x)=-2<0,\\text{ so the product is maximized.}` },
-              { kind: 'math', content: `${formatNumber(optimalNumber)}\\text{ and }${formatNumber(optimalNumber)}\\qquad\\left(P_{\\max}=${formatNumber(maximumProduct)}\\right)` }
+              { kind: 'math', content: `\text{The maximum product is }P(${formatNumber(optimalNumber)})=${formatNumber(optimalNumber)}\cdot${formatNumber(optimalNumber)}=${formatNumber(maximumProduct)}\text{, occurring when }x=${formatNumber(optimalNumber)}\text{ and }y=${formatNumber(optimalNumber)}.` }
             ]
           };
         }
@@ -655,13 +657,14 @@ fetch("/nav.html")
             hints: [
               { kind: 'math', content: `\\text{Let }x\\text{ be the smaller number and }y\\text{ be the larger number.}` },
               { kind: 'math', content: `y-x=${n}\\quad\\Longrightarrow\\quad y=x+${n}` },
+              { kind: 'math', content: `\\text{Let }P\\text{ denote the product of the two numbers.}` },
               { kind: 'math', content: `P=xy` },
               { kind: 'math', content: `P(x)=x(x+${n})=x^{2}+${n}x` },
               { kind: 'math', content: `P'(x)=2x+${n}` },
               { kind: 'math', content: `\\begin{aligned}P'(x)&=0\\\\2x+${n}&=0\\\\x&=${formatNumber(smallerNumber)}\\end{aligned}` },
               { kind: 'math', content: `y=x+${n}=${formatNumber(smallerNumber)}+${n}=${formatNumber(largerNumber)}` },
               { kind: 'math', content: `P''(x)=2>0,\\text{ so the product is minimized.}` },
-              { kind: 'math', content: `${formatNumber(smallerNumber)}\\text{ and }${formatNumber(largerNumber)}\\qquad\\left(P_{\\min}=${formatNumber(minimumProduct)}\\right)` }
+              { kind: 'math', content: `\text{The minimum product is }P(${formatNumber(smallerNumber)})=${formatNumber(smallerNumber)}\cdot${formatNumber(largerNumber)}=${formatNumber(minimumProduct)}\text{, occurring when }x=${formatNumber(smallerNumber)}\text{ and }y=${formatNumber(largerNumber)}.` }
             ]
           };
         }
@@ -680,13 +683,14 @@ fetch("/nav.html")
           hints: [
             { kind: 'math', content: `\\text{Let }x\\text{ be the first positive number and }y\\text{ be the second.}` },
             { kind: 'math', content: `xy=${n}\\quad\\Longrightarrow\\quad y=\\frac{${n}}{x},\\qquad x>0` },
+            { kind: 'math', content: `\\text{Let }S\\text{ denote the sum of the two numbers.}` },
             { kind: 'math', content: `S=x+y` },
             { kind: 'math', content: `S(x)=x+\\frac{${n}}{x}` },
             { kind: 'math', content: `S'(x)=1-\\frac{${n}}{x^{2}}` },
             { kind: 'math', content: `\\begin{aligned}S'(x)&=0\\\\1-\\frac{${n}}{x^{2}}&=0\\\\x^{2}&=${n}\\\\x&=\\sqrt{${n}}\\end{aligned}` },
             { kind: 'math', content: `y=\\frac{${n}}{x}=\\frac{${n}}{\\sqrt{${n}}}=\\sqrt{${n}}` },
             { kind: 'math', content: `S''(x)=\\frac{${2 * n}}{x^{3}}>0\\text{ for }x>0,\\text{ so the sum is minimized.}` },
-            { kind: 'math', content: `\\sqrt{${n}}\\text{ and }\\sqrt{${n}}\\qquad\\left(S_{\\min}=2\\sqrt{${n}}\\right)` }
+            { kind: 'math', content: `\text{The minimum sum is }S(\sqrt{${n}})=\sqrt{${n}}+\sqrt{${n}}=2\sqrt{${n}}\text{, occurring when }x=\sqrt{${n}}\text{ and }y=\sqrt{${n}}.` }
           ]
         };
       }

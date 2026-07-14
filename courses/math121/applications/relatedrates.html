@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1039,8 +1040,18 @@ fetch("/nav.html")
         const relY = relY0 + vy * tStar;
         const px = ax + relX;
         const py = ay + relY;
-        const distance = Math.hypot(relX, relY);
-        const thetaRate = (relY * vx - relX * vy) / (distance * distance);
+        const distanceSquared = relX * relX + relY * relY;
+        const distance = Math.sqrt(distanceSquared);
+        const timeQuadraticA = vx * vx + vy * vy;
+        const timeQuadraticB = 2 * (relX0 * vx + relY0 * vy);
+        const timeQuadraticC = relX0 * relX0 + relY0 * relY0 - distanceSquared;
+        const xLinearTerm = 2 * relX0 * vx;
+        const xQuadraticTerm = vx * vx;
+        const yLinearTerm = 2 * relY0 * vy;
+        const yQuadraticTerm = vy * vy;
+        const otherTime = -timeQuadraticB / timeQuadraticA - tStar;
+        if (otherTime >= 0 && Math.abs(otherTime - tStar) > 1e-10) continue;
+        const thetaRate = (relY * vx - relX * vy) / distanceSquared;
         const distanceRate = (relX * vx + relY * vy) / distance;
         if (!Number.isFinite(thetaRate) || !Number.isFinite(distanceRate) || Math.abs(thetaRate) < 0.005) continue;
 
@@ -1050,7 +1061,7 @@ fetch("/nav.html")
         const xFunctionTex = vx === 0 ? `${relX0}` : `${relX0}+(${vx})t`;
         const yFunctionTex = vy === 0 ? `${relY0}` : `${relY0}+(${vy})t`;
 
-        const data = { ax, ay, bx, by, px, py, direction, speed, vx, vy, relX0, relY0, relX, relY, distance, thetaRate, distanceRate, tStar };
+        const data = { ax, ay, bx, by, px, py, direction, speed, vx, vy, relX0, relY0, relX, relY, distanceSquared, distance, thetaRate, distanceRate, tStar };
 
         const diagramText = [
           `Let the observer's position be the dark blue point \\(A\\).`,
@@ -1058,10 +1069,13 @@ fetch("/nav.html")
           `The light red arrow shows the direction in which the particle is moving.`
         ].map(line => `<div>${line}</div>`).join('');
 
-        const commonHints = [
+        const openingHints = [
           { kind: 'angle-diagram', content: diagramText, data },
           { kind: 'math', content: `\\text{Initially, the observer has coordinates }A=(${ax},${ay})\\text{, and the particle has coordinates }B=(${bx},${by}).` },
-          { kind: 'math', content: `\\frac{dx_P}{dt}=${vx}\\qquad\\text{and}\\qquad\\frac{dy_P}{dt}=${vy}` },
+          { kind: 'math', content: `\\frac{dx_P}{dt}=${vx}\\qquad\\text{and}\\qquad\\frac{dy_P}{dt}=${vy}` }
+        ];
+
+        const coordinateHints = [
           { kind: 'math', content: `\\text{At }t=${tStar},\\text{ the particle has coordinates }P=\\left(${bx}+(${vx})(${tStar}),${by}+(${vy})(${tStar})\\right)=(${px},${py}).` },
           { kind: 'math', content: `\\text{Let }x(t)\\text{ be the east-west displacement from the observer to the particle.}` },
           { kind: 'math', content: `\\text{Let }y(t)\\text{ be the north-south displacement from the observer to the particle.}` },
@@ -1075,22 +1089,25 @@ fetch("/nav.html")
         ];
 
         const hints = askThetaRate ? [
-          ...commonHints,
-          { kind: 'math', content: `d=${formatNumber(distance)}\\implies (${xFunctionTex})^{2}+(${yFunctionTex})^{2}=${formatNumber(distance * distance)}\\implies t=${tStar}` },
+          ...openingHints,
+          { kind: 'math', content: `d=\\sqrt{${distanceSquared}}\\implies (${xFunctionTex})^{2}+(${yFunctionTex})^{2}=${distanceSquared}\\implies ${relX0 * relX0}${xLinearTerm < 0 ? '' : '+'}${xLinearTerm}t+${xQuadraticTerm}t^{2}+${relY0 * relY0}${yLinearTerm < 0 ? '' : '+'}${yLinearTerm}t+${yQuadraticTerm}t^{2}=${distanceSquared}` },
+          { kind: 'math', content: `${timeQuadraticA}t^{2}${timeQuadraticB < 0 ? '' : '+'}${timeQuadraticB}t${timeQuadraticC < 0 ? '' : '+'}${timeQuadraticC}=0\\implies t=${tStar}` },
+          ...coordinateHints,
           { kind: 'math', content: `\\text{At }t=${tStar},\\quad\\frac{d\\theta}{dt}=\\frac{(${relY})(${vx})-(${relX})(${vy})}{(${relX})^{2}+(${relY})^{2}}=${thetaRateTex}\\text{ radians per second}.` }
         ] : [
-          ...commonHints,
+          ...openingHints,
           { kind: 'math', content: `${thetaRateTex}=\\frac{(${yFunctionTex})(${vx})-(${xFunctionTex})(${vy})}{(${xFunctionTex})^{2}+(${yFunctionTex})^{2}}\\implies t=${tStar}` },
-          { kind: 'math', content: `\\text{At }t=${tStar},\\quad d=\\sqrt{(${relX})^{2}+(${relY})^{2}}=${formatNumber(distance)}` },
+          ...coordinateHints,
+          { kind: 'math', content: `\\text{At }t=${tStar},\\quad d=\\sqrt{(${relX})^{2}+(${relY})^{2}}=\\sqrt{${distanceSquared}}` },
           { kind: 'math', content: `2d\\frac{dd}{dt}=2x\\frac{dx}{dt}+2y\\frac{dy}{dt}\\implies \\frac{dd}{dt}=\\frac{x\\frac{dx}{dt}+y\\frac{dy}{dt}}{d}` },
-          { kind: 'math', content: `\\text{At }t=${tStar},\\quad\\frac{dd}{dt}=\\frac{(${relX})(${vx})+(${relY})(${vy})}{${formatNumber(distance)}}=${distanceRateTex}\\text{ units per second}.` }
+          { kind: 'math', content: `\\text{At }t=${tStar},\\quad\\frac{dd}{dt}=\\frac{(${relX})(${vx})+(${relY})(${vy})}{\\sqrt{${distanceSquared}}}=${distanceRateTex}\\text{ units per second}.` }
         ];
 
         return {
           type: 4,
           data,
           questionHtml: `<p>An observer is located at \\(A=(${ax},${ay})\\). A particle begins at \\(B=(${bx},${by})\\) and moves ${dir.phrase} at ${speed} units per second. Let \\(\\theta\\) be the angle between the vertical line through \\(A\\) and the line connecting the observer to the particle. ${askThetaRate
-            ? `How quickly is \\(\\theta\\) changing when the distance between the observer and particle is ${formatNumber(distance)} units?`
+            ? `How quickly is \\(\\theta\\) changing when the distance between the observer and particle is \\(\\sqrt{${distanceSquared}}\\) units?`
             : `How quickly is the distance between the observer and particle changing when \\(\\frac{d\\theta}{dt}=${thetaRateTex}\\) radians per second?`}</p>`,
           answer: {
             label: askThetaRate ? 'Rate of change of angle' : 'Rate of change of distance',

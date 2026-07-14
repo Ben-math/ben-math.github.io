@@ -11,6 +11,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -903,6 +904,9 @@ fetch("/nav.html")
           const relationSteps = relationSentence
             ? [{ kind: 'math', content: `\\text{The given relationship is }${relationHint}.` }]
             : [];
+          const prismNotationSteps = shape === 'cylinder'
+            ? []
+            : [{ kind: 'math', content: `\\text{Let }S\\text{ denote the surface area of the prism, and let }V\\text{ denote its volume.}` }];
 
           return {
             type: 3,
@@ -915,15 +919,16 @@ fetch("/nav.html")
             hints: [
               { kind: 'diagram', content: diagramIntroduction, diagram },
               ...relationSteps,
+              ...prismNotationSteps,
               { kind: 'math', content: volumeFormula },
               { kind: 'math', content: `${yName}=\\frac{${volumeTarget}}{${formatNumber(volumeCoefficient)}${xName}^{2}}` },
-              { kind: 'math', content: `\\begin{aligned}${costFormula}\\\\&=${formatNumber(aCost)}${xName}^{2}+${formatNumber(sidePrice * sideAreaCoefficient)}${xName}${yName}\\end{aligned}` },
+              { kind: 'math', content: `\\begin{aligned}&${costFormula}\\\\&=${formatNumber(aCost)}${xName}^{2}+${formatNumber(sidePrice * sideAreaCoefficient)}${xName}${yName}\\end{aligned}` },
               { kind: 'math', content: `C(${xName})=${formatNumber(aCost)}${xName}^{2}+\\frac{${formatNumber(bCost)}}{${xName}}` },
               { kind: 'math', content: `C'(${xName})=${formatNumber(2 * aCost)}${xName}-\\frac{${formatNumber(bCost)}}{${xName}^{2}}` },
-              { kind: 'math', content: `\\begin{aligned}C'(${xName})&=0\\\\${formatNumber(2 * aCost)}${xName}^{3}&=${formatNumber(bCost)}\\\\${xName}&=${formatNumber(xOpt)}\\end{aligned}` },
+              { kind: 'math', content: `C'(${xName})=0\\implies ${formatNumber(2 * aCost)}${xName}^{3}=${formatNumber(bCost)}\\implies ${xName}=${formatNumber(xOpt)}` },
               { kind: 'math', content: `${yName}=\\frac{${volumeTarget}}{${formatNumber(volumeCoefficient)}(${formatNumber(xOpt)})^{2}}=${formatNumber(yOpt)}` },
               { kind: 'math', content: `C''(${xName})=${formatNumber(2 * aCost)}+\\frac{${formatNumber(2 * bCost)}}{${xName}^{3}}>0,\\text{ so the cost is minimized.}` },
-              { kind: 'math', content: `C_{\\min}=\\$${formatNumber(minCost, 2)}` }
+              { kind: 'math', content: `\\text{The minimum cost is }C(${formatNumber(xOpt)})=${formatNumber(aCost)}(${formatNumber(xOpt)})^{2}+\\frac{${formatNumber(bCost)}}{${formatNumber(xOpt)}}=\\$${formatNumber(minCost, 2)}.` }
             ]
           };
         }
@@ -957,15 +962,16 @@ fetch("/nav.html")
             hints: [
               { kind: 'diagram', content: diagramIntroduction, diagram },
               ...(relationSentence ? [{ kind: 'math', content: `\\text{The given relationship is }${relationHint}.` }] : []),
+              ...(shape === 'cylinder' ? [] : [{ kind: 'math', content: `\\text{Let }S\\text{ denote the surface area of the prism, and let }V\\text{ denote its volume.}` }]),
               { kind: 'math', content: volumeFormula },
               { kind: 'math', content: `${variables.y}=\\frac{${volumeTarget}}{${formatNumber(volumeCoefficient)}${variables.x}^{2}}` },
-              { kind: 'math', content: `\\begin{aligned}${surfaceFormula}\\\\&=${formatNumber(baseAreaCoefficient)}${variables.x}^{2}+${formatNumber(sideAreaCoefficient)}${variables.x}${variables.y}\\end{aligned}` },
+              { kind: 'math', content: `\\begin{aligned}&${surfaceFormula}\\\\&=${formatNumber(baseAreaCoefficient)}${variables.x}^{2}+${formatNumber(sideAreaCoefficient)}${variables.x}${variables.y}\\end{aligned}` },
               { kind: 'math', content: `S(${variables.x})=${formatNumber(baseAreaCoefficient)}${variables.x}^{2}+\\frac{${formatNumber(sideAreaCoefficient * volumeTarget / volumeCoefficient)}}{${variables.x}}` },
               { kind: 'math', content: `S'(${variables.x})=${formatNumber(2 * baseAreaCoefficient)}${variables.x}-\\frac{${formatNumber(sideAreaCoefficient * volumeTarget / volumeCoefficient)}}{${variables.x}^{2}}` },
-              { kind: 'math', content: `\\begin{aligned}S'(${variables.x})&=0\\\\${formatNumber(2 * baseAreaCoefficient)}${variables.x}^{3}&=${formatNumber(sideAreaCoefficient * volumeTarget / volumeCoefficient)}\\\\${variables.x}&=${formatNumber(xOpt)}\\end{aligned}` },
+              { kind: 'math', content: `S'(${variables.x})=0\\implies ${formatNumber(2 * baseAreaCoefficient)}${variables.x}^{3}=${formatNumber(sideAreaCoefficient * volumeTarget / volumeCoefficient)}\\implies ${variables.x}=${formatNumber(xOpt)}` },
               { kind: 'math', content: `${variables.y}=\\frac{${volumeTarget}}{${formatNumber(volumeCoefficient)}(${formatNumber(xOpt)})^{2}}=${formatNumber(yOpt)}` },
               { kind: 'math', content: `S''(${variables.x})=${formatNumber(2 * baseAreaCoefficient)}+\\frac{${formatNumber(2 * sideAreaCoefficient * volumeTarget / volumeCoefficient)}}{${variables.x}^{3}}>0,\\text{ so the surface area is minimized.}` },
-              { kind: 'math', content: `S_{\\min}=${formatNumber(minArea)}` }
+              { kind: 'math', content: `\\text{The minimum surface area is }S(${formatNumber(xOpt)})=${formatNumber(baseAreaCoefficient)}(${formatNumber(xOpt)})^{2}+\\frac{${formatNumber(sideAreaCoefficient * volumeTarget / volumeCoefficient)}}{${formatNumber(xOpt)}}=${formatNumber(minArea)}.` }
             ]
           };
         }
@@ -996,15 +1002,16 @@ fetch("/nav.html")
           hints: [
             { kind: 'diagram', content: diagramIntroduction, diagram },
             ...(relationSentence ? [{ kind: 'math', content: `\\text{The given relationship is }${relationHint}.` }] : []),
-            { kind: 'math', content: `\\begin{aligned}${surfaceFormula}\\\\${areaTarget}&=${formatNumber(baseAreaCoefficient)}${variables.x}^{2}+${formatNumber(sideAreaCoefficient)}${variables.x}${variables.y}\\end{aligned}` },
+            ...(shape === 'cylinder' ? [] : [{ kind: 'math', content: `\\text{Let }S\\text{ denote the surface area of the prism, and let }V\\text{ denote its volume.}` }]),
+            { kind: 'math', content: `\\begin{aligned}&${surfaceFormula}\\\\${areaTarget}&=${formatNumber(baseAreaCoefficient)}${variables.x}^{2}+${formatNumber(sideAreaCoefficient)}${variables.x}${variables.y}\\end{aligned}` },
             { kind: 'math', content: `${variables.y}=\\frac{${areaTarget}-${formatNumber(baseAreaCoefficient)}${variables.x}^{2}}{${formatNumber(sideAreaCoefficient)}${variables.x}}` },
             { kind: 'math', content: volumeFormula },
             { kind: 'math', content: `V(${variables.x})=${formatNumber(volumeCoefficient / sideAreaCoefficient)}${variables.x}\\left(${areaTarget}-${formatNumber(baseAreaCoefficient)}${variables.x}^{2}\\right)` },
             { kind: 'math', content: `V'(${variables.x})=${formatNumber(volumeCoefficient / sideAreaCoefficient)}\\left(${areaTarget}-${formatNumber(3 * baseAreaCoefficient)}${variables.x}^{2}\\right)` },
-            { kind: 'math', content: `\\begin{aligned}V'(${variables.x})&=0\\\\${areaTarget}-${formatNumber(3 * baseAreaCoefficient)}${variables.x}^{2}&=0\\\\${variables.x}&=${formatNumber(xOpt)}\\end{aligned}` },
+            { kind: 'math', content: `V'(${variables.x})=0\\implies ${areaTarget}-${formatNumber(3 * baseAreaCoefficient)}${variables.x}^{2}=0\\implies ${variables.x}=${formatNumber(xOpt)}` },
             { kind: 'math', content: `${variables.y}=\\frac{${areaTarget}-${formatNumber(baseAreaCoefficient)}(${formatNumber(xOpt)})^{2}}{${formatNumber(sideAreaCoefficient)}(${formatNumber(xOpt)})}=${formatNumber(yOpt)}` },
             { kind: 'math', content: `V''(${variables.x})=-${formatNumber(6 * baseAreaCoefficient * volumeCoefficient / sideAreaCoefficient)}${variables.x}<0,\\text{ so the volume is maximized.}` },
-            { kind: 'math', content: `V_{\\max}=${formatNumber(maxVolume)}` }
+            { kind: 'math', content: `\\text{The maximum volume is }V(${formatNumber(xOpt)})=${formatNumber(volumeCoefficient / sideAreaCoefficient)}(${formatNumber(xOpt)})\\left(${areaTarget}-${formatNumber(baseAreaCoefficient)}(${formatNumber(xOpt)})^{2}\\right)=${formatNumber(maxVolume)}.` }
           ]
         };
       }
@@ -1284,20 +1291,19 @@ fetch("/nav.html")
 
     function triangularBoxDiagramSvg(diagram) {
       const labels = diagram.labels || {};
-      const missingFace = diagram.open ? ' stroke-dasharray="8 7"' : '';
+      const topEdgeStyle = diagram.open ? ' stroke-dasharray="8 7"' : '';
       return `
-        <svg viewBox="0 0 500 280" class="optimization-diagram" role="img" aria-label="${diagram.open ? 'Open-topped' : 'Closed'} triangular prism">
-          <polygon points="85,205 175,75 255,205" fill="none" stroke="currentColor" stroke-width="3"/>
-          <polygon points="245,225 335,95 415,225" fill="none" stroke="currentColor" stroke-width="3"/>
-          <line x1="85" y1="205" x2="245" y2="225" stroke="currentColor" stroke-width="3"/>
-          <line x1="255" y1="205" x2="415" y2="225" stroke="currentColor" stroke-width="3"/>
-          <line x1="175" y1="75" x2="335" y2="95" stroke="currentColor" stroke-width="3"${missingFace}/>
-          <line x1="175" y1="75" x2="255" y2="205" stroke="currentColor" stroke-width="3"${missingFace}/>
-          <line x1="335" y1="95" x2="415" y2="225" stroke="currentColor" stroke-width="3"${missingFace}/>
-          <line x1="175" y1="75" x2="175" y2="205" stroke="currentColor" stroke-width="2" stroke-dasharray="6 6"/>
-          <text x="170" y="235" text-anchor="middle">${labels.base || 'b'}</text>
-          <text x="155" y="145" text-anchor="end">${labels.triangleHeight || 'a'}</text>
-          <text x="335" y="265" text-anchor="middle">${labels.length || 'L'}</text>
+        <svg viewBox="0 0 520 300" class="optimization-diagram" role="img" aria-label="${diagram.open ? 'Open-topped' : 'Closed'} triangular prism">
+          <polygon points="225,175 315,45 405,175" fill="none" stroke="currentColor" stroke-width="3"/>
+          <line x1="85" y1="235" x2="225" y2="175" stroke="currentColor" stroke-width="3"/>
+          <line x1="265" y1="235" x2="405" y2="175" stroke="currentColor" stroke-width="3"/>
+          <line x1="175" y1="105" x2="315" y2="45" stroke="currentColor" stroke-width="3"${topEdgeStyle}/>
+          <polygon points="85,235 175,105 265,235" fill="none" stroke="currentColor" stroke-width="3"/>
+          <line x1="175" y1="105" x2="175" y2="235" stroke="currentColor" stroke-width="2" stroke-dasharray="6 6"/>
+          <path d="M175 225 L185 225 L185 235" fill="none" stroke="currentColor" stroke-width="2"/>
+          <text x="175" y="270" text-anchor="middle">${labels.base || 'b'}</text>
+          <text x="158" y="170" text-anchor="end">${labels.triangleHeight || 'a'}</text>
+          <text x="335" y="225" text-anchor="middle" transform="rotate(-23 335 225)">${labels.length || 'L'}</text>
         </svg>`;
     }
 

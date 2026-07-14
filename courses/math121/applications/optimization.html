@@ -17,6 +17,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -658,16 +659,13 @@ fetch("/nav.html")
               makeAnswerField({ id: 'larger-number', label: 'Larger number', expected: largerNumber })
             ],
             hints: [
-              { kind: 'math', content: `\\text{Let }x\\text{ be the smaller number and }y\\text{ be the larger number.}` },
-              { kind: 'math', content: `y-x=${n}\\quad\\Longrightarrow\\quad y=x+${n}` },
-              { kind: 'math', content: `\\text{Let }P\\text{ denote the product of the two numbers.}` },
-              { kind: 'math', content: `P=xy` },
-              { kind: 'math', content: `P(x)=x(x+${n})=x^{2}+${n}x` },
-              { kind: 'math', content: `P'(x)=2x+${n}` },
-              { kind: 'math', content: `\\begin{aligned}P'(x)&=0\\\\2x+${n}&=0\\\\x&=${formatNumber(smallerNumber)}\\end{aligned}` },
-              { kind: 'math', content: `y=x+${n}=${formatNumber(smallerNumber)}+${n}=${formatNumber(largerNumber)}` },
-              { kind: 'math', content: `P''(x)=2>0,\\text{ so the product is minimized.}` },
-              { kind: 'math', content: `\\text{The minimum product is }P(${formatNumber(smallerNumber)})=${formatNumber(smallerNumber)}\\cdot${formatNumber(largerNumber)}=${formatNumber(minimumProduct)}\\text{, occurring when }x=${formatNumber(smallerNumber)}\\text{ and }y=${formatNumber(largerNumber)}.` }
+              { kind: 'math', content: `\\text{The distance between the particles is the absolute value of the difference between their positions.}` },
+              { kind: 'math', content: `D(t)=\\left|g(t)-f(t)\\right|,\\qquad t\\ge ${delay}` },
+              { kind: 'math', content: `\\begin{aligned}D(t)&=\\left|${gTex}-\\left(${fTex}\\right)\\right|\\\\&=\\left|${aGap}t^{2}${signedTerm(-2 * aGap * h, 't')}${signedTerm(aGap * h * h + kGap, '')}\\right|\\\\&=\\left|${aGap}\\left(t-${h}\\right)^{2}+${kGap}\\right|\\\\&=${aGap}\\left(t-${h}\\right)^{2}+${kGap}\\end{aligned}` },
+              { kind: 'math', content: `D'(t)=${2 * aGap}(t-${h})` },
+              { kind: 'math', content: `D'(t)=0\\implies t=${h}` },
+              { kind: 'math', content: `D''(t)=${2 * aGap}>0,\\text{ so the distance is minimized.}` },
+              { kind: 'math', content: `\\text{The minimum distance occurs }${h}\\text{ hours after ${clockLabel(startHour)}, and is }D(${h})=${aGap}(${h}-${h})^{2}+${kGap}=${kGap}.` }
             ]
           };
         }
@@ -1165,15 +1163,15 @@ fetch("/nav.html")
               makeAnswerField({ id: 'distance', label: 'Distance between particles', expected: Math.abs(positionGapAtH), unit: 'units' })
             ],
             hints: [
-              { kind: 'diagram', content: 'Compare the particles’ velocity graphs, then evaluate their position separation at the minimizing time:', diagram: { kind: 'velocity-gap' } },
-              { kind: 'math', content: `v_A(t)=f'(t),\\qquad v_B(t)=g'(t)` },
-              { kind: 'math', content: `\\begin{aligned}v_B(t)-v_A(t)&=${aGap}(t-${h})^{2}+${kGap}>0\\end{aligned}` },
-              { kind: 'math', content: `V(t)=\\left|v_B(t)-v_A(t)\\right|=${aGap}(t-${h})^{2}+${kGap}` },
+              { kind: 'math', content: `\\text{The particles' velocities are the derivatives of their position functions.}` },
+              { kind: 'math', content: `v_A(t)=f'(t)=${polynomialTex2(3 * fa, 2 * fb, fc)}` },
+              { kind: 'math', content: `v_B(t)=g'(t)=${polynomialTex2(3 * ga, 2 * gb, gc)}` },
+              { kind: 'math', content: `\\text{The difference between their velocities is given by the function }V(t)=\\left|v_B(t)-v_A(t)\\right|.` },
+              { kind: 'math', content: `\\begin{aligned}V(t)&=\\left|${polynomialTex2(3 * ga, 2 * gb, gc)}-\\left(${polynomialTex2(3 * fa, 2 * fb, fc)}\\right)\\right|\\\\&=\\left|${aGap}t^{2}${signedTerm(-2 * aGap * h, 't')}${signedTerm(aGap * h * h + kGap, '')}\\right|\\\\&=\\left|${aGap}\\left(t-${h}\\right)^{2}+${kGap}\\right|\\\\&=${aGap}\\left(t-${h}\\right)^{2}+${kGap}\\end{aligned}` },
               { kind: 'math', content: `V'(t)=${2 * aGap}(t-${h})` },
-              { kind: 'math', content: `\\begin{aligned}V'(t)&=0\\\\t&=${h}\\end{aligned}` },
+              { kind: 'math', content: `V'(t)=0\\implies t=${h}` },
               { kind: 'math', content: `V''(t)=${2 * aGap}>0,\\text{ so the velocities are closest then.}` },
-              { kind: 'math', content: `\\begin{aligned}\\text{Distance}&=\\left|g(${h})-f(${h})\\right|\\\\&=${formatNumber(Math.abs(positionGapAtH))}\\end{aligned}` },
-              { kind: 'math', content: `t=${h}\\text{ hours after ${clockLabel(startHour)}},\\qquad D=${formatNumber(Math.abs(positionGapAtH))}` }
+              { kind: 'math', content: `\\text{The particles' velocities are closest }${h}\\text{ hours after ${clockLabel(startHour)}. At that time, their distance apart is }\\left|g(${h})-f(${h})\\right|=${formatNumber(Math.abs(positionGapAtH))}.` }
             ]
           };
         }
@@ -1203,14 +1201,13 @@ fetch("/nav.html")
               makeAnswerField({ id: 'distance', label: 'Minimum vertical distance', expected: kGap, unit: 'units' })
             ],
             hints: [
-              { kind: 'diagram', content: 'The vertical distance is the vertical gap between the two height graphs:', diagram: { kind: 'vertical-gap' } },
+              { kind: 'math', content: `\\text{The vertical distance between the particles is the absolute value of the difference between their heights.}` },
               { kind: 'math', content: `D(t)=\\left|g(t)-f(t)\\right|` },
-              { kind: 'math', content: `g(t)-f(t)=${aGap}(t-${h})^{2}+${kGap}>0` },
-              { kind: 'math', content: `D(t)=${aGap}(t-${h})^{2}+${kGap}` },
+              { kind: 'math', content: `\\begin{aligned}D(t)&=\\left|${gTex}-\\left(${fTex}\\right)\\right|\\\\&=\\left|${aGap}t^{2}${signedTerm(-2 * aGap * h, 't')}${signedTerm(aGap * h * h + kGap, '')}\\right|\\\\&=\\left|${aGap}\\left(t-${h}\\right)^{2}+${kGap}\\right|\\\\&=${aGap}\\left(t-${h}\\right)^{2}+${kGap}\\end{aligned}` },
               { kind: 'math', content: `D'(t)=${2 * aGap}(t-${h})` },
-              { kind: 'math', content: `\\begin{aligned}D'(t)&=0\\\\t&=${h}\\end{aligned}` },
+              { kind: 'math', content: `D'(t)=0\\implies t=${h}` },
               { kind: 'math', content: `D''(t)=${2 * aGap}>0,\\text{ so the vertical distance is minimized.}` },
-              { kind: 'math', content: `t=${h},\\qquad D_{\\min}=${kGap}` }
+              { kind: 'math', content: `\\text{The minimum vertical distance occurs at time }t=${h}\\text{, and is }D(${h})=${aGap}(${h}-${h})^{2}+${kGap}=${kGap}.` }
             ]
           };
         }
@@ -1245,13 +1242,14 @@ fetch("/nav.html")
             makeAnswerField({ id: 'distance', label: 'Maximum vertical distance', expected: maxDistance, unit: 'units' })
           ],
           hints: [
-            { kind: 'diagram', content: 'The vertical distance is the gap between the two graphs; on a closed interval, check critical points and endpoints:', diagram: { kind: 'vertical-gap-interval' } },
+            { kind: 'math', content: `\\text{The vertical distance between the particles is the absolute value of the difference between their heights.}` },
             { kind: 'math', content: `D(t)=\\left|g(t)-f(t)\\right|` },
-            { kind: 'math', content: `g(t)-f(t)=${aGap}(t-${h})^{2}+${kGap}>0` },
-            { kind: 'math', content: `D(t)=${aGap}(t-${h})^{2}+${kGap}` },
-            { kind: 'math', content: `D'(t)=${2 * aGap}(t-${h})=0\\quad\\Longrightarrow\\quad t=${h}` },
-            { kind: 'math', content: `\\begin{aligned}D(${left})&=${formatNumber(leftDistance)}\\\\D(${h})&=${kGap}\\\\D(${right})&=${formatNumber(rightDistance)}\\end{aligned}` },
-            { kind: 'math', content: `t=${maxTime},\\qquad D_{\\max}=${formatNumber(maxDistance)}` }
+            { kind: 'math', content: `\\begin{aligned}D(t)&=\\left|${gTex}-\\left(${fTex}\\right)\\right|\\\\&=\\left|${aGap}t^{2}${signedTerm(-2 * aGap * h, 't')}${signedTerm(aGap * h * h + kGap, '')}\\right|\\\\&=\\left|${aGap}\\left(t-${h}\\right)^{2}+${kGap}\\right|\\\\&=${aGap}\\left(t-${h}\\right)^{2}+${kGap}\\end{aligned}` },
+            { kind: 'math', content: `D'(t)=${2 * aGap}(t-${h})` },
+            { kind: 'math', content: `D'(t)=0\\implies t=${h}` },
+            { kind: 'math', content: `\\text{Since the interval is closed, compare the value at the critical point with the values at both endpoints.}` },
+            { kind: 'math', content: `\\begin{aligned}D(${left})&=${aGap}(${left}-${h})^{2}+${kGap}=${formatNumber(leftDistance)}\\\\D(${h})&=${aGap}(${h}-${h})^{2}+${kGap}=${kGap}\\\\D(${right})&=${aGap}(${right}-${h})^{2}+${kGap}=${formatNumber(rightDistance)}\\end{aligned}` },
+            { kind: 'math', content: `\\text{The maximum vertical distance occurs at time }t=${maxTime}\\text{, and is }D(${maxTime})=${aGap}(${maxTime}-${h})^{2}+${kGap}=${formatNumber(maxDistance)}.` }
           ]
         };
       }

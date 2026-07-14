@@ -16,6 +16,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1091,13 +1092,9 @@ fetch("/nav.html")
             hints: [
               { kind: 'diagram', content: 'Let D(t) denote the distance from the moving particle P(t) to the fixed point A, as shown:', diagram: { kind: 'motion-point' } },
               { kind: 'math', content: `\\begin{aligned}D(t)&=\\sqrt{\\left(${x0}+${vx}t-${ax}\\right)^{2}+\\left(${y0}+${vy}t-${ay}\\right)^{2}}\\end{aligned}` },
-              { kind: 'math', content: `\\text{It is equivalent and simpler to minimize }Q(t)=D(t)^{2}.` },
-              { kind: 'math', content: `Q(t)=${formatNumber(quadraticCoeff)}t^{2}${signedTerm(linearCoeff, 't')}${signedTerm(constantTerm, '')}` },
-              { kind: 'math', content: `Q'(t)=${formatNumber(2 * quadraticCoeff)}t${signedTerm(linearCoeff, '')}` },
-              { kind: 'math', content: `\\begin{aligned}Q'(t)&=0\\\\t&=${formatNumber(tOpt)}\\end{aligned}` },
-              { kind: 'math', content: `Q''(t)=${formatNumber(2 * quadraticCoeff)}>0,\\text{ so this gives the minimum distance.}` },
-              { kind: 'math', content: `\\begin{aligned}D\\left(${formatNumber(tOpt)}\\right)&=\\sqrt{Q\\left(${formatNumber(tOpt)}\\right)}\\\\&=${formatNumber(minDistance)}\\end{aligned}` },
-              { kind: 'math', content: `t=${formatNumber(tOpt)},\\qquad D_{\\min}=${formatNumber(minDistance)}` }
+              { kind: 'math', content: `\\begin{aligned}D'(t)&=\\frac{1}{2\\sqrt{\\left(${x0}+${vx}t-${ax}\\right)^{2}+\\left(${y0}+${vy}t-${ay}\\right)^{2}}}\\cdot\\left(2${vx}\\left(${x0}+${vx}t-${ax}\\right)+2${vy}\\left(${y0}+${vy}t-${ay}\\right)\\right)\\\\&=\\frac{${formatNumber(quadraticCoeff)}t${signedTerm(linearCoeff / 2, '')}}{\\sqrt{\\left(${x0}+${vx}t-${ax}\\right)^{2}+\\left(${y0}+${vy}t-${ay}\\right)^{2}}}\\end{aligned}` },
+              { kind: 'math', content: `D'(t)=0\\implies ${formatNumber(quadraticCoeff)}t${signedTerm(linearCoeff / 2, '')}=0\\implies t=${formatNumber(tOpt)}` },
+              { kind: 'math', content: `\\text{The minimum distance occurs at time }t=${formatNumber(tOpt)}\\text{, and is }D(${formatNumber(tOpt)})=\\sqrt{\\left(${x0}+${vx}(${formatNumber(tOpt)})-${ax}\\right)^{2}+\\left(${y0}+${vy}(${formatNumber(tOpt)})-${ay}\\right)^{2}}=${formatNumber(minDistance)}.` }
             ]
           };
         }

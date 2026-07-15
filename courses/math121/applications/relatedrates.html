@@ -5,6 +5,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -865,8 +866,34 @@ fetch("/nav.html")
             qRate = 2 * Math.PI * dims.r * rates.r
               + Math.PI * s * rates.r
               + Math.PI * dims.r * (dims.r * rates.r + dims.h * rates.h) / s;
-            qValueTex = `\\pi\\left(${dims.r * dims.r}+${dims.r}\\sqrt{${slantSquared}}\\right)`;
-            qRateTex = `\\pi\\left(${2 * dims.r * rates.r}+${rates.r}\\sqrt{${slantSquared}}+\\frac{${dims.r * (dims.r * rates.r + dims.h * rates.h)}}{\\sqrt{${slantSquared}}}\\right)`;
+            const slantRoot = Math.round(Math.sqrt(slantSquared));
+            const slantIsInteger = slantRoot * slantRoot === slantSquared;
+            const slantTex = slantIsInteger ? `${slantRoot}` : `\\sqrt{${slantSquared}}`;
+
+            const surfaceConstant = dims.r * dims.r;
+            const surfaceSlantCoefficient = dims.r;
+            qValueTex = slantIsInteger
+              ? piMultipleTex(surfaceConstant + surfaceSlantCoefficient * slantRoot)
+              : `\\pi\\left(${surfaceConstant}+${surfaceSlantCoefficient}\\sqrt{${slantSquared}}\\right)`;
+
+            const rateConstant = 2 * dims.r * rates.r;
+            const rateSlantCoefficient = rates.r;
+            const rateFractionNumerator = dims.r * (dims.r * rates.r + dims.h * rates.h);
+
+            if (slantIsInteger) {
+              const rateNumerator = rateConstant * slantRoot
+                + rateSlantCoefficient * slantRoot * slantRoot
+                + rateFractionNumerator;
+              qRateTex = piMultipleTex(rateNumerator, slantRoot);
+            } else {
+              const signedRadicalTerm = rateSlantCoefficient >= 0
+                ? `+${rateSlantCoefficient}\\sqrt{${slantSquared}}`
+                : `-${Math.abs(rateSlantCoefficient)}\\sqrt{${slantSquared}}`;
+              const signedFractionTerm = rateFractionNumerator >= 0
+                ? `+\\frac{${rateFractionNumerator}}{\\sqrt{${slantSquared}}}`
+                : `-\\frac{${Math.abs(rateFractionNumerator)}}{\\sqrt{${slantSquared}}}`;
+              qRateTex = `\\pi\\left(${rateConstant}${signedRadicalTerm}${signedFractionTerm}\\right)`;
+            }
           }
         }
 

@@ -6,6 +6,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1320,15 +1321,22 @@ fetch("/nav.html")
 
     function planetOrbitDiagramHtml(data) {
       const { radiusA, radiusB, angleA, angleB } = data;
-      const maxRadius = Math.max(radiusA, radiusB);
-      const scale = 125 / maxRadius;
       const cx = 260, cy = 165;
-      const rA = radiusA * scale;
-      const rB = radiusB * scale;
-      const ax = cx + rA * Math.cos(angleA);
-      const ay = cy - rA * Math.sin(angleA);
-      const bx = cx + rB * Math.cos(angleB);
-      const by = cy - rB * Math.sin(angleB);
+
+      // The diagram is intentionally schematic rather than to scale.  The
+      // larger actual orbit is drawn with radius 220, and the smaller with
+      // radius 120.  The planet farther through its orbit is placed at
+      // 70/200 of a revolution, while the other is placed at 25/200.
+      const rA = radiusA > radiusB ? 220 : 120;
+      const rB = radiusB > radiusA ? 220 : 120;
+      const fartherAngle = 2 * Math.PI * 70 / 200;
+      const nearerAngle = 2 * Math.PI * 25 / 200;
+      const displayAngleA = angleA > angleB ? fartherAngle : nearerAngle;
+      const displayAngleB = angleB > angleA ? fartherAngle : nearerAngle;
+      const ax = cx + rA * Math.cos(displayAngleA);
+      const ay = cy - rA * Math.sin(displayAngleA);
+      const bx = cx + rB * Math.cos(displayAngleB);
+      const by = cy - rB * Math.sin(displayAngleB);
       return `
         <div class="optimization-diagram-wrap">
           <svg class="optimization-diagram" viewBox="0 0 520 330" role="img" aria-label="Two planets in circular orbits around a star">

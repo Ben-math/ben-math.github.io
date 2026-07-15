@@ -8,6 +8,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -690,7 +691,7 @@ fetch("/nav.html")
           { kind: 'math', content: `\\text{At }t=${elapsed},\\quad\\frac{d\\theta}{dt}=\\frac{(${relY.toFixed(2)})(${formatNumber(relVx)})-(${relX.toFixed(2)})(${formatNumber(relVy)})}{(${relX.toFixed(2)})^{2}+(${relY.toFixed(2)})^{2}}=${formatNumber(rate)}\\text{ radians per hour}.` }
         ] : [
           ...commonHints,
-          { kind: 'math', content: `d^{2}=x^{2}+y^{2}` },
+          { kind: 'math', content: `\\text{By the cosine law, }d^{2}=x^{2}+y^{2}` },
           { kind: 'math', content: `2d\\frac{dd}{dt}=2x\\frac{dx}{dt}+2y\\frac{dy}{dt}` },
           { kind: 'math', content: `\\frac{dd}{dt}=\\frac{x\\frac{dx}{dt}+y\\frac{dy}{dt}}{\\sqrt{x^{2}+y^{2}}}` },
           { kind: 'math', content: `\\text{At }t=${elapsed},\\quad\\frac{dd}{dt}=\\frac{(${relX.toFixed(2)})(${formatNumber(relVx)})+(${relY.toFixed(2)})(${formatNumber(relVy)})}{\\sqrt{(${relX.toFixed(2)})^{2}+(${relY.toFixed(2)})^{2}}}=${formatNumber(rate)}\\text{ km/h}.` }
@@ -1282,7 +1283,7 @@ fetch("/nav.html")
           { kind: 'math', content: `x(t)=${xFunctionTex}\\qquad\\text{and}\\qquad y(t)=${yFunctionTex}` },
           { kind: 'math', content: `x(${tStar})=${px}-${ax}=${relX}\\qquad\\text{and}\\qquad y(${tStar})=${py}-${ay}=${relY}` },
           { kind: 'math', content: `\\frac{dx}{dt}=${vx}\\qquad\\text{and}\\qquad\\frac{dy}{dt}=${vy}` },
-          { kind: 'math', content: `d^{2}=x^{2}+y^{2}` },
+          { kind: 'math', content: `\\text{By the cosine law, }d^{2}=x^{2}+y^{2}` },
           { kind: 'math', content: `\\tan\\theta=\\frac{x}{y}` },
           { kind: 'math', content: `\\sec^{2}\\theta\\frac{d\\theta}{dt}=\\frac{y\\frac{dx}{dt}-x\\frac{dy}{dt}}{y^{2}}\\implies \\frac{d\\theta}{dt}=\\frac{y\\frac{dx}{dt}-x\\frac{dy}{dt}}{x^{2}+y^{2}}` }
         ];
@@ -1395,15 +1396,17 @@ fetch("/nav.html")
             unit: 'million km per day'
           },
           hints: [
-            { kind: 'orbit-diagram', content: 'Let \\(d\\) denote the distance between the planets and let \\(\\phi\\) denote the angle between their position vectors:', data },
+            { kind: 'orbit-diagram', content: 'Let \\(d(t)\\) and \\(\\theta(t)\\) be functions of the number of days since planetary alignment giving the distance and angle between the planets respectively.', data },
+            { kind: 'math', content: `\\text{Let }\\theta_A(t)\\text{ and }\\theta_B(t)\\text{ be similar functions giving the rotation of each individual planet about the star.}` },
             { kind: 'math', content: `\\theta_A(t)=\\frac{2\\pi t}{${periodA}},\\qquad \\theta_B(t)=\\frac{2\\pi t}{${periodB}}` },
             { kind: 'math', content: `\\phi(t)=\\theta_B(t)-\\theta_A(t)=2\\pi t\\left(\\frac{1}{${periodB}}-\\frac{1}{${periodA}}\\right)` },
             { kind: 'math', content: `\\frac{d\\phi}{dt}=${phiRateTex}` },
             { kind: 'math', content: `\\phi(${days})=${phiTex}=${formatNumber(phi)}` },
-            { kind: 'math', content: `d^{2}=${radiusA}^{2}+${radiusB}^{2}-2(${radiusA})(${radiusB})\\cos\\phi` },
+            { kind: 'math', content: `\\text{By the cosine law, }d^{2}=${radiusA}^{2}+${radiusB}^{2}-2(${radiusA})(${radiusB})\\cos\\phi` },
             { kind: 'math', content: `2d\\frac{dd}{dt}=2(${radiusA})(${radiusB})\\sin\\phi\\frac{d\\phi}{dt}` },
+            { kind: 'math', content: `\\text{At }t=${days},` },
             { kind: 'math', content: `d(${days})=\\sqrt{${radiusA}^{2}+${radiusB}^{2}-2(${radiusA})(${radiusB})\\cos\\left(${phiTex}\\right)}=${formatNumber(distance)}` },
-            { kind: 'math', content: `\\left.\\frac{dd}{dt}\\right|_{t=${days}}=\\frac{(${radiusA})(${radiusB})\\sin\\left(${phiTex}\\right)\\left(${phiRateTex}\\right)}{${formatNumber(distance)}}=${formatNumber(distanceRate)}` },
+            { kind: 'math', content: `\\\text{At }t=${days},\\quad\\frac{dd}{dt}=\\frac{(${radiusA})(${radiusB})\\sin\\left(${phiTex}\\right)\\left(${phiRateTex}\\right)}{${formatNumber(distance)}}=${formatNumber(distanceRate)}` },
             { kind: 'math', content: `\\text{Therefore, the distance between the planets is changing at }${formatNumber(distanceRate)}\\text{ million km per day}.` }
           ]
         };

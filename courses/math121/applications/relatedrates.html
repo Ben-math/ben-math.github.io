@@ -7,6 +7,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -533,7 +534,7 @@ fetch("/nav.html")
       const b1 = [d.initialX + d.vBx * d.elapsed, d.initialY + d.vBy * d.elapsed];
       const maxAbs = Math.max(1, ...[a0, b0, a1, b1].flat().map(Math.abs));
       const axisLimit = 1.2 * maxAbs;
-      const sx = x => 260 + (x / axisLimit) * 220;
+      const sx = x => 260 + (x / axisLimit) * 145;
       const sy = y => 170 - (y / axisLimit) * 140;
       const ax0 = sx(a0[0]), ay0 = sy(a0[1]);
       const bx0 = sx(b0[0]), by0 = sy(b0[1]);
@@ -726,7 +727,7 @@ fetch("/nav.html")
       if (data.shape === 'cone') {
         return `<div class="optimization-diagram-wrap"><svg class="optimization-diagram" viewBox="0 0 520 320" role="img" aria-label="Cone"><ellipse cx="260" cy="250" rx="115" ry="38" fill="none" stroke="currentColor" stroke-width="2"/><line x1="145" y1="250" x2="260" y2="45" stroke="currentColor" stroke-width="2"/><line x1="375" y1="250" x2="260" y2="45" stroke="currentColor" stroke-width="2"/><line x1="260" y1="45" x2="260" y2="250" stroke="currentColor" stroke-width="1.5" stroke-dasharray="6 5"/><line x1="260" y1="250" x2="375" y2="250" stroke="currentColor" stroke-width="2"/><text x="315" y="240">r</text><text x="270" y="150">h</text></svg></div>`;
       }
-      return `<div class="optimization-diagram-wrap"><svg class="optimization-diagram" viewBox="0 0 520 320" role="img" aria-label="Rectangular prism"><polygon points="135,95 340,95 410,145 205,145" fill="none" stroke="currentColor" stroke-width="2"/><polygon points="135,95 205,145 205,270 135,220" fill="none" stroke="currentColor" stroke-width="2"/><polygon points="205,145 410,145 410,270 205,270" fill="none" stroke="currentColor" stroke-width="2"/><line x1="135" y1="220" x2="340" y2="220" stroke="currentColor" stroke-width="2" stroke-dasharray="6 5"/><line x1="340" y1="95" x2="340" y2="220" stroke="currentColor" stroke-width="2" stroke-dasharray="6 5"/><line x1="340" y1="220" x2="410" y2="270" stroke="currentColor" stroke-width="2" stroke-dasharray="6 5"/><text x="295" y="288">l</text><text x="165" y="252">w</text><text x="420" y="210">h</text></svg></div>`;
+      return `<div class="optimization-diagram-wrap"><svg class="optimization-diagram" viewBox="0 0 520 320" role="img" aria-label="Rectangular prism"><polygon points="135,95 340,95 410,145 205,145" fill="none" stroke="currentColor" stroke-width="2"/><polygon points="135,95 205,145 205,270 135,145" fill="none" stroke="currentColor" stroke-width="2"/><polygon points="205,145 410,145 410,270 205,270" fill="none" stroke="currentColor" stroke-width="2"/><line x1="135" y1="145" x2="340" y2="145" stroke="currentColor" stroke-width="2" stroke-dasharray="6 5"/><line x1="340" y1="95" x2="340" y2="145" stroke="currentColor" stroke-width="2" stroke-dasharray="6 5"/><line x1="340" y1="145" x2="410" y2="270" stroke="currentColor" stroke-width="2" stroke-dasharray="6 5"/><text x="295" y="288">l</text><text x="165" y="252">w</text><text x="420" y="210">h</text></svg></div>`;
     }
 
 
@@ -1324,11 +1325,11 @@ fetch("/nav.html")
       const cx = 260, cy = 165;
 
       // The diagram is intentionally schematic rather than to scale.  The
-      // larger actual orbit is drawn with radius 220, and the smaller with
-      // radius 120.  The planet farther through its orbit is placed at
+      // larger actual orbit is drawn with radius 145, and the smaller with
+      // radius 80.  The planet farther through its orbit is placed at
       // 70/200 of a revolution, while the other is placed at 25/200.
-      const rA = radiusA > radiusB ? 220 : 120;
-      const rB = radiusB > radiusA ? 220 : 120;
+      const rA = radiusA > radiusB ? 145 : 80;
+      const rB = radiusB > radiusA ? 145 : 80;
       const fartherAngle = 2 * Math.PI * 70 / 200;
       const nearerAngle = 2 * Math.PI * 25 / 200;
       const displayAngleA = angleA > angleB ? fartherAngle : nearerAngle;

@@ -4,6 +4,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -758,73 +759,114 @@ fetch("/nav.html")
         const shape = randomChoice(shapes);
         const quantity = Math.random() < 0.5 ? 'volume' : 'surface area';
         const inverseMode = Math.random() < 0.5;
-        let dims, rates, formulas, qValue, qRate, qValueTex, qRateTex, unknownKey = null;
+        let dims, rates, formulas, qValue, qRate, qValueTex, qRateTex;
+        let unknownKey = null;
+        let substitutionTex = '';
+        let dimensionSolveTex = '';
 
         if (shape === 'prism') {
           dims = { l: randomInteger(3, 15), w: randomInteger(3, 15), h: randomInteger(3, 15) };
-          rates = { l: randomChoice([-1,1]) * randomInteger(1,5), w: randomChoice([-1,1]) * randomInteger(1,5), h: randomChoice([-1,1]) * randomInteger(1,5) };
+          rates = {
+            l: randomChoice([-1, 1]) * randomInteger(1, 5),
+            w: randomChoice([-1, 1]) * randomInteger(1, 5),
+            h: randomChoice([-1, 1]) * randomInteger(1, 5)
+          };
           if (quantity === 'volume') {
-            formulas = { base: 'V=lwh', derivative: '\\frac{dV}{dt}=wh\\frac{dl}{dt}+lh\\frac{dw}{dt}+lw\\frac{dh}{dt}' };
-            qValue = dims.l*dims.w*dims.h;
-            qRate = dims.w*dims.h*rates.l + dims.l*dims.h*rates.w + dims.l*dims.w*rates.h;
+            formulas = {
+              base: 'V=lwh',
+              derivative: '\\frac{dV}{dt}=wh\\frac{dl}{dt}+lh\\frac{dw}{dt}+lw\\frac{dh}{dt}'
+            };
+            qValue = dims.l * dims.w * dims.h;
+            qRate = dims.w * dims.h * rates.l + dims.l * dims.h * rates.w + dims.l * dims.w * rates.h;
             qValueTex = `${qValue}`;
             qRateTex = `${qRate}`;
           } else {
-            formulas = { base: 'S=2lw+2lh+2wh', derivative: '\\frac{dS}{dt}=2\\left(w\\frac{dl}{dt}+l\\frac{dw}{dt}\\right)+2\\left(h\\frac{dl}{dt}+l\\frac{dh}{dt}\\right)+2\\left(h\\frac{dw}{dt}+w\\frac{dh}{dt}\\right)' };
-            qValue = 2*(dims.l*dims.w+dims.l*dims.h+dims.w*dims.h);
-            qRate = 2*(dims.w*rates.l+dims.l*rates.w+dims.h*rates.l+dims.l*rates.h+dims.h*rates.w+dims.w*rates.h);
+            formulas = {
+              base: 'S=2lw+2lh+2wh',
+              derivative: '\\frac{dS}{dt}=2\\left(w\\frac{dl}{dt}+l\\frac{dw}{dt}\\right)+2\\left(h\\frac{dl}{dt}+l\\frac{dh}{dt}\\right)+2\\left(h\\frac{dw}{dt}+w\\frac{dh}{dt}\\right)'
+            };
+            qValue = 2 * (dims.l * dims.w + dims.l * dims.h + dims.w * dims.h);
+            qRate = 2 * (dims.w * rates.l + dims.l * rates.w)
+              + 2 * (dims.h * rates.l + dims.l * rates.h)
+              + 2 * (dims.h * rates.w + dims.w * rates.h);
             qValueTex = `${qValue}`;
             qRateTex = `${qRate}`;
           }
         } else if (shape === 'cylinder') {
           dims = { r: randomInteger(3, 15), h: randomInteger(3, 20) };
-          rates = { r: randomChoice([-1,1]) * randomInteger(1,5), h: randomChoice([-1,1]) * randomInteger(1,5) };
+          rates = {
+            r: randomChoice([-1, 1]) * randomInteger(1, 5),
+            h: randomChoice([-1, 1]) * randomInteger(1, 5)
+          };
           if (quantity === 'volume') {
-            formulas = { base: 'V=\\pi r^{2}h', derivative: '\\frac{dV}{dt}=2\\pi rh\\frac{dr}{dt}+\\pi r^{2}\\frac{dh}{dt}' };
-            qValue = Math.PI*dims.r*dims.r*dims.h;
-            qRate = 2*Math.PI*dims.r*dims.h*rates.r + Math.PI*dims.r*dims.r*rates.h;
-            qValueTex = piMultipleTex(dims.r*dims.r*dims.h);
-            qRateTex = piMultipleTex(2*dims.r*dims.h*rates.r + dims.r*dims.r*rates.h);
+            formulas = {
+              base: 'V=\\pi r^{2}h',
+              derivative: '\\frac{dV}{dt}=2\\pi rh\\frac{dr}{dt}+\\pi r^{2}\\frac{dh}{dt}'
+            };
+            qValue = Math.PI * dims.r * dims.r * dims.h;
+            qRate = Math.PI * (2 * dims.r * dims.h * rates.r + dims.r * dims.r * rates.h);
+            qValueTex = piMultipleTex(dims.r * dims.r * dims.h);
+            qRateTex = piMultipleTex(2 * dims.r * dims.h * rates.r + dims.r * dims.r * rates.h);
           } else {
-            formulas = { base: 'S=2\\pi r^{2}+2\\pi rh', derivative: '\\frac{dS}{dt}=4\\pi r\\frac{dr}{dt}+2\\pi\\left(h\\frac{dr}{dt}+r\\frac{dh}{dt}\\right)' };
-            qValue = 2*Math.PI*dims.r*dims.r+2*Math.PI*dims.r*dims.h;
-            qRate = 4*Math.PI*dims.r*rates.r+2*Math.PI*(dims.h*rates.r+dims.r*rates.h);
-            qValueTex = piMultipleTex(2*dims.r*dims.r + 2*dims.r*dims.h);
-            qRateTex = piMultipleTex(4*dims.r*rates.r + 2*(dims.h*rates.r+dims.r*rates.h));
+            formulas = {
+              base: 'S=2\\pi r^{2}+2\\pi rh',
+              derivative: '\\frac{dS}{dt}=4\\pi r\\frac{dr}{dt}+2\\pi\\left(h\\frac{dr}{dt}+r\\frac{dh}{dt}\\right)'
+            };
+            qValue = Math.PI * (2 * dims.r * dims.r + 2 * dims.r * dims.h);
+            qRate = Math.PI * (4 * dims.r * rates.r + 2 * (dims.h * rates.r + dims.r * rates.h));
+            qValueTex = piMultipleTex(2 * dims.r * dims.r + 2 * dims.r * dims.h);
+            qRateTex = piMultipleTex(4 * dims.r * rates.r + 2 * (dims.h * rates.r + dims.r * rates.h));
           }
         } else if (shape === 'sphere') {
           dims = { r: randomInteger(3, 15) };
-          rates = { r: randomChoice([-1,1]) * randomInteger(1,5) };
+          rates = { r: randomChoice([-1, 1]) * randomInteger(1, 5) };
           if (quantity === 'volume') {
-            formulas = { base: 'V=\\frac{4}{3}\\pi r^{3}', derivative: '\\frac{dV}{dt}=4\\pi r^{2}\\frac{dr}{dt}' };
-            qValue = 4*Math.PI*dims.r**3/3;
-            qRate = 4*Math.PI*dims.r*dims.r*rates.r;
-            qValueTex = piMultipleTex(4*dims.r**3, 3);
-            qRateTex = piMultipleTex(4*dims.r*dims.r*rates.r);
+            formulas = {
+              base: 'V=\\frac{4}{3}\\pi r^{3}',
+              derivative: '\\frac{dV}{dt}=4\\pi r^{2}\\frac{dr}{dt}'
+            };
+            qValue = 4 * Math.PI * dims.r ** 3 / 3;
+            qRate = 4 * Math.PI * dims.r * dims.r * rates.r;
+            qValueTex = piMultipleTex(4 * dims.r ** 3, 3);
+            qRateTex = piMultipleTex(4 * dims.r * dims.r * rates.r);
           } else {
-            formulas = { base: 'S=4\\pi r^{2}', derivative: '\\frac{dS}{dt}=8\\pi r\\frac{dr}{dt}' };
-            qValue = 4*Math.PI*dims.r*dims.r;
-            qRate = 8*Math.PI*dims.r*rates.r;
-            qValueTex = piMultipleTex(4*dims.r*dims.r);
-            qRateTex = piMultipleTex(8*dims.r*rates.r);
+            formulas = {
+              base: 'S=4\\pi r^{2}',
+              derivative: '\\frac{dS}{dt}=8\\pi r\\frac{dr}{dt}'
+            };
+            qValue = 4 * Math.PI * dims.r * dims.r;
+            qRate = 8 * Math.PI * dims.r * rates.r;
+            qValueTex = piMultipleTex(4 * dims.r * dims.r);
+            qRateTex = piMultipleTex(8 * dims.r * rates.r);
           }
         } else {
           dims = { r: randomInteger(3, 12), h: randomInteger(4, 16) };
-          rates = { r: randomChoice([-1,1]) * randomInteger(1,4), h: randomChoice([-1,1]) * randomInteger(1,4) };
-          const s = Math.hypot(dims.r, dims.h);
+          rates = {
+            r: randomChoice([-1, 1]) * randomInteger(1, 4),
+            h: randomChoice([-1, 1]) * randomInteger(1, 4)
+          };
+          const slantSquared = dims.r * dims.r + dims.h * dims.h;
+          const s = Math.sqrt(slantSquared);
           if (quantity === 'volume') {
-            formulas = { base: 'V=\\frac{1}{3}\\pi r^{2}h', derivative: '\\frac{dV}{dt}=\\frac{1}{3}\\pi\\left(2rh\\frac{dr}{dt}+r^{2}\\frac{dh}{dt}\\right)' };
-            qValue = Math.PI*dims.r*dims.r*dims.h/3;
-            qRate = Math.PI*(2*dims.r*dims.h*rates.r+dims.r*dims.r*rates.h)/3;
-            qValueTex = piMultipleTex(dims.r*dims.r*dims.h, 3);
-            qRateTex = piMultipleTex(2*dims.r*dims.h*rates.r+dims.r*dims.r*rates.h, 3);
+            formulas = {
+              base: 'V=\\frac{1}{3}\\pi r^{2}h',
+              derivative: '\\frac{dV}{dt}=\\frac{1}{3}\\pi\\left(2rh\\frac{dr}{dt}+r^{2}\\frac{dh}{dt}\\right)'
+            };
+            qValue = Math.PI * dims.r * dims.r * dims.h / 3;
+            qRate = Math.PI * (2 * dims.r * dims.h * rates.r + dims.r * dims.r * rates.h) / 3;
+            qValueTex = piMultipleTex(dims.r * dims.r * dims.h, 3);
+            qRateTex = piMultipleTex(2 * dims.r * dims.h * rates.r + dims.r * dims.r * rates.h, 3);
           } else {
-            formulas = { base: 'S=\\pi r^{2}+\\pi r\\sqrt{r^{2}+h^{2}}', derivative: '\\frac{dS}{dt}=2\\pi r\\frac{dr}{dt}+\\pi\\sqrt{r^{2}+h^{2}}\\frac{dr}{dt}+\\frac{\\pi r\\left(r\\frac{dr}{dt}+h\\frac{dh}{dt}\\right)}{\\sqrt{r^{2}+h^{2}}}' };
-            qValue = Math.PI*dims.r*dims.r + Math.PI*dims.r*s;
-            qRate = 2*Math.PI*dims.r*rates.r + Math.PI*s*rates.r + Math.PI*dims.r*(dims.r*rates.r+dims.h*rates.h)/s;
-            const slantSquared = dims.r*dims.r + dims.h*dims.h;
-            qValueTex = `\pi\left(${dims.r*dims.r}+${dims.r}\sqrt{${slantSquared}}\right)`;
-            qRateTex = `\pi\left(${2*dims.r*rates.r}+${rates.r}\sqrt{${slantSquared}}+\frac{${dims.r*(dims.r*rates.r+dims.h*rates.h)}}{\sqrt{${slantSquared}}}\right)`;
+            formulas = {
+              base: 'S=\\pi r^{2}+\\pi r\\sqrt{r^{2}+h^{2}}',
+              derivative: '\\frac{dS}{dt}=2\\pi r\\frac{dr}{dt}+\\pi\\sqrt{r^{2}+h^{2}}\\frac{dr}{dt}+\\frac{\\pi r\\left(r\\frac{dr}{dt}+h\\frac{dh}{dt}\\right)}{\\sqrt{r^{2}+h^{2}}}'
+            };
+            qValue = Math.PI * dims.r * dims.r + Math.PI * dims.r * s;
+            qRate = 2 * Math.PI * dims.r * rates.r
+              + Math.PI * s * rates.r
+              + Math.PI * dims.r * (dims.r * rates.r + dims.h * rates.h) / s;
+            qValueTex = `\\pi\\left(${dims.r * dims.r}+${dims.r}\\sqrt{${slantSquared}}\\right)`;
+            qRateTex = `\\pi\\left(${2 * dims.r * rates.r}+${rates.r}\\sqrt{${slantSquared}}+\\frac{${dims.r * (dims.r * rates.r + dims.h * rates.h)}}{\\sqrt{${slantSquared}}}\\right)`;
           }
         }
 
@@ -833,31 +875,123 @@ fetch("/nav.html")
         const symbolName = quantity === 'volume' ? 'V' : 'S';
         const quantityUnit = quantity === 'volume' ? 'cm^{3}' : 'cm^{2}';
         const quantityRateUnit = quantity === 'volume' ? 'cm^{3}/s' : 'cm^{2}/s';
-        const dimensionNames = { l:'length', w:'width', h:'height', r:'radius' };
+        const dimensionNames = { l: 'length', w: 'width', h: 'height', r: 'radius' };
 
-        let knownPhrases = [];
-        for (const key of keys) {
-          if (key !== unknownKey) knownPhrases.push(`the ${dimensionNames[key]} is ${dims[key]} cm and is changing at ${rates[key]} cm/s`);
+        if (inverseMode) {
+          if (shape === 'prism') {
+            if (quantity === 'volume') {
+              const others = keys.filter(k => k !== unknownKey);
+              dimensionSolveTex = `${qValue}=(${others.map(k => dims[k]).join(')(')})${unknownKey}\\implies ${unknownKey}=${dims[unknownKey]}`;
+            } else {
+              const knownA = keys.filter(k => k !== unknownKey)[0];
+              const knownB = keys.filter(k => k !== unknownKey)[1];
+              const coeff = 2 * (dims[knownA] + dims[knownB]);
+              const constantPart = 2 * dims[knownA] * dims[knownB];
+              dimensionSolveTex = `${qValue}=2(${dims[knownA]})(${dims[knownB]})+2(${dims[knownA]})${unknownKey}+2(${dims[knownB]})${unknownKey}\\implies ${qValue}=${constantPart}+${coeff}${unknownKey}\\implies ${unknownKey}=${dims[unknownKey]}`;
+            }
+          } else if (shape === 'cylinder') {
+            if (quantity === 'volume') {
+              if (unknownKey === 'h') {
+                dimensionSolveTex = `${qValueTex}=\\pi(${dims.r})^{2}h\\implies h=${dims.h}`;
+              } else {
+                dimensionSolveTex = `${qValueTex}=\\pi r^{2}(${dims.h})\\implies r=${dims.r}`;
+              }
+            } else {
+              if (unknownKey === 'h') {
+                dimensionSolveTex = `${qValueTex}=2\\pi(${dims.r})^{2}+2\\pi(${dims.r})h\\implies h=${dims.h}`;
+              } else {
+                dimensionSolveTex = `${qValueTex}=2\\pi r^{2}+2\\pi r(${dims.h})\\implies r=${dims.r}`;
+              }
+            }
+          } else if (shape === 'sphere') {
+            dimensionSolveTex = quantity === 'volume'
+              ? `${qValueTex}=\\frac{4}{3}\\pi r^{3}\\implies r=${dims.r}`
+              : `${qValueTex}=4\\pi r^{2}\\implies r=${dims.r}`;
+          } else {
+            if (quantity === 'volume') {
+              dimensionSolveTex = unknownKey === 'h'
+                ? `${qValueTex}=\\frac{1}{3}\\pi(${dims.r})^{2}h\\implies h=${dims.h}`
+                : `${qValueTex}=\\frac{1}{3}\\pi r^{2}(${dims.h})\\implies r=${dims.r}`;
+            } else {
+              dimensionSolveTex = unknownKey === 'h'
+                ? `${qValueTex}=\\pi(${dims.r})^{2}+\\pi(${dims.r})\\sqrt{(${dims.r})^{2}+h^{2}}\\implies h=${dims.h}`
+                : `${qValueTex}=\\pi r^{2}+\\pi r\\sqrt{r^{2}+(${dims.h})^{2}}\\implies r=${dims.r}`;
+            }
+          }
         }
-        if (inverseMode) knownPhrases.push(`the ${quantity} is \\(${qValueTex}\\,${quantityUnit}\\) and is changing at \\(${qRateTex}\\,${quantityRateUnit}\\)`);
+
+        const rateTex = key => key === unknownKey ? `\\frac{d${key}}{dt}` : `(${rates[key]})`;
+
+        if (shape === 'prism') {
+          substitutionTex = quantity === 'volume'
+            ? `=(${dims.w})(${dims.h})${rateTex('l')}+(${dims.l})(${dims.h})${rateTex('w')}+(${dims.l})(${dims.w})${rateTex('h')}=${inverseMode ? qRateTex : qRateTex}`
+            : `=2\\left((${dims.w})${rateTex('l')}+(${dims.l})${rateTex('w')}\\right)+2\\left((${dims.h})${rateTex('l')}+(${dims.l})${rateTex('h')}\\right)+2\\left((${dims.h})${rateTex('w')}+(${dims.w})${rateTex('h')}\\right)=${inverseMode ? qRateTex : qRateTex}`;
+        } else if (shape === 'cylinder') {
+          substitutionTex = quantity === 'volume'
+            ? `=2\\pi(${dims.r})(${dims.h})${rateTex('r')}+\\pi(${dims.r})^{2}${rateTex('h')}=${qRateTex}`
+            : `=4\\pi(${dims.r})${rateTex('r')}+2\\pi\\left((${dims.h})${rateTex('r')}+(${dims.r})${rateTex('h')}\\right)=${qRateTex}`;
+        } else if (shape === 'sphere') {
+          substitutionTex = quantity === 'volume'
+            ? `=4\\pi(${dims.r})^{2}${rateTex('r')}=${qRateTex}`
+            : `=8\\pi(${dims.r})${rateTex('r')}=${qRateTex}`;
+        } else {
+          const slantSquared = dims.r * dims.r + dims.h * dims.h;
+          substitutionTex = quantity === 'volume'
+            ? `=\\frac{1}{3}\\pi\\left(2(${dims.r})(${dims.h})${rateTex('r')}+(${dims.r})^{2}${rateTex('h')}\\right)=${qRateTex}`
+            : `=2\\pi(${dims.r})${rateTex('r')}+\\pi\\sqrt{${slantSquared}}${rateTex('r')}+\\frac{\\pi(${dims.r})\\left((${dims.r})${rateTex('r')}+(${dims.h})${rateTex('h')}\\right)}{\\sqrt{${slantSquared}}}=${qRateTex}`;
+        }
+
+        const knownPhrases = [];
+        for (const key of keys) {
+          if (key !== unknownKey) {
+            knownPhrases.push(`the ${dimensionNames[key]} is ${dims[key]} cm and is changing at ${rates[key]} cm/s`);
+          }
+        }
+        if (inverseMode) {
+          knownPhrases.push(`the ${quantity} is \\(${qValueTex}\\,${quantityUnit}\\) and is changing at \\(${qRateTex}\\,${quantityRateUnit}\\)`);
+        }
+
         const question = inverseMode
           ? `how quickly is the ${dimensionNames[unknownKey]} changing?`
           : `how quickly is the ${quantity} changing?`;
 
-        const substitutionParts = [];
         const finalUnknown = inverseMode ? rates[unknownKey] : qRate;
         const finalUnknownTex = inverseMode ? formatNumber(finalUnknown) : qRateTex;
-        let solveTex;
-        if (!inverseMode) {
-          solveTex = `${formulas.derivative}\\implies \\frac{d${symbolName}}{dt}=${qRateTex}`;
-        } else {
-          const unknownRateTex = `\\frac{d${unknownKey}}{dt}`;
-          solveTex = `${formulas.derivative}\\implies ${unknownRateTex}=${finalUnknownTex}`;
+        const rateKnownTex = keys
+          .filter(k => k !== unknownKey)
+          .map(k => `\\frac{d${k}}{dt}=${formatNumber(rates[k])}`)
+          .join(',\\qquad ');
+        const valueKnownTex = keys
+          .filter(k => k !== unknownKey)
+          .map(k => `${k}=${dims[k]}`)
+          .join(',\\qquad ');
+        const inverseExtra = inverseMode
+          ? `,\\qquad ${symbolName}=${qValueTex},\\qquad \\frac{d${symbolName}}{dt}=${qRateTex}`
+          : '';
+
+        const hints = [
+          { kind: 'shape-diagram', content: `Let the dimensions be labelled as shown:`, data: { shape, dimensions: dims } },
+          { kind: 'math', content: `\\text{Known: }${valueKnownTex}${inverseExtra}` },
+          { kind: 'math', content: `\\text{Known rates: }${rateKnownTex}` },
+          { kind: 'math', content: `\\text{Relationship: }${formulas.base}` }
+        ];
+
+        if (inverseMode) {
+          hints.push({ kind: 'math', content: dimensionSolveTex });
         }
 
-        const rateKnownTex = keys.filter(k=>k!==unknownKey).map(k=>`\\frac{d${k}}{dt}=${formatNumber(rates[k])}`).join(',\\qquad ');
-        const valueKnownTex = keys.filter(k=>k!==unknownKey).map(k=>`${k}=${dims[k]}`).join(',\\qquad ');
-        const inverseExtra = inverseMode ? `,\\qquad ${symbolName}=${qValueTex},\\qquad \\frac{d${symbolName}}{dt}=${qRateTex}` : '';
+        hints.push(
+          { kind: 'math', content: `\\text{Differentiate with respect to }t:\\qquad ${formulas.derivative}` },
+          { kind: 'math', content: substitutionTex },
+          { kind: 'math', content: inverseMode
+            ? `\\frac{d${unknownKey}}{dt}=${finalUnknownTex}`
+            : `\\frac{d${symbolName}}{dt}=${finalUnknownTex}` },
+          { kind: 'math', content: inverseMode
+            ? `\\text{Therefore, the ${dimensionNames[unknownKey]} is changing at }${finalUnknownTex}\\text{ cm/s}.`
+            : (quantity === 'volume'
+                ? `\\text{Therefore, the volume is changing at }${finalUnknownTex}\\text{ cm}^{3}\\text{/s}.`
+                : `\\text{Therefore, the surface area is changing at }${finalUnknownTex}\\text{ cm}^{2}\\text{/s}.`) }
+        );
 
         return {
           type: 2,
@@ -868,19 +1002,7 @@ fetch("/nav.html")
             expected: finalUnknown,
             unit: inverseMode ? 'cm/s' : (quantity === 'volume' ? 'cm³/s' : 'cm²/s')
           },
-          hints: [
-            { kind: 'shape-diagram', content: `Let the dimensions be labelled as shown:`, data: { shape, dimensions: dims } },
-            { kind: 'math', content: `\\text{Known: }${valueKnownTex}${inverseExtra}` },
-            { kind: 'math', content: `\\text{Known rates: }${rateKnownTex}${inverseMode ? '' : ''}` },
-            { kind: 'math', content: `\\text{Relationship: }${formulas.base}` },
-            { kind: 'math', content: `\\text{Differentiate with respect to }t:\\qquad ${formulas.derivative}` },
-            { kind: 'math', content: solveTex },
-            { kind: 'math', content: inverseMode
-              ? `\\text{Therefore, the ${dimensionNames[unknownKey]} is changing at }${finalUnknownTex}\\text{ cm/s}.`
-              : (quantity === 'volume'
-                  ? `\\text{Therefore, the volume is changing at }${finalUnknownTex}\\text{ cm}^{3}\\text{/s}.`
-                  : `\\text{Therefore, the surface area is changing at }${finalUnknownTex}\\text{ cm}^{2}\\text{/s}.`) }
-          ]
+          hints
         };
       }
       throw new Error('Unable to generate a valid shape problem.');

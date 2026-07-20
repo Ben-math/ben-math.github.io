@@ -54,38 +54,27 @@ fetch("/nav.html")
     \[f(x) = \frac{1}{30}, \hspace{1mm} 0 < x < 30 \hspace{3mm} \text{ is } \hspace{3mm} 30 \cdot \frac{1}{30} = 1\]
     We see a probability computed as an area under the function:
     \[P(X \leq 20) = 20 \cdot \frac{1}{30} = \frac{2}{3}\]
-    Note that since a line has no area, the following probabilities are  equivalent for any real numbers $a$ and $b$:
+    Note that since a line has no area, the following probabilities are equivalent for any real numbers \(a\) and \(b\):
     \[P(a \leq X \leq b) = P(a < X < b)\]
     </p>
 
 
-    <p>For example, let us consider the Bernoulli trial where a success is rolling a 6 on a 6-sided die.  This has a probability of 
-      \(\frac{1}{6}\).  The corresponding geometric random variable has parameter
-      \(\frac{1}{6}\), and pdf
-      \[f\left(x;\frac{1}{6}\right) = \frac{1}{6}\left(1-\frac{1}{6}\right)^{x-1} = \frac{1}{6}\left(\frac{5}{6}\right)^{x-1}\]
-      The probability of rolling a 6 on the first try is
-      \[P(X = 1) = f\left(1,\frac{1}{6}\right) = \frac{1}{6}\left(\frac{5}{6}\right)^{1-1} = \frac{1}{6}\]
-      The probability of rolling a 6 on the second try is
-      \[P(X = 2) = f\left(2,\frac{1}{6}\right) = \frac{1}{6}\left(\frac{5}{6}\right)^{2-1} = \frac{5}{36}\]
-      The probability of rolling a 6 on the third try is
-      \[P(X = 3) = f\left(3,\frac{1}{6}\right) = \frac{1}{6}\left(\frac{5}{6}\right)^{3-1} = \frac{25}{216}\]
-      ...and so on.  The graph of the probability distribution function trails off infinitely to the right (with shorter and shorter columns):
-      <div id="binom-hist-1" style="margin: 1rem auto; max-width: 640px;"></div>
+    <p>Working with the same function which is equal to $\frac{1}{30}$ when $0 < x < 30$ and zero elsewhere, let us compute a more complicated probability:
+    \[P(3 < X \leq 7) \cup P(20 < X) = (7-3) \cdot \frac{1}{30} + (30-20) \cdot \frac{1}{30} = \frac{14}{30} = \frac{7}{15}\]
+    Visually, this is the sum of the areas of two rectangles: <br> INSERT FIGURE HERE
     </p>
 
 
-    <p>We might also want to answer questions of the form
-      \[\text{``What is the probability it takes more than 4 rolls to get a 6?''}\]
-      In other words, we're finding the probability that we don't get a 6 until either the fifth roll, or sixth roll, or seventh roll, and so on...  That is:
-      \[P(X > 4) = P(X = 5) + P(X = 6) + P(X = 7) + ...\]
-      We can't compute an infinite sum.  However, we <i>can</i> take the <i>complement</i> of the probability that it takes more than 4 rolls:
-      \[P(X > 4) = 1 - P(X \leq 4) = 1 - (P(X=1) + P(X=2) + P(X=3) + P(X=4))\]
-      \[=1 - \left(\frac{1}{6} + \frac{5}{36} + \frac{25}{216} + \frac{125}{1296}\right) = \frac{625}{1296} \approx 0.482\]
-      <div id="binom-hist-3" style="margin: 1rem auto; max-width: 640px;"></div>
-      This could also have been computed as the odds of <i>not</i> getting a 6 within your first 4 rolls:
-      \[P(X > 4) = 1 - P(X \leq 4) = 1 - \left(\frac{5}{6}\right)^4 = \frac{625}{1296}\]
-      This leads to our next formula:
-      \[P(X > x) = (1-p)^x\]
+    <p>Let us suppose that on a trip to the emergency room, you are equally likely to wait any amount of time between 2 and 12 hours: that is, since all 
+    wait times in this range are equally likely, they are <i>uniformly distributed</i> over the interval \([2,12]\).  Let us find:
+    \begin{itemize}
+        \item The probability that you wait less than 5 hours
+        \item The probability that you wait between 6 and 10 hours
+        \item The $90^{\text{th}}$ percentile of wait times
+        \item The probability that you wait less than 3 hours, given that you wait less than 6 hours
+        \item The average wait time
+        \item The standard deviation in wait time
+    \end{itemize}
     </p>
 
     <p>We have a similar formula for a "less than" question.  The probability that it takes <i>fewer than</i> \(x\) trials to obtain a success is the 

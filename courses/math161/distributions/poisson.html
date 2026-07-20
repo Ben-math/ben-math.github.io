@@ -59,20 +59,19 @@ fetch("/nav.html")
       <li>The exclamation mark is the factorial operation, which gives the product of all positive integers less than the input.  For example, 
         \(4! = 4 \cdot 3 \cdot 2 \cdot 1 = 24\)</li>
     </ul>
+    Conveniently, the mean and variance of this distribution are the same,
+    \[\mu = \sigma^2\]
+    making finding the standard deviation very easy.
     </p>
 
 
-    <p>For example, let us consider the Bernoulli trial where a success is rolling a 6 on a 6-sided die.  This has a probability of 
-      \(\frac{1}{6}\).  The corresponding geometric random variable has parameter
-      \(\frac{1}{6}\), and pdf
-      \[f\left(x;\frac{1}{6}\right) = \frac{1}{6}\left(1-\frac{1}{6}\right)^{x-1} = \frac{1}{6}\left(\frac{5}{6}\right)^{x-1}\]
-      The probability of rolling a 6 on the first try is
-      \[P(X = 1) = f\left(1,\frac{1}{6}\right) = \frac{1}{6}\left(\frac{5}{6}\right)^{1-1} = \frac{1}{6}\]
-      The probability of rolling a 6 on the second try is
-      \[P(X = 2) = f\left(2,\frac{1}{6}\right) = \frac{1}{6}\left(\frac{5}{6}\right)^{2-1} = \frac{5}{36}\]
-      The probability of rolling a 6 on the third try is
-      \[P(X = 3) = f\left(3,\frac{1}{6}\right) = \frac{1}{6}\left(\frac{5}{6}\right)^{3-1} = \frac{25}{216}\]
-      ...and so on.  The graph of the probability distribution function trails off infinitely to the right (with shorter and shorter columns):
+    <p>For example, suppose you sneeze on average 20 times per day.  We want to find the probability that you sneeze exactly twice in a randomly selected hour. 
+      Since our problem deals with hours rather than days, we need to convert to the average <i>per hour</i> rate.  Namely, you sneeze
+      \[\mu = 20 \cdot \frac{1}{24} = \frac{5}{6}\]
+      times per hour, on average.  Then the Poisson random variable \(X\) giving the number of times you sneeze in a randomly selected hour has pdf
+      \[f(x) = \frac{\left(\frac{5}{6}\right)^xe^{-\frac{5}{6}}}{x!}\]
+      and
+      \[P(X = 2) = f(2) = \frac{\left(\frac{5}{6}\right)^2e^{-\frac{5}{6}}}{2!} \approx 0.151\]
       <div id="binom-hist-1" style="margin: 1rem auto; max-width: 640px;"></div>
     </p>
 

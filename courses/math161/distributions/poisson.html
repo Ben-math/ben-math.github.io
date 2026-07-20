@@ -51,11 +51,14 @@ fetch("/nav.html")
     </ul>
     </p>
     
-    <p>If Bernoulli trials each have probability \(p\) of success, and are performed until a success is obtained, then the random variable \(X\) with 
-      parameter \(p\) is called a <b>geometric random variable</b>.  Its pdf is called a <b>geometric distribution</b>, given by
-      \[f(x;p) = p(1-p)^{x-1} \hspace{2cm} \text{ for } x \in \{1, 2, 3, ...\}\]
-      The input x is the number of the trial on which we first obtain a success, so \(f(x;p)\) gives the probability of having \(x-1\) many failures in a row, 
-      followed by a success.
+    <p>The probability distribution function of a <b>Poisson random variable</b> is given by
+      \[f(x;\mu) = \frac{\mu^xe^{-\mu}}{x!}\]
+      <ul>
+      <li>The mean \(\mu\) will either be stated in the problem, or be a constant multiple of the average rate given in the problem</li>
+      <li>The number \(e\) is a special constant (like \(\pi\)), \(e \approx 2.71828\)</li>
+      <li>The exclamation mark is the factorial operation, which gives the product of all positive integers less than the input.  For example, 
+        \(4! = 4 \cdot 3 \cdot 2 \cdot 1 = 24\)</li>
+    </ul>
     </p>
 
 

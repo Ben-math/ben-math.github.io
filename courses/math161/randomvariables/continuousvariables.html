@@ -52,7 +52,7 @@ fetch("/nav.html")
     </p>
     
     <p> On the other hand, it is called a <b>continuous random variable</b> if it can take on uncountably infinitely many 
-      values, such as from all of \(\mathbb{R}\) (or anything you would intuitively term a "continuuum").
+      values, such as from all of \(\mathbb{R}\) (or anything you would intuitively term a "continuum").
     </p>
 
       
@@ -65,12 +65,13 @@ fetch("/nav.html")
     </p>
 
 
-    <p>A function which maps all of the values a discrete random variable \(X\) takes on to their respective probabilities is called its 
-      <b>probability distribution function</b> (we will abbreviate this with pdf), defined by
-      \[f(x) = P(X = x)\]
-      A pdf has similar properties to those of a probability itself: since its values are probabilities, they are 
-      between 0 and 1, and because it gives the probabilities of all possible values the random variable can take on, the sum of all its values is 1.
+    <p>We define the <b>probability density function</b> of a continuous random variable (as opposed to probability <i>distribution</i> function in the 
+      discrete case) using the following notation from calculus: \[P(a \leq X \leq b) = \int_a^bf(x)dx\] That symbol on the right-hand side probably means 
+      little to you if you haven't studied calculus - it represents the area under the curve \(f(x)\) between \(a\) and \(b\) (and is called the definite 
+      integral in calculus).
     </p>
+
+    <p>As in the discrete case, the total area under a probability density function is 1.</p>
 
     <p>It's that second property - that its values sum to 1 - which is often helpful in checking whether you've correctly computed its values, as you 
       can afterwards verify that they sum to 1.  For example, if we compute all the values of the pdf \(f\) of the random 

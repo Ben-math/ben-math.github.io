@@ -77,9 +77,13 @@ fetch("/nav.html")
     </ul>
     </p>
 
-    <p>We have a similar formula for a "less than" question.  The probability that it takes <i>fewer than</i> \(x\) trials to obtain a success is the 
-      complement of the probability of failing on the first \(x-1\) trials in a row:
-      \[P(X < x) = 1 - (1-p)^{x-1}\]
+    <p>Let us start by defining the probability density function.  Since all wait times between 2 and 12 hours are equally likely, we have the function
+    \[f(x) = \begin{cases}
+        \frac{1}{10} & \text{if } 2 < x < 12\\
+        0 & \text{otherwise}
+    \end{cases}\]
+    That is, it is equal to \(\frac{1}{12-2} = \frac{1}{10}\) when \(x\) is between 2 and 12, and zero everywhere else, so the total area under the 
+    function is 1: INSERT FIGURE HERE
     </p>
 
 

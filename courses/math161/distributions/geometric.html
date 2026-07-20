@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta charset="UTF-8" />
+  <title>Geometric Distribution</title>
+  <link rel="stylesheet" href="/style.css" />
+
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+</head>
+<body>
+  <header>
+    <h1>Geometric Distribution</h1>
+    <div id="nav-placeholder"></div>
+      <script>
+fetch("/nav.html")
+  .then(response => response.text())
+  .then(html => {
+    document.getElementById("nav-placeholder").innerHTML = html;
+
+    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+    const navLinks = document.querySelectorAll("#nav-placeholder a");
+    navLinks.forEach(link => {
+      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+      if (linkPath === currentPath) {
+        link.classList.add("active");
+      }
+    });
+
+    const s = document.createElement("script");
+    s.src = "/mascot.js";
+    s.defer = true;
+    document.body.appendChild(s); 
+  })
+  .catch(err => {
+    console.error("Failed to load nav:", err);
+  });
+</script>
+  </header>
+  <main>
+
+    <p>A Bernoulli trial is an experiment which can either be considered a success or a failure.  For instance, one may consider flipping heads a 
+      success (in which case flipping tails is a failure), or rolling a 2 or lower a success (in which case rolling a 3 or higher is a failure).
+    </p>
+    
+    <p>If \(n\) many Bernoulli trials are performed, each with probability \(p\) of success, then the random variable \(X\) with parameters \(n,p\) is 
+      called a <b>binomial random variable</b>.  Its pdf is called a <b>binomial distribution</b>, given by
+      \[f(x;n,p) = \binom{n}{x}p^x(1-p)^{n-x} \hspace{2cm} \text{ for } x \in \{0, 1, ..., n\}\]
+      The input x is the number of successes, so \(f(x; n, p)\) gives the probability of having \(x\) many successes when doing \(n\) many Bernoulli 
+      trials that have a probability \(p\) of success.
+    </p>
+
+      
+    <p>The Binomial coefficients \(\binom{n}{x}\) are entries in Pascal's triangle, can be computed via the formula
+      \[\binom{n}{x} = \frac{n!}{(n-x)!x!}\]
+      or by typing "nCx" (read as \(n\) choose \(x\)) into your calculator.
+    </p>
+
+
+    <p>For example, let us consider the Bernoulli trial where a success is  rolling a sum of 9 or higher on two 6-sided dice.  This has a probability of 
+      \(\frac{10}{36} = \frac{5}{18}\).  If we perform this experiment 20 times, then the corresponding binomial random variable has parameters 
+      \(\left(20, \frac{5}{18}\right)\), and pdf
+      \[f\left(x;20,\frac{5}{18}\right) = \binom{20}{x}\left(\frac{5}{18}\right)^x\left(\frac{13}{18}\right)^{20-x}\]
+      Since successes are less likely than failures, we see that the taller columns in the pdf's histogram tend leftwards:
+      <div id="binom-hist-1" style="margin: 1rem auto; max-width: 640px;"></div>
+    </p>
+
+    <p>For instance, to find the probability of rolling a 9 or higher 6 out of the 20 times, we compute
+      \[f\left(6;20,\frac{5}{18}\right) = \binom{20}{6}\left(\frac{5}{18}\right)^6\left(\frac{13}{18}\right)^{14} = 0.187\]
+      Note that the probability above corresponds to the odds of 6 successes and 14 failures.
+      <div id="binom-hist-2" style="margin: 1rem auto; max-width: 640px;"></div>
+    </p>
+
+    <p>We might also want to answer questions of the form
+      \[\text{``What is the probability of rolling a 9 or higher 2 or fewer times?''}\]
+      To answer this question, we are finding the following sum:
+      \[P(X \leq 2) = P(X = 0) + P(X = 1) + P(X = 2) = f\left(0;20,\frac{5}{18}\right) + f\left(1;20,\frac{5}{18}\right) + 
+      f\left(2;20,\frac{5}{18}\right) \approx 0.055\]
+      That is, we are summing the 3 leftmost columns in the histogram:
+      <div id="binom-hist-3" style="margin: 1rem auto; max-width: 640px;"></div>
+    </p>
+
+    <p>The preceding required us to compute the value of the pdf 3 times for our sum, which was quite time consuming.  Consider the problem 
+      \[\text{``What is the probability of rolling a 9 or higher 18 or fewer times?''}\]
+      We wouldn't want to find the sum
+      \[P(X \leq 18) = P(X = 0) + P(X = 1) + ... + P(X = 18)\]
+      However, observe that the complement of the event "rolling a 9 or higher 18 or fewer times" is "rolling a 9 or higher 19 or more times".  That is, 
+      we can compute the easier sum
+      \[P(X \leq 18) = 1 - P(X \geq 19) = 1 - (P(X = 19) + P(X = 20)) = 1 - (f\left(19;20,\frac{5}{18}\right) + f\left(20;20,\frac{5}{18}\right)) \approx 
+      0.9999999996\]
+      That is, we sum the two rightmost columns of the histogram, and subtract the result from 1.
+    </p>
+
+
+    <p>Finally, we have convenient formulas which simplify the computation of mean and variance specifically for binomial distributions: 
+      \[\mu = np \hspace{2cm} \sigma^2 = np(1-p)\]
+      In our running example, we find
+      \[\mu = 20\left(\frac{5}{18}\right) \approx 5.56 \hspace{2cm} \sigma = \sqrt{20\left(\frac{5}{18}\right)\left(\frac{13}{18}\right)} \approx 2\]
+    </p>
+<div class="button-container">
+      <button id="start-btn" class="rubber-button">Start!</button>
+    </div>
+
+    <p id="question-text" class="math"></p>
+
+    <div id="activity-area" style="margin-top: 1rem;">
+      <div id="table-area" class="math" style="margin: 1rem auto; max-width: 900px; text-align: center;"></div>
+
+      <div id="mean-area" class="math" style="margin-top: 0.75rem; text-align: center;"></div>
+
+      <div id="work-area" class="math" style="margin-top: 1rem; text-align: center;"></div>
+
+      <div id="histogram-area" style="margin: 1rem auto; max-width: 740px;"></div>
+
+      <p id="stage-feedback" style="font-weight: bold; margin-top: 0.75rem; text-align: center;"></p>
+
+      <div class="button-container" style="gap: 0.75rem;">
+        <button id="hint-btn" class="rubber-button">Hint</button>
+        <button id="next-btn" class="rubber-button">Next</button>
+      </div>
+    </div>
+</main>
+  
+<script>
+  const startBtn = document.getElementById('start-btn');
+  const hintBtn = document.getElementById('hint-btn');
+  const nextBtn = document.getElementById('next-btn');
+
+  const questionText = document.getElementById('question-text');
+  const tableArea = document.getElementById('table-area');
+  const meanArea = document.getElementById('mean-area');
+  const workArea = document.getElementById('work-area');
+  const histogramArea = document.getElementById('histogram-area');
+  const stageFeedback = document.getElementById('stage-feedback');
+
+  // -----------------------------
+  // Helpers
+  // -----------------------------
+  function playSound(id) {
+    const s = document.getElementById(id);
+    if (s) { s.currentTime = 0; s.play(); }
+  }
+
+  function randInt(a, b) {
+    return Math.floor(Math.random() * (b - a + 1)) + a;
+  }
+
+  function gcd(a, b) {
+    a = Math.abs(a); b = Math.abs(b);
+    while (b !== 0) { const t = a % b; a = b; b = t; }
+    return a === 0 ? 1 : a;
+  }
+
+  function reduceFrac(num, den) {
+    if (den < 0) { den = -den; num = -num; }
+    const g = gcd(num, den);
+    return [num / g, den / g];
+  }
+
+  function addFrac(aNum, aDen, bNum, bDen) {
+    const num = aNum * bDen + bNum * aDen;
+    const den = aDen * bDen;
+    return reduceFrac(num, den);
+  }
+
+  function subFrac(aNum, aDen, bNum, bDen) {
+    return addFrac(aNum, aDen, -bNum, bDen);
+  }
+
+  function mulFrac(aNum, aDen, bNum, bDen) {
+    return reduceFrac(aNum * bNum, aDen * bDen);
+  }
+
+  function fracToTex(num, den) {
+    const [n, d] = reduceFrac(num, den);
+    if (d === 1) return `${n}`;
+    return `\\frac{${n}}{${d}}`;
+  }
+
+  function fracToString(num, den) {
+    const [n, d] = reduceFrac(num, den);
+    if (d === 1) return `${n}`;
+    return `${n}/${d}`;
+  }
+
+  function typeset(elements = []) {
+    if (!window.MathJax) return;
+    if (MathJax.typesetPromise) {
+      if (elements.length > 0) MathJax.typesetPromise(elements);
+      else MathJax.typesetPromise();
+      return;
+    }
+    if (MathJax.typeset) {
+      if (elements.length > 0) MathJax.typeset(elements);
+      else MathJax.typeset();
+    }
+  }
+
+  function parseNumber(raw) {
+    // Accept integer, fraction, or decimal.
+    const s = (raw ?? '').trim().replace(/\s+/g, '');
+    if (!s) return { error: 'Please enter a value.' };
+
+    const fracMatch = s.match(/^([+-]?\d+)\/([+-]?\d+)$/);
+    if (fracMatch) {
+      const a = parseInt(fracMatch[1], 10);
+      const b = parseInt(fracMatch[2], 10);
+      if (b === 0) return { error: 'Denominator cannot be 0.' };
+      const [n, d] = reduceFrac(a, b);
+      return { kind: 'frac', num: n, den: d, value: n / d };
+    }
+
+    const intMatch = s.match(/^[+-]?\d+$/);
+    if (intMatch) {
+      const a = parseInt(s, 10);
+      return { kind: 'frac', num: a, den: 1, value: a };
+    }
+
+    const decMatch = s.match(/^[+-]?\d*\.\d+$/);
+    if (decMatch) {
+      const v = Number(s);
+      if (!Number.isFinite(v)) return { error: 'That decimal does not look valid.' };
+      return { kind: 'dec', value: v };
+    }
+
+    return { error: 'I couldn’t parse that. Use an integer, a fraction like 3/8, or a decimal like 0.375.' };
+  }
+
+  function relClose(a, b, relTol) {
+    const denom = Math.max(1e-12, Math.abs(b));
+    return Math.abs(a - b) <= relTol * denom;
+  }
+
+  function inputMatchesRational(parsed, tNum, tDen, relTol = 0.001) {
+    const target = tNum / tDen;
+    if (parsed.error) return false;
+    if (parsed.kind === 'frac') {
+      const [n, d] = reduceFrac(parsed.num, parsed.den);
+      const [tn, td] = reduceFrac(tNum, tDen);
+      return (n === tn && d === td);
+    }
+    if (parsed.kind === 'dec') return relClose(parsed.value, target, relTol);
+    return false;
+  }
+
+  
+  // -----------------------------
+  // Inline-SVG histogram for Binomial(n,p)
+  // -----------------------------
+  // Usage:
+  //   renderBinomialHistogram('#div', 20, 5/18)              // all pale blue
+  //   renderBinomialHistogram('#div', 20, 5/18, {highlightXs:[6]}) // highlight x=6 in pale red
+  function renderBinomialHistogram(container, n, p, options = {}) {
+    const el = (typeof container === 'string') ? document.querySelector(container) : container;
+    if (!el) return;
+
+    const W = options.width ?? 640;
+    const H = options.height ?? 260;
+    const pad = { left: 48, right: 16, top: (options.title ? 30 : 14), bottom: 48, ...(options.padding ?? {}) };
+
+    const paleBlue = options.paleBlue ?? '#b7d8f0';
+    const paleRed = options.paleRed ?? '#f2b6b6';
+    const highlight = new Set(options.highlightXs ?? []);
+
+    const comb = (N, K) => {
+      if (K < 0 || K > N) return 0;
+      K = Math.min(K, N - K);
+      let num = 1;
+      let den = 1;
+      for (let i = 1; i <= K; i++) {
+        num *= (N - (K - i));
+        den *= i;
+        const g = gcd(num, den);
+        num /= g; den /= g;
+      }
+      return num / den;
+    };
+
+    const data = [];
+    let maxP = 0;
+    for (let x = 0; x <= n; x++) {
+      const px = comb(n, x) * Math.pow(p, x) * Math.pow(1 - p, n - x);
+      data.push({ x, p: px });
+      if (px > maxP) maxP = px;
+    }
+
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+    const xStep = plotW / data.length;
+    const barW = xStep * 0.78;
+
+    const y = (prob) => pad.top + (1 - (prob / maxP)) * plotH;
+    const x0 = (i) => pad.left + i * xStep + (xStep - barW) / 2;
+
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', String(H));
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', options.ariaLabel ?? `Histogram of Binomial(n=${n}, p=${p})`);
+
+    const g = document.createElementNS(svgNS, 'g');
+    svg.appendChild(g);
+
+    if (options.title) {
+      const t = document.createElementNS(svgNS, 'text');
+      t.setAttribute('x', String(W / 2));
+      t.setAttribute('y', '18');
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('font-size', '14');
+      t.setAttribute('font-weight', '600');
+      t.setAttribute('fill', 'currentColor');
+      t.textContent = options.title;
+      g.appendChild(t);
+    }
+
+    const axisColor = options.axisColor ?? 'currentColor';
+    const axisOpacity = options.axisOpacity ?? '0.55';
+
+    const xAxis = document.createElementNS(svgNS, 'line');
+    xAxis.setAttribute('x1', String(pad.left));
+    xAxis.setAttribute('y1', String(pad.top + plotH));
+    xAxis.setAttribute('x2', String(pad.left + plotW));
+    xAxis.setAttribute('y2', String(pad.top + plotH));
+    xAxis.setAttribute('stroke', axisColor);
+    xAxis.setAttribute('stroke-opacity', axisOpacity);
+    xAxis.setAttribute('stroke-width', '1');
+    g.appendChild(xAxis);
+
+    const yAxis = document.createElementNS(svgNS, 'line');
+    yAxis.setAttribute('x1', String(pad.left));
+    yAxis.setAttribute('y1', String(pad.top));
+    yAxis.setAttribute('x2', String(pad.left));
+    yAxis.setAttribute('y2', String(pad.top + plotH));
+    yAxis.setAttribute('stroke', axisColor);
+    yAxis.setAttribute('stroke-opacity', axisOpacity);
+    yAxis.setAttribute('stroke-width', '1');
+    g.appendChild(yAxis);
+
+    const ticks = options.yTicks ?? 3;
+    for (let k = 0; k < ticks; k++) {
+      const frac = (ticks === 1) ? 0 : k / (ticks - 1);
+      const yy = pad.top + (1 - frac) * plotH;
+
+      const tick = document.createElementNS(svgNS, 'line');
+      tick.setAttribute('x1', String(pad.left - 4));
+      tick.setAttribute('y1', String(yy));
+      tick.setAttribute('x2', String(pad.left));
+      tick.setAttribute('y2', String(yy));
+      tick.setAttribute('stroke', axisColor);
+      tick.setAttribute('stroke-opacity', axisOpacity);
+      tick.setAttribute('stroke-width', '1');
+      g.appendChild(tick);
+
+      const lab = document.createElementNS(svgNS, 'text');
+      lab.setAttribute('x', String(pad.left - 8));
+      lab.setAttribute('y', String(yy + 4));
+      lab.setAttribute('text-anchor', 'end');
+      lab.setAttribute('font-size', '12');
+      lab.setAttribute('fill', axisColor);
+      lab.setAttribute('fill-opacity', axisOpacity);
+      lab.textContent = (options.yFormatter ? options.yFormatter(frac * maxP) : (frac * maxP).toFixed(3).replace(/0+$/, '').replace(/\.$/, ''));
+      g.appendChild(lab);
+    }
+
+    for (let i = 0; i < data.length; i++) {
+      const d = data[i];
+      const xx = x0(i);
+      const yy = y(d.p);
+      const h = (pad.top + plotH) - yy;
+
+      const rect = document.createElementNS(svgNS, 'rect');
+      rect.setAttribute('x', String(xx));
+      rect.setAttribute('y', String(yy));
+      rect.setAttribute('width', String(barW));
+      rect.setAttribute('height', String(Math.max(0, h)));
+      rect.setAttribute('fill', highlight.has(d.x) ? paleRed : paleBlue);
+      rect.setAttribute('fill-opacity', '0.85');
+      rect.setAttribute('stroke', 'currentColor');
+      rect.setAttribute('stroke-opacity', '0.35');
+      rect.setAttribute('stroke-width', '1');
+      g.appendChild(rect);
+
+      // x labels: show every label for n<=25; otherwise thin out
+      const showLabel = (n <= 25) || (d.x % 2 === 0);
+      if (showLabel) {
+        const xl = document.createElementNS(svgNS, 'text');
+        xl.setAttribute('x', String(xx + barW / 2));
+        xl.setAttribute('y', String(pad.top + plotH + 20));
+        xl.setAttribute('text-anchor', 'middle');
+        xl.setAttribute('font-size', '12');
+        xl.setAttribute('fill', 'currentColor');
+        xl.setAttribute('fill-opacity', '0.85');
+        xl.textContent = String(d.x);
+        g.appendChild(xl);
+      }
+    }
+
+    if (options.xLabel) {
+      const xl2 = document.createElementNS(svgNS, 'text');
+      xl2.setAttribute('x', String(pad.left + plotW / 2));
+      xl2.setAttribute('y', String(H - 10));
+      xl2.setAttribute('text-anchor', 'middle');
+      xl2.setAttribute('font-size', '12');
+      xl2.setAttribute('fill', 'currentColor');
+      xl2.setAttribute('fill-opacity', '0.85');
+      xl2.textContent = options.xLabel;
+      g.appendChild(xl2);
+    }
+
+    if (options.yLabel) {
+      const yl2 = document.createElementNS(svgNS, 'text');
+      yl2.setAttribute('x', '16');
+      yl2.setAttribute('y', String(pad.top + plotH / 2));
+      yl2.setAttribute('text-anchor', 'middle');
+      yl2.setAttribute('font-size', '12');
+      yl2.setAttribute('fill', 'currentColor');
+      yl2.setAttribute('fill-opacity', '0.85');
+      yl2.setAttribute('transform', `rotate(-90 16 ${pad.top + plotH / 2})`);
+      yl2.textContent = options.yLabel;
+      g.appendChild(yl2);
+    }
+
+    el.innerHTML = '';
+    el.appendChild(svg);
+  }
+
+// -----------------------------
+  // Inline-SVG histogram for discrete pdfs (already used above)
+  // -----------------------------
+  // Usage:
+  //   renderDiscreteHistogram('#some-div', [{x:2,p:1/36}, ...], { title: '...' })
+  function renderDiscreteHistogram(container, points, options = {}) {
+    const el = (typeof container === 'string') ? document.querySelector(container) : container;
+    if (!el) return;
+
+    const W = options.width ?? 620;
+    const H = options.height ?? 240;
+    const pad = { left: 44, right: 16, top: (options.title ? 30 : 14), bottom: 46, ...(options.padding ?? {}) };
+
+    const data = (points || []).map(d => ({ x: d.x, p: d.p })).sort((a, b) => a.x - b.x);
+    if (data.length === 0) {
+      el.textContent = 'No data to plot.';
+      return;
+    }
+
+    const maxP = Math.max(...data.map(d => d.p));
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+
+    const xStep = plotW / data.length;
+
+    const y = (p) => pad.top + (1 - (p / maxP)) * plotH;
+    const barW = xStep * 0.78;
+    const x0 = (i) => pad.left + i * xStep + (xStep - barW) / 2;
+
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', String(H));
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', options.ariaLabel ?? 'Histogram of a discrete probability distribution');
+
+    const g = document.createElementNS(svgNS, 'g');
+    svg.appendChild(g);
+
+    if (options.title) {
+      const t = document.createElementNS(svgNS, 'text');
+      t.setAttribute('x', String(W / 2));
+      t.setAttribute('y', '18');
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('font-size', '14');
+      t.setAttribute('font-weight', '600');
+      t.setAttribute('fill', 'currentColor');
+      t.textContent = options.title;
+      g.appendChild(t);
+    }
+
+    const axisColor = options.axisColor ?? 'currentColor';
+    const axisOpacity = options.axisOpacity ?? '0.55';
+
+    const xAxis = document.createElementNS(svgNS, 'line');
+    xAxis.setAttribute('x1', String(pad.left));
+    xAxis.setAttribute('y1', String(pad.top + plotH));
+    xAxis.setAttribute('x2', String(pad.left + plotW));
+    xAxis.setAttribute('y2', String(pad.top + plotH));
+    xAxis.setAttribute('stroke', axisColor);
+    xAxis.setAttribute('stroke-opacity', axisOpacity);
+    xAxis.setAttribute('stroke-width', '1');
+    g.appendChild(xAxis);
+
+    const yAxis = document.createElementNS(svgNS, 'line');
+    yAxis.setAttribute('x1', String(pad.left));
+    yAxis.setAttribute('y1', String(pad.top));
+    yAxis.setAttribute('x2', String(pad.left));
+    yAxis.setAttribute('y2', String(pad.top + plotH));
+    yAxis.setAttribute('stroke', axisColor);
+    yAxis.setAttribute('stroke-opacity', axisOpacity);
+    yAxis.setAttribute('stroke-width', '1');
+    g.appendChild(yAxis);
+
+    const ticks = options.yTicks ?? 3;
+    for (let k = 0; k < ticks; k++) {
+      const frac = (ticks === 1) ? 0 : k / (ticks - 1);
+      const yy = pad.top + (1 - frac) * plotH;
+
+      const tick = document.createElementNS(svgNS, 'line');
+      tick.setAttribute('x1', String(pad.left - 4));
+      tick.setAttribute('y1', String(yy));
+      tick.setAttribute('x2', String(pad.left));
+      tick.setAttribute('y2', String(yy));
+      tick.setAttribute('stroke', axisColor);
+      tick.setAttribute('stroke-opacity', axisOpacity);
+      tick.setAttribute('stroke-width', '1');
+      g.appendChild(tick);
+
+      const lab = document.createElementNS(svgNS, 'text');
+      lab.setAttribute('x', String(pad.left - 8));
+      lab.setAttribute('y', String(yy + 4));
+      lab.setAttribute('text-anchor', 'end');
+      lab.setAttribute('font-size', '12');
+      lab.setAttribute('fill', axisColor);
+      lab.setAttribute('fill-opacity', axisOpacity);
+      const val = frac * maxP;
+      lab.textContent = (options.yFormatter ? options.yFormatter(val) : val.toFixed(3).replace(/0+$/, '').replace(/\.$/, ''));
+      g.appendChild(lab);
+    }
+
+    for (let i = 0; i < data.length; i++) {
+      const d = data[i];
+      const x = x0(i);
+      const yy = y(d.p);
+      const h = (pad.top + plotH) - yy;
+
+      const rect = document.createElementNS(svgNS, 'rect');
+      rect.setAttribute('x', String(x));
+      rect.setAttribute('y', String(yy));
+      rect.setAttribute('width', String(barW));
+      rect.setAttribute('height', String(Math.max(0, h)));
+      rect.setAttribute('fill', options.barFill ?? 'currentColor');
+      rect.setAttribute('fill-opacity', options.barFillOpacity ?? '0.35');
+      rect.setAttribute('stroke', options.barStroke ?? 'currentColor');
+      rect.setAttribute('stroke-opacity', options.barStrokeOpacity ?? '0.75');
+      rect.setAttribute('stroke-width', options.barStrokeWidth ?? '1');
+      g.appendChild(rect);
+
+      const xl = document.createElementNS(svgNS, 'text');
+      xl.setAttribute('x', String(x + barW / 2));
+      xl.setAttribute('y', String(pad.top + plotH + 20));
+      xl.setAttribute('text-anchor', 'middle');
+      xl.setAttribute('font-size', '12');
+      xl.setAttribute('fill', 'currentColor');
+      xl.setAttribute('fill-opacity', '0.85');
+      xl.textContent = String(d.x);
+      g.appendChild(xl);
+    }
+
+    if (options.xLabel) {
+      const xl2 = document.createElementNS(svgNS, 'text');
+      xl2.setAttribute('x', String(pad.left + plotW / 2));
+      xl2.setAttribute('y', String(H - 10));
+      xl2.setAttribute('text-anchor', 'middle');
+      xl2.setAttribute('font-size', '12');
+      xl2.setAttribute('fill', 'currentColor');
+      xl2.setAttribute('fill-opacity', '0.85');
+      xl2.textContent = options.xLabel;
+      g.appendChild(xl2);
+    }
+
+    if (options.yLabel) {
+      const yl2 = document.createElementNS(svgNS, 'text');
+      yl2.setAttribute('x', '14');
+      yl2.setAttribute('y', String(pad.top + plotH / 2));
+      yl2.setAttribute('text-anchor', 'middle');
+      yl2.setAttribute('font-size', '12');
+      yl2.setAttribute('fill', 'currentColor');
+      yl2.setAttribute('fill-opacity', '0.85');
+      yl2.setAttribute('transform', `rotate(-90 14 ${pad.top + plotH / 2})`);
+      yl2.textContent = options.yLabel;
+      g.appendChild(yl2);
+    }
+
+    el.innerHTML = '';
+    el.appendChild(svg);
+  }
+
+  
+  // -----------------------------
+  // Static binomial histograms for the lesson text above
+  // -----------------------------
+  const LESSON_N = 20;
+  const LESSON_P = 5/18;
+
+  renderBinomialHistogram('#binom-hist-1', LESSON_N, LESSON_P, {
+    xLabel: 'x',
+    yLabel: 'f(x)'
+  });
+
+  renderBinomialHistogram('#binom-hist-2', LESSON_N, LESSON_P, {
+    xLabel: 'x',
+    yLabel: 'f(x)',
+    highlightXs: [6]
+  });
+
+  renderBinomialHistogram('#binom-hist-3', LESSON_N, LESSON_P, {
+    xLabel: 'x',
+    yLabel: 'f(x)',
+    highlightXs: [0,1,2]
+  });
+
+
+
+  
+  // -----------------------------
+  // Activity (Binomial) — Question Type (1) for now
+  // -----------------------------
+  const REL_TOL = 0.001; // 0.1% relative tolerance for decimal answers
+
+  let stage = 0;         // 0 = not started; 1..4
+  let prob = null;       // current problem object
+  let solutionLog = '';  // keeps revealed solutions visible
+
+  let solHistCounter = 0; // unique ids for inline solution histograms
+  let finished = false;   // after Stage 4 solution is shown, lock Hint/Next
+
+  function clearActivity() {
+    tableArea.innerHTML = '';
+    meanArea.innerHTML = '';
+    workArea.innerHTML = '';
+    histogramArea.innerHTML = '';
+    stageFeedback.textContent = '';
+    stageFeedback.style.color = 'black';
+    solutionLog = '';
+    finished = false;
+    hintBtn.disabled = false;
+    nextBtn.disabled = false;
+    typeset();
+  }
+
+  function setFeedback(msg, color = 'black') {
+    stageFeedback.textContent = msg;
+    stageFeedback.style.color = color;
+  }
+
+  function parseDecimal(raw) {
+    const s = (raw ?? '').trim().replace(/\s+/g, '');
+    if (!s) return { error: 'Please enter a value.' };
+    const v = Number(s);
+    if (!Number.isFinite(v)) return { error: 'That does not look like a valid number.' };
+    return { value: v };
+  }
+
+  // Stable binomial pmf values P(X=x) for x=0..n using recurrence.
+  function binomPMFArray(n, p) {
+    const arr = new Array(n + 1).fill(0);
+    if (p <= 0) { arr[0] = 1; return arr; }
+    if (p >= 1) { arr[n] = 1; return arr; }
+    const q = 1 - p;
+    let px = Math.pow(q, n); // P(0)
+    arr[0] = px;
+    for (let x = 0; x < n; x++) {
+      px = px * ((n - x) / (x + 1)) * (p / q);
+      arr[x + 1] = px;
+    }
+    return arr;
+  }
+
+  function sumRange(arr, a, b) {
+    let s = 0;
+    for (let i = a; i <= b; i++) s += arr[i];
+    return s;
+  }
+
+  
+  function relationTexToEnglish(relTex) {
+    // relTex is one of: P(X\le t), P(X< t), P(X\ge t), P(X> t)
+    // Return a phrase like: "at most 3", "less than 3", "at least 3", "more than 3"
+    const m = (relTex || '').match(/P\(X(\\le|\\ge|<|>)\s*([0-9]+)\)/);
+    if (!m) return '...';
+    const op = m[1];
+    const t = m[2];
+    if (op === '\\le') return `at most ${t}`;
+    if (op === '<') return `less than ${t}`;
+    if (op === '\\ge') return `at least ${t}`;
+    if (op === '>') return `more than ${t}`;
+    return `... ${t}`;
+  }
+
+  const TYPE2_BANK = [
+    {
+      x: 'shooting free throws',
+      y: 'scoring',
+      z: 'shoot',
+      stage1: (k) => `scoring on <b>${k}</b> shots`,
+      stage2: (phrase) => `scoring on <b>${phrase}</b> shots`
+    },
+    {
+      x: 'buying lottery tickets',
+      y: 'winning a prize',
+      z: 'buy',
+      stage1: (k) => `winning <b>${k}</b> prizes`,
+      stage2: (phrase) => `winning <b>${phrase}</b> prizes`
+    },
+    {
+      x: 'attempting backflips',
+      y: 'succeeding',
+      z: 'attempt',
+      stage1: (k) => `succeeding on <b>${k}</b> backflips`,
+      stage2: (phrase) => `succeeding on <b>${phrase}</b> backflips`
+    },
+    {
+      x: 'throwing darts',
+      y: 'hitting the bullseye',
+      z: 'throw',
+      stage1: (k) => `hitting the bullseye <b>${k}</b> times`,
+      stage2: (phrase) => `hitting the bullseye <b>${phrase}</b> times`
+    }
+  ];
+
+  const TYPE3_BANK = [
+    {
+      ySing: 'raccoon',
+      yPlural: 'raccoons',
+      zSentence: 'have rabies',
+      desc: 'raccoons with rabies'
+    },
+    {
+      ySing: 'quokka',
+      yPlural: 'quokkas',
+      zSentence: 'are male',
+      desc: 'male quokkas'
+    },
+    {
+      ySing: 'student',
+      yPlural: 'students',
+      zSentence: 'are in first year',
+      desc: 'first year students'
+    },
+    {
+      ySing: 'laptop',
+      yPlural: 'laptops',
+      zSentence: 'are defective',
+      desc: 'defective laptops'
+    }
+  ];
+
+  function buildType3BinomialProblem() {
+    const n = randInt(6, 12);
+
+    // Population parameters
+    const m = randInt(20, 200);
+    const x = randInt(1, m - 1); // ensure x < m and nontrivial
+
+    const scenario = TYPE3_BANK[randInt(0, TYPE3_BANK.length - 1)];
+    const p = x / m;
+
+    const pmf = binomPMFArray(n, p);
+
+    // Stage 1 target x
+    const x1 = randInt(0, n);
+
+    // Stage 2 inequality: ensure 2 or 3 values summed, possibly via complement
+    const kTerms = (Math.random() < 0.5) ? 2 : 3;
+    const tail = (Math.random() < 0.5) ? 'left' : 'right'; // tail to highlight/sum
+    const inclusive = (Math.random() < 0.5);
+    const useComplement = (Math.random() < 0.5);
+
+    const stage2 = {
+      kTerms, tail, inclusive, useComplement,
+      threshold: 0,
+      relationTex: '',
+      highlightXs: [],
+      targetProb: 0,
+      solutionTex: ''
+    };
+
+    if (tail === 'left') {
+      const highlight = [...Array(kTerms).keys()]; // 0..kTerms-1
+      stage2.highlightXs = highlight;
+
+      if (!useComplement) {
+        stage2.threshold = inclusive ? (kTerms - 1) : kTerms;
+        stage2.relationTex = inclusive ? `P(X\\le ${stage2.threshold})` : `P(X< ${stage2.threshold})`;
+        stage2.targetProb = sumRange(pmf, 0, kTerms - 1);
+        stage2.solutionTex =
+          `\\[${stage2.relationTex} = \\sum_{x=0}^{${kTerms - 1}} f(x;n,p)\\]` +
+          `\\[= ${highlight.map(h => `f(${h};n,p)`).join(' + ')} \\approx ${stage2.targetProb.toFixed(6)}\\]`;
+      } else {
+        stage2.threshold = inclusive ? kTerms : (kTerms - 1);
+        stage2.relationTex = inclusive ? `P(X\\ge ${stage2.threshold})` : `P(X> ${stage2.threshold})`;
+        stage2.targetProb = 1 - sumRange(pmf, 0, kTerms - 1);
+        stage2.solutionTex =
+          `\\[${stage2.relationTex} = 1 - P(X\\le ${kTerms - 1})\\]` +
+          `\\[= 1 - \\sum_{x=0}^{${kTerms - 1}} f(x;n,p)\\approx ${stage2.targetProb.toFixed(6)}\\]`;
+      }
+    } else {
+      const start = n - kTerms + 1;
+      const highlight = [];
+      for (let xh = start; xh <= n; xh++) highlight.push(xh);
+      stage2.highlightXs = highlight;
+
+      if (!useComplement) {
+        stage2.threshold = inclusive ? start : (start - 1);
+        stage2.relationTex = inclusive ? `P(X\\ge ${stage2.threshold})` : `P(X> ${stage2.threshold})`;
+        stage2.targetProb = sumRange(pmf, start, n);
+        stage2.solutionTex =
+          `\\[${stage2.relationTex} = \\sum_{x=${start}}^{${n}} f(x;n,p)\\]` +
+          `\\[= ${highlight.map(h => `f(${h};n,p)`).join(' + ')} \\approx ${stage2.targetProb.toFixed(6)}\\]`;
+      } else {
+        stage2.threshold = inclusive ? (start - 1) : start;
+        stage2.relationTex = inclusive ? `P(X\\le ${stage2.threshold})` : `P(X< ${stage2.threshold})`;
+        stage2.targetProb = 1 - sumRange(pmf, start, n);
+        stage2.solutionTex =
+          `\\[${stage2.relationTex} = 1 - P(X\\ge ${start})\\]` +
+          `\\[= 1 - \\sum_{x=${start}}^{${n}} f(x;n,p)\\approx ${stage2.targetProb.toFixed(6)}\\]`;
+      }
+    }
+
+    return {
+      kind: 'binom_type3_population',
+      n, p,
+      m, x,
+      scenario,
+      pmf,
+      stage1: { x: x1, targetProb: pmf[x1] },
+      stage2,
+      mean: n * p,
+      sigma: Math.sqrt(n * p * (1 - p))
+    };
+  }
+
+  function buildType2BinomialProblem() {
+    const n = randInt(6, 12);
+
+    // m is a randomly generated probability between 0 and 100% with one digit after the decimal point.
+    const mPercent = randInt(0, 1000) / 10; // 0.0 ... 100.0
+    const p = mPercent / 100;
+
+    const scenario = TYPE2_BANK[randInt(0, TYPE2_BANK.length - 1)];
+
+    const pmf = binomPMFArray(n, p);
+
+    // Stage 1 target x
+    const x1 = randInt(0, n);
+
+    // Stage 2 inequality: ensure 2 or 3 values summed, possibly via complement
+    const kTerms = (Math.random() < 0.5) ? 2 : 3;
+    const tail = (Math.random() < 0.5) ? 'left' : 'right'; // tail to highlight/sum
+    const inclusive = (Math.random() < 0.5);
+    const useComplement = (Math.random() < 0.5);
+
+    const stage2 = {
+      kTerms, tail, inclusive, useComplement,
+      threshold: 0,
+      relationTex: '',
+      highlightXs: [],
+      targetProb: 0,
+      solutionTex: ''
+    };
+
+    if (tail === 'left') {
+      const highlight = [...Array(kTerms).keys()]; // 0..kTerms-1
+      stage2.highlightXs = highlight;
+
+      if (!useComplement) {
+        stage2.threshold = inclusive ? (kTerms - 1) : kTerms;
+        stage2.relationTex = inclusive ? `P(X\\le ${stage2.threshold})` : `P(X< ${stage2.threshold})`;
+        stage2.targetProb = sumRange(pmf, 0, kTerms - 1);
+        stage2.solutionTex =
+          `\\[${stage2.relationTex} = \\sum_{x=0}^{${kTerms - 1}} f(x;n,p)\\]` +
+          `\\[= ${highlight.map(h => `f(${h};n,p)`).join(' + ')} \\approx ${stage2.targetProb.toFixed(6)}\\]`;
+      } else {
+        stage2.threshold = inclusive ? kTerms : (kTerms - 1);
+        stage2.relationTex = inclusive ? `P(X\\ge ${stage2.threshold})` : `P(X> ${stage2.threshold})`;
+        stage2.targetProb = 1 - sumRange(pmf, 0, kTerms - 1);
+        stage2.solutionTex =
+          `\\[${stage2.relationTex} = 1 - P(X\\le ${kTerms - 1})\\]` +
+          `\\[= 1 - \\sum_{x=0}^{${kTerms - 1}} f(x;n,p)\\approx ${stage2.targetProb.toFixed(6)}\\]`;
+      }
+    } else {
+      const start = n - kTerms + 1;
+      const highlight = [];
+      for (let x = start; x <= n; x++) highlight.push(x);
+      stage2.highlightXs = highlight;
+
+      if (!useComplement) {
+        stage2.threshold = inclusive ? start : (start - 1);
+        stage2.relationTex = inclusive ? `P(X\\ge ${stage2.threshold})` : `P(X> ${stage2.threshold})`;
+        stage2.targetProb = sumRange(pmf, start, n);
+        stage2.solutionTex =
+          `\\[${stage2.relationTex} = \\sum_{x=${start}}^{${n}} f(x;n,p)\\]` +
+          `\\[= ${highlight.map(h => `f(${h};n,p)`).join(' + ')} \\approx ${stage2.targetProb.toFixed(6)}\\]`;
+      } else {
+        stage2.threshold = inclusive ? (start - 1) : start;
+        stage2.relationTex = inclusive ? `P(X\\le ${stage2.threshold})` : `P(X< ${stage2.threshold})`;
+        stage2.targetProb = 1 - sumRange(pmf, start, n);
+        stage2.solutionTex =
+          `\\[${stage2.relationTex} = 1 - P(X\\ge ${start})\\]` +
+          `\\[= 1 - \\sum_{x=${start}}^{${n}} f(x;n,p)\\approx ${stage2.targetProb.toFixed(6)}\\]`;
+      }
+    }
+
+    return {
+      kind: 'binom_type2_context',
+      n, p,
+      mPercent,
+      scenario,
+      pmf,
+      stage1: { x: x1, targetProb: pmf[x1] },
+      stage2,
+      mean: n * p,
+      sigma: Math.sqrt(n * p * (1 - p))
+    };
+  }
+
+function buildType1BinomialProblem() {
+    const y = randInt(4, 20);
+    const n = randInt(6, 12);
+
+    let successText = '';
+    let p = 0;
+
+    if (Math.random() < 0.3) {
+      const k = randInt(1, y);
+      successText = `rolling a ${k}`;
+      p = 1 / y;
+    } else {
+      const dirHigher = Math.random() < 0.5;
+      if (dirHigher) {
+        const t = randInt(1, y - 1);
+        successText = `rolling higher than ${t}`;
+        p = (y - t) / y;
+      } else {
+        const t = randInt(2, y);
+        successText = `rolling lower than ${t}`;
+        p = (t - 1) / y;
+      }
+    }
+
+    const pmf = binomPMFArray(n, p);
+
+    // Stage 1 target x
+    const x1 = randInt(0, n);
+
+    // Stage 2 inequality: ensure 2 or 3 values summed, possibly via complement
+    const kTerms = (Math.random() < 0.5) ? 2 : 3;
+    const tail = (Math.random() < 0.5) ? 'left' : 'right'; // tail to highlight/sum
+    const inclusive = (Math.random() < 0.5);
+    const useComplement = (Math.random() < 0.5);
+
+    const stage2 = {
+      kTerms, tail, inclusive, useComplement,
+      threshold: 0,
+      relationTex: '',
+      highlightXs: [],
+      targetProb: 0,
+      solutionTex: ''
+    };
+
+    if (tail === 'left') {
+      const highlight = [...Array(kTerms).keys()]; // 0..kTerms-1
+      stage2.highlightXs = highlight;
+
+      if (!useComplement) {
+        // exactly kTerms via <= or <
+        stage2.threshold = inclusive ? (kTerms - 1) : kTerms;
+        stage2.relationTex = inclusive ? `P(X\\le ${stage2.threshold})` : `P(X< ${stage2.threshold})`;
+        stage2.targetProb = sumRange(pmf, 0, kTerms - 1);
+        stage2.solutionTex =
+          `\\[${stage2.relationTex} = \\sum_{x=0}^{${kTerms - 1}} f(x;n,p)\\]` +
+          `\\[= ${highlight.map(h => `f(${h};n,p)`).join(' + ')} \\approx ${stage2.targetProb.toFixed(6)}\\]`;
+      } else {
+        // complement uses left tail
+        stage2.threshold = inclusive ? kTerms : (kTerms - 1);
+        stage2.relationTex = inclusive ? `P(X\\ge ${stage2.threshold})` : `P(X> ${stage2.threshold})`;
+        stage2.targetProb = 1 - sumRange(pmf, 0, kTerms - 1);
+        stage2.solutionTex =
+          `\\[${stage2.relationTex} = 1 - P(X\\le ${kTerms - 1})\\]` +
+          `\\[= 1 - \\sum_{x=0}^{${kTerms - 1}} f(x;n,p)\\approx ${stage2.targetProb.toFixed(6)}\\]`;
+      }
+    } else {
+      const start = n - kTerms + 1;
+      const highlight = [];
+      for (let x = start; x <= n; x++) highlight.push(x);
+      stage2.highlightXs = highlight;
+
+      if (!useComplement) {
+        stage2.threshold = inclusive ? start : (start - 1);
+        stage2.relationTex = inclusive ? `P(X\\ge ${stage2.threshold})` : `P(X> ${stage2.threshold})`;
+        stage2.targetProb = sumRange(pmf, start, n);
+        stage2.solutionTex =
+          `\\[${stage2.relationTex} = \\sum_{x=${start}}^{${n}} f(x;n,p)\\]` +
+          `\\[= ${highlight.map(h => `f(${h};n,p)`).join(' + ')} \\approx ${stage2.targetProb.toFixed(6)}\\]`;
+      } else {
+        stage2.threshold = inclusive ? (start - 1) : start;
+        stage2.relationTex = inclusive ? `P(X\\le ${stage2.threshold})` : `P(X< ${stage2.threshold})`;
+        stage2.targetProb = 1 - sumRange(pmf, start, n);
+        stage2.solutionTex =
+          `\\[${stage2.relationTex} = 1 - P(X\\ge ${start})\\]` +
+          `\\[= 1 - \\sum_{x=${start}}^{${n}} f(x;n,p)\\approx ${stage2.targetProb.toFixed(6)}\\]`;
+      }
+    }
+
+    return {
+      kind: 'binom_type1_die',
+      y, n, p,
+      successText,
+      pmf,
+      stage1: { x: x1, targetProb: pmf[x1] },
+      stage2,
+      mean: n * p,
+      sigma: Math.sqrt(n * p * (1 - p))
+    };
+  }
+
+  function renderPrompt() {
+    if (!prob) return;
+
+    if (prob.kind === 'binom_type1_die') {
+      questionText.innerHTML =
+        `A ${prob.y}-sided die is rolled ${prob.n} times. A success will be considered ${prob.successText}. ` +
+        `Let \\(X\\) be the number of successes.`;
+      typeset([questionText]);
+      return;
+    }
+
+    if (prob.kind === 'binom_type2_context') {
+      const s = prob.scenario;
+      questionText.innerHTML =
+        `You are ${s.x}. You ${s.z} ${prob.n}. You have a ${prob.mPercent.toFixed(1)}\% probability of ${s.y}. ` +
+        `Let \\(X\\) be the number of successes.`;
+      typeset([questionText]);
+      return;
+    }
+
+    if (prob.kind === 'binom_type3_population') {
+      const s = prob.scenario;
+      questionText.innerHTML =
+        `Out of a population of ${prob.m} ${s.yPlural}, ${prob.x} ${s.zSentence}. ` +
+        `A ${s.ySing} is selected at random ${prob.n} times. ` +
+        `Let \\(X\\) be the number of successes.`;
+      typeset([questionText]);
+      return;
+    }
+  }
+
+  function renderStage() {
+    if (!prob) return;
+
+    tableArea.innerHTML = '';
+    histogramArea.innerHTML = '';
+    setFeedback('');
+
+    // keep revealed work visible (solutions are appended to meanArea)
+
+    if (stage === 1) {
+      const x = prob.stage1.x;
+
+      if (prob.kind === 'binom_type2_context') {
+        const s1 = prob.scenario.stage1(x);
+        workArea.innerHTML = `
+          <div style="margin-bottom:0.75rem;"><b>Stage 1.</b> What is the probability of ${s1}?</div>
+          <div>\\(P(X=${x}) =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
+        `;
+      } else if (prob.kind === 'binom_type3_population') {
+        const s1 = `selecting <b>${x}</b> ${prob.scenario.desc}`;
+        workArea.innerHTML = `
+          <div style="margin-bottom:0.75rem;"><b>Stage 1.</b> What is the probability of ${s1}?</div>
+          <div>\\(P(X=${x}) =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
+        `;
+      } else {
+        // Type (1): die rolling
+        workArea.innerHTML = `
+          <div style="margin-bottom:0.75rem;"><b>Stage 1.</b> What is the probability of <b>${x}</b> successes?</div>
+          <div>\\(P(X=${x}) =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
+        `;
+      }
+    } else if (stage === 2) {
+      const rel = prob.stage2.relationTex;
+
+      if (prob.kind === 'binom_type2_context') {
+        const phrase = relationTexToEnglish(rel);
+        const s2 = prob.scenario.stage2(phrase);
+        workArea.innerHTML = `
+          <div style="margin-bottom:0.75rem;"><b>Stage 2.</b> What is the probability of ${s2}?</div>
+          <div>\\(${rel} =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
+        `;
+      } else if (prob.kind === 'binom_type3_population') {
+        const phrase = relationTexToEnglish(rel);
+        const s2 = `selecting <b>${phrase}</b> ${prob.scenario.desc}`;
+        workArea.innerHTML = `
+          <div style="margin-bottom:0.75rem;"><b>Stage 2.</b> What is the probability of ${s2}?</div>
+          <div>\\(${rel} =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
+        `;
+      } else {
+        // Type (1): die rolling
+        workArea.innerHTML = `
+          <div style="margin-bottom:0.75rem;"><b>Stage 2.</b> Compute \\(${rel}\\).</div>
+          <div>\\(${rel} =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
+        `;
+      }
+    } else if (stage === 3) {
+      workArea.innerHTML = `
+        <div style="margin-bottom:0.75rem;"><b>Stage 3.</b> Compute the mean \\(\\mu\\) of \\(X\\).</div>
+        <div>\\(\\mu =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
+      `;
+    } else if (stage === 4) {
+      workArea.innerHTML = `
+        <div style="margin-bottom:0.75rem;"><b>Stage 4.</b> Compute the standard deviation \\(\\sigma\\) of \\(X\\).</div>
+        <div>\\(\\sigma =\\) <input id="ans" type="text" inputmode="decimal" style="width: 10em; text-align:center;"></div>
+      `;
+    } else {
+      workArea.innerHTML = `<div>Press Start to begin.</div>`;
+    }
+
+    typeset([meanArea, workArea]);
+  }
+
+  
+  function appendSolution(texBlock) {
+    const wrap = document.createElement('div');
+    wrap.style.marginTop = '0.75rem';
+    wrap.style.textAlign = 'center';
+    wrap.innerHTML = texBlock;
+    meanArea.appendChild(wrap);
+  }
+
+  function appendSolutionWithHistogram(texBlock, renderFn) {
+    solHistCounter += 1;
+
+    const wrap = document.createElement('div');
+    wrap.style.marginTop = '0.75rem';
+    wrap.style.textAlign = 'center';
+    wrap.innerHTML = texBlock;
+    meanArea.appendChild(wrap);
+
+    const histWrap = document.createElement('div');
+    histWrap.id = `sol-hist-${solHistCounter}`;
+    histWrap.style.margin = '0.75rem auto 0';
+    histWrap.style.maxWidth = '740px';
+    meanArea.appendChild(histWrap);
+
+    renderFn(histWrap);
+  }
+
+  function revealStageSolution() {
+    if (!prob) return;
+    histogramArea.innerHTML = '';
+
+    if (stage === 1) {
+      const x = prob.stage1.x;
+      const n = prob.n;
+      const p = prob.p;
+      const val = prob.stage1.targetProb;
+
+      appendSolutionWithHistogram(`
+        
+        \\[
+          P(X=${x}) = f(${x};n,p) = \\binom{${n}}{${x}} p^{${x}}(1-p)^{${n}-${x}}
+          \\approx ${val.toFixed(6)}
+        \\]
+      `, (el) => {
+        renderBinomialHistogram(el, n, p, {
+          xLabel: 'x',
+          yLabel: 'f(x)',
+          highlightXs: [x]
+        });
+      });
+      typeset([meanArea]);
+      return;
+    }
+
+    if (stage === 2) {
+      appendSolutionWithHistogram(`
+        
+        ${prob.stage2.solutionTex}
+      `, (el) => {
+        renderBinomialHistogram(el, prob.n, prob.p, {
+          xLabel: 'x',
+          yLabel: 'f(x)',
+          highlightXs: prob.stage2.highlightXs
+        });
+      });
+      typeset([meanArea]);
+      return;
+    }
+
+    if (stage === 3) {
+      appendSolution(`
+        
+        \\[
+          \\mu = np = ${prob.n}\\left(${prob.p.toFixed(6)}\\right) \\approx ${prob.mean.toFixed(6)}
+        \\]
+      `);
+      typeset([meanArea]);
+      return;
+    }
+
+    if (stage === 4) {
+      appendSolution(`
+
+        \\[
+          \\sigma = \\sqrt{np(1-p)} = \\sqrt{${prob.n}\\left(${prob.p.toFixed(6)}\\right)\\left(${(1-prob.p).toFixed(6)}\\right)}
+          \\approx ${prob.sigma.toFixed(6)}
+        \\]
+      `);
+      // lock the activity after showing the Stage 4 solution
+      finished = true;
+      hintBtn.disabled = true;
+      nextBtn.disabled = true;
+      // remove the answer box so it doesn't appear again
+      workArea.innerHTML = '';
+      typeset([meanArea]);
+      return;
+    }
+  }
+
+  function currentTarget() {
+    if (!prob) return null;
+    if (stage === 1) return prob.stage1.targetProb;
+    if (stage === 2) return prob.stage2.targetProb;
+    if (stage === 3) return prob.mean;
+    if (stage === 4) return prob.sigma;
+    return null;
+  }
+
+  function onNext() {
+    if (!prob || stage === 0) return;
+    if (finished) return;
+    const target = currentTarget();
+    const parsed = parseDecimal(document.getElementById('ans')?.value ?? '');
+    if (parsed.error) { setFeedback(parsed.error, 'crimson'); return; }
+    if (!relClose(parsed.value, target, REL_TOL)) { setFeedback('Not quite.', 'crimson'); return; }
+
+    setFeedback('Correct!', 'green');
+    revealStageSolution();
+    if (stage < 4) { stage += 1; renderStage(); }
+  }
+
+  function onHint() {
+    if (!prob || stage === 0) return;
+    if (finished) return;
+    revealStageSolution();
+    if (stage < 4) { stage += 1; renderStage(); }
+  }
+
+  function startRandomProblem() {
+    clearActivity();
+    finished = false;
+    hintBtn.disabled = false;
+    nextBtn.disabled = false;
+    // Choose randomly between Type (1), Type (2), and Type (3).
+    const t = randInt(1, 3);
+    if (t === 1) prob = buildType1BinomialProblem();
+    else if (t === 2) prob = buildType2BinomialProblem();
+    else prob = buildType3BinomialProblem();
+    stage = 1;
+    renderPrompt();
+    renderStage();
+  }
+
+  // Hook up buttons
+  startBtn.addEventListener('click', () => {
+    playSound('click-sound');
+    startRandomProblem();
+  });
+
+  hintBtn.addEventListener('click', () => {
+    playSound('click-sound');
+    onHint();
+  });
+
+  nextBtn.addEventListener('click', () => {
+    playSound('click-sound');
+    onNext();
+  });
+
+</script>
+
+
+
+  <audio id="click-sound" src="button.mp3" preload="auto"></audio>
+  <audio id="set-sound" src="set2.mp3" preload="auto"></audio>
+
+</body>
+</html>

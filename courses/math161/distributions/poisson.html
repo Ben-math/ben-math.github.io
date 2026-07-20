@@ -77,29 +77,14 @@ fetch("/nav.html")
 
 
     <p>We might also want to answer questions of the form
-      \[\text{``What is the probability it takes more than 4 rolls to get a 6?''}\]
-      In other words, we're finding the probability that we don't get a 6 until either the fifth roll, or sixth roll, or seventh roll, and so on...  That is:
-      \[P(X > 4) = P(X = 5) + P(X = 6) + P(X = 7) + ...\]
-      We can't compute an infinite sum.  However, we <i>can</i> take the <i>complement</i> of the probability that it takes more than 4 rolls:
-      \[P(X > 4) = 1 - P(X \leq 4) = 1 - (P(X=1) + P(X=2) + P(X=3) + P(X=4))\]
-      \[=1 - \left(\frac{1}{6} + \frac{5}{36} + \frac{25}{216} + \frac{125}{1296}\right) = \frac{625}{1296} \approx 0.482\]
+      \[\text{``What is the probability that you sneeze more than once in a randomly selected minute?''}\]
+      In other words, we're finding the probability that we sneeze twice, or three times, or four times, and so on...  That is:
+      \[P(X > 1) = P(X = 2) + P(X = 3) + P(X = 4) + ...\]
+      As was the case with the geometric distribution, we can't compute an infinite sum.  However, we <i>can</i> take the <i>complement</i> of the probability 
+      that you sneeze more than once:
+      \[P(X > 1) = 1 - P(X \leq 1) = 1 - (P(X=0) + P(X=1))\]
+      \[=1 - \left(\frac{\left(\frac{5}{6}\right)^0e^{-\frac{5}{6}}}{0!} + \frac{\left(\frac{5}{6}\right)^1e^{-\frac{5}{6}}}{1!}\right) \approx 0.203\]
       <div id="binom-hist-3" style="margin: 1rem auto; max-width: 640px;"></div>
-      This could also have been computed as the odds of <i>not</i> getting a 6 within your first 4 rolls:
-      \[P(X > 4) = 1 - P(X \leq 4) = 1 - \left(\frac{5}{6}\right)^4 = \frac{625}{1296}\]
-      This leads to our next formula:
-      \[P(X > x) = (1-p)^x\]
-    </p>
-
-    <p>We have a similar formula for a "less than" question.  The probability that it takes <i>fewer than</i> \(x\) trials to obtain a success is the 
-      complement of the probability of failing on the first \(x-1\) trials in a row:
-      \[P(X < x) = 1 - (1-p)^{x-1}\]
-    </p>
-
-
-    <p>Finally, we have convenient formulas which simplify the computation of mean and variance specifically for geometric distributions: 
-      \[\mu = \frac{1}{p} \hspace{2cm} \sigma^2 = \frac{1-p}{p^2}\]
-      In our running example, we find
-      \[\mu = \frac{1}{\frac{1}{6}} = 6 \hspace{2cm} \sigma = \sqrt{\frac{1-\frac{1}{6}}{\left(\frac{1}{6}\right)^2}} = \sqrt{30} \approx 5.477\]
     </p>
 <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

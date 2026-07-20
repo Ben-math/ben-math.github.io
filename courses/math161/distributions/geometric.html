@@ -41,21 +41,17 @@ fetch("/nav.html")
   </header>
   <main>
 
-    <p>A Bernoulli trial is an experiment which can either be considered a success or a failure.  For instance, one may consider flipping heads a 
-      success (in which case flipping tails is a failure), or rolling a 2 or lower a success (in which case rolling a 3 or higher is a failure).
+    <p>The geometric distribution is closely related to the binomial distribution, in that it also involves repeated Bernoulli trials (an experiment which can 
+    either be considered a success or a failure).  The difference is that with the binomial distribution, we had a fixed number of trials being performed.  In 
+    this case, we repeat the experiment until a success is achieved.  Some examples are flipping a coin until obtaining heads, or rolling a die until getting 
+    a 6.  As was the case for the binomial distribution, we require that the trials be independent of one another, and have the same probability of success.
     </p>
     
-    <p>If \(n\) many Bernoulli trials are performed, each with probability \(p\) of success, then the random variable \(X\) with parameters \(n,p\) is 
-      called a <b>binomial random variable</b>.  Its pdf is called a <b>binomial distribution</b>, given by
-      \[f(x;n,p) = \binom{n}{x}p^x(1-p)^{n-x} \hspace{2cm} \text{ for } x \in \{0, 1, ..., n\}\]
-      The input x is the number of successes, so \(f(x; n, p)\) gives the probability of having \(x\) many successes when doing \(n\) many Bernoulli 
-      trials that have a probability \(p\) of success.
-    </p>
-
-      
-    <p>The Binomial coefficients \(\binom{n}{x}\) are entries in Pascal's triangle, can be computed via the formula
-      \[\binom{n}{x} = \frac{n!}{(n-x)!x!}\]
-      or by typing "nCx" (read as \(n\) choose \(x\)) into your calculator.
+    <p>If Bernoulli trials each have probability \(p\) of success, and are performed until a success is obtained, then the random variable \(X\) with 
+      parameter \(p\) is called a <b>geometric random variable</b>.  Its pdf is called a <b>geometric distribution</b>, given by
+      \[f(x;p) = p(1-p)^{x-1} \hspace{2cm} \text{ for } x \in \{1, 2, 3, ...\}\]
+      The input x is the number of the trial on which we first obtain a success, so \(f(x;p)\) gives the probability of having \(x-1\) many failures in a row, 
+      followed by a success.
     </p>
 
 

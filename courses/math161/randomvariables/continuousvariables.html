@@ -73,80 +73,39 @@ fetch("/nav.html")
 
     <p>As in the discrete case, the total area under a probability density function is equal to 1.</p>
 
-    <p>It's that second property - that its values sum to 1 - which is often helpful in checking whether you've correctly computed its values, as you 
-      can afterwards verify that they sum to 1.  For example, if we compute all the values of the pdf \(f\) of the random 
-      variable \(X\) which gives the sum of two 6-sided dice, we obtain the following table of values (note the values \(x\) are the possible sums when 
-      rolling two 6-sided dice, so they are between 2 and 12):
-      \[
-      \begin{array}{|c|c|c|c|c|c|c|c|c|c|c|c|}
-      \hline
-      x & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 & 11 & 12\\
-      \hline
-      f(x) & \frac{1}{36} & \frac{2}{36} & \frac{3}{36} & \frac{4}{36} & \frac{5}{36} & \frac{6}{36} & \frac{5}{36} & \frac{4}{36} & \frac{3}{36} &
-       \frac{2}{36} & \frac{1}{36}\\
-      \hline
-      \end{array}
-      \]
-
-      <div id="dice-histogram" style="margin: 1rem auto; max-width: 640px;"></div>
-
-      We can verify we've found the correct values of \(f(x)\) above by confirming
-      \[\frac{1}{36} + \frac{2}{36} + \frac{3}{36} + \frac{4}{36} + \frac{5}{36} + \frac{6}{36} + \frac{5}{36} + \frac{4}{36} + \frac{3}{36} + 
-      \frac{2}{36} + \frac{1}{36} = \frac{36}{36} = 1\] 
-      Other than asking for the probability that the random variable takes on a particular value, we may ask for the probability it is greater or less 
-      than some value, or falls within a range.  This amounts to summing individual values of the pdf.  For instance, in the preceding example, to find 
-      the probability of rolling higher than a 9,
-      \[P(X > 9) = P(X = 10) + P(X = 11) + P(X = 12) = f(10) + f(11) + f(12) = \frac{3}{36} + \frac{2}{36} + \frac{1}{36} = \frac{6}{36} = \frac{1}{6}\]
-      or to find the odds of rolling between a 5 and 7 (inclusive):
-      \[P(5 \leq X \leq 7) = P(X = 5) + P(X = 6) + P(X = 7) = \frac{4}{36} + \frac{5}{36} + \frac{6}{36} = \frac{15}{36} = \frac{5}{12}\]
+    <p>The definition of the PDF says that the probability \(X\) is between \(a\) and \(b\) is represented by the area under the curve \(f\) on the 
+    interval \([a,b]\).  Below, see a probability density function \(f\) for height of adults in Canada.  INSERT FIGURE HERE <br>
+    The area under the curve displayed,
+    \[P(60 \leq X \leq 72) \approx 0.89\]
+    gives the probability that a random adult has height between 5 and 6 feet.
     </p>
 
-    <p>We've previously seen that to compute the mean of a set of data, we are computing a weighted average of the data values, where each value is 
-      weighted by its relative frequency.  For instance, if playing basketball you take 20 shots, miss on 10 of them, score 2 points on 6 of them, and 
-      score 3 points on 4 of them, then the mean points you scored per shot is
-      \[\frac{10}{20}(0) + \frac{6}{20}(2) + \frac{4}{20}(3) = \frac{24}{20} = 1.2\]
-      This same idea extends to finding the mean - also called <b>expected value</b> - of a random variable \(X\), denoted by \(E(X) = \mu\).  Observe 
-      that the relative frequency of a data value <b>is</b> the probability it would be selected at random from the data set.  So, the expected value 
-      of \(X\) is computed exactly as you'd expect: as a weighted average of the values of \(X\), weighted by their respective probabilities (the values 
-      of the pdf):
-      \[E(X) = \sum_x xf(x)\]
-      For example, to find the expected value of the sum of two dice \(X\), we compute
-      \[\mu = \frac{1}{36}(2) + \frac{2}{36}(3) + \frac{3}{36}(4) + \frac{4}{36}(5) + \frac{5}{36}(6) + \frac{6}{36}(7) + \frac{5}{36}(8) + 
-      \frac{4}{36}(9) + \frac{3}{36}(10) + \frac{2}{36}(11) + \frac{1}{36}(12) = \frac{252}{36} = 7\]
-      This is in line with what we'd expect, since the pdf is symmetric about 7.
+    <p>Probability density functions are represented by curves defined by functions.  The key criteria is that these functions are nonnegative (since 
+    probabilities can't be negative), and the total area under them equals 1 (since the probability that an event in the sample space occurs is 1).
+    It turns out that the following
+    \[f(x) = \begin{cases}
+       0.006x(10-x) & \text{if } 0 \leq x \leq 10\\
+       0 & \text{otherwise}
+    \end{cases}\]
+    is an example of a probability density function, because it satisfies these criteria (but we would need calculus to show this).
     </p>
 
-    <p>Finally, our formula for the standard deviation \(\sigma\) of a random variable \(X\) is also as we've seen previously (just replacing relative 
-      frequency with the values of the pdf in our formula):
-      \[\sigma = \sqrt{\sum_x\left[(x - \mu)^2f(x)\right]}\]
-      So to find the standard deviation in our running example,
-      \[\sigma = \sqrt{(2-7)^2 \cdot \frac{1}{36} + (3-7)^2 \cdot \frac{2}{36} + ... + (12-7)^2 \cdot \frac{1}{36}} = \sqrt{\frac{210}{36}} \approx 2.42\]
+    <p>INSERT FIGURE HERE <br>
+      Using the tools of calculus, one could find the probability that \(X\) is between 2 and 5:
+    \[P(2 \leq X \leq 5) = \int_2^5f(x)dx = 0.396\]
+    ...which visually looks about right (about 40% of the curve is accounted for by the blue area).
     </p>
 
 
-    <p>Generally you would find it helpful to use a similar "table method" for organizing the steps of computing standard deviation as previously.  For 
-      instance, let \(X\) be the random variable giving your winnings from a lottery ticket.  If you have a 75% chance of winning nothing, a 20% chance 
-      of winning $5, and a 5% chance of winning $100, then we can construct a table with the pdf for \(X\), and extend it to the terms in the standard 
-      deviation computation sum once we've found the mean:
-      \[\mu = 0(0.75) + 5(0.2) + 100(0.05) = 6\]
-      \[
-      \begin{array}{|c|c|c|c|}
-      \hline
-      x & f(x) & (x- \mu)^2 & (x - \mu)^2 \cdot f(x)\\
-      \hline
-      0 & 0.75 & (0-6)^2 = 36 & 36 \cdot 0.75 = 27\\
-      \hline
-      5 & 0.2 & (5-6)^2 = 1 & 1 \cdot 0.2 = 0.2\\
-      \hline
-      100 & 0.05 & (100-6)^2 = 8836 & 8836 \cdot 0.05 = 441.8\\
-      \hline
-      \end{array}
-      \]
-      \[\sigma = \sqrt{27 + 0.2 + 441.8} \approx 21.67\]
-    </p>
+    <p>Note that in the continuous case, the only probabilities it makes sense to talk about are <b>intervals</b> of values of \(X\).  If we tried to ask 
+    in the preceding example, what is the probability that \(X\) <b>equals</b> 5, we'd be trying to find an area which has a <b>width of zero</b>.  That 
+    is, \[P(X = 5) = 0\] This is true in general in the continuous case: the probability that \(X\) takes on a <i>specific</i> value is always zero.</p>
+    
+    <p>This should make intuitive sense.  I claim that there does not exist a milk carton anywhere on Earth which has a volume <b>exactly equal to</b> 
+    1 litre.  If we measured cartons' volumes with enough precision, they'd all be <i>slightly</i> off 1 litre.</p>
 
-    <p>This activity deals with <i>general</i> discrete random variables.  We will in the following lessons explore specific discrete probability 
-    distributions: binomial, geometric, and Poisson.</p>
+    <p>This activity deals with <i>general</i> continuous random variables.  We will in the following lessons explore specific continuous probability 
+    densitites: uniform, exponential, and normal.</p>
 
     
 

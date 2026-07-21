@@ -104,8 +104,18 @@ fetch("/nav.html")
     \(z\), where \(Z\) has standard normal distribution.  Visually, see \(P(Z \leq 1.78) \approx 0.9625\): INSERT FIGURE HERE
     </p>
 
-    <p><div style="text-align:center; font-size:10px; margin:20px 0;">
-<table style="border-collapse:collapse; margin:auto;">
+    <p>
+    <div style="
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  gap:20px;
+  margin:20px 0;
+  font-size:10px;
+">
+
+  <!-- LEFT TABLE: existing rows from -2.5 through -0.0 -->
+  <table style="border-collapse:collapse;">
 <tr>
   <th style="border:1px solid black; padding:2px;"><i>z</i></th>
   <th style="border:1px solid black; padding:2px;">.00</th>
@@ -485,6 +495,166 @@ fetch("/nav.html")
 </tr>
 
 </table>
+
+
+  <!-- RIGHT TABLE: rows from 0.0 through 0.9 -->
+  <table style="border-collapse:collapse;">
+    <tr>
+      <th style="border:1px solid black; padding:2px;"><i>z</i></th>
+      <th style="border:1px solid black; padding:2px;">.00</th>
+      <th style="border:1px solid black; padding:2px;">.01</th>
+      <th style="border:1px solid black; padding:2px;">.02</th>
+      <th style="border:1px solid black; padding:2px;">.03</th>
+      <th style="border:1px solid black; padding:2px;">.04</th>
+      <th style="border:1px solid black; padding:2px;">.05</th>
+      <th style="border:1px solid black; padding:2px;">.06</th>
+      <th style="border:1px solid black; padding:2px;">.07</th>
+      <th style="border:1px solid black; padding:2px;">.08</th>
+      <th style="border:1px solid black; padding:2px;">.09</th>
+    </tr>
+
+    <tr>
+      <td style="border:1px solid black; padding:2px;">0.0</td>
+      <td style="border:1px solid black; padding:2px;">0.5000</td>
+      <td style="border:1px solid black; padding:2px;">0.5040</td>
+      <td style="border:1px solid black; padding:2px;">0.5080</td>
+      <td style="border:1px solid black; padding:2px;">0.5120</td>
+      <td style="border:1px solid black; padding:2px;">0.5160</td>
+      <td style="border:1px solid black; padding:2px;">0.5199</td>
+      <td style="border:1px solid black; padding:2px;">0.5239</td>
+      <td style="border:1px solid black; padding:2px;">0.5279</td>
+      <td style="border:1px solid black; padding:2px;">0.5319</td>
+      <td style="border:1px solid black; padding:2px;">0.5359</td>
+    </tr>
+
+    <tr>
+      <td style="border:1px solid black; padding:2px;">0.1</td>
+      <td style="border:1px solid black; padding:2px;">0.5398</td>
+      <td style="border:1px solid black; padding:2px;">0.5438</td>
+      <td style="border:1px solid black; padding:2px;">0.5478</td>
+      <td style="border:1px solid black; padding:2px;">0.5517</td>
+      <td style="border:1px solid black; padding:2px;">0.5557</td>
+      <td style="border:1px solid black; padding:2px;">0.5596</td>
+      <td style="border:1px solid black; padding:2px;">0.5636</td>
+      <td style="border:1px solid black; padding:2px;">0.5675</td>
+      <td style="border:1px solid black; padding:2px;">0.5714</td>
+      <td style="border:1px solid black; padding:2px;">0.5753</td>
+    </tr>
+
+    <tr>
+      <td style="border:1px solid black; padding:2px;">0.2</td>
+      <td style="border:1px solid black; padding:2px;">0.5793</td>
+      <td style="border:1px solid black; padding:2px;">0.5832</td>
+      <td style="border:1px solid black; padding:2px;">0.5871</td>
+      <td style="border:1px solid black; padding:2px;">0.5910</td>
+      <td style="border:1px solid black; padding:2px;">0.5948</td>
+      <td style="border:1px solid black; padding:2px;">0.5987</td>
+      <td style="border:1px solid black; padding:2px;">0.6026</td>
+      <td style="border:1px solid black; padding:2px;">0.6064</td>
+      <td style="border:1px solid black; padding:2px;">0.6103</td>
+      <td style="border:1px solid black; padding:2px;">0.6141</td>
+    </tr>
+
+    <tr>
+      <td style="border:1px solid black; padding:2px;">0.3</td>
+      <td style="border:1px solid black; padding:2px;">0.6179</td>
+      <td style="border:1px solid black; padding:2px;">0.6217</td>
+      <td style="border:1px solid black; padding:2px;">0.6255</td>
+      <td style="border:1px solid black; padding:2px;">0.6293</td>
+      <td style="border:1px solid black; padding:2px;">0.6331</td>
+      <td style="border:1px solid black; padding:2px;">0.6368</td>
+      <td style="border:1px solid black; padding:2px;">0.6406</td>
+      <td style="border:1px solid black; padding:2px;">0.6443</td>
+      <td style="border:1px solid black; padding:2px;">0.6480</td>
+      <td style="border:1px solid black; padding:2px;">0.6517</td>
+    </tr>
+
+    <tr>
+      <td style="border:1px solid black; padding:2px;">0.4</td>
+      <td style="border:1px solid black; padding:2px;">0.6554</td>
+      <td style="border:1px solid black; padding:2px;">0.6591</td>
+      <td style="border:1px solid black; padding:2px;">0.6628</td>
+      <td style="border:1px solid black; padding:2px;">0.6664</td>
+      <td style="border:1px solid black; padding:2px;">0.6700</td>
+      <td style="border:1px solid black; padding:2px;">0.6736</td>
+      <td style="border:1px solid black; padding:2px;">0.6772</td>
+      <td style="border:1px solid black; padding:2px;">0.6808</td>
+      <td style="border:1px solid black; padding:2px;">0.6844</td>
+      <td style="border:1px solid black; padding:2px;">0.6879</td>
+    </tr>
+
+    <tr>
+      <td style="border:1px solid black; padding:2px;">0.5</td>
+      <td style="border:1px solid black; padding:2px;">0.6915</td>
+      <td style="border:1px solid black; padding:2px;">0.6950</td>
+      <td style="border:1px solid black; padding:2px;">0.6985</td>
+      <td style="border:1px solid black; padding:2px;">0.7019</td>
+      <td style="border:1px solid black; padding:2px;">0.7054</td>
+      <td style="border:1px solid black; padding:2px;">0.7088</td>
+      <td style="border:1px solid black; padding:2px;">0.7123</td>
+      <td style="border:1px solid black; padding:2px;">0.7157</td>
+      <td style="border:1px solid black; padding:2px;">0.7190</td>
+      <td style="border:1px solid black; padding:2px;">0.7224</td>
+    </tr>
+
+    <tr>
+      <td style="border:1px solid black; padding:2px;">0.6</td>
+      <td style="border:1px solid black; padding:2px;">0.7257</td>
+      <td style="border:1px solid black; padding:2px;">0.7291</td>
+      <td style="border:1px solid black; padding:2px;">0.7324</td>
+      <td style="border:1px solid black; padding:2px;">0.7357</td>
+      <td style="border:1px solid black; padding:2px;">0.7389</td>
+      <td style="border:1px solid black; padding:2px;">0.7422</td>
+      <td style="border:1px solid black; padding:2px;">0.7454</td>
+      <td style="border:1px solid black; padding:2px;">0.7486</td>
+      <td style="border:1px solid black; padding:2px;">0.7517</td>
+      <td style="border:1px solid black; padding:2px;">0.7549</td>
+    </tr>
+
+    <tr>
+      <td style="border:1px solid black; padding:2px;">0.7</td>
+      <td style="border:1px solid black; padding:2px;">0.7580</td>
+      <td style="border:1px solid black; padding:2px;">0.7611</td>
+      <td style="border:1px solid black; padding:2px;">0.7642</td>
+      <td style="border:1px solid black; padding:2px;">0.7673</td>
+      <td style="border:1px solid black; padding:2px;">0.7704</td>
+      <td style="border:1px solid black; padding:2px;">0.7734</td>
+      <td style="border:1px solid black; padding:2px;">0.7764</td>
+      <td style="border:1px solid black; padding:2px;">0.7794</td>
+      <td style="border:1px solid black; padding:2px;">0.7823</td>
+      <td style="border:1px solid black; padding:2px;">0.7852</td>
+    </tr>
+
+    <tr>
+      <td style="border:1px solid black; padding:2px;">0.8</td>
+      <td style="border:1px solid black; padding:2px;">0.7881</td>
+      <td style="border:1px solid black; padding:2px;">0.7910</td>
+      <td style="border:1px solid black; padding:2px;">0.7939</td>
+      <td style="border:1px solid black; padding:2px;">0.7967</td>
+      <td style="border:1px solid black; padding:2px;">0.7995</td>
+      <td style="border:1px solid black; padding:2px;">0.8023</td>
+      <td style="border:1px solid black; padding:2px;">0.8051</td>
+      <td style="border:1px solid black; padding:2px;">0.8078</td>
+      <td style="border:1px solid black; padding:2px;">0.8106</td>
+      <td style="border:1px solid black; padding:2px;">0.8133</td>
+    </tr>
+
+    <tr>
+      <td style="border:1px solid black; padding:2px;">0.9</td>
+      <td style="border:1px solid black; padding:2px;">0.8159</td>
+      <td style="border:1px solid black; padding:2px;">0.8186</td>
+      <td style="border:1px solid black; padding:2px;">0.8212</td>
+      <td style="border:1px solid black; padding:2px;">0.8238</td>
+      <td style="border:1px solid black; padding:2px;">0.8264</td>
+      <td style="border:1px solid black; padding:2px;">0.8289</td>
+      <td style="border:1px solid black; padding:2px;">0.8315</td>
+      <td style="border:1px solid black; padding:2px;">0.8340</td>
+      <td style="border:1px solid black; padding:2px;">0.8365</td>
+      <td style="border:1px solid black; padding:2px;">0.8389</td>
+    </tr>
+
+  </table>
+
 </div>
     </p>
 

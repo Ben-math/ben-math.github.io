@@ -2446,10 +2446,12 @@ fetch("/nav.html")
 </div>
     </p>
 
-    <p>The formula for standard deviation of a uniform distribution has no intuitive explanation (it is derived via moment-generating functions):
-    \[\sigma = \sqrt{\frac{(b-a)^2}{12}}\]
-    So in this case, the standard deviation is
-    \[\sqrt{\frac{(12-2)^2}{12}} = \sqrt{\frac{100}{12}} \approx 2.89 \text{ hours}\]
+    <p>Suppose \(X\) is a normally distributed random variable with mean \(\mu = 50\) and standard deviation \(\sigma = 3\).  Let us find 
+    \(P(44 \leq X \leq 53)\).</p>  
+      
+    <p>By the corollary relating to the standard normal distribution, \(Z = \frac{X - \mu}{\sigma}\), so
+    \[P(44 \leq X \leq 53) = P\left(\frac{44-50}{3} \leq Z \leq \frac{53-50}{3}\right) = P(-2 \leq Z \leq 1)\]
+    \[= P(Z \leq 1) - (1 - P(Z \leq 2)) \approx 0.8413 - (1 - 0.9772) = 0.8185\]
     </p>
 <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

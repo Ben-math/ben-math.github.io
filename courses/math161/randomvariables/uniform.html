@@ -87,10 +87,39 @@ fetch("/nav.html")
     </p>
 
 
-    <p>Finally, we have convenient formulas which simplify the computation of mean and variance specifically for geometric distributions: 
-      \[\mu = \frac{1}{p} \hspace{2cm} \sigma^2 = \frac{1-p}{p^2}\]
-      In our running example, we find
-      \[\mu = \frac{1}{\frac{1}{6}} = 6 \hspace{2cm} \sigma = \sqrt{\frac{1-\frac{1}{6}}{\left(\frac{1}{6}\right)^2}} = \sqrt{30} \approx 5.477\]
+    <p>To find the probability of waiting less than 5 hours, we take the area of the rectangle under the function which is to the left of 5:
+    \[P(X < 5) = (5 - 2) \cdot \frac{1}{10} = \frac{3}{10}\] INSERT FIGURE HERE
+    </p>
+
+    <p>To find the probability of waiting between 6 and 10 hours, we take the area of the rectangle under the function which is between 6 and 10:
+    \[P(6 < X < 10) = (10 - 6) \cdot \frac{1}{10} = \frac{4}{10} = \frac{2}{5}\] INSERT FIGURE HERE
+    </p>
+
+    <p>To find the \(90^{\text{th}}\) percentile of wait times, we're looking for the wait time which is greater than 90% of the wait times.  That is, 
+    we are looking for a $k$ such that \[P(X < k) = 0.9\]
+    That is, we're looking for the right-hand side of a rectangle which starts at the leftmost end of the function, and occupies 90% of the area 
+    underneath it: \[(k - 2) \cdot \frac{1}{10} = 0.9 \implies k - 2 = 9 \implies k = 11\] INSERT FIGURE HERE
+    </p>
+
+    <p>To find the probability that you wait less than 3 hours <b>given that you wait less than 6 hours</b>, we have a conditional probability question.  
+    We enter the reduced sample space (the light blue rectangle between 2 and 6), and find the proportion of it which the event we're interested in 
+    (the dark blue rectangle between 2 and 3) occupies: 
+    \[P(X < 3| X < 6) = \frac{P(X < 3 \cap X < 6)}{P(X < 6)} = \frac{(3-2)\cdot\frac{1}{10}}{(6-2)\cdot\frac{1}{10}} = \frac{\frac{1}{10}}{\frac{4}{10}} 
+    = \frac{1}{4}\] INSERT FIGURE HERE
+    </p>
+
+    <p>The average wait time is what you'd expect it to be: the midpoint of the two extreme wait times:
+    INSERT FIGURE HERE
+    \[\mu = \frac{2+12}{2} = 7\]
+    So the average wait time is 7 hours. <br>
+    This is the general formula for a uniform distribution on the interval $[a,b]$:
+    \[\mu = \frac{a+b}{2}\]
+    </p>
+
+    <p>The formula for standard deviation of a uniform distribution has no intuitive explanation (it is derived via moment-generating functions):
+    \[\sigma = \sqrt{\frac{(b-a)^2}{12}}\]
+    So in this case, the standard deviation is
+    \[\sqrt{\frac{(12-2)^2}{12}} = \sqrt{\frac{100}{12}} \approx 2.89 \text{ hours}\]
     </p>
 <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

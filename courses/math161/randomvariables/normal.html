@@ -3232,7 +3232,18 @@ fetch("/nav.html")
 
 
 <p>From the symmetry of the normal distribution, it is clear that the median (\(50^{\text{th}}\) percentile) is the same as the mean.  To find 
-percentiles, find the \(z\) score closest to that percentile, and the table tells us how many standard deviations from the mean we need to go up or down.</p>
+percentiles, find the \(z\) score closest to that percentile, and the table tells us how many standard deviations from the mean we need to go up or 
+down.</p>
+
+<p>Suppose \(X\) is a normally distributed random variable with mean \(\mu = 50\) and standard deviation \(\sigma = 3\).  Let us find the 
+\({\color{red}90^{\text{th}}}\) percentile, and the first quartile.  For the \({\color{red}90^{\text{th}}}\) percentile, we are looking for a 
+\(k\) such that
+\[P(X < k) = 0.9\]  In the normal table, we find the value \({\color{red}0.8997}\) which is closest to 0.9: its \(z\)-score is \({\color{red}1.27}\).  
+So we go up \({\color{red}1.28}\) standard deviations from the mean: 
+\[k = \mu + {\color{red}1.28}\sigma = 50 + {\color{red}1.28}(3) = {\color{red}53.84}\]  For the first quartile, we are looking for a \(k\) 
+such that \[P(X < k) = 0.25\]  In the normal table, we find the value \({\color{red}0.2514}\) which is closest to 0.25: its \(z\)-score is 
+\({\color{red}-0.67}\).  So we go down \({\color{red}0.67}\) standard deviations from the mean: 
+\[k = \mu - {\color{red}0.67}\sigma = 50 - {\color{red}0.67}(3) = {\color{red}47.99}\]</p>
 <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>

@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -72,7 +73,7 @@ fetch("/nav.html")
       \[f(x) = \frac{\left(\frac{5}{6}\right)^xe^{-\frac{5}{6}}}{x!}\]
       and
       \[P(X = 2) = f(2) = \frac{\left(\frac{5}{6}\right)^2e^{-\frac{5}{6}}}{2!} \approx 0.151\]
-      <div id="binom-hist-1" style="margin: 1rem auto; max-width: 640px;"></div>
+      <div id="poisson-hist-1" style="margin: 1rem auto; max-width: 640px;"></div>
     </p>
 
 
@@ -84,10 +85,10 @@ fetch("/nav.html")
       that you sneeze more than once:
       \[P(X > 1) = 1 - P(X \leq 1) = 1 - (P(X=0) + P(X=1))\]
       \[=1 - \left(\frac{\left(\frac{5}{6}\right)^0e^{-\frac{5}{6}}}{0!} + \frac{\left(\frac{5}{6}\right)^1e^{-\frac{5}{6}}}{1!}\right) \approx 0.203\]
-      <div id="binom-hist-3" style="margin: 1rem auto; max-width: 640px;"></div>
+      <div id="poisson-hist-2" style="margin: 1rem auto; max-width: 640px;"></div>
     </p>
 <div class="button-container">
-      <button id="start-btn" class="rubber-button">Start!</button>
+      <button id="start-btn" class="rubber-button" hidden>Start!</button>
     </div>
 
     <p id="question-text" class="math"></p>
@@ -104,8 +105,8 @@ fetch("/nav.html")
       <p id="stage-feedback" style="font-weight: bold; margin-top: 0.75rem; text-align: center;"></p>
 
       <div class="button-container" style="gap: 0.75rem;">
-        <button id="hint-btn" class="rubber-button">Hint</button>
-        <button id="next-btn" class="rubber-button">Next</button>
+        <button id="hint-btn" class="rubber-button" hidden>Hint</button>
+        <button id="next-btn" class="rubber-button" hidden>Next</button>
       </div>
     </div>
 </main>
@@ -416,6 +417,168 @@ fetch("/nav.html")
   }
 
 // -----------------------------
+  // Inline-SVG histogram for Poisson(mu)
+  // -----------------------------
+  // The Poisson distribution has infinite support, so maxX controls how
+  // many columns are displayed. Use highlightXs or highlightFrom to select columns.
+  function renderPoissonHistogram(container, mu, options = {}) {
+    const el = (typeof container === 'string') ? document.querySelector(container) : container;
+    if (!el) return;
+
+    const W = options.width ?? 640;
+    const H = options.height ?? 260;
+    const maxX = options.maxX ?? 12;
+    const pad = { left: 48, right: 16, top: (options.title ? 30 : 14), bottom: 48, ...(options.padding ?? {}) };
+
+    const paleBlue = options.paleBlue ?? '#b7d8f0';
+    const paleRed = options.paleRed ?? '#f2b6b6';
+    const highlight = new Set(options.highlightXs ?? []);
+    const highlightFrom = options.highlightFrom ?? Infinity;
+
+    const data = [];
+    let px = Math.exp(-mu); // P(X=0)
+    let maxP = px;
+    data.push({ x: 0, p: px });
+    for (let x = 1; x <= maxX; x++) {
+      px = px * mu / x;
+      data.push({ x, p: px });
+      if (px > maxP) maxP = px;
+    }
+
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+    const xStep = plotW / data.length;
+    const barW = xStep * 0.78;
+    const y = (prob) => pad.top + (1 - prob / maxP) * plotH;
+    const x0 = (i) => pad.left + i * xStep + (xStep - barW) / 2;
+
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', String(H));
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', options.ariaLabel ?? `Histogram of Poisson(mu=${mu}), shown for x=0 through ${maxX}`);
+
+    const g = document.createElementNS(svgNS, 'g');
+    svg.appendChild(g);
+
+    if (options.title) {
+      const t = document.createElementNS(svgNS, 'text');
+      t.setAttribute('x', String(W / 2));
+      t.setAttribute('y', '18');
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('font-size', '14');
+      t.setAttribute('font-weight', '600');
+      t.setAttribute('fill', 'currentColor');
+      t.textContent = options.title;
+      g.appendChild(t);
+    }
+
+    const axisColor = options.axisColor ?? 'currentColor';
+    const axisOpacity = options.axisOpacity ?? '0.55';
+    const baseY = pad.top + plotH;
+
+    const xAxis = document.createElementNS(svgNS, 'line');
+    xAxis.setAttribute('x1', String(pad.left));
+    xAxis.setAttribute('y1', String(baseY));
+    xAxis.setAttribute('x2', String(pad.left + plotW));
+    xAxis.setAttribute('y2', String(baseY));
+    xAxis.setAttribute('stroke', axisColor);
+    xAxis.setAttribute('stroke-opacity', axisOpacity);
+    g.appendChild(xAxis);
+
+    const yAxis = document.createElementNS(svgNS, 'line');
+    yAxis.setAttribute('x1', String(pad.left));
+    yAxis.setAttribute('y1', String(pad.top));
+    yAxis.setAttribute('x2', String(pad.left));
+    yAxis.setAttribute('y2', String(baseY));
+    yAxis.setAttribute('stroke', axisColor);
+    yAxis.setAttribute('stroke-opacity', axisOpacity);
+    g.appendChild(yAxis);
+
+    const ticks = options.yTicks ?? 3;
+    for (let k = 0; k < ticks; k++) {
+      const frac = (ticks === 1) ? 0 : k / (ticks - 1);
+      const yy = pad.top + (1 - frac) * plotH;
+
+      const tick = document.createElementNS(svgNS, 'line');
+      tick.setAttribute('x1', String(pad.left - 4));
+      tick.setAttribute('y1', String(yy));
+      tick.setAttribute('x2', String(pad.left));
+      tick.setAttribute('y2', String(yy));
+      tick.setAttribute('stroke', axisColor);
+      tick.setAttribute('stroke-opacity', axisOpacity);
+      g.appendChild(tick);
+
+      const lab = document.createElementNS(svgNS, 'text');
+      lab.setAttribute('x', String(pad.left - 8));
+      lab.setAttribute('y', String(yy + 4));
+      lab.setAttribute('text-anchor', 'end');
+      lab.setAttribute('font-size', '12');
+      lab.setAttribute('fill', axisColor);
+      lab.setAttribute('fill-opacity', axisOpacity);
+      const val = frac * maxP;
+      lab.textContent = options.yFormatter ? options.yFormatter(val) : val.toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
+      g.appendChild(lab);
+    }
+
+    data.forEach((d, i) => {
+      const xx = x0(i);
+      const yy = y(d.p);
+      const rect = document.createElementNS(svgNS, 'rect');
+      rect.setAttribute('x', String(xx));
+      rect.setAttribute('y', String(yy));
+      rect.setAttribute('width', String(barW));
+      rect.setAttribute('height', String(Math.max(0, baseY - yy)));
+      rect.setAttribute('fill', (highlight.has(d.x) || d.x >= highlightFrom) ? paleRed : paleBlue);
+      rect.setAttribute('fill-opacity', '0.85');
+      rect.setAttribute('stroke', 'currentColor');
+      rect.setAttribute('stroke-opacity', '0.35');
+      rect.setAttribute('stroke-width', '1');
+      g.appendChild(rect);
+
+      const xl = document.createElementNS(svgNS, 'text');
+      xl.setAttribute('x', String(xx + barW / 2));
+      xl.setAttribute('y', String(baseY + 20));
+      xl.setAttribute('text-anchor', 'middle');
+      xl.setAttribute('font-size', '12');
+      xl.setAttribute('fill', 'currentColor');
+      xl.setAttribute('fill-opacity', '0.85');
+      xl.textContent = String(d.x);
+      g.appendChild(xl);
+    });
+
+    if (options.xLabel) {
+      const xl = document.createElementNS(svgNS, 'text');
+      xl.setAttribute('x', String(pad.left + plotW / 2));
+      xl.setAttribute('y', String(H - 10));
+      xl.setAttribute('text-anchor', 'middle');
+      xl.setAttribute('font-size', '12');
+      xl.setAttribute('fill', 'currentColor');
+      xl.setAttribute('fill-opacity', '0.85');
+      xl.textContent = options.xLabel;
+      g.appendChild(xl);
+    }
+
+    if (options.yLabel) {
+      const yl = document.createElementNS(svgNS, 'text');
+      yl.setAttribute('x', '16');
+      yl.setAttribute('y', String(pad.top + plotH / 2));
+      yl.setAttribute('text-anchor', 'middle');
+      yl.setAttribute('font-size', '12');
+      yl.setAttribute('fill', 'currentColor');
+      yl.setAttribute('fill-opacity', '0.85');
+      yl.setAttribute('transform', `rotate(-90 16 ${pad.top + plotH / 2})`);
+      yl.textContent = options.yLabel;
+      g.appendChild(yl);
+    }
+
+    el.innerHTML = '';
+    el.appendChild(svg);
+  }
+
+  // -----------------------------
   // Inline-SVG histogram for discrete pdfs (already used above)
   // -----------------------------
   // Usage:
@@ -577,31 +740,25 @@ fetch("/nav.html")
 
   
   // -----------------------------
-  // Static binomial histograms for the lesson text above
+  // Static Poisson histograms for the lesson text above
   // -----------------------------
-  const LESSON_N = 20;
-  const LESSON_P = 5/18;
+  const LESSON_MU = 5/6;
 
-  renderBinomialHistogram('#binom-hist-1', LESSON_N, LESSON_P, {
-    xLabel: 'x',
-    yLabel: 'f(x)'
-  });
-
-  renderBinomialHistogram('#binom-hist-2', LESSON_N, LESSON_P, {
+  renderPoissonHistogram('#poisson-hist-1', LESSON_MU, {
+    maxX: 10,
     xLabel: 'x',
     yLabel: 'f(x)',
-    highlightXs: [6]
+    highlightXs: [2]
   });
 
-  renderBinomialHistogram('#binom-hist-3', LESSON_N, LESSON_P, {
+  renderPoissonHistogram('#poisson-hist-2', LESSON_MU, {
+    maxX: 10,
     xLabel: 'x',
     yLabel: 'f(x)',
-    highlightXs: [0,1,2]
+    highlightFrom: 2
   });
 
 
-
-  
   // -----------------------------
   // Activity (Binomial) — Question Type (1) for now
   // -----------------------------

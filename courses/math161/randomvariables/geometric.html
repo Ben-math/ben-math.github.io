@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -70,7 +71,7 @@ fetch("/nav.html")
       The probability of rolling a 6 on the third try is
       \[P(X = 3) = f\left(3,\frac{1}{6}\right) = \frac{1}{6}\left(\frac{5}{6}\right)^{3-1} = \frac{25}{216}\]
       ...and so on.  The graph of the probability distribution function trails off infinitely to the right (with shorter and shorter columns):
-      <div id="binom-hist-1" style="margin: 1rem auto; max-width: 640px;"></div>
+      <div id="geom-hist-1" style="margin: 1rem auto; max-width: 640px;"></div>
     </p>
 
 
@@ -81,7 +82,7 @@ fetch("/nav.html")
       We can't compute an infinite sum.  However, we <i>can</i> take the <i>complement</i> of the probability that it takes more than 4 rolls:
       \[P(X > 4) = 1 - P(X \leq 4) = 1 - (P(X=1) + P(X=2) + P(X=3) + P(X=4))\]
       \[=1 - \left(\frac{1}{6} + \frac{5}{36} + \frac{25}{216} + \frac{125}{1296}\right) = \frac{625}{1296} \approx 0.482\]
-      <div id="binom-hist-3" style="margin: 1rem auto; max-width: 640px;"></div>
+      <div id="geom-hist-2" style="margin: 1rem auto; max-width: 640px;"></div>
       This could also have been computed as the odds of <i>not</i> getting a 6 within your first 4 rolls:
       \[P(X > 4) = 1 - P(X \leq 4) = 1 - \left(\frac{5}{6}\right)^4 = \frac{625}{1296}\]
       This leads to our next formula:
@@ -100,7 +101,7 @@ fetch("/nav.html")
       \[\mu = \frac{1}{\frac{1}{6}} = 6 \hspace{2cm} \sigma = \sqrt{\frac{1-\frac{1}{6}}{\left(\frac{1}{6}\right)^2}} = \sqrt{30} \approx 5.477\]
     </p>
 <div class="button-container">
-      <button id="start-btn" class="rubber-button">Start!</button>
+      <button id="start-btn" class="rubber-button" hidden>Start!</button>
     </div>
 
     <p id="question-text" class="math"></p>
@@ -117,8 +118,8 @@ fetch("/nav.html")
       <p id="stage-feedback" style="font-weight: bold; margin-top: 0.75rem; text-align: center;"></p>
 
       <div class="button-container" style="gap: 0.75rem;">
-        <button id="hint-btn" class="rubber-button">Hint</button>
-        <button id="next-btn" class="rubber-button">Next</button>
+        <button id="hint-btn" class="rubber-button" hidden>Hint</button>
+        <button id="next-btn" class="rubber-button" hidden>Next</button>
       </div>
     </div>
 </main>
@@ -428,6 +429,166 @@ fetch("/nav.html")
     el.appendChild(svg);
   }
 
+  // -----------------------------
+  // Inline-SVG histogram for Geometric(p)
+  // -----------------------------
+  // The geometric distribution has infinite support, so maxX controls how
+  // many columns are displayed. Use highlightFrom to select a right-hand tail.
+  function renderGeometricHistogram(container, p, options = {}) {
+    const el = (typeof container === 'string') ? document.querySelector(container) : container;
+    if (!el) return;
+
+    const W = options.width ?? 640;
+    const H = options.height ?? 260;
+    const maxX = options.maxX ?? 20;
+    const pad = { left: 48, right: 16, top: (options.title ? 30 : 14), bottom: 48, ...(options.padding ?? {}) };
+
+    const blue = options.blue ?? '#4a90e2';
+    const red = options.red ?? '#e74c3c';
+    const highlight = new Set(options.highlightXs ?? []);
+    const highlightFrom = options.highlightFrom ?? Infinity;
+
+    const data = [];
+    for (let x = 1; x <= maxX; x++) {
+      data.push({ x, p: p * Math.pow(1 - p, x - 1) });
+    }
+
+    const maxP = data[0].p;
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+    const xStep = plotW / data.length;
+    const barW = xStep * 0.78;
+    const y = (prob) => pad.top + (1 - prob / maxP) * plotH;
+    const x0 = (i) => pad.left + i * xStep + (xStep - barW) / 2;
+
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', String(H));
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', options.ariaLabel ?? `Histogram of Geometric(p=${p}), shown for x=1 through ${maxX}`);
+
+    const g = document.createElementNS(svgNS, 'g');
+    svg.appendChild(g);
+
+    if (options.title) {
+      const t = document.createElementNS(svgNS, 'text');
+      t.setAttribute('x', String(W / 2));
+      t.setAttribute('y', '18');
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('font-size', '14');
+      t.setAttribute('font-weight', '600');
+      t.setAttribute('fill', 'currentColor');
+      t.textContent = options.title;
+      g.appendChild(t);
+    }
+
+    const axisColor = options.axisColor ?? 'currentColor';
+    const axisOpacity = options.axisOpacity ?? '0.55';
+    const baseY = pad.top + plotH;
+
+    const xAxis = document.createElementNS(svgNS, 'line');
+    xAxis.setAttribute('x1', String(pad.left));
+    xAxis.setAttribute('y1', String(baseY));
+    xAxis.setAttribute('x2', String(pad.left + plotW));
+    xAxis.setAttribute('y2', String(baseY));
+    xAxis.setAttribute('stroke', axisColor);
+    xAxis.setAttribute('stroke-opacity', axisOpacity);
+    g.appendChild(xAxis);
+
+    const yAxis = document.createElementNS(svgNS, 'line');
+    yAxis.setAttribute('x1', String(pad.left));
+    yAxis.setAttribute('y1', String(pad.top));
+    yAxis.setAttribute('x2', String(pad.left));
+    yAxis.setAttribute('y2', String(baseY));
+    yAxis.setAttribute('stroke', axisColor);
+    yAxis.setAttribute('stroke-opacity', axisOpacity);
+    g.appendChild(yAxis);
+
+    const ticks = options.yTicks ?? 3;
+    for (let k = 0; k < ticks; k++) {
+      const frac = (ticks === 1) ? 0 : k / (ticks - 1);
+      const yy = pad.top + (1 - frac) * plotH;
+      const tick = document.createElementNS(svgNS, 'line');
+      tick.setAttribute('x1', String(pad.left - 4));
+      tick.setAttribute('y1', String(yy));
+      tick.setAttribute('x2', String(pad.left));
+      tick.setAttribute('y2', String(yy));
+      tick.setAttribute('stroke', axisColor);
+      tick.setAttribute('stroke-opacity', axisOpacity);
+      g.appendChild(tick);
+
+      const lab = document.createElementNS(svgNS, 'text');
+      lab.setAttribute('x', String(pad.left - 8));
+      lab.setAttribute('y', String(yy + 4));
+      lab.setAttribute('text-anchor', 'end');
+      lab.setAttribute('font-size', '12');
+      lab.setAttribute('fill', axisColor);
+      lab.setAttribute('fill-opacity', axisOpacity);
+      const val = frac * maxP;
+      lab.textContent = (options.yFormatter ? options.yFormatter(val) : val.toFixed(3).replace(/0+$/, '').replace(/\.$/, ''));
+      g.appendChild(lab);
+    }
+
+    data.forEach((d, i) => {
+      const xx = x0(i);
+      const yy = y(d.p);
+      const rect = document.createElementNS(svgNS, 'rect');
+      rect.setAttribute('x', String(xx));
+      rect.setAttribute('y', String(yy));
+      rect.setAttribute('width', String(barW));
+      rect.setAttribute('height', String(Math.max(0, baseY - yy)));
+      rect.setAttribute('fill', (highlight.has(d.x) || d.x >= highlightFrom) ? red : blue);
+      rect.setAttribute('fill-opacity', '0.85');
+      rect.setAttribute('stroke', 'currentColor');
+      rect.setAttribute('stroke-opacity', '0.35');
+      rect.setAttribute('stroke-width', '1');
+      g.appendChild(rect);
+
+      const showLabel = maxX <= 20 || d.x % 2 === 0;
+      if (showLabel) {
+        const xl = document.createElementNS(svgNS, 'text');
+        xl.setAttribute('x', String(xx + barW / 2));
+        xl.setAttribute('y', String(baseY + 20));
+        xl.setAttribute('text-anchor', 'middle');
+        xl.setAttribute('font-size', '12');
+        xl.setAttribute('fill', 'currentColor');
+        xl.setAttribute('fill-opacity', '0.85');
+        xl.textContent = String(d.x);
+        g.appendChild(xl);
+      }
+    });
+
+    if (options.xLabel) {
+      const xl = document.createElementNS(svgNS, 'text');
+      xl.setAttribute('x', String(pad.left + plotW / 2));
+      xl.setAttribute('y', String(H - 10));
+      xl.setAttribute('text-anchor', 'middle');
+      xl.setAttribute('font-size', '12');
+      xl.setAttribute('fill', 'currentColor');
+      xl.setAttribute('fill-opacity', '0.85');
+      xl.textContent = options.xLabel;
+      g.appendChild(xl);
+    }
+
+    if (options.yLabel) {
+      const yl = document.createElementNS(svgNS, 'text');
+      yl.setAttribute('x', '16');
+      yl.setAttribute('y', String(pad.top + plotH / 2));
+      yl.setAttribute('text-anchor', 'middle');
+      yl.setAttribute('font-size', '12');
+      yl.setAttribute('fill', 'currentColor');
+      yl.setAttribute('fill-opacity', '0.85');
+      yl.setAttribute('transform', `rotate(-90 16 ${pad.top + plotH / 2})`);
+      yl.textContent = options.yLabel;
+      g.appendChild(yl);
+    }
+
+    el.innerHTML = '';
+    el.appendChild(svg);
+  }
+
 // -----------------------------
   // Inline-SVG histogram for discrete pdfs (already used above)
   // -----------------------------
@@ -590,28 +751,22 @@ fetch("/nav.html")
 
   
   // -----------------------------
-  // Static binomial histograms for the lesson text above
+  // Static geometric histograms for the lesson text above
   // -----------------------------
-  const LESSON_N = 20;
-  const LESSON_P = 5/18;
+  const LESSON_P = 1/6;
 
-  renderBinomialHistogram('#binom-hist-1', LESSON_N, LESSON_P, {
+  renderGeometricHistogram('#geom-hist-1', LESSON_P, {
+    maxX: 20,
     xLabel: 'x',
     yLabel: 'f(x)'
   });
 
-  renderBinomialHistogram('#binom-hist-2', LESSON_N, LESSON_P, {
+  renderGeometricHistogram('#geom-hist-2', LESSON_P, {
+    maxX: 20,
     xLabel: 'x',
     yLabel: 'f(x)',
-    highlightXs: [6]
+    highlightFrom: 5
   });
-
-  renderBinomialHistogram('#binom-hist-3', LESSON_N, LESSON_P, {
-    xLabel: 'x',
-    yLabel: 'f(x)',
-    highlightXs: [0,1,2]
-  });
-
 
 
   

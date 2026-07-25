@@ -88,8 +88,8 @@ fetch("/nav.html")
     </p>
 
     <p>So, the number of made shots is modelled by a binomial distribution \(f(x;740,0.413)\).  Our usual strategies for finding \(P(X \geq 300)\), 
-    \[f(300;740,0.413)+...+f(740;740,0.413)\] or the complement \[1 - (f(0;740,0.413)+...+f(299;740,0.413))\] both involve computing unreasonably 
-    long sums.  However, the normal approximation can help us:</p>
+    \[P(X \geq 300) = f(300;740,0.413)+...+f(740;740,0.413)\] or the complement \[P(X \geq 300) = 1 - P(X < 300) = 1 - (f(0;740,0.413)+...+f(299;740,0.413))\] 
+    both involve computing unreasonably long sums.  However, the normal approximation can help us:</p>
 
     <p>By DeMoivre-Laplace, we approximate with \[\mu = 740(0.413) \approx 305.6 \hspace{1cm} \text{ and } \hspace{1cm} sigma = \sqrt{740(0.413)(1-0.413)} 
     \approx 13.4\] Then converting to the standard normal distribution using \(Z = \frac{X - \mu}{\sigma}\):

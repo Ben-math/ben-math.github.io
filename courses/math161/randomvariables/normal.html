@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -52,7 +53,7 @@ fetch("/nav.html")
     </p>
     
     <p>The normal distribution is the well-known bell-shaped curve, symmetric about its mean \(\mu\).  For instance, with \(\mu = 3\), see below some 
-    examples for various values of \(\sigma^2\) (\({\color{green}0.5}, {\color{red}1}, {\color{blue}2}\)): INSERT FIGURE HERE <br>
+    examples for various values of \(\sigma^2\) (\({\color{green}0.5}, {\color{red}1}, {\color{blue}2}\)): <div id="normal-comparison-figure" style="margin:1rem auto; max-width:740px;"></div> <br>
     That is, changing \(\mu\) translates the graph to the left or right, and increasing \(\sigma\) flattens the curve out.
     </p>
 
@@ -100,10 +101,10 @@ fetch("/nav.html")
     </ul>
     </p>
 
-    <p>INSERT FIGURE HERE</p>
+    <p><div id="normal-empirical-figure" style="margin:1rem auto; max-width:740px;"></div></p>
 
     <p>Since the normal distribution doesn't integrate easily, we use a table of already computed probabilities \(P(Z \leq z)\) for various values of 
-    \(z\), where \(Z\) has standard normal distribution.  Visually, see \({\color{red}P(Z \leq 1.78)} \approx {\color{red}0.9625}\): INSERT FIGURE HERE
+    \(z\), where \(Z\) has standard normal distribution.  Visually, see \({\color{red}P(Z \leq 1.78)} \approx {\color{red}0.9625}\): <div id="normal-left-178-figure" style="margin:1rem auto; max-width:740px;"></div>
     </p>
 
     <p>
@@ -1665,13 +1666,13 @@ fetch("/nav.html")
   </table>
 
 </div>
-    INSERT FIGURE HERE
+    <div id="normal-right-115-figure" style="margin:1rem auto; max-width:740px;"></div>
     \[{\color{red}P(Z \geq 1.15)} = 1 - {\color{blue}P(Z < 1.15)} = 1 - {\color{blue}0.8749} = {\color{red}0.1251}\]
     </p>
 
     <p>Finally, if we want to find the probability that \(z\) lands in a range, we can compute as follows:
     \[{\color{red}P(-2.11 \leq Z \leq 0.26)} = {\color{blue}P(Z \leq 0.26)} - {\color{blue}P(Z \leq -2.11)}\]
-    \[\approx {\color{blue}0.6026} - {\color{blue}0.0174} = {\color{red}0.5852}\] INSERT FIGURE HERE
+    \[\approx {\color{blue}0.6026} - {\color{blue}0.0174} = {\color{red}0.5852}\] <div id="normal-between-figure" style="margin:1rem auto; max-width:740px;"></div>
       <div style="
   display:flex;
   justify-content:center;
@@ -2455,7 +2456,7 @@ fetch("/nav.html")
     <p>By the corollary relating to the standard normal distribution, \(Z = \frac{X - \mu}{\sigma}\), so
     \[{\color{red}P(44 \leq X \leq 53)} = P\left({\color{blue}\frac{44-50}{3}} \leq Z \leq {\color{blue}\frac{53-50}{3}}\right) = 
     P({\color{blue}-2} \leq Z \leq {\color{blue}1})\]
-    \[= {\color{blue}P(Z \leq 1)} - {\color{blue}P(Z \leq -2)} \approx {\color{blue}0.8413} - {\color{blue}0.0228} = {\color{red}0.8185}\] INSERT FIGURE HERE
+    \[= {\color{blue}P(Z \leq 1)} - {\color{blue}P(Z \leq -2)} \approx {\color{blue}0.8413} - {\color{blue}0.0228} = {\color{red}0.8185}\] <div id="normal-x-range-figure" style="margin:1rem auto; max-width:740px;"></div>
     <div style="
   display:flex;
   justify-content:center;
@@ -4023,7 +4024,7 @@ down.</p>
   
 <p>Its \(z\)-score is \({\color{red}1.28}\).  
 So we go \({\color{red}\text{up } 1.28}\) standard deviations from the mean: 
-\[k = \mu {\color{red}+ 1.28}\sigma = 50 {\color{red}+ 1.28}(3) = {\color{red}53.84}\]  INSERT FIGURE HERE
+\[k = \mu {\color{red}+ 1.28}\sigma = 50 {\color{red}+ 1.28}(3) = {\color{red}53.84}\]  <div id="normal-left-5384-figure" style="margin:1rem auto; max-width:740px;"></div>
 For the first quartile, we are looking for a \(k\) 
 such that \[P(X < k) = 0.25\]  In the normal table, we find the value \({\color{red}0.2514}\) which is closest to 0.25: </p>
 
@@ -4807,8 +4808,8 @@ such that \[P(X < k) = 0.25\]  In the normal table, we find the value \({\color{
                   
 <p>Its \(z\)-score is 
 \({\color{red}-0.67}\).  So we go \({\color{red}\text{down } 0.67}\) standard deviations from the mean: 
-\[k = \mu {\color{red}- 0.67}\sigma = 50 {\color{red}- 0.67}(3) = {\color{red}47.99}\]  INSERT FIGURE HERE</p>
-<div class="button-container">
+\[k = \mu {\color{red}- 0.67}\sigma = 50 {\color{red}- 0.67}(3) = {\color{red}47.99}\]  <div id="normal-left-4799-figure" style="margin:1rem auto; max-width:740px;"></div></p>
+<div class="button-container" style="display:none;">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>
 
@@ -4825,7 +4826,7 @@ such that \[P(X < k) = 0.25\]  In the normal table, we find the value \({\color{
 
       <p id="stage-feedback" style="font-weight: bold; margin-top: 0.75rem; text-align: center;"></p>
 
-      <div class="button-container" style="gap: 0.75rem;">
+      <div class="button-container" style="display:none; gap: 0.75rem;">
         <button id="hint-btn" class="rubber-button">Hint</button>
         <button id="next-btn" class="rubber-button">Next</button>
       </div>
@@ -4833,6 +4834,205 @@ such that \[P(X < k) = 0.25\]  In the normal table, we find the value \({\color{
 </main>
   
 <script>
+
+  // -----------------------------
+  // Static normal-distribution figures for the lesson text above
+  // -----------------------------
+  function renderNormalDistribution(container, mean, sd, options = {}) {
+    const el = (typeof container === 'string') ? document.querySelector(container) : container;
+    if (!el || !(sd > 0)) return;
+
+    const W = options.width ?? 680;
+    const H = options.height ?? 280;
+    const pad = { left: 52, right: 22, top: 24, bottom: 48, ...(options.padding ?? {}) };
+
+    const paleBlue = options.paleBlue ?? '#b7d8f0';
+    const paleRed = options.paleRed ?? '#f2b6b6';
+    const darkRed = options.darkRed ?? '#c94f4f';
+
+    const xMin = mean - 4 * sd;
+    const xMax = mean + 4 * sd;
+    const peak = 1 / (Math.sqrt(2 * Math.PI) * sd);
+    const yMax = peak * 1.16;
+
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+    const baselineY = pad.top + plotH;
+    const xMap = x => pad.left + ((x - xMin) / (xMax - xMin)) * plotW;
+    const yMap = y => pad.top + (1 - y / yMax) * plotH;
+    const pdf = x => Math.exp(-0.5 * Math.pow((x - mean) / sd, 2)) / (Math.sqrt(2 * Math.PI) * sd);
+
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', String(H));
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', options.ariaLabel ?? `Normal distribution with mean ${mean} and standard deviation ${sd}`);
+
+    const add = (name, attrs = {}, parent = svg) => {
+      const node = document.createElementNS(svgNS, name);
+      for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, String(v));
+      parent.appendChild(node);
+      return node;
+    };
+
+    const axisColor = options.axisColor ?? 'currentColor';
+    add('line', { x1: pad.left, y1: baselineY, x2: pad.left + plotW, y2: baselineY, stroke: axisColor, 'stroke-opacity': 0.6, 'stroke-width': 1.2 });
+    add('line', { x1: pad.left, y1: pad.top, x2: pad.left, y2: baselineY, stroke: axisColor, 'stroke-opacity': 0.6, 'stroke-width': 1.2 });
+
+    const samples = 360;
+    const curvePoints = [];
+    for (let i = 0; i <= samples; i++) {
+      const x = xMin + (xMax - xMin) * i / samples;
+      curvePoints.push([xMap(x), yMap(pdf(x))]);
+    }
+
+    const fullPath = `M ${curvePoints[0][0]} ${baselineY} ` +
+      curvePoints.map(([px, py]) => `L ${px} ${py}`).join(' ') +
+      ` L ${curvePoints[curvePoints.length - 1][0]} ${baselineY} Z`;
+    add('path', { d: fullPath, fill: paleBlue, 'fill-opacity': 0.9, stroke: 'none' });
+
+    const shadeInterval = (interval, fill) => {
+      let [a, b] = interval;
+      a = Math.max(xMin, a);
+      b = Math.min(xMax, b);
+      if (!(b > a)) return;
+      const pts = [];
+      const n = Math.max(2, Math.round(samples * (b - a) / (xMax - xMin)));
+      for (let i = 0; i <= n; i++) {
+        const x = a + (b - a) * i / n;
+        pts.push([xMap(x), yMap(pdf(x))]);
+      }
+      const d = `M ${xMap(a)} ${baselineY} ` +
+        pts.map(([px, py]) => `L ${px} ${py}`).join(' ') +
+        ` L ${xMap(b)} ${baselineY} Z`;
+      add('path', { d, fill, 'fill-opacity': 0.95, stroke: 'none' });
+    };
+
+    for (const interval of (options.selected ?? [])) shadeInterval(interval, paleRed);
+    for (const interval of (options.superSelected ?? [])) shadeInterval(interval, darkRed);
+
+    const curveD = curvePoints.map(([px, py], i) => `${i === 0 ? 'M' : 'L'} ${px} ${py}`).join(' ');
+    add('path', { d: curveD, fill: 'none', stroke: options.curveColor ?? 'currentColor', 'stroke-width': 2 });
+
+    const ticks = options.ticks ?? [xMin, mean - 3*sd, mean - 2*sd, mean - sd, mean, mean + sd, mean + 2*sd, mean + 3*sd, xMax];
+    const fmt = options.xFormatter ?? (x => {
+      const rounded = Math.abs(x) < 1e-10 ? 0 : x;
+      return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+    });
+    for (const value of ticks) {
+      if (value < xMin - 1e-9 || value > xMax + 1e-9) continue;
+      const px = xMap(value);
+      add('line', { x1: px, y1: baselineY, x2: px, y2: baselineY + 5, stroke: axisColor, 'stroke-opacity': 0.7 });
+      const lab = add('text', { x: px, y: baselineY + 20, 'text-anchor': 'middle', 'font-size': 11, fill: axisColor, 'fill-opacity': 0.85 });
+      lab.textContent = fmt(value);
+    }
+
+    el.innerHTML = '';
+    el.appendChild(svg);
+  }
+
+  // This first figure is unique: three unshaded curves on one set of axes.
+  function renderNormalComparisonFigure(container) {
+    const el = (typeof container === 'string') ? document.querySelector(container) : container;
+    if (!el) return;
+
+    const W = 680, H = 280;
+    const pad = { left: 52, right: 22, top: 24, bottom: 48 };
+    const mean = 3;
+    const xMin = -5, xMax = 11;
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+    const baselineY = pad.top + plotH;
+    const peak = 1 / (Math.sqrt(2 * Math.PI) * 0.5);
+    const yMax = peak * 1.16;
+    const xMap = x => pad.left + ((x - xMin) / (xMax - xMin)) * plotW;
+    const yMap = y => pad.top + (1 - y / yMax) * plotH;
+    const pdf = (x, sd) => Math.exp(-0.5 * Math.pow((x - mean) / sd, 2)) / (Math.sqrt(2 * Math.PI) * sd);
+
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', String(H));
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', 'Three normal curves with mean 3 and standard deviations 0.5, 1, and 2');
+
+    const add = (name, attrs = {}) => {
+      const node = document.createElementNS(svgNS, name);
+      for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, String(v));
+      svg.appendChild(node);
+      return node;
+    };
+
+    add('line', { x1: pad.left, y1: baselineY, x2: pad.left + plotW, y2: baselineY, stroke: 'currentColor', 'stroke-opacity': 0.6, 'stroke-width': 1.2 });
+    add('line', { x1: pad.left, y1: pad.top, x2: pad.left, y2: baselineY, stroke: 'currentColor', 'stroke-opacity': 0.6, 'stroke-width': 1.2 });
+
+    for (let value = -5; value <= 11; value += 2) {
+      const px = xMap(value);
+      add('line', { x1: px, y1: baselineY, x2: px, y2: baselineY + 5, stroke: 'currentColor', 'stroke-opacity': 0.7 });
+      const lab = add('text', { x: px, y: baselineY + 20, 'text-anchor': 'middle', 'font-size': 11, fill: 'currentColor', 'fill-opacity': 0.85 });
+      lab.textContent = String(value);
+    }
+
+    const curves = [
+      { sd: 0.5, color: 'green' },
+      { sd: 1, color: 'red' },
+      { sd: 2, color: 'blue' }
+    ];
+    for (const c of curves) {
+      const pts = [];
+      for (let i = 0; i <= 420; i++) {
+        const x = xMin + (xMax - xMin) * i / 420;
+        pts.push([xMap(x), yMap(pdf(x, c.sd))]);
+      }
+      const d = pts.map(([px, py], i) => `${i === 0 ? 'M' : 'L'} ${px} ${py}`).join(' ');
+      add('path', { d, fill: 'none', stroke: c.color, 'stroke-width': 2.5 });
+    }
+
+    el.innerHTML = '';
+    el.appendChild(svg);
+  }
+
+  renderNormalComparisonFigure('#normal-comparison-figure');
+
+  renderNormalDistribution('#normal-empirical-figure', 168, 7, {
+    selected: [[154, 182]],
+    superSelected: [[161, 175]],
+    ticks: [140, 147, 154, 161, 168, 175, 182, 189, 196]
+  });
+
+  renderNormalDistribution('#normal-left-178-figure', 0, 1, {
+    selected: [[-4, 1.78]],
+    ticks: [-4, -3, -2, -1, 0, 1, 1.78, 2, 3, 4]
+  });
+
+  renderNormalDistribution('#normal-right-115-figure', 0, 1, {
+    selected: [[1.15, 4]],
+    ticks: [-4, -3, -2, -1, 0, 1, 1.15, 2, 3, 4]
+  });
+
+  renderNormalDistribution('#normal-between-figure', 0, 1, {
+    selected: [[-2.11, 0.26]],
+    ticks: [-4, -3, -2.11, -2, -1, 0, 0.26, 1, 2, 3, 4]
+  });
+
+  renderNormalDistribution('#normal-x-range-figure', 50, 3, {
+    selected: [[44, 53]],
+    ticks: [38, 41, 44, 47, 50, 53, 56, 59, 62]
+  });
+
+  renderNormalDistribution('#normal-left-5384-figure', 50, 3, {
+    selected: [[38, 53.84]],
+    ticks: [38, 41, 44, 47, 50, 53.84, 56, 59, 62]
+  });
+
+  renderNormalDistribution('#normal-left-4799-figure', 50, 3, {
+    selected: [[38, 47.99]],
+    ticks: [38, 41, 44, 47.99, 50, 53, 56, 59, 62]
+  });
+
   const startBtn = document.getElementById('start-btn');
   const hintBtn = document.getElementById('hint-btn');
   const nextBtn = document.getElementById('next-btn');

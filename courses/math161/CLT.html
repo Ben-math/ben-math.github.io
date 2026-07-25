@@ -111,6 +111,17 @@ fetch("/nav.html")
     is different from that of the original random variable \(X\).  \[z = \frac{\overline{x} - \mu_X}{\left(\frac{\sigma_X}{\sqrt{n}}\right)}\]
     The standard deviation of the sample mean, \(\sigma_{\overline{x}} = \frac{\sigma_X}{\sqrt{n}}\), is called the <b>standard error</b> of the mean.
     </p>
+
+    <p>The preceding applies when we are asked questions about averages.  The second version deals with sums:</p>
+
+    <p>If we repeatedly sample \(n > 30\) from a random variable \(X\) with known mean and standard deviation, then \(\Sigma X\) (the sum of the values 
+    of the sample) tends to a normal distribution with \[\mu_{\Sigma X} = n \cdot \mu_X \hspace{5mm} \text{ and } \hspace{5mm} \sigma_{\Sigma X} = 
+    \sqrt{n} \cdot \sigma_X\]</p>
+
+    <p>And the final version deals with proportions:</p>
+
+    <p>If we repeatedly sample \(n > 30\) from a random variable \(X\) with known probability of success \(p\), then \(\hat{p}\) (the sampling proportion) 
+    tends to a normal distribution with \[\mu_{\hat{p}} = p \hspace{5mm} \text{ and } \hspace{5mm} \sigma_{\hat{p}} = \sqrt{\frac{p(1-p)}{n}}\]</p>
 <div class="button-container" style="display:none;">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>

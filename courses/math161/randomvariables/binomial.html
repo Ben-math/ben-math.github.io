@@ -1,20 +1,20 @@
+
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
-  <meta charset="UTF-8" />
-  <title>Binomial Distribution</title>
-  <link rel="stylesheet" href="/style.css" />
-
-  <script id="MathJax-script" async
-    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-  </script>
-</head>
+<meta content="Personal website of Ben Fraser, with math education activities for students and teachers." name="description"/>
+<meta charset="utf-8">
+<title>Binomial Distribution</title>
+<link href="/style.css" rel="stylesheet"/>
+<script async="" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+</meta></head>
 <body>
-  <header>
-    <h1>Binomial Distribution</h1>
-    <div id="nav-placeholder"></div>
-      <script>
+<header>
+<h1>Binomial Distribution</h1>
+<div id="nav-placeholder"></div>
+<script>
 fetch("/nav.html")
   .then(response => response.text())
   .then(html => {
@@ -38,51 +38,42 @@ fetch("/nav.html")
     console.error("Failed to load nav:", err);
   });
 </script>
-  </header>
-  <main>
-
-    <p>A Bernoulli trial is an experiment which can either be considered a success or a failure.  For instance, one may consider flipping heads a 
+</header>
+<main>
+<p>A Bernoulli trial is an experiment which can either be considered a success or a failure.  For instance, one may consider flipping heads a 
       success (in which case flipping tails is a failure), or rolling a 2 or lower a success (in which case rolling a 3 or higher is a failure).
     </p>
-    
-    <p>If \(n\) many Bernoulli trials are performed, each with probability \(p\) of success, then the random variable \(X\) with parameters \(n,p\) is 
+<p>If \(n\) many Bernoulli trials are performed, each with probability \(p\) of success, then the random variable \(X\) with parameters \(n,p\) is 
       called a <b>binomial random variable</b>.  Its pdf is called a <b>binomial distribution</b>, given by
       \[f(x;n,p) = \binom{n}{x}p^x(1-p)^{n-x} \hspace{2cm} \text{ for } x \in \{0, 1, ..., n\}\]
       The input x is the number of successes, so \(f(x; n, p)\) gives the probability of having \(x\) many successes when doing \(n\) many Bernoulli 
       trials that have a probability \(p\) of success.
     </p>
-
-      
-    <p>The Binomial coefficients \(\binom{n}{x}\) are entries in Pascal's triangle, can be computed via the formula
+<p>The Binomial coefficients \(\binom{n}{x}\) are entries in Pascal's triangle, can be computed via the formula
       \[\binom{n}{x} = \frac{n!}{(n-x)!x!}\]
       or by typing "nCx" (read as \(n\) choose \(x\)) into your calculator.
     </p>
-
-
-    <p>For example, let us consider the Bernoulli trial where a success is  rolling a sum of 9 or higher on two 6-sided dice.  This has a probability of 
+<p>For example, let us consider the Bernoulli trial where a success is  rolling a sum of 9 or higher on two 6-sided dice.  This has a probability of 
       \(\frac{10}{36} = \frac{5}{18}\).  If we perform this experiment 20 times, then the corresponding binomial random variable has parameters 
       \(\left(20, \frac{5}{18}\right)\), and pdf
       \[f\left(x;20,\frac{5}{18}\right) = \binom{20}{x}\left(\frac{5}{18}\right)^x\left(\frac{13}{18}\right)^{20-x}\]
       Since successes are less likely than failures, we see that the taller columns in the pdf's histogram tend leftwards:
       <div id="binom-hist-1" style="margin: 1rem auto; max-width: 640px;"></div>
-    </p>
-
-    <p>For instance, to find the probability of rolling a 9 or higher 6 out of the 20 times, we compute
+</p>
+<p>For instance, to find the probability of rolling a 9 or higher 6 out of the 20 times, we compute
       \[f\left(6;20,\frac{5}{18}\right) = \binom{20}{6}\left(\frac{5}{18}\right)^6\left(\frac{13}{18}\right)^{14} = 0.187\]
       Note that the probability above corresponds to the odds of 6 successes and 14 failures.
       <div id="binom-hist-2" style="margin: 1rem auto; max-width: 640px;"></div>
-    </p>
-
-    <p>We might also want to answer questions of the form
+</p>
+<p>We might also want to answer questions of the form
       \[\text{``What is the probability of rolling a 9 or higher 2 or fewer times?''}\]
       To answer this question, we are finding the following sum:
       \[P(X \leq 2) = P(X = 0) + P(X = 1) + P(X = 2) = f\left(0;20,\frac{5}{18}\right) + f\left(1;20,\frac{5}{18}\right) + 
       f\left(2;20,\frac{5}{18}\right) \approx 0.055\]
       That is, we are summing the 3 leftmost columns in the histogram:
       <div id="binom-hist-3" style="margin: 1rem auto; max-width: 640px;"></div>
-    </p>
-
-    <p>The preceding required us to compute the value of the pdf 3 times for our sum, which was quite time consuming.  Consider the problem 
+</p>
+<p>The preceding required us to compute the value of the pdf 3 times for our sum, which was quite time consuming.  Consider the problem 
       \[\text{``What is the probability of rolling a 9 or higher 18 or fewer times?''}\]
       We wouldn't want to find the sum
       \[P(X \leq 18) = P(X = 0) + P(X = 1) + ... + P(X = 18)\]
@@ -92,37 +83,27 @@ fetch("/nav.html")
       0.9999999996\]
       That is, we sum the two rightmost columns of the histogram, and subtract the result from 1.
     </p>
-
-
-    <p>Finally, we have convenient formulas which simplify the computation of mean and variance specifically for binomial distributions: 
+<p>Finally, we have convenient formulas which simplify the computation of mean and variance specifically for binomial distributions: 
       \[\mu = np \hspace{2cm} \sigma^2 = np(1-p)\]
       In our running example, we find
       \[\mu = 20\left(\frac{5}{18}\right) \approx 5.56 \hspace{2cm} \sigma = \sqrt{20\left(\frac{5}{18}\right)\left(\frac{13}{18}\right)} \approx 2\]
     </p>
-<div class="button-container">
-      <button id="start-btn" class="rubber-button">Start!</button>
-    </div>
-
-    <p id="question-text" class="math"></p>
-
-    <div id="activity-area" style="margin-top: 1rem;">
-      <div id="table-area" class="math" style="margin: 1rem auto; max-width: 900px; text-align: center;"></div>
-
-      <div id="mean-area" class="math" style="margin-top: 0.75rem; text-align: center;"></div>
-
-      <div id="work-area" class="math" style="margin-top: 1rem; text-align: center;"></div>
-
-      <div id="histogram-area" style="margin: 1rem auto; max-width: 740px;"></div>
-
-      <p id="stage-feedback" style="font-weight: bold; margin-top: 0.75rem; text-align: center;"></p>
-
-      <div class="button-container" style="gap: 0.75rem;">
-        <button id="hint-btn" class="rubber-button">Hint</button>
-        <button id="next-btn" class="rubber-button">Next</button>
-      </div>
-    </div>
+<div class="button-container" style="display:none">
+<button class="rubber-button" id="start-btn">Start!</button>
+</div>
+<p class="math" id="question-text"></p>
+<div id="activity-area" style="margin-top: 1rem;">
+<div class="math" id="table-area" style="margin: 1rem auto; max-width: 900px; text-align: center;"></div>
+<div class="math" id="mean-area" style="margin-top: 0.75rem; text-align: center;"></div>
+<div class="math" id="work-area" style="margin-top: 1rem; text-align: center;"></div>
+<div id="histogram-area" style="margin: 1rem auto; max-width: 740px;"></div>
+<p id="stage-feedback" style="font-weight: bold; margin-top: 0.75rem; text-align: center;"></p>
+<div class="button-container" style="gap: 0.75rem;;display:none">
+<button class="rubber-button" id="hint-btn">Hint</button>
+<button class="rubber-button" id="next-btn">Next</button>
+</div>
+</div>
 </main>
-  
 <script>
   const startBtn = document.getElementById('start-btn');
   const hintBtn = document.getElementById('hint-btn');
@@ -1280,11 +1261,7 @@ function buildType1BinomialProblem() {
   });
 
 </script>
-
-
-
-  <audio id="click-sound" src="button.mp3" preload="auto"></audio>
-  <audio id="set-sound" src="set2.mp3" preload="auto"></audio>
-
+<audio id="click-sound" preload="auto" src="button.mp3"></audio>
+<audio id="set-sound" preload="auto" src="set2.mp3"></audio>
 </body>
 </html>

@@ -63,7 +63,7 @@ fetch("/nav.html")
         of these averages is approximated by a normal distribution.</li>
     </ul>
     For instance, consider Jokic playing multiple games in a season.  In each game, he takes multiple shots (each shot is itself a Bernoulli trial).  
-    Each game corresponds to one of the observed averages (his FG\% for that game), and if he plays enough games, we expect that the distribution of FG 
+    Each game corresponds to one of the observed averages (his FG% for that game), and if he plays enough games, we expect that the distribution of FG 
     percentages per game will look approximately normal.
     </p>
 
@@ -76,8 +76,11 @@ fetch("/nav.html")
     </p>
 
 
-    <p>To find the probability of waiting less than 5 hours, we take the area of the rectangle under the function which is to the left of 5:
-    \[P(X < 5) = (5 - 2) \cdot \frac{1}{10} = \frac{3}{10}\] <div id="uniform-figure-5" style="margin: 1rem auto; max-width: 700px;"></div>
+    <p>The specific earliest case of the Central Limit Theorem being applied to the binomial distribution is called the De Moivre--Laplace Theorem: <br>
+    If \(X\) is a binomial random variable with distribution \(f(x;n,p)\), then it is approximated by the normal random variable with distribution 
+    \(g(x; np, \sqrt{np(1-p)})\). <br>
+    Why?  Recall that the binomial distribution has mean and standard deviation
+    \[\mu = np \hspace{5mm} \text{ and } \hspace{5mm} \sigma = \sqrt{np(1-p)}\]
     </p>
 
     <p>To find the probability of waiting between 6 and 10 hours, we take the area of the rectangle under the function which is between 6 and 10:

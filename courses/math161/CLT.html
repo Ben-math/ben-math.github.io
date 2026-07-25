@@ -43,49 +43,36 @@ fetch("/nav.html")
   </header>
   <main>
 
-    <p>We say the continuous random variable \(X\) is uniformly distributed on the interval \((a,b)\) if its probability density function is given by
-        \[f(x) = \begin{cases}
-        \frac{1}{b-a} & \text{if } a < x < b\\
-        0 & \text{otherwise} \end{cases}\]
-    We can easily see that this defines a valid pdf, as the area under it is just the area of a rectangle with length \(b-a\) and height 
-    \(\frac{1}{b-a}\).  <div id="uniform-figure-1" style="margin: 1rem auto; max-width: 700px;"></div>
+    <p>Consider the binomial distribution \(f(x,n,0.413)\) for a variety of \(n \in \{50, 100, 200, 400\}\): INSERT FIGURE HERE INSERT FIGURE HERE
     </p>
     
-    <p>Of continuous distributions, uniform is the easiest to work with, since areas under it are just rectangles, whose areas can be computed as
-      \[\text{base} \times \text{height}\]  <div id="uniform-figure-2" style="margin: 1rem auto; max-width: 700px;"></div> <br> Above is a valid uniform distribution: the area under the function 
-    \[f(x) = \frac{1}{30}, \hspace{1mm} 0 < x < 30 \hspace{3mm} \text{ is } \hspace{3mm} 30 \cdot \frac{1}{30} = 1\]
-    We see a probability computed as an area under the function:
-    \[P(X \leq 20) = 20 \cdot \frac{1}{30} = \frac{2}{3}\]
-    Note that since a line has no area, the following probabilities are equivalent for any real numbers \(a\) and \(b\):
-    \[P(a \leq X \leq b) = P(a < X < b)\]
+    <p>We see that as \(n\) increases, the binomial distribution looks increasingly like the normal distribution.  That the binomial can be 
+    approximated by the normal is in fact the earliest version (1738) of the Central Limit Theorem:</p>
+
+
+    <p>Where \(X_1\), \(X_2\),... is an infinite sequence of independent and identically distributed random variables, each with mean \(\mu\) and 
+    variance \(\sigma^2\), then the distribution of \[\frac{X_1+...+X_n - n\mu}{\sigma\sqrt{n}}\] tends to the standard normal as \(n \to \infty\).
     </p>
 
 
-    <p>Working with the same function which is equal to \(\frac{1}{30}\) when \(0 < x < 30\) and zero elsewhere, let us compute a more complicated 
-    probability: \[P(3 < X \leq 7) \cup P(20 < X) = (7-3) \cdot \frac{1}{30} + (30-20) \cdot \frac{1}{30} = \frac{14}{30} = \frac{7}{15}\]
-    Visually, this is the sum of the areas of two rectangles: <br> <div id="uniform-figure-3" style="margin: 1rem auto; max-width: 700px;"></div>
-    </p>
-
-
-    <p>Let us suppose that on a trip to the emergency room, you are equally likely to wait any amount of time between 2 and 12 hours: that is, since all 
-    wait times in this range are equally likely, they are <i>uniformly distributed</i> over the interval \([2,12]\).  Let us find:
+    <p>Intuitively, the Central Limit Theorem tells us the following.
     <ul>
-      <li>The probability that you wait less than 5 hours</li>
-      <li>The probability that you wait between 6 and 10 hours</li>
-      <li>The \(90^{\text{th}}\) percentile of wait times</li>
-      <li>The probability that you wait less than 3 hours, given that you wait less than 6 hours</li>
-      <li>The average wait time</li>
-      <li>The standard deviation in wait time</li>
+        <li>Suppose we make a large sample of observations, each randomly produced in a way that doesn't depend on the other observations, and then compute 
+          the mean of the observed values.</li>
+        <li>If we repeat this process, resulting in a collection of observed averages, then if the sample size is large enough, the probability distribution 
+        of these averages is approximated by a normal distribution.</li>
     </ul>
+    For instance, consider Jokic playing multiple games in a season.  In each game, he takes multiple shots (each shot is itself a Bernoulli trial).  
+    Each game corresponds to one of the observed averages (his FG\% for that game), and if he plays enough games, we expect that the distribution of FG 
+    percentages per game will look approximately normal.
     </p>
 
-    <p>Let us start by defining the probability density function.  Since all wait times between 2 and 12 hours are equally likely, we have the function
-    \[f(x) = \begin{cases}
-        \frac{1}{10} & \text{if } 2 < x < 12\\
-        0 & \text{otherwise}
-    \end{cases}\]
-    That is, it is equal to \(\frac{1}{12-2} = \frac{1}{10}\) when \(x\) is between 2 and 12, and zero everywhere else, so the total area under the 
-    function is 1: <div id="uniform-figure-4" style="margin: 1rem auto; max-width: 700px;"></div>
+    <p>Of course, the preceding has wide-reaching implications.  For instance, why do so many of the things we observe in nature tend to be normally 
+    distributed? <br>
+    Think about the fact that many quantities in the real world are the sum of many unobserved, random, independent factors.  So an application of the CLT 
+    to these situations can partially explain the commonality of the normal. <br>
+    And as implied by the preceding slide, since the application of the CLT requires sufficiently large sample sizes, this is why large sample statistics 
+    are often used in experiments.
     </p>
 
 

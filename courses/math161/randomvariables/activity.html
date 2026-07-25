@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -738,6 +739,231 @@ fetch("/nav.html")
   }
 
   
+
+  // -----------------------------
+  // Inline-SVG histogram for Geometric(p)
+  // -----------------------------
+  // X is the trial number of the first success, so x = 1, 2, 3, ...
+  function renderGeometricHistogram(container, p, options = {}) {
+    const el = (typeof container === 'string') ? document.querySelector(container) : container;
+    if (!el || !(p > 0 && p <= 1)) return;
+
+    const W = options.width ?? 640;
+    const H = options.height ?? 260;
+    const pad = { left: 48, right: 16, top: (options.title ? 30 : 14), bottom: 48, ...(options.padding ?? {}) };
+    const paleBlue = options.paleBlue ?? '#b7d8f0';
+    const paleRed = options.paleRed ?? '#f2b6b6';
+    const highlight = new Set(options.highlightXs ?? []);
+    const maxX = Math.max(1, Math.floor(options.maxX ?? Math.max(10, Math.ceil(Math.log(0.005) / Math.log(1 - p)))));
+
+    const data = [];
+    for (let x = 1; x <= maxX; x++) data.push({ x, p: Math.pow(1 - p, x - 1) * p });
+    renderDiscreteDistributionHistogram(el, data, {
+      ...options, width: W, height: H, padding: pad,
+      paleBlue, paleRed, highlightXs: [...highlight],
+      ariaLabel: options.ariaLabel ?? `Histogram of Geometric(p=${p})`
+    });
+  }
+
+  // -----------------------------
+  // Inline-SVG histogram for Poisson(mu)
+  // -----------------------------
+  function renderPoissonHistogram(container, mu, options = {}) {
+    const el = (typeof container === 'string') ? document.querySelector(container) : container;
+    if (!el || !(mu > 0)) return;
+
+    const W = options.width ?? 640;
+    const H = options.height ?? 260;
+    const pad = { left: 48, right: 16, top: (options.title ? 30 : 14), bottom: 48, ...(options.padding ?? {}) };
+    const paleBlue = options.paleBlue ?? '#b7d8f0';
+    const paleRed = options.paleRed ?? '#f2b6b6';
+    const highlight = new Set(options.highlightXs ?? []);
+    const defaultMax = Math.ceil(mu + 4 * Math.sqrt(mu));
+    const maxX = Math.max(1, Math.floor(options.maxX ?? defaultMax));
+
+    const data = [];
+    let px = Math.exp(-mu);
+    data.push({ x: 0, p: px });
+    for (let x = 1; x <= maxX; x++) {
+      px *= mu / x;
+      data.push({ x, p: px });
+    }
+    renderDiscreteDistributionHistogram(el, data, {
+      ...options, width: W, height: H, padding: pad,
+      paleBlue, paleRed, highlightXs: [...highlight],
+      ariaLabel: options.ariaLabel ?? `Histogram of Poisson(mu=${mu})`
+    });
+  }
+
+  // Shared renderer used by the geometric and Poisson helpers.
+  function renderDiscreteDistributionHistogram(container, data, options = {}) {
+    const el = (typeof container === 'string') ? document.querySelector(container) : container;
+    if (!el || !Array.isArray(data) || data.length === 0) return;
+
+    const W = options.width ?? 640;
+    const H = options.height ?? 260;
+    const pad = { left: 48, right: 16, top: (options.title ? 30 : 14), bottom: 48, ...(options.padding ?? {}) };
+    const paleBlue = options.paleBlue ?? '#b7d8f0';
+    const paleRed = options.paleRed ?? '#f2b6b6';
+    const highlight = new Set(options.highlightXs ?? []);
+    const maxP = Math.max(...data.map(d => d.p));
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+    const xStep = plotW / data.length;
+    const barW = xStep * 0.78;
+    const y = prob => pad.top + (1 - prob / maxP) * plotH;
+    const x0 = i => pad.left + i * xStep + (xStep - barW) / 2;
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', String(H));
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', options.ariaLabel ?? 'Histogram of a discrete probability distribution');
+    const g = document.createElementNS(svgNS, 'g');
+    svg.appendChild(g);
+
+    const add = (name, attrs) => {
+      const node = document.createElementNS(svgNS, name);
+      for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, String(value));
+      g.appendChild(node);
+      return node;
+    };
+
+    if (options.title) {
+      const t = add('text', { x: W / 2, y: 18, 'text-anchor': 'middle', 'font-size': 14, 'font-weight': 600, fill: 'currentColor' });
+      t.textContent = options.title;
+    }
+
+    const axisColor = options.axisColor ?? 'currentColor';
+    const axisOpacity = options.axisOpacity ?? 0.55;
+    const baseY = pad.top + plotH;
+    add('line', { x1: pad.left, y1: baseY, x2: pad.left + plotW, y2: baseY, stroke: axisColor, 'stroke-opacity': axisOpacity, 'stroke-width': 1 });
+    add('line', { x1: pad.left, y1: pad.top, x2: pad.left, y2: baseY, stroke: axisColor, 'stroke-opacity': axisOpacity, 'stroke-width': 1 });
+
+    const ticks = options.yTicks ?? 3;
+    for (let k = 0; k < ticks; k++) {
+      const frac = ticks === 1 ? 0 : k / (ticks - 1);
+      const yy = pad.top + (1 - frac) * plotH;
+      add('line', { x1: pad.left - 4, y1: yy, x2: pad.left, y2: yy, stroke: axisColor, 'stroke-opacity': axisOpacity, 'stroke-width': 1 });
+      const lab = add('text', { x: pad.left - 8, y: yy + 4, 'text-anchor': 'end', 'font-size': 12, fill: axisColor, 'fill-opacity': axisOpacity });
+      const val = frac * maxP;
+      lab.textContent = options.yFormatter ? options.yFormatter(val) : val.toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
+    }
+
+    const labelEvery = Math.max(1, Math.floor(options.labelEvery ?? (data.length <= 25 ? 1 : 2)));
+    data.forEach((d, i) => {
+      const xx = x0(i);
+      const yy = y(d.p);
+      add('rect', {
+        x: xx, y: yy, width: barW, height: Math.max(0, baseY - yy),
+        fill: highlight.has(d.x) ? paleRed : paleBlue,
+        'fill-opacity': 0.85, stroke: 'currentColor', 'stroke-opacity': 0.35, 'stroke-width': 1
+      });
+      if (i % labelEvery === 0 || i === data.length - 1) {
+        const lab = add('text', { x: xx + barW / 2, y: baseY + 20, 'text-anchor': 'middle', 'font-size': 12, fill: 'currentColor', 'fill-opacity': 0.85 });
+        lab.textContent = String(d.x);
+      }
+    });
+
+    if (options.xLabel) {
+      const lab = add('text', { x: pad.left + plotW / 2, y: H - 10, 'text-anchor': 'middle', 'font-size': 12, fill: 'currentColor', 'fill-opacity': 0.85 });
+      lab.textContent = options.xLabel;
+    }
+    if (options.yLabel) {
+      const lab = add('text', { x: 16, y: pad.top + plotH / 2, 'text-anchor': 'middle', 'font-size': 12, fill: 'currentColor', 'fill-opacity': 0.85, transform: `rotate(-90 16 ${pad.top + plotH / 2})` });
+      lab.textContent = options.yLabel;
+    }
+
+    el.innerHTML = '';
+    el.appendChild(svg);
+  }
+
+  // -----------------------------
+  // Inline-SVG diagram for Normal(mu, sigma)
+  // -----------------------------
+  // selectedRanges and superSelectedRanges are arrays of [left, right] intervals.
+  function renderNormalDistribution(container, mu, sigma, options = {}) {
+    const el = (typeof container === 'string') ? document.querySelector(container) : container;
+    if (!el || !(sigma > 0)) return;
+
+    const W = options.width ?? 660;
+    const H = options.height ?? 280;
+    const pad = { left: 56, right: 24, top: 24, bottom: 48, ...(options.padding ?? {}) };
+    const paleBlue = options.paleBlue ?? '#b7d8f0';
+    const paleRed = options.paleRed ?? '#f2b6b6';
+    const darkRed = options.darkRed ?? '#c94f4f';
+    const axisColor = options.axisColor ?? 'currentColor';
+    const xMin = options.xMin ?? (mu - 4 * sigma);
+    const xMax = options.xMax ?? (mu + 4 * sigma);
+    const peak = 1 / (sigma * Math.sqrt(2 * Math.PI));
+    const yMax = options.yMax ?? 1.25 * peak;
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+    const xPx = x => pad.left + ((x - xMin) / (xMax - xMin)) * plotW;
+    const yPx = y => pad.top + (1 - y / yMax) * plotH;
+    const pdf = x => Math.exp(-0.5 * Math.pow((x - mu) / sigma, 2)) / (sigma * Math.sqrt(2 * Math.PI));
+    const baseY = yPx(0);
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', String(H));
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', options.ariaLabel ?? `Normal distribution with mean ${mu} and standard deviation ${sigma}`);
+
+    const add = (name, attrs) => {
+      const node = document.createElementNS(svgNS, name);
+      for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, String(value));
+      svg.appendChild(node);
+      return node;
+    };
+    const pathForRange = (left, right, closeToAxis) => {
+      const L = Math.max(xMin, left);
+      const R = Math.min(xMax, right);
+      if (!(R > L)) return '';
+      const steps = Math.max(2, Math.ceil(240 * (R - L) / (xMax - xMin)));
+      let d = closeToAxis ? `M ${xPx(L)} ${baseY} L ${xPx(L)} ${yPx(pdf(L))}` : `M ${xPx(L)} ${yPx(pdf(L))}`;
+      for (let i = 1; i <= steps; i++) {
+        const x = L + (R - L) * i / steps;
+        d += ` L ${xPx(x)} ${yPx(pdf(x))}`;
+      }
+      if (closeToAxis) d += ` L ${xPx(R)} ${baseY} Z`;
+      return d;
+    };
+
+    add('line', { x1: pad.left, y1: baseY, x2: pad.left + plotW, y2: baseY, stroke: axisColor, 'stroke-opacity': 0.65, 'stroke-width': 1.2 });
+    add('line', { x1: pad.left, y1: pad.top, x2: pad.left, y2: baseY, stroke: axisColor, 'stroke-opacity': 0.65, 'stroke-width': 1.2 });
+    add('path', { d: pathForRange(xMin, xMax, true), fill: paleBlue, 'fill-opacity': 0.9, stroke: 'none' });
+    for (const [left, right] of (options.selectedRanges ?? [])) {
+      const d = pathForRange(left, right, true);
+      if (d) add('path', { d, fill: paleRed, 'fill-opacity': 0.92, stroke: 'none' });
+    }
+    for (const [left, right] of (options.superSelectedRanges ?? [])) {
+      const d = pathForRange(left, right, true);
+      if (d) add('path', { d, fill: darkRed, 'fill-opacity': 0.95, stroke: 'none' });
+    }
+    add('path', { d: pathForRange(xMin, xMax, false), fill: 'none', stroke: axisColor, 'stroke-width': 2 });
+
+    const tickValues = options.tickValues ?? [mu - 3 * sigma, mu - 2 * sigma, mu - sigma, mu, mu + sigma, mu + 2 * sigma, mu + 3 * sigma];
+    const tickLabels = new Map((options.tickLabels ?? []).map(item => [Number(item.value), String(item.label)]));
+    for (const x of tickValues) {
+      if (x < xMin || x > xMax) continue;
+      add('line', { x1: xPx(x), y1: baseY, x2: xPx(x), y2: baseY + 5, stroke: axisColor, 'stroke-width': 1 });
+      const lab = add('text', { x: xPx(x), y: baseY + 21, 'text-anchor': 'middle', 'font-size': 12, fill: axisColor });
+      lab.textContent = tickLabels.get(Number(x)) ?? (options.tickFormatter ? options.tickFormatter(x) : Number(x.toFixed(2)).toString());
+    }
+
+    const xLab = add('text', { x: pad.left + plotW / 2, y: H - 10, 'text-anchor': 'middle', 'font-size': 12, fill: axisColor, 'fill-opacity': 0.85 });
+    xLab.textContent = options.xLabel ?? 'x';
+    const yLab = add('text', { x: 15, y: pad.top + plotH / 2, 'text-anchor': 'middle', 'font-size': 12, fill: axisColor, 'fill-opacity': 0.85, transform: `rotate(-90 15 ${pad.top + plotH / 2})` });
+    yLab.textContent = options.yLabel ?? 'f(x)';
+
+    el.innerHTML = '';
+    el.appendChild(svg);
+  }
+
+
   // -----------------------------
   // Static binomial histograms for the lesson text above
   // -----------------------------

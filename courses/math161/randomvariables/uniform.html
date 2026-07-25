@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -46,11 +47,11 @@ fetch("/nav.html")
         \frac{1}{b-a} & \text{if } a < x < b\\
         0 & \text{otherwise} \end{cases}\]
     We can easily see that this defines a valid pdf, as the area under it is just the area of a rectangle with length \(b-a\) and height 
-    \(\frac{1}{b-a}\).  INSERT FIGURE HERE
+    \(\frac{1}{b-a}\).  <div id="uniform-figure-1" style="margin: 1rem auto; max-width: 700px;"></div>
     </p>
     
     <p>Of continuous distributions, uniform is the easiest to work with, since areas under it are just rectangles, whose areas can be computed as
-      \[\text{base} \times \text{height}\]  INSERT FIGURE HERE <br> Above is a valid uniform distribution: the area under the function 
+      \[\text{base} \times \text{height}\]  <div id="uniform-figure-2" style="margin: 1rem auto; max-width: 700px;"></div> <br> Above is a valid uniform distribution: the area under the function 
     \[f(x) = \frac{1}{30}, \hspace{1mm} 0 < x < 30 \hspace{3mm} \text{ is } \hspace{3mm} 30 \cdot \frac{1}{30} = 1\]
     We see a probability computed as an area under the function:
     \[P(X \leq 20) = 20 \cdot \frac{1}{30} = \frac{2}{3}\]
@@ -61,7 +62,7 @@ fetch("/nav.html")
 
     <p>Working with the same function which is equal to \(\frac{1}{30}\) when \(0 < x < 30\) and zero elsewhere, let us compute a more complicated 
     probability: \[P(3 < X \leq 7) \cup P(20 < X) = (7-3) \cdot \frac{1}{30} + (30-20) \cdot \frac{1}{30} = \frac{14}{30} = \frac{7}{15}\]
-    Visually, this is the sum of the areas of two rectangles: <br> INSERT FIGURE HERE
+    Visually, this is the sum of the areas of two rectangles: <br> <div id="uniform-figure-3" style="margin: 1rem auto; max-width: 700px;"></div>
     </p>
 
 
@@ -83,33 +84,33 @@ fetch("/nav.html")
         0 & \text{otherwise}
     \end{cases}\]
     That is, it is equal to \(\frac{1}{12-2} = \frac{1}{10}\) when \(x\) is between 2 and 12, and zero everywhere else, so the total area under the 
-    function is 1: INSERT FIGURE HERE
+    function is 1: <div id="uniform-figure-4" style="margin: 1rem auto; max-width: 700px;"></div>
     </p>
 
 
     <p>To find the probability of waiting less than 5 hours, we take the area of the rectangle under the function which is to the left of 5:
-    \[P(X < 5) = (5 - 2) \cdot \frac{1}{10} = \frac{3}{10}\] INSERT FIGURE HERE
+    \[P(X < 5) = (5 - 2) \cdot \frac{1}{10} = \frac{3}{10}\] <div id="uniform-figure-5" style="margin: 1rem auto; max-width: 700px;"></div>
     </p>
 
     <p>To find the probability of waiting between 6 and 10 hours, we take the area of the rectangle under the function which is between 6 and 10:
-    \[P(6 < X < 10) = (10 - 6) \cdot \frac{1}{10} = \frac{4}{10} = \frac{2}{5}\] INSERT FIGURE HERE
+    \[P(6 < X < 10) = (10 - 6) \cdot \frac{1}{10} = \frac{4}{10} = \frac{2}{5}\] <div id="uniform-figure-6" style="margin: 1rem auto; max-width: 700px;"></div>
     </p>
 
     <p>To find the \(90^{\text{th}}\) percentile of wait times, we're looking for the wait time which is greater than 90% of the wait times.  That is, 
     we are looking for a \(k\) such that \[P(X < k) = 0.9\]
     That is, we're looking for the right-hand side of a rectangle which starts at the leftmost end of the function, and occupies 90% of the area 
-    underneath it: \[(k - 2) \cdot \frac{1}{10} = 0.9 \implies k - 2 = 9 \implies k = 11\] INSERT FIGURE HERE
+    underneath it: \[(k - 2) \cdot \frac{1}{10} = 0.9 \implies k - 2 = 9 \implies k = 11\] <div id="uniform-figure-7" style="margin: 1rem auto; max-width: 700px;"></div>
     </p>
 
     <p>To find the probability that you wait less than 3 hours <b>given that you wait less than 6 hours</b>, we have a conditional probability question.  
     We enter the reduced sample space (the light red rectangle between 2 and 6), and find the proportion of it which the event we're interested in 
     (the dark red rectangle between 2 and 3) occupies: 
     \[P(X < 3| X < 6) = \frac{P(X < 3 \cap X < 6)}{P(X < 6)} = \frac{(3-2)\cdot\frac{1}{10}}{(6-2)\cdot\frac{1}{10}} = \frac{\frac{1}{10}}{\frac{4}{10}} 
-    = \frac{1}{4}\] INSERT FIGURE HERE
+    = \frac{1}{4}\] <div id="uniform-figure-8" style="margin: 1rem auto; max-width: 700px;"></div>
     </p>
 
     <p>The average wait time is what you'd expect it to be: the midpoint of the two extreme wait times:
-    INSERT FIGURE HERE
+    <div id="uniform-figure-9" style="margin: 1rem auto; max-width: 700px;"></div>
     \[\mu = \frac{2+12}{2} = 7\]
     So the average wait time is 7 hours.  This is the general formula for a uniform distribution on the interval \([a,b]\):
     \[\mu = \frac{a+b}{2}\]
@@ -120,7 +121,7 @@ fetch("/nav.html")
     So in this case, the standard deviation is
     \[\sqrt{\frac{(12-2)^2}{12}} = \sqrt{\frac{100}{12}} \approx 2.89 \text{ hours}\]
     </p>
-<div class="button-container">
+<div class="button-container" style="display:none;">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>
 
@@ -137,7 +138,7 @@ fetch("/nav.html")
 
       <p id="stage-feedback" style="font-weight: bold; margin-top: 0.75rem; text-align: center;"></p>
 
-      <div class="button-container" style="gap: 0.75rem;">
+      <div class="button-container" style="gap: 0.75rem; display:none;">
         <button id="hint-btn" class="rubber-button">Hint</button>
         <button id="next-btn" class="rubber-button">Next</button>
       </div>
@@ -267,6 +268,133 @@ fetch("/nav.html")
   }
 
   
+  // -----------------------------
+  // Inline-SVG diagram for a uniform distribution
+  // -----------------------------
+  // selectedRanges and superSelectedRanges are arrays of [left, right] intervals.
+  function renderUniformDistribution(container, a, b, options = {}) {
+    const el = (typeof container === 'string') ? document.querySelector(container) : container;
+    if (!el || !(b > a)) return;
+
+    const W = options.width ?? 660;
+    const H = options.height ?? 260;
+    const pad = { left: 56, right: 24, top: 22, bottom: 48, ...(options.padding ?? {}) };
+
+    const lightBlue = options.lightBlue ?? '#b7d8f0';
+    const lightRed = options.lightRed ?? '#f2b6b6';
+    const darkRed = options.darkRed ?? '#c94f4f';
+    const axisColor = options.axisColor ?? 'currentColor';
+    const span = b - a;
+    const xMin = options.xMin ?? (a - 0.15 * span);
+    const xMax = options.xMax ?? (b + 0.15 * span);
+    const density = 1 / span;
+    const yMax = options.yMax ?? (1.35 * density);
+
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+    const xPx = x => pad.left + ((x - xMin) / (xMax - xMin)) * plotW;
+    const yPx = y => pad.top + (1 - y / yMax) * plotH;
+    const baseY = yPx(0);
+    const topY = yPx(density);
+
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', String(H));
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', options.ariaLabel ?? `Uniform distribution from ${a} to ${b}`);
+
+    const add = (name, attrs, parent = svg) => {
+      const node = document.createElementNS(svgNS, name);
+      for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, String(value));
+      parent.appendChild(node);
+      return node;
+    };
+
+    // Axes, with space above and on both sides of the density rectangle.
+    add('line', { x1: pad.left, y1: baseY, x2: pad.left + plotW, y2: baseY, stroke: axisColor, 'stroke-opacity': 0.65, 'stroke-width': 1.2 });
+    add('line', { x1: pad.left, y1: pad.top, x2: pad.left, y2: baseY, stroke: axisColor, 'stroke-opacity': 0.65, 'stroke-width': 1.2 });
+
+    const drawRange = (left, right, fill) => {
+      const L = Math.max(a, Math.min(b, left));
+      const R = Math.max(a, Math.min(b, right));
+      if (R <= L) return;
+      add('rect', {
+        x: xPx(L), y: topY, width: xPx(R) - xPx(L), height: baseY - topY,
+        fill, 'fill-opacity': 0.9
+      });
+    };
+
+    drawRange(a, b, lightBlue);
+    for (const range of (options.selectedRanges ?? [])) drawRange(range[0], range[1], lightRed);
+    for (const range of (options.superSelectedRanges ?? [])) drawRange(range[0], range[1], darkRed);
+
+    // Outline of the pdf.
+    add('path', {
+      d: `M ${xPx(a)} ${baseY} L ${xPx(a)} ${topY} L ${xPx(b)} ${topY} L ${xPx(b)} ${baseY}`,
+      fill: 'none', stroke: axisColor, 'stroke-width': 2, 'stroke-linejoin': 'round'
+    });
+
+    for (const x of (options.verticalLines ?? [])) {
+      if (x < a || x > b) continue;
+      add('line', { x1: xPx(x), y1: baseY, x2: xPx(x), y2: topY, stroke: options.verticalLineColor ?? darkRed, 'stroke-width': 3 });
+    }
+
+    const labelMap = new Map();
+    const putLabel = (x, label) => labelMap.set(Number(x), String(label));
+    putLabel(a, options.aLabel ?? a);
+    putLabel(b, options.bLabel ?? b);
+    for (const x of (options.tickValues ?? [])) putLabel(x, x);
+    for (const item of (options.tickLabels ?? [])) putLabel(item.value, item.label);
+
+    for (const [x, label] of [...labelMap.entries()].sort((u, v) => u[0] - v[0])) {
+      add('line', { x1: xPx(x), y1: baseY, x2: xPx(x), y2: baseY + 5, stroke: axisColor, 'stroke-width': 1 });
+      const t = add('text', { x: xPx(x), y: baseY + 21, 'text-anchor': 'middle', 'font-size': 13, fill: axisColor });
+      t.textContent = label;
+    }
+
+    const zero = add('text', { x: pad.left - 8, y: baseY + 4, 'text-anchor': 'end', 'font-size': 12, fill: axisColor, 'fill-opacity': 0.8 });
+    zero.textContent = '0';
+    const hLabel = add('text', { x: pad.left - 8, y: topY + 4, 'text-anchor': 'end', 'font-size': 12, fill: axisColor, 'fill-opacity': 0.8 });
+    hLabel.textContent = options.heightLabel ?? (Number.isInteger(span) ? `1/${span}` : density.toFixed(3));
+
+    const xLabel = add('text', { x: pad.left + plotW / 2, y: H - 10, 'text-anchor': 'middle', 'font-size': 12, fill: axisColor, 'fill-opacity': 0.85 });
+    xLabel.textContent = options.xLabel ?? 'x';
+    const yLabel = add('text', { x: 15, y: pad.top + plotH / 2, 'text-anchor': 'middle', 'font-size': 12, fill: axisColor, 'fill-opacity': 0.85, transform: `rotate(-90 15 ${pad.top + plotH / 2})` });
+    yLabel.textContent = options.yLabel ?? 'f(x)';
+
+    el.innerHTML = '';
+    el.appendChild(svg);
+  }
+
+  // Static uniform-distribution diagrams for the lesson text above.
+  renderUniformDistribution('#uniform-figure-1', 2, 8, {
+    aLabel: 'a', bLabel: 'b', heightLabel: '1/(b-a)', ariaLabel: 'Uniform distribution between positive values a and b'
+  });
+  renderUniformDistribution('#uniform-figure-2', 0, 30, {
+    selectedRanges: [[0, 20]], tickValues: [20], heightLabel: '1/30'
+  });
+  renderUniformDistribution('#uniform-figure-3', 0, 30, {
+    selectedRanges: [[3, 7], [20, 30]], tickValues: [3, 7, 20], heightLabel: '1/30'
+  });
+  renderUniformDistribution('#uniform-figure-4', 2, 12, { heightLabel: '1/10' });
+  renderUniformDistribution('#uniform-figure-5', 2, 12, {
+    selectedRanges: [[2, 5]], tickValues: [5], heightLabel: '1/10'
+  });
+  renderUniformDistribution('#uniform-figure-6', 2, 12, {
+    selectedRanges: [[6, 10]], tickValues: [6, 10], heightLabel: '1/10'
+  });
+  renderUniformDistribution('#uniform-figure-7', 2, 12, {
+    selectedRanges: [[2, 11]], tickValues: [11], heightLabel: '1/10'
+  });
+  renderUniformDistribution('#uniform-figure-8', 2, 12, {
+    selectedRanges: [[2, 6]], superSelectedRanges: [[2, 3]], tickValues: [3, 6], heightLabel: '1/10'
+  });
+  renderUniformDistribution('#uniform-figure-9', 2, 12, {
+    verticalLines: [7], tickValues: [7], heightLabel: '1/10'
+  });
+
   // -----------------------------
   // Inline-SVG histogram for Binomial(n,p)
   // -----------------------------

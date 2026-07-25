@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -74,7 +75,8 @@ fetch("/nav.html")
     <p>As in the discrete case, the total area under a probability density function is equal to 1.</p>
 
     <p>The definition of the PDF says that the probability \(X\) is between \(a\) and \(b\) is represented by the area under the curve \(f\) on the 
-    interval \([a,b]\).  Below, see a probability density function \(f\) for height of adults in Canada.  INSERT FIGURE HERE <br>
+    interval \([a,b]\).  Below, see a probability density function \(f\) for height of adults in Canada.
+      <div id="normal-density-figure" style="margin: 1rem auto; max-width: 680px;"></div>
     The area under the curve displayed,
     \[P(60 \leq X \leq 72) \approx 0.89\]
     gives the probability that a random adult has height between 5 and 6 feet.
@@ -90,7 +92,7 @@ fetch("/nav.html")
     is an example of a probability density function, because it satisfies these criteria (but we would need calculus to show this).
     </p>
 
-    <p>INSERT FIGURE HERE <br>
+    <p><div id="quadratic-density-figure" style="margin: 1rem auto; max-width: 680px;"></div>
       Using the tools of calculus, one could find the probability that \(X\) is between 2 and 5:
     \[P(2 \leq X \leq 5) = \int_2^5f(x)dx = 0.396\]
     ...which visually looks about right (about 40% of the curve is accounted for by the blue area).
@@ -110,7 +112,7 @@ fetch("/nav.html")
     densitites: uniform, exponential, and normal.</p>
     
 
-    <div class="button-container">
+    <div class="button-container" style="display: none;">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>
 
@@ -129,7 +131,7 @@ fetch("/nav.html")
 
       <p id="stage-feedback" style="font-weight: bold; margin-top: 0.75rem; text-align: center;"></p>
 
-      <div class="button-container" style="gap: 0.75rem;">
+      <div class="button-container" style="gap: 0.75rem; display: none;">
         <button id="hint-btn" class="rubber-button">Hint</button>
         <button id="next-btn" class="rubber-button">Next</button>
       </div>
@@ -257,6 +259,146 @@ fetch("/nav.html")
     }
     if (parsed.kind === 'dec') return relClose(parsed.value, target, relTol);
     return false;
+  }
+
+  // -----------------------------
+  // Inline-SVG density curve helper for continuous pdfs
+  // -----------------------------
+  function renderContinuousDensity(container, densityFn, xMin, xMax, options = {}) {
+    const el = (typeof container === 'string') ? document.querySelector(container) : container;
+    if (!el) return;
+
+    const W = options.width ?? 660;
+    const H = options.height ?? 280;
+    const pad = { left: 48, right: 18, top: 18, bottom: 48, ...(options.padding ?? {}) };
+    const paleBlue = options.paleBlue ?? '#b7d8f0';
+    const paleRed = options.paleRed ?? '#f2b6b6';
+    const axisColor = options.axisColor ?? 'currentColor';
+    const axisOpacity = options.axisOpacity ?? '0.55';
+    const selectedMin = options.selectedMin ?? xMin;
+    const selectedMax = options.selectedMax ?? xMin;
+    const samples = options.samples ?? 500;
+
+    const data = [];
+    let maxY = 0;
+    for (let i = 0; i <= samples; i++) {
+      const x = xMin + (xMax - xMin) * i / samples;
+      const y = Math.max(0, densityFn(x));
+      data.push({ x, y });
+      if (y > maxY) maxY = y;
+    }
+    if (maxY <= 0) return;
+
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+    const sx = x => pad.left + (x - xMin) / (xMax - xMin) * plotW;
+    const sy = y => pad.top + (1 - y / maxY) * plotH;
+    const baseY = pad.top + plotH;
+
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', String(H));
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', options.ariaLabel ?? 'Probability density curve with selected area');
+
+    const g = document.createElementNS(svgNS, 'g');
+    svg.appendChild(g);
+
+    const makeAreaPath = (a, b) => {
+      const pts = data.filter(d => d.x >= a && d.x <= b);
+      if (pts.length === 0) return '';
+      let d = `M ${sx(pts[0].x)} ${baseY}`;
+      for (const p of pts) d += ` L ${sx(p.x)} ${sy(p.y)}`;
+      d += ` L ${sx(pts[pts.length - 1].x)} ${baseY} Z`;
+      return d;
+    };
+
+    const blueAreas = [[xMin, Math.min(selectedMin, xMax)], [Math.max(selectedMax, xMin), xMax]];
+    for (const [a, b] of blueAreas) {
+      if (b <= a) continue;
+      const path = document.createElementNS(svgNS, 'path');
+      path.setAttribute('d', makeAreaPath(a, b));
+      path.setAttribute('fill', paleBlue);
+      path.setAttribute('fill-opacity', '0.85');
+      g.appendChild(path);
+    }
+
+    if (selectedMax > selectedMin) {
+      const path = document.createElementNS(svgNS, 'path');
+      path.setAttribute('d', makeAreaPath(Math.max(selectedMin, xMin), Math.min(selectedMax, xMax)));
+      path.setAttribute('fill', paleRed);
+      path.setAttribute('fill-opacity', '0.85');
+      g.appendChild(path);
+    }
+
+    const curve = document.createElementNS(svgNS, 'path');
+    let curveD = '';
+    data.forEach((p, i) => {
+      curveD += `${i === 0 ? 'M' : ' L'} ${sx(p.x)} ${sy(p.y)}`;
+    });
+    curve.setAttribute('d', curveD);
+    curve.setAttribute('fill', 'none');
+    curve.setAttribute('stroke', 'currentColor');
+    curve.setAttribute('stroke-width', '2');
+    g.appendChild(curve);
+
+    const xAxis = document.createElementNS(svgNS, 'line');
+    xAxis.setAttribute('x1', String(pad.left));
+    xAxis.setAttribute('y1', String(baseY));
+    xAxis.setAttribute('x2', String(pad.left + plotW));
+    xAxis.setAttribute('y2', String(baseY));
+    xAxis.setAttribute('stroke', axisColor);
+    xAxis.setAttribute('stroke-opacity', axisOpacity);
+    g.appendChild(xAxis);
+
+    const ticks = options.xTicks ?? [];
+    for (const val of ticks) {
+      const xx = sx(val);
+      const tick = document.createElementNS(svgNS, 'line');
+      tick.setAttribute('x1', String(xx));
+      tick.setAttribute('y1', String(baseY));
+      tick.setAttribute('x2', String(xx));
+      tick.setAttribute('y2', String(baseY + 5));
+      tick.setAttribute('stroke', axisColor);
+      tick.setAttribute('stroke-opacity', axisOpacity);
+      g.appendChild(tick);
+
+      const lab = document.createElementNS(svgNS, 'text');
+      lab.setAttribute('x', String(xx));
+      lab.setAttribute('y', String(baseY + 21));
+      lab.setAttribute('text-anchor', 'middle');
+      lab.setAttribute('font-size', '12');
+      lab.setAttribute('fill', 'currentColor');
+      lab.textContent = String(val);
+      g.appendChild(lab);
+    }
+
+    if (options.xLabel) {
+      const lab = document.createElementNS(svgNS, 'text');
+      lab.setAttribute('x', String(pad.left + plotW / 2));
+      lab.setAttribute('y', String(H - 10));
+      lab.setAttribute('text-anchor', 'middle');
+      lab.setAttribute('font-size', '12');
+      lab.setAttribute('fill', 'currentColor');
+      lab.textContent = options.xLabel;
+      g.appendChild(lab);
+    }
+
+    el.innerHTML = '';
+    el.appendChild(svg);
+  }
+
+  function renderNormalDensity(container, mean, standardDeviation, options = {}) {
+    const density = x => Math.exp(-0.5 * Math.pow((x - mean) / standardDeviation, 2)) /
+      (standardDeviation * Math.sqrt(2 * Math.PI));
+    const xMin = options.xMin ?? mean - 4 * standardDeviation;
+    const xMax = options.xMax ?? mean + 4 * standardDeviation;
+    renderContinuousDensity(container, density, xMin, xMax, {
+      ...options,
+      ariaLabel: options.ariaLabel ?? `Normal distribution with mean ${mean} and standard deviation ${standardDeviation}`
+    });
   }
 
   // -----------------------------
@@ -420,32 +562,27 @@ fetch("/nav.html")
   }
 
   // -----------------------------
-  // Static histogram for the two-dice example in the text above
+  // Static continuous-density figures for the lesson text above
   // -----------------------------
-  renderDiscreteHistogram('#dice-histogram', [
-    { x: 2,  p: 1/36 },
-    { x: 3,  p: 2/36 },
-    { x: 4,  p: 3/36 },
-    { x: 5,  p: 4/36 },
-    { x: 6,  p: 5/36 },
-    { x: 7,  p: 6/36 },
-    { x: 8,  p: 5/36 },
-    { x: 9,  p: 4/36 },
-    { x: 10, p: 3/36 },
-    { x: 11, p: 2/36 },
-    { x: 12, p: 1/36 }
-  ], {
-    xLabel: 'x',
-    yLabel: 'f(x)',
-    yFormatter: (v) => {
-      const n = Math.round(v * 36);
-      const den = 36;
-      const g = gcd(n, den);
-      const nn = n / g;
-      const dd = den / g;
-      return (n === 0) ? '0' : `${nn}/${dd}`;
-    }
+  renderNormalDensity('#normal-density-figure', 66, 3.5, {
+    xMin: 40,
+    xMax: 92,
+    selectedMin: 60,
+    selectedMax: 72,
+    xTicks: [40, 50, 60, 66, 72, 80, 90],
+    xLabel: 'Height (inches)'
   });
+
+  renderContinuousDensity('#quadratic-density-figure',
+    x => (x >= 0 && x <= 10) ? 0.006 * x * (10 - x) : 0,
+    0, 10, {
+      selectedMin: 2,
+      selectedMax: 5,
+      xTicks: [0, 2, 5, 10],
+      xLabel: 'x',
+      ariaLabel: 'Probability density f(x)=0.006x(10-x) on 0 to 10, with area from 2 to 5 selected'
+    }
+  );
 
   // -----------------------------
   // Activity state (Type 1)

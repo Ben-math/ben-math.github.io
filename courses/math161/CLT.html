@@ -76,21 +76,26 @@ fetch("/nav.html")
     </p>
 
 
-    <p>The specific earliest case of the Central Limit Theorem being applied to the binomial distribution is called the De Moivre--Laplace Theorem: </p>
+    <p>The specific earliest case of the Central Limit Theorem being applied to the binomial distribution is called the De Moivre-Laplace Theorem: </p>
     <p>If \(X\) is a binomial random variable with distribution \(f(x;n,p)\), then it is approximated by the normal random variable with distribution 
     \(g(x; np, \sqrt{np(1-p)})\). </p>
     <p>Why?  Recall that the binomial distribution has mean and standard deviation
     \[\mu = np \hspace{5mm} \text{ and } \hspace{5mm} \sigma = \sqrt{np(1-p)}\]
     </p>
 
-    <p>To find the probability of waiting between 6 and 10 hours, we take the area of the rectangle under the function which is between 6 and 10:
-    \[P(6 < X < 10) = (10 - 6) \cdot \frac{1}{10} = \frac{4}{10} = \frac{2}{5}\] <div id="uniform-figure-6" style="margin: 1rem auto; max-width: 700px;"></div>
+    <p>For example, let the probability that Jokic makes a shot be 43%.  Let us find the probability that he makes at least 300 shots, given that he attempts 
+      740.
     </p>
 
-    <p>To find the \(90^{\text{th}}\) percentile of wait times, we're looking for the wait time which is greater than 90% of the wait times.  That is, 
-    we are looking for a \(k\) such that \[P(X < k) = 0.9\]
-    That is, we're looking for the right-hand side of a rectangle which starts at the leftmost end of the function, and occupies 90% of the area 
-    underneath it: \[(k - 2) \cdot \frac{1}{10} = 0.9 \implies k - 2 = 9 \implies k = 11\] <div id="uniform-figure-7" style="margin: 1rem auto; max-width: 700px;"></div>
+    <p>So, the number of made shots is modelled by a binomial distribution \(f(x;740,0.413)\).  Our usual strategies for finding \(P(X \geq 300)\), 
+    \[f(300;740,0.413)+...+f(740;740,0.413)\] or the complement \[1 - (f(0;740,0.413)+...+f(299;740,0.413))\] both involve computing unreasonably 
+    long sums.  However, the normal approximation can help us:</p>
+
+    <p>By DeMoivre-Laplace, we approximate with \[\mu = 740(0.413) \approx 305.6 \hspace{1cm} \text{ and } \hspace{1cm} sigma = \sqrt{740(0.413)(1-0.413)} 
+    \approx 13.4\] Then converting to the standard normal distribution using \(Z = \frac{X - \mu}{\sigma}\):
+    \[P(X \geq 300) = P\left(Z \geq \frac{300-305.6}{13.4}\right) \approx P(Z \geq -0.42)\]
+    \[= 1 - P(Z \leq -0.42)) = 1 - (1 - P( Z \leq 0.42)) = 1 - (1- 0.6628) = 0.6628\]
+    So the probability he makes at least 300 out of 740 shots is approximately 66.28%.
     </p>
 
     <p>To find the probability that you wait less than 3 hours <b>given that you wait less than 6 hours</b>, we have a conditional probability question.  

@@ -98,24 +98,18 @@ fetch("/nav.html")
     So the probability he makes at least 300 out of 740 shots is approximately 66.28%.
     </p>
 
-    <p>To find the probability that you wait less than 3 hours <b>given that you wait less than 6 hours</b>, we have a conditional probability question.  
-    We enter the reduced sample space (the light red rectangle between 2 and 6), and find the proportion of it which the event we're interested in 
-    (the dark red rectangle between 2 and 3) occupies: 
-    \[P(X < 3| X < 6) = \frac{P(X < 3 \cap X < 6)}{P(X < 6)} = \frac{(3-2)\cdot\frac{1}{10}}{(6-2)\cdot\frac{1}{10}} = \frac{\frac{1}{10}}{\frac{4}{10}} 
-    = \frac{1}{4}\] <div id="uniform-figure-8" style="margin: 1rem auto; max-width: 700px;"></div>
+    <p>There are 3 versions of the Central Limit Theorem we will consider.  They all involve repeatedly drawing samples of size \(n\) (where \(n\) is large 
+    enough) from a population with a known mean and standard deviation.  Our general rule will be that a sample size of \(n > 30\) is large enough (if the 
+    underlying distribution is normal, smaller sample sizes may be sufficient).</p>
+
+    <p>The first version concerns the means of our samples:
     </p>
 
-    <p>The average wait time is what you'd expect it to be: the midpoint of the two extreme wait times:
-    <div id="uniform-figure-9" style="margin: 1rem auto; max-width: 700px;"></div>
-    \[\mu = \frac{2+12}{2} = 7\]
-    So the average wait time is 7 hours.  This is the general formula for a uniform distribution on the interval \([a,b]\):
-    \[\mu = \frac{a+b}{2}\]
-    </p>
-
-    <p>The formula for standard deviation of a uniform distribution has no intuitive explanation (it is derived via moment-generating functions):
-    \[\sigma = \sqrt{\frac{(b-a)^2}{12}}\]
-    So in this case, the standard deviation is
-    \[\sqrt{\frac{(12-2)^2}{12}} = \sqrt{\frac{100}{12}} \approx 2.89 \text{ hours}\]
+    <p>If we repeatedly sample \(n > 30\) from a random variable \(X\) with known mean and standard deviation, then the sample means \(\overline{x}\) tend to 
+    a normal distribution with \[\mu_{\overline{x}} = \mu_X \hspace{5mm} \text{ and } \hspace{5mm} \sigma_{\overline{x}} = \frac{\sigma_X}{\sqrt{n}}\] 
+    Note that now, the sample means \(\overline{x}\) are the random variable (rather than \(x\) itself), which follow a normal distribution.  Its \(z\)-score 
+    is different from that of the original random variable \(X\).  \[z = \frac{\overline{x} - \mu_X}{\left(\frac{\sigma_X}{\sqrt{n}}\right)}\]
+    The standard deviation of the sample mean, \(\sigma_{\overline{x}} = \frac{\sigma_X}{\sqrt{n}}\), is called the <b>standard error</b> of the mean.
     </p>
 <div class="button-container" style="display:none;">
       <button id="start-btn" class="rubber-button">Start!</button>

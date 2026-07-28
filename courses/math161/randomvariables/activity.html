@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1113,56 +1114,56 @@ fetch("/nav.html")
     const distribution = randomChoice(DISTRIBUTIONS);
 
     if (distribution === 'binomial') {
-      const n = randInt(8, 30);
-      const p = fractionParameter(0.2, 0.8);
+      const n = randInt(6, 40);
+      const p = fractionParameter(0.15, 0.85);
       const mean = n * p.value;
       const sd = Math.sqrt(n * p.value * (1 - p.value));
       return {
         distribution, n, p, mean, sd, min: 0, max: n,
-        description: `\(X\) is a binomial random variable with number of trials \(n=${n}\), each with probability \(p=${fracToTex(p.num, p.den)}\) of success.`
+        description: `\\(X\\) is a binomial random variable with number of trials \\(n=${n}\\), each with probability \\(p=${fracToTex(p.num, p.den)}\\) of success.`
       };
     }
 
     if (distribution === 'geometric') {
-      const p = fractionParameter(0.2, 0.6);
+      const p = fractionParameter(0.15, 0.7);
       const mean = 1 / p.value;
       const sd = Math.sqrt(1 - p.value) / p.value;
-      const max = Math.max(5, Math.ceil(Math.log(0.02) / Math.log(1 - p.value)));
+      const max = Math.max(5, Math.ceil(Math.log(0.01) / Math.log(1 - p.value)));
       return {
         distribution, p, mean, sd, min: 1, max,
-        description: `\(X\) is a geometric random variable with probability \(p=${fracToTex(p.num, p.den)}\) of success on each trial, where \(X\) is the trial number of the first success.`
+        description: `\\(X\\) is a geometric random variable with probability \\(p=${fracToTex(p.num, p.den)}\\) of success on each trial, where \\(X\\) is the trial number of the first success.`
       };
     }
 
     if (distribution === 'Poisson') {
-      const mu = randInt(4, 24) / 2;
+      const mu = randInt(3, 30) / 2;
       const sd = Math.sqrt(mu);
-      const max = Math.ceil(mu + 2.25 * sd);
+      const max = Math.ceil(mu + 3 * sd);
       return {
         distribution, mu, mean: mu, sd, min: 0, max,
-        description: `\(X\) is a Poisson random variable with mean \(\mu=${formatNumber(mu)}\).`
+        description: `\\(X\\) is a Poisson random variable with mean \\(\\mu=${formatNumber(mu)}\\).`
       };
     }
 
     if (distribution === 'uniform') {
-      const a = randInt(-10, 20);
-      const width = randInt(6, 20);
+      const a = randInt(-20, 30);
+      const width = randInt(5, 30);
       const b = a + width;
       return {
         distribution, a, b, mean: (a + b) / 2, sd: width / Math.sqrt(12), min: a, max: b,
-        description: `\(X\) is uniformly distributed on the interval \([${a},${b}]\).`
+        description: `\\(X\\) is uniformly distributed on the interval \\([${a},${b}]\\).`
       };
     }
 
-    const sigma = randInt(2, 15);
-    const mu = randInt(3, 18) * 10;
+    const sigma = randInt(2, 20);
+    const mu = randInt(2, 20) * 10;
     return {
       distribution, mu, sigma, mean: mu, sd: sigma, min: mu - 3 * sigma, max: mu + 3 * sigma,
-      description: `\(X\) is normally distributed with mean \(\mu=${mu}\) and standard deviation \(\sigma=${sigma}\).`
+      description: `\\(X\\) is normally distributed with mean \\(\\mu=${mu}\\) and standard deviation \\(\\sigma=${sigma}\\).`
     };
   }
 
-  function centralInteger(d, spread = 1.5) {
+  function centralInteger(d, spread = 3) {
     const lo = Math.max(d.min, Math.ceil(d.mean - spread * d.sd));
     const hi = Math.min(d.max, Math.floor(d.mean + spread * d.sd));
     return randInt(lo, Math.max(lo, hi));
@@ -1170,8 +1171,8 @@ fetch("/nav.html")
 
   function centralContinuous(d) {
     const step = d.distribution === 'normal' ? Math.max(1, d.sd / 2) : Math.max(0.5, (d.max - d.min) / 10);
-    const lo = d.mean - 1.5 * d.sd;
-    const hi = d.mean + 1.5 * d.sd;
+    const lo = d.mean - 3 * d.sd;
+    const hi = d.mean + 3 * d.sd;
     const raw = lo + Math.random() * (hi - lo);
     return Math.min(d.max, Math.max(d.min, Math.round(raw / step) * step));
   }
@@ -1182,7 +1183,7 @@ fetch("/nav.html")
 
     if (type === 'specific') {
       const x = point();
-      return `Find \(P(X=${formatNumber(x)})\).`;
+      return `Find \\(P(X=${formatNumber(x)})\\).`;
     }
 
     if (type === 'range') {
@@ -1193,20 +1194,20 @@ fetch("/nav.html")
         right = Math.min(d.max, centre + randInt(1, 3));
         if (right <= left + 1) right = Math.min(d.max, left + 2);
       } else {
-        left = d.mean - (0.5 + 0.5 * randInt(0, 2)) * d.sd;
-        right = d.mean + (0.5 + 0.5 * randInt(0, 2)) * d.sd;
+        left = d.mean - (0.5 + 0.5 * randInt(0, 5)) * d.sd;
+        right = d.mean + (0.5 + 0.5 * randInt(0, 5)) * d.sd;
         left = Math.max(d.min, left);
         right = Math.min(d.max, right);
       }
       const leftOp = Math.random() < 0.5 ? '<' : '\\leq';
       const rightOp = Math.random() < 0.5 ? '<' : '\\leq';
-      return `Find \(P(${formatNumber(left)} ${leftOp} X ${rightOp} ${formatNumber(right)})\).`;
+      return `Find \\(P(${formatNumber(left)} ${leftOp} X ${rightOp} ${formatNumber(right)})\\).`;
     }
 
     if (type === 'oneSided') {
       const x = point();
       const relation = randomChoice(['<', '\\leq', '>', '\\geq']);
-      return `Find \(P(X ${relation} ${formatNumber(x)})\).`;
+      return `Find \\(P(X ${relation} ${formatNumber(x)})\\).`;
     }
 
     if (type === 'conditional') {
@@ -1216,37 +1217,37 @@ fetch("/nav.html")
         const upper = Math.min(d.max, centre + randInt(2, 4));
         if (Math.random() < 0.5) {
           const x = randInt(lower, Math.max(lower, upper));
-          return `Find \(P(X=${x}\mid ${lower}\\leq X\\leq ${upper})\).`;
+          return `Find \\(P(X=${x}\\mid ${lower}\\leq X\\leq ${upper})\\).`;
         }
         const inner = Math.max(lower, Math.min(upper, centre));
-        return `Find \(P(X\\leq ${inner}\mid ${lower}\\leq X\\leq ${upper})\).`;
+        return `Find \\(P(X\\leq ${inner}\\mid ${lower}\\leq X\\leq ${upper})\\).`;
       }
-      const lower = Math.max(d.min, d.mean - 1.5 * d.sd);
-      const upper = Math.min(d.max, d.mean + 1.5 * d.sd);
-      const inner = d.mean + randomChoice([-0.5, 0, 0.5]) * d.sd;
-      return `Find \(P(X\\leq ${formatNumber(inner)}\mid ${formatNumber(lower)}\\leq X\\leq ${formatNumber(upper)})\).`;
+      const lower = Math.max(d.min, d.mean - 3 * d.sd);
+      const upper = Math.min(d.max, d.mean + 3 * d.sd);
+      const inner = d.mean + randomChoice([-2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2]) * d.sd;
+      return `Find \\(P(X\\leq ${formatNumber(inner)}\\mid ${formatNumber(lower)}\\leq X\\leq ${formatNumber(upper)})\\).`;
     }
 
     if (type === 'percentileOfValue') {
       const x = point();
-      return `What percentile is the value \(X=${formatNumber(x)}\)?`;
+      return `What percentile is the value \\(X=${formatNumber(x)}\\)?`;
     }
 
     if (type === 'valueFromPercentile') {
       const percentile = randomChoice([10, 20, 25, 30, 40, 60, 70, 75, 80, 90]);
-      return `Find the ${percentile}${percentile === 1 ? 'st' : percentile === 2 ? 'nd' : percentile === 3 ? 'rd' : 'th'} percentile of \(X\).`;
+      return `Find the ${percentile}${percentile === 1 ? 'st' : percentile === 2 ? 'nd' : percentile === 3 ? 'rd' : 'th'} percentile of \\(X\\).`;
     }
 
-    if (type === 'mean') return `Find the mean of \(X\).`;
-    if (type === 'sd') return `Find the standard deviation of \(X\).`;
-    if (type === 'iqr') return `Find the interquartile range of \(X\).`;
+    if (type === 'mean') return `Find the mean of \\(X\\).`;
+    if (type === 'sd') return `Find the standard deviation of \\(X\\).`;
+    if (type === 'iqr') return `Find the interquartile range of \\(X\\).`;
 
     const quartile = randomChoice([
       'median',
       'first quartile',
       'third quartile'
     ]);
-    return `Find the ${quartile} of \(X\).`;
+    return `Find the ${quartile} of \\(X\\).`;
   }
 
   function clearPlaceholderActivity() {
@@ -1267,7 +1268,6 @@ fetch("/nav.html")
 
     questionText.innerHTML = `<p>${distribution.description}</p><p>${task}</p>`;
     hintBtn.disabled = false;
-    startBtn.textContent = 'New Question';
     typeset([questionText]);
   }
 

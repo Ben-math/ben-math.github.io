@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -445,12 +446,24 @@ fetch("/nav.html")
       }
     }
 
+    // Display only the portion of the distribution within four standard
+    // deviations of the mean, clipped to the possible values 0,...,n.
+    const mean = n * p;
+    const sigma = Math.sqrt(n * p * (1 - p));
+    const minDisplayedX = Math.max(0, Math.ceil(mean - 4 * sigma));
+    const maxDisplayedX = Math.min(n, Math.floor(mean + 4 * sigma));
+    const displayedData = data.filter(d => d.x >= minDisplayedX && d.x <= maxDisplayedX);
+
+    // Leave 20% headroom above the tallest displayed column.
+    const displayedMaxP = Math.max(...displayedData.map(d => d.p));
+    const yMax = 1.25 * displayedMaxP;
+
     const plotW = W - pad.left - pad.right;
     const plotH = H - pad.top - pad.bottom;
-    const xStep = plotW / data.length;
+    const xStep = plotW / displayedData.length;
     const barW = xStep * 0.78;
 
-    const y = (prob) => pad.top + (1 - (prob / maxP)) * plotH;
+    const y = (prob) => pad.top + (1 - (prob / yMax)) * plotH;
     const x0 = (i) => pad.left + i * xStep + (xStep - barW) / 2;
 
     const svgNS = 'http://www.w3.org/2000/svg';
@@ -521,12 +534,12 @@ fetch("/nav.html")
       lab.setAttribute('font-size', '12');
       lab.setAttribute('fill', axisColor);
       lab.setAttribute('fill-opacity', axisOpacity);
-      lab.textContent = (options.yFormatter ? options.yFormatter(frac * maxP) : (frac * maxP).toFixed(3).replace(/0+$/, '').replace(/\.$/, ''));
+      lab.textContent = (options.yFormatter ? options.yFormatter(frac * yMax) : (frac * yMax).toFixed(3).replace(/0+$/, '').replace(/\.$/, ''));
       g.appendChild(lab);
     }
 
-    for (let i = 0; i < data.length; i++) {
-      const d = data[i];
+    for (let i = 0; i < displayedData.length; i++) {
+      const d = displayedData[i];
       const xx = x0(i);
       const yy = y(d.p);
       const h = (pad.top + plotH) - yy;
@@ -545,7 +558,7 @@ fetch("/nav.html")
 
       // x labels: show every label for n<=25; otherwise thin out
       const labelEvery = options.labelEvery ?? (n <= 25 ? 1 : Math.max(2, Math.ceil(n / 10)));
-      const showLabel = (d.x % labelEvery === 0) || d.x === n;
+      const showLabel = (d.x % labelEvery === 0) || i === 0 || i === displayedData.length - 1;
       if (showLabel) {
         const xl = document.createElementNS(svgNS, 'text');
         xl.setAttribute('x', String(xx + barW / 2));

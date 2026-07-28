@@ -49,7 +49,7 @@ fetch("/nav.html")
       The input x is the number of successes, so \(f(x; n, p)\) gives the probability of having \(x\) many successes when doing \(n\) many Bernoulli 
       trials that have a probability \(p\) of success.
     </p>
-<p>The Binomial coefficients \(\binom{n}{x}\) are entries in Pascal's triangle, can be computed via the formula
+<p>The Binomial coefficients \(\binom{n}{x}\) are entries in Pascal's triangle, and can be computed via the formula
       \[\binom{n}{x} = \frac{n!}{(n-x)!x!}\]
       or by typing "nCx" (read as \(n\) choose \(x\)) into your calculator.
     </p>
@@ -66,7 +66,7 @@ fetch("/nav.html")
       <div id="binom-hist-2" style="margin: 1rem auto; max-width: 640px;"></div>
 </p>
 <p>We might also want to answer questions of the form
-      \[\text{``What is the probability of rolling a 9 or higher 2 or fewer times?''}\]
+      \[\text{"What is the probability of rolling a 9 or higher 2 or fewer times?"}\]
       To answer this question, we are finding the following sum:
       \[P(X \leq 2) = P(X = 0) + P(X = 1) + P(X = 2) = f\left(0;20,\frac{5}{18}\right) + f\left(1;20,\frac{5}{18}\right) + 
       f\left(2;20,\frac{5}{18}\right) \approx 0.055\]
@@ -74,13 +74,13 @@ fetch("/nav.html")
       <div id="binom-hist-3" style="margin: 1rem auto; max-width: 640px;"></div>
 </p>
 <p>The preceding required us to compute the value of the pdf 3 times for our sum, which was quite time consuming.  Consider the problem 
-      \[\text{``What is the probability of rolling a 9 or higher 18 or fewer times?''}\]
+      \[\text{"What is the probability of rolling a 9 or higher 18 or fewer times?"}\]
       We wouldn't want to find the sum
       \[P(X \leq 18) = P(X = 0) + P(X = 1) + ... + P(X = 18)\]
       However, observe that the complement of the event "rolling a 9 or higher 18 or fewer times" is "rolling a 9 or higher 19 or more times".  That is, 
       we can compute the easier sum
-      \[P(X \leq 18) = 1 - P(X \geq 19) = 1 - (P(X = 19) + P(X = 20)) = 1 - (f\left(19;20,\frac{5}{18}\right) + f\left(20;20,\frac{5}{18}\right)) \approx 
-      0.9999999996\]
+      \[P(X \leq 18) = 1 - P(X \geq 19) = 1 - (P(X = 19) + P(X = 20)) = 1 - \left(f\left(19;20,\frac{5}{18}\right) + f\left(20;20,\frac{5}{18}\right)\right) 
+      \approx 0.9999999996\]
       That is, we sum the two rightmost columns of the histogram, and subtract the result from 1.
     </p>
 <p>Finally, we have convenient formulas which simplify the computation of mean and variance specifically for binomial distributions: 

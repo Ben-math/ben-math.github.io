@@ -43,85 +43,25 @@ fetch("/nav.html")
   </header>
   <main>
 
-    <p>We say the continuous random variable \(X\) is uniformly distributed on the interval \((a,b)\) if its probability density function is given by
-        \[f(x) = \begin{cases}
-        \frac{1}{b-a} & \text{if } a < x < b\\
-        0 & \text{otherwise} \end{cases}\]
-    We can easily see that this defines a valid pdf, as the area under it is just the area of a rectangle with length \(b-a\) and height 
-    \(\frac{1}{b-a}\).  <div id="uniform-figure-1" style="margin: 1rem auto; max-width: 700px;"></div>
-    </p>
-    
-    <p>Of continuous distributions, uniform is the easiest to work with, since areas under it are just rectangles, whose areas can be computed as
-      \[\text{base} \times \text{height}\]  <div id="uniform-figure-2" style="margin: 1rem auto; max-width: 700px;"></div> <br> Above is a valid uniform distribution: the area under the function 
-    \[f(x) = \frac{1}{30}, \hspace{1mm} 0 < x < 30 \hspace{3mm} \text{ is } \hspace{3mm} 30 \cdot \frac{1}{30} = 1\]
-    We see a probability computed as an area under the function:
-    \[P(X \leq 20) = 20 \cdot \frac{1}{30} = \frac{2}{3}\]
-    Note that since a line has no area, the following probabilities are equivalent for any real numbers \(a\) and \(b\):
-    \[P(a \leq X \leq b) = P(a < X < b)\]
-    </p>
-
-
-    <p>Working with the same function which is equal to \(\frac{1}{30}\) when \(0 < x < 30\) and zero elsewhere, let us compute a more complicated 
-    probability: \[P(3 < X \leq 7) \cup P(20 < X) = (7-3) \cdot \frac{1}{30} + (30-20) \cdot \frac{1}{30} = \frac{14}{30} = \frac{7}{15}\]
-    Visually, this is the sum of the areas of two rectangles: <br> <div id="uniform-figure-3" style="margin: 1rem auto; max-width: 700px;"></div>
+    <p>This activity will ask a question about any of the 5 probability distributions we have learned about: binomial, geometric, Poisson, uniform, and 
+    normal.  The reason they are all combined into a single activity is that one of the greatest difficulties students face in working with these is not in 
+    the <i>how</i> to compute things, but rather in deciding <i>which</i> probability distribution applies to the situation.  Some things to look out for:
+      <ul>
+        <li>Are Bernoulli trials (something with a fixed probability, either given in the problem or that can be easily computed) being performed in the 
+          problem?  If so, then you are probably looking at a binomial or geometric distribution.</li>
+        <li>If there are a fixed number of Bernoulli trials performed, it is a binomial distribution.</li>
+        <li>If Bernoulli trials are performed <i>until</i> a success, it is a geometric distribution.</li>
+        <li>Watch out for the words "on average/average rate".  This may be a Poisson distribution.</li>
+        <li>If outcomes in an interval are <i>"equally likely/uniformly distributed"</i>, this may be a uniform distribution.</li>
+        <li>The only circumstance in which you are looking at a normal distribution is <b>if it is explicitly stated in the problem.</b></li>
+      </ul>
+    That last point takes all the guesswork out of determining whether you've got a normal distribution on your hands: you need only distinguish between the 
+    remaining 4.  With enough practice, you learn to recognize these quickly.
     </p>
 
-
-    <p>Let us suppose that on a trip to the emergency room, you are equally likely to wait any amount of time between 2 and 12 hours: that is, since all 
-    wait times in this range are equally likely, they are <i>uniformly distributed</i> over the interval \([2,12]\).  Let us find:
-    <ul>
-      <li>The probability that you wait less than 5 hours</li>
-      <li>The probability that you wait between 6 and 10 hours</li>
-      <li>The \(90^{\text{th}}\) percentile of wait times</li>
-      <li>The probability that you wait less than 3 hours, given that you wait less than 6 hours</li>
-      <li>The average wait time</li>
-      <li>The standard deviation in wait time</li>
-    </ul>
-    </p>
-
-    <p>Let us start by defining the probability density function.  Since all wait times between 2 and 12 hours are equally likely, we have the function
-    \[f(x) = \begin{cases}
-        \frac{1}{10} & \text{if } 2 < x < 12\\
-        0 & \text{otherwise}
-    \end{cases}\]
-    That is, it is equal to \(\frac{1}{12-2} = \frac{1}{10}\) when \(x\) is between 2 and 12, and zero everywhere else, so the total area under the 
-    function is 1: <div id="uniform-figure-4" style="margin: 1rem auto; max-width: 700px;"></div>
-    </p>
-
-
-    <p>To find the probability of waiting less than 5 hours, we take the area of the rectangle under the function which is to the left of 5:
-    \[P(X < 5) = (5 - 2) \cdot \frac{1}{10} = \frac{3}{10}\] <div id="uniform-figure-5" style="margin: 1rem auto; max-width: 700px;"></div>
-    </p>
-
-    <p>To find the probability of waiting between 6 and 10 hours, we take the area of the rectangle under the function which is between 6 and 10:
-    \[P(6 < X < 10) = (10 - 6) \cdot \frac{1}{10} = \frac{4}{10} = \frac{2}{5}\] <div id="uniform-figure-6" style="margin: 1rem auto; max-width: 700px;"></div>
-    </p>
-
-    <p>To find the \(90^{\text{th}}\) percentile of wait times, we're looking for the wait time which is greater than 90% of the wait times.  That is, 
-    we are looking for a \(k\) such that \[P(X < k) = 0.9\]
-    That is, we're looking for the right-hand side of a rectangle which starts at the leftmost end of the function, and occupies 90% of the area 
-    underneath it: \[(k - 2) \cdot \frac{1}{10} = 0.9 \implies k - 2 = 9 \implies k = 11\] <div id="uniform-figure-7" style="margin: 1rem auto; max-width: 700px;"></div>
-    </p>
-
-    <p>To find the probability that you wait less than 3 hours <b>given that you wait less than 6 hours</b>, we have a conditional probability question.  
-    We enter the reduced sample space (the light red rectangle between 2 and 6), and find the proportion of it which the event we're interested in 
-    (the dark red rectangle between 2 and 3) occupies: 
-    \[P(X < 3| X < 6) = \frac{P(X < 3 \cap X < 6)}{P(X < 6)} = \frac{(3-2)\cdot\frac{1}{10}}{(6-2)\cdot\frac{1}{10}} = \frac{\frac{1}{10}}{\frac{4}{10}} 
-    = \frac{1}{4}\] <div id="uniform-figure-8" style="margin: 1rem auto; max-width: 700px;"></div>
-    </p>
-
-    <p>The average wait time is what you'd expect it to be: the midpoint of the two extreme wait times:
-    <div id="uniform-figure-9" style="margin: 1rem auto; max-width: 700px;"></div>
-    \[\mu = \frac{2+12}{2} = 7\]
-    So the average wait time is 7 hours.  This is the general formula for a uniform distribution on the interval \([a,b]\):
-    \[\mu = \frac{a+b}{2}\]
-    </p>
-
-    <p>The formula for standard deviation of a uniform distribution has no intuitive explanation (it is derived via moment-generating functions):
-    \[\sigma = \sqrt{\frac{(b-a)^2}{12}}\]
-    So in this case, the standard deviation is
-    \[\sqrt{\frac{(12-2)^2}{12}} = \sqrt{\frac{100}{12}} \approx 2.89 \text{ hours}\]
-    </p>
+    <p>Once you've identified the distribution in the problem, you will want to give its probability distribution function, and then use it to solve the 
+    problem (you may be asked for a probability of a particular outcome or range of outcomes, a conditional probability, a percentile/quartile... anything 
+    that has come up before is fair game!</p>
 <div class="button-container" style="display:none;">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>

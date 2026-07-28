@@ -1005,7 +1005,6 @@ fetch("/nav.html")
   const cltTailXs = [];
   for (let x = 300; x <= 740; x++) cltTailXs.push(x);
   renderBinomialHistogram('#clt-binom-740', 740, 0.413, {
-    title: 'f(x; 740, 0.413), with X ≥ 300 selected',
     xLabel: 'x', yLabel: 'f(x)', highlightXs: cltTailXs, labelEvery: 50,
     width: 760, height: 300
   });

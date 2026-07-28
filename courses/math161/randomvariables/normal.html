@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -224,14 +225,18 @@ such that \[P(X < k) = 0.25\]  In the normal table, we find the value \({\color{
     }
 
     const highlightedRows = new Set();
-    const highlightedColumns = new Set();
+    const highlightedColumns = {
+      negative: new Set(),
+      positive: new Set()
+    };
     for (const z of highlights) {
       if (z < minZ - 0.09 || z > maxZ + 0.09) continue;
+      const side = z < 0 ? 'negative' : 'positive';
       const sign = z < 0 ? -1 : 1;
       const absHundredths = Math.round(Math.abs(z) * 100);
       const tenths = Math.floor(absHundredths / 10) / 10;
       highlightedRows.add(Number((sign * tenths).toFixed(1)));
-      highlightedColumns.add(absHundredths % 10);
+      highlightedColumns[side].add(absHundredths % 10);
     }
 
     const wrapper = document.createElement('div');
@@ -268,7 +273,7 @@ such that \[P(X < k) = 0.25\]  In the normal table, we find the value \({\color{
         th.textContent = `.${String(hundredth).padStart(2, '0')}`;
         th.style.border = border;
         th.style.padding = cellPadding;
-        colourCell(th, highlightedColumns.has(hundredth));
+        colourCell(th, highlightedColumns[side].has(hundredth));
         header.appendChild(th);
       }
       table.appendChild(header);

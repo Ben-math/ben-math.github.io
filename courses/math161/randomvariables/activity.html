@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1056,7 +1057,7 @@ fetch("/nav.html")
 
   
   // -----------------------------
-  // Main activity: placeholder problem generator
+  // Main activity: problem generator
   // -----------------------------
   const DISTRIBUTIONS = ['binomial', 'geometric', 'Poisson', 'uniform', 'normal'];
   let currentProblem = null;
@@ -1082,7 +1083,7 @@ fetch("/nav.html")
 
   function fractionParameter(min = 0.2, max = 0.8) {
     const possibilities = [];
-    for (let den = 3; den <= 10; den++) {
+    for (let den = 3; den <= 12; den++) {
       for (let num = 1; num < den; num++) {
         const [n, d] = reduceFrac(num, den);
         const value = n / d;
@@ -1092,6 +1093,162 @@ fetch("/nav.html")
       }
     }
     return randomChoice(possibilities);
+  }
+
+  function ordinal(n) {
+    const mod100 = n % 100;
+    if (mod100 >= 11 && mod100 <= 13) return `${n}th`;
+    if (n % 10 === 1) return `${n}st`;
+    if (n % 10 === 2) return `${n}nd`;
+    if (n % 10 === 3) return `${n}rd`;
+    return `${n}th`;
+  }
+
+  const FUN_POPULATIONS = [
+    { singular: 'koala', plural: 'koalas', adjectives: ['evil', 'sleepy', 'karate-trained', 'suspiciously polite'] },
+    { singular: 'Pokémon', plural: 'Pokémon', adjectives: ['shiny', 'legendary', 'sleeping', 'wild'] },
+    { singular: 'dragon', plural: 'dragons', adjectives: ['fire-breathing', 'friendly', 'three-headed', 'vegetarian'] },
+    { singular: 'robot', plural: 'robots', adjectives: ['malfunctioning', 'musical', 'sarcastic', 'gold-plated'] },
+    { singular: 'cat', plural: 'cats', adjectives: ['tuxedo', 'grumpy', 'orange', 'internet-famous'] },
+    { singular: 'penguin', plural: 'penguins', adjectives: ['dancing', 'emperor', 'bow-tie-wearing', 'lost'] },
+    { singular: 'alien', plural: 'aliens', adjectives: ['green', 'telepathic', 'vacationing', 'disguised'] },
+    { singular: 'sock', plural: 'socks', adjectives: ['striped', 'missing', 'left-footed', 'glow-in-the-dark'] }
+  ];
+
+  const SHOT_CONTEXTS = [
+    { action: 'shooting a basketball', attempt: 'shot', score: 'make the shot' },
+    { action: 'throwing a dart at a dartboard', attempt: 'throw', score: 'hit the bullseye' },
+    { action: 'taking a penalty kick in soccer', attempt: 'kick', score: 'score a goal' },
+    { action: 'shooting a puck at a hockey net', attempt: 'shot', score: 'score a goal' },
+    { action: 'tossing a ring onto a carnival bottle', attempt: 'toss', score: 'land the ring' },
+    { action: 'launching a paper airplane through a hoop', attempt: 'launch', score: 'send it through the hoop' }
+  ];
+
+  function percentParameter(min, max) {
+    const values = [];
+    for (let x = Math.ceil(100 * min / 5) * 5; x <= Math.floor(100 * max / 5) * 5; x += 5) values.push(x);
+    const percent = randomChoice(values);
+    const [num, den] = reduceFrac(percent, 100);
+    return { percent, num, den, value: percent / 100 };
+  }
+
+  function describeDieEvent(sides, allowedMin, allowedMax) {
+    const possibilities = [];
+    const add = (label, count) => {
+      const p = count / sides;
+      if (p >= allowedMin && p <= allowedMax) possibilities.push({ label, count, total: sides, p });
+    };
+    for (let x = 1; x <= sides; x++) add(`${x}`, 1);
+    for (let a = 1; a <= sides; a++) {
+      for (let b = a + 1; b <= sides; b++) add(`a number from ${a} to ${b}, inclusive`, b - a + 1);
+    }
+    for (let x = 1; x < sides; x++) {
+      add(`more than ${x}`, sides - x);
+      add(`at least ${x}`, sides - x + 1);
+      add(`less than ${x + 1}`, x);
+      add(`at most ${x}`, x);
+    }
+    return randomChoice(possibilities);
+  }
+
+  function sumCounts(a, b) {
+    const counts = new Map();
+    for (let i = 1; i <= a; i++) for (let j = 1; j <= b; j++) counts.set(i + j, (counts.get(i + j) || 0) + 1);
+    return counts;
+  }
+
+  function describeTwoDiceEvent(a, b, allowedMin, allowedMax) {
+    const counts = sumCounts(a, b);
+    const minSum = 2;
+    const maxSum = a + b;
+    const total = a * b;
+    const possibilities = [];
+    const countRange = (lo, hi) => {
+      let count = 0;
+      for (let s = lo; s <= hi; s++) count += counts.get(s) || 0;
+      return count;
+    };
+    const add = (label, count) => {
+      const p = count / total;
+      if (p >= allowedMin && p <= allowedMax) possibilities.push({ label, count, total, p });
+    };
+    for (let s = minSum; s <= maxSum; s++) add(`a sum of ${s}`, counts.get(s));
+    for (let lo = minSum; lo <= maxSum; lo++) {
+      for (let hi = lo + 1; hi <= maxSum; hi++) add(`a sum from ${lo} to ${hi}, inclusive`, countRange(lo, hi));
+    }
+    for (let x = minSum; x < maxSum; x++) {
+      add(`a sum greater than ${x}`, countRange(x + 1, maxSum));
+      add(`a sum of at least ${x}`, countRange(x, maxSum));
+      add(`a sum less than ${x + 1}`, countRange(minSum, x));
+      add(`a sum of at most ${x}`, countRange(minSum, x));
+    }
+    return randomChoice(possibilities);
+  }
+
+  function makeBernoulliScenario(distribution, n) {
+    const caseNumber = randInt(1, 5);
+    const pBounds = distribution === 'binomial' ? [0.15, 0.85] : [0.15, 0.7];
+    let intro = '';
+    let successSingular = 'success';
+    let successPlural = 'successes';
+    let p;
+
+    if (caseNumber === 1 || caseNumber === 2) {
+      const population = randomChoice(FUN_POPULATIONS);
+      const adjective = randomChoice(population.adjectives);
+      successSingular = `${adjective} ${population.singular}`;
+      successPlural = `${adjective} ${population.plural}`;
+
+      if (caseNumber === 1) {
+        p = percentParameter(...pBounds);
+        intro = `${p.percent}% of ${population.plural} are ${adjective}.`;
+      } else {
+        const base = fractionParameter(...pBounds);
+        const scale = randInt(2, 8);
+        const b = base.den * scale;
+        const c = base.num * scale;
+        p = { ...base };
+        intro = `Of a group of ${b} ${population.plural}, ${c} are ${adjective}.`;
+      }
+
+      intro += distribution === 'binomial'
+        ? ` Suppose we randomly select ${n} ${population.plural}, independently and with replacement.`
+        : ` We randomly select ${population.plural}, independently and with replacement, until a ${successSingular} is found.`;
+    } else if (caseNumber === 3) {
+      const shot = randomChoice(SHOT_CONTEXTS);
+      p = percentParameter(...pBounds);
+      successSingular = 'score';
+      successPlural = 'scores';
+      intro = `When ${shot.action}, you have a ${p.percent}% chance to ${shot.score}. `;
+      intro += distribution === 'binomial'
+        ? `Suppose you make ${n} independent ${shot.attempt}s.`
+        : `You make independent ${shot.attempt}s until you ${shot.score}.`;
+    } else if (caseNumber === 4) {
+      const sides = randomChoice([6, 8, 10, 12, 20]);
+      const event = describeDieEvent(sides, ...pBounds);
+      const [num, den] = reduceFrac(event.count, event.total);
+      p = { num, den, value: event.p };
+      successSingular = 'win';
+      successPlural = 'wins';
+      intro = `You roll a ${sides}-sided die. `;
+      intro += distribution === 'binomial'
+        ? `You play ${n} independent rounds of a game in which you win when you roll ${event.label}.`
+        : `You repeatedly roll the die until you roll ${event.label}.`;
+    } else {
+      const sides1 = randomChoice([4, 6, 8, 10, 12]);
+      const sides2 = randomChoice([4, 6, 8, 10, 12]);
+      const event = describeTwoDiceEvent(sides1, sides2, ...pBounds);
+      const [num, den] = reduceFrac(event.count, event.total);
+      p = { num, den, value: event.p };
+      successSingular = 'win';
+      successPlural = 'wins';
+      intro = `You roll a ${sides1}-sided die and a ${sides2}-sided die. `;
+      intro += distribution === 'binomial'
+        ? `You play ${n} independent rounds of a game in which you win when you roll ${event.label}.`
+        : `You repeatedly roll both dice until you roll ${event.label}.`;
+    }
+
+    return { intro, p, successSingular, successPlural };
   }
 
   function chooseQuestionType(distribution) {
@@ -1115,23 +1272,25 @@ fetch("/nav.html")
 
     if (distribution === 'binomial') {
       const n = randInt(6, 40);
-      const p = fractionParameter(0.15, 0.85);
+      const scenario = makeBernoulliScenario(distribution, n);
+      const p = scenario.p;
       const mean = n * p.value;
       const sd = Math.sqrt(n * p.value * (1 - p.value));
       return {
-        distribution, n, p, mean, sd, min: 0, max: n,
-        description: `\\(X\\) is a binomial random variable with number of trials \\(n=${n}\\), each with probability \\(p=${fracToTex(p.num, p.den)}\\) of success.`
+        distribution, n, p, mean, sd, min: 0, max: n, scenario,
+        description: scenario.intro
       };
     }
 
     if (distribution === 'geometric') {
-      const p = fractionParameter(0.15, 0.7);
+      const scenario = makeBernoulliScenario(distribution);
+      const p = scenario.p;
       const mean = 1 / p.value;
       const sd = Math.sqrt(1 - p.value) / p.value;
       const max = Math.max(5, Math.ceil(Math.log(0.01) / Math.log(1 - p.value)));
       return {
-        distribution, p, mean, sd, min: 1, max,
-        description: `\\(X\\) is a geometric random variable with probability \\(p=${fracToTex(p.num, p.den)}\\) of success on each trial, where \\(X\\) is the trial number of the first success.`
+        distribution, p, mean, sd, min: 1, max, scenario,
+        description: scenario.intro
       };
     }
 
@@ -1151,7 +1310,7 @@ fetch("/nav.html")
       const b = a + width;
       return {
         distribution, a, b, mean: (a + b) / 2, sd: width / Math.sqrt(12), min: a, max: b,
-        description: `\\(X\\) is uniformly distributed on the interval \\([${a},${b}]\\).`
+        description: `\\(X\\) is uniformly distributed on the interval \\[${a},${b}\\].`
       };
     }
 
@@ -1177,16 +1336,116 @@ fetch("/nav.html")
     return Math.min(d.max, Math.max(d.min, Math.round(raw / step) * step));
   }
 
+  function makeBernoulliQuestion(d, type) {
+    const isBinomial = d.distribution === 'binomial';
+    const noun = isBinomial ? d.scenario.successPlural : 'trial';
+    const point = () => centralInteger(d);
+    let wording = '';
+    let notation = '';
+
+    if (type === 'specific') {
+      const m = point();
+      wording = isBinomial
+        ? `What is the probability that exactly ${m} of the ${d.n} rounds result in ${d.scenario.successPlural}?`
+        : `What is the probability that the first ${d.scenario.successSingular} occurs on the ${ordinal(m)} trial?`;
+      notation = `P(X=${m})`;
+    } else if (type === 'range') {
+      const centre = centralInteger(d, 1);
+      let left = Math.max(d.min, centre - randInt(1, 3));
+      let right = Math.min(d.max, centre + randInt(1, 3));
+      if (right <= left) right = Math.min(d.max, left + 1);
+      wording = isBinomial
+        ? `What is the probability that between ${left} and ${right} of the rounds, inclusive, result in ${d.scenario.successPlural}?`
+        : `What is the probability that the first ${d.scenario.successSingular} occurs between the ${ordinal(left)} and ${ordinal(right)} trials, inclusive?`;
+      notation = `P(${left}\\leq X\\leq ${right})`;
+    } else if (type === 'oneSided') {
+      const m = point();
+      const relation = randomChoice(['<', '\\leq', '>', '\\geq']);
+      const wordingMap = {
+        '<': isBinomial ? `fewer than ${m}` : `before the ${ordinal(m)} trial`,
+        '\\leq': isBinomial ? `at most ${m}` : `on or before the ${ordinal(m)} trial`,
+        '>': isBinomial ? `more than ${m}` : `after the ${ordinal(m)} trial`,
+        '\\geq': isBinomial ? `at least ${m}` : `on or after the ${ordinal(m)} trial`
+      };
+      wording = isBinomial
+        ? `What is the probability that ${wordingMap[relation]} of the rounds result in ${d.scenario.successPlural}?`
+        : `What is the probability that the first ${d.scenario.successSingular} occurs ${wordingMap[relation]}?`;
+      notation = `P(X${relation}${m})`;
+    } else if (type === 'conditional') {
+      if (isBinomial) {
+        const k = Math.max(0, Math.min(d.n - 1, centralInteger(d, 1)));
+        const m = randInt(k + 1, d.n);
+        wording = `Given that more than ${k} rounds result in ${d.scenario.successPlural}, what is the probability that exactly ${m} rounds do?`;
+        notation = `P(X=${m}\\mid X>${k})`;
+      } else {
+        const k = Math.max(1, centralInteger(d, 1));
+        const m = randInt(k + 1, Math.max(k + 1, d.max));
+        wording = `Given that the first ${d.scenario.successSingular} has not occurred in the first ${k} trials, what is the probability that it occurs on the ${ordinal(m)} trial?`;
+        notation = `P(X=${m}\\mid X>${k})`;
+      }
+    } else if (type === 'percentileOfValue') {
+      const m = point();
+      wording = isBinomial
+        ? `What percentile corresponds to ${m} ${d.scenario.successPlural}?`
+        : `What percentile corresponds to the first ${d.scenario.successSingular} occurring on the ${ordinal(m)} trial?`;
+      notation = `P(X\\leq ${m})`;
+    } else if (type === 'valueFromPercentile') {
+      const percentile = randomChoice([10, 20, 25, 30, 40, 60, 70, 75, 80, 90]);
+      wording = isBinomial
+        ? `Find the ${ordinal(percentile)} percentile for the number of ${d.scenario.successPlural}.`
+        : `Find the ${ordinal(percentile)} percentile for the trial on which the first ${d.scenario.successSingular} occurs.`;
+      notation = `\\text{Find the smallest }x\\text{ such that }P(X\\leq x)\\geq ${percentile / 100}.`;
+    } else if (type === 'mean') {
+      wording = isBinomial
+        ? `Find the expected number of ${d.scenario.successPlural}.`
+        : `Find the expected trial number of the first ${d.scenario.successSingular}.`;
+      notation = `E(X)`;
+    } else if (type === 'sd') {
+      wording = isBinomial
+        ? `Find the standard deviation of the number of ${d.scenario.successPlural}.`
+        : `Find the standard deviation of the trial number of the first ${d.scenario.successSingular}.`;
+      notation = `\\sigma_X`;
+    } else if (type === 'iqr') {
+      wording = isBinomial
+        ? `Find the interquartile range of the number of ${d.scenario.successPlural}.`
+        : `Find the interquartile range of the trial number of the first ${d.scenario.successSingular}.`;
+      notation = `Q_3-Q_1`;
+    } else {
+      const quartiles = [
+        { name: 'median', symbol: 'Q_2' },
+        { name: 'first quartile', symbol: 'Q_1' },
+        { name: 'third quartile', symbol: 'Q_3' }
+      ];
+      const q = randomChoice(quartiles);
+      wording = isBinomial
+        ? `Find the ${q.name} of the number of ${d.scenario.successPlural}.`
+        : `Find the ${q.name} of the trial number of the first ${d.scenario.successSingular}.`;
+      notation = q.symbol;
+    }
+
+    const variableMeaning = isBinomial
+      ? `the number of ${d.scenario.successPlural} in the ${d.n} trials`
+      : `the trial number of the first ${d.scenario.successSingular}`;
+    const model = isBinomial
+      ? `X\\sim\\operatorname{Binomial}\\left(${d.n},${fracToTex(d.p.num, d.p.den)}\\right)`
+      : `X\\sim\\operatorname{Geometric}\\left(${fracToTex(d.p.num, d.p.den)}\\right)`;
+    const hint = `Let \\(X\\) be ${variableMeaning}. Then \\( ${model} \\), and the question asks for \\( ${notation} \\).`;
+    return { wording, notation, hint };
+  }
+
   function generateQuestion(d, type) {
-    const discrete = ['binomial', 'geometric', 'Poisson'].includes(d.distribution);
+    if (d.distribution === 'binomial' || d.distribution === 'geometric') {
+      return makeBernoulliQuestion(d, type);
+    }
+
+    const discrete = ['Poisson'].includes(d.distribution);
     const point = () => discrete ? centralInteger(d) : centralContinuous(d);
+    let wording;
 
     if (type === 'specific') {
       const x = point();
-      return `Find \\(P(X=${formatNumber(x)})\\).`;
-    }
-
-    if (type === 'range') {
+      wording = `Find \\(P(X=${formatNumber(x)})\\).`;
+    } else if (type === 'range') {
       let left, right;
       if (discrete) {
         const centre = centralInteger(d, 1);
@@ -1194,60 +1453,40 @@ fetch("/nav.html")
         right = Math.min(d.max, centre + randInt(1, 3));
         if (right <= left + 1) right = Math.min(d.max, left + 2);
       } else {
-        left = d.mean - (0.5 + 0.5 * randInt(0, 5)) * d.sd;
-        right = d.mean + (0.5 + 0.5 * randInt(0, 5)) * d.sd;
-        left = Math.max(d.min, left);
-        right = Math.min(d.max, right);
+        left = Math.max(d.min, d.mean - (0.5 + 0.5 * randInt(0, 5)) * d.sd);
+        right = Math.min(d.max, d.mean + (0.5 + 0.5 * randInt(0, 5)) * d.sd);
       }
       const leftOp = Math.random() < 0.5 ? '<' : '\\leq';
       const rightOp = Math.random() < 0.5 ? '<' : '\\leq';
-      return `Find \\(P(${formatNumber(left)} ${leftOp} X ${rightOp} ${formatNumber(right)})\\).`;
-    }
-
-    if (type === 'oneSided') {
+      wording = `Find \\(P(${formatNumber(left)} ${leftOp} X ${rightOp} ${formatNumber(right)})\\).`;
+    } else if (type === 'oneSided') {
       const x = point();
       const relation = randomChoice(['<', '\\leq', '>', '\\geq']);
-      return `Find \\(P(X ${relation} ${formatNumber(x)})\\).`;
-    }
-
-    if (type === 'conditional') {
+      wording = `Find \\(P(X ${relation} ${formatNumber(x)})\\).`;
+    } else if (type === 'conditional') {
       if (discrete) {
         const centre = centralInteger(d, 0.8);
         const lower = Math.max(d.min, centre - randInt(2, 4));
         const upper = Math.min(d.max, centre + randInt(2, 4));
-        if (Math.random() < 0.5) {
-          const x = randInt(lower, Math.max(lower, upper));
-          return `Find \\(P(X=${x}\\mid ${lower}\\leq X\\leq ${upper})\\).`;
-        }
-        const inner = Math.max(lower, Math.min(upper, centre));
-        return `Find \\(P(X\\leq ${inner}\\mid ${lower}\\leq X\\leq ${upper})\\).`;
+        const x = randInt(lower, Math.max(lower, upper));
+        wording = `Find \\(P(X=${x}\\mid ${lower}\\leq X\\leq ${upper})\\).`;
+      } else {
+        const lower = Math.max(d.min, d.mean - 3 * d.sd);
+        const upper = Math.min(d.max, d.mean + 3 * d.sd);
+        const inner = d.mean + randomChoice([-2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2]) * d.sd;
+        wording = `Find \\(P(X\\leq ${formatNumber(inner)}\\mid ${formatNumber(lower)}\\leq X\\leq ${formatNumber(upper)})\\).`;
       }
-      const lower = Math.max(d.min, d.mean - 3 * d.sd);
-      const upper = Math.min(d.max, d.mean + 3 * d.sd);
-      const inner = d.mean + randomChoice([-2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2]) * d.sd;
-      return `Find \\(P(X\\leq ${formatNumber(inner)}\\mid ${formatNumber(lower)}\\leq X\\leq ${formatNumber(upper)})\\).`;
-    }
-
-    if (type === 'percentileOfValue') {
-      const x = point();
-      return `What percentile is the value \\(X=${formatNumber(x)}\\)?`;
-    }
-
-    if (type === 'valueFromPercentile') {
+    } else if (type === 'percentileOfValue') {
+      wording = `What percentile is the value \\(X=${formatNumber(point())}\\)?`;
+    } else if (type === 'valueFromPercentile') {
       const percentile = randomChoice([10, 20, 25, 30, 40, 60, 70, 75, 80, 90]);
-      return `Find the ${percentile}${percentile === 1 ? 'st' : percentile === 2 ? 'nd' : percentile === 3 ? 'rd' : 'th'} percentile of \\(X\\).`;
-    }
+      wording = `Find the ${ordinal(percentile)} percentile of \\(X\\).`;
+    } else if (type === 'mean') wording = `Find the mean of \\(X\\).`;
+    else if (type === 'sd') wording = `Find the standard deviation of \\(X\\).`;
+    else if (type === 'iqr') wording = `Find the interquartile range of \\(X\\).`;
+    else wording = `Find the ${randomChoice(['median', 'first quartile', 'third quartile'])} of \\(X\\).`;
 
-    if (type === 'mean') return `Find the mean of \\(X\\).`;
-    if (type === 'sd') return `Find the standard deviation of \\(X\\).`;
-    if (type === 'iqr') return `Find the interquartile range of \\(X\\).`;
-
-    const quartile = randomChoice([
-      'median',
-      'first quartile',
-      'third quartile'
-    ]);
-    return `Find the ${quartile} of \\(X\\).`;
+    return { wording, hint: `This is a ${d.distribution} distribution. Its parameters are given in the first sentence of the problem.` };
   }
 
   function clearPlaceholderActivity() {
@@ -1266,14 +1505,14 @@ fetch("/nav.html")
     const task = generateQuestion(distribution, questionType);
     currentProblem = { ...distribution, questionType, task };
 
-    questionText.innerHTML = `<p>${distribution.description}</p><p>${task}</p>`;
+    questionText.innerHTML = `<p>${distribution.description}</p><p>${task.wording}</p>`;
     hintBtn.disabled = false;
     typeset([questionText]);
   }
 
   function showPlaceholderHint() {
     if (!currentProblem) return;
-    workArea.innerHTML = `<p><b>Hint:</b> This is a ${currentProblem.distribution} distribution. Its parameters are given in the first sentence of the problem.</p>`;
+    workArea.innerHTML = `<p><b>Hint:</b> ${currentProblem.task.hint}</p>`;
     hintBtn.disabled = true;
     typeset([workArea]);
   }

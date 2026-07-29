@@ -51,7 +51,7 @@ fetch("/nav.html")
 
     <p>This activity will ask a question about any of the 5 probability distributions we have learned about: binomial, geometric, Poisson, uniform, and 
     normal.  The reason they are all combined into a single activity is that one of the greatest difficulties students face in working with these is not in 
-    <i>how</i> to compute things, but rather in deciding <i>which</i> probability distribution applies to the situation.  Some things to look out for:
+    the <i>how</i> to compute things, but rather in deciding <i>which</i> probability distribution applies to the situation.  Some things to look out for:
       <ul>
         <li>Are Bernoulli attempts (something with a fixed probability, either given in the problem or that can be easily computed) being performed in the 
           problem?  If so, then you are probably looking at a binomial or geometric distribution.</li>
@@ -1572,28 +1572,58 @@ fetch("/nav.html")
     else renderGeometricHistogram(container, d.p.value, { ...options, maxX: Math.max(d.max, ...highlightXs, ...superHighlightXs, 10) });
   }
 
-  function nearestQuantileDetails(d, target) {
-    const max = d.distribution === 'binomial' ? d.n + 1 : Math.max(d.max + 8, 40);
+  function nearestCumulativeCandidates(d, target) {
+    const maxK = d.distribution === 'binomial' ? d.n + 1 : Math.max(d.max + 8, 40);
     let upperK = d.min;
-    while (upperK <= max && bernoulliCdf(d, upperK - 1) < target) upperK++;
-    upperK = Math.min(upperK, max);
-
+    while (upperK <= maxK && bernoulliCdf(d, upperK - 1) < target) upperK++;
+    upperK = Math.min(upperK, maxK);
     const lowerK = Math.max(d.min, upperK - 1);
-    const lowerValue = bernoulliCdf(d, lowerK - 1); // P(X<lowerK)
-    const upperValue = bernoulliCdf(d, upperK - 1); // P(X<upperK)
-    const lowerDiff = Math.abs(lowerValue - target);
-    const upperDiff = Math.abs(upperValue - target);
-    const chosenK = upperDiff < lowerDiff ? upperK : lowerK;
-
-    return { lowerK, upperK, lowerValue, upperValue, lowerDiff, upperDiff, chosenK };
-  }
-
-  function nearestQuantile(d, target) {
-    return nearestQuantileDetails(d, target).chosenK;
+    const lowerValue = bernoulliCdf(d, lowerK - 1);
+    const upperValue = bernoulliCdf(d, upperK - 1);
+    const chosenK = Math.abs(upperValue - target) < Math.abs(lowerValue - target) ? upperK : lowerK;
+    return { lowerK, upperK, lowerValue, upperValue, chosenK };
   }
 
   function sumNotation(d, xs) {
     return xs.map(x => `f\\left(${d.distribution === 'geometric' ? `${x},${fracToTex(d.p.num,d.p.den)}` : `${x},${d.n},${fracToTex(d.p.num,d.p.den)}`}\\right)`).join('+');
+  }
+
+  function probabilityTermSum(xs) {
+    return xs.map(x => `P(X=${x})`).join('+');
+  }
+
+  function chunkTerms(xs, size = 5) {
+    const chunks = [];
+    for (let i = 0; i < xs.length; i += size) chunks.push(xs.slice(i, i + size));
+    return chunks;
+  }
+
+  function expandedProbabilityHtml(eventTex, xs, probability, complementXs = null, complementTex = '') {
+    const useComplement = Array.isArray(complementXs) && complementXs.length < xs.length;
+    const chosen = useComplement ? complementXs : xs;
+    const chunks = chunkTerms(chosen);
+    const lines = [];
+
+    if (useComplement) {
+      lines.push(`P(${eventTex})&=1-P(${complementTex})`);
+      if (chunks.length === 1) {
+        lines.push(`&=1-\\left(${probabilityTermSum(chunks[0])}\\right)`);
+      } else {
+        lines.push(`&=1-\\left(${probabilityTermSum(chunks[0])}`);
+        for (let i = 1; i < chunks.length; i++) {
+          const end = i === chunks.length - 1 ? '\\right)' : '';
+          lines.push(`&\\qquad+${probabilityTermSum(chunks[i])}${end}`);
+        }
+      }
+    } else if (chunks.length === 1) {
+      lines.push(`P(${eventTex})&=${probabilityTermSum(chunks[0])}`);
+    } else {
+      lines.push(`P(${eventTex})&=${probabilityTermSum(chunks[0])}`);
+      for (let i = 1; i < chunks.length; i++) lines.push(`&\\qquad+${probabilityTermSum(chunks[i])}`);
+    }
+
+    lines.push(`&\\approx ${probability.toFixed(4)}`);
+    return `<p>\\[\\begin{aligned}${lines.join('\\\\')}\\end{aligned}\\]</p>`;
   }
 
   function buildBernoulliHints(d) {
@@ -1628,13 +1658,32 @@ fetch("/nav.html")
       steps.push({ html: `<p>\\[P(X=${e.m})=${pmfFormula(d,e.m)}=${bigFracTex(num,den)}\\approx ${bernoulliPmf(d,e.m).toFixed(4)}\\]</p>` });
     } else if (e.type === 'range' || e.type === 'oneSided') {
       const xs = probabilityXs(d,e);
-      let prob = xs.reduce((s,x)=>s+bernoulliPmf(d,x),0);
-      let expression;
-      if (xs.length <= 8) expression = `P(${e.type==='range' ? `${e.left}\\leq X\\leq ${e.right}` : `X${e.relation}${e.m}`})=${sumNotation(d,xs)}`;
-      else if (e.relation === '>') expression = `P(X>${e.m})=1-P(X\\leq ${e.m})`;
-      else if (e.relation === '\\geq') expression = `P(X\\geq ${e.m})=1-P(X<${e.m})`;
-      else expression = `P(${d.task.notation.replace(/^P\(|\)$/g,'')})=${sumNotation(d,xs)}`;
-      steps.push({ html: `<p>\\[${expression}\\approx ${prob.toFixed(4)}\\]</p>` });
+      let prob;
+      if (e.type === 'range') prob = bernoulliCdf(d, e.right) - bernoulliCdf(d, e.left - 1);
+      else if (e.relation === '<') prob = bernoulliCdf(d, e.m - 1);
+      else if (e.relation === '\\leq') prob = bernoulliCdf(d, e.m);
+      else if (e.relation === '>') prob = 1 - bernoulliCdf(d, e.m);
+      else prob = 1 - bernoulliCdf(d, e.m - 1);
+
+      if (isBinomial) {
+        const support = Array.from({length:d.n + 1}, (_, i) => i);
+        const selected = new Set(xs);
+        const complementXs = support.filter(x => !selected.has(x));
+        const relationTex = e.relation === '<' ? '\\lt' : e.relation;
+        const eventTex = e.type === 'range' ? `${e.left}\\leq X\\leq ${e.right}` : `X${relationTex}${e.m}`;
+        let complementTex = '';
+        if (e.type === 'range') complementTex = `X\\lt ${e.left}\\text{ or }X>${e.right}`;
+        else if (e.relation === '<') complementTex = `X\\geq ${e.m}`;
+        else if (e.relation === '\\leq') complementTex = `X\\geq ${e.m + 1}`;
+        else if (e.relation === '>') complementTex = `X\\leq ${e.m}`;
+        else complementTex = `X\\lt ${e.m}`;
+        steps.push({ html: expandedProbabilityHtml(eventTex, xs, prob, complementXs, complementTex) });
+      } else {
+        const relationTex = e.relation === '<' ? '\\lt' : e.relation;
+        const eventTex = e.type === 'range' ? `${e.left}\\leq X\\leq ${e.right}` : `X${relationTex}${e.m}`;
+        if (xs.length <= 8) steps.push({ html: expandedProbabilityHtml(eventTex, xs, prob) });
+        else steps.push({ html: `<p>\\[P(${eventTex})\\approx ${prob.toFixed(4)}\\]</p>` });
+      }
     } else if (e.type === 'conditional') {
       const numerator = bernoulliPmf(d,e.m);
       const denominator = 1-bernoulliCdf(d,e.k);
@@ -1654,25 +1703,31 @@ fetch("/nav.html")
     } else if (e.type === 'percentileOfValue') {
       const xs=Array.from({length:e.m-d.min+1},(_,i)=>d.min+i);
       const val=bernoulliCdf(d,e.m);
-      steps.push({html:`<p>The percentile is the cumulative probability up to and including \\(X=${e.m}\\).</p><p>\\[P(X\\leq ${e.m})=${sumNotation(d,xs)}\\approx ${val.toFixed(4)}\\]</p><p>Thus, \\(X=${e.m}\\) is approximately the \\(${(100*val).toFixed(1)}\\)th percentile.</p>`,diagram:{highlight:xs}});
+      let calculation;
+      if (isBinomial) {
+        const complementXs=Array.from({length:d.n-e.m},(_,i)=>e.m+1+i);
+        calculation=expandedProbabilityHtml(`X\\leq ${e.m}`,xs,val,complementXs,`X\\geq ${e.m+1}`);
+      } else {
+        calculation=xs.length<=8 ? expandedProbabilityHtml(`X\\leq ${e.m}`,xs,val) : `<p>\\[P(X\\leq ${e.m})\\approx ${val.toFixed(4)}\\]</p>`;
+      }
+      steps.push({html:`<p>The percentile is the cumulative probability up to and including \\(X=${e.m}\\).</p>${calculation}<p>Thus, \\(X=${e.m}\\) is approximately the \\(${(100*val).toFixed(1)}\\)th percentile.</p>`,diagram:{highlight:xs}});
     } else if (e.type === 'valueFromPercentile') {
       const target=e.percentile/100;
-      const q=nearestQuantileDetails(d,target);
-      steps.push({html:`<p>We look for a \\(k\\) such that \\(P(X<k)\\approx ${target}\). Since this is discrete, we compare the cumulative probabilities immediately below and above ${target}.</p>`});
-      steps.push({html:`<p>\\[P(X<${q.lowerK})\\approx ${q.lowerValue.toFixed(4)}\\qquad\\text{and}\\qquad P(X<${q.upperK})\\approx ${q.upperValue.toFixed(4)}\\]</p>`});
-      const chosenValue=q.chosenK===q.upperK?q.upperValue:q.lowerValue;
-      steps.push({html:`<p>Since ${chosenValue.toFixed(4)} is closer to ${target}, the ${ordinal(e.percentile)} percentile is \\(${q.chosenK}\\).</p>`,diagram:{highlight:[q.chosenK]}});
+      const q=nearestCumulativeCandidates(d,target);
+      steps.push({html:`<p>We look for a \\(k\\) such that \\(P(X\\lt k)\\approx ${target}\\). Since this is discrete, we compare the cumulative probabilities immediately below and above ${target}.</p>`});
+      steps.push({html:`<p>\\[P(X\\lt ${q.lowerK})\\approx ${q.lowerValue.toFixed(4)}\\qquad\\text{and}\\qquad P(X\\lt ${q.upperK})\\approx ${q.upperValue.toFixed(4)}\\]</p>`});
+      steps.push({html:`<p>Therefore, the ${ordinal(e.percentile)} percentile is \\( ${q.chosenK} \\).</p>`,diagram:{highlight:[q.chosenK]}});
     } else if (e.type === 'quartile' || e.type === 'iqr') {
       const targets=e.type==='iqr'?[{name:'Q_1',target:.25},{name:'Q_3',target:.75}]:[{name:e.quartileSymbol,target:e.target}];
       const answers={};
       if(e.type==='iqr') steps.push({html:`<p>We are trying to find \\(IQR=Q_3-Q_1\\).</p>`});
       for(const item of targets){
-        const q=nearestQuantileDetails(d,item.target);
+        const q=nearestCumulativeCandidates(d,item.target);
+        const lead = item.name==='Q_1' ? 'We start by finding' : (item.name==='Q_3' ? 'We next find' : 'We find');
+        steps.push({html:`<p>${lead} \\(${item.name}\\). We look for a \\(k\\) such that \\(P(X\\lt k)\\approx ${item.target}\\). Since this is discrete, we compare the cumulative probabilities immediately below and above ${item.target}.</p>`});
+        steps.push({html:`<p>\\[P(X\\lt ${q.lowerK})\\approx ${q.lowerValue.toFixed(4)}\\qquad\\text{and}\\qquad P(X\\lt ${q.upperK})\\approx ${q.upperValue.toFixed(4)}\\]</p>`});
         answers[item.name]=q.chosenK;
-        const opening=item.name==='Q_1'?'We start by finding':(item.name==='Q_3'?'We next find':'We find');
-        steps.push({html:`<p>${opening} \\(${item.name}\\). We look for a \\(k\\) such that \\(P(X<k)\\approx ${item.target}\). Since this is discrete, we compare the cumulative probabilities immediately below and above ${item.target}.</p>`});
-        steps.push({html:`<p>\\[P(X<${q.lowerK})\\approx ${q.lowerValue.toFixed(4)}\\qquad\\text{and}\\qquad P(X<${q.upperK})\\approx ${q.upperValue.toFixed(4)}\\]</p>`});
-        const chosenValue=q.chosenK===q.upperK?q.upperValue:q.lowerValue;
+        const chosenValue = q.chosenK === q.upperK ? q.upperValue : q.lowerValue;
         steps.push({html:`<p>Since ${chosenValue.toFixed(4)} is closer to ${item.target}, we have \\(${item.name}=${q.chosenK}\\).</p>`,diagram:{highlight:[q.chosenK]}});
       }
       if(e.type==='iqr') steps.push({html:`<p>\\[IQR=Q_3-Q_1=${answers.Q_3}-${answers.Q_1}=${answers.Q_3-answers.Q_1}\\]</p>`});

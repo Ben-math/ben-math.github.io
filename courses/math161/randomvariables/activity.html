@@ -3,6 +3,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -50,10 +51,10 @@ fetch("/nav.html")
     normal.  The reason they are all combined into a single activity is that one of the greatest difficulties students face in working with these is not in 
     the <i>how</i> to compute things, but rather in deciding <i>which</i> probability distribution applies to the situation.  Some things to look out for:
       <ul>
-        <li>Are Bernoulli trials (something with a fixed probability, either given in the problem or that can be easily computed) being performed in the 
+        <li>Are Bernoulli attempts (something with a fixed probability, either given in the problem or that can be easily computed) being performed in the 
           problem?  If so, then you are probably looking at a binomial or geometric distribution.</li>
-        <li>If there are a fixed number of Bernoulli trials performed, it is a binomial distribution.</li>
-        <li>If Bernoulli trials are performed <i>until</i> a success, it is a geometric distribution.</li>
+        <li>If there are a fixed number of Bernoulli attempts performed, it is a binomial distribution.</li>
+        <li>If Bernoulli attempts are performed <i>until</i> a success, it is a geometric distribution.</li>
         <li>Watch out for the words "on average/average rate".  This may be a Poisson distribution.</li>
         <li>If outcomes in an interval are <i>"equally likely/uniformly distributed"</i>, this may be a uniform distribution.</li>
         <li>The only circumstance in which you are looking at a normal distribution is <b>if it is explicitly stated in the problem.</b></li>
@@ -809,7 +810,7 @@ fetch("/nav.html")
   // -----------------------------
   // Inline-SVG histogram for Geometric(p)
   // -----------------------------
-  // X is the trial number of the first success, so x = 1, 2, 3, ...
+  // X is the attempt number of the first success, so x = 1, 2, 3, ...
   function renderGeometricHistogram(container, p, options = {}) {
     const el = (typeof container === 'string') ? document.querySelector(container) : container;
     if (!el || !(p > 0 && p <= 1)) return;
@@ -1213,7 +1214,7 @@ fetch("/nav.html")
 
       intro += distribution === 'binomial'
         ? ` Suppose we randomly select ${n} ${population.plural}, independently and with replacement.`
-        : ` We randomly select ${population.plural}, independently and with replacement, until a ${successSingular} is found.`;
+        : ` We randomly select ${population.plural}, with replacement, until a ${successSingular} is found.`;
     } else if (caseNumber === 3) {
       const shot = randomChoice(SHOT_CONTEXTS);
       p = percentParameter(...pBounds);
@@ -1347,7 +1348,7 @@ fetch("/nav.html")
       const m = point();
       wording = isBinomial
         ? `What is the probability that exactly ${m} of the ${d.n} rounds result in ${d.scenario.successPlural}?`
-        : `What is the probability that the first ${d.scenario.successSingular} occurs on the ${ordinal(m)} trial?`;
+        : `What is the probability that the first ${d.scenario.successSingular} occurs on the ${ordinal(m)} attempt?`;
       notation = `P(X=${m})`;
     } else if (type === 'range') {
       const centre = centralInteger(d, 1);
@@ -1356,16 +1357,16 @@ fetch("/nav.html")
       if (right <= left) right = Math.min(d.max, left + 1);
       wording = isBinomial
         ? `What is the probability that between ${left} and ${right} of the rounds, inclusive, result in ${d.scenario.successPlural}?`
-        : `What is the probability that the first ${d.scenario.successSingular} occurs between the ${ordinal(left)} and ${ordinal(right)} trials, inclusive?`;
+        : `What is the probability that the first ${d.scenario.successSingular} occurs between the ${ordinal(left)} and ${ordinal(right)} attempts, inclusive?`;
       notation = `P(${left}\\leq X\\leq ${right})`;
     } else if (type === 'oneSided') {
       const m = point();
       const relation = randomChoice(['<', '\\leq', '>', '\\geq']);
       const wordingMap = {
-        '<': isBinomial ? `fewer than ${m}` : `before the ${ordinal(m)} trial`,
-        '\\leq': isBinomial ? `at most ${m}` : `on or before the ${ordinal(m)} trial`,
-        '>': isBinomial ? `more than ${m}` : `after the ${ordinal(m)} trial`,
-        '\\geq': isBinomial ? `at least ${m}` : `on or after the ${ordinal(m)} trial`
+        '<': isBinomial ? `fewer than ${m}` : `before the ${ordinal(m)} attempt`,
+        '\\leq': isBinomial ? `at most ${m}` : `on or before the ${ordinal(m)} attempt`,
+        '>': isBinomial ? `more than ${m}` : `after the ${ordinal(m)} attempt`,
+        '\\geq': isBinomial ? `at least ${m}` : `on or after the ${ordinal(m)} attempt`
       };
       wording = isBinomial
         ? `What is the probability that ${wordingMap[relation]} of the rounds result in ${d.scenario.successPlural}?`
@@ -1380,35 +1381,35 @@ fetch("/nav.html")
       } else {
         const k = Math.max(1, centralInteger(d, 1));
         const m = randInt(k + 1, Math.max(k + 1, d.max));
-        wording = `Given that the first ${d.scenario.successSingular} has not occurred in the first ${k} trials, what is the probability that it occurs on the ${ordinal(m)} trial?`;
+        wording = `Given that the first ${d.scenario.successSingular} has not occurred in the first ${k} attempts, what is the probability that it occurs on the ${ordinal(m)} attempt?`;
         notation = `P(X=${m}\\mid X>${k})`;
       }
     } else if (type === 'percentileOfValue') {
       const m = point();
       wording = isBinomial
         ? `What percentile corresponds to ${m} ${d.scenario.successPlural}?`
-        : `What percentile corresponds to the first ${d.scenario.successSingular} occurring on the ${ordinal(m)} trial?`;
+        : `What percentile corresponds to the first ${d.scenario.successSingular} occurring on the ${ordinal(m)} attempt?`;
       notation = `P(X\\leq ${m})`;
     } else if (type === 'valueFromPercentile') {
       const percentile = randomChoice([10, 20, 25, 30, 40, 60, 70, 75, 80, 90]);
       wording = isBinomial
         ? `Find the ${ordinal(percentile)} percentile for the number of ${d.scenario.successPlural}.`
-        : `Find the ${ordinal(percentile)} percentile for the trial on which the first ${d.scenario.successSingular} occurs.`;
+        : `Find the ${ordinal(percentile)} percentile for the selection on which the first ${d.scenario.successSingular} occurs.`;
       notation = `\\text{Find the smallest }x\\text{ such that }P(X\\leq x)\\geq ${percentile / 100}.`;
     } else if (type === 'mean') {
       wording = isBinomial
         ? `Find the expected number of ${d.scenario.successPlural}.`
-        : `Find the expected trial number of the first ${d.scenario.successSingular}.`;
+        : `Find the expected attempt number of the first ${d.scenario.successSingular}.`;
       notation = `E(X)`;
     } else if (type === 'sd') {
       wording = isBinomial
         ? `Find the standard deviation of the number of ${d.scenario.successPlural}.`
-        : `Find the standard deviation of the trial number of the first ${d.scenario.successSingular}.`;
+        : `Find the standard deviation of the attempt number of the first ${d.scenario.successSingular}.`;
       notation = `\\sigma_X`;
     } else if (type === 'iqr') {
       wording = isBinomial
         ? `Find the interquartile range of the number of ${d.scenario.successPlural}.`
-        : `Find the interquartile range of the trial number of the first ${d.scenario.successSingular}.`;
+        : `Find the interquartile range of the attempt number of the first ${d.scenario.successSingular}.`;
       notation = `Q_3-Q_1`;
     } else {
       const quartiles = [
@@ -1419,13 +1420,13 @@ fetch("/nav.html")
       const q = randomChoice(quartiles);
       wording = isBinomial
         ? `Find the ${q.name} of the number of ${d.scenario.successPlural}.`
-        : `Find the ${q.name} of the trial number of the first ${d.scenario.successSingular}.`;
+        : `Find the ${q.name} of the attempt number of the first ${d.scenario.successSingular}.`;
       notation = q.symbol;
     }
 
     const variableMeaning = isBinomial
-      ? `the number of ${d.scenario.successPlural} in the ${d.n} trials`
-      : `the trial number of the first ${d.scenario.successSingular}`;
+      ? `the number of ${d.scenario.successPlural} in the ${d.n} attempts`
+      : `the attempt number of the first ${d.scenario.successSingular}`;
     const model = isBinomial
       ? `X\\sim\\operatorname{Binomial}\\left(${d.n},${fracToTex(d.p.num, d.p.den)}\\right)`
       : `X\\sim\\operatorname{Geometric}\\left(${fracToTex(d.p.num, d.p.den)}\\right)`;

@@ -4,6 +4,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -86,6 +87,7 @@ fetch("/nav.html")
       <div class="button-container" style="gap: 0.75rem;">
         <button id="hint-btn" class="rubber-button" disabled>Hint</button>
       </div>
+      <div id="hint-area" class="math" style="margin-top: 1rem;"></div>
     </div>
 </main>
   
@@ -224,6 +226,7 @@ fetch("/nav.html")
   const workArea = document.getElementById('work-area');
   const histogramArea = document.getElementById('histogram-area');
   const stageFeedback = document.getElementById('stage-feedback');
+  const hintArea = document.getElementById('hint-area');
 
   // -----------------------------
   // Helpers
@@ -480,6 +483,7 @@ fetch("/nav.html")
     const paleBlue = options.paleBlue ?? '#b7d8f0';
     const paleRed = options.paleRed ?? '#f2b6b6';
     const highlight = new Set(options.highlightXs ?? []);
+    const superHighlight = new Set(options.superHighlightXs ?? []);
 
     const comb = (N, K) => {
       if (K < 0 || K > N) return 0;
@@ -594,7 +598,7 @@ fetch("/nav.html")
       rect.setAttribute('y', String(yy));
       rect.setAttribute('width', String(barW));
       rect.setAttribute('height', String(Math.max(0, h)));
-      rect.setAttribute('fill', highlight.has(d.x) ? paleRed : paleBlue);
+      rect.setAttribute('fill', superHighlight.has(d.x) ? (options.darkRed ?? '#c94f4f') : (highlight.has(d.x) ? paleRed : paleBlue));
       rect.setAttribute('fill-opacity', '0.85');
       rect.setAttribute('stroke', 'currentColor');
       rect.setAttribute('stroke-opacity', '0.35');
@@ -821,13 +825,14 @@ fetch("/nav.html")
     const paleBlue = options.paleBlue ?? '#b7d8f0';
     const paleRed = options.paleRed ?? '#f2b6b6';
     const highlight = new Set(options.highlightXs ?? []);
+    const superHighlight = new Set(options.superHighlightXs ?? []);
     const maxX = Math.max(1, Math.floor(options.maxX ?? Math.max(10, Math.ceil(Math.log(0.005) / Math.log(1 - p)))));
 
     const data = [];
     for (let x = 1; x <= maxX; x++) data.push({ x, p: Math.pow(1 - p, x - 1) * p });
     renderDiscreteDistributionHistogram(el, data, {
       ...options, width: W, height: H, padding: pad,
-      paleBlue, paleRed, highlightXs: [...highlight],
+      paleBlue, paleRed, highlightXs: [...highlight], superHighlightXs: [...superHighlight],
       ariaLabel: options.ariaLabel ?? `Histogram of Geometric(p=${p})`
     });
   }
@@ -873,6 +878,7 @@ fetch("/nav.html")
     const paleBlue = options.paleBlue ?? '#b7d8f0';
     const paleRed = options.paleRed ?? '#f2b6b6';
     const highlight = new Set(options.highlightXs ?? []);
+    const superHighlight = new Set(options.superHighlightXs ?? []);
     const maxP = Math.max(...data.map(d => d.p));
     const plotW = W - pad.left - pad.right;
     const plotH = H - pad.top - pad.bottom;
@@ -924,7 +930,7 @@ fetch("/nav.html")
       const yy = y(d.p);
       add('rect', {
         x: xx, y: yy, width: barW, height: Math.max(0, baseY - yy),
-        fill: highlight.has(d.x) ? paleRed : paleBlue,
+        fill: superHighlight.has(d.x) ? (options.darkRed ?? '#c94f4f') : (highlight.has(d.x) ? paleRed : paleBlue),
         'fill-opacity': 0.85, stroke: 'currentColor', 'stroke-opacity': 0.35, 'stroke-width': 1
       });
       if (i % labelEvery === 0 || i === data.length - 1) {
@@ -1208,7 +1214,7 @@ fetch("/nav.html")
         const scale = randInt(2, 8);
         const b = base.den * scale;
         const c = base.num * scale;
-        p = { ...base };
+        p = { ...base, givenNum: c, givenDen: b };
         intro = `Of a group of ${b} ${population.plural}, ${c} are ${adjective}.`;
       }
 
@@ -1223,12 +1229,12 @@ fetch("/nav.html")
       intro = `When ${shot.action}, you have a ${p.percent}% chance to ${shot.score}. `;
       intro += distribution === 'binomial'
         ? `Suppose you make ${n} independent ${shot.attempt}s.`
-        : `You make independent ${shot.attempt}s until you ${shot.score}.`;
+        : `You make ${shot.attempt}s repeatedly until you ${shot.score}.`;
     } else if (caseNumber === 4) {
       const sides = randomChoice([6, 8, 10, 12, 20]);
       const event = describeDieEvent(sides, ...pBounds);
       const [num, den] = reduceFrac(event.count, event.total);
-      p = { num, den, value: event.p };
+      p = { num, den, value: event.p, givenNum: event.count, givenDen: event.total };
       successSingular = 'win';
       successPlural = 'wins';
       intro = `You roll a ${sides}-sided die. `;
@@ -1240,7 +1246,7 @@ fetch("/nav.html")
       const sides2 = randomChoice([4, 6, 8, 10, 12]);
       const event = describeTwoDiceEvent(sides1, sides2, ...pBounds);
       const [num, den] = reduceFrac(event.count, event.total);
-      p = { num, den, value: event.p };
+      p = { num, den, value: event.p, givenNum: event.count, givenDen: event.total };
       successSingular = 'win';
       successPlural = 'wins';
       intro = `You roll a ${sides1}-sided die and a ${sides2}-sided die. `;
@@ -1339,63 +1345,62 @@ fetch("/nav.html")
 
   function makeBernoulliQuestion(d, type) {
     const isBinomial = d.distribution === 'binomial';
-    const noun = isBinomial ? d.scenario.successPlural : 'trial';
     const point = () => centralInteger(d);
     let wording = '';
     let notation = '';
+    const event = { type };
 
     if (type === 'specific') {
-      const m = point();
+      event.m = point();
       wording = isBinomial
-        ? `What is the probability that exactly ${m} of the ${d.n} rounds result in ${d.scenario.successPlural}?`
-        : `What is the probability that the first ${d.scenario.successSingular} occurs on the ${ordinal(m)} attempt?`;
-      notation = `P(X=${m})`;
+        ? `What is the probability that exactly ${event.m} of the ${d.n} rounds result in ${d.scenario.successPlural}?`
+        : `What is the probability that the first ${d.scenario.successSingular} occurs on the ${ordinal(event.m)} attempt?`;
+      notation = `P(X=${event.m})`;
     } else if (type === 'range') {
       const centre = centralInteger(d, 1);
-      let left = Math.max(d.min, centre - randInt(1, 3));
-      let right = Math.min(d.max, centre + randInt(1, 3));
-      if (right <= left) right = Math.min(d.max, left + 1);
+      event.left = Math.max(d.min, centre - randInt(1, 3));
+      event.right = Math.min(d.max, centre + randInt(1, 3));
+      if (event.right <= event.left) event.right = Math.min(d.max, event.left + 1);
       wording = isBinomial
-        ? `What is the probability that between ${left} and ${right} of the rounds, inclusive, result in ${d.scenario.successPlural}?`
-        : `What is the probability that the first ${d.scenario.successSingular} occurs between the ${ordinal(left)} and ${ordinal(right)} attempts, inclusive?`;
-      notation = `P(${left}\\leq X\\leq ${right})`;
+        ? `What is the probability that between ${event.left} and ${event.right} of the rounds, inclusive, result in ${d.scenario.successPlural}?`
+        : `What is the probability that the first ${d.scenario.successSingular} occurs between the ${ordinal(event.left)} and ${ordinal(event.right)} attempts, inclusive?`;
+      notation = `P(${event.left}\\leq X\\leq ${event.right})`;
     } else if (type === 'oneSided') {
-      const m = point();
-      const relation = randomChoice(['<', '\\leq', '>', '\\geq']);
+      event.m = point();
+      event.relation = randomChoice(['<', '\\leq', '>', '\\geq']);
       const wordingMap = {
-        '<': isBinomial ? `fewer than ${m}` : `before the ${ordinal(m)} attempt`,
-        '\\leq': isBinomial ? `at most ${m}` : `on or before the ${ordinal(m)} attempt`,
-        '>': isBinomial ? `more than ${m}` : `after the ${ordinal(m)} attempt`,
-        '\\geq': isBinomial ? `at least ${m}` : `on or after the ${ordinal(m)} attempt`
+        '<': isBinomial ? `fewer than ${event.m}` : `before the ${ordinal(event.m)} attempt`,
+        '\\leq': isBinomial ? `at most ${event.m}` : `on or before the ${ordinal(event.m)} attempt`,
+        '>': isBinomial ? `more than ${event.m}` : `after the ${ordinal(event.m)} attempt`,
+        '\\geq': isBinomial ? `at least ${event.m}` : `on or after the ${ordinal(event.m)} attempt`
       };
       wording = isBinomial
-        ? `What is the probability that ${wordingMap[relation]} of the rounds result in ${d.scenario.successPlural}?`
-        : `What is the probability that the first ${d.scenario.successSingular} occurs ${wordingMap[relation]}?`;
-      notation = `P(X${relation}${m})`;
+        ? `What is the probability that ${wordingMap[event.relation]} of the rounds result in ${d.scenario.successPlural}?`
+        : `What is the probability that the first ${d.scenario.successSingular} occurs ${wordingMap[event.relation]}?`;
+      notation = `P(X${event.relation}${event.m})`;
     } else if (type === 'conditional') {
       if (isBinomial) {
-        const k = Math.max(0, Math.min(d.n - 1, centralInteger(d, 1)));
-        const m = randInt(k + 1, d.n);
-        wording = `Given that more than ${k} rounds result in ${d.scenario.successPlural}, what is the probability that exactly ${m} rounds do?`;
-        notation = `P(X=${m}\\mid X>${k})`;
+        event.k = Math.max(0, Math.min(d.n - 1, centralInteger(d, 1)));
+        event.m = randInt(event.k + 1, d.n);
+        wording = `Given that more than ${event.k} rounds result in ${d.scenario.successPlural}, what is the probability that exactly ${event.m} rounds do?`;
       } else {
-        const k = Math.max(1, centralInteger(d, 1));
-        const m = randInt(k + 1, Math.max(k + 1, d.max));
-        wording = `Given that the first ${d.scenario.successSingular} has not occurred in the first ${k} attempts, what is the probability that it occurs on the ${ordinal(m)} attempt?`;
-        notation = `P(X=${m}\\mid X>${k})`;
+        event.k = Math.max(1, centralInteger(d, 1));
+        event.m = randInt(event.k + 1, Math.max(event.k + 1, d.max));
+        wording = `Given that the first ${d.scenario.successSingular} has not occurred in the first ${event.k} attempts, what is the probability that it occurs on the ${ordinal(event.m)} attempt?`;
       }
+      notation = `P(X=${event.m}\\mid X>${event.k})`;
     } else if (type === 'percentileOfValue') {
-      const m = point();
+      event.m = point();
       wording = isBinomial
-        ? `What percentile corresponds to ${m} ${d.scenario.successPlural}?`
-        : `What percentile corresponds to the first ${d.scenario.successSingular} occurring on the ${ordinal(m)} attempt?`;
-      notation = `P(X\\leq ${m})`;
+        ? `What percentile corresponds to ${event.m} ${d.scenario.successPlural}?`
+        : `What percentile corresponds to the first ${d.scenario.successSingular} occurring on the ${ordinal(event.m)} attempt?`;
+      notation = `P(X\\leq ${event.m})`;
     } else if (type === 'valueFromPercentile') {
-      const percentile = randomChoice([10, 20, 25, 30, 40, 60, 70, 75, 80, 90]);
+      event.percentile = randomChoice([10, 20, 25, 30, 40, 60, 70, 75, 80, 90]);
       wording = isBinomial
-        ? `Find the ${ordinal(percentile)} percentile for the number of ${d.scenario.successPlural}.`
-        : `Find the ${ordinal(percentile)} percentile for the selection on which the first ${d.scenario.successSingular} occurs.`;
-      notation = `\\text{Find the smallest }x\\text{ such that }P(X\\leq x)\\geq ${percentile / 100}.`;
+        ? `Find the ${ordinal(event.percentile)} percentile for the number of ${d.scenario.successPlural}.`
+        : `Find the ${ordinal(event.percentile)} percentile for the attempt on which the first ${d.scenario.successSingular} occurs.`;
+      notation = `\\text{Find the smallest }x\\text{ such that }P(X\\leq x)\\geq ${event.percentile / 100}.`;
     } else if (type === 'mean') {
       wording = isBinomial
         ? `Find the expected number of ${d.scenario.successPlural}.`
@@ -1413,25 +1418,19 @@ fetch("/nav.html")
       notation = `Q_3-Q_1`;
     } else {
       const quartiles = [
-        { name: 'median', symbol: 'Q_2' },
-        { name: 'first quartile', symbol: 'Q_1' },
-        { name: 'third quartile', symbol: 'Q_3' }
+        { name: 'median', symbol: 'Q_2', target: 0.5 },
+        { name: 'first quartile', symbol: 'Q_1', target: 0.25 },
+        { name: 'third quartile', symbol: 'Q_3', target: 0.75 }
       ];
       const q = randomChoice(quartiles);
+      event.quartileName = q.name; event.quartileSymbol = q.symbol; event.target = q.target;
       wording = isBinomial
         ? `Find the ${q.name} of the number of ${d.scenario.successPlural}.`
         : `Find the ${q.name} of the attempt number of the first ${d.scenario.successSingular}.`;
       notation = q.symbol;
     }
 
-    const variableMeaning = isBinomial
-      ? `the number of ${d.scenario.successPlural} in the ${d.n} attempts`
-      : `the attempt number of the first ${d.scenario.successSingular}`;
-    const model = isBinomial
-      ? `X\\sim\\operatorname{Binomial}\\left(${d.n},${fracToTex(d.p.num, d.p.den)}\\right)`
-      : `X\\sim\\operatorname{Geometric}\\left(${fracToTex(d.p.num, d.p.den)}\\right)`;
-    const hint = `Let \\(X\\) be ${variableMeaning}. Then \\( ${model} \\), and the question asks for \\( ${notation} \\).`;
-    return { wording, notation, hint };
+    return { wording, notation, event };
   }
 
   function generateQuestion(d, type) {
@@ -1490,6 +1489,208 @@ fetch("/nav.html")
     return { wording, hint: `This is a ${d.distribution} distribution. Its parameters are given in the first sentence of the problem.` };
   }
 
+  function bigGcd(a, b) {
+    a = a < 0n ? -a : a; b = b < 0n ? -b : b;
+    while (b) [a, b] = [b, a % b];
+    return a || 1n;
+  }
+
+  function bigFrac(num, den) {
+    const g = bigGcd(num, den);
+    return [num / g, den / g];
+  }
+
+  function bigFracTex(num, den) {
+    const [n, d] = bigFrac(num, den);
+    return d === 1n ? `${n}` : `\\frac{${n}}{${d}}`;
+  }
+
+  function binomCoeffBig(n, k) {
+    k = Math.min(k, n - k);
+    let ans = 1n;
+    for (let i = 1; i <= k; i++) ans = ans * BigInt(n - k + i) / BigInt(i);
+    return ans;
+  }
+
+  function bernoulliPmfFraction(d, x) {
+    const a = BigInt(d.p.num), b = BigInt(d.p.den);
+    if (d.distribution === 'geometric') {
+      return bigFrac(a * (b - a) ** BigInt(x - 1), b ** BigInt(x));
+    }
+    return bigFrac(binomCoeffBig(d.n, x) * a ** BigInt(x) * (b - a) ** BigInt(d.n - x), b ** BigInt(d.n));
+  }
+
+  function bernoulliPmf(d, x) {
+    if (d.distribution === 'geometric') return Math.pow(1 - d.p.value, x - 1) * d.p.value;
+    return Number(bernoulliPmfFraction(d, x)[0]) / Number(bernoulliPmfFraction(d, x)[1]);
+  }
+
+  function bernoulliCdf(d, x) {
+    if (x < d.min) return 0;
+    if (d.distribution === 'geometric') return 1 - Math.pow(1 - d.p.value, Math.floor(x));
+    let total = 0;
+    for (let i = 0; i <= Math.min(d.n, Math.floor(x)); i++) total += bernoulliPmf(d, i);
+    return total;
+  }
+
+  function probabilityXs(d, event) {
+    const all = [];
+    const max = d.distribution === 'binomial' ? d.n : Math.max(d.max, event.m || 0, event.right || 0, (event.k || 0) + 3);
+    for (let x = d.min; x <= max; x++) {
+      let yes = false;
+      if (event.type === 'specific') yes = x === event.m;
+      else if (event.type === 'range') yes = x >= event.left && x <= event.right;
+      else if (event.type === 'oneSided') {
+        yes = event.relation === '<' ? x < event.m : event.relation === '\\leq' ? x <= event.m : event.relation === '>' ? x > event.m : x >= event.m;
+      }
+      if (yes) all.push(x);
+    }
+    return all;
+  }
+
+  function pmfFormula(d, x) {
+    const p = fracToTex(d.p.num, d.p.den);
+    const q = fracToTex(d.p.den - d.p.num, d.p.den);
+    return d.distribution === 'geometric'
+      ? `f\\left(${x},${p}\\right)=${p}\\left(${q}\\right)^{${x}-1}`
+      : `f\\left(${x},${d.n},${p}\\right)=\\binom{${d.n}}{${x}}\\left(${p}\\right)^{${x}}\\left(${q}\\right)^{${d.n}-${x}}`;
+  }
+
+  function pmfGeneralFormula(d) {
+    const p0 = d.p.num === d.p.den ? '1' : fracToTex(d.p.num, d.p.den);
+    const q = fracToTex(d.p.den - d.p.num, d.p.den);
+    if (d.distribution === 'geometric') {
+      return `\\[f\\left(x,${p0}\\right)=${p0}\\left(1-${p0}\\right)^{x-1}=${p0}\\left(${q}\\right)^{x-1}\\]`;
+    }
+    return `\\[f\\left(x,${d.n},${p0}\\right)=\\binom{${d.n}}{x}\\left(${p0}\\right)^x\\left(1-${p0}\\right)^{${d.n}-x}=\\binom{${d.n}}{x}\\left(${p0}\\right)^x\\left(${q}\\right)^{${d.n}-x}\\]`;
+  }
+
+  function renderBernoulliHintDiagram(container, d, highlightXs = [], superHighlightXs = []) {
+    const options = { xLabel: 'x', yLabel: 'f(x)', highlightXs, superHighlightXs };
+    if (d.distribution === 'binomial') renderBinomialHistogram(container, d.n, d.p.value, options);
+    else renderGeometricHistogram(container, d.p.value, { ...options, maxX: Math.max(d.max, ...highlightXs, ...superHighlightXs, 10) });
+  }
+
+  function cdfQuantile(d, target) {
+    const max = d.distribution === 'binomial' ? d.n : Math.max(d.max + 6, 30);
+    for (let x = d.min; x <= max; x++) if (bernoulliCdf(d, x) >= target) return x;
+    return max;
+  }
+
+  function nearestQuantile(d, target) {
+    const max = d.distribution === 'binomial' ? d.n + 1 : Math.max(d.max + 4, 20);
+    let bestK = d.min;
+    let best = Infinity;
+    for (let k = d.min; k <= max; k++) {
+      const value = bernoulliCdf(d, k - 1); // P(X<k)
+      const diff = Math.abs(value - target);
+      if (diff < best - 1e-12) { best = diff; bestK = k; }
+    }
+    return bestK;
+  }
+
+  function sumNotation(d, xs) {
+    return xs.map(x => `f\\left(${d.distribution === 'geometric' ? `${x},${fracToTex(d.p.num,d.p.den)}` : `${x},${d.n},${fracToTex(d.p.num,d.p.den)}`}\\right)`).join('+');
+  }
+
+  function buildBernoulliHints(d) {
+    const e = d.task.event;
+    const isBinomial = d.distribution === 'binomial';
+    const pRaw = fracToTex(d.p.num, d.p.den);
+    const pGiven = d.p.percent
+      ? `${d.p.percent / 100}`
+      : (d.p.givenNum ? fracToTex(d.p.givenNum, d.p.givenDen) : pRaw);
+    const variableMeaning = isBinomial
+      ? `the number of ${d.scenario.successPlural} in the ${d.n} attempts`
+      : `the attempt number of the first ${d.scenario.successSingular}`;
+    const distributionText = isBinomial
+      ? `a binomial random variable with \\(n=${d.n}\\) and \\(p=${pGiven}\\)`
+      : `a geometric random variable with \\(p=${pGiven}\\)`;
+    const reduction = (d.p.num !== d.p.den && pGiven !== pRaw) ? ` = \\( ${pRaw} \\)` : '';
+    const steps = [
+      { html: `<p>Let \\(X\\) be ${variableMeaning}. Then \\(X\\) is ${distributionText}${reduction}.</p>` },
+      { html: `<p>So it has probability distribution function</p>${pmfGeneralFormula(d)}`, diagram: { highlight: [] } }
+    ];
+
+    if (['specific','range','oneSided','conditional'].includes(e.type)) {
+      const shaded = e.type === 'conditional'
+        ? Array.from({length:(isBinomial ? d.n : Math.max(d.max,e.m))-e.k},(_,i)=>e.k+1+i)
+        : probabilityXs(d,e);
+      const superXs = e.type === 'conditional' ? [e.m] : [];
+      steps.push({ html: `<p>We are trying to find \\( ${d.task.notation} \\).</p>`, diagram: { highlight: shaded, super: superXs } });
+    }
+
+    if (e.type === 'specific') {
+      const [num, den] = bernoulliPmfFraction(d,e.m);
+      steps.push({ html: `<p>\\[P(X=${e.m})=${pmfFormula(d,e.m)}=${bigFracTex(num,den)}\\approx ${bernoulliPmf(d,e.m).toFixed(4)}\\]</p>` });
+    } else if (e.type === 'range' || e.type === 'oneSided') {
+      const xs = probabilityXs(d,e);
+      let prob = xs.reduce((s,x)=>s+bernoulliPmf(d,x),0);
+      let expression;
+      if (xs.length <= 8) expression = `P(${e.type==='range' ? `${e.left}\\leq X\\leq ${e.right}` : `X${e.relation}${e.m}`})=${sumNotation(d,xs)}`;
+      else if (e.relation === '>') expression = `P(X>${e.m})=1-P(X\\leq ${e.m})`;
+      else if (e.relation === '\\geq') expression = `P(X\\geq ${e.m})=1-P(X<${e.m})`;
+      else expression = `P(${d.task.notation.replace(/^P\(|\)$/g,'')})=${sumNotation(d,xs)}`;
+      steps.push({ html: `<p>\\[${expression}\\approx ${prob.toFixed(4)}\\]</p>` });
+    } else if (e.type === 'conditional') {
+      const numerator = bernoulliPmf(d,e.m);
+      const denominator = 1-bernoulliCdf(d,e.k);
+      const answer = numerator/denominator;
+      const fM = `f\\left(${isBinomial ? `${e.m},${d.n},${pRaw}` : `${e.m},${pRaw}`}\\right)`;
+      const lowerTerms = Array.from({length:e.k-d.min+1},(_,i)=>d.min+i);
+      const denomExpr = lowerTerms.length <= 8 ? `1-\\left(${sumNotation(d,lowerTerms)}\\right)` : `1-P(X\\leq ${e.k})`;
+      steps.push({ html: `<p>\\[P(X=${e.m}\\mid X>${e.k})=\\frac{P(X=${e.m}\\cap X>${e.k})}{P(X>${e.k})}=\\frac{P(X=${e.m})}{1-P(X\\leq ${e.k})}=\\frac{${fM}}{${denomExpr}}\\approx\\frac{${numerator.toFixed(6)}}{${denominator.toFixed(6)}}\\approx ${answer.toFixed(4)}\\]</p>` });
+    } else if (e.type === 'mean') {
+      steps.push({ html: isBinomial
+        ? `<p>For a binomial random variable, \\(E(X)=np\\). Therefore,</p><p>\\[E(X)=${d.n}\\left(${pRaw}\\right)=${formatNumber(d.mean)}\\]</p>`
+        : `<p>For a geometric random variable, \\(E(X)=\\frac{1}{p}\\). Therefore,</p><p>\\[E(X)=\\frac{1}{${pRaw}}=${formatNumber(d.mean)}\\]</p>` });
+    } else if (e.type === 'sd') {
+      steps.push({ html: isBinomial
+        ? `<p>For a binomial random variable, \\(\\sigma_X=\\sqrt{np(1-p)}\\). Therefore,</p><p>\\[\\sigma_X=\\sqrt{${d.n}\\left(${pRaw}\\right)\\left(${fracToTex(d.p.den-d.p.num,d.p.den)}\\right)}\\approx ${d.sd.toFixed(4)}\\]</p>`
+        : `<p>For a geometric random variable, \\(\\sigma_X=\\frac{\\sqrt{1-p}}{p}\\). Therefore,</p><p>\\[\\sigma_X=\\frac{\\sqrt{${fracToTex(d.p.den-d.p.num,d.p.den)}}}{${pRaw}}\\approx ${d.sd.toFixed(4)}\\]</p>` });
+    } else if (e.type === 'percentileOfValue') {
+      const xs=Array.from({length:e.m-d.min+1},(_,i)=>d.min+i);
+      const val=bernoulliCdf(d,e.m);
+      steps.push({html:`<p>The percentile is the cumulative probability up to and including \\(X=${e.m}\\).</p><p>\\[P(X\\leq ${e.m})=${sumNotation(d,xs)}\\approx ${val.toFixed(4)}\\]</p><p>Thus, \\(X=${e.m}\\) is approximately the \\(${(100*val).toFixed(1)}\\)th percentile.</p>`,diagram:{highlight:xs}});
+    } else if (e.type === 'valueFromPercentile') {
+      const target=e.percentile/100, k=cdfQuantile(d,target);
+      const before=bernoulliCdf(d,k-1), after=bernoulliCdf(d,k);
+      steps.push({html:`<p>We seek the smallest integer \\(k\\) whose cumulative probability reaches ${target}.</p>`});
+      steps.push({html:`<p>\\[P(X\\leq ${k-1})\\approx ${before.toFixed(4)}\\qquad\\text{and}\\qquad P(X\\leq ${k})\\approx ${after.toFixed(4)}\\]</p>`});
+      steps.push({html:`<p>Therefore, the ${ordinal(e.percentile)} percentile is \\( ${k} \\).</p>`,diagram:{highlight:[k]}});
+    } else if (e.type === 'quartile' || e.type === 'iqr') {
+      const targets=e.type==='iqr'?[{name:'Q_1',target:.25},{name:'Q_3',target:.75}]:[{name:e.quartileSymbol,target:e.target}];
+      const answers={};
+      if(e.type==='iqr') steps.push({html:`<p>We are trying to find \\(IQR=Q_3-Q_1\\).</p>`});
+      for(const item of targets){
+        const k=nearestQuantile(d,item.target); answers[item.name]=k;
+        const lower=bernoulliCdf(d,k-1), upper=bernoulliCdf(d,k);
+        steps.push({html:`<p>We ${item.name==='Q_1'?'start by':'next'} find \\(${item.name}\\). We look for a \\(k\\) such that \\(P(X<k)=${item.target}\\). Since this is discrete, we choose the closest available cumulative probability.</p>`});
+        steps.push({html:`<p>\\[P(X<${k})\\approx ${lower.toFixed(4)}\\qquad\\text{and}\\qquad P(X<${k+1})\\approx ${upper.toFixed(4)}\\]</p>`});
+        const dl=Math.abs(lower-item.target),du=Math.abs(upper-item.target);
+        const chosen=du<dl?k+1:k;
+        answers[item.name]=chosen;
+        steps.push({html:`<p>Since ${Math.min(dl,du)===du?upper.toFixed(4):lower.toFixed(4)} is closer to ${item.target}, we have \\(${item.name}=${chosen}\\).</p>`,diagram:{highlight:[chosen]}});
+      }
+      if(e.type==='iqr') steps.push({html:`<p>\\[IQR=Q_3-Q_1=${answers.Q_3}-${answers.Q_1}=${answers.Q_3-answers.Q_1}\\]</p>`});
+    }
+    return steps;
+  }
+
+  function appendHintStep(step, d) {
+    const wrapper=document.createElement('div');
+    wrapper.style.marginTop='1rem';
+    wrapper.innerHTML=step.html;
+    hintArea.appendChild(wrapper);
+    if(step.diagram){
+      const graph=document.createElement('div');
+      graph.style.maxWidth='740px'; graph.style.margin='0.75rem auto';
+      wrapper.appendChild(graph);
+      renderBernoulliHintDiagram(graph,d,step.diagram.highlight||[],step.diagram.super||[]);
+    }
+    typeset([wrapper]);
+  }
+
   function clearPlaceholderActivity() {
     questionText.innerHTML = '';
     tableArea.innerHTML = '';
@@ -1497,6 +1698,7 @@ fetch("/nav.html")
     workArea.innerHTML = '';
     histogramArea.innerHTML = '';
     stageFeedback.textContent = '';
+    hintArea.innerHTML = '';
   }
 
   function startRandomProblem() {
@@ -1504,7 +1706,8 @@ fetch("/nav.html")
     const distribution = generateDistribution();
     const questionType = chooseQuestionType(distribution.distribution);
     const task = generateQuestion(distribution, questionType);
-    currentProblem = { ...distribution, questionType, task };
+    currentProblem = { ...distribution, questionType, task, hintIndex: 0 };
+    if (distribution.distribution === 'binomial' || distribution.distribution === 'geometric') currentProblem.hintSteps = buildBernoulliHints(currentProblem);
 
     questionText.innerHTML = `<p>${distribution.description}</p><p>${task.wording}</p>`;
     hintBtn.disabled = false;
@@ -1513,9 +1716,19 @@ fetch("/nav.html")
 
   function showPlaceholderHint() {
     if (!currentProblem) return;
-    workArea.innerHTML = `<p><b>Hint:</b> ${currentProblem.task.hint}</p>`;
+    if (currentProblem.hintSteps) {
+      const step = currentProblem.hintSteps[currentProblem.hintIndex];
+      if (!step) return;
+      appendHintStep(step, currentProblem);
+      currentProblem.hintIndex++;
+      hintBtn.disabled = currentProblem.hintIndex >= currentProblem.hintSteps.length;
+      return;
+    }
+    const p = document.createElement('p');
+    p.innerHTML = currentProblem.task.hint;
+    hintArea.appendChild(p);
     hintBtn.disabled = true;
-    typeset([workArea]);
+    typeset([p]);
   }
 
   startBtn.addEventListener('click', () => {

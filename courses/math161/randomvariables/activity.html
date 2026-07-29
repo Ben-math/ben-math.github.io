@@ -7,6 +7,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1611,16 +1612,22 @@ fetch("/nav.html")
     const chunks = chunkTerms(chosen);
     const lines = [];
 
+    // Boundary events can have no individual probability terms at all.
+    if (chosen.length === 0) {
+      lines.push(`P(${eventTex})&=${useComplement ? '1' : '0'}`);
+      lines.push(`&\\approx ${probability.toFixed(4)}`);
+      return `<p>\\[\\begin{aligned}${lines.join('\\\\')}\\end{aligned}\\]</p>`;
+    }
+
     if (useComplement) {
       lines.push(`P(${eventTex})&=1-P(${complementTex})`);
       if (chunks.length === 1) {
         lines.push(`&=1-\\left(${probabilityTermSum(chunks[0])}\\right)`);
       } else {
-        lines.push(`&=1-\\left(${probabilityTermSum(chunks[0])}`);
-        for (let i = 1; i < chunks.length; i++) {
-          const end = i === chunks.length - 1 ? '\\right)' : '';
-          lines.push(`&\\qquad+${probabilityTermSum(chunks[i])}${end}`);
-        }
+        const innerLines = chunks.map((chunk, i) =>
+          `${i === 0 ? '' : '&\\quad+'}${probabilityTermSum(chunk)}`
+        );
+        lines.push(`&=1-\\left(\\begin{aligned}${innerLines.join('\\\\')}\\end{aligned}\\right)`);
       }
     } else if (chunks.length === 1) {
       lines.push(`P(${eventTex})&=${probabilityTermSum(chunks[0])}`);

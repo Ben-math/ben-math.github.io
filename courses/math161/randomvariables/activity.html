@@ -6,6 +6,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1573,14 +1574,20 @@ fetch("/nav.html")
   }
 
   function nearestCumulativeCandidates(d, target) {
+    // Find the first k for which P(X < k) reaches or exceeds the target,
+    // then compare that value with the immediately preceding cumulative value.
     const maxK = d.distribution === 'binomial' ? d.n + 1 : Math.max(d.max + 8, 40);
     let upperK = d.min;
     while (upperK <= maxK && bernoulliCdf(d, upperK - 1) < target) upperK++;
     upperK = Math.min(upperK, maxK);
-    const lowerK = Math.max(d.min, upperK - 1);
+
+    const lowerK = upperK - 1;
     const lowerValue = bernoulliCdf(d, lowerK - 1);
     const upperValue = bernoulliCdf(d, upperK - 1);
-    const chosenK = Math.abs(upperValue - target) < Math.abs(lowerValue - target) ? upperK : lowerK;
+    const chosenK = Math.abs(lowerValue - target) <= Math.abs(upperValue - target)
+      ? lowerK
+      : upperK;
+
     return { lowerK, upperK, lowerValue, upperValue, chosenK };
   }
 

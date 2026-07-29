@@ -5,6 +5,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -50,7 +51,7 @@ fetch("/nav.html")
 
     <p>This activity will ask a question about any of the 5 probability distributions we have learned about: binomial, geometric, Poisson, uniform, and 
     normal.  The reason they are all combined into a single activity is that one of the greatest difficulties students face in working with these is not in 
-    the <i>how</i> to compute things, but rather in deciding <i>which</i> probability distribution applies to the situation.  Some things to look out for:
+    <i>how</i> to compute things, but rather in deciding <i>which</i> probability distribution applies to the situation.  Some things to look out for:
       <ul>
         <li>Are Bernoulli attempts (something with a fixed probability, either given in the problem or that can be easily computed) being performed in the 
           problem?  If so, then you are probably looking at a binomial or geometric distribution.</li>
@@ -1219,7 +1220,7 @@ fetch("/nav.html")
       }
 
       intro += distribution === 'binomial'
-        ? ` Suppose we randomly select ${n} ${population.plural}, independently and with replacement.`
+        ? ` Suppose we randomly select ${n} ${population.plural}, with replacement.`
         : ` We randomly select ${population.plural}, with replacement, until a ${successSingular} is found.`;
     } else if (caseNumber === 3) {
       const shot = randomChoice(SHOT_CONTEXTS);
@@ -1228,7 +1229,7 @@ fetch("/nav.html")
       successPlural = 'scores';
       intro = `When ${shot.action}, you have a ${p.percent}% chance to ${shot.score}. `;
       intro += distribution === 'binomial'
-        ? `Suppose you make ${n} independent ${shot.attempt}s.`
+        ? `Suppose you make ${n} ${shot.attempt}s.`
         : `You make ${shot.attempt}s repeatedly until you ${shot.score}.`;
     } else if (caseNumber === 4) {
       const sides = randomChoice([6, 8, 10, 12, 20]);
@@ -1239,7 +1240,7 @@ fetch("/nav.html")
       successPlural = 'wins';
       intro = `You roll a ${sides}-sided die. `;
       intro += distribution === 'binomial'
-        ? `You play ${n} independent rounds of a game in which you win when you roll ${event.label}.`
+        ? `You play ${n} rounds of a game in which you win when you roll ${event.label}.`
         : `You repeatedly roll the die until you roll ${event.label}.`;
     } else {
       const sides1 = randomChoice([4, 6, 8, 10, 12]);
@@ -1251,7 +1252,7 @@ fetch("/nav.html")
       successPlural = 'wins';
       intro = `You roll a ${sides1}-sided die and a ${sides2}-sided die. `;
       intro += distribution === 'binomial'
-        ? `You play ${n} independent rounds of a game in which you win when you roll ${event.label}.`
+        ? `You play ${n} rounds of a game in which you win when you roll ${event.label}.`
         : `You repeatedly roll both dice until you roll ${event.label}.`;
     }
 
@@ -1571,22 +1572,24 @@ fetch("/nav.html")
     else renderGeometricHistogram(container, d.p.value, { ...options, maxX: Math.max(d.max, ...highlightXs, ...superHighlightXs, 10) });
   }
 
-  function cdfQuantile(d, target) {
-    const max = d.distribution === 'binomial' ? d.n : Math.max(d.max + 6, 30);
-    for (let x = d.min; x <= max; x++) if (bernoulliCdf(d, x) >= target) return x;
-    return max;
+  function nearestQuantileDetails(d, target) {
+    const max = d.distribution === 'binomial' ? d.n + 1 : Math.max(d.max + 8, 40);
+    let upperK = d.min;
+    while (upperK <= max && bernoulliCdf(d, upperK - 1) < target) upperK++;
+    upperK = Math.min(upperK, max);
+
+    const lowerK = Math.max(d.min, upperK - 1);
+    const lowerValue = bernoulliCdf(d, lowerK - 1); // P(X<lowerK)
+    const upperValue = bernoulliCdf(d, upperK - 1); // P(X<upperK)
+    const lowerDiff = Math.abs(lowerValue - target);
+    const upperDiff = Math.abs(upperValue - target);
+    const chosenK = upperDiff < lowerDiff ? upperK : lowerK;
+
+    return { lowerK, upperK, lowerValue, upperValue, lowerDiff, upperDiff, chosenK };
   }
 
   function nearestQuantile(d, target) {
-    const max = d.distribution === 'binomial' ? d.n + 1 : Math.max(d.max + 4, 20);
-    let bestK = d.min;
-    let best = Infinity;
-    for (let k = d.min; k <= max; k++) {
-      const value = bernoulliCdf(d, k - 1); // P(X<k)
-      const diff = Math.abs(value - target);
-      if (diff < best - 1e-12) { best = diff; bestK = k; }
-    }
-    return bestK;
+    return nearestQuantileDetails(d, target).chosenK;
   }
 
   function sumNotation(d, xs) {
@@ -1642,8 +1645,8 @@ fetch("/nav.html")
       steps.push({ html: `<p>\\[P(X=${e.m}\\mid X>${e.k})=\\frac{P(X=${e.m}\\cap X>${e.k})}{P(X>${e.k})}=\\frac{P(X=${e.m})}{1-P(X\\leq ${e.k})}=\\frac{${fM}}{${denomExpr}}\\approx\\frac{${numerator.toFixed(6)}}{${denominator.toFixed(6)}}\\approx ${answer.toFixed(4)}\\]</p>` });
     } else if (e.type === 'mean') {
       steps.push({ html: isBinomial
-        ? `<p>For a binomial random variable, \\(E(X)=np\\). Therefore,</p><p>\\[E(X)=${d.n}\\left(${pRaw}\\right)=${formatNumber(d.mean)}\\]</p>`
-        : `<p>For a geometric random variable, \\(E(X)=\\frac{1}{p}\\). Therefore,</p><p>\\[E(X)=\\frac{1}{${pRaw}}=${formatNumber(d.mean)}\\]</p>` });
+        ? `<p>For a binomial random variable, \\(E(X)=\\mu=np\\). Therefore,</p><p>\\[\\mu=${d.n}\\left(${pRaw}\\right)=${formatNumber(d.mean)}\\]</p>`
+        : `<p>For a geometric random variable, \\(E(X)=\\mu=\\frac{1}{p}\\). Therefore,</p><p>\\[\\mu=\\frac{1}{${pRaw}}=${formatNumber(d.mean)}\\]</p>` });
     } else if (e.type === 'sd') {
       steps.push({ html: isBinomial
         ? `<p>For a binomial random variable, \\(\\sigma_X=\\sqrt{np(1-p)}\\). Therefore,</p><p>\\[\\sigma_X=\\sqrt{${d.n}\\left(${pRaw}\\right)\\left(${fracToTex(d.p.den-d.p.num,d.p.den)}\\right)}\\approx ${d.sd.toFixed(4)}\\]</p>`
@@ -1653,24 +1656,24 @@ fetch("/nav.html")
       const val=bernoulliCdf(d,e.m);
       steps.push({html:`<p>The percentile is the cumulative probability up to and including \\(X=${e.m}\\).</p><p>\\[P(X\\leq ${e.m})=${sumNotation(d,xs)}\\approx ${val.toFixed(4)}\\]</p><p>Thus, \\(X=${e.m}\\) is approximately the \\(${(100*val).toFixed(1)}\\)th percentile.</p>`,diagram:{highlight:xs}});
     } else if (e.type === 'valueFromPercentile') {
-      const target=e.percentile/100, k=cdfQuantile(d,target);
-      const before=bernoulliCdf(d,k-1), after=bernoulliCdf(d,k);
-      steps.push({html:`<p>We seek the smallest integer \\(k\\) whose cumulative probability reaches ${target}.</p>`});
-      steps.push({html:`<p>\\[P(X\\leq ${k-1})\\approx ${before.toFixed(4)}\\qquad\\text{and}\\qquad P(X\\leq ${k})\\approx ${after.toFixed(4)}\\]</p>`});
-      steps.push({html:`<p>Therefore, the ${ordinal(e.percentile)} percentile is \\( ${k} \\).</p>`,diagram:{highlight:[k]}});
+      const target=e.percentile/100;
+      const q=nearestQuantileDetails(d,target);
+      steps.push({html:`<p>We look for a \\(k\\) such that \\(P(X<k)\\approx ${target}\). Since this is discrete, we compare the cumulative probabilities immediately below and above ${target}.</p>`});
+      steps.push({html:`<p>\\[P(X<${q.lowerK})\\approx ${q.lowerValue.toFixed(4)}\\qquad\\text{and}\\qquad P(X<${q.upperK})\\approx ${q.upperValue.toFixed(4)}\\]</p>`});
+      const chosenValue=q.chosenK===q.upperK?q.upperValue:q.lowerValue;
+      steps.push({html:`<p>Since ${chosenValue.toFixed(4)} is closer to ${target}, the ${ordinal(e.percentile)} percentile is \\(${q.chosenK}\\).</p>`,diagram:{highlight:[q.chosenK]}});
     } else if (e.type === 'quartile' || e.type === 'iqr') {
       const targets=e.type==='iqr'?[{name:'Q_1',target:.25},{name:'Q_3',target:.75}]:[{name:e.quartileSymbol,target:e.target}];
       const answers={};
       if(e.type==='iqr') steps.push({html:`<p>We are trying to find \\(IQR=Q_3-Q_1\\).</p>`});
       for(const item of targets){
-        const k=nearestQuantile(d,item.target); answers[item.name]=k;
-        const lower=bernoulliCdf(d,k-1), upper=bernoulliCdf(d,k);
-        steps.push({html:`<p>We ${item.name==='Q_1'?'start by':'next'} find \\(${item.name}\\). We look for a \\(k\\) such that \\(P(X<k)=${item.target}\\). Since this is discrete, we choose the closest available cumulative probability.</p>`});
-        steps.push({html:`<p>\\[P(X<${k})\\approx ${lower.toFixed(4)}\\qquad\\text{and}\\qquad P(X<${k+1})\\approx ${upper.toFixed(4)}\\]</p>`});
-        const dl=Math.abs(lower-item.target),du=Math.abs(upper-item.target);
-        const chosen=du<dl?k+1:k;
-        answers[item.name]=chosen;
-        steps.push({html:`<p>Since ${Math.min(dl,du)===du?upper.toFixed(4):lower.toFixed(4)} is closer to ${item.target}, we have \\(${item.name}=${chosen}\\).</p>`,diagram:{highlight:[chosen]}});
+        const q=nearestQuantileDetails(d,item.target);
+        answers[item.name]=q.chosenK;
+        const opening=item.name==='Q_1'?'We start by finding':(item.name==='Q_3'?'We next find':'We find');
+        steps.push({html:`<p>${opening} \\(${item.name}\\). We look for a \\(k\\) such that \\(P(X<k)\\approx ${item.target}\). Since this is discrete, we compare the cumulative probabilities immediately below and above ${item.target}.</p>`});
+        steps.push({html:`<p>\\[P(X<${q.lowerK})\\approx ${q.lowerValue.toFixed(4)}\\qquad\\text{and}\\qquad P(X<${q.upperK})\\approx ${q.upperValue.toFixed(4)}\\]</p>`});
+        const chosenValue=q.chosenK===q.upperK?q.upperValue:q.lowerValue;
+        steps.push({html:`<p>Since ${chosenValue.toFixed(4)} is closer to ${item.target}, we have \\(${item.name}=${q.chosenK}\\).</p>`,diagram:{highlight:[q.chosenK]}});
       }
       if(e.type==='iqr') steps.push({html:`<p>\\[IQR=Q_3-Q_1=${answers.Q_3}-${answers.Q_1}=${answers.Q_3-answers.Q_1}\\]</p>`});
     }

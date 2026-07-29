@@ -8,6 +8,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1606,8 +1607,8 @@ fetch("/nav.html")
     return chunks;
   }
 
-  function expandedProbabilityHtml(eventTex, xs, probability, complementXs = null, complementTex = '') {
-    const useComplement = Array.isArray(complementXs) && complementXs.length < xs.length;
+  function expandedProbabilityHtml(eventTex, xs, probability, complementXs = null, complementTex = '', forceComplement = false) {
+    const useComplement = Array.isArray(complementXs) && (forceComplement || complementXs.length < xs.length);
     const chosen = useComplement ? complementXs : xs;
     const chunks = chunkTerms(chosen);
     const lines = [];
@@ -1695,8 +1696,31 @@ fetch("/nav.html")
       } else {
         const relationTex = e.relation === '<' ? '\\lt' : e.relation;
         const eventTex = e.type === 'range' ? `${e.left}\\leq X\\leq ${e.right}` : `X${relationTex}${e.m}`;
-        if (xs.length <= 8) steps.push({ html: expandedProbabilityHtml(eventTex, xs, prob) });
-        else steps.push({ html: `<p>\\[P(${eventTex})\\approx ${prob.toFixed(4)}\\]</p>` });
+
+        if (e.type === 'oneSided' && (e.relation === '>' || e.relation === '\\geq')) {
+          // A geometric distribution has infinite support to the right, so a right-tail
+          // probability must be written using its finite left-tail complement.
+          const cutoff = e.relation === '>' ? e.m : e.m - 1;
+          const complementXs = Array.from(
+            { length: Math.max(0, cutoff - d.min + 1) },
+            (_, i) => d.min + i
+          );
+          const complementTex = e.relation === '>' ? `X\\leq ${e.m}` : `X\\lt ${e.m}`;
+          steps.push({
+            html: expandedProbabilityHtml(
+              eventTex,
+              [],
+              prob,
+              complementXs,
+              complementTex,
+              true
+            )
+          });
+        } else if (xs.length <= 8) {
+          steps.push({ html: expandedProbabilityHtml(eventTex, xs, prob) });
+        } else {
+          steps.push({ html: `<p>\\[P(${eventTex})\\approx ${prob.toFixed(4)}\\]</p>` });
+        }
       }
     } else if (e.type === 'conditional') {
       const numerator = bernoulliPmf(d,e.m);
@@ -1704,8 +1728,33 @@ fetch("/nav.html")
       const answer = numerator/denominator;
       const fM = `f\\left(${isBinomial ? `${e.m},${d.n},${pRaw}` : `${e.m},${pRaw}`}\\right)`;
       const lowerTerms = Array.from({length:e.k-d.min+1},(_,i)=>d.min+i);
-      const denomExpr = lowerTerms.length <= 8 ? `1-\\left(${sumNotation(d,lowerTerms)}\\right)` : `1-P(X\\leq ${e.k})`;
-      steps.push({ html: `<p>\\[P(X=${e.m}\\mid X>${e.k})=\\frac{P(X=${e.m}\\cap X>${e.k})}{P(X>${e.k})}=\\frac{P(X=${e.m})}{1-P(X\\leq ${e.k})}=\\frac{${fM}}{${denomExpr}}\\approx\\frac{${numerator.toFixed(6)}}{${denominator.toFixed(6)}}\\approx ${answer.toFixed(4)}\\]</p>` });
+
+      let denominatorProbabilityTex;
+      let denominatorFormulaTex;
+
+      if (isBinomial) {
+        const upperTerms = Array.from({length:d.n-e.k},(_,i)=>e.k+1+i);
+        const useComplement = lowerTerms.length < upperTerms.length;
+        if (useComplement) {
+          denominatorProbabilityTex = `1-P(X\\leq ${e.k})`;
+          denominatorFormulaTex = lowerTerms.length <= 8
+            ? `1-\\left(${sumNotation(d,lowerTerms)}\\right)`
+            : `1-P(X\\leq ${e.k})`;
+        } else {
+          denominatorProbabilityTex = `P(X\\geq ${e.k+1})`;
+          denominatorFormulaTex = upperTerms.length <= 8
+            ? sumNotation(d,upperTerms)
+            : `P(X\\geq ${e.k+1})`;
+        }
+      } else {
+        // The geometric upper tail is infinite, so use its finite lower-tail complement.
+        denominatorProbabilityTex = `1-P(X\\leq ${e.k})`;
+        denominatorFormulaTex = lowerTerms.length <= 8
+          ? `1-\\left(${sumNotation(d,lowerTerms)}\\right)`
+          : `1-P(X\\leq ${e.k})`;
+      }
+
+      steps.push({ html: `<p>\\[P(X=${e.m}\\mid X>${e.k})=\\frac{P(X=${e.m}\\cap X>${e.k})}{P(X>${e.k})}=\\frac{P(X=${e.m})}{${denominatorProbabilityTex}}=\\frac{${fM}}{${denominatorFormulaTex}}\\approx\\frac{${numerator.toFixed(6)}}{${denominator.toFixed(6)}}\\approx ${answer.toFixed(4)}\\]</p>` });
     } else if (e.type === 'mean') {
       steps.push({ html: isBinomial
         ? `<p>For a binomial random variable, \\(E(X)=\\mu=np\\). Therefore,</p><p>\\[\\mu=${d.n}\\left(${pRaw}\\right)=${formatNumber(d.mean)}\\]</p>`

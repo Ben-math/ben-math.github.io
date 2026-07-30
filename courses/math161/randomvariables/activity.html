@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1892,8 +1893,8 @@ fetch("/nav.html")
       const answer=numerator/denominator;
       const intersection=e.targetRelation==='<'?`${e.lower}\\leq X\\lt ${e.m}`:`${e.m}\\lt X\\leq ${e.upper}`;
       const targetRelationTex=e.targetRelation==='<'?'\\lt':e.targetRelation;
-      steps.push({html:`<p>Using \\(P(A\\mid B)=\\dfrac{P(A\\cap B)}{P(B)}\\), the intersection is \\(${intersection}\\).</p>`});
-      steps.push({html:`<p>Both probabilities are interval lengths divided by the same total width, so that common denominator cancels:</p><p>\\[P(X${targetRelationTex}${e.m}\\mid ${e.lower}\\leq X\\leq ${e.upper})=\\frac{(${numerator}/${width})}{(${denominator}/${width})}=\\frac{${numerator}}{${denominator}}\\approx ${answer.toFixed(4)}\\]</p>`});
+      steps.push({html:`<p>\\[\\begin{aligned}P(X${targetRelationTex}${e.m}\\mid ${e.lower}\\leq X\\leq ${e.upper})&=\\frac{P(X${targetRelationTex}${e.m})\\cap(${e.lower}\\leq X\\leq ${e.upper})}{P(${e.lower}\\leq X\\leq ${e.upper})}\\\\&=\\frac{P(${intersection})}{P(${e.lower}\\leq X\\leq ${e.upper})}\\end{aligned}\\]</p>`});
+      steps.push({html:`<p>\\[\\begin{aligned}&=\\frac{\\dfrac{${intRight}-${intLeft}}{${width}}}{\\dfrac{${e.upper}-${e.lower}}{${width}}}=\\frac{\\dfrac{${numerator}}{${width}}}{\\dfrac{${denominator}}{${width}}}=\\frac{${numerator}}{${denominator}}\\approx ${answer.toFixed(4)}\\end{aligned}\\]</p>`});
     } else if(e.type==='percentileOfValue'){
       const v=(e.m-d.a)/width;
       steps.push({html:`<p>The percentile is the cumulative area to the left of \\(X=${e.m}\\):</p><p>\\[P(X\\leq ${e.m})=\\frac{${e.m}-${d.a}}{${d.b}-${d.a}}=\\frac{${e.m-d.a}}{${width}}\\approx ${v.toFixed(4)}\\]</p><p>Thus, ${uniformValuePhrase(d,e.m)} is the \\(${(100*v).toFixed(1)}\\)th percentile.</p>`,diagram:{selected:[[d.a,e.m]],super:[],lines:[e.m]}});
@@ -1919,75 +1920,49 @@ fetch("/nav.html")
   function buildNormalHints(d) {
     const e = d.task.event;
     const steps = [
-      { html:`<p>Let \\(X\\) be the ${d.scenario.singular}, measured in ${d.scenario.unit}. The problem states that \\(X\\) is normally distributed with mean \\(\\mu=${d.mu}\\) and standard deviation \\(\\sigma=${d.sigma}\\).</p>` },
-      { html:`<p>To use the standard normal table, convert values of \\(X\\) to z-scores using</p><p>\\[z=\\frac{x-\\mu}{\\sigma}=\\frac{x-${d.mu}}{${d.sigma}}.\\]</p>`, diagram:{selected:[],super:[],lines:[],zValues:[],showTable:false} }
+      { html:`<p>Let \(X\) be the ${d.scenario.singular}, measured in ${d.scenario.unit}. The problem states that \(X\) is normally distributed with mean \(\mu=${d.mu}\) and standard deviation \(\sigma=${d.sigma}\).</p>` }
     ];
-
-    const zTex = x => `\\frac{${formatNumber(x)}-${d.mu}}{${d.sigma}}=${roundedZ(d,x).toFixed(2)}`;
-    const cdfX = x => normalCdf(normalZ(d,x));
-
+    const zRaw = x => `\frac{${formatNumber(x)}-${d.mu}}{${d.sigma}}`;
     if (['specific','range','oneSided','conditional'].includes(e.type)) {
       let selected=[], superSelected=[], lines=[], zValues=[];
-      if (e.type==='specific') {
-        lines=[e.m];
-      } else if (e.type==='range') {
-        selected=[[e.left,e.right]];
-        zValues=[roundedZ(d,e.left),roundedZ(d,e.right)];
-      } else if (e.type==='oneSided') {
-        selected=(e.relation==='<'||e.relation==='\\leq')?[[-Infinity,e.m]]:[[e.m,Infinity]];
-        zValues=[roundedZ(d,e.m)];
-      } else {
-        selected=[[e.lower,e.upper]];
-        superSelected=e.targetRelation==='<'?[[e.lower,e.m]]:[[e.m,e.upper]];
-        zValues=[roundedZ(d,e.lower),roundedZ(d,e.upper),roundedZ(d,e.m)];
-      }
-      steps.push({html:`<p>We are trying to find \\(${d.task.notation}\\). The highlighted area under the normal curve represents this probability.</p>`,diagram:{selected,super:superSelected,lines,zValues,showTable:e.type!=='specific'}});
+      if (e.type==='specific') lines=[e.m];
+      else if (e.type==='range') { selected=[[e.left,e.right]]; zValues=[roundedZ(d,e.left),roundedZ(d,e.right)]; }
+      else if (e.type==='oneSided') { selected=(e.relation==='<'||e.relation==='\leq')?[[-Infinity,e.m]]:[[e.m,Infinity]]; zValues=[roundedZ(d,e.m)]; }
+      else { selected=[[e.lower,e.upper]]; superSelected=e.targetRelation==='<'?[[e.lower,e.m]]:[[e.m,e.upper]]; zValues=[roundedZ(d,e.lower),roundedZ(d,e.upper),roundedZ(d,e.m)]; }
+      steps.push({html:`<p>We are trying to find \(${d.task.notation}\). The highlighted area under the normal curve represents this probability.</p>`,diagram:{selected,super:superSelected,lines,zValues,showTable:e.type!=='specific'}});
     }
-
     if(e.type==='specific'){
-      steps.push({html:`<p>A normal random variable is continuous, so the probability of any one exact value is zero:</p><p>\\[P(X=${e.m})=0.\\]</p>`});
+      steps.push({html:`<p>A normal random variable is continuous, so the probability of any one exact value is zero:</p><p>\[P(X=${e.m})=0.\]</p>`});
     } else if(e.type==='range'){
-      const zl=roundedZ(d,e.left), zr=roundedZ(d,e.right);
-      const pl=normalCdf(zl), pr=normalCdf(zr), ans=pr-pl;
-      steps.push({html:`<p>Convert both endpoints to z-scores:</p><p>\\[z_1=${zTex(e.left)},\\qquad z_2=${zTex(e.right)}.\\]</p>`});
-      steps.push({html:`<p>Using the standard normal table,</p><p>\\[P(${e.left}\\leq X\\leq ${e.right})=P(${zl.toFixed(2)}\\leq Z\\leq ${zr.toFixed(2)})\\]</p><p>\\[=P(Z\\leq ${zr.toFixed(2)})-P(Z\\leq ${zl.toFixed(2)})\\approx ${pr.toFixed(4)}-${pl.toFixed(4)}=${ans.toFixed(4)}.\\]</p>`});
+      const zl=roundedZ(d,e.left), zr=roundedZ(d,e.right), pl=normalCdf(zl), pr=normalCdf(zr), ans=pr-pl;
+      steps.push({html:`<p>\[\begin{aligned}P(${e.left}\leq X\leq ${e.right})&=P\left(${zRaw(e.left)}\leq Z\leq ${zRaw(e.right)}\right)\\&=P(${zl.toFixed(2)}\leq Z\leq ${zr.toFixed(2)})\\&=${pr.toFixed(4)}-${pl.toFixed(4)}=${ans.toFixed(4)}.\end{aligned}\]</p>`});
     } else if(e.type==='oneSided'){
-      const z=roundedZ(d,e.m), left=e.relation==='<'||e.relation==='\\leq';
-      const table=normalCdf(z), ans=left?table:1-table;
-      const rel=e.relation==='<'?'\\lt':e.relation;
-      steps.push({html:`<p>Convert the boundary to a z-score:</p><p>\\[z=${zTex(e.m)}.\\]</p>`});
-      steps.push({html:left
-        ? `<p>From the standard normal table,</p><p>\\[P(X${rel}${e.m})=P(Z\\leq ${z.toFixed(2)})\\approx ${ans.toFixed(4)}.\\]</p>`
-        : `<p>Use the complement of the table value:</p><p>\\[P(X${rel}${e.m})=P(Z>${z.toFixed(2)})=1-P(Z\\leq ${z.toFixed(2)})\\approx 1-${table.toFixed(4)}=${ans.toFixed(4)}.\\]</p>`});
+      const z=roundedZ(d,e.m), left=e.relation==='<'||e.relation==='\leq', table=normalCdf(z), ans=left?table:1-table, rel=e.relation==='<'?'\lt':e.relation;
+      steps.push({html:left?`<p>\[\begin{aligned}P(X${rel}${e.m})&=P\left(Z\leq ${zRaw(e.m)}\right)\\&=P(Z\leq ${z.toFixed(2)})\approx ${ans.toFixed(4)}.\end{aligned}\]</p>`:`<p>\[\begin{aligned}P(X${rel}${e.m})&=P\left(Z>${zRaw(e.m)}\right)\\&=P(Z>${z.toFixed(2)})=1-P(Z\leq ${z.toFixed(2)})\\&\approx1-${table.toFixed(4)}=${ans.toFixed(4)}.\end{aligned}\]</p>`});
     } else if(e.type==='conditional'){
-      const zl=roundedZ(d,e.lower), zu=roundedZ(d,e.upper), zm=roundedZ(d,e.m);
-      const pl=normalCdf(zl), pu=normalCdf(zu), pm=normalCdf(zm);
-      const numerator=e.targetRelation==='<'?pm-pl:pu-pm;
-      const denominator=pu-pl;
-      const answer=numerator/denominator;
-      const intersection=e.targetRelation==='<'?`${e.lower}\\leq X\\lt ${e.m}`:`${e.m}\\lt X\\leq ${e.upper}`;
-      const rel=e.targetRelation==='<'?'\\lt':e.targetRelation;
-      steps.push({html:`<p>Using \\(P(A\\mid B)=\\dfrac{P(A\\cap B)}{P(B)}\\), the intersection is \\(${intersection}\\).</p>`});
-      steps.push({html:`<p>Convert the three boundaries to z-scores:</p><p>\\[z_L=${zTex(e.lower)},\\qquad z_M=${zTex(e.m)},\\qquad z_U=${zTex(e.upper)}.\\]</p>`});
-      steps.push({html:`<p>Use the table to calculate the numerator and denominator:</p><p>\\[P(${intersection})\\approx ${numerator.toFixed(4)},\\qquad P(${e.lower}\\leq X\\leq ${e.upper})\\approx ${denominator.toFixed(4)}.\\]</p>`});
-      steps.push({html:`<p>Therefore,</p><p>\\[P(X${rel}${e.m}\\mid ${e.lower}\\leq X\\leq ${e.upper})\\approx\\frac{${numerator.toFixed(4)}}{${denominator.toFixed(4)}}=${answer.toFixed(4)}.\\]</p>`});
+      const zl=roundedZ(d,e.lower),zu=roundedZ(d,e.upper),zm=roundedZ(d,e.m),pl=normalCdf(zl),pu=normalCdf(zu),pm=normalCdf(zm);
+      const numerator=e.targetRelation==='<'?pm-pl:pu-pm, denominator=pu-pl, answer=numerator/denominator;
+      const intersection=e.targetRelation==='<'?`${e.lower}\leq X\lt ${e.m}`:`${e.m}\lt X\leq ${e.upper}`, rel=e.targetRelation==='<'?'\lt':e.targetRelation;
+      const numZ=e.targetRelation==='<'?`${zRaw(e.lower)}\leq Z\lt ${zRaw(e.m)}`:`${zRaw(e.m)}\lt Z\leq ${zRaw(e.upper)}`;
+      const numZR=e.targetRelation==='<'?`${zl.toFixed(2)}\leq Z\lt ${zm.toFixed(2)}`:`${zm.toFixed(2)}\lt Z\leq ${zu.toFixed(2)}`;
+      const numValues=e.targetRelation==='<'?`${pm.toFixed(4)}-${pl.toFixed(4)}`:`${pu.toFixed(4)}-${pm.toFixed(4)}`;
+      steps.push({html:`<p>\[\begin{aligned}P(X${rel}${e.m}\mid ${e.lower}\leq X\leq ${e.upper})&=\frac{P(X${rel}${e.m})\cap(${e.lower}\leq X\leq ${e.upper})}{P(${e.lower}\leq X\leq ${e.upper})}\\&=\frac{P(${intersection})}{P(${e.lower}\leq X\leq ${e.upper})}\end{aligned}\]</p>`});
+      steps.push({html:`<p>\[\begin{aligned}&=\frac{P\left(${numZ}\right)}{P\left(${zRaw(e.lower)}\leq Z\leq ${zRaw(e.upper)}\right)}\\&=\frac{P(${numZR})}{P(${zl.toFixed(2)}\leq Z\leq ${zu.toFixed(2)})}\\&=\frac{${numValues}}{${pu.toFixed(4)}-${pl.toFixed(4)}}\approx ${answer.toFixed(4)}.\end{aligned}\]</p>`});
     } else if(e.type==='percentileOfValue'){
-      const z=roundedZ(d,e.m), p=normalCdf(z);
-      steps.push({html:`<p>Convert the value to a z-score:</p><p>\\[z=${zTex(e.m)}.\\]</p>`});
-      steps.push({html:`<p>The cumulative table value is</p><p>\\[P(X\\leq ${e.m})=P(Z\\leq ${z.toFixed(2)})\\approx ${p.toFixed(4)}.\\]</p><p>Thus, ${uniformValuePhrase(d,e.m)} is approximately the \\(${(100*p).toFixed(1)}\\)th percentile.</p>`,diagram:{selected:[[-Infinity,e.m]],super:[],lines:[e.m],zValues:[z],showTable:true}});
+      const z=roundedZ(d,e.m),p=normalCdf(z);
+      steps.push({html:`<p>\[\begin{aligned}P(X\leq ${e.m})&=P\left(Z\leq ${zRaw(e.m)}\right)\\&=P(Z\leq ${z.toFixed(2)})\approx ${p.toFixed(4)}.\end{aligned}\]</p><p>Thus, ${uniformValuePhrase(d,e.m)} is approximately the \(${(100*p).toFixed(1)}\)th percentile.</p>`,diagram:{selected:[[-Infinity,e.m]],super:[],lines:[e.m],zValues:[z],showTable:true}});
     } else if(e.type==='valueFromPercentile'){
-      const target=e.percentile/100, z=Number(inverseNormalCdf(target).toFixed(2)), x=d.mu+z*d.sigma;
-      steps.push({html:`<p>Find the z-score whose cumulative probability is closest to \\(${target.toFixed(2)}\\). From the standard normal table, \\(z\\approx ${z.toFixed(2)}\\).</p>`,diagram:{selected:[[-Infinity,x]],super:[],lines:[x],zValues:[z],showTable:true}});
-      steps.push({html:`<p>Convert back to the original units using \\(x=\\mu+z\\sigma\\):</p><p>\\[x=${d.mu}+(${z.toFixed(2)})(${d.sigma})\\approx ${formatNumber(x)}\\text{ ${d.scenario.unit}}.\\]</p><p>The ${ordinal(e.percentile)} percentile is approximately ${formatNumber(x)} ${d.scenario.unit}.</p>`});
+      const target=e.percentile/100,z=Number(inverseNormalCdf(target).toFixed(2)),x=d.mu+z*d.sigma;
+      steps.push({html:`<p>Find the standard-normal table entry whose cumulative probability is closest to \(${target.toFixed(2)}\): \(Z\approx ${z.toFixed(2)}\).</p>`,diagram:{selected:[[-Infinity,x]],super:[],lines:[x],zValues:[z],showTable:true}});
+      steps.push({html:`<p>\[x=\mu+Z\sigma=${d.mu}+(${z.toFixed(2)})(${d.sigma})\approx ${formatNumber(x)}\text{ ${d.scenario.unit}}.\]</p><p>The ${ordinal(e.percentile)} percentile is approximately ${formatNumber(x)} ${d.scenario.unit}.</p>`});
     } else if(e.type==='quartile'){
-      const z=Number(inverseNormalCdf(e.target).toFixed(2)), x=d.mu+z*d.sigma;
-      steps.push({html:`<p>The cumulative probability for \\(${e.quartileSymbol}\\) is \\(${e.target}\\). The corresponding table value gives \\(z\\approx ${z.toFixed(2)}\\).</p>`,diagram:{selected:[[-Infinity,x]],super:[],lines:[x],zValues:[z],showTable:true}});
-      steps.push({html:`<p>\\[${e.quartileSymbol}=\\mu+z\\sigma=${d.mu}+(${z.toFixed(2)})(${d.sigma})\\approx ${formatNumber(x)}\\text{ ${d.scenario.unit}}.\\]</p>`});
+      const z=Number(inverseNormalCdf(e.target).toFixed(2)),x=d.mu+z*d.sigma;
+      steps.push({html:`<p>The cumulative probability for \(${e.quartileSymbol}\) is \(${e.target}\), corresponding to \(Z\approx ${z.toFixed(2)}\) in the standard normal table.</p>`,diagram:{selected:[[-Infinity,x]],super:[],lines:[x],zValues:[z],showTable:true}});
+      steps.push({html:`<p>\[${e.quartileSymbol}=\mu+Z\sigma=${d.mu}+(${z.toFixed(2)})(${d.sigma})\approx ${formatNumber(x)}\text{ ${d.scenario.unit}}.\]</p>`});
     } else if(e.type==='iqr'){
-      const z1=Number(inverseNormalCdf(.25).toFixed(2)), z3=Number(inverseNormalCdf(.75).toFixed(2));
-      const q1=d.mu+z1*d.sigma, q3=d.mu+z3*d.sigma, iqr=q3-q1;
-      steps.push({html:`<p>The table values for cumulative probabilities \\(0.25\\) and \\(0.75\\) give \\(z_1\\approx ${z1.toFixed(2)}\\) and \\(z_3\\approx ${z3.toFixed(2)}\\).</p>`,diagram:{selected:[[q1,q3]],super:[],lines:[q1,q3],zValues:[z1,z3],showTable:true}});
-      steps.push({html:`<p>\\[Q_1=${d.mu}+(${z1.toFixed(2)})(${d.sigma})\\approx ${formatNumber(q1)},\\qquad Q_3=${d.mu}+(${z3.toFixed(2)})(${d.sigma})\\approx ${formatNumber(q3)}.\\]</p><p>\\[IQR=Q_3-Q_1\\approx ${formatNumber(q3)}-${formatNumber(q1)}=${formatNumber(iqr)}\\text{ ${d.scenario.unit}}.\\]</p>`});
+      const z1=Number(inverseNormalCdf(.25).toFixed(2)),z3=Number(inverseNormalCdf(.75).toFixed(2)),q1=d.mu+z1*d.sigma,q3=d.mu+z3*d.sigma,iqr=q3-q1;
+      steps.push({html:`<p>The cumulative probabilities \(0.25\) and \(0.75\) correspond to \(Z\approx ${z1.toFixed(2)}\) and \(Z\approx ${z3.toFixed(2)}\) in the standard normal table.</p>`,diagram:{selected:[[q1,q3]],super:[],lines:[q1,q3],zValues:[z1,z3],showTable:true}});
+      steps.push({html:`<p>\[\begin{aligned}Q_1&=${d.mu}+(${z1.toFixed(2)})(${d.sigma})\approx ${formatNumber(q1)},\\Q_3&=${d.mu}+(${z3.toFixed(2)})(${d.sigma})\approx ${formatNumber(q3)}.\end{aligned}\]</p><p>\[IQR=Q_3-Q_1\approx ${formatNumber(q3)}-${formatNumber(q1)}=${formatNumber(iqr)}\text{ ${d.scenario.unit}}.\]</p>`});
     }
     return steps;
   }

@@ -4,6 +4,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1232,8 +1233,7 @@ fetch("/nav.html")
   const CLT_CONFIG = {
     problemTypes: [
       { value: 'means', weight: 1 },
-      { value: 'sums', weight: 1 },
-      { value: 'proportions', weight: 1 }
+      { value: 'sums', weight: 1 }
     ],
     // The original specification says four types but describes three.  Keep a
     // reserved, disabled slot rather than silently inventing a fourth family.
@@ -1555,50 +1555,206 @@ fetch("/nav.html")
     return `${context.introText} ${context.sampleText}`;
   }
 
-  function generateCLTDraftQuestion() {
+  function generateCLTQuestion() {
     const type = weightedChoice(CLT_CONFIG.problemTypes);
-    const context = type === 'proportions' ? makeProportionContext() : makeUnderlyingContext(type);
+    const context = makeUnderlyingContext(type);
     const sampling = samplingDistributionFor(type, context);
     const task = makeNormalEventQuestion(type, context, sampling);
-    return { type, context, sampling, task, wording:`${renderContext(type,context)} ${task.wording}` };
+    const problem = { type, context, sampling, task, wording:`${renderContext(type,context)} ${task.wording}`, hintIndex:0 };
+    completeNormalEvent(problem);
+    return problem;
+  }
+
+  function completeNormalEvent(problem) {
+    const d = problem.sampling;
+    const e = problem.task.event;
+    const phi = z => normalCdf(Number(z.toFixed(2)));
+    if (e.type === 'range') {
+      e.z1 = roundedZ(d,e.left); e.z2 = roundedZ(d,e.right);
+      e.answer = phi(e.z2)-phi(e.z1);
+    } else if (e.type === 'oneSided') {
+      e.z = roundedZ(d,e.m);
+      const left = phi(e.z);
+      e.answer = (e.relation === '<' || e.relation === '\\leq') ? left : 1-left;
+    } else if (e.type === 'conditional') {
+      e.zLower=roundedZ(d,e.lower); e.zUpper=roundedZ(d,e.upper); e.zM=roundedZ(d,e.m);
+      const denom=phi(e.zUpper)-phi(e.zLower);
+      e.answer=e.targetRelation==='<' ? (phi(e.zM)-phi(e.zLower))/denom : (phi(e.zUpper)-phi(e.zM))/denom;
+    } else if (e.type === 'percentileOfValue') {
+      e.z=roundedZ(d,e.m); e.answer=phi(e.z);
+    } else if (e.type === 'valueFromPercentile') {
+      e.p=e.percentile/100; e.z=Number(inverseNormalCdf(e.p).toFixed(2));
+      e.answer=d.mu+e.z*d.sigma;
+    } else if (e.type === 'quartile') {
+      const map={Q_1:0.25,Q_2:0.5,Q_3:0.75}; e.p=map[e.quartileSymbol];
+      e.z=Number(inverseNormalCdf(e.p).toFixed(2)); e.answer=d.mu+e.z*d.sigma;
+    } else if (e.type === 'iqr') {
+      e.z1=-0.67; e.z3=0.67; e.q1=d.mu+e.z1*d.sigma; e.q3=d.mu+e.z3*d.sigma; e.answer=e.q3-e.q1;
+    }
   }
 
   function clearCLTActivity() {
-    tableArea.innerHTML = '';
-    meanArea.innerHTML = '';
-    workArea.innerHTML = '';
-    histogramArea.innerHTML = '';
-    stageFeedback.textContent = '';
+    tableArea.innerHTML=''; meanArea.innerHTML=''; workArea.innerHTML=''; histogramArea.innerHTML=''; stageFeedback.textContent='';
   }
 
-  function renderCLTDraft(problem) {
-    clearCLTActivity();
-    const typeNames = { means:'CLT for means', sums:'CLT for sums', proportions:'CLT for proportions' };
-    questionText.innerHTML = problem.wording;
-    workArea.innerHTML = `
-      <div style="margin-top:1rem; text-align:center;">
-        <div>\\(${problem.task.notation}\\)</div>
-        <div style="margin-top:0.75rem; font-size:0.9em; opacity:0.75;">
-          Draft framework preview: ${typeNames[problem.type]}; underlying source: ${problem.context.parameterSource}; event family: ${problem.task.event.type}.
-        </div>
-      </div>`;
-    hintBtn.disabled = false;
-    typeset([questionText, workArea]);
+  function fmt(x, digits=3) { return Number(Number(x).toFixed(digits)).toString(); }
+  function probFmt(x) { return Number(x).toFixed(4); }
+  function mathValue(x,d) {
+    if (d.unit === 'money') return `\\$${Number(x).toFixed(2)}`;
+    return fmt(x, Math.max(1, CLT_UNIT_LIBRARY[d.unit]?.decimals ?? 2));
+  }
+  function displaySamplingValue(x,d) {
+    if (d.unit === 'money') return `$${Number(x).toFixed(2)}`;
+    const dec=Math.max(1,CLT_UNIT_LIBRARY[d.unit]?.decimals ?? 2);
+    return `${Number(x.toFixed(dec))} ${CLT_UNIT_LIBRARY[d.unit]?.symbol ?? ''}`.trim();
+  }
+  function zPhi(z){ return normalCdf(Number(z.toFixed(2))); }
+  function phiTex(z){ return probFmt(zPhi(z)); }
+
+  function underlyingStep(problem) {
+    const c=problem.context;
+    let html='';
+    if(c.parameterSource==='direct') {
+      html=`<p>The mean and standard deviation of the underlying distribution are given directly:</p>
+      <p>\\[\\mu_X=${formatMathMeasurement(c.mu,c.unit)}\\hspace{6mm}\\text{and}\\hspace{6mm}\\sigma_X=${formatMathMeasurement(c.sigma,c.unit)}.\\]</p>`;
+    } else if(c.parameterSource==='uniform') {
+      html=`<p>The underlying distribution is uniform. Its mean and standard deviation are</p>
+      <p>\\[\\begin{aligned}
+      \\mu_X&=\\frac{a+b}{2}=\\frac{${fmt(c.a,2)}+${fmt(c.b,2)}}{2}=${fmt(c.mu,3)},\\\\
+      \\sigma_X&=\\sqrt{\\frac{(b-a)^2}{12}}=\\sqrt{\\frac{(${fmt(c.b,2)}-${fmt(c.a,2)})^2}{12}}\\approx ${fmt(c.sigma,3)}.
+      \\end{aligned}\\]</p>`;
+    } else if(c.parameterSource==='poisson') {
+      html=`<p>The underlying distribution is Poisson with parameter \\(\\lambda=${fmt(c.lambda,2)}\\). Therefore,</p>
+      <p>\\[\\mu_X=\\lambda=${fmt(c.mu,3)}\\hspace{6mm}\\text{and}\\hspace{6mm}\\sigma_X=\\sqrt{\\lambda}=\\sqrt{${fmt(c.lambda,2)}}\\approx ${fmt(c.sigma,3)}.\\]</p>`;
+    } else {
+      html=`<p>The underlying distribution is geometric with success probability \\(p=${fmt(c.p,3)}\\). Therefore,</p>
+      <p>\\[\\mu_X=\\frac1p=\\frac1{${fmt(c.p,3)}}=${fmt(c.mu,3)}\\hspace{6mm}\\text{and}\\hspace{6mm}\\sigma_X=\\frac{\\sqrt{1-p}}p=\\frac{\\sqrt{1-${fmt(c.p,3)}}}{${fmt(c.p,3)}}\\approx ${fmt(c.sigma,3)}.\\]</p>`;
+    }
+    workArea.insertAdjacentHTML('beforeend',html);
+    renderUnderlyingPlot(problem);
   }
 
-  startBtn.addEventListener('click', () => {
-    playSound('click-sound');
-    currentCLTDraft = generateCLTDraftQuestion();
-    renderCLTDraft(currentCLTDraft);
+  function renderUnderlyingPlot(problem) {
+    const c=problem.context;
+    histogramArea.innerHTML='';
+    if(c.parameterSource==='uniform') {
+      renderUniformDistribution(histogramArea,c.a,c.b,{xLabel:CLT_UNIT_LIBRARY[c.unit].symbol,heightLabel:`1/${fmt(c.b-c.a,2)}`});
+    } else if(c.parameterSource==='poisson') {
+      const max=Math.max(12,Math.ceil(c.mu+4*c.sigma)); const pts=[];
+      let pk=Math.exp(-c.lambda); pts.push({x:0,p:pk});
+      for(let k=1;k<=max;k++){pk*=c.lambda/k;pts.push({x:k,p:pk});}
+      renderDiscreteHistogram(histogramArea,pts,{title:'Underlying Poisson distribution',xLabel:'x',yLabel:'P(X=x)'});
+    } else if(c.parameterSource==='geometric') {
+      const max=Math.max(10,Math.ceil(c.mu+4*c.sigma)); const pts=[];
+      for(let k=1;k<=max;k++)pts.push({x:k,p:Math.pow(1-c.p,k-1)*c.p});
+      renderDiscreteHistogram(histogramArea,pts,{title:'Underlying geometric distribution',xLabel:'x',yLabel:'P(X=x)'});
+    }
+  }
+
+  function samplingStep(problem) {
+    const c=problem.context,d=problem.sampling;
+    const mu=fmt(d.mu,3), sig=fmt(d.sigma,3);
+    const html=problem.type==='means'
+      ? `<p>We are asked about an average, so we use the sample-mean version of the Central Limit Theorem:</p>
+      <p>\\[\\begin{aligned}
+      \\mu_{\\overline X}&=\\mu_X=${fmt(c.mu,3)},\\\\
+      \\sigma_{\\overline X}&=\\frac{\\sigma_X}{\\sqrt n}=\\frac{${fmt(c.sigma,3)}}{\\sqrt{${c.n}}}\\approx ${sig}.
+      \\end{aligned}\\]</p>`
+      : `<p>We are asked about a total, so we use the sample-sum version of the Central Limit Theorem:</p>
+      <p>\\[\\begin{aligned}
+      \\mu_{\\Sigma X}&=n\\mu_X=${c.n}(${fmt(c.mu,3)})\\approx ${mu},\\\\
+      \\sigma_{\\Sigma X}&=\\sqrt n\\,\\sigma_X=\\sqrt{${c.n}}(${fmt(c.sigma,3)})\\approx ${sig}.
+      \\end{aligned}\\]</p>`;
+    workArea.insertAdjacentHTML('beforeend',html);
+    renderNormalDistribution(meanArea,d.mu,d.sigma,{xLabel:problem.type==='means'?'sample mean':'sample total',yLabel:'density'});
+  }
+
+  function eventNotation(problem) {
+    const d=problem.sampling,e=problem.task.event,s=d.symbol;
+    if(e.type==='range')return `P(${e.left}\\leq ${s}\\leq ${e.right})`;
+    if(e.type==='oneSided')return `P(${s}${e.relation}${e.m})`;
+    if(e.type==='conditional')return `P(${s}${e.targetRelation}${e.m}\\mid ${e.lower}\\leq ${s}\\leq ${e.upper})`;
+    if(e.type==='percentileOfValue')return `P(${s}\\leq ${e.m})`;
+    return '';
+  }
+
+  function calculationStep(problem) {
+    const d=problem.sampling,e=problem.task.event,s=d.symbol;
+    let html='',zs=[],selected=[];
+    if(e.type==='oneSided') {
+      const left=e.relation==='<'||e.relation==='\\leq'; const p=zPhi(e.z);
+      html=`<p>\\[\\begin{aligned}
+      ${eventNotation(problem)}&=P\\left(Z${e.relation}\\frac{${mathValue(e.m,d)}-${fmt(d.mu,3)}}{${fmt(d.sigma,3)}}\\right)\\\\
+      &=P(Z${e.relation}${fmt(e.z,2)})\\\\
+      &=${left?phiTex(e.z):`1-${phiTex(e.z)}`}\\\\
+      &=${probFmt(e.answer)}.
+      \\end{aligned}\\]</p>`;
+      zs=[e.z]; selected=left?[[-Infinity,e.m]]:[[e.m,Infinity]];
+    } else if(e.type==='range') {
+      html=`<p>\\[\\begin{aligned}
+      ${eventNotation(problem)}&=P\\left(\\frac{${mathValue(e.left,d)}-${fmt(d.mu,3)}}{${fmt(d.sigma,3)}}\\leq Z\\leq\\frac{${mathValue(e.right,d)}-${fmt(d.mu,3)}}{${fmt(d.sigma,3)}}\\right)\\\\
+      &=P(${fmt(e.z1,2)}\\leq Z\\leq ${fmt(e.z2,2)})\\\\
+      &=P(Z\\leq ${fmt(e.z2,2)})-P(Z\\leq ${fmt(e.z1,2)})\\\\
+      &=${phiTex(e.z2)}-${phiTex(e.z1)}=${probFmt(e.answer)}.
+      \\end{aligned}\\]</p>`;
+      zs=[e.z1,e.z2]; selected=[[e.left,e.right]];
+    } else if(e.type==='conditional') {
+      const num=e.targetRelation==='<'?`${phiTex(e.zM)}-${phiTex(e.zLower)}`:`${phiTex(e.zUpper)}-${phiTex(e.zM)}`;
+      html=`<p>\\[\\begin{aligned}
+      ${eventNotation(problem)}&=\\frac{P(\\text{target event and given interval})}{P(\\text{given interval})}\\\\
+      &=\\frac{${num}}{${phiTex(e.zUpper)}-${phiTex(e.zLower)}}\\\\
+      &=${probFmt(e.answer)}.
+      \\end{aligned}\\]</p>`;
+      zs=[e.zLower,e.zM,e.zUpper]; selected=[[e.lower,e.upper]];
+    } else if(e.type==='percentileOfValue') {
+      html=`<p>\\[\\begin{aligned}
+      z&=\\frac{${mathValue(e.m,d)}-${fmt(d.mu,3)}}{${fmt(d.sigma,3)}}=${fmt(e.z,2)},\\\\
+      P(${s}\\leq ${e.m})&=P(Z\\leq ${fmt(e.z,2)})=${probFmt(e.answer)}.
+      \\end{aligned}\\]</p><p>Thus, ${displaySamplingValue(e.m,d)} is approximately the \\(${fmt(100*e.answer,2)}\\)th percentile.</p>`;
+      zs=[e.z]; selected=[[-Infinity,e.m]];
+    } else if(e.type==='valueFromPercentile'||e.type==='quartile') {
+      const label=e.type==='quartile'?e.quartileSymbol:`P(${s}\\leq x)=${fmt(e.p,2)}`;
+      html=`<p>The standard-normal table gives \\(z\\approx ${fmt(e.z,2)}\\). Therefore,</p>
+      <p>\\[\\begin{aligned}
+      ${label}:\\qquad x&=\\mu+z\\sigma\\\\
+      &=${fmt(d.mu,3)}+(${fmt(e.z,2)})(${fmt(d.sigma,3)})\\\\
+      &\\approx ${mathValue(e.answer,d)}.
+      \\end{aligned}\\]</p>`;
+      zs=[e.z]; selected=[[-Infinity,e.answer]];
+    } else {
+      html=`<p>For the first and third quartiles, the corresponding standard-normal values are approximately \\(-0.67\\) and \\(0.67\\):</p>
+      <p>\\[\\begin{aligned}
+      Q_1&=${fmt(d.mu,3)}-0.67(${fmt(d.sigma,3)})\\approx ${mathValue(e.q1,d)},\\\\
+      Q_3&=${fmt(d.mu,3)}+0.67(${fmt(d.sigma,3)})\\approx ${mathValue(e.q3,d)},\\\\
+      IQR&=Q_3-Q_1\\approx ${mathValue(e.q3,d)}-${mathValue(e.q1,d)}=${mathValue(e.answer,d)}.
+      \\end{aligned}\\]</p>`;
+      zs=[-0.67,0.67]; selected=[[e.q1,e.q3]];
+    }
+    workArea.insertAdjacentHTML('beforeend',html);
+    renderNormalDistribution(meanArea,d.mu,d.sigma,{selectedRanges:selected,tickValues:[d.mu-2*d.sigma,d.mu-d.sigma,d.mu,d.mu+d.sigma,d.mu+2*d.sigma,...selected.flat().filter(Number.isFinite)],xLabel:problem.type==='means'?'sample mean':'sample total',yLabel:'density'});
+    renderStandardNormalTable(tableArea,{highlightZs:zs,minZ:-2.5,maxZ:2.5,fontSize:'10px'});
+    stageFeedback.textContent=`Final answer: ${e.type==='percentileOfValue'?fmt(100*e.answer,2)+'th percentile':e.type==='valueFromPercentile'||e.type==='quartile'||e.type==='iqr'?displaySamplingValue(e.answer,d):probFmt(e.answer)}`;
+    stageFeedback.style.color='black';
+  }
+
+  function renderCLTProblem(problem) {
+    clearCLTActivity(); questionText.innerHTML=problem.wording;
+    hintBtn.disabled=false; hintBtn.textContent='Hint'; nextBtn.style.display='none';
+    typeset([questionText]);
+  }
+
+  startBtn.addEventListener('click',()=>{
+    playSound('click-sound'); currentCLTDraft=generateCLTQuestion(); renderCLTProblem(currentCLTDraft);
   });
 
-  hintBtn.addEventListener('click', () => {
-    playSound('click-sound');
-    if (!currentCLTDraft) return;
-    stageFeedback.textContent = 'Hint steps will be implemented after the numerical question generators are complete.';
-    stageFeedback.style.color = 'black';
+  hintBtn.addEventListener('click',()=>{
+    playSound('click-sound'); if(!currentCLTDraft)return;
+    currentCLTDraft.hintIndex++;
+    if(currentCLTDraft.hintIndex===1) underlyingStep(currentCLTDraft);
+    else if(currentCLTDraft.hintIndex===2) samplingStep(currentCLTDraft);
+    else if(currentCLTDraft.hintIndex===3){calculationStep(currentCLTDraft);hintBtn.disabled=true;}
+    typeset([workArea,meanArea,tableArea,histogramArea]);
   });
-
 
 </script>
 

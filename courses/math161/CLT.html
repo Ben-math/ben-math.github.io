@@ -5,6 +5,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -159,6 +160,7 @@ fetch("/nav.html")
         <button id="hint-btn" class="rubber-button">Hint</button>
         <button id="next-btn" class="rubber-button" style="display:none;">Next</button>
       </div>
+      <div id="hint-area" class="math" style="margin-top: 1rem;"></div>
     </div>
 </main>
   
@@ -298,6 +300,7 @@ fetch("/nav.html")
   const workArea = document.getElementById('work-area');
   const histogramArea = document.getElementById('histogram-area');
   const stageFeedback = document.getElementById('stage-feedback');
+  const hintArea = document.getElementById('hint-area');
 
   // -----------------------------
   // Helpers
@@ -1594,7 +1597,8 @@ fetch("/nav.html")
   }
 
   function clearCLTActivity() {
-    tableArea.innerHTML=''; meanArea.innerHTML=''; workArea.innerHTML=''; histogramArea.innerHTML=''; stageFeedback.textContent='';
+    tableArea.innerHTML=''; meanArea.innerHTML=''; workArea.innerHTML=''; histogramArea.innerHTML='';
+    stageFeedback.textContent=''; hintArea.innerHTML='';
   }
 
   function fmt(x, digits=3) { return Number(Number(x).toFixed(digits)).toString(); }
@@ -1611,62 +1615,60 @@ fetch("/nav.html")
   function zPhi(z){ return normalCdf(Number(z.toFixed(2))); }
   function phiTex(z){ return probFmt(zPhi(z)); }
 
+  function makeHintWrapper() {
+    const wrapper = document.createElement('div');
+    wrapper.style.marginTop = '1rem';
+    hintArea.appendChild(wrapper);
+    return wrapper;
+  }
+
   function underlyingStep(problem) {
     const c=problem.context;
+    const wrapper=makeHintWrapper();
     let html='';
     if(c.parameterSource==='direct') {
       html=`<p>The mean and standard deviation of the underlying distribution are given directly:</p>
-      <p>\\[\\mu_X=${formatMathMeasurement(c.mu,c.unit)}\\hspace{6mm}\\text{and}\\hspace{6mm}\\sigma_X=${formatMathMeasurement(c.sigma,c.unit)}.\\]</p>`;
+      <p>\\[\\mu_X=${formatMathMeasurement(c.mu,c.unit)}\\hspace{6mm}\\text{ and }\\hspace{6mm}\\sigma_X=${formatMathMeasurement(c.sigma,c.unit)}.\\]</p>`;
     } else if(c.parameterSource==='uniform') {
-      html=`<p>The underlying distribution is uniform. Its mean and standard deviation are</p>
-      <p>\\[\\begin{aligned}
-      \\mu_X&=\\frac{a+b}{2}=\\frac{${fmt(c.a,2)}+${fmt(c.b,2)}}{2}=${fmt(c.mu,3)},\\\\
-      \\sigma_X&=\\sqrt{\\frac{(b-a)^2}{12}}=\\sqrt{\\frac{(${fmt(c.b,2)}-${fmt(c.a,2)})^2}{12}}\\approx ${fmt(c.sigma,3)}.
-      \\end{aligned}\\]</p>`;
+      html=`<p>The underlying distribution is uniform, with mean and standard deviation</p>
+      <p>\\[\\mu_X=\\frac{a+b}{2}=\\frac{${fmt(c.a,2)}+${fmt(c.b,2)}}{2}=${fmt(c.mu,3)}\\hspace{3mm}\\text{ and }\\hspace{3mm}\\sigma_X=\\sqrt{\\frac{(b-a)^2}{12}}=\\sqrt{\\frac{(${fmt(c.b,2)}-${fmt(c.a,2)})^2}{12}}\\approx ${fmt(c.sigma,3)}.\\]</p>`;
     } else if(c.parameterSource==='poisson') {
-      html=`<p>The underlying distribution is Poisson with parameter \\(\\lambda=${fmt(c.lambda,2)}\\). Therefore,</p>
-      <p>\\[\\mu_X=\\lambda=${fmt(c.mu,3)}\\hspace{6mm}\\text{and}\\hspace{6mm}\\sigma_X=\\sqrt{\\lambda}=\\sqrt{${fmt(c.lambda,2)}}\\approx ${fmt(c.sigma,3)}.\\]</p>`;
+      html=`<p>The underlying distribution is Poisson with parameter \\(\\lambda=${fmt(c.lambda,2)}\\), with mean and standard deviation</p>
+      <p>\\[\\mu_X=\\lambda=${fmt(c.mu,3)}\\hspace{3mm}\\text{ and }\\hspace{3mm}\\sigma_X=\\sqrt{\\lambda}=\\sqrt{${fmt(c.lambda,2)}}\\approx ${fmt(c.sigma,3)}.\\]</p>`;
     } else {
-      html=`<p>The underlying distribution is geometric with success probability \\(p=${fmt(c.p,3)}\\). Therefore,</p>
-      <p>\\[\\mu_X=\\frac1p=\\frac1{${fmt(c.p,3)}}=${fmt(c.mu,3)}\\hspace{6mm}\\text{and}\\hspace{6mm}\\sigma_X=\\frac{\\sqrt{1-p}}p=\\frac{\\sqrt{1-${fmt(c.p,3)}}}{${fmt(c.p,3)}}\\approx ${fmt(c.sigma,3)}.\\]</p>`;
+      html=`<p>The underlying distribution is geometric with success probability \\(p=${fmt(c.p,3)}\\), with mean and standard deviation</p>
+      <p>\\[\\mu_X=\\frac{1}{p}=\\frac{1}{${fmt(c.p,3)}}=${fmt(c.mu,3)}\\hspace{3mm}\\text{ and }\\hspace{3mm}\\sigma_X=\\frac{\\sqrt{1-p}}{p}=\\frac{\\sqrt{1-${fmt(c.p,3)}}}{${fmt(c.p,3)}}\\approx ${fmt(c.sigma,3)}.\\]</p>`;
     }
-    workArea.insertAdjacentHTML('beforeend',html);
-    renderUnderlyingPlot(problem);
-  }
-
-  function renderUnderlyingPlot(problem) {
-    const c=problem.context;
-    histogramArea.innerHTML='';
-    if(c.parameterSource==='uniform') {
-      renderUniformDistribution(histogramArea,c.a,c.b,{xLabel:CLT_UNIT_LIBRARY[c.unit].symbol,heightLabel:`1/${fmt(c.b-c.a,2)}`});
-    } else if(c.parameterSource==='poisson') {
-      const max=Math.max(12,Math.ceil(c.mu+4*c.sigma)); const pts=[];
-      let pk=Math.exp(-c.lambda); pts.push({x:0,p:pk});
-      for(let k=1;k<=max;k++){pk*=c.lambda/k;pts.push({x:k,p:pk});}
-      renderDiscreteHistogram(histogramArea,pts,{title:'Underlying Poisson distribution',xLabel:'x',yLabel:'P(X=x)'});
-    } else if(c.parameterSource==='geometric') {
-      const max=Math.max(10,Math.ceil(c.mu+4*c.sigma)); const pts=[];
-      for(let k=1;k<=max;k++)pts.push({x:k,p:Math.pow(1-c.p,k-1)*c.p});
-      renderDiscreteHistogram(histogramArea,pts,{title:'Underlying geometric distribution',xLabel:'x',yLabel:'P(X=x)'});
+    wrapper.innerHTML=html;
+    if(c.parameterSource!=='direct') {
+      const graph=document.createElement('div');
+      graph.style.maxWidth='740px'; graph.style.margin='0.75rem auto';
+      wrapper.appendChild(graph);
+      if(c.parameterSource==='uniform') {
+        renderUniformDistribution(graph,c.a,c.b,{xLabel:CLT_UNIT_LIBRARY[c.unit].symbol,heightLabel:`1/${fmt(c.b-c.a,2)}`});
+      } else if(c.parameterSource==='poisson') {
+        renderPoissonHistogram(graph,c.lambda,{xLabel:'x',yLabel:'f(x)',maxX:Math.max(12,Math.ceil(c.mu+4*c.sigma))});
+      } else {
+        renderGeometricHistogram(graph,c.p,{xLabel:'x',yLabel:'f(x)',maxX:Math.max(10,Math.ceil(c.mu+4*c.sigma))});
+      }
     }
+    typeset([wrapper]);
   }
 
   function samplingStep(problem) {
     const c=problem.context,d=problem.sampling;
+    const wrapper=makeHintWrapper();
     const mu=fmt(d.mu,3), sig=fmt(d.sigma,3);
-    const html=problem.type==='means'
-      ? `<p>We are asked about an average, so we use the sample-mean version of the Central Limit Theorem:</p>
-      <p>\\[\\begin{aligned}
-      \\mu_{\\overline X}&=\\mu_X=${fmt(c.mu,3)},\\\\
-      \\sigma_{\\overline X}&=\\frac{\\sigma_X}{\\sqrt n}=\\frac{${fmt(c.sigma,3)}}{\\sqrt{${c.n}}}\\approx ${sig}.
-      \\end{aligned}\\]</p>`
-      : `<p>We are asked about a total, so we use the sample-sum version of the Central Limit Theorem:</p>
-      <p>\\[\\begin{aligned}
-      \\mu_{\\Sigma X}&=n\\mu_X=${c.n}(${fmt(c.mu,3)})\\approx ${mu},\\\\
-      \\sigma_{\\Sigma X}&=\\sqrt n\\,\\sigma_X=\\sqrt{${c.n}}(${fmt(c.sigma,3)})\\approx ${sig}.
-      \\end{aligned}\\]</p>`;
-    workArea.insertAdjacentHTML('beforeend',html);
-    renderNormalDistribution(meanArea,d.mu,d.sigma,{xLabel:problem.type==='means'?'sample mean':'sample total',yLabel:'density'});
+    wrapper.innerHTML=problem.type==='means'
+      ? `<p>We are asked about an average, so we use the sample mean version of the Central Limit Theorem,</p>
+      <p>\\[\\mu_{\\overline{x}}=\\mu_X=${fmt(c.mu,3)}\\hspace{3mm}\\text{ and }\\hspace{3mm}\\sigma_{\\overline{x}}=\\frac{\\sigma_X}{\\sqrt{n}}=\\frac{${fmt(c.sigma,3)}}{\\sqrt{${c.n}}}\\approx ${sig}.\\]</p>`
+      : `<p>We are asked about a total, so we use the sample sum version of the Central Limit Theorem,</p>
+      <p>\\[\\mu_{\\Sigma X}=n\\mu_X=${c.n}(${fmt(c.mu,3)})\\approx ${mu}\\hspace{3mm}\\text{ and }\\hspace{3mm}\\sigma_{\\Sigma X}=\\sqrt{n}\\,\\sigma_X=\\sqrt{${c.n}}(${fmt(c.sigma,3)})\\approx ${sig}.\\]</p>`;
+    const graph=document.createElement('div');
+    graph.style.maxWidth='740px'; graph.style.margin='0.75rem auto';
+    wrapper.appendChild(graph);
+    renderNormalDistribution(graph,d.mu,d.sigma,{xLabel:problem.type==='means'?'sample mean':'sample total'});
+    typeset([wrapper]);
   }
 
   function eventNotation(problem) {
@@ -1679,62 +1681,83 @@ fetch("/nav.html")
   }
 
   function calculationStep(problem) {
-    const d=problem.sampling,e=problem.task.event,s=d.symbol;
-    let html='',zs=[],selected=[];
+    const d=problem.sampling,e=problem.task.event,symbol=d.symbol;
+    const wrapper=makeHintWrapper();
+    let html='',zs=[],selected=[],superSelected=[],lines=[];
+    const zRaw=x=>`\\frac{${mathValue(x,d)}-${fmt(d.mu,3)}}{${fmt(d.sigma,3)}}`;
     if(e.type==='oneSided') {
-      const left=e.relation==='<'||e.relation==='\\leq'; const p=zPhi(e.z);
-      html=`<p>\\[\\begin{aligned}
-      ${eventNotation(problem)}&=P\\left(Z${e.relation}\\frac{${mathValue(e.m,d)}-${fmt(d.mu,3)}}{${fmt(d.sigma,3)}}\\right)\\\\
-      &=P(Z${e.relation}${fmt(e.z,2)})\\\\
-      &=${left?phiTex(e.z):`1-${phiTex(e.z)}`}\\\\
-      &=${probFmt(e.answer)}.
-      \\end{aligned}\\]</p>`;
-      zs=[e.z]; selected=left?[[-Infinity,e.m]]:[[e.m,Infinity]];
+      const left=e.relation==='<'||e.relation==='\\leq';
+      const rel=e.relation==='<'?'\\lt':e.relation;
+      const table=zPhi(e.z);
+      html=left
+        ? `<p>\\[\\begin{aligned}
+          P(${symbol}${rel}${mathValue(e.m,d)})
+          &=P\\left(Z\\leq ${zRaw(e.m)}\\right)\\\\
+          &=P(Z\\leq ${fmt(e.z,2)})\\approx ${probFmt(e.answer)}.
+        \\end{aligned}\\]</p>`
+        : `<p>\\[\\begin{aligned}
+          P(${symbol}${rel}${mathValue(e.m,d)})
+          &=P\\left(Z>${zRaw(e.m)}\\right)\\\\
+          &=P(Z>${fmt(e.z,2)})=1-P(Z\\leq ${fmt(e.z,2)})\\\\
+          &\\approx 1-${probFmt(table)}=${probFmt(e.answer)}.
+        \\end{aligned}\\]</p>`;
+      zs=[e.z]; selected=left?[[-Infinity,e.m]]:[[e.m,Infinity]]; lines=[e.m];
     } else if(e.type==='range') {
       html=`<p>\\[\\begin{aligned}
-      ${eventNotation(problem)}&=P\\left(\\frac{${mathValue(e.left,d)}-${fmt(d.mu,3)}}{${fmt(d.sigma,3)}}\\leq Z\\leq\\frac{${mathValue(e.right,d)}-${fmt(d.mu,3)}}{${fmt(d.sigma,3)}}\\right)\\\\
-      &=P(${fmt(e.z1,2)}\\leq Z\\leq ${fmt(e.z2,2)})\\\\
-      &=P(Z\\leq ${fmt(e.z2,2)})-P(Z\\leq ${fmt(e.z1,2)})\\\\
-      &=${phiTex(e.z2)}-${phiTex(e.z1)}=${probFmt(e.answer)}.
+        P(${mathValue(e.left,d)}\\leq ${symbol}\\leq ${mathValue(e.right,d)})
+        &=P\\left(${zRaw(e.left)}\\leq Z\\leq ${zRaw(e.right)}\\right)\\\\
+        &=P(${fmt(e.z1,2)}\\leq Z\\leq ${fmt(e.z2,2)})\\\\
+        &=${phiTex(e.z2)}-${phiTex(e.z1)}=${probFmt(e.answer)}.
       \\end{aligned}\\]</p>`;
-      zs=[e.z1,e.z2]; selected=[[e.left,e.right]];
+      zs=[e.z1,e.z2]; selected=[[e.left,e.right]]; lines=[e.left,e.right];
     } else if(e.type==='conditional') {
-      const num=e.targetRelation==='<'?`${phiTex(e.zM)}-${phiTex(e.zLower)}`:`${phiTex(e.zUpper)}-${phiTex(e.zM)}`;
+      const rel=e.targetRelation==='<'?'\\lt':e.targetRelation;
+      const intersection=e.targetRelation==='<'?`${mathValue(e.lower,d)}\\leq ${symbol}\\lt ${mathValue(e.m,d)}`:`${mathValue(e.m,d)}\\lt ${symbol}\\leq ${mathValue(e.upper,d)}`;
+      const numZ=e.targetRelation==='<'?`${fmt(e.zLower,2)}\\leq Z\\lt ${fmt(e.zM,2)}`:`${fmt(e.zM,2)}\\lt Z\\leq ${fmt(e.zUpper,2)}`;
+      const numValues=e.targetRelation==='<'?`${phiTex(e.zM)}-${phiTex(e.zLower)}`:`${phiTex(e.zUpper)}-${phiTex(e.zM)}`;
       html=`<p>\\[\\begin{aligned}
-      ${eventNotation(problem)}&=\\frac{P(\\text{target event and given interval})}{P(\\text{given interval})}\\\\
-      &=\\frac{${num}}{${phiTex(e.zUpper)}-${phiTex(e.zLower)}}\\\\
-      &=${probFmt(e.answer)}.
+        P(${symbol}${rel}${mathValue(e.m,d)}\\mid ${mathValue(e.lower,d)}\\leq ${symbol}\\leq ${mathValue(e.upper,d)})
+        &=\\frac{P(${symbol}${rel}${mathValue(e.m,d)})\\cap(${mathValue(e.lower,d)}\\leq ${symbol}\\leq ${mathValue(e.upper,d)})}{P(${mathValue(e.lower,d)}\\leq ${symbol}\\leq ${mathValue(e.upper,d)})}\\\\
+        &=\\frac{P(${intersection})}{P(${mathValue(e.lower,d)}\\leq ${symbol}\\leq ${mathValue(e.upper,d)})}\\\\
+        &=\\frac{P(${numZ})}{P(${fmt(e.zLower,2)}\\leq Z\\leq ${fmt(e.zUpper,2)})}\\\\
+        &=\\frac{${numValues}}{${phiTex(e.zUpper)}-${phiTex(e.zLower)}}\\approx ${probFmt(e.answer)}.
       \\end{aligned}\\]</p>`;
-      zs=[e.zLower,e.zM,e.zUpper]; selected=[[e.lower,e.upper]];
+      zs=[e.zLower,e.zM,e.zUpper]; selected=[[e.lower,e.upper]]; superSelected=e.targetRelation==='<'?[[e.lower,e.m]]:[[e.m,e.upper]]; lines=[e.lower,e.m,e.upper];
     } else if(e.type==='percentileOfValue') {
       html=`<p>\\[\\begin{aligned}
-      z&=\\frac{${mathValue(e.m,d)}-${fmt(d.mu,3)}}{${fmt(d.sigma,3)}}=${fmt(e.z,2)},\\\\
-      P(${s}\\leq ${e.m})&=P(Z\\leq ${fmt(e.z,2)})=${probFmt(e.answer)}.
-      \\end{aligned}\\]</p><p>Thus, ${displaySamplingValue(e.m,d)} is approximately the \\(${fmt(100*e.answer,2)}\\)th percentile.</p>`;
-      zs=[e.z]; selected=[[-Infinity,e.m]];
-    } else if(e.type==='valueFromPercentile'||e.type==='quartile') {
-      const label=e.type==='quartile'?e.quartileSymbol:`P(${s}\\leq x)=${fmt(e.p,2)}`;
-      html=`<p>The standard-normal table gives \\(z\\approx ${fmt(e.z,2)}\\). Therefore,</p>
-      <p>\\[\\begin{aligned}
-      ${label}:\\qquad x&=\\mu+z\\sigma\\\\
-      &=${fmt(d.mu,3)}+(${fmt(e.z,2)})(${fmt(d.sigma,3)})\\\\
-      &\\approx ${mathValue(e.answer,d)}.
-      \\end{aligned}\\]</p>`;
-      zs=[e.z]; selected=[[-Infinity,e.answer]];
+        P(${symbol}\\leq ${mathValue(e.m,d)})
+        &=P\\left(Z\\leq ${zRaw(e.m)}\\right)\\\\
+        &=P(Z\\leq ${fmt(e.z,2)})\\approx ${probFmt(e.answer)}.
+      \\end{aligned}\\]</p><p>Thus, ${displaySamplingValue(e.m,d)} is approximately the \\(${fmt(100*e.answer,1)}\\)th percentile.</p>`;
+      zs=[e.z]; selected=[[-Infinity,e.m]]; lines=[e.m];
+    } else if(e.type==='valueFromPercentile') {
+      html=`<p>Find the standard-normal table entry whose cumulative probability is closest to \\(${fmt(e.p,2)}\\): \\(Z\\approx ${fmt(e.z,2)}\\).</p>
+      <p>\\[x=\\mu+Z\\sigma=${fmt(d.mu,3)}+(${fmt(e.z,2)})(${fmt(d.sigma,3)})\\approx ${mathValue(e.answer,d)}.\\]</p>
+      <p>The requested percentile is approximately ${displaySamplingValue(e.answer,d)}.</p>`;
+      zs=[e.z]; selected=[[-Infinity,e.answer]]; lines=[e.answer];
+    } else if(e.type==='quartile') {
+      html=`<p>The cumulative probability for \\(${e.quartileSymbol}\\) is \\(${fmt(e.p,2)}\\), corresponding to \\(Z\\approx ${fmt(e.z,2)}\\) in the standard normal table.</p>
+      <p>\\[${e.quartileSymbol}=\\mu+Z\\sigma=${fmt(d.mu,3)}+(${fmt(e.z,2)})(${fmt(d.sigma,3)})\\approx ${mathValue(e.answer,d)}.\\]</p>`;
+      zs=[e.z]; selected=[[-Infinity,e.answer]]; lines=[e.answer];
     } else {
-      html=`<p>For the first and third quartiles, the corresponding standard-normal values are approximately \\(-0.67\\) and \\(0.67\\):</p>
+      html=`<p>The cumulative probabilities \\(0.25\\) and \\(0.75\\) correspond to \\(Z\\approx -0.67\\) and \\(Z\\approx 0.67\\) in the standard normal table.</p>
       <p>\\[\\begin{aligned}
-      Q_1&=${fmt(d.mu,3)}-0.67(${fmt(d.sigma,3)})\\approx ${mathValue(e.q1,d)},\\\\
-      Q_3&=${fmt(d.mu,3)}+0.67(${fmt(d.sigma,3)})\\approx ${mathValue(e.q3,d)},\\\\
-      IQR&=Q_3-Q_1\\approx ${mathValue(e.q3,d)}-${mathValue(e.q1,d)}=${mathValue(e.answer,d)}.
-      \\end{aligned}\\]</p>`;
-      zs=[-0.67,0.67]; selected=[[e.q1,e.q3]];
+        Q_1&=${fmt(d.mu,3)}+(-0.67)(${fmt(d.sigma,3)})\\approx ${mathValue(e.q1,d)},\\\\
+        Q_3&=${fmt(d.mu,3)}+(0.67)(${fmt(d.sigma,3)})\\approx ${mathValue(e.q3,d)}.
+      \\end{aligned}\\]</p>
+      <p>\\[IQR=Q_3-Q_1\\approx ${mathValue(e.q3,d)}-${mathValue(e.q1,d)}=${mathValue(e.answer,d)}.\\]</p>`;
+      zs=[-0.67,0.67]; selected=[[e.q1,e.q3]]; lines=[e.q1,e.q3];
     }
-    workArea.insertAdjacentHTML('beforeend',html);
-    renderNormalDistribution(meanArea,d.mu,d.sigma,{selectedRanges:selected,tickValues:[d.mu-2*d.sigma,d.mu-d.sigma,d.mu,d.mu+d.sigma,d.mu+2*d.sigma,...selected.flat().filter(Number.isFinite)],xLabel:problem.type==='means'?'sample mean':'sample total',yLabel:'density'});
-    renderStandardNormalTable(tableArea,{highlightZs:zs,minZ:-2.5,maxZ:2.5,fontSize:'10px'});
-    stageFeedback.textContent=`Final answer: ${e.type==='percentileOfValue'?fmt(100*e.answer,2)+'th percentile':e.type==='valueFromPercentile'||e.type==='quartile'||e.type==='iqr'?displaySamplingValue(e.answer,d):probFmt(e.answer)}`;
-    stageFeedback.style.color='black';
+    wrapper.innerHTML=html;
+    const graph=document.createElement('div');
+    graph.style.maxWidth='740px'; graph.style.margin='0.75rem auto';
+    wrapper.appendChild(graph);
+    renderNormalDistribution(graph,d.mu,d.sigma,{selectedRanges:selected,superSelectedRanges:superSelected,tickValues:[d.mu-3*d.sigma,d.mu-2*d.sigma,d.mu-d.sigma,d.mu,d.mu+d.sigma,d.mu+2*d.sigma,d.mu+3*d.sigma,...lines],xLabel:problem.type==='means'?'sample mean':'sample total'});
+    const table=document.createElement('div');
+    table.style.margin='0.75rem auto';
+    wrapper.appendChild(table);
+    renderStandardNormalTable(table,{highlightZs:zs,minZ:-3.0,maxZ:3.0,fontSize:'10px'});
+    typeset([wrapper]);
   }
 
   function renderCLTProblem(problem) {
@@ -1753,7 +1776,7 @@ fetch("/nav.html")
     if(currentCLTDraft.hintIndex===1) underlyingStep(currentCLTDraft);
     else if(currentCLTDraft.hintIndex===2) samplingStep(currentCLTDraft);
     else if(currentCLTDraft.hintIndex===3){calculationStep(currentCLTDraft);hintBtn.disabled=true;}
-    typeset([workArea,meanArea,tableArea,histogramArea]);
+
   });
 
 </script>

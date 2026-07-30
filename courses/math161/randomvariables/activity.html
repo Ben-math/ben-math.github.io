@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1083,6 +1084,36 @@ fetch("/nav.html")
     return Number(x.toFixed(2)).toString();
   }
 
+
+  function normalCdf(z) {
+    const a = Math.abs(z);
+    const t = 1 / (1 + 0.2316419 * a);
+    const density = 0.3989422804014327 * Math.exp(-0.5 * a * a);
+    const tail = density * t * (
+      0.319381530 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429)))
+    );
+    const cdf = 1 - tail;
+    return z >= 0 ? cdf : 1 - cdf;
+  }
+
+  function inverseNormalCdf(p) {
+    let lo = -4, hi = 4;
+    for (let i = 0; i < 70; i++) {
+      const mid = (lo + hi) / 2;
+      if (normalCdf(mid) < p) lo = mid;
+      else hi = mid;
+    }
+    return (lo + hi) / 2;
+  }
+
+  function normalZ(d, x) {
+    return (x - d.mu) / d.sigma;
+  }
+
+  function roundedZ(d, x) {
+    return Number(normalZ(d, x).toFixed(2));
+  }
+
   function fractionParameter(min = 0.2, max = 0.8) {
     const possibilities = [];
     for (let den = 3; den <= 12; den++) {
@@ -1345,6 +1376,28 @@ fetch("/nav.html")
     };
   }
 
+
+  function makeNormalScenario() {
+    const eligible = UNIFORM_SCENARIOS.filter(item => item.max - item.min >= 12);
+    const item = randomChoice(eligible);
+    const maxSigma = Math.max(2, Math.min(20, Math.floor((item.max - item.min) / 6)));
+    const sigma = randInt(2, maxSigma);
+    const muMin = Math.ceil(item.min + 3 * sigma);
+    const muMax = Math.floor(item.max - 3 * sigma);
+    const mu = randInt(muMin, Math.max(muMin, muMax));
+    const words = item.singular.split(' ');
+    const last = words.pop();
+    const pluralLast = /[^aeiou]y$/i.test(last) ? `${last.slice(0,-1)}ies` : `${last}s`;
+    const normalSubject = [...words, pluralLast].join(' ');
+    const capitalizedSubject = normalSubject.charAt(0).toUpperCase() + normalSubject.slice(1);
+    return {
+      ...item, mu, sigma,
+      a: mu - 3 * sigma,
+      b: mu + 3 * sigma,
+      intro: `${capitalizedSubject} are normally distributed with a mean of ${mu} ${item.unit} and a standard deviation of ${sigma} ${item.unit}.`
+    };
+  }
+
   function uniformPoint(d, interior = true) {
     const lo = interior ? d.a + 1 : d.a;
     const hi = interior ? d.b - 1 : d.b;
@@ -1476,11 +1529,11 @@ fetch("/nav.html")
       };
     }
 
-    const sigma = randInt(2, 20);
-    const mu = randInt(2, 20) * 10;
+    const scenario = makeNormalScenario();
+    const { mu, sigma, a, b } = scenario;
     return {
-      distribution, mu, sigma, mean: mu, sd: sigma, min: mu - 3 * sigma, max: mu + 3 * sigma,
-      description: `\\(X\\) is normally distributed with mean \\(\\mu=${mu}\\) and standard deviation \\(\\sigma=${sigma}\\).`
+      distribution, mu, sigma, mean: mu, sd: sigma, min: a, max: b, a, b, scenario,
+      description: scenario.intro
     };
   }
 
@@ -1645,7 +1698,7 @@ fetch("/nav.html")
       return makeBernoulliQuestion(d, type);
     }
     if (d.distribution === 'Poisson') return makePoissonQuestion(d,type);
-    if (d.distribution === 'uniform') return makeUniformQuestion(d,type);
+    if (d.distribution === 'uniform' || d.distribution === 'normal') return makeUniformQuestion(d,type);
 
     const discrete = ['Poisson'].includes(d.distribution);
     const point = () => discrete ? centralInteger(d) : centralContinuous(d);
@@ -1859,6 +1912,82 @@ fetch("/nav.html")
       const q1=d.a+.25*width,q3=d.a+.75*width,iqr=q3-q1;
       steps.push({html:`<p>First find the first and third quartiles:</p><p>\\[Q_1=${d.a}+0.25(${d.b}-${d.a})=${formatNumber(q1)}\\]</p><p>\\[Q_3=${d.a}+0.75(${d.b}-${d.a})=${formatNumber(q3)}\\]</p>`,diagram:{selected:[[q1,q3]],super:[],lines:[q1,q3]}});
       steps.push({html:`<p>\\[IQR=Q_3-Q_1=${formatNumber(q3)}-${formatNumber(q1)}=${formatNumber(iqr)}\\text{ ${d.scenario.unit}}\\]</p>`});
+    }
+    return steps;
+  }
+
+  function buildNormalHints(d) {
+    const e = d.task.event;
+    const steps = [
+      { html:`<p>Let \\(X\\) be the ${d.scenario.singular}, measured in ${d.scenario.unit}. The problem states that \\(X\\) is normally distributed with mean \\(\\mu=${d.mu}\\) and standard deviation \\(\\sigma=${d.sigma}\\).</p>` },
+      { html:`<p>To use the standard normal table, convert values of \\(X\\) to z-scores using</p><p>\\[z=\\frac{x-\\mu}{\\sigma}=\\frac{x-${d.mu}}{${d.sigma}}.\\]</p>`, diagram:{selected:[],super:[],lines:[],zValues:[],showTable:false} }
+    ];
+
+    const zTex = x => `\\frac{${formatNumber(x)}-${d.mu}}{${d.sigma}}=${roundedZ(d,x).toFixed(2)}`;
+    const cdfX = x => normalCdf(normalZ(d,x));
+
+    if (['specific','range','oneSided','conditional'].includes(e.type)) {
+      let selected=[], superSelected=[], lines=[], zValues=[];
+      if (e.type==='specific') {
+        lines=[e.m];
+      } else if (e.type==='range') {
+        selected=[[e.left,e.right]];
+        zValues=[roundedZ(d,e.left),roundedZ(d,e.right)];
+      } else if (e.type==='oneSided') {
+        selected=(e.relation==='<'||e.relation==='\\leq')?[[-Infinity,e.m]]:[[e.m,Infinity]];
+        zValues=[roundedZ(d,e.m)];
+      } else {
+        selected=[[e.lower,e.upper]];
+        superSelected=e.targetRelation==='<'?[[e.lower,e.m]]:[[e.m,e.upper]];
+        zValues=[roundedZ(d,e.lower),roundedZ(d,e.upper),roundedZ(d,e.m)];
+      }
+      steps.push({html:`<p>We are trying to find \\(${d.task.notation}\\). The highlighted area under the normal curve represents this probability.</p>`,diagram:{selected,super:superSelected,lines,zValues,showTable:e.type!=='specific'}});
+    }
+
+    if(e.type==='specific'){
+      steps.push({html:`<p>A normal random variable is continuous, so the probability of any one exact value is zero:</p><p>\\[P(X=${e.m})=0.\\]</p>`});
+    } else if(e.type==='range'){
+      const zl=roundedZ(d,e.left), zr=roundedZ(d,e.right);
+      const pl=normalCdf(zl), pr=normalCdf(zr), ans=pr-pl;
+      steps.push({html:`<p>Convert both endpoints to z-scores:</p><p>\\[z_1=${zTex(e.left)},\\qquad z_2=${zTex(e.right)}.\\]</p>`});
+      steps.push({html:`<p>Using the standard normal table,</p><p>\\[P(${e.left}\\leq X\\leq ${e.right})=P(${zl.toFixed(2)}\\leq Z\\leq ${zr.toFixed(2)})\\]</p><p>\\[=P(Z\\leq ${zr.toFixed(2)})-P(Z\\leq ${zl.toFixed(2)})\\approx ${pr.toFixed(4)}-${pl.toFixed(4)}=${ans.toFixed(4)}.\\]</p>`});
+    } else if(e.type==='oneSided'){
+      const z=roundedZ(d,e.m), left=e.relation==='<'||e.relation==='\\leq';
+      const table=normalCdf(z), ans=left?table:1-table;
+      const rel=e.relation==='<'?'\\lt':e.relation;
+      steps.push({html:`<p>Convert the boundary to a z-score:</p><p>\\[z=${zTex(e.m)}.\\]</p>`});
+      steps.push({html:left
+        ? `<p>From the standard normal table,</p><p>\\[P(X${rel}${e.m})=P(Z\\leq ${z.toFixed(2)})\\approx ${ans.toFixed(4)}.\\]</p>`
+        : `<p>Use the complement of the table value:</p><p>\\[P(X${rel}${e.m})=P(Z>${z.toFixed(2)})=1-P(Z\\leq ${z.toFixed(2)})\\approx 1-${table.toFixed(4)}=${ans.toFixed(4)}.\\]</p>`});
+    } else if(e.type==='conditional'){
+      const zl=roundedZ(d,e.lower), zu=roundedZ(d,e.upper), zm=roundedZ(d,e.m);
+      const pl=normalCdf(zl), pu=normalCdf(zu), pm=normalCdf(zm);
+      const numerator=e.targetRelation==='<'?pm-pl:pu-pm;
+      const denominator=pu-pl;
+      const answer=numerator/denominator;
+      const intersection=e.targetRelation==='<'?`${e.lower}\\leq X\\lt ${e.m}`:`${e.m}\\lt X\\leq ${e.upper}`;
+      const rel=e.targetRelation==='<'?'\\lt':e.targetRelation;
+      steps.push({html:`<p>Using \\(P(A\\mid B)=\\dfrac{P(A\\cap B)}{P(B)}\\), the intersection is \\(${intersection}\\).</p>`});
+      steps.push({html:`<p>Convert the three boundaries to z-scores:</p><p>\\[z_L=${zTex(e.lower)},\\qquad z_M=${zTex(e.m)},\\qquad z_U=${zTex(e.upper)}.\\]</p>`});
+      steps.push({html:`<p>Use the table to calculate the numerator and denominator:</p><p>\\[P(${intersection})\\approx ${numerator.toFixed(4)},\\qquad P(${e.lower}\\leq X\\leq ${e.upper})\\approx ${denominator.toFixed(4)}.\\]</p>`});
+      steps.push({html:`<p>Therefore,</p><p>\\[P(X${rel}${e.m}\\mid ${e.lower}\\leq X\\leq ${e.upper})\\approx\\frac{${numerator.toFixed(4)}}{${denominator.toFixed(4)}}=${answer.toFixed(4)}.\\]</p>`});
+    } else if(e.type==='percentileOfValue'){
+      const z=roundedZ(d,e.m), p=normalCdf(z);
+      steps.push({html:`<p>Convert the value to a z-score:</p><p>\\[z=${zTex(e.m)}.\\]</p>`});
+      steps.push({html:`<p>The cumulative table value is</p><p>\\[P(X\\leq ${e.m})=P(Z\\leq ${z.toFixed(2)})\\approx ${p.toFixed(4)}.\\]</p><p>Thus, ${uniformValuePhrase(d,e.m)} is approximately the \\(${(100*p).toFixed(1)}\\)th percentile.</p>`,diagram:{selected:[[-Infinity,e.m]],super:[],lines:[e.m],zValues:[z],showTable:true}});
+    } else if(e.type==='valueFromPercentile'){
+      const target=e.percentile/100, z=Number(inverseNormalCdf(target).toFixed(2)), x=d.mu+z*d.sigma;
+      steps.push({html:`<p>Find the z-score whose cumulative probability is closest to \\(${target.toFixed(2)}\\). From the standard normal table, \\(z\\approx ${z.toFixed(2)}\\).</p>`,diagram:{selected:[[-Infinity,x]],super:[],lines:[x],zValues:[z],showTable:true}});
+      steps.push({html:`<p>Convert back to the original units using \\(x=\\mu+z\\sigma\\):</p><p>\\[x=${d.mu}+(${z.toFixed(2)})(${d.sigma})\\approx ${formatNumber(x)}\\text{ ${d.scenario.unit}}.\\]</p><p>The ${ordinal(e.percentile)} percentile is approximately ${formatNumber(x)} ${d.scenario.unit}.</p>`});
+    } else if(e.type==='quartile'){
+      const z=Number(inverseNormalCdf(e.target).toFixed(2)), x=d.mu+z*d.sigma;
+      steps.push({html:`<p>The cumulative probability for \\(${e.quartileSymbol}\\) is \\(${e.target}\\). The corresponding table value gives \\(z\\approx ${z.toFixed(2)}\\).</p>`,diagram:{selected:[[-Infinity,x]],super:[],lines:[x],zValues:[z],showTable:true}});
+      steps.push({html:`<p>\\[${e.quartileSymbol}=\\mu+z\\sigma=${d.mu}+(${z.toFixed(2)})(${d.sigma})\\approx ${formatNumber(x)}\\text{ ${d.scenario.unit}}.\\]</p>`});
+    } else if(e.type==='iqr'){
+      const z1=Number(inverseNormalCdf(.25).toFixed(2)), z3=Number(inverseNormalCdf(.75).toFixed(2));
+      const q1=d.mu+z1*d.sigma, q3=d.mu+z3*d.sigma, iqr=q3-q1;
+      steps.push({html:`<p>The table values for cumulative probabilities \\(0.25\\) and \\(0.75\\) give \\(z_1\\approx ${z1.toFixed(2)}\\) and \\(z_3\\approx ${z3.toFixed(2)}\\).</p>`,diagram:{selected:[[q1,q3]],super:[],lines:[q1,q3],zValues:[z1,z3],showTable:true}});
+      steps.push({html:`<p>\\[Q_1=${d.mu}+(${z1.toFixed(2)})(${d.sigma})\\approx ${formatNumber(q1)},\\qquad Q_3=${d.mu}+(${z3.toFixed(2)})(${d.sigma})\\approx ${formatNumber(q3)}.\\]</p><p>\\[IQR=Q_3-Q_1\\approx ${formatNumber(q3)}-${formatNumber(q1)}=${formatNumber(iqr)}\\text{ ${d.scenario.unit}}.\\]</p>`});
     }
     return steps;
   }
@@ -2179,6 +2308,15 @@ fetch("/nav.html")
       wrapper.appendChild(graph);
       if(d.distribution==='Poisson') renderPoissonHistogram(graph,d.mu,{xLabel:'x',yLabel:'f(x)',maxX:d.max,highlightXs:step.diagram.highlight||[],superHighlightXs:step.diagram.super||[]});
       else if(d.distribution==='uniform') renderUniformDistribution(graph,d.a,d.b,{xLabel:`${d.scenario.singular} (${d.scenario.unit})`,heightLabel:fracToString(1,d.b-d.a),selectedRanges:step.diagram.selected||[],superSelectedRanges:step.diagram.super||[],verticalLines:step.diagram.lines||[],tickValues:[...(step.diagram.lines||[])]});
+      else if(d.distribution==='normal') {
+        renderNormalDistribution(graph,d.mu,d.sigma,{xLabel:`${d.scenario.singular} (${d.scenario.unit})`,selectedRanges:step.diagram.selected||[],superSelectedRanges:step.diagram.super||[],tickValues:[d.mu-3*d.sigma,d.mu-2*d.sigma,d.mu-d.sigma,d.mu,d.mu+d.sigma,d.mu+2*d.sigma,d.mu+3*d.sigma,...(step.diagram.lines||[])]});
+        if(step.diagram.showTable){
+          const table=document.createElement('div');
+          table.style.margin='0.75rem auto';
+          wrapper.appendChild(table);
+          renderStandardNormalTable(table,{highlightZs:step.diagram.zValues||[],minZ:-3.0,maxZ:3.0});
+        }
+      }
       else renderBernoulliHintDiagram(graph,d,step.diagram.highlight||[],step.diagram.super||[]);
     }
     typeset([wrapper]);
@@ -2203,6 +2341,7 @@ fetch("/nav.html")
     if (distribution.distribution === 'binomial' || distribution.distribution === 'geometric') currentProblem.hintSteps = buildBernoulliHints(currentProblem);
     else if (distribution.distribution === 'Poisson') currentProblem.hintSteps = buildPoissonHints(currentProblem);
     else if (distribution.distribution === 'uniform') currentProblem.hintSteps = buildUniformHints(currentProblem);
+    else if (distribution.distribution === 'normal') currentProblem.hintSteps = buildNormalHints(currentProblem);
 
     questionText.innerHTML = `<p>${distribution.description}</p><p>${task.wording}</p>`;
     hintBtn.disabled = false;

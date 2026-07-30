@@ -9,6 +9,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -866,7 +867,7 @@ fetch("/nav.html")
     }
     renderDiscreteDistributionHistogram(el, data, {
       ...options, width: W, height: H, padding: pad,
-      paleBlue, paleRed, highlightXs: [...highlight],
+      paleBlue, paleRed, highlightXs: [...highlight], superHighlightXs: [...(options.superHighlightXs ?? [])],
       ariaLabel: options.ariaLabel ?? `Histogram of Poisson(mu=${mu})`
     });
   }
@@ -1135,6 +1136,66 @@ fetch("/nav.html")
     { action: 'launching a paper airplane through a hoop', attempt: 'launch', score: 'send it through the hoop' }
   ];
 
+
+
+  const POISSON_TIME_ACTIONS = ['sneeze','blink','jump','hiccup','yawn','check your phone','lose your train of thought','say “um”','spot a dog','hear a notification','laugh at your own joke','wonder what time it is'];
+  const POISSON_TIME_UNITS = [
+    {one:'second',many:'seconds',size:1},{one:'minute',many:'minutes',size:60},
+    {one:'hour',many:'hours',size:3600},{one:'day',many:'days',size:86400}
+  ];
+  const POISSON_DISTANCE_SCENARIOS = [
+    ['road','pothole','potholes'],['forest trail','mushroom','mushrooms'],['beach','lost flip-flop','lost flip-flops'],
+    ['city sidewalk','pigeon','pigeons'],['hiking path','suspiciously balanced rock','suspiciously balanced rocks'],
+    ['riverbank','frog','frogs'],['ski run','abandoned ski pole','abandoned ski poles'],
+    ['railway track','graffiti mural','graffiti murals'],['hedgerow','garden gnome','garden gnomes'],['country lane','tractor','tractors']
+  ];
+  const POISSON_DISTANCE_UNITS = [
+    {one:'metre',many:'metres',size:1},{one:'kilometre',many:'kilometres',size:1000},
+    {one:'foot',many:'feet',size:0.3048},{one:'mile',many:'miles',size:1609.344}
+  ];
+  const POISSON_RATE_SCENARIOS = [
+    ['Defective lightbulbs','lightbulb','lightbulbs','defective lightbulb','defective lightbulbs'],
+    ['Mislabeled soup cans','soup can','soup cans','mislabeled soup can','mislabeled soup cans'],
+    ['Cracked dragon eggs','dragon egg','dragon eggs','cracked dragon egg','cracked dragon eggs'],
+    ['Books with a printing error','book','books','book with a printing error','books with a printing error'],
+    ['Robots with a loose screw','robot','robots','robot with a loose screw','robots with a loose screw'],
+    ['Cookies missing a chocolate chip','cookie','cookies','cookie missing a chocolate chip','cookies missing a chocolate chip'],
+    ['Socks with an unexpected hole','sock','socks','sock with an unexpected hole','socks with an unexpected hole'],
+    ['Trading cards printed upside down','trading card','trading cards','trading card printed upside down','trading cards printed upside down'],
+    ['Jellybeans of the wrong colour','jellybean','jellybeans','jellybean of the wrong colour','jellybeans of the wrong colour'],
+    ['Packages sent to the wrong moon','package','packages','package sent to the wrong moon','packages sent to the wrong moon']
+  ];
+  function poissonUnit(n,u){ return `${n} ${n===1?u.one:u.many}`; }
+  function makePoissonScenario(){
+    const kind=randInt(1,3), means=[2,3,4,5,6,7,8,9,10,12];
+    if(kind===1){
+      const action=randomChoice(POISSON_TIME_ACTIONS);
+      const pairs=[
+        [POISSON_TIME_UNITS[1],POISSON_TIME_UNITS[0],[5,10,15,20,30]],
+        [POISSON_TIME_UNITS[2],POISSON_TIME_UNITS[1],[5,10,15,20,30]],
+        [POISSON_TIME_UNITS[3],POISSON_TIME_UNITS[2],[2,3,4,6,8,12]]
+      ];
+      const [a,b,amounts]=randomChoice(pairs), A=1, B=randomChoice(amounts), mu=randomChoice(means);
+      const z=mu*a.size/(B*b.size);
+      return {kind:'time',mu,action,countOne:'time',countMany:'times',where:`a randomly selected ${poissonUnit(B,b)}`,intro:`In an average ${a.one}, you ${action} ${z} ${z===1?'time':'times'}.`};
+    }
+    if(kind===2){
+      const q=randomChoice(POISSON_DISTANCE_SCENARIOS);
+      const pairs=[
+        [POISSON_DISTANCE_UNITS[1],POISSON_DISTANCE_UNITS[0],[100,200,250,500]],
+        [POISSON_DISTANCE_UNITS[3],POISSON_DISTANCE_UNITS[2],[528,660,880,1320,2640]]
+      ];
+      const [a,b,amounts]=randomChoice(pairs), A=1, B=randomChoice(amounts), mu=randomChoice(means);
+      const z=Math.round(mu*A*a.size/(B*b.size));
+      return {kind:'distance',mu,countOne:q[1],countMany:q[2],where:`a randomly selected ${poissonUnit(B,b)} stretch of ${q[0]}`,intro:`In a stretch of ${poissonUnit(A,a)} of ${q[0]}, there are on average ${z} ${z===1?q[1]:q[2]}.`};
+    }
+    const q=randomChoice(POISSON_RATE_SCENARIOS);
+    while(true){
+      const pct=randomChoice([1,2,3,4,5,6,8,10]), N=randomChoice([50,75,100,150,200,250,300,400,500,600]), mu=pct*N/100;
+      if(mu>=2&&mu<=15&&Number.isInteger(mu)) return {kind:'rate',mu,countOne:q[3],countMany:q[4],where:`a collection of ${N} ${q[2]}`,intro:`${q[0]} occur with an average rate of ${pct}%. In a collection of ${N} ${q[2]}, consider the number with this characteristic.`};
+    }
+  }
+
   function percentParameter(min, max) {
     const values = [];
     for (let x = Math.ceil(100 * min / 5) * 5; x <= Math.floor(100 * max / 5) * 5; x += 5) values.push(x);
@@ -1306,13 +1367,8 @@ fetch("/nav.html")
     }
 
     if (distribution === 'Poisson') {
-      const mu = randInt(3, 30) / 2;
-      const sd = Math.sqrt(mu);
-      const max = Math.ceil(mu + 3 * sd);
-      return {
-        distribution, mu, mean: mu, sd, min: 0, max,
-        description: `\\(X\\) is a Poisson random variable with mean \\(\\mu=${formatNumber(mu)}\\).`
-      };
+      const scenario=makePoissonScenario(), mu=scenario.mu, sd=Math.sqrt(mu), max=Math.ceil(mu+4*sd);
+      return {distribution,mu,mean:mu,sd,min:0,max,scenario,description:scenario.intro};
     }
 
     if (distribution === 'uniform') {
@@ -1437,10 +1493,28 @@ fetch("/nav.html")
     return { wording, notation, event };
   }
 
+
+  function poissonPhrase(d,n){ return `${n} ${n===1?d.scenario.countOne:d.scenario.countMany}`; }
+  function makePoissonQuestion(d,type){
+    const e={type}, where=d.scenario.where, point=()=>centralInteger(d); let wording='',notation='';
+    if(type==='specific'){e.m=point(); wording=d.scenario.kind==='time'?`What is the probability that you ${d.scenario.action} exactly ${e.m} times in ${where}?`:`What is the probability that there are exactly ${poissonPhrase(d,e.m)} in ${where}?`; notation=`P(X=${e.m})`;}
+    else if(type==='range'){const c=centralInteger(d,1);e.left=Math.max(0,c-randInt(1,3));e.right=Math.max(e.left+1,c+randInt(1,3));wording=d.scenario.kind==='time'?`What is the probability that you ${d.scenario.action} between ${e.left} and ${e.right} times, inclusive, in ${where}?`:`What is the probability that there are between ${e.left} and ${e.right} ${d.scenario.countMany}, inclusive, in ${where}?`;notation=`P(${e.left}\\leq X\\leq ${e.right})`;}
+    else if(type==='oneSided'){e.m=point();e.relation=randomChoice(['<','\\leq','>','\\geq']);const w=e.relation==='<'?`fewer than ${e.m}`:e.relation==='\\leq'?`at most ${e.m}`:e.relation==='>'?`more than ${e.m}`:`at least ${e.m}`;wording=d.scenario.kind==='time'?`What is the probability that you ${d.scenario.action} ${w} times in ${where}?`:`What is the probability that there are ${w} ${d.scenario.countMany} in ${where}?`;notation=`P(X${e.relation}${e.m})`;}
+    else if(type==='conditional'){e.k=Math.max(0,centralInteger(d,1)-randInt(1,2));e.m=e.k+randInt(1,3);wording=d.scenario.kind==='time'?`Given that you ${d.scenario.action} more than ${e.k} times in ${where}, what is the probability that you ${d.scenario.action} more than ${e.m} times?`:`Given that there are more than ${e.k} ${d.scenario.countMany} in ${where}, what is the probability that there are more than ${e.m} ${d.scenario.countMany}?`;notation=`P(X>${e.m}\\mid X>${e.k})`;}
+    else if(type==='percentileOfValue'){e.m=point();wording=`What percentile corresponds to ${poissonPhrase(d,e.m)} in ${where}?`;notation=`P(X\\leq ${e.m})`;}
+    else if(type==='valueFromPercentile'){e.percentile=randomChoice([10,20,25,30,40,60,70,75,80,90]);wording=`Find the ${ordinal(e.percentile)} percentile for the number of ${d.scenario.countMany} in ${where}.`;notation='percentile';}
+    else if(type==='mean'){wording=d.scenario.kind==='time'?`In ${where}, how many times can you be expected to ${d.scenario.action}?`:`In ${where}, how many ${d.scenario.countMany} can you be expected to find?`;notation='E(X)';}
+    else if(type==='sd'){wording=`Find the standard deviation of the number of ${d.scenario.countMany} in ${where}.`;notation='\\sigma_X';}
+    else if(type==='iqr'){wording=`In ${where}, what is the interquartile range for the number of ${d.scenario.countMany}?`;notation='Q_3-Q_1';}
+    else {const z=randomChoice([{n:'median',s:'Q_2',t:.5},{n:'first quartile',s:'Q_1',t:.25},{n:'third quartile',s:'Q_3',t:.75}]);Object.assign(e,{quartileName:z.n,quartileSymbol:z.s,target:z.t});wording=`Find the ${z.n} of the number of ${d.scenario.countMany} in ${where}.`;notation=z.s;}
+    return {wording,notation,event:e};
+  }
+
   function generateQuestion(d, type) {
     if (d.distribution === 'binomial' || d.distribution === 'geometric') {
       return makeBernoulliQuestion(d, type);
     }
+    if (d.distribution === 'Poisson') return makePoissonQuestion(d,type);
 
     const discrete = ['Poisson'].includes(d.distribution);
     const point = () => discrete ? centralInteger(d) : centralContinuous(d);
@@ -1491,6 +1565,26 @@ fetch("/nav.html")
     else wording = `Find the ${randomChoice(['median', 'first quartile', 'third quartile'])} of \\(X\\).`;
 
     return { wording, hint: `This is a ${d.distribution} distribution. Its parameters are given in the first sentence of the problem.` };
+  }
+
+
+  function poissonPmf(d,x){if(x<0)return 0;let p=Math.exp(-d.mu);for(let i=1;i<=x;i++)p*=d.mu/i;return p;}
+  function poissonCdf(d,x){if(x<0)return 0;let p=Math.exp(-d.mu),t=p;for(let i=1;i<=Math.floor(x);i++){p*=d.mu/i;t+=p;}return Math.min(1,t);}
+  function poissonNearest(d,target){let u=0;while(poissonCdf(d,u-1)<target&&u<80)u++;const l=Math.max(0,u-1),lv=poissonCdf(d,l-1),uv=poissonCdf(d,u-1);return{lowerK:l,upperK:u,lowerValue:lv,upperValue:uv,chosenK:Math.abs(lv-target)<=Math.abs(uv-target)?l:u};}
+  function poissonTerms(d,xs){return xs.map(x=>`f(${x},${formatNumber(d.mu)})`).join('+');}
+  function buildPoissonHints(d){
+    const e=d.task.event, steps=[{html:`<p>Let \\(X\\) be the number of ${d.scenario.countMany} in ${d.scenario.where}. Since events occur at an average rate over a fixed interval, \\(X\\) is a Poisson random variable with \\(\\mu=${formatNumber(d.mu)}\\).</p>`},{html:`<p>Its probability distribution function is</p><p>\\[f(x,${formatNumber(d.mu)})=\\frac{e^{-${formatNumber(d.mu)}}${formatNumber(d.mu)}^x}{x!},\\quad x=0,1,2,\\ldots\\]</p>`,diagram:{highlight:[]}}];
+    if(['specific','range','oneSided','conditional'].includes(e.type)){let h=[],s=[];if(e.type==='specific')h=[e.m];else if(e.type==='range')h=Array.from({length:e.right-e.left+1},(_,i)=>e.left+i);else if(e.type==='oneSided')h=Array.from({length:d.max+1},(_,i)=>i).filter(x=>e.relation==='<'?x<e.m:e.relation==='\\leq'?x<=e.m:e.relation==='>'?x>e.m:x>=e.m);else{h=Array.from({length:Math.max(0,d.max-e.k)},(_,i)=>e.k+1+i);s=Array.from({length:Math.max(0,d.max-e.m)},(_,i)=>e.m+1+i);}steps.push({html:`<p>We are trying to find \\( ${d.task.notation} \\).</p>`,diagram:{highlight:h,super:s}});}
+    if(e.type==='specific'){const v=poissonPmf(d,e.m);steps.push({html:`<p>\\[P(X=${e.m})=\\frac{e^{-${formatNumber(d.mu)}}${formatNumber(d.mu)}^{${e.m}}}{${e.m}!}\\approx ${v.toFixed(4)}\\]</p>`});}
+    else if(e.type==='range'){const xs=Array.from({length:e.right-e.left+1},(_,i)=>e.left+i),v=poissonCdf(d,e.right)-poissonCdf(d,e.left-1);steps.push({html:expandedProbabilityHtml(`${e.left}\\leq X\\leq ${e.right}`,xs,v)});}
+    else if(e.type==='oneSided'){let xs=[],cx=null,ct='',v;const et=`X${e.relation==='<'?'\\lt':e.relation}${e.m}`;if(e.relation==='<'){xs=Array.from({length:e.m},(_,i)=>i);v=poissonCdf(d,e.m-1);}else if(e.relation==='\\leq'){xs=Array.from({length:e.m+1},(_,i)=>i);v=poissonCdf(d,e.m);}else if(e.relation==='>'){cx=Array.from({length:e.m+1},(_,i)=>i);ct=`X\\leq ${e.m}`;v=1-poissonCdf(d,e.m);}else{cx=Array.from({length:e.m},(_,i)=>i);ct=`X\\lt ${e.m}`;v=1-poissonCdf(d,e.m-1);}steps.push({html:expandedProbabilityHtml(et,xs,v,cx,ct,!!cx)});}
+    else if(e.type==='conditional'){const a=1-poissonCdf(d,e.m),b=1-poissonCdf(d,e.k),ans=a/b,nx=Array.from({length:e.m+1},(_,i)=>i),dx=Array.from({length:e.k+1},(_,i)=>i);steps.push({html:`<p>\\[\\begin{aligned}P(X>${e.m}\\mid X>${e.k})&=\\frac{P(X>${e.m})}{P(X>${e.k})}\\\\&=\\frac{1-P(X\\leq ${e.m})}{1-P(X\\leq ${e.k})}\\\\&=\\frac{1-\\left(${poissonTerms(d,nx)}\\right)}{1-\\left(${poissonTerms(d,dx)}\\right)}\\\\&\\approx ${ans.toFixed(4)}\\end{aligned}\\]</p>`});}
+    else if(e.type==='mean')steps.push({html:`<p>For a Poisson random variable, \\(E(X)=\\mu\\). Therefore,</p><p>\\[E(X)=\\mu=${formatNumber(d.mu)}\\]</p>`});
+    else if(e.type==='sd')steps.push({html:`<p>For a Poisson random variable, \\(\\sigma_X=\\sqrt{\\mu}\\). Therefore,</p><p>\\[\\sigma_X=\\sqrt{${formatNumber(d.mu)}}\\approx ${d.sd.toFixed(4)}\\]</p>`});
+    else if(e.type==='percentileOfValue'){const xs=Array.from({length:e.m+1},(_,i)=>i),v=poissonCdf(d,e.m);steps.push({html:`<p>The percentile is the cumulative probability up to and including \\(X=${e.m}\\).</p>${expandedProbabilityHtml(`X\\leq ${e.m}`,xs,v)}<p>Thus, \\(X=${e.m}\\) is approximately the \\(${(100*v).toFixed(1)}\\)th percentile.</p>`,diagram:{highlight:xs}});}
+    else if(e.type==='valueFromPercentile'){const t=e.percentile/100,q=poissonNearest(d,t);steps.push({html:`<p>We look for a \\(k\\) such that \\(P(X\\lt k)\\approx ${t}\\).</p>`},{html:`<p>\\[P(X\\lt ${q.lowerK})\\approx ${q.lowerValue.toFixed(4)}\\qquad\\text{and}\\qquad P(X\\lt ${q.upperK})\\approx ${q.upperValue.toFixed(4)}\\]</p>`},{html:`<p>Therefore, the ${ordinal(e.percentile)} percentile is \\(${q.chosenK}\\).</p>`,diagram:{highlight:[q.chosenK]}});}
+    else if(e.type==='quartile'||e.type==='iqr'){const ts=e.type==='iqr'?[['Q_1',.25],['Q_3',.75]]:[[e.quartileSymbol,e.target]],a={};if(e.type==='iqr')steps.push({html:'<p>We are trying to find \\(IQR=Q_3-Q_1\\).</p>'});for(const [name,t] of ts){const q=poissonNearest(d,t),lead=name==='Q_1'?'We start by finding':name==='Q_3'?'We next find':'We find';steps.push({html:`<p>${lead} \\(${name}\\). We look for a \\(k\\) such that \\(P(X\\lt k)\\approx ${t}\\).</p>`},{html:`<p>\\[P(X\\lt ${q.lowerK})\\approx ${q.lowerValue.toFixed(4)}\\qquad\\text{and}\\qquad P(X\\lt ${q.upperK})\\approx ${q.upperValue.toFixed(4)}\\]</p>`},{html:`<p>Therefore, \\(${name}=${q.chosenK}\\).</p>`,diagram:{highlight:[q.chosenK]}});a[name]=q.chosenK;}if(e.type==='iqr')steps.push({html:`<p>\\[IQR=${a.Q_3}-${a.Q_1}=${a.Q_3-a.Q_1}\\]</p>`});}
+    return steps;
   }
 
   function bigGcd(a, b) {
@@ -1807,7 +1901,8 @@ fetch("/nav.html")
       const graph=document.createElement('div');
       graph.style.maxWidth='740px'; graph.style.margin='0.75rem auto';
       wrapper.appendChild(graph);
-      renderBernoulliHintDiagram(graph,d,step.diagram.highlight||[],step.diagram.super||[]);
+      if(d.distribution==='Poisson') renderPoissonHistogram(graph,d.mu,{xLabel:'x',yLabel:'f(x)',maxX:d.max,highlightXs:step.diagram.highlight||[],superHighlightXs:step.diagram.super||[]});
+      else renderBernoulliHintDiagram(graph,d,step.diagram.highlight||[],step.diagram.super||[]);
     }
     typeset([wrapper]);
   }
@@ -1829,6 +1924,7 @@ fetch("/nav.html")
     const task = generateQuestion(distribution, questionType);
     currentProblem = { ...distribution, questionType, task, hintIndex: 0 };
     if (distribution.distribution === 'binomial' || distribution.distribution === 'geometric') currentProblem.hintSteps = buildBernoulliHints(currentProblem);
+    else if (distribution.distribution === 'Poisson') currentProblem.hintSteps = buildPoissonHints(currentProblem);
 
     questionText.innerHTML = `<p>${distribution.description}</p><p>${task.wording}</p>`;
     hintBtn.disabled = false;

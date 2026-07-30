@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -135,7 +136,7 @@ fetch("/nav.html")
 
     <p>If we repeatedly sample \(n > 30\) from a random variable \(X\) with known probability of success \(p\), then \(\hat{p}\) (the sampling proportion) 
     tends to a normal distribution with \[\mu_{\hat{p}} = p \hspace{5mm} \text{ and } \hspace{5mm} \sigma_{\hat{p}} = \sqrt{\frac{p(1-p)}{n}}\]</p>
-<div class="button-container" style="display:none;">
+<div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>
 
@@ -152,9 +153,9 @@ fetch("/nav.html")
 
       <p id="stage-feedback" style="font-weight: bold; margin-top: 0.75rem; text-align: center;"></p>
 
-      <div class="button-container" style="gap: 0.75rem; display:none;">
+      <div class="button-container" style="gap: 0.75rem;">
         <button id="hint-btn" class="rubber-button">Hint</button>
-        <button id="next-btn" class="rubber-button">Next</button>
+        <button id="next-btn" class="rubber-button" style="display:none;">Next</button>
       </div>
     </div>
 </main>
@@ -404,6 +405,59 @@ fetch("/nav.html")
     }
     if (parsed.kind === 'dec') return relClose(parsed.value, target, relTol);
     return false;
+  }
+
+
+  // -----------------------------
+  // Reusable random-selection and normal-distribution helpers
+  // -----------------------------
+  function randomChoice(items) {
+    return items[randInt(0, items.length - 1)];
+  }
+
+  function weightedChoice(items) {
+    const total = items.reduce((sum, item) => sum + item.weight, 0);
+    let r = Math.random() * total;
+    for (const item of items) {
+      r -= item.weight;
+      if (r < 0) return item.value;
+    }
+    return items[items.length - 1].value;
+  }
+
+  function formatNumber(x) {
+    if (Number.isInteger(x)) return String(x);
+    return Number(x.toFixed(2)).toString();
+  }
+
+  function normalCdf(z) {
+    const a = Math.abs(z);
+    const t = 1 / (1 + 0.2316419 * a);
+    const density = 0.3989422804014327 * Math.exp(-0.5 * a * a);
+    const tail = density * t * (
+      0.319381530 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429)))
+    );
+    const cdf = 1 - tail;
+    return z >= 0 ? cdf : 1 - cdf;
+  }
+
+  function inverseNormalCdf(p) {
+    let lo = -4;
+    let hi = 4;
+    for (let i = 0; i < 70; i++) {
+      const mid = (lo + hi) / 2;
+      if (normalCdf(mid) < p) lo = mid;
+      else hi = mid;
+    }
+    return (lo + hi) / 2;
+  }
+
+  function normalZ(distribution, x) {
+    return (x - distribution.mu) / distribution.sigma;
+  }
+
+  function roundedZ(distribution, x) {
+    return Number(normalZ(distribution, x).toFixed(2));
   }
 
   

@@ -3,6 +3,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1879,13 +1880,13 @@ fetch("/nav.html")
       steps.push({html:`<p>A continuous random variable has probability \\(0\\) at any single exact value. Therefore,</p><p>\\[P(X=${e.m})=0\\]</p>`});
     } else if(e.type==='range'){
       const v=uniformProbability(d,e.left,e.right);
-      steps.push({html:`<p>\\[P(${e.left}\\leq X\\leq ${e.right})=\\frac{${e.right}-${e.left}}{${d.b}-${d.a}}=\\frac{${e.right-e.left}}{${width}}\\approx ${v.toFixed(4)}\\]</p>`});
+      steps.push({html:`<p>\\[P(${e.left}\\leq X\\leq ${e.right})=\\frac{${e.right}-${e.left}}{${width}}=\\frac{${e.right-e.left}}{${width}}\\approx ${v.toFixed(4)}\\]</p>`});
     } else if(e.type==='oneSided'){
       const left=(e.relation==='<'||e.relation==='\\leq')?d.a:e.m;
       const right=(e.relation==='<'||e.relation==='\\leq')?e.m:d.b;
       const v=uniformProbability(d,left,right);
       const relationTex=e.relation==='<'?'\\lt':e.relation;
-      steps.push({html:`<p>Because \\(X\\) is continuous, including or excluding the endpoint does not change the probability.</p><p>\\[P(X${relationTex}${e.m})=\\frac{${right}-${left}}{${d.b}-${d.a}}=\\frac{${right-left}}{${width}}\\approx ${v.toFixed(4)}\\]</p>`});
+      steps.push({html:`<p>Because \\(X\\) is continuous, including or excluding the endpoint does not change the probability.</p><p>\\[P(X${relationTex}${e.m})=\\frac{${right}-${left}}{${width}}=\\frac{${right-left}}{${width}}\\approx ${v.toFixed(4)}\\]</p>`});
     } else if(e.type==='conditional'){
       const intLeft=e.targetRelation==='<'?e.lower:e.m;
       const intRight=e.targetRelation==='<'?e.m:e.upper;
@@ -1894,11 +1895,17 @@ fetch("/nav.html")
       const answer=numerator/denominator;
       const intersection=e.targetRelation==='<'?`${e.lower}\\leq X\\lt ${e.m}`:`${e.m}\\lt X\\leq ${e.upper}`;
       const targetRelationTex=e.targetRelation==='<'?'\\lt':e.targetRelation;
-      steps.push({html:`<p>\\[\\begin{aligned}P(X${targetRelationTex}${e.m}\\mid ${e.lower}\\leq X\\leq ${e.upper})&=\\frac{P(X${targetRelationTex}${e.m})\\cap(${e.lower}\\leq X\\leq ${e.upper})}{P(${e.lower}\\leq X\\leq ${e.upper})}\\\\&=\\frac{P(${intersection})}{P(${e.lower}\\leq X\\leq ${e.upper})}\\end{aligned}\\]</p>`});
-      steps.push({html:`<p>\\[\\begin{aligned}&=\\frac{\\dfrac{${intRight}-${intLeft}}{${width}}}{\\dfrac{${e.upper}-${e.lower}}{${width}}}=\\frac{\\dfrac{${numerator}}{${width}}}{\\dfrac{${denominator}}{${width}}}=\\frac{${numerator}}{${denominator}}\\approx ${answer.toFixed(4)}\\end{aligned}\\]</p>`});
+      steps.push({html:`<p>\\[\\begin{aligned}
+        P(X${targetRelationTex}${e.m}\\mid ${e.lower}\\leq X\\leq ${e.upper})
+        &=\\frac{P(X${targetRelationTex}${e.m})\\cap(${e.lower}\\leq X\\leq ${e.upper})}{P(${e.lower}\\leq X\\leq ${e.upper})}\\\\
+        &=\\frac{P(${intersection})}{P(${e.lower}\\leq X\\leq ${e.upper})}\\\\
+        &=\\frac{\\dfrac{${intRight}-${intLeft}}{${width}}}{\\dfrac{${e.upper}-${e.lower}}{${width}}}\\\\
+        &=\\frac{\\dfrac{${numerator}}{${width}}}{\\dfrac{${denominator}}{${width}}}
+        =\\frac{${numerator}}{${denominator}}\\approx ${answer.toFixed(4)}
+      \\end{aligned}\\]</p>`});
     } else if(e.type==='percentileOfValue'){
       const v=(e.m-d.a)/width;
-      steps.push({html:`<p>The percentile is the cumulative area to the left of \\(X=${e.m}\\):</p><p>\\[P(X\\leq ${e.m})=\\frac{${e.m}-${d.a}}{${d.b}-${d.a}}=\\frac{${e.m-d.a}}{${width}}\\approx ${v.toFixed(4)}\\]</p><p>Thus, ${uniformValuePhrase(d,e.m)} is the \\(${(100*v).toFixed(1)}\\)th percentile.</p>`,diagram:{selected:[[d.a,e.m]],super:[],lines:[e.m]}});
+      steps.push({html:`<p>The percentile is the cumulative area to the left of \\(X=${e.m}\\):</p><p>\\[P(X\\leq ${e.m})=\\frac{${e.m}-${d.a}}{${width}}=\\frac{${e.m-d.a}}{${width}}\\approx ${v.toFixed(4)}\\]</p><p>Thus, ${uniformValuePhrase(d,e.m)} is the \\(${(100*v).toFixed(1)}\\)th percentile.</p>`,diagram:{selected:[[d.a,e.m]],super:[],lines:[e.m]}});
     } else if(e.type==='valueFromPercentile'){
       const t=e.percentile/100;
       const x=d.a+t*width;
@@ -1967,12 +1974,10 @@ fetch("/nav.html")
       steps.push({html:`<p>\\[\\begin{aligned}
         P(X${rel}${e.m}\\mid ${e.lower}\\leq X\\leq ${e.upper})
         &=\\frac{P(X${rel}${e.m})\\cap(${e.lower}\\leq X\\leq ${e.upper})}{P(${e.lower}\\leq X\\leq ${e.upper})}\\\\
-        &=\\frac{P(${intersection})}{P(${e.lower}\\leq X\\leq ${e.upper})}.
-      \\end{aligned}\\]</p>`});
-      steps.push({html:`<p>\\[\\begin{aligned}
+        &=\\frac{P(${intersection})}{P(${e.lower}\\leq X\\leq ${e.upper})}\\\\
         &=\\frac{P\\left(${numZ}\\right)}{P\\left(${zRaw(e.lower)}\\leq Z\\leq ${zRaw(e.upper)}\\right)}\\\\
         &=\\frac{P(${numZR})}{P(${zl.toFixed(2)}\\leq Z\\leq ${zu.toFixed(2)})}\\\\
-        &=\\frac{${numValues}}{${pu.toFixed(4)}-${pl.toFixed(4)}}\\approx ${answer.toFixed(4)}.
+        &=\\frac{${numValues}}{${pu.toFixed(4)}-${pl.toFixed(4)}}\\approx ${answer.toFixed(4)}
       \\end{aligned}\\]</p>`});
     } else if(e.type==='percentileOfValue'){
       const z=roundedZ(d,e.m),p=normalCdf(z);
@@ -2261,7 +2266,13 @@ fetch("/nav.html")
           : `1-P(X\\leq ${e.k})`;
       }
 
-      steps.push({ html: `<p>\\[P(X=${e.m}\\mid X>${e.k})=\\frac{P(X=${e.m}\\cap X>${e.k})}{P(X>${e.k})}=\\frac{P(X=${e.m})}{${denominatorProbabilityTex}}=\\frac{${fM}}{${denominatorFormulaTex}}\\approx\\frac{${numerator.toFixed(6)}}{${denominator.toFixed(6)}}\\approx ${answer.toFixed(4)}\\]</p>` });
+      steps.push({ html: `<p>\\[\\begin{aligned}
+        P(X=${e.m}\\mid X>${e.k})
+        &=\\frac{P(X=${e.m}\\cap X>${e.k})}{P(X>${e.k})}\\\\
+        &=\\frac{P(X=${e.m})}{${denominatorProbabilityTex}}\\\\
+        &=\\frac{${fM}}{${denominatorFormulaTex}}\\\\
+        &\\approx\\frac{${numerator.toFixed(6)}}{${denominator.toFixed(6)}}\\approx ${answer.toFixed(4)}
+      \\end{aligned}\\]</p>` });
     } else if (e.type === 'mean') {
       steps.push({ html: isBinomial
         ? `<p>For a binomial random variable, \\(E(X)=\\mu=np\\). Therefore,</p><p>\\[\\mu=${d.n}\\left(${pRaw}\\right)=${formatNumber(d.mean)}\\]</p>`

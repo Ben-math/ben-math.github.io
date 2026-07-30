@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1311,6 +1312,111 @@ fetch("/nav.html")
     return { intro, p, successSingular, successPlural };
   }
 
+
+  const UNIFORM_SCENARIOS = [
+    { subject: 'Hospital wait times', singular: 'hospital wait time', unit: 'hours', min: 1, max: 12, adjective: '' },
+    { subject: 'Kangaroos', singular: 'kangaroo height', unit: 'cm', min: 150, max: 320, adjective: ' tall' },
+    { subject: 'Newborn dragons', singular: 'newborn dragon weight', unit: 'kg', min: 2, max: 18, adjective: ' in weight' },
+    { subject: 'Submarine sandwiches', singular: 'submarine sandwich length', unit: 'cm', min: 15, max: 90, adjective: ' long' },
+    { subject: 'Robot recharge times', singular: 'robot recharge time', unit: 'minutes', min: 10, max: 180, adjective: '' },
+    { subject: 'Concert encore lengths', singular: 'concert encore length', unit: 'minutes', min: 2, max: 40, adjective: ' long' },
+    { subject: 'Watermelon weights', singular: 'watermelon weight', unit: 'kg', min: 2, max: 16, adjective: '' },
+    { subject: 'Penguin slide distances', singular: 'penguin slide distance', unit: 'm', min: 2, max: 35, adjective: ' long' },
+    { subject: 'Alien commute times', singular: 'alien commute time', unit: 'minutes', min: 5, max: 120, adjective: '' },
+    { subject: 'Wizard beard lengths', singular: 'wizard beard length', unit: 'cm', min: 10, max: 180, adjective: ' long' },
+    { subject: 'Bottles of enchanted juice', singular: 'enchanted juice volume', unit: 'mL', min: 200, max: 1200, adjective: ' in volume' },
+    { subject: 'House-cat nap lengths', singular: 'house-cat nap length', unit: 'minutes', min: 10, max: 240, adjective: ' long' },
+    { subject: 'Roller-coaster ride times', singular: 'roller-coaster ride time', unit: 'seconds', min: 30, max: 240, adjective: '' },
+    { subject: 'Treasure-map walking distances', singular: 'treasure-map walking distance', unit: 'km', min: 1, max: 20, adjective: ' long' },
+    { subject: 'Giant soap-bubble diameters', singular: 'giant soap-bubble diameter', unit: 'cm', min: 20, max: 150, adjective: ' across' }
+  ];
+
+  function makeUniformScenario() {
+    const item = randomChoice(UNIFORM_SCENARIOS);
+    let a, b;
+    do {
+      a = randInt(item.min, Math.max(item.min, item.max - 4));
+      b = randInt(a + 4, item.max);
+    } while (b - a < 4);
+    return {
+      ...item, a, b,
+      intro: `${item.subject} are equally likely to be between ${a} and ${b} ${item.unit}${item.adjective}.`
+    };
+  }
+
+  function uniformPoint(d, interior = true) {
+    const lo = interior ? d.a + 1 : d.a;
+    const hi = interior ? d.b - 1 : d.b;
+    return randInt(lo, Math.max(lo, hi));
+  }
+
+  function uniformValuePhrase(d, x) {
+    return `${x} ${d.scenario.unit}`;
+  }
+
+  function makeUniformQuestion(d, type) {
+    const e = { type };
+    let wording = '', notation = '';
+    const noun = d.scenario.singular;
+
+    if (type === 'specific') {
+      e.m = uniformPoint(d);
+      wording = `What is the probability that a randomly selected ${noun} is exactly ${uniformValuePhrase(d,e.m)}?`;
+      notation = `P(X=${e.m})`;
+    } else if (type === 'range') {
+      e.left = randInt(d.a, d.b - 2);
+      e.right = randInt(e.left + 1, d.b);
+      wording = `What is the probability that a randomly selected ${noun} is between ${uniformValuePhrase(d,e.left)} and ${uniformValuePhrase(d,e.right)}?`;
+      notation = `P(${e.left}\\leq X\\leq ${e.right})`;
+    } else if (type === 'oneSided') {
+      e.m = uniformPoint(d);
+      e.relation = randomChoice(['<','\\leq','>','\\geq']);
+      const phrase = e.relation === '<' ? `less than ${uniformValuePhrase(d,e.m)}`
+        : e.relation === '\\leq' ? `at most ${uniformValuePhrase(d,e.m)}`
+        : e.relation === '>' ? `more than ${uniformValuePhrase(d,e.m)}`
+        : `at least ${uniformValuePhrase(d,e.m)}`;
+      wording = `What is the probability that a randomly selected ${noun} is ${phrase}?`;
+      notation = `P(X${e.relation}${e.m})`;
+    } else if (type === 'conditional') {
+      e.lower = randInt(d.a, d.b - 3);
+      e.upper = randInt(e.lower + 2, d.b);
+      e.m = randInt(e.lower + 1, e.upper - 1);
+      e.targetRelation = randomChoice(['<','>']);
+      const target = e.targetRelation === '<'
+        ? `less than ${uniformValuePhrase(d,e.m)}`
+        : `more than ${uniformValuePhrase(d,e.m)}`;
+      wording = `Given that a randomly selected ${noun} is between ${uniformValuePhrase(d,e.lower)} and ${uniformValuePhrase(d,e.upper)}, what is the probability that it is ${target}?`;
+      notation = `P(X${e.targetRelation}${e.m}\\mid ${e.lower}\\leq X\\leq ${e.upper})`;
+    } else if (type === 'percentileOfValue') {
+      e.m = uniformPoint(d);
+      wording = `What percentile corresponds to a ${noun} of ${uniformValuePhrase(d,e.m)}?`;
+      notation = `P(X\\leq ${e.m})`;
+    } else if (type === 'valueFromPercentile') {
+      e.percentile = randomChoice([10,20,25,30,40,60,70,75,80,90]);
+      wording = `Find the ${ordinal(e.percentile)} percentile of ${noun}.`;
+      notation = `${e.percentile}\\text{th percentile}`;
+    } else if (type === 'mean') {
+      wording = `Find the mean ${noun}.`;
+      notation = `E(X)`;
+    } else if (type === 'sd') {
+      wording = `Find the standard deviation of ${noun}.`;
+      notation = `\\sigma_X`;
+    } else if (type === 'iqr') {
+      wording = `Find the interquartile range of ${noun}.`;
+      notation = `Q_3-Q_1`;
+    } else {
+      const q = randomChoice([
+        { name:'median', symbol:'Q_2', target:.5 },
+        { name:'first quartile', symbol:'Q_1', target:.25 },
+        { name:'third quartile', symbol:'Q_3', target:.75 }
+      ]);
+      Object.assign(e,{quartileName:q.name,quartileSymbol:q.symbol,target:q.target});
+      wording = `Find the ${q.name} of ${noun}.`;
+      notation = q.symbol;
+    }
+    return { wording, notation, event:e };
+  }
+
   function chooseQuestionType(distribution) {
     const types = [
       { value: 'specific', weight: 20 },
@@ -1360,12 +1466,12 @@ fetch("/nav.html")
     }
 
     if (distribution === 'uniform') {
-      const a = randInt(-20, 30);
-      const width = randInt(5, 30);
-      const b = a + width;
+      const scenario = makeUniformScenario();
+      const { a, b } = scenario;
+      const width = b - a;
       return {
-        distribution, a, b, mean: (a + b) / 2, sd: width / Math.sqrt(12), min: a, max: b,
-        description: `\\(X\\) is uniformly distributed on the interval \\[${a},${b}\\].`
+        distribution, a, b, mean: (a + b) / 2, sd: width / Math.sqrt(12), min: a, max: b, scenario,
+        description: scenario.intro
       };
     }
 
@@ -1538,6 +1644,7 @@ fetch("/nav.html")
       return makeBernoulliQuestion(d, type);
     }
     if (d.distribution === 'Poisson') return makePoissonQuestion(d,type);
+    if (d.distribution === 'uniform') return makeUniformQuestion(d,type);
 
     const discrete = ['Poisson'].includes(d.distribution);
     const point = () => discrete ? centralInteger(d) : centralContinuous(d);
@@ -1678,6 +1785,77 @@ fetch("/nav.html")
         a[name]=q.chosenK;
       }
       if(e.type==='iqr') steps.push({html:`<p>\\[IQR=${a.Q_3}-${a.Q_1}=${a.Q_3-a.Q_1}\\]</p>`});
+    }
+    return steps;
+  }
+
+
+  function uniformProbability(d, left, right) {
+    const L = Math.max(d.a, left);
+    const R = Math.min(d.b, right);
+    return Math.max(0, R - L) / (d.b - d.a);
+  }
+
+  function buildUniformHints(d) {
+    const e = d.task.event;
+    const width = d.b - d.a;
+    const heightTex = fracToTex(1,width);
+    const steps = [
+      { html:`<p>Let \\(X\\) be the ${d.scenario.singular}, measured in ${d.scenario.unit}. Since every value from ${d.a} to ${d.b} is equally likely, \\(X\\) is uniformly distributed on \\([${d.a},${d.b}]\\).</p>` },
+      { html:`<p>The probability density function is</p><p>\\[f(x)=\\begin{cases}\\dfrac{1}{${d.b}-${d.a}}=${heightTex},&${d.a}\\leq x\\leq ${d.b},\\\\0,&\\text{otherwise.}\\end{cases}\\]</p>`, diagram:{ selected:[], super:[], lines:[] } }
+    ];
+
+    if (['specific','range','oneSided','conditional'].includes(e.type)) {
+      let selected=[], superSelected=[], lines=[];
+      if (e.type==='specific') lines=[e.m];
+      else if (e.type==='range') selected=[[e.left,e.right]];
+      else if (e.type==='oneSided') {
+        selected = (e.relation==='<'||e.relation==='\\leq') ? [[d.a,e.m]] : [[e.m,d.b]];
+      } else {
+        selected=[[e.lower,e.upper]];
+        superSelected=e.targetRelation==='<' ? [[e.lower,e.m]] : [[e.m,e.upper]];
+      }
+      steps.push({html:`<p>We are trying to find \\(${d.task.notation}\\). For a uniform distribution, probability is the selected interval length divided by the total interval length.</p>`,diagram:{selected,super:superSelected,lines}});
+    }
+
+    if(e.type==='specific'){
+      steps.push({html:`<p>A continuous random variable has probability \\(0\\) at any single exact value. Therefore,</p><p>\\[P(X=${e.m})=0\\]</p>`});
+    } else if(e.type==='range'){
+      const v=uniformProbability(d,e.left,e.right);
+      steps.push({html:`<p>\\[P(${e.left}\\leq X\\leq ${e.right})=\\frac{${e.right}-${e.left}}{${d.b}-${d.a}}=\\frac{${e.right-e.left}}{${width}}\\approx ${v.toFixed(4)}\\]</p>`});
+    } else if(e.type==='oneSided'){
+      const left=(e.relation==='<'||e.relation==='\\leq')?d.a:e.m;
+      const right=(e.relation==='<'||e.relation==='\\leq')?e.m:d.b;
+      const v=uniformProbability(d,left,right);
+      const relationTex=e.relation==='<'?'\\lt':e.relation;
+      steps.push({html:`<p>Because \\(X\\) is continuous, including or excluding the endpoint does not change the probability.</p><p>\\[P(X${relationTex}${e.m})=\\frac{${right}-${left}}{${d.b}-${d.a}}=\\frac{${right-left}}{${width}}\\approx ${v.toFixed(4)}\\]</p>`});
+    } else if(e.type==='conditional'){
+      const intLeft=e.targetRelation==='<'?e.lower:e.m;
+      const intRight=e.targetRelation==='<'?e.m:e.upper;
+      const numerator=Math.max(0,intRight-intLeft);
+      const denominator=e.upper-e.lower;
+      const answer=numerator/denominator;
+      const intersection=e.targetRelation==='<'?`${e.lower}\\leq X<${e.m}`:`${e.m}<X\\leq ${e.upper}`;
+      steps.push({html:`<p>Using \\(P(A\\mid B)=\\dfrac{P(A\\cap B)}{P(B)}\\), the intersection is \\(${intersection}\\).</p>`});
+      steps.push({html:`<p>Both probabilities are interval lengths divided by the same total width, so that common denominator cancels:</p><p>\\[P(X${e.targetRelation}${e.m}\\mid ${e.lower}\\leq X\\leq ${e.upper})=\\frac{(${numerator}/${width})}{(${denominator}/${width})}=\\frac{${numerator}}{${denominator}}\\approx ${answer.toFixed(4)}\\]</p>`});
+    } else if(e.type==='percentileOfValue'){
+      const v=(e.m-d.a)/width;
+      steps.push({html:`<p>The percentile is the cumulative area to the left of \\(X=${e.m}\\):</p><p>\\[P(X\\leq ${e.m})=\\frac{${e.m}-${d.a}}{${d.b}-${d.a}}=\\frac{${e.m-d.a}}{${width}}\\approx ${v.toFixed(4)}\\]</p><p>Thus, ${uniformValuePhrase(d,e.m)} is the \\(${(100*v).toFixed(1)}\\)th percentile.</p>`,diagram:{selected:[[d.a,e.m]],super:[],lines:[e.m]}});
+    } else if(e.type==='valueFromPercentile'){
+      const t=e.percentile/100;
+      const x=d.a+t*width;
+      steps.push({html:`<p>For a uniform distribution on \\([a,b]\\), the \\(p\\)th quantile is \\(a+p(b-a)\\). Therefore,</p><p>\\[x=${d.a}+${t}(${d.b}-${d.a})=${formatNumber(x)}\\]</p><p>The ${ordinal(e.percentile)} percentile is ${formatNumber(x)} ${d.scenario.unit}.</p>`,diagram:{selected:[[d.a,x]],super:[],lines:[x]}});
+    } else if(e.type==='mean'){
+      steps.push({html:`<p>For a uniform random variable, \\(E(X)=\\dfrac{a+b}{2}\\). Therefore,</p><p>\\[E(X)=\\frac{${d.a}+${d.b}}{2}=${formatNumber(d.mean)}\\text{ ${d.scenario.unit}}\\]</p>`});
+    } else if(e.type==='sd'){
+      steps.push({html:`<p>For a uniform random variable, \\(\\sigma_X=\\dfrac{b-a}{\\sqrt{12}}\\). Therefore,</p><p>\\[\\sigma_X=\\frac{${d.b}-${d.a}}{\\sqrt{12}}\\approx ${d.sd.toFixed(4)}\\text{ ${d.scenario.unit}}\\]</p>`});
+    } else if(e.type==='quartile'){
+      const x=d.a+e.target*width;
+      steps.push({html:`<p>For a uniform distribution, \\(Q_p=a+p(b-a)\\). Therefore,</p><p>\\[${e.quartileSymbol}=${d.a}+${e.target}(${d.b}-${d.a})=${formatNumber(x)}\\text{ ${d.scenario.unit}}\\]</p>`,diagram:{selected:[[d.a,x]],super:[],lines:[x]}});
+    } else if(e.type==='iqr'){
+      const q1=d.a+.25*width,q3=d.a+.75*width,iqr=q3-q1;
+      steps.push({html:`<p>First find the first and third quartiles:</p><p>\\[Q_1=${d.a}+0.25(${d.b}-${d.a})=${formatNumber(q1)}\\]</p><p>\\[Q_3=${d.a}+0.75(${d.b}-${d.a})=${formatNumber(q3)}\\]</p>`,diagram:{selected:[[q1,q3]],super:[],lines:[q1,q3]}});
+      steps.push({html:`<p>\\[IQR=Q_3-Q_1=${formatNumber(q3)}-${formatNumber(q1)}=${formatNumber(iqr)}\\text{ ${d.scenario.unit}}\\]</p>`});
     }
     return steps;
   }
@@ -1997,6 +2175,7 @@ fetch("/nav.html")
       graph.style.maxWidth='740px'; graph.style.margin='0.75rem auto';
       wrapper.appendChild(graph);
       if(d.distribution==='Poisson') renderPoissonHistogram(graph,d.mu,{xLabel:'x',yLabel:'f(x)',maxX:d.max,highlightXs:step.diagram.highlight||[],superHighlightXs:step.diagram.super||[]});
+      else if(d.distribution==='uniform') renderUniformDistribution(graph,d.a,d.b,{xLabel:`${d.scenario.singular} (${d.scenario.unit})`,heightLabel:fracToString(1,d.b-d.a),selectedRanges:step.diagram.selected||[],superSelectedRanges:step.diagram.super||[],verticalLines:step.diagram.lines||[],tickValues:[...(step.diagram.lines||[])]});
       else renderBernoulliHintDiagram(graph,d,step.diagram.highlight||[],step.diagram.super||[]);
     }
     typeset([wrapper]);
@@ -2020,6 +2199,7 @@ fetch("/nav.html")
     currentProblem = { ...distribution, questionType, task, hintIndex: 0 };
     if (distribution.distribution === 'binomial' || distribution.distribution === 'geometric') currentProblem.hintSteps = buildBernoulliHints(currentProblem);
     else if (distribution.distribution === 'Poisson') currentProblem.hintSteps = buildPoissonHints(currentProblem);
+    else if (distribution.distribution === 'uniform') currentProblem.hintSteps = buildUniformHints(currentProblem);
 
     questionText.innerHTML = `<p>${distribution.description}</p><p>${task.wording}</p>`;
     hintBtn.disabled = false;

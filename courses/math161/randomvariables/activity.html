@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1376,7 +1377,7 @@ fetch("/nav.html")
         : e.relation === '>' ? `more than ${uniformValuePhrase(d,e.m)}`
         : `at least ${uniformValuePhrase(d,e.m)}`;
       wording = `What is the probability that a randomly selected ${noun} is ${phrase}?`;
-      notation = `P(X${e.relation}${e.m})`;
+      notation = `P(X${e.relation === '<' ? '\\lt' : e.relation}${e.m})`;
     } else if (type === 'conditional') {
       e.lower = randInt(d.a, d.b - 3);
       e.upper = randInt(e.lower + 2, d.b);
@@ -1386,7 +1387,7 @@ fetch("/nav.html")
         ? `less than ${uniformValuePhrase(d,e.m)}`
         : `more than ${uniformValuePhrase(d,e.m)}`;
       wording = `Given that a randomly selected ${noun} is between ${uniformValuePhrase(d,e.lower)} and ${uniformValuePhrase(d,e.upper)}, what is the probability that it is ${target}?`;
-      notation = `P(X${e.targetRelation}${e.m}\\mid ${e.lower}\\leq X\\leq ${e.upper})`;
+      notation = `P(X${e.targetRelation === '<' ? '\\lt' : e.targetRelation}${e.m}\\mid ${e.lower}\\leq X\\leq ${e.upper})`;
     } else if (type === 'percentileOfValue') {
       e.m = uniformPoint(d);
       wording = `What percentile corresponds to a ${noun} of ${uniformValuePhrase(d,e.m)}?`;
@@ -1614,7 +1615,7 @@ fetch("/nav.html")
       e.relation=randomChoice(['<','\\leq','>','\\geq']);
       const w=e.relation==='<'?`fewer than ${e.m}`:e.relation==='\\leq'?`at most ${e.m}`:e.relation==='>'?`more than ${e.m}`:`at least ${e.m}`;
       wording=d.scenario.kind==='time'?`What is the probability that you ${d.scenario.action} ${w} times in ${where}?`:`What is the probability that there are ${w} ${d.scenario.countMany} in ${where}?`;
-      notation=`P(X${e.relation}${e.m})`;
+      notation=`P(X${e.relation === '<' ? '\\lt' : e.relation}${e.m})`;
     }
     else if(type==='conditional'){
       e.k=Math.max(0,centralInteger(d,1)-randInt(1,3));
@@ -1628,7 +1629,7 @@ fetch("/nav.html")
         ? timeClause(e.targetRelation,e.m)
         : objectClause(e.targetRelation,e.m);
       wording=`Given that ${condition}, what is the probability that ${target}?`;
-      notation=`P(X${e.targetRelation}${e.m}\\mid X>${e.k})`;
+      notation=`P(X${e.targetRelation === '<' ? '\\lt' : e.targetRelation}${e.m}\\mid X>${e.k})`;
     }
     else if(type==='percentileOfValue'){e.m=point();wording=`What percentile corresponds to ${poissonPhrase(d,e.m)} in ${where}?`;notation=`P(X\\leq ${e.m})`;}
     else if(type==='valueFromPercentile'){e.percentile=randomChoice([10,20,25,30,40,60,70,75,80,90]);wording=`Find the ${ordinal(e.percentile)} percentile for the number of ${d.scenario.countMany} in ${where}.`;notation='percentile';}
@@ -1747,7 +1748,7 @@ fetch("/nav.html")
       if(e.targetRelation==='<'){
         const xs=Array.from({length:Math.max(0,e.m-e.k-1)},(_,i)=>e.k+1+i);
         numerator=poissonCdf(d,e.m-1)-poissonCdf(d,e.k);
-        intersectionTex=`${e.k}<X<${e.m}`;
+        intersectionTex=`${e.k}\\lt X\\lt ${e.m}`;
         numeratorStep=expandedProbabilityHtml(intersectionTex,xs,numerator);
       } else if(e.targetRelation==='='){
         numerator=poissonPmf(d,e.m);
@@ -1761,10 +1762,11 @@ fetch("/nav.html")
       }
 
       const denominatorXs=Array.from({length:e.k+1},(_,i)=>i);
-      steps.push({html:`<p>Using \\(P(A\\mid B)=\\frac{P(A\\cap B)}{P(B)}\\), the intersection in the numerator is \\(${intersectionTex}\\). Thus,</p><p>\\[P(X${e.targetRelation}${e.m}\\mid X>${e.k})=\\frac{P(${intersectionTex})}{P(X>${e.k})}\\]</p>`});
+      const targetRelationTex=e.targetRelation==='<'?'\\lt':e.targetRelation;
+      steps.push({html:`<p>Using \\(P(A\\mid B)=\\frac{P(A\\cap B)}{P(B)}\\), the intersection in the numerator is \\(${intersectionTex}\\). Thus,</p><p>\\[P(X${targetRelationTex}${e.m}\\mid X>${e.k})=\\frac{P(${intersectionTex})}{P(X>${e.k})}\\]</p>`});
       steps.push({html:`<p>Calculate the numerator:</p>${numeratorStep}`});
       steps.push({html:`<p>Calculate the denominator:</p>${expandedProbabilityHtml(`X>${e.k}`,[],denominator,denominatorXs,`X\\leq ${e.k}`,true)}`});
-      steps.push({html:`<p>Finally,</p><p>\\[P(X${e.targetRelation}${e.m}\\mid X>${e.k})\\approx\\frac{${numerator.toFixed(6)}}{${denominator.toFixed(6)}}\\approx ${(numerator/denominator).toFixed(4)}\\]</p>`});
+      steps.push({html:`<p>Finally,</p><p>\\[P(X${targetRelationTex}${e.m}\\mid X>${e.k})\\approx\\frac{${numerator.toFixed(6)}}{${denominator.toFixed(6)}}\\approx ${(numerator/denominator).toFixed(4)}\\]</p>`});
     }
     else if(e.type==='mean') steps.push({html:`<p>For a Poisson random variable, \\(E(X)=\\mu\\). Therefore,</p><p>\\[E(X)=\\mu=${formatNumber(d.mu)}\\]</p>`});
     else if(e.type==='sd') steps.push({html:`<p>For a Poisson random variable, \\(\\sigma_X=\\sqrt{\\mu}\\). Therefore,</p><p>\\[\\sigma_X=\\sqrt{${formatNumber(d.mu)}}\\approx ${d.sd.toFixed(4)}\\]</p>`});
@@ -1835,9 +1837,10 @@ fetch("/nav.html")
       const numerator=Math.max(0,intRight-intLeft);
       const denominator=e.upper-e.lower;
       const answer=numerator/denominator;
-      const intersection=e.targetRelation==='<'?`${e.lower}\\leq X<${e.m}`:`${e.m}<X\\leq ${e.upper}`;
+      const intersection=e.targetRelation==='<'?`${e.lower}\\leq X\\lt ${e.m}`:`${e.m}\\lt X\\leq ${e.upper}`;
+      const targetRelationTex=e.targetRelation==='<'?'\\lt':e.targetRelation;
       steps.push({html:`<p>Using \\(P(A\\mid B)=\\dfrac{P(A\\cap B)}{P(B)}\\), the intersection is \\(${intersection}\\).</p>`});
-      steps.push({html:`<p>Both probabilities are interval lengths divided by the same total width, so that common denominator cancels:</p><p>\\[P(X${e.targetRelation}${e.m}\\mid ${e.lower}\\leq X\\leq ${e.upper})=\\frac{(${numerator}/${width})}{(${denominator}/${width})}=\\frac{${numerator}}{${denominator}}\\approx ${answer.toFixed(4)}\\]</p>`});
+      steps.push({html:`<p>Both probabilities are interval lengths divided by the same total width, so that common denominator cancels:</p><p>\\[P(X${targetRelationTex}${e.m}\\mid ${e.lower}\\leq X\\leq ${e.upper})=\\frac{(${numerator}/${width})}{(${denominator}/${width})}=\\frac{${numerator}}{${denominator}}\\approx ${answer.toFixed(4)}\\]</p>`});
     } else if(e.type==='percentileOfValue'){
       const v=(e.m-d.a)/width;
       steps.push({html:`<p>The percentile is the cumulative area to the left of \\(X=${e.m}\\):</p><p>\\[P(X\\leq ${e.m})=\\frac{${e.m}-${d.a}}{${d.b}-${d.a}}=\\frac{${e.m-d.a}}{${width}}\\approx ${v.toFixed(4)}\\]</p><p>Thus, ${uniformValuePhrase(d,e.m)} is the \\(${(100*v).toFixed(1)}\\)th percentile.</p>`,diagram:{selected:[[d.a,e.m]],super:[],lines:[e.m]}});

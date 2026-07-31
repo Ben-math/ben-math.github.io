@@ -47,6 +47,20 @@ fetch("/nav.html")
     <p>We now move from the descriptive side of things to <i>inferential</i> statistics.  That is, returning to our overarching goal: we want to estimate some 
     \({\color{red}\text{parameter}}\) of the \({\color{red}\text{population}}\), and we do so by obtaining a \({\color{blue}\text{statistic}}\) from a 
     \({\color{blue}\text{sample}}\).</p>
+
+    <p>A reasonable question to ask is:
+    \[\text{How {\it good} is that estimate?}\]
+    We certainly have an intuition that a larger sample leads to a better estimate.</p>
+
+    <p>For example, suppose we want to estimate the average number of hours of sleep per night that the residents of a town get.<br><br>
+    We might take a sample of 100 residents, and obtain the sample mean \(\overline{x}\) of hours of sleep that those residents get.  We say that the 
+    \({\color{blue}\text{sample mean} \overline{x}}\) is a <b>point estimate</b> for the \({\color{red}\text{population mean} \mu}\).<br><br>
+    Likewise, the \({\color{blue}\text{sample standard deviation} s}\) is a point estimate for the \({\color{red}\text{population standard deviation} \sigma}\).
+    <br><br>
+    We can be <i>increasingly confident</i> that our statistic estimates the parameter well as our sample size increases.  Suppose we found that the sample mean 
+    for hours of sleep was \(\overline{x} = 7\). The idea of a <b>confidence interval</b> is to make statements like
+    \[\text{We are \rule{8mm}{0.4pt}\% confident that }\mu \text{ is within \rule{8mm}{0.4pt} hours of 7.}\]
+    Clearly, the wider our interval, the greater our confidence level will be.</p>
 <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>

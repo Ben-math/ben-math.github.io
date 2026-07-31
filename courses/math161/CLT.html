@@ -7,6 +7,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1481,16 +1482,26 @@ fetch("/nav.html")
     return weightedChoice(NORMAL_EVENT_TYPES);
   }
 
+  function samplingValueDecimals(dist) {
+    if (dist.variable === 'sample proportion') return 2;
+    return Math.min(2, Math.max(1, CLT_UNIT_LIBRARY[dist.unit]?.decimals ?? 2));
+  }
+
   function eventValue(dist, z) {
     const raw = dist.mu + z * dist.sigma;
     if (dist.variable === 'sample proportion') return Math.max(0.01, Math.min(0.99, roundFriendly(raw,2)));
-    const decimals = dist.unit ? CLT_UNIT_LIBRARY[dist.unit].decimals : 2;
-    return roundFriendly(raw, Math.min(2, decimals + 1));
+    // Store the cutoff at exactly the same precision used in the question.
+    // In particular, averages and totals of count variables may be non-integers.
+    return roundFriendly(raw, samplingValueDecimals(dist));
   }
 
   function displayEventValue(value, dist) {
     if (dist.variable === 'sample proportion') return formatPercent(value);
-    return formatMeasurement(value, dist.unit);
+    const unit = CLT_UNIT_LIBRARY[dist.unit];
+    const decimals = samplingValueDecimals(dist);
+    const number = Number(value).toFixed(decimals).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');
+    if (unit.kind === 'money') return `$${Number(value).toFixed(2)}`;
+    return `${number} ${unit.symbol}`.trim();
   }
 
   function describeTarget(type, context) {
@@ -1606,12 +1617,19 @@ fetch("/nav.html")
   function probFmt(x) { return Number(x).toFixed(4); }
   function mathValue(x,d) {
     if (d.unit === 'money') return `\\$${Number(x).toFixed(2)}`;
-    return fmt(x, Math.max(1, CLT_UNIT_LIBRARY[d.unit]?.decimals ?? 2));
+    return fmt(x, samplingValueDecimals(d));
   }
   function displaySamplingValue(x,d) {
     if (d.unit === 'money') return `$${Number(x).toFixed(2)}`;
-    const dec=Math.max(1,CLT_UNIT_LIBRARY[d.unit]?.decimals ?? 2);
-    return `${Number(x.toFixed(dec))} ${CLT_UNIT_LIBRARY[d.unit]?.symbol ?? ''}`.trim();
+    return `${fmt(x,samplingValueDecimals(d))} ${CLT_UNIT_LIBRARY[d.unit]?.symbol ?? ''}`.trim();
+  }
+  function finalMathValue(x,d) {
+    return d.unit === 'money' ? `\\$${Number(x).toFixed(4)}` : Number(x).toFixed(4);
+  }
+  function finalDisplayValue(x,d) {
+    const unit=CLT_UNIT_LIBRARY[d.unit]?.symbol ?? '';
+    if (d.unit === 'money') return `$${Number(x).toFixed(4)}`;
+    return `${Number(x).toFixed(4)} ${unit}`.trim();
   }
   function zPhi(z){ return normalCdf(Number(z.toFixed(2))); }
   function phiTex(z){ return probFmt(zPhi(z)); }
@@ -1734,20 +1752,20 @@ fetch("/nav.html")
       zs=[e.z]; selected=[[-Infinity,e.m]]; lines=[e.m];
     } else if(e.type==='valueFromPercentile') {
       html=`<p>Find the standard-normal table entry whose cumulative probability is closest to \\(${fmt(e.p,2)}\\): \\(Z\\approx ${fmt(e.z,2)}\\).</p>
-      <p>\\[x=\\mu+Z\\sigma=${fmt(d.mu,3)}+(${fmt(e.z,2)})(${fmt(d.sigma,3)})\\approx ${mathValue(e.answer,d)}.\\]</p>
-      <p>The requested percentile is approximately ${displaySamplingValue(e.answer,d)}.</p>`;
+      <p>\\[x=\\mu+Z\\sigma=${fmt(d.mu,4)}+(${fmt(e.z,2)})(${fmt(d.sigma,4)})\\approx ${finalMathValue(e.answer,d)}.\\]</p>
+      <p>The requested percentile is approximately ${finalDisplayValue(e.answer,d)}.</p>`;
       zs=[e.z]; selected=[[-Infinity,e.answer]]; lines=[e.answer];
     } else if(e.type==='quartile') {
       html=`<p>The cumulative probability for \\(${e.quartileSymbol}\\) is \\(${fmt(e.p,2)}\\), corresponding to \\(Z\\approx ${fmt(e.z,2)}\\) in the standard normal table.</p>
-      <p>\\[${e.quartileSymbol}=\\mu+Z\\sigma=${fmt(d.mu,3)}+(${fmt(e.z,2)})(${fmt(d.sigma,3)})\\approx ${mathValue(e.answer,d)}.\\]</p>`;
+      <p>\\[${e.quartileSymbol}=\\mu+Z\\sigma=${fmt(d.mu,4)}+(${fmt(e.z,2)})(${fmt(d.sigma,4)})\\approx ${finalMathValue(e.answer,d)}.\\]</p>`;
       zs=[e.z]; selected=[[-Infinity,e.answer]]; lines=[e.answer];
     } else {
       html=`<p>The cumulative probabilities \\(0.25\\) and \\(0.75\\) correspond to \\(Z\\approx -0.67\\) and \\(Z\\approx 0.67\\) in the standard normal table.</p>
       <p>\\[\\begin{aligned}
-        Q_1&=${fmt(d.mu,3)}+(-0.67)(${fmt(d.sigma,3)})\\approx ${mathValue(e.q1,d)},\\\\
-        Q_3&=${fmt(d.mu,3)}+(0.67)(${fmt(d.sigma,3)})\\approx ${mathValue(e.q3,d)}.
+        Q_1&=${fmt(d.mu,4)}+(-0.67)(${fmt(d.sigma,4)})\\approx ${finalMathValue(e.q1,d)},\\\\
+        Q_3&=${fmt(d.mu,4)}+(0.67)(${fmt(d.sigma,4)})\\approx ${finalMathValue(e.q3,d)}.
       \\end{aligned}\\]</p>
-      <p>\\[IQR=Q_3-Q_1\\approx ${mathValue(e.q3,d)}-${mathValue(e.q1,d)}=${mathValue(e.answer,d)}.\\]</p>`;
+      <p>\\[IQR=Q_3-Q_1\\approx ${finalMathValue(e.q3,d)}-${finalMathValue(e.q1,d)}=${finalMathValue(e.answer,d)}.\\]</p>`;
       zs=[-0.67,0.67]; selected=[[e.q1,e.q3]]; lines=[e.q1,e.q3];
     }
     wrapper.innerHTML=html;

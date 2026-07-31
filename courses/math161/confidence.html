@@ -103,6 +103,15 @@ fetch("/nav.html")
     \[\overline{x} = 500 \text{ kg}\]
     If we know that the population standard deviation of polar bear weights is \(\sigma = 16\) kg, then let us construct an 80% confidence interval of 
     the population mean polar bear weight.</p>
+
+    <p>Since we know the population standard deviation \(\sigma = 16\), and this is a question about means, we use the normal distribution for sample 
+    means, which itself has mean and standard deviation \[\mu_{\overline{x}} = \mu_X = 500 \hspace{3mm} \text{ and } \hspace{3mm} \sigma_{\overline{x}} 
+    = \frac{\sigma_X}{\sqrt{n}} = \frac{16}{\sqrt{64}} = 2\]</p>
+
+    <p>For an 80% confidence interval, we have \(\alpha = 100\% - 80\% = 20\%\) of the area under the curve outside the interval.  Since it is split 
+    between either side, we have \(\frac{\alpha}{2} = 10\%\) on either side.  We find \(z_{0.1} = -1.28\).  So our margin of error is
+    \[\text{EBM }= 1.28(2) = 2.56\] and our confidence interval ranges between
+    \[500 - 2.56 = 497.44 \text{ kg } \hspace{3mm} \text{ and } \hspace{3mm} 500 + 2.56 = 502.56 \text{ kg}\]</p>
 <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>

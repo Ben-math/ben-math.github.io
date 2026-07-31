@@ -6,6 +6,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1417,7 +1418,7 @@ fetch("/nav.html")
     const unit = CLT_UNIT_LIBRARY[unitKey];
     const number = Number(value.toFixed(unit.decimals));
     if (unit.kind === 'money') return `\$${number.toFixed(2)}`;
-    return `${number}\text{ ${unit.symbol}}`;
+    return `${number}\\text{ ${unit.symbol}}`;
   }
 
   function makeDirectContext() {
@@ -1719,6 +1720,7 @@ fetch("/nav.html")
         P(${symbol}${rel}${mathValue(e.m,d)}\\mid ${mathValue(e.lower,d)}\\leq ${symbol}\\leq ${mathValue(e.upper,d)})
         &=\\frac{P(${symbol}${rel}${mathValue(e.m,d)})\\cap(${mathValue(e.lower,d)}\\leq ${symbol}\\leq ${mathValue(e.upper,d)})}{P(${mathValue(e.lower,d)}\\leq ${symbol}\\leq ${mathValue(e.upper,d)})}\\\\
         &=\\frac{P(${intersection})}{P(${mathValue(e.lower,d)}\\leq ${symbol}\\leq ${mathValue(e.upper,d)})}\\\\
+        &=\\frac{P\\left(${e.targetRelation==='<' ? `${zRaw(e.lower)}\\leq Z\\lt ${zRaw(e.m)}` : `${zRaw(e.m)}\\lt Z\\leq ${zRaw(e.upper)}`}\\right)}{P\\left(${zRaw(e.lower)}\\leq Z\\leq ${zRaw(e.upper)}\\right)}\\\\
         &=\\frac{P(${numZ})}{P(${fmt(e.zLower,2)}\\leq Z\\leq ${fmt(e.zUpper,2)})}\\\\
         &=\\frac{${numValues}}{${phiTex(e.zUpper)}-${phiTex(e.zLower)}}\\approx ${probFmt(e.answer)}.
       \\end{aligned}\\]</p>`;

@@ -43,97 +43,10 @@ fetch("/nav.html")
 </script>
   </header>
   <main>
-
-    <p>Consider the binomial distribution \(f(x,n,0.413)\) for a variety of \(n \in \{50, 100, 200, 400\}\):
-      <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:1rem; margin:1rem auto; max-width:1100px;">
-        <div id="clt-binom-50" style="flex:1 1 480px; min-width:300px;"></div>
-        <div id="clt-binom-100" style="flex:1 1 480px; min-width:300px;"></div>
-      </div>
-      <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:1rem; margin:1rem auto; max-width:1100px;">
-        <div id="clt-binom-200" style="flex:1 1 480px; min-width:300px;"></div>
-        <div id="clt-binom-400" style="flex:1 1 480px; min-width:300px;"></div>
-      </div>
-    </p>
     
-    <p>We see that as \(n\) increases, the binomial distribution looks increasingly like the normal distribution.  That the binomial can be 
-    approximated by the normal is in fact the earliest version (1738) of the Central Limit Theorem, stated here in full generality:</p>
-
-
-    <p>Where \(X_1\), \(X_2\),... is an infinite sequence of independent and identically distributed random variables, each with mean \(\mu\) and 
-    variance \(\sigma^2\), then the distribution of \[\frac{X_1+...+X_n - n\mu}{\sigma\sqrt{n}}\] tends to the standard normal as \(n \to \infty\).
-    </p>
-
-
-    <p>Intuitively, the Central Limit Theorem tells us the following.
-    <ul>
-        <li>Suppose we make a large sample of observations, each randomly produced in a way that doesn't depend on the other observations, and then compute 
-          the mean of the observed values.</li>
-        <li>If we repeat this process, resulting in a collection of observed averages, then if the sample size is large enough, the probability distribution 
-        of these averages is approximated by a normal distribution.</li>
-    </ul>
-    For instance, consider Jokic playing multiple games in a season.  In each game, he takes multiple shots (each shot is itself a Bernoulli trial).  
-    Each game corresponds to one of the observed averages (his FG% for that game), and if he plays enough games, we expect that the distribution of FG 
-    percentages per game will look approximately normal.
-    </p>
-
-    <p>Of course, the preceding has wide-reaching implications.  For instance, why do so many of the things we observe in nature tend to be normally 
-    distributed?</p>
-    <p>Think about the fact that many quantities in the real world are the sum of many unobserved, random, independent factors.  So an application of the CLT 
-    to these situations can partially explain the commonality of the normal. </p>
-    <p>And as implied by the preceding, since the application of the CLT requires sufficiently large sample sizes, this is why large sample statistics 
-    are often used in experiments.
-    </p>
-
-
-    <p>The specific earliest case of the Central Limit Theorem being applied to the binomial distribution is called the De Moivre-Laplace Theorem: </p>
-    <p>If \(X\) is a binomial random variable with distribution \(f(x;n,p)\), then it is approximated by the normal random variable with distribution 
-    \(g(x; np, \sqrt{np(1-p)})\). </p>
-    <p>Why?  Recall that the binomial distribution has mean and standard deviation
-    \[\mu = np \hspace{5mm} \text{ and } \hspace{5mm} \sigma = \sqrt{np(1-p)}\]
-    </p>
-
-    <p>For example, let the probability that Jokic makes a shot be 43%.  Let us find the probability that he makes at least 300 shots, given that he attempts 
-      740.
-    </p>
-
-    <p>So, the number of made shots is modelled by a binomial distribution \(f(x;740,0.413)\).  Our usual strategies for finding \(P(X \geq 300)\),
-      <div id="clt-binom-740" style="margin:1rem auto; max-width:760px;"></div>
-    \[P(X \geq 300) = f(300;740,0.413)+...+f(740;740,0.413)\] or the complement \[P(X \geq 300) = 1 - P(X < 300) = 1 - (f(0;740,0.413)+...+f(299;740,0.413))\] 
-    both involve computing unreasonably long sums.  However, the normal approximation can help us:</p>
-
-    <p>By DeMoivre-Laplace, we approximate with \[\mu = 740(0.413) \approx 305.6 \hspace{1cm} \text{ and } \hspace{1cm} \sigma = \sqrt{740(0.413)(1-0.413)} 
-    \approx 13.4\]
-    <div id="clt-normal-approx" style="margin:1rem auto; max-width:760px;"></div>
-    Then converting to the standard normal distribution using \(Z = \frac{X - \mu}{\sigma}\):
-    \[P(X \geq 300) = P\left(Z \geq \frac{300-305.6}{13.4}\right) \approx P(Z \geq -0.42)\]
-    \[= 1 - P(Z \leq -0.42)) = 1 - (1 - P( Z \leq 0.42)) = 1 - (1- 0.6628) = 0.6628\]
-    So the probability he makes at least 300 out of 740 shots is approximately 66.28%.
-    </p>
-
-    <p>There are 3 versions of the Central Limit Theorem we will consider.  They all involve repeatedly drawing samples of size \(n\) (where \(n\) is large 
-    enough) from a population with a known mean and standard deviation.  Our general rule will be that a sample size of \(n > 30\) is large enough (if the 
-    underlying distribution is normal, smaller sample sizes may be sufficient).</p>
-
-    <p>The first version concerns the means of our samples:
-    </p>
-
-    <p>If we repeatedly sample \(n > 30\) from a random variable \(X\) with known mean and standard deviation, then the sample means \(\overline{x}\) tend to 
-    a normal distribution with \[\mu_{\overline{x}} = \mu_X \hspace{5mm} \text{ and } \hspace{5mm} \sigma_{\overline{x}} = \frac{\sigma_X}{\sqrt{n}}\] 
-    Note that now, the sample means \(\overline{x}\) are the random variable (rather than \(x\) itself), which follow a normal distribution.  Its \(z\)-score 
-    is different from that of the original random variable \(X\).  \[z = \frac{\overline{x} - \mu_X}{\left(\frac{\sigma_X}{\sqrt{n}}\right)}\]
-    The standard deviation of the sample mean, \(\sigma_{\overline{x}} = \frac{\sigma_X}{\sqrt{n}}\), is called the <b>standard error</b> of the mean.
-    </p>
-
-    <p>The preceding applies when we are asked questions about averages.  The second version deals with sums:</p>
-
-    <p>If we repeatedly sample \(n > 30\) from a random variable \(X\) with known mean and standard deviation, then \(\Sigma X\) (the sum of the values 
-    of the sample) tends to a normal distribution with \[\mu_{\Sigma X} = n \cdot \mu_X \hspace{5mm} \text{ and } \hspace{5mm} \sigma_{\Sigma X} = 
-    \sqrt{n} \cdot \sigma_X\]</p>
-
-    <p>And the final version deals with proportions:</p>
-
-    <p>If we repeatedly sample \(n > 30\) from a random variable \(X\) with known probability of success \(p\), then \(\hat{p}\) (the sampling proportion) 
-    tends to a normal distribution with \[\mu_{\hat{p}} = p \hspace{5mm} \text{ and } \hspace{5mm} \sigma_{\hat{p}} = \sqrt{\frac{p(1-p)}{n}}\]</p>
+    <p>We now move from the descriptive side of things to <i>inferential</i> statistics.  That is, returning to our overarching goal: we want estimate some 
+    \({\text{color{red}parameter}}\) of the \({\text{color{red}population}}\), and we do so by obtaining a \({\text{color{blue}statistic}}\) from a 
+    \({\text{color{blue}sample}}\).</p>
 <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>

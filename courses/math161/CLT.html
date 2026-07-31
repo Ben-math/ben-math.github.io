@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1332,7 +1333,7 @@ fetch("/nav.html")
     c => `On average, each is ${formatMeasurement(c.mu,c.unit)}, with a standard deviation of ${formatMeasurement(c.sigma,c.unit)}.`,
     c => `Historical records give an average ${c.measureNoun} of ${formatMeasurement(c.mu,c.unit)} and a standard deviation of ${formatMeasurement(c.sigma,c.unit)}.`,
     c => `The long-run mean is ${formatMeasurement(c.mu,c.unit)}; the corresponding standard deviation is ${formatMeasurement(c.sigma,c.unit)}.`,
-    c => `For individual observations, \\(\mu=${formatMathMeasurement(c.mu,c.unit)}\\) and \\(\sigma=${formatMathMeasurement(c.sigma,c.unit)}\\).`
+    c => `For individual observations, <span class="math">\\(\\mu = ${formatMathMeasurement(c.mu,c.unit)}\\)</span> and <span class="math">\\(\\sigma = ${formatMathMeasurement(c.sigma,c.unit)}\\)</span>.`
   ];
 
   const NORMAL_EVENT_TYPES = [
@@ -1459,8 +1460,15 @@ fetch("/nav.html")
   function makeProportionContext() {
     const scenario = choiceAvoidingRecent(PROPORTION_SCENARIOS, s => s.id, recentScenarioIds);
     rememberRecent(recentScenarioIds, scenario.id, CLT_CONFIG.recentScenarioMemory);
-    const n = randomChoice([50, 100, 200]);
     const p = Number.isFinite(scenario.fixedP) ? scenario.fixedP : randomChoice([0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.5,0.6,0.65,0.7,0.75,0.8,0.85,0.9]);
+
+    // Draw from a broad range so sample sizes are not restricted to neat values.
+    // Keep both expected successes and expected failures at least 10.
+    let n;
+    do {
+      n = randInt(40, 220);
+    } while (n * p < 10 || n * (1 - p) < 10);
+
     return { ...scenario, n, p, mu:p, sigma:Math.sqrt(p*(1-p)/n), parameterSource:'binomial', introText:scenario.build(p,n) };
   }
 
@@ -1859,7 +1867,10 @@ fetch("/nav.html")
 
   function proportionBinomialSetup(problem) {
     const c=problem.context,wrapper=makeHintWrapper(),mu=c.n*c.p,sigma=Math.sqrt(c.n*c.p*(1-c.p));
-    wrapper.innerHTML=`<p>Alternatively, the underlying distribution is binomial, with \\(n=${c.n}\\) and \\(p=${fmt(c.p,3)}\\). It has mean and standard deviation</p>
+    const lead = proportionPrimaryIsCLT(problem)
+      ? 'Alternatively, the underlying distribution is binomial'
+      : 'The underlying distribution is binomial';
+    wrapper.innerHTML=`<p>${lead}, with \\(n=${c.n}\\) and \\(p=${fmt(c.p,3)}\\). It has mean and standard deviation</p>
       <p>\\[\\mu_X=np=${c.n}(${fmt(c.p,3)})=${fmt(mu,3)}\\hspace{8mm}\\text{ and }\\hspace{8mm}\\sigma_X=\\sqrt{np(1-p)}=\\sqrt{${c.n}(${fmt(c.p,3)})(1-${fmt(c.p,3)})}\\approx ${fmt(sigma,3)}.\\]</p>`;
     const graph=document.createElement('div');graph.style.maxWidth='740px';graph.style.margin='0.75rem auto';wrapper.appendChild(graph);
     renderBinomialHistogram(graph,c.n,c.p,{xLabel:'x',yLabel:'f(x)'});typeset([wrapper]);

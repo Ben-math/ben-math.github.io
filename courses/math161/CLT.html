@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1228,7 +1229,8 @@ fetch("/nav.html")
   const CLT_CONFIG = {
     problemTypes: [
       { value: 'means', weight: 1 },
-      { value: 'sums', weight: 1 }
+      { value: 'sums', weight: 1 },
+      { value: 'proportions', weight: 1 }
     ],
     // The original specification says four types but describes three.  Keep a
     // reserved, disabled slot rather than silently inventing a fourth family.
@@ -1457,7 +1459,7 @@ fetch("/nav.html")
   function makeProportionContext() {
     const scenario = choiceAvoidingRecent(PROPORTION_SCENARIOS, s => s.id, recentScenarioIds);
     rememberRecent(recentScenarioIds, scenario.id, CLT_CONFIG.recentScenarioMemory);
-    const n = randomChoice(SAMPLE_SIZES.filter(v => v >= 50));
+    const n = randomChoice([50, 100, 200]);
     const p = Number.isFinite(scenario.fixedP) ? scenario.fixedP : randomChoice([0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.5,0.6,0.65,0.7,0.75,0.8,0.85,0.9]);
     return { ...scenario, n, p, mu:p, sigma:Math.sqrt(p*(1-p)/n), parameterSource:'binomial', introText:scenario.build(p,n) };
   }
@@ -1465,7 +1467,7 @@ fetch("/nav.html")
   function samplingDistributionFor(type, context) {
     if (type === 'means') return { variable:'sample mean', symbol:'\\overline{X}', mu:context.mu, sigma:context.sigma/Math.sqrt(context.n), unit:context.unit };
     if (type === 'sums') return { variable:'sample total', symbol:'\\Sigma X', mu:context.n*context.mu, sigma:Math.sqrt(context.n)*context.sigma, unit:context.unit };
-    return { variable:'sample proportion', symbol:'\\hat{p}', mu:context.p, sigma:Math.sqrt(context.p*(1-context.p)/context.n), unit:null };
+    return { variable:'sample proportion', symbol:'\\hat{p}', mu:context.p, sigma:Math.sqrt(context.p*(1-context.p)/context.n), unit:null, n:context.n };
   }
 
   function chooseNormalEventType() {
@@ -1473,13 +1475,16 @@ fetch("/nav.html")
   }
 
   function samplingValueDecimals(dist) {
-    if (dist.variable === 'sample proportion') return 2;
+    if (dist.variable === 'sample proportion') return 3;
     return Math.min(2, Math.max(1, CLT_UNIT_LIBRARY[dist.unit]?.decimals ?? 2));
   }
 
   function eventValue(dist, z) {
     const raw = dist.mu + z * dist.sigma;
-    if (dist.variable === 'sample proportion') return Math.max(0.01, Math.min(0.99, roundFriendly(raw,2)));
+    if (dist.variable === 'sample proportion') {
+      const n = dist.n ?? 100;
+      return Math.max(1/n, Math.min((n-1)/n, Math.round(raw*n)/n));
+    }
     // Store the cutoff at exactly the same precision used in the question.
     // In particular, averages and totals of count variables may be non-integers.
     return roundFriendly(raw, samplingValueDecimals(dist));
@@ -1520,7 +1525,7 @@ fetch("/nav.html")
   }
 
   function makeNormalEventQuestion(type, context, dist) {
-    const eventType = chooseNormalEventType();
+    const eventType = type === 'proportions' ? weightedChoice([{value:'range',weight:1},{value:'oneSided',weight:1}]) : chooseNormalEventType();
     const target = describeTarget(type, context);
     const e = { type:eventType };
     let wording = '';
@@ -1584,12 +1589,22 @@ fetch("/nav.html")
 
   function generateCLTQuestion() {
     const type = weightedChoice(CLT_CONFIG.problemTypes);
-    const context = makeUnderlyingContext(type);
+    const context = type === 'proportions' ? makeProportionContext() : makeUnderlyingContext(type);
     const sampling = samplingDistributionFor(type, context);
     const task = makeNormalEventQuestion(type, context, sampling);
     const problem = { type, context, sampling, task, wording:`${renderContext(type,context)} ${task.wording}`, hintIndex:0 };
     completeNormalEvent(problem);
+    if (type === 'proportions') completeProportionCounts(problem);
     return problem;
+  }
+
+  function completeProportionCounts(problem) {
+    const c=problem.context,e=problem.task.event;
+    const toCount=x=>Math.max(0,Math.min(c.n,Math.round(c.n*x)));
+    if(e.type==='range'){e.countLeft=toCount(e.left);e.countRight=toCount(e.right);}
+    else if(e.type==='oneSided'){e.countM=toCount(e.m);}
+    else if(e.type==='conditional'){e.countLower=toCount(e.lower);e.countUpper=toCount(e.upper);e.countM=toCount(e.m);}
+    else if(e.type==='percentileOfValue'){e.countM=toCount(e.m);}
   }
 
   function completeNormalEvent(problem) {
@@ -1792,6 +1807,102 @@ fetch("/nav.html")
     typeset([wrapper]);
   }
 
+
+  function proportionPrimaryIsCLT(problem) {
+    return problem.context.direct === true;
+  }
+
+  function proportionEventData(problem, useCounts=false) {
+    const c=problem.context,e=problem.task.event;
+    const symbol=useCounts?'X':'\\hat{p}';
+    const value=x=>useCounts?Math.round(c.n*x):fmt(x,2);
+    if(e.type==='range') return {symbol, left:value(e.left), right:value(e.right), z1:e.z1, z2:e.z2, selected:[[useCounts?e.countLeft:e.left,useCounts?e.countRight:e.right]], lines:[useCounts?e.countLeft:e.left,useCounts?e.countRight:e.right]};
+    if(e.type==='oneSided') return {symbol, relation:e.relation, m:value(e.m), z:e.z, selected:(e.relation==='<'||e.relation==='\\leq')?[[-Infinity,useCounts?e.countM:e.m]]:[[useCounts?e.countM:e.m,Infinity]], lines:[useCounts?e.countM:e.m]};
+    if(e.type==='percentileOfValue') return {symbol, relation:'\\leq', m:value(e.m), z:e.z, selected:[[-Infinity,useCounts?e.countM:e.m]], lines:[useCounts?e.countM:e.m]};
+    return null;
+  }
+
+  function appendNormalAndTable(wrapper,mu,sigma,data,xLabel) {
+    const graph=document.createElement('div');
+    graph.style.maxWidth='740px';graph.style.margin='0.75rem auto';wrapper.appendChild(graph);
+    renderNormalDistribution(graph,mu,sigma,{selectedRanges:data?.selected??[],tickValues:[mu-3*sigma,mu-2*sigma,mu-sigma,mu,mu+sigma,mu+2*sigma,mu+3*sigma,...(data?.lines??[])],xLabel});
+    if(data){
+      const table=document.createElement('div');table.style.margin='0.75rem auto';wrapper.appendChild(table);
+      const zs=data.z1!==undefined?[data.z1,data.z2]:[data.z];
+      renderStandardNormalTable(table,{highlightZs:zs,minZ:-3,maxZ:3,fontSize:'10px'});
+    }
+  }
+
+  function proportionCLTSetup(problem) {
+    const c=problem.context,d=problem.sampling,wrapper=makeHintWrapper();
+    wrapper.innerHTML=`<p>${c.direct ? 'We are asked about a proportion, so we use' : 'Alternatively, we can use'} the proportion version of the Central Limit Theorem,</p>
+      <p>\\[\\mu_{\\hat{p}}=p=${fmt(c.p,3)}\\hspace{3mm}\\text{ and }\\hspace{3mm}\\sigma_{\\hat{p}}=\\sqrt{\\frac{p(1-p)}{n}}=\\sqrt{\\frac{${fmt(c.p,3)}(1-${fmt(c.p,3)})}{${c.n}}}\\approx ${fmt(d.sigma,4)}.\\]</p>`;
+    appendNormalAndTable(wrapper,d.mu,d.sigma,null,'sample proportion');typeset([wrapper]);
+  }
+
+  function proportionCLTCalculation(problem) {
+    const d=problem.sampling,e=problem.task.event,wrapper=makeHintWrapper(),data=proportionEventData(problem,false);
+    let html='';
+    if(e.type==='range') html=`<p>\\[\\begin{aligned}
+      P(${fmt(e.left,2)}\\leq\\hat{p}\\leq${fmt(e.right,2)})
+      &=P\\left(\\frac{${fmt(e.left,2)}-${fmt(d.mu,3)}}{${fmt(d.sigma,4)}}\\leq Z\\leq\\frac{${fmt(e.right,2)}-${fmt(d.mu,3)}}{${fmt(d.sigma,4)}}\\right)\\\\
+      &\\approx P(${fmt(e.z1,2)}\\leq Z\\leq${fmt(e.z2,2)})\\\\
+      &=P(Z\\leq${fmt(e.z2,2)})-P(Z\\leq${fmt(e.z1,2)})\\\\
+      &=${phiTex(e.z2)}-${phiTex(e.z1)}=${probFmt(e.answer)}.
+      \\end{aligned}\\]</p>`;
+    else if(e.type==='oneSided') {
+      const left=e.relation==='<'||e.relation==='\\leq', rel=e.relation==='<'?'\\lt':e.relation;
+      html=left?`<p>\\[\\begin{aligned}P(\\hat{p}${rel}${fmt(e.m,2)})&=P\\left(Z\\leq\\frac{${fmt(e.m,2)}-${fmt(d.mu,3)}}{${fmt(d.sigma,4)}}\\right)\\\\&\\approx P(Z\\leq${fmt(e.z,2)})=${probFmt(e.answer)}.\\end{aligned}\\]</p>`:`<p>\\[\\begin{aligned}P(\\hat{p}${rel}${fmt(e.m,2)})&=P\\left(Z>\\frac{${fmt(e.m,2)}-${fmt(d.mu,3)}}{${fmt(d.sigma,4)}}\\right)\\\\&\\approx P(Z>${fmt(e.z,2)})=1-${phiTex(e.z)}=${probFmt(e.answer)}.\\end{aligned}\\]</p>`;
+    } else { calculationStep(problem); wrapper.remove(); return; }
+    wrapper.innerHTML=html;appendNormalAndTable(wrapper,d.mu,d.sigma,data,'sample proportion');typeset([wrapper]);
+  }
+
+  function proportionBinomialSetup(problem) {
+    const c=problem.context,wrapper=makeHintWrapper(),mu=c.n*c.p,sigma=Math.sqrt(c.n*c.p*(1-c.p));
+    wrapper.innerHTML=`<p>Alternatively, the underlying distribution is binomial, with \\(n=${c.n}\\) and \\(p=${fmt(c.p,3)}\\). It has mean and standard deviation</p>
+      <p>\\[\\mu_X=np=${c.n}(${fmt(c.p,3)})=${fmt(mu,3)}\\hspace{8mm}\\text{ and }\\hspace{8mm}\\sigma_X=\\sqrt{np(1-p)}=\\sqrt{${c.n}(${fmt(c.p,3)})(1-${fmt(c.p,3)})}\\approx ${fmt(sigma,3)}.\\]</p>`;
+    const graph=document.createElement('div');graph.style.maxWidth='740px';graph.style.margin='0.75rem auto';wrapper.appendChild(graph);
+    renderBinomialHistogram(graph,c.n,c.p,{xLabel:'x',yLabel:'f(x)'});typeset([wrapper]);
+  }
+
+  function proportionDeMoivreSetup(problem) {
+    const c=problem.context,wrapper=makeHintWrapper(),mu=c.n*c.p,sigma=Math.sqrt(c.n*c.p*(1-c.p));
+    wrapper.innerHTML='<p>We use the De Moivre–Laplace normal approximation of the binomial distribution with the same mean and standard deviation.</p>';
+    appendNormalAndTable(wrapper,mu,sigma,null,'number of successes');typeset([wrapper]);
+  }
+
+  function proportionConvertCounts(problem) {
+    const c=problem.context,e=problem.task.event,wrapper=makeHintWrapper();let html='';
+    if(e.type==='range') html=`<p>\\[${c.n}(${fmt(e.left,2)})=${e.countLeft}\\hspace{8mm}\\text{ and }\\hspace{8mm}${c.n}(${fmt(e.right,2)})=${e.countRight}.\\]</p>`;
+    else if(e.type==='oneSided'||e.type==='percentileOfValue') html=`<p>\\[${c.n}(${fmt(e.m,2)})=${e.countM}.\\]</p>`;
+    else {wrapper.innerHTML='<p>Convert each proportion cutoff to the corresponding number of successes by multiplying by the sample size.</p>';typeset([wrapper]);return;}
+    wrapper.innerHTML=html;typeset([wrapper]);
+  }
+
+  function proportionBinomialCalculation(problem) {
+    const c=problem.context,e=problem.task.event,wrapper=makeHintWrapper(),mu=c.n*c.p,sigma=Math.sqrt(c.n*c.p*(1-c.p)),data=proportionEventData(problem,true);let html='';
+    if(e.type==='range') html=`<p>\\[\\begin{aligned}
+      P(${e.countLeft}\\leq X\\leq${e.countRight})
+      &=P\\left(\\frac{${e.countLeft}-${fmt(mu,3)}}{${fmt(sigma,3)}}\\leq Z\\leq\\frac{${e.countRight}-${fmt(mu,3)}}{${fmt(sigma,3)}}\\right)\\\\
+      &\\approx P(${fmt(e.z1,2)}\\leq Z\\leq${fmt(e.z2,2)})\\\\
+      &=${phiTex(e.z2)}-${phiTex(e.z1)}=${probFmt(e.answer)}.
+      \\end{aligned}\\]</p>`;
+    else if(e.type==='oneSided') {
+      const left=e.relation==='<'||e.relation==='\\leq',rel=e.relation==='<'?'\\lt':e.relation;
+      html=left?`<p>\\[\\begin{aligned}P(X${rel}${e.countM})&=P\\left(Z\\leq\\frac{${e.countM}-${fmt(mu,3)}}{${fmt(sigma,3)}}\\right)\\\\&\\approx P(Z\\leq${fmt(e.z,2)})=${probFmt(e.answer)}.\\end{aligned}\\]</p>`:`<p>\\[\\begin{aligned}P(X${rel}${e.countM})&=P\\left(Z>\\frac{${e.countM}-${fmt(mu,3)}}{${fmt(sigma,3)}}\\right)\\\\&\\approx P(Z>${fmt(e.z,2)})=1-${phiTex(e.z)}=${probFmt(e.answer)}.\\end{aligned}\\]</p>`;
+    } else {wrapper.innerHTML='<p>The same standardized normal calculation gives the probability found above.</p>';typeset([wrapper]);return;}
+    wrapper.innerHTML=html;appendNormalAndTable(wrapper,mu,sigma,data,'number of successes');typeset([wrapper]);
+  }
+
+  function proportionHintStep(problem,index) {
+    const cltFirst=proportionPrimaryIsCLT(problem);
+    const steps=cltFirst
+      ? [proportionCLTSetup,proportionCLTCalculation,proportionBinomialSetup,proportionDeMoivreSetup,proportionConvertCounts,proportionBinomialCalculation]
+      : [proportionBinomialSetup,proportionDeMoivreSetup,proportionConvertCounts,proportionBinomialCalculation,proportionCLTSetup,proportionCLTCalculation];
+    steps[index-1](problem);
+    return steps.length;
+  }
+
   function renderCLTProblem(problem) {
     clearCLTActivity(); questionText.innerHTML=problem.wording;
     hintBtn.disabled=false; hintBtn.textContent='Hint'; nextBtn.style.display='none';
@@ -1805,7 +1916,10 @@ fetch("/nav.html")
   hintBtn.addEventListener('click',()=>{
     playSound('click-sound'); if(!currentCLTDraft)return;
     currentCLTDraft.hintIndex++;
-    if(currentCLTDraft.hintIndex===1) underlyingStep(currentCLTDraft);
+    if(currentCLTDraft.type==='proportions') {
+      const total=proportionHintStep(currentCLTDraft,currentCLTDraft.hintIndex);
+      if(currentCLTDraft.hintIndex>=total) hintBtn.disabled=true;
+    } else if(currentCLTDraft.hintIndex===1) underlyingStep(currentCLTDraft);
     else if(currentCLTDraft.hintIndex===2) samplingStep(currentCLTDraft);
     else if(currentCLTDraft.hintIndex===3){calculationStep(currentCLTDraft);hintBtn.disabled=true;}
 

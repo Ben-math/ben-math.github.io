@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -111,7 +112,10 @@ fetch("/nav.html")
     <p>For an 80% confidence interval, we have \(\alpha = 100\% - 80\% = 20\%\) of the area under the curve outside the interval.  Since it is split 
     between either side, we have \(\frac{\alpha}{2} = 10\%\) on either side.  We find \(z_{0.1} = -1.28\).  So our margin of error is
     \[\text{EBM }= 1.28(2) = 2.56\] and our confidence interval ranges between
-    \[500 - 2.56 = 497.44 \text{ kg } \hspace{3mm} \text{ and } \hspace{3mm} 500 + 2.56 = 502.56 \text{ kg}\] INSERT SIDE-BY-SIDE FIGURES HERE</p>
+    \[500 - 2.56 = 497.44 \text{ kg } \hspace{3mm} \text{ and } \hspace{3mm} 500 + 2.56 = 502.56 \text{ kg}\] <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:1rem; margin:1rem auto; max-width:1100px;">
+      <div id="confidence-z-80" style="flex:1 1 460px; min-width:300px;"></div>
+      <div id="confidence-xbar-80" style="flex:1 1 460px; min-width:300px;"></div>
+    </div></p>
 <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>
@@ -1136,8 +1140,10 @@ fetch("/nav.html")
 
     const xLab = add('text', { x: pad.left + plotW / 2, y: H - 10, 'text-anchor': 'middle', 'font-size': 12, fill: axisColor, 'fill-opacity': 0.85 });
     xLab.textContent = options.xLabel ?? 'x';
-    const yLab = add('text', { x: 15, y: pad.top + plotH / 2, 'text-anchor': 'middle', 'font-size': 12, fill: axisColor, 'fill-opacity': 0.85, transform: `rotate(-90 15 ${pad.top + plotH / 2})` });
-    yLab.textContent = options.yLabel ?? 'f(x)';
+    if (options.yLabel !== false && options.yLabel !== '') {
+      const yLab = add('text', { x: 15, y: pad.top + plotH / 2, 'text-anchor': 'middle', 'font-size': 12, fill: axisColor, 'fill-opacity': 0.85, transform: `rotate(-90 15 ${pad.top + plotH / 2})` });
+      yLab.textContent = options.yLabel ?? 'f(x)';
+    }
 
     el.innerHTML = '';
     el.appendChild(svg);
@@ -1175,17 +1181,37 @@ fetch("/nav.html")
 
   renderNormalDistribution('#confidence-middle-two-sd', 0, 1, {
     selectedRanges: [[-2, 2]],
-    tickValues: [-3, -2, -1, 0, 1, 2, 3],
+    tickValues: [-2, 0, 2],
     tickLabels: [
       { value: -2, label: '\u03bc - 2\u03c3' },
       { value: 0, label: '\u03bc' },
       { value: 2, label: '\u03bc + 2\u03c3' }
     ],
-    xLabel: 'sample mean',
-    yLabel: 'density',
-    ariaLabel: 'Normal distribution with the central region within two standard deviations of the mean selected',
+    xLabel: 'x̄',
+    yLabel: false,
+    ariaLabel: 'Normal distribution with the central region from mu minus two sigma to mu plus two sigma selected',
     width: 760,
     height: 300
+  });
+
+  renderNormalDistribution('#confidence-z-80', 0, 1, {
+    selectedRanges: [[-1.28, 1.28]],
+    tickValues: [-1.28, 0, 1.28],
+    xLabel: 'Z',
+    yLabel: false,
+    ariaLabel: 'Standard normal distribution with the central interval from negative 1.28 to positive 1.28 selected',
+    width: 520,
+    height: 270
+  });
+
+  renderNormalDistribution('#confidence-xbar-80', 500, 2, {
+    selectedRanges: [[497.44, 502.56]],
+    tickValues: [497.44, 500, 502.56],
+    xLabel: 'x̄',
+    yLabel: false,
+    ariaLabel: 'Normal distribution for the sample mean with the confidence interval from 497.44 to 502.56 selected',
+    width: 520,
+    height: 270
   });
 
   // -----------------------------

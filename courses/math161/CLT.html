@@ -1,13 +1,3 @@
-
-
-
-
-
-
-
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1332,7 +1322,7 @@ fetch("/nav.html")
     ctx => `${ctx.cadence}, your routine includes ${ctx.action.replace(/^you /,'')}.`,
     ctx => `Suppose that ${ctx.cadence.toLowerCase()}, ${ctx.action}.`,
     ctx => `${ctx.action.charAt(0).toUpperCase() + ctx.action.slice(1)} ${ctx.cadence.toLowerCase()}.`,
-    ctx => `Consider one occasion on which ${ctx.cadence.toLowerCase()} and ${ctx.action}.`
+    ctx => `Consider a period described as follows: ${ctx.cadence.toLowerCase()}, ${ctx.action}.`
   ];
 
   const DIRECT_PARAMETER_WORDINGS = [
@@ -1340,7 +1330,7 @@ fetch("/nav.html")
     c => `On average, each is ${formatMeasurement(c.mu,c.unit)}, with a standard deviation of ${formatMeasurement(c.sigma,c.unit)}.`,
     c => `Historical records give an average ${c.measureNoun} of ${formatMeasurement(c.mu,c.unit)} and a standard deviation of ${formatMeasurement(c.sigma,c.unit)}.`,
     c => `The long-run mean is ${formatMeasurement(c.mu,c.unit)}; the corresponding standard deviation is ${formatMeasurement(c.sigma,c.unit)}.`,
-    c => `For individual observations, \(\mu=${formatMathMeasurement(c.mu,c.unit)}\) and \(\sigma=${formatMathMeasurement(c.sigma,c.unit)}\).`
+    c => `For individual observations, \\(\mu=${formatMathMeasurement(c.mu,c.unit)}\\) and \\(\sigma=${formatMathMeasurement(c.sigma,c.unit)}\\).`
   ];
 
   const NORMAL_EVENT_TYPES = [
@@ -1495,6 +1485,21 @@ fetch("/nav.html")
     return roundFriendly(raw, samplingValueDecimals(dist));
   }
 
+  function randomZ(min, max, step = 0.1) {
+    const count = Math.round((max - min) / step);
+    return Number((min + randInt(0, count) * step).toFixed(2));
+  }
+
+  function distinctEventValueInRange(dist, minZ, maxZ, forbidden = []) {
+    let value = eventValue(dist, randomZ(minZ, maxZ, 0.1));
+    let attempts = 0;
+    while (forbidden.includes(value) && attempts < 60) {
+      value = eventValue(dist, randomZ(minZ, maxZ, 0.1));
+      attempts++;
+    }
+    return value;
+  }
+
   function displayEventValue(value, dist) {
     if (dist.variable === 'sample proportion') return formatPercent(value);
     const unit = CLT_UNIT_LIBRARY[dist.unit];
@@ -1522,24 +1527,31 @@ fetch("/nav.html")
     let notation = '';
 
     if (eventType === 'range') {
-      const z1 = randomChoice([-1.8,-1.5,-1.2,-1,-0.8,-0.6,-0.4]);
-      const z2 = randomChoice([0.4,0.6,0.8,1,1.2,1.5,1.8]);
-      e.left = eventValue(dist,z1); e.right = eventValue(dist,z2);
+      const z1 = randomZ(-2.8, 1.2, 0.1);
+      const z2 = randomZ(z1 + 0.5, 2.9, 0.1);
+      e.left = eventValue(dist,z1);
+      e.right = distinctEventValueInRange(dist, z1 + 0.5, 2.9, [e.left]);
       wording = `${randomChoice(QUESTION_LEADS.probability)} ${target} is between ${displayEventValue(e.left,dist)} and ${displayEventValue(e.right,dist)}?`;
       notation = `P(${e.left}\\leq ${dist.symbol}\\leq ${e.right})`;
     } else if (eventType === 'oneSided') {
       e.relation = randomChoice(['<','\\leq','>','\\geq']);
-      e.m = eventValue(dist,randomChoice([-1.5,-1.2,-0.8,-0.5,0.5,0.8,1.2,1.5]));
+      e.m = eventValue(dist, randomZ(-2.8, 2.8, 0.1));
       const phrase = e.relation === '<' ? `less than ${displayEventValue(e.m,dist)}` : e.relation === '\\leq' ? `at most ${displayEventValue(e.m,dist)}` : e.relation === '>' ? `more than ${displayEventValue(e.m,dist)}` : `at least ${displayEventValue(e.m,dist)}`;
       wording = `${randomChoice(QUESTION_LEADS.probability)} ${target} is ${phrase}?`;
       notation = `P(${dist.symbol}${e.relation}${e.m})`;
     } else if (eventType === 'conditional') {
-      e.lower = eventValue(dist,-1.4); e.upper = eventValue(dist,1.4); e.m = eventValue(dist,randomChoice([-0.5,0.5])); e.targetRelation = randomChoice(['<','>']);
+      const lowerZ = randomZ(-2.9, 0.6, 0.1);
+      const upperZ = randomZ(Math.max(lowerZ + 0.8, -0.1), 2.9, 0.1);
+      const targetZ = randomZ(lowerZ + 0.2, upperZ - 0.2, 0.1);
+      e.lower = eventValue(dist, lowerZ);
+      e.upper = distinctEventValueInRange(dist, Math.max(lowerZ + 0.8, -0.1), 2.9, [e.lower]);
+      e.m = distinctEventValueInRange(dist, lowerZ + 0.2, upperZ - 0.2, [e.lower, e.upper]);
+      e.targetRelation = randomChoice(['<','>']);
       const targetPhrase = e.targetRelation === '<' ? `less than ${displayEventValue(e.m,dist)}` : `more than ${displayEventValue(e.m,dist)}`;
       wording = `Given that ${target} lies between ${displayEventValue(e.lower,dist)} and ${displayEventValue(e.upper,dist)}, what is the probability that it is ${targetPhrase}?`;
       notation = `P(${dist.symbol}${e.targetRelation}${e.m}\\mid ${e.lower}\\leq ${dist.symbol}\\leq ${e.upper})`;
     } else if (eventType === 'percentileOfValue') {
-      e.m = eventValue(dist,randomChoice([-1.4,-1,-0.6,0.6,1,1.4]));
+      e.m = eventValue(dist, randomZ(-2.8, 2.8, 0.1));
       wording = `${randomChoice(QUESTION_LEADS.percentileValue)} ${displayEventValue(e.m,dist)} for ${target}?`;
       notation = `P(${dist.symbol}\\leq ${e.m})`;
     } else if (eventType === 'valueFromPercentile') {

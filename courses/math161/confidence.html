@@ -61,6 +61,16 @@ fetch("/nav.html")
     for hours of sleep was \(\overline{x} = 7\). The idea of a <b>confidence interval</b> is to make statements like
     \[\text{We are _____% confident that }\mu \text{ is within _____ hours of 7.}\]
     Clearly, the wider our interval, the greater our confidence level will be.</p>
+
+    <p>Suppose we knew the population standard deviation, \(\sigma = 1\), in this example.  Since our sample was of size \(n = 100 > 30\), by CLT for sample 
+    means, \[\sigma_{\overline{x}} = \frac{\sigma_X}{\sqrt{n}} = \frac{1}{\sqrt{100}} = 0.1\]
+    We don't know \(\mu_X\), the population mean hours of sleep: this is what we are trying to estimate.  However, we can apply the 68-95-99.7 rule: for 
+    instance, we know that 95% of sample means \(\overline{x}\) will land within 2 standard deviations of \(\mu_{\overline{x}}\)
+    (and we have \(\mu_{\overline{x}} = \mu_X\), by CLT for samply means).<br><br>
+    This means we can be 95% confident that \(\mu_X\) lies within a distance of \(2 \cdot \sigma_{\overline{x}} = 2 \cdot 0.1 = 0.2\) hours of the sample 
+    mean we found.<br><br>
+    Since \(7 - 0.2 = 6.8 \text{ and } 7 + 0.2 = 7.2\),
+    \[\text{We are 95% confident that the population average hours of sleep } \mu_X { is between 6.8 and 7.2 hours.}\]</p>
 <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>

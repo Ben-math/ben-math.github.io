@@ -66,11 +66,37 @@ fetch("/nav.html")
     means, \[\sigma_{\overline{x}} = \frac{\sigma_X}{\sqrt{n}} = \frac{1}{\sqrt{100}} = 0.1\]
     We don't know \(\mu_X\), the population mean hours of sleep: this is what we are trying to estimate.  However, we can apply the 68-95-99.7 rule: for 
     instance, we know that 95% of sample means \(\overline{x}\) will land within 2 standard deviations of \(\mu_{\overline{x}}\)
-    (and we have \(\mu_{\overline{x}} = \mu_X\), by CLT for samply means).<br><br>
+    (and we have \(\mu_{\overline{x}} = \mu_X\), by CLT for sample means).<br><br>
     This means we can be 95% confident that \(\mu_X\) lies within a distance of \(2 \cdot \sigma_{\overline{x}} = 2 \cdot 0.1 = 0.2\) hours of the sample 
     mean we found.<br><br>
     Since \(7 - 0.2 = 6.8 \text{ and } 7 + 0.2 = 7.2\),
-    \[\text{We are 95% confident that the population average hours of sleep } \mu_X { is between 6.8 and 7.2 hours.}\]</p>
+    \[\text{We are 95% confident that the population average hours of sleep } \mu_X \text{ is between 6.8 and 7.2 hours.}\]</p>
+
+    <p>We have just constructed a <b>95% confidence interval</b>.  Such intervals have the form
+    \[(\text{point estimate } - \text{ margin of error}, \text{ point estimate }+\text{ margin of error})\]
+    Note that there are 2 possibilities: there is a 95% chance that the true population mean \(\mu_X\) lies within our interval.  So, there is a 5% chance 
+    that the sample mean we found is farther than \(0.2\) hours away from the population mean (even if we've followed all the correct guidance to choose an 
+    unbiased sample).<br><br>
+    "Margin of error" describes the radius of the confidence interval.  We see that if we were to widen the confidence interval to 3 standard deviations away 
+    (6.7 to 7.3 hours) we improve our confidence level to 99.7%.</p>
+
+    <p>From the preceding discussion, it is easy to construct 68%, 95%, and 99.7% confidence intervals for the population mean.  We will now learn to 
+    construct confidence intervals with any percentage.<br><br>
+    First, we will abbreviate the margin of error to <b>EBM</b> (error bound for a population mean), so our confidence intervals for the population mean 
+    \(\mu\), given a sample mean \(\overline{x}\) we have found, takes the form
+    \[(\overline{x} - \text{ EBM}, \overline{x} + \text{ EBM})\]
+    A researcher may decide to widen the confidence interval, or increasre their sample size, if they want to increase their level of confidence that 
+    \(\overline{x}\) accurately estimates \(\mu\) (conversely, a smaller sample size or narrower confidence interval decreases the level of confidence).</p>
+
+    <p>In the example we just did, we are 95% confident that our sample mean \(\overline{x} = 7\) lies \({\color{red}\text{within 2 standard deviations of the 
+    population mean }\mu}\).<br><br>
+    So, the \({\color{blue}\text{area outside 2 standard deviations}}\) occupies \(100-95 = 5%\) of the area under the normal curve.  (the area outside will 
+    be called \({\color{blue}\alpha}\))<br><br>
+    By the symmetry of the normal distribution, this means \({\color{blue}\frac{\alpha}{2} = \frac{5}{2} =2.5% \text{ of the area lies on either side}}\) of 
+    our \({\color{blue}95% \text{ confidence interval}}\).<br><br>
+    So, the left endpoint of our interval has 2.5% of the area of the curve to its left, and the right endpoint of our interval has \(95+2.5 = 97.5%\) of the 
+    area of the curve to its left.<br><br>
+    So the problem of finding a 95% confidence interval becomes finding the \(2.5^{\text{th}}\) and \(97.5^{\text{th}}\) percentiles.</p>
 <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>

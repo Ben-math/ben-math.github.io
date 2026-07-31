@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1965,7 +1966,7 @@ fetch("/nav.html")
       const num=e.targetRelation==='<'?`${phiTex(e.zM)}-${phiTex(e.zLower)}`:`${phiTex(e.zUpper)}-${phiTex(e.zM)}`;
       html=`<p>\\[\\begin{aligned}
       P(X${rel}${e.countM}\\mid ${e.countLower}\\leq X\\leq${e.countUpper})
-      &=\\frac{P(${e.targetRelation==='<'?`${e.countLower}\\leq X<${e.countM}`:`${e.countM}<X\\leq${e.countUpper}`})}{P(${e.countLower}\\leq X\\leq${e.countUpper})}\\\\
+      &=\\frac{P(${e.targetRelation==='<'?`${e.countLower}\\leq X\\lt ${e.countM}`:`${e.countM}\\lt X\\leq${e.countUpper}`})}{P(${e.countLower}\\leq X\\leq${e.countUpper})}\\\\
       &\\approx\\frac{${num}}{${phiTex(e.zUpper)}-${phiTex(e.zLower)}}=${probFmt(e.answer)}.
       \\end{aligned}\\]</p>`;
     } else if(e.type==='percentileOfValue') {

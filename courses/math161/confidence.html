@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -89,7 +90,7 @@ fetch("/nav.html")
     \(\overline{x}\) accurately estimates \(\mu\) (conversely, a smaller sample size or narrower confidence interval decreases the level of confidence).</p>
 
     <p>In the example we just did, we are 95% confident that our sample mean \(\overline{x} = 7\) lies 
-    \({\color{red}\text{within 2 standard deviations of the population mean }\mu}\).<br><br>INSERT FIGURE HERE
+    \({\color{red}\text{within 2 standard deviations of the population mean }\mu}\).<br><br><div id="confidence-middle-two-sd" style="margin:1rem auto; max-width:760px;"></div><br>
     So, the \({\color{blue}\text{area outside 2 standard deviations}}\) occupies \(100-95 = 5\%\) of the area under the normal curve.  (the area outside will 
     be called \({\color{blue}\alpha}\))<br><br>
     By the symmetry of the normal distribution, this means \({\color{blue}\frac{\alpha}{2} = \frac{5}{2} =2.5\% \text{ of the area lies on either side}}\) of 
@@ -1156,6 +1157,21 @@ fetch("/nav.html")
     tickValues: [265.4, 278.8, 292.2, 300, 305.6, 319, 332.4, 345.8],
     title: 'Normal approximation',
     xLabel: 'x', yLabel: 'g(x)', width: 760, height: 300
+  });
+
+  renderNormalDistribution('#confidence-middle-two-sd', 0, 1, {
+    selectedRanges: [[-2, 2]],
+    tickValues: [-3, -2, -1, 0, 1, 2, 3],
+    tickLabels: [
+      { value: -2, label: '\u03bc - 2\u03c3' },
+      { value: 0, label: '\u03bc' },
+      { value: 2, label: '\u03bc + 2\u03c3' }
+    ],
+    xLabel: 'sample mean',
+    yLabel: 'density',
+    ariaLabel: 'Normal distribution with the central region within two standard deviations of the mean selected',
+    width: 760,
+    height: 300
   });
 
   // -----------------------------

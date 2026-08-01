@@ -171,6 +171,39 @@ fetch("/nav.html")
     </div>
     So we are 60% confident that the average grade in the course is between 58.86% and 71.36%.<br><br>
     As we can see, taking such a small sample makes it hard for us to be particularly confident, and the error bound is quite large.</p>
+
+    <p>So far, we have only constructed confidence intervals when the parameter we are interested in estimating is the population mean.<br><br>
+    But often, the thing we are interested in estimating is a proportion.  For instance, a polling firm may want to estimate the proportion of the population 
+    which will vote for a particular candidate.<br><br>
+    We have already seen that CLT can be applied to not only sample means, but proportions as well.  So our strategy will be very similar to previously.</p>
+
+    <p>The main difference is that we won't necessarily be given a proportion to start: the underlying distribution will be binomial.<br><br>
+    That is, we will be taking a sample of size \(n\), and obtain a proportion of successes from that sample.<br><br>
+    A benefit of the underlying distribution being binomial is that the binomial distribution already bears a close resemblance to the normal distribution: 
+    so we will be able to safely approximate with the normal, rather than referring to Student's \(t\)-distribution.<br><br>
+    Recall DeMoivre-Laplace: the binomial is approximated by the normal distribution whose mean and standard deviation are the same:
+    \[\mu = np \hspace{3mm} \text{ and } \hspace{3mm} \sigma = \sqrt{np(1-p)}\]</p>
+
+    <p>The binomial random variable \(X\) counts the number of successes among the \(n\) trials.  So the <i>proportion</i> of successes is the random variable 
+    we saw in a version of the CLT,
+    \[\hat{p} = \frac{X}{n},\]
+    whose mean and standard deviation we have already seen (we are just now seeing how they were obtained):
+    \[\mu_{\hat{p}} = \frac{np}{n} = p \hspace{3mm} \text{ and } \hspace{3mm} \sigma_{\hat{p}} = \frac{\sqrt{np(1-p)}}{n} = \sqrt{\frac{p(1-p)}{n}}\]
+    We solve confidence interval problems with sample proportions in the same manner as we did with sample means, only using the above as our mean and 
+    standard deviation instead.</p>
+
+    <p>Suppose we want to gauge the support of a political party in Nanaimo.  We survey 50 people in Nanaimo, and determine that 13 of them support the party.
+    \[p = \frac{13}{50} = 0.26,\]
+    so
+    \[\mu_{\hat{p}} = p = 0.26 \hspace{3mm} \text{ and } \hspace{3mm} \sigma_{\hat{p}} = \sqrt{\frac{p(1-p)}{n}} = \sqrt{\frac{0.26(0.74)}{50}} \approx 0.062\]
+    Let us construct a 78% confidence interval of the proportion of the Nanaimo population that will vote for the party.</p>
+
+    <p>For a 78% confidence interval, we have \(\alpha = 100\% - 78\% = 22\%\) of the area under the curve outside the interval.  Since it is split between 
+    either side, we have \(\frac{\alpha}{2} = 11\%\) on either side.  We find \(z_{0.11} = -1.23\) and \(z_{0.89} = 1.23\).  So our margin of error is
+    \[\text{EBP } = 1.23(0.062) \approx 0.076\]
+    (EBP standing for error bound for a proportion), and our confidence interval ranges between
+    \[0.26 - 1.23(0.062) \approx 0.184 \hspace{3mm} \text{ and } 0.26 + 1.23(0.062) \approx 0.336\]
+    We are 78% confident the proportion of people in Nanaimo who will vote for the party is between 18.4% and 33.6%.</p>
 <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>

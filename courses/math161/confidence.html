@@ -165,7 +165,10 @@ fetch("/nav.html")
     <div id="standard-t-table-2" style="margin:20px auto; max-width:1100px; overflow-x:auto;"></div>
     <p>So to construct our 60% confidence interval, we must go \(0.889\) standard deviations from our sample mean:
     \[65.\overline{1} - 0.889(7.03) \approx 58.86 \hspace{3mm} \text{ and }  \hspace{3mm} 65.\overline{1} + 0.889(7.03) = 71.36\]
-    INSERT SIDE-BY-SIDE FIGURES HERE
+    <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:1rem; margin:1rem auto; max-width:1100px;">
+      <div id="confidence-t-60" style="flex:1 1 460px; min-width:300px;"></div>
+      <div id="confidence-t-xbar-60" style="flex:1 1 460px; min-width:300px;"></div>
+    </div>
     So we are 60% confident that the average grade in the course is between 58.86% and 71.36%.<br><br>
     As we can see, taking such a small sample makes it hard for us to be particularly confident, and the error bound is quite large.</p>
 <div class="button-container">
@@ -379,7 +382,7 @@ fetch("/nav.html")
 
   renderTTable('#standard-t-table-1', { });
 
-  renderTTable('#standard-t-table-2', { });
+  renderTTable('#standard-t-table-2', { highlightDf: 8, highlightConfidenceLevel: 60, highlightColor: 'red' });
 
   
   const startBtn = document.getElementById('start-btn');
@@ -1265,6 +1268,119 @@ fetch("/nav.html")
   }
 
 
+  // -----------------------------
+  // Inline-SVG diagram for Student's t-distribution
+  // -----------------------------
+  // selectedRanges and superSelectedRanges are arrays of [left, right] intervals.
+  function renderStudentTDistribution(container, df, options = {}) {
+    const el = (typeof container === 'string') ? document.querySelector(container) : container;
+    if (!el || !(df > 0)) return;
+
+    const mu = Number.isFinite(options.mu) ? options.mu : 0;
+    const scale = Number.isFinite(options.scale) && options.scale > 0 ? options.scale : 1;
+    const W = options.width ?? 660;
+    const H = options.height ?? 280;
+    const pad = { left: 56, right: 24, top: 24, bottom: 48, ...(options.padding ?? {}) };
+    const paleBlue = options.paleBlue ?? '#b7d8f0';
+    const paleRed = options.paleRed ?? '#f2b6b6';
+    const darkRed = options.darkRed ?? '#c94f4f';
+    const axisColor = options.axisColor ?? 'currentColor';
+    const xMin = options.xMin ?? (mu - 4 * scale);
+    const xMax = options.xMax ?? (mu + 4 * scale);
+
+    function logGamma(z) {
+      const coeffs = [
+        676.5203681218851, -1259.1392167224028, 771.32342877765313,
+        -176.61502916214059, 12.507343278686905, -0.13857109526572012,
+        9.9843695780195716e-6, 1.5056327351493116e-7
+      ];
+      if (z < 0.5) return Math.log(Math.PI) - Math.log(Math.sin(Math.PI * z)) - logGamma(1 - z);
+      z -= 1;
+      let x = 0.99999999999980993;
+      for (let i = 0; i < coeffs.length; i++) x += coeffs[i] / (z + i + 1);
+      const t = z + coeffs.length - 0.5;
+      return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
+    }
+
+    const coefficient = Math.exp(logGamma((df + 1) / 2) - logGamma(df / 2)) /
+      (Math.sqrt(df * Math.PI) * scale);
+    const pdf = x => {
+      const u = (x - mu) / scale;
+      return coefficient * Math.pow(1 + (u * u) / df, -(df + 1) / 2);
+    };
+    const peak = pdf(mu);
+    const yMax = options.yMax ?? 1.25 * peak;
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+    const xPx = x => pad.left + ((x - xMin) / (xMax - xMin)) * plotW;
+    const yPx = y => pad.top + (1 - y / yMax) * plotH;
+    const baseY = yPx(0);
+
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', String(H));
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', options.ariaLabel ?? `Student t distribution with ${df} degrees of freedom`);
+
+    const add = (name, attrs) => {
+      const node = document.createElementNS(svgNS, name);
+      for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, String(value));
+      svg.appendChild(node);
+      return node;
+    };
+
+    const pathForRange = (left, right, closeToAxis) => {
+      const L = Math.max(xMin, left);
+      const R = Math.min(xMax, right);
+      if (!(R > L)) return '';
+      const steps = Math.max(2, Math.ceil(240 * (R - L) / (xMax - xMin)));
+      let d = closeToAxis ? `M ${xPx(L)} ${baseY} L ${xPx(L)} ${yPx(pdf(L))}` : `M ${xPx(L)} ${yPx(pdf(L))}`;
+      for (let i = 1; i <= steps; i++) {
+        const x = L + (R - L) * i / steps;
+        d += ` L ${xPx(x)} ${yPx(pdf(x))}`;
+      }
+      if (closeToAxis) d += ` L ${xPx(R)} ${baseY} Z`;
+      return d;
+    };
+
+    add('line', { x1: pad.left, y1: baseY, x2: pad.left + plotW, y2: baseY, stroke: axisColor, 'stroke-opacity': 0.65, 'stroke-width': 1.2 });
+    if (options.yAxis !== false) {
+      add('line', { x1: pad.left, y1: pad.top, x2: pad.left, y2: baseY, stroke: axisColor, 'stroke-opacity': 0.65, 'stroke-width': 1.2 });
+    }
+    add('path', { d: pathForRange(xMin, xMax, true), fill: paleBlue, 'fill-opacity': 0.9, stroke: 'none' });
+    for (const [left, right] of (options.selectedRanges ?? [])) {
+      const d = pathForRange(left, right, true);
+      if (d) add('path', { d, fill: paleRed, 'fill-opacity': 0.92, stroke: 'none' });
+    }
+    for (const [left, right] of (options.superSelectedRanges ?? [])) {
+      const d = pathForRange(left, right, true);
+      if (d) add('path', { d, fill: darkRed, 'fill-opacity': 0.95, stroke: 'none' });
+    }
+    add('path', { d: pathForRange(xMin, xMax, false), fill: 'none', stroke: axisColor, 'stroke-width': 2 });
+
+    const tickValues = options.tickValues ?? [mu - 3 * scale, mu - 2 * scale, mu - scale, mu, mu + scale, mu + 2 * scale, mu + 3 * scale];
+    const tickLabels = new Map((options.tickLabels ?? []).map(item => [Number(item.value), String(item.label)]));
+    for (const x of tickValues) {
+      if (x < xMin || x > xMax) continue;
+      add('line', { x1: xPx(x), y1: baseY, x2: xPx(x), y2: baseY + 5, stroke: axisColor, 'stroke-width': 1 });
+      const lab = add('text', { x: xPx(x), y: baseY + 21, 'text-anchor': 'middle', 'font-size': 12, fill: axisColor });
+      lab.textContent = tickLabels.get(Number(x)) ?? (options.tickFormatter ? options.tickFormatter(x) : Number(x.toFixed(3)).toString());
+    }
+
+    const xLab = add('text', { x: pad.left + plotW / 2, y: H - 10, 'text-anchor': 'middle', 'font-size': 12, fill: axisColor, 'fill-opacity': 0.85 });
+    xLab.textContent = options.xLabel ?? 't';
+    if (options.yLabel !== false && options.yLabel !== '') {
+      const yLab = add('text', { x: 15, y: pad.top + plotH / 2, 'text-anchor': 'middle', 'font-size': 12, fill: axisColor, 'fill-opacity': 0.85, transform: `rotate(-90 15 ${pad.top + plotH / 2})` });
+      yLab.textContent = options.yLabel ?? 'f(t)';
+    }
+
+    el.innerHTML = '';
+    el.appendChild(svg);
+  }
+
+
 
   // Central Limit Theorem lesson figures.
   renderBinomialHistogram('#clt-binom-50', 50, 0.413, {
@@ -1325,6 +1441,41 @@ fetch("/nav.html")
     xLabel: 'x̄',
     yLabel: false,
     ariaLabel: 'Normal distribution for the sample mean with the confidence interval from 497.44 to 502.56 selected',
+    width: 520,
+    height: 270
+  });
+
+
+  renderStudentTDistribution('#confidence-t-60', 8, {
+    mu: 0,
+    scale: 1,
+    selectedRanges: [[-0.889, 0.889]],
+    tickValues: [-0.889, 0, 0.889],
+    tickLabels: [
+      { value: -0.889, label: '-0.889' },
+      { value: 0, label: '0' },
+      { value: 0.889, label: '0.889' }
+    ],
+    xLabel: 't',
+    yLabel: false,
+    ariaLabel: 'Student t distribution with 8 degrees of freedom and the central interval from negative 0.889 to positive 0.889 selected',
+    width: 520,
+    height: 270
+  });
+
+  renderStudentTDistribution('#confidence-t-xbar-60', 8, {
+    mu: 65.11,
+    scale: 7.03,
+    selectedRanges: [[58.86, 71.36]],
+    tickValues: [58.86, 65.11, 71.36],
+    tickLabels: [
+      { value: 58.86, label: '58.86' },
+      { value: 65.11, label: '65.11' },
+      { value: 71.36, label: '71.36' }
+    ],
+    xLabel: 'x̄',
+    yLabel: false,
+    ariaLabel: 'Student t sampling distribution for the sample mean with the confidence interval from 58.86 to 71.36 selected',
     width: 520,
     height: 270
   });

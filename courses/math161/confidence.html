@@ -110,7 +110,9 @@ fetch("/nav.html")
     = \frac{\sigma_X}{\sqrt{n}} = \frac{16}{\sqrt{64}} = 2\]</p>
 
     <p>For an 80% confidence interval, we have \(\alpha = 100\% - 80\% = 20\%\) of the area under the curve outside the interval.  Since it is split 
-    between either side, we have \(\frac{\alpha}{2} = 10\%\) on either side.  We find \(z_{0.1} = -1.28\).  So our margin of error is
+    between either side, we have \(\frac{\alpha}{2} = 10\%\) on either side.  We find \(z_{0.1} = -1.28\) and \(z_{0.9} = 1.28\).  
+    <div id="standard-normal-table-1" style="margin:20px 0;"></div>  
+    So our margin of error is
     \[\text{EBM }= 1.28(2) = 2.56\] and our confidence interval ranges between
     \[500 - 2.56 = 497.44 \text{ kg } \hspace{3mm} \text{ and } \hspace{3mm} 500 + 2.56 = 502.56 \text{ kg}\] <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:1rem; margin:1rem auto; max-width:1100px;">
       <div id="confidence-z-80" style="flex:1 1 460px; min-width:300px;"></div>
@@ -266,6 +268,12 @@ fetch("/nav.html")
     el.innerHTML = '';
     el.appendChild(wrapper);
   }
+
+  renderStandardNormalTable('#standard-normal-table-1', {
+    highlightZs: [1.28],
+    highlightColor: 'red'
+  });
+
   
   const startBtn = document.getElementById('start-btn');
   const hintBtn = document.getElementById('hint-btn');

@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -199,11 +200,14 @@ fetch("/nav.html")
     Let us construct a 78% confidence interval of the proportion of the Nanaimo population that will vote for the party.</p>
 
     <p>For a 78% confidence interval, we have \(\alpha = 100\% - 78\% = 22\%\) of the area under the curve outside the interval.  Since it is split between 
-    either side, we have \(\frac{\alpha}{2} = 11\%\) on either side.  We find \(z_{0.11} = -1.23\) and \(z_{0.89} = 1.23\).  INSERT TABLE HERE So our margin of error is
+    either side, we have \(\frac{\alpha}{2} = 11\%\) on either side.  We find \(z_{0.11} = -1.23\) and \(z_{0.89} = 1.23\).  <div id="standard-normal-table-2" style="margin:20px 0;"></div> So our margin of error is
     \[\text{EBP } = 1.23(0.062) \approx 0.076\]
     (EBP standing for error bound for a proportion), and our confidence interval ranges between
     \[0.26 - 1.23(0.062) \approx 0.184 \hspace{3mm} \text{ and } 0.26 + 1.23(0.062) \approx 0.336\]
-    INSERT SIDE-BY-SIDE FIGURES HERE
+    <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:1rem; margin:1rem auto; max-width:1100px;">
+      <div id="confidence-z-78" style="flex:1 1 460px; min-width:300px;"></div>
+      <div id="confidence-phat-78" style="flex:1 1 460px; min-width:300px;"></div>
+    </div>
     We are 78% confident the proportion of people in Nanaimo who will vote for the party is between 18.4% and 33.6%.</p>
 
     <p>This could also be stated as pollsters commonly do: the party is polling at
@@ -426,6 +430,11 @@ fetch("/nav.html")
 
   renderStandardNormalTable('#standard-normal-table-1', {
     highlightZs: [-1.28, 1.28],
+    highlightColor: 'red'
+  });
+
+  renderStandardNormalTable('#standard-normal-table-2', {
+    highlightZs: [-1.23, 1.23],
     highlightColor: 'red'
   });
 
@@ -1490,6 +1499,32 @@ fetch("/nav.html")
     xLabel: 'x̄',
     yLabel: false,
     ariaLabel: 'Normal distribution for the sample mean with the confidence interval from 497.44 to 502.56 selected',
+    width: 520,
+    height: 270
+  });
+
+
+  renderNormalDistribution('#confidence-z-78', 0, 1, {
+    selectedRanges: [[-1.23, 1.23]],
+    tickValues: [-1.23, 0, 1.23],
+    xLabel: 'Z',
+    yLabel: false,
+    ariaLabel: 'Standard normal distribution with the central interval from negative 1.23 to positive 1.23 selected',
+    width: 520,
+    height: 270
+  });
+
+  renderNormalDistribution('#confidence-phat-78', 0.26, 0.062, {
+    selectedRanges: [[0.184, 0.336]],
+    tickValues: [0.184, 0.26, 0.336],
+    tickLabels: [
+      { value: 0.184, label: '0.184' },
+      { value: 0.26, label: '0.26' },
+      { value: 0.336, label: '0.336' }
+    ],
+    xLabel: 'p̂',
+    yLabel: false,
+    ariaLabel: 'Normal approximation for the sample proportion with the confidence interval from 0.184 to 0.336 selected',
     width: 520,
     height: 270
   });

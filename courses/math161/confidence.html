@@ -118,6 +118,18 @@ fetch("/nav.html")
       <div id="confidence-z-80" style="flex:1 1 460px; min-width:300px;"></div>
       <div id="confidence-xbar-80" style="flex:1 1 460px; min-width:300px;"></div>
     </div></p>
+
+    <p>Suppose we know that the confidence interval for a population mean is \((17,33)\).  We can recover the sample mean and the error bound from this.<br><br>
+    The sample mean should be in the middle of this interval,
+    \[\overline{x} = \frac{17+33}{2} = 25\]
+    And so the error bound is the distance from this midpoint to the ends of the confidence interval,
+    \[\text{EBM } = \overline{x} - 17 = 25 - 17 = 8\]</p>
+
+    <p>Finally, if we have a desired margin of error and level of confidence, we can determine the sample size we require via the following: 
+    \[n = \frac{\left(z_{\frac{\alpha}{2}}\right)^2 \cdot \sigma^2}{(\text{EBM})^2}\]
+    So if we have a study where we want to be 90% confident of our results, to have an error bound of 0.1 kg, and we know that the population standard 
+    deviation is 2 kg, then we need a sample of size \[n = \frac{\left(z_{\frac{\alpha}{2}}\right)^2 \cdot \sigma^2}{(\text{EBM})^2} = 
+    \frac{\left(z_{\frac{0.1}{2}}\right)^2 \cdot 2^2}{(0.1)^2} = 400 \cdot \left(z_{0.05}\right)^2 = 400 \cdot (-1.64)^2 \approx 1076\]</p>
 <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>

@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -329,8 +330,8 @@ fetch("/nav.html")
     const hdf = String(options.highlightDf ?? '');
     const colour = options.highlightColor ?? 'red';
     const table = document.createElement('table');
-    table.style.borderCollapse = 'collapse'; table.style.margin = '0 auto'; table.style.fontSize = options.fontSize ?? '11px'; table.style.whiteSpace = 'nowrap';
-    const style = (c, hi=false, bold=false) => { c.style.border=options.border ?? '1px solid black'; c.style.padding=options.cellPadding ?? '4px 6px'; c.style.textAlign='center'; if (bold) c.style.fontWeight='700'; if (hi) { c.style.color=colour; c.style.fontWeight='700'; } };
+    table.style.borderCollapse = 'collapse'; table.style.margin = '0 auto'; table.style.fontSize = options.fontSize ?? '10px'; table.style.whiteSpace = 'nowrap';
+    const style = (c, hi=false, bold=false) => { c.style.border=options.border ?? '1px solid black'; c.style.padding=options.cellPadding ?? '2px'; c.style.textAlign='center'; if (bold) c.style.fontWeight='700'; if (hi) { c.style.color=colour; c.style.fontWeight='700'; } };
     const head = (label, vals, fmt) => { const tr=document.createElement('tr'); const a=document.createElement('th'); a.textContent=label; style(a,false,true); tr.appendChild(a); vals.forEach((v,i)=>{const th=document.createElement('th'); th.textContent=fmt(v); style(th,i===ci,true); tr.appendChild(th);}); table.appendChild(tr); };
     head('Confidence Level', confidenceLevels, v=>`${v}%`); head('One-tail', oneTail, String); head('Two-tail', twoTail, String);
     const dtr=document.createElement('tr'); const dth=document.createElement('th'); dth.textContent='df'; style(dth,false,true); dtr.appendChild(dth); confidenceLevels.forEach((_,i)=>{const th=document.createElement('th'); style(th,i===ci); dtr.appendChild(th);}); table.appendChild(dtr);

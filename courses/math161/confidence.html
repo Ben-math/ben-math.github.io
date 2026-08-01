@@ -1,8 +1,3 @@
-
-
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -130,6 +125,13 @@ fetch("/nav.html")
     So if we have a study where we want to be 90% confident of our results, to have an error bound of 0.1 kg, and we know that the population standard 
     deviation is 2 kg, then we need a sample of size \[n = \frac{\left(z_{\frac{\alpha}{2}}\right)^2 \cdot \sigma^2}{(\text{EBM})^2} = 
     \frac{\left(z_{\frac{0.1}{2}}\right)^2 \cdot 2^2}{(0.1)^2} = 400 \cdot \left(z_{0.05}\right)^2 = 400 \cdot (-1.64)^2 \approx 1076\]</p>
+
+    <p>In the examples we've considered thus far, the population standard deviation \(\sigma\) has been known.  In practice, it is most often unknown, and 
+    the sample standard deviation \(s\) is used as an estimate for \(\sigma\).  However, this runs into problems, especially when the sample size is small.
+    <br><br>
+    This is because the CLT tells us that a normal distribution is a good approximation when the sample is large enough: but generally, the distribution is 
+    dependent on how large the sample is.  For smaller sample sizes, the normal distribution may underestimate how spread out the data are.<br><br>
+    So, when we use \(s\) as a stand-in for \(\sigma\), instead of using the normal distribution, we use what is called <b>Student's \(t\)-distribution</b>.</p>
 <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>

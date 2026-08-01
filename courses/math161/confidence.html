@@ -135,6 +135,31 @@ fetch("/nav.html")
     dependent on how large the sample is.  For smaller sample sizes, the normal distribution may underestimate how spread out the data are.<br><br>
     So, when we use \(s\) as a stand-in for \(\sigma\), instead of using the normal distribution, we use what is called <b>Student's \(t\)-distribution</b>.</p>
     <div id="standard-t-table-1" style="margin:20px auto; max-width:1100px; overflow-x:auto;"></div>
+
+    <p>First, the column at left is called "degrees of freedom".  When estimating a mean, it is equal to the sample size minus one:
+    \[df = n - 1\]
+    Next, look at the bottom row of the table.  \(df = \infty\) means that this row refers to us having an extremely large sample.  By CLT, this means the 
+    underlying distribution is approximated by a normal distribution.<br><br>
+    Essentially, Student's \(t\)-distribution looks increasingly normal as the sample size \(n\) increases.  You are encouraged to compare the values in the 
+    bottom row of the \(t\)-table with the \(z\)-scores corresponding to the same values \(\frac{\alpha}{2}\): you will see they match up.</p>
+
+    <p>The \(t\)-scores function the same as \(z\)-scores: they determine how many standard deviations from the mean we go.  The tables function differently, 
+      however:
+    <ul>
+      <li>In the \(t\)-table, the values in the center of the table are the \(t\)-scores, whereas in the standard normal table, the \(z\)-scores were found 
+      using the margins of the table.</li>
+      <li>The \(t\)-table restricts us to only the listed confidence intervals.  With the normal table, we were able to construct confidence intervals for 
+      arbitrary levels of confidence.</li>
+    </ul>
+    We now give a concrete example.  Suppose I want to learn the average grade of the students in a large course by sampling grades from 9 of the students.  
+    I learn that their grades are \[\{60, 57, 88, 74, 90, 63, 70, 18, 66\}\]
+    I want to construct a 60% confidence interval for the average grade in the course.</p>
+
+    <p>I start by finding the sample mean and sample standard deviation using the methods we've learned previously:
+    \[\overline{x} = \frac{60 + 57 + 88 + 74 + 90 + 63 + 70 + 18 + 66}{9} = \frac{586}{9} = 65.\overline{1} \]
+    \[s = \sqrt{\frac{\sum(x-\overline{x})^2}{n-1}} = \sqrt{\frac{(60-65.\overline{1})^2 + (57 - 65.\overline{1})^2 + ... + 
+    (66 - 65.\overline{1})^2}{8}} \approx 21.1\] Next, I consult the $t$-table for 60\% confidence, with $df = n-1 = 8$ degrees of freedom.</p>
+    <div id="standard-t-table-2" style="margin:20px auto; max-width:1100px; overflow-x:auto;"></div>
 <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>
@@ -345,6 +370,8 @@ fetch("/nav.html")
   });
 
   renderTTable('#standard-t-table-1', { });
+
+  renderTTable('#standard-t-table-2', { });
 
   
   const startBtn = document.getElementById('start-btn');

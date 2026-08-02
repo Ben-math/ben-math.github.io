@@ -85,7 +85,14 @@ fetch("/nav.html")
     \[\mu_{\overline{x}} = \mu_X = 82.2 \hspace{3mm} \text{ and } \hspace{3mm} \sigma_{\overline{x}} = \frac{\sigma_X}{\sqrt{n}} = \frac{13.68}{\sqrt{5}} 
     = 6.12\]
     We find the probability of having a result as extreme (or more) than the one we obtained: that is, being farther right than 82.2 marshmallows.
-    \[P(\overline{x} > 82.2) = P\left(t > \frac{82.2-67}{6.12}\right) = P(t > 2.484)\] </p>
+    \[P(\overline{x} > 82.2) = P\left(t > \frac{82.2-67}{6.12}\right) = P(t > 2.484)\] 
+    We can't directly compute probabilities for the \(t\)-distribution, but <i>can</i> find the bounds of the rejection region.  First, in terms of # of 
+    standard deviations from the mean, since \(\alpha = 0.1\) and \(df = n-1 = 4\), we check the \(t\)-table for a one-tailed test, finding \(t=1.533\).  
+    Our result is farther to the right, at \(2.484\) standard deviations, so we reject \(H_0\).  So, there is sufficient evidence to conclude the boxes of 
+    cereal do in fact contain more than 67 marshmallows.<br><br>
+    <i>Or</i>, we could find the bounds of rejection in terms of $ of marshmallows:
+    \[67+1.533(6.12) = 76.38 \text{ marshmallows}\]
+    and our result of \(82.2\) marshallows is farther right than that, so we reject \(H_0\).</p>
 
 <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

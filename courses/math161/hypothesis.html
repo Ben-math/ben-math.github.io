@@ -1,0 +1,2395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta charset="UTF-8" />
+  <title>Hypothesis Testing</title>
+  <link rel="stylesheet" href="/style.css" />
+
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+</head>
+<body>
+  <header>
+    <h1>Hypothesis Testing</h1>
+    <div id="nav-placeholder"></div>
+      <script>
+fetch("/nav.html")
+  .then(response => response.text())
+  .then(html => {
+    document.getElementById("nav-placeholder").innerHTML = html;
+
+    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+    const navLinks = document.querySelectorAll("#nav-placeholder a");
+    navLinks.forEach(link => {
+      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+      if (linkPath === currentPath) {
+        link.classList.add("active");
+      }
+    });
+
+    const s = document.createElement("script");
+    s.src = "/mascot.js";
+    s.defer = true;
+    document.body.appendChild(s); 
+  })
+  .catch(err => {
+    console.error("Failed to load nav:", err);
+  });
+</script>
+  </header>
+  <main>
+    
+    <p>We now move from the descriptive side of things to <i>inferential</i> statistics.  That is, returning to our overarching goal: we want to estimate some 
+    \({\color{red}\text{parameter}}\) of the \({\color{red}\text{population}}\), and we do so by obtaining a \({\color{blue}\text{statistic}}\) from a 
+    \({\color{blue}\text{sample}}\).</p>
+
+    <p>A reasonable question to ask is:
+    \[\text{How }good\text{ is that estimate?}\]
+    We certainly have an intuition that a larger sample leads to a better estimate.</p>
+
+    <p>For example, suppose we want to estimate the average number of hours of sleep per night that the residents of a town get.<br><br>
+    We might take a sample of 100 residents, and obtain the sample mean \(\overline{x}\) of hours of sleep that those residents get.  We say that the 
+    \({\color{blue}\text{sample mean } \overline{x}}\) is a <b>point estimate</b> for the \({\color{red}\text{population mean } \mu}\).<br><br>
+    Likewise, the \({\color{blue}\text{sample standard deviation } s}\) is a point estimate for the \({\color{red}\text{population standard deviation } \sigma}\).
+    <br><br>
+    We can be <i>increasingly confident</i> that our statistic estimates the parameter well as our sample size increases.  Suppose we found that the sample mean 
+    for hours of sleep was \(\overline{x} = 7\). The idea of a <b>confidence interval</b> is to make statements like
+    \[\text{We are _____% confident that }\mu \text{ is within _____ hours of 7.}\]
+    Clearly, the wider our interval, the greater our confidence level will be.</p>
+
+    <p>Suppose we knew the population standard deviation, \(\sigma = 1\), in this example.  Since our sample was of size \(n = 100 > 30\), by CLT for sample 
+    means, \[\sigma_{\overline{x}} = \frac{\sigma_X}{\sqrt{n}} = \frac{1}{\sqrt{100}} = 0.1\]
+    We don't know \(\mu_X\), the population mean hours of sleep: this is what we are trying to estimate.  However, we can apply the 68-95-99.7 rule: for 
+    instance, we know that 95% of sample means \(\overline{x}\) will land within 2 standard deviations of \(\mu_{\overline{x}}\)
+    (and we have \(\mu_{\overline{x}} = \mu_X\), by CLT for sample means).<br><br>
+    This means we can be 95% confident that \(\mu_X\) lies within a distance of \(2 \cdot \sigma_{\overline{x}} = 2 \cdot 0.1 = 0.2\) hours of the sample 
+    mean we found.<br><br>
+    Since \(7 - 0.2 = 6.8 \text{ and } 7 + 0.2 = 7.2\),
+    \[\text{We are 95% confident that the population average hours of sleep } \mu_X \text{ is between 6.8 and 7.2 hours.}\]</p>
+
+    <p>We have just constructed a <b>95% confidence interval</b>.  Such intervals have the form
+    \[(\text{point estimate } - \text{ margin of error}, \text{ point estimate }+\text{ margin of error})\]
+    Note that there are 2 possibilities: there is a 95% chance that the true population mean \(\mu_X\) lies within our interval.  So, there is a 5% chance 
+    that the sample mean we found is farther than \(0.2\) hours away from the population mean (even if we've followed all the correct guidance to choose an 
+    unbiased sample).<br><br>
+    "Margin of error" describes the radius of the confidence interval.  We see that if we were to widen the confidence interval to 3 standard deviations away 
+    (6.7 to 7.3 hours) we improve our confidence level to 99.7%.</p>
+
+    <p>From the preceding discussion, it is easy to construct 68%, 95%, and 99.7% confidence intervals for the population mean.  We will now learn to 
+    construct confidence intervals with any percentage.<br><br>
+    First, we will abbreviate the margin of error to <b>EBM</b> (error bound for a population mean), so our confidence intervals for the population mean 
+    \(\mu\), given a sample mean \(\overline{x}\) we have found, takes the form
+    \[(\overline{x} - \text{ EBM}, \overline{x} + \text{ EBM})\]
+    A researcher may decide to widen the confidence interval, or increase their sample size, if they want to increase their level of confidence that 
+    \(\overline{x}\) accurately estimates \(\mu\) (conversely, a smaller sample size or narrower confidence interval decreases the level of confidence).</p>
+
+    <p>In the example we just did, we are 95% confident that our sample mean \(\overline{x} = 7\) lies 
+    \({\color{red}\text{within 2 standard deviations of the population mean }\mu}\).<br><br><div id="confidence-middle-two-sd" style="margin:1rem auto; max-width:760px;"></div><br>
+    So, the \({\color{blue}\text{area outside 2 standard deviations}}\) occupies \(100-95 = 5\%\) of the area under the normal curve.  (the area outside will 
+    be called \({\color{blue}\alpha}\))<br><br>
+    By the symmetry of the normal distribution, this means \({\color{blue}\frac{\alpha}{2} = \frac{5}{2} =2.5\% \text{ of the area lies on either side}}\) of 
+    our \({\color{red}95\% \text{ confidence interval}}\).<br><br>
+    So, the left endpoint of our interval has 2.5% of the area of the curve to its left, and the right endpoint of our interval has \(95+2.5 = 97.5\%\) of the 
+    area of the curve to its left.<br><br>
+    So the problem of finding a 95% confidence interval becomes finding the \(2.5^{\text{th}}\) and \(97.5^{\text{th}}\) percentiles.</p>
+
+    <p>Suppose we want to determine the average weight of polar bears.  We weigh 64 bears, and find the sample mean weight to be
+    \[\overline{x} = 500 \text{ kg}\]
+    If we know that the population standard deviation of polar bear weights is \(\sigma = 16\) kg, then let us construct an 80% confidence interval of 
+    the population mean polar bear weight.</p>
+
+    <p>Since we know the population standard deviation \(\sigma = 16\), and this is a question about means, we use the normal distribution for sample 
+    means, which itself has mean and standard deviation \[\mu_{\overline{x}} = \mu_X = 500 \hspace{3mm} \text{ and } \hspace{3mm} \sigma_{\overline{x}} 
+    = \frac{\sigma_X}{\sqrt{n}} = \frac{16}{\sqrt{64}} = 2\]</p>
+
+    <p>For an 80% confidence interval, we have \(\alpha = 100\% - 80\% = 20\%\) of the area under the curve outside the interval.  Since it is split 
+    between either side, we have \(\frac{\alpha}{2} = 10\%\) on either side.  We find \(z_{0.1} = -1.28\) and \(z_{0.9} = 1.28\).  
+    <div id="standard-normal-table-1" style="margin:20px 0;"></div>  
+    So our margin of error is
+    \[\text{EBM }= 1.28(2) = 2.56\] and our confidence interval ranges between
+    \[500 - 2.56 = 497.44 \text{ kg } \hspace{3mm} \text{ and } \hspace{3mm} 500 + 2.56 = 502.56 \text{ kg}\] <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:1rem; margin:1rem auto; max-width:1100px;">
+      <div id="confidence-z-80" style="flex:1 1 460px; min-width:300px;"></div>
+      <div id="confidence-xbar-80" style="flex:1 1 460px; min-width:300px;"></div>
+    </div></p>
+
+    <p>Suppose we know that the confidence interval for a population mean is \((17,33)\).  We can recover the sample mean and the error bound from this.<br><br>
+    The sample mean should be in the middle of this interval,
+    \[\overline{x} = \frac{17+33}{2} = 25\]
+    And so the error bound is the distance from this midpoint to the ends of the confidence interval,
+    \[\text{EBM } = \overline{x} - 17 = 25 - 17 = 8\]</p>
+
+    <p>Finally, if we have a desired margin of error and level of confidence, we can determine the sample size we require via the following: 
+    \[n = \frac{\left(z_{\frac{\alpha}{2}}\right)^2 \cdot \sigma^2}{(\text{EBM})^2}\]
+    So if we have a study where we want to be 90% confident of our results, to have an error bound of 0.1 kg, and we know that the population standard 
+    deviation is 2 kg, then we need a sample of size \[n = \frac{\left(z_{\frac{\alpha}{2}}\right)^2 \cdot \sigma^2}{(\text{EBM})^2} = 
+    \frac{\left(z_{\frac{0.1}{2}}\right)^2 \cdot 2^2}{(0.1)^2} = 400 \cdot \left(z_{0.05}\right)^2 = 400 \cdot (-1.64)^2 \approx 1076\]</p>
+
+    <p>In the examples we've considered thus far, the population standard deviation \(\sigma\) has been known.  In practice, it is most often unknown, and 
+    the sample standard deviation \(s\) is used as an estimate for \(\sigma\).  However, this runs into problems, especially when the sample size is small.
+    <br><br>
+    This is because the CLT tells us that a normal distribution is a good approximation when the sample is large enough: but generally, the distribution is 
+    dependent on how large the sample is.  For smaller sample sizes, the normal distribution may underestimate how spread out the data are.<br><br>
+    So, when we use \(s\) as a stand-in for \(\sigma\), instead of using the normal distribution, we use what is called <b>Student's \(t\)-distribution</b>.</p>
+    <div id="standard-t-table-1" style="margin:20px auto; max-width:1100px; overflow-x:auto;"></div>
+
+    <p>First, the column at left is called "degrees of freedom".  When estimating a mean, it is equal to the sample size minus one:
+    \[df = n - 1\]
+    Next, look at the bottom row of the table.  \(df = \infty\) means that this row refers to us having an extremely large sample.  By CLT, this means the 
+    underlying distribution is approximated by a normal distribution.<br><br>
+    Essentially, Student's \(t\)-distribution looks increasingly normal as the sample size \(n\) increases.  You are encouraged to compare the values in the 
+    bottom row of the \(t\)-table with the \(z\)-scores corresponding to the same values \(\frac{\alpha}{2}\): you will see they match up.</p>
+
+    <p>The \(t\)-scores function the same as \(z\)-scores: they determine how many standard deviations from the mean we go.  The tables function differently, 
+      however:
+    <ul>
+      <li>In the \(t\)-table, the values in the center of the table are the \(t\)-scores, whereas in the standard normal table, the \(z\)-scores were found 
+      using the margins of the table.</li>
+      <li>The \(t\)-table restricts us to only the listed confidence intervals.  With the normal table, we were able to construct confidence intervals for 
+      arbitrary levels of confidence.</li>
+    </ul>
+    We now give a concrete example.  Suppose we want to learn the average grade of the students in a large course by sampling grades from 9 of the students.  
+    We learn that their grades are \[\{60, 57, 88, 74, 90, 63, 70, 18, 66\}\]
+    We want to construct a 60% confidence interval for the average grade in the course.</p>
+
+    <p>We start by finding the sample mean and sample standard deviation using the methods we've learned previously:
+    \[\overline{x} = \frac{60 + 57 + 88 + 74 + 90 + 63 + 70 + 18 + 66}{9} = \frac{586}{9} = 65.\overline{1} \]
+    \[s = \sqrt{\frac{\sum(x-\overline{x})^2}{n-1}} = \sqrt{\frac{(60-65.\overline{1})^2 + (57 - 65.\overline{1})^2 + ... + 
+    (66 - 65.\overline{1})^2}{8}} \approx 21.1\] 
+    We use \(s\) as our estimate for \(\sigma\).  We then use it to find the standard deviation for the sample mean,
+    \[\sigma_{\overline{x}} = \frac{\sigma}{\sqrt{9}} = \frac{21.1}{3} \approx 7.03\]  
+    Next, we consult the \(t\)-table for 60% confidence, with \(df = n-1 = 8\) degrees of freedom.</p>
+    <div id="standard-t-table-2" style="margin:20px auto; max-width:1100px; overflow-x:auto;"></div>
+    <p>So to construct our 60% confidence interval, we must go \(0.889\) standard deviations from our sample mean:
+    \[65.\overline{1} - 0.889(7.03) \approx 58.86 \hspace{3mm} \text{ and }  \hspace{3mm} 65.\overline{1} + 0.889(7.03) = 71.36\]
+    <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:1rem; margin:1rem auto; max-width:1100px;">
+      <div id="confidence-t-60" style="flex:1 1 460px; min-width:300px;"></div>
+      <div id="confidence-t-xbar-60" style="flex:1 1 460px; min-width:300px;"></div>
+    </div>
+    So we are 60% confident that the average grade in the course is between 58.86% and 71.36%.<br><br>
+    As we can see, taking such a small sample makes it hard for us to be particularly confident, and the error bound is quite large.</p>
+
+    <p>So far, we have only constructed confidence intervals when the parameter we are interested in estimating is the population mean.<br><br>
+    But often, the thing we are interested in estimating is a proportion.  For instance, a polling firm may want to estimate the proportion of the population 
+    which will vote for a particular candidate.<br><br>
+    We have already seen that CLT can be applied to not only sample means, but proportions as well.  So our strategy will be very similar to previously.</p>
+
+    <p>The main difference is that we won't necessarily be given a proportion to start: the underlying distribution will be binomial.<br><br>
+    That is, we will be taking a sample of size \(n\), and obtain a proportion of successes from that sample.<br><br>
+    A benefit of the underlying distribution being binomial is that the binomial distribution already bears a close resemblance to the normal distribution: 
+    so we will be able to safely approximate with the normal, rather than referring to Student's \(t\)-distribution.<br><br>
+    Recall DeMoivre-Laplace: the binomial is approximated by the normal distribution whose mean and standard deviation are the same:
+    \[\mu = np \hspace{3mm} \text{ and } \hspace{3mm} \sigma = \sqrt{np(1-p)}\]</p>
+
+    <p>The binomial random variable \(X\) counts the number of successes among the \(n\) trials.  So the <i>proportion</i> of successes is the random variable 
+    we saw in a version of the CLT,
+    \[\hat{p} = \frac{X}{n},\]
+    whose mean and standard deviation we have already seen (we are just now seeing how they were obtained):
+    \[\mu_{\hat{p}} = \frac{np}{n} = p \hspace{3mm} \text{ and } \hspace{3mm} \sigma_{\hat{p}} = \frac{\sqrt{np(1-p)}}{n} = \sqrt{\frac{p(1-p)}{n}}\]
+    We solve confidence interval problems with sample proportions in the same manner as we did with sample means, only using the above as our mean and 
+    standard deviation instead.</p>
+
+    <p>Suppose we want to gauge the support of a political party in Nanaimo.  We survey 50 people in Nanaimo, and determine that 13 of them support the party.
+    \[p = \frac{13}{50} = 0.26,\]
+    so
+    \[\mu_{\hat{p}} = p = 0.26 \hspace{3mm} \text{ and } \hspace{3mm} \sigma_{\hat{p}} = \sqrt{\frac{p(1-p)}{n}} = \sqrt{\frac{0.26(0.74)}{50}} \approx 0.062\]
+    Let us construct a 78% confidence interval of the proportion of the Nanaimo population that will vote for the party.</p>
+
+    <p>For a 78% confidence interval, we have \(\alpha = 100\% - 78\% = 22\%\) of the area under the curve outside the interval.  Since it is split between 
+    either side, we have \(\frac{\alpha}{2} = 11\%\) on either side.  We find \(z_{0.11} = -1.23\) and \(z_{0.89} = 1.23\).  <div id="standard-normal-table-2" style="margin:20px 0;"></div> So our margin of error is
+    \[\text{EBP } = 1.23(0.062) \approx 0.076\]
+    (EBP standing for error bound for a proportion), and our confidence interval ranges between
+    \[0.26 - 1.23(0.062) \approx 0.184 \hspace{3mm} \text{ and } 0.26 + 1.23(0.062) \approx 0.336\]
+    <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:1rem; margin:1rem auto; max-width:1100px;">
+      <div id="confidence-z-78" style="flex:1 1 460px; min-width:300px;"></div>
+      <div id="confidence-phat-78" style="flex:1 1 460px; min-width:300px;"></div>
+    </div>
+    We are 78% confident the proportion of people in Nanaimo who will vote for the party is between 18.4% and 33.6%.</p>
+
+    <p>This could also be stated as pollsters commonly do: the party is polling at
+    \[26 \pm 7.6\%\]
+    (although note that this statement omits the confidence level of the pollster).</p>
+
+    <p>Finally, as was the case for means, if we have a desired margin of error and level of confidence for proportions, we can determine the sample size we 
+    require via a slightly different formula (note that we <i>always</i> round up, since we are finding the minimum sample size we <i>need</i>, and we can only 
+    have integer sample sizes): 
+    \[n = \frac{0.25\left(z_{\frac{\alpha}{2}}\right)^2}{(\text{EBP})^2}\]
+    Suppose in the preceding example, we want to be 99% confident of our polling numbers, with a margin of error of \(\pm0.1\%\).  What is the minimum number of 
+    people we need to poll to be sure to have this level of certainty?
+    \[\alpha = 0.01 \hspace{3mm} \text{ and } \hspace{3mm} \text{EBP } = 0.001\]
+    So we need to poll at minimum
+    \[n = \frac{0.25\left(z_{\frac{\alpha}{2}}\right)^2}{(\text{EBP})^2} = \frac{0.25(z_{0.005})^2}{0.001^2} = \frac{0.25(2.57)^2}{0.001^2} \approx 1651230 
+    \text{ people}\]</p>
+<div class="button-container">
+      <button id="start-btn" class="rubber-button">Start!</button>
+    </div>
+
+    <p id="question-text" class="math"></p>
+
+    <div id="activity-area" style="margin-top: 1rem;">
+      <div id="table-area" class="math" style="margin: 1rem auto; max-width: 900px; text-align: center;"></div>
+
+      <div id="mean-area" class="math" style="margin-top: 0.75rem; text-align: center;"></div>
+
+      <div id="work-area" class="math" style="margin-top: 1rem; text-align: center;"></div>
+
+      <div id="histogram-area" style="margin: 1rem auto; max-width: 740px;"></div>
+
+      <p id="stage-feedback" style="font-weight: bold; margin-top: 0.75rem; text-align: center;"></p>
+
+      <div class="button-container" style="gap: 0.75rem;">
+        <button id="hint-btn" class="rubber-button">Hint</button>
+        <button id="next-btn" class="rubber-button" style="display:none;">Next</button>
+      </div>
+      <div id="hint-area" class="math" style="margin-top: 1rem;"></div>
+    </div>
+</main>
+  
+<script>
+
+  // -----------------------------
+  // Standard normal cumulative-probability table
+  // -----------------------------
+  // Example:
+  // renderStandardNormalTable('#table-id', {
+  //   highlightZs: [1.78],
+  //   highlightColor: 'red'
+  // });
+  function renderStandardNormalTable(container, options = {}) {
+    const el = (typeof container === 'string') ? document.querySelector(container) : container;
+    if (!el) return;
+
+    const minZ = Number.isFinite(options.minZ) ? Math.max(-3.9, Math.round(options.minZ * 10) / 10) : -2.5;
+    const maxZ = Number.isFinite(options.maxZ) ? Math.min(3.9, Math.round(options.maxZ * 10) / 10) : 2.5;
+    const highlightColor = options.highlightColor ?? 'red';
+    const fontSize = options.fontSize ?? '10px';
+    const cellPadding = options.cellPadding ?? '2px';
+    const border = options.border ?? '1px solid black';
+    const highlights = new Set((options.highlightZs ?? []).map(z => Number(Number(z).toFixed(2))));
+
+    // Accurate enough to reproduce a conventional four-decimal z-table.
+    function standardNormalCDF(z) {
+      const a = Math.abs(z);
+      const t = 1 / (1 + 0.2316419 * a);
+      const density = 0.3989422804014327 * Math.exp(-0.5 * a * a);
+      const tail = density * t * (
+        0.319381530 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429)))
+      );
+      const cdf = 1 - tail;
+      return z >= 0 ? cdf : 1 - cdf;
+    }
+
+    const highlightedRows = new Set();
+    const highlightedColumns = {
+      negative: new Set(),
+      positive: new Set()
+    };
+    for (const z of highlights) {
+      if (z < minZ - 0.09 || z > maxZ + 0.09) continue;
+      const side = z < 0 ? 'negative' : 'positive';
+      const sign = z < 0 ? -1 : 1;
+      const absHundredths = Math.round(Math.abs(z) * 100);
+      const tenths = Math.floor(absHundredths / 10) / 10;
+      highlightedRows.add(Number((sign * tenths).toFixed(1)));
+      highlightedColumns[side].add(absHundredths % 10);
+    }
+
+    const wrapper = document.createElement('div');
+    Object.assign(wrapper.style, {
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'flex-start',
+      gap: options.gap ?? '20px',
+      margin: '20px 0',
+      fontSize,
+      flexWrap: 'wrap'
+    });
+
+    const colourCell = (cell, active) => {
+      if (active) {
+        cell.style.color = highlightColor;
+        cell.style.fontWeight = '700';
+      }
+    };
+
+    function makeTable(startRow, endRow, side) {
+      const table = document.createElement('table');
+      table.style.borderCollapse = 'collapse';
+
+      const header = document.createElement('tr');
+      const zHead = document.createElement('th');
+      zHead.innerHTML = '<i>z</i>';
+      zHead.style.border = border;
+      zHead.style.padding = cellPadding;
+      header.appendChild(zHead);
+
+      for (let hundredth = 0; hundredth <= 9; hundredth++) {
+        const th = document.createElement('th');
+        th.textContent = `.${String(hundredth).padStart(2, '0')}`;
+        th.style.border = border;
+        th.style.padding = cellPadding;
+        colourCell(th, highlightedColumns[side].has(hundredth));
+        header.appendChild(th);
+      }
+      table.appendChild(header);
+
+      const step = startRow <= endRow ? 1 : -1;
+      for (let i = startRow; step > 0 ? i <= endRow : i >= endRow; i += step) {
+        const rowBase = Number((i / 10).toFixed(1));
+        const tr = document.createElement('tr');
+        const rowLabel = document.createElement('td');
+        rowLabel.textContent = (side === 'negative' && rowBase === 0) ? '-0.0' : rowBase.toFixed(1);
+        rowLabel.style.border = border;
+        rowLabel.style.padding = cellPadding;
+        colourCell(rowLabel, highlightedRows.has(rowBase));
+        tr.appendChild(rowLabel);
+
+        for (let hundredth = 0; hundredth <= 9; hundredth++) {
+          const sign = side === 'negative' ? -1 : 1;
+          const z = Number((rowBase + sign * hundredth / 100).toFixed(2));
+          const td = document.createElement('td');
+          td.textContent = standardNormalCDF(z).toFixed(4);
+          td.style.border = border;
+          td.style.padding = cellPadding;
+          colourCell(td, highlights.has(z));
+          tr.appendChild(td);
+        }
+        table.appendChild(tr);
+      }
+      return table;
+    }
+
+    const negativeStart = Math.round(minZ * 10);
+    const negativeEnd = Math.min(0, Math.round(maxZ * 10));
+    if (negativeStart <= 0) wrapper.appendChild(makeTable(negativeStart, negativeEnd, 'negative'));
+
+    const positiveStart = Math.max(0, Math.ceil(minZ * 10));
+    const positiveEnd = Math.round(maxZ * 10);
+    if (positiveEnd >= 0) wrapper.appendChild(makeTable(positiveStart, positiveEnd, 'positive'));
+
+    el.innerHTML = '';
+    el.appendChild(wrapper);
+  }
+
+
+  function renderTTable(container, options = {}) {
+    const el = (typeof container === 'string') ? document.querySelector(container) : container;
+    if (!el) return;
+    const confidenceLevels = [50,60,70,80,90,95,98,99];
+    const oneTail = [0.25,0.2,0.15,0.1,0.05,0.025,0.01,0.005];
+    const twoTail = [0.5,0.4,0.3,0.2,0.1,0.05,0.02,0.01];
+    const rows = [
+      [1,1.000,1.376,1.963,3.078,6.314,12.706,31.821,63.657],
+      [2,0.816,1.061,1.386,1.886,2.920,4.303,6.965,9.925],
+      [3,0.765,0.978,1.250,1.638,2.353,3.182,4.541,5.841],
+      [4,0.741,0.941,1.190,1.533,2.132,2.776,3.747,4.604],
+      [5,0.727,0.920,1.156,1.476,2.015,2.571,3.365,4.032],
+      [6,0.718,0.906,1.134,1.440,1.943,2.447,3.143,3.707],
+      [7,0.711,0.896,1.119,1.415,1.895,2.365,2.998,3.499],
+      [8,0.706,0.889,1.108,1.397,1.860,2.306,2.896,3.355],
+      [9,0.703,0.883,1.100,1.383,1.833,2.262,2.821,3.250],
+      [10,0.700,0.879,1.093,1.372,1.812,2.228,2.764,3.169],
+      [11,0.697,0.876,1.088,1.363,1.796,2.201,2.718,3.106],
+      [12,0.695,0.873,1.083,1.356,1.782,2.179,2.681,3.055],
+      [13,0.694,0.870,1.079,1.350,1.771,2.160,2.650,3.012],
+      [14,0.692,0.868,1.076,1.345,1.761,2.145,2.624,2.977],
+      [15,0.691,0.866,1.074,1.341,1.753,2.131,2.602,2.947],
+      [16,0.690,0.865,1.071,1.337,1.746,2.120,2.583,2.921],
+      [17,0.689,0.863,1.069,1.333,1.740,2.110,2.567,2.898],
+      [18,0.688,0.862,1.067,1.330,1.734,2.101,2.552,2.878],
+      [19,0.688,0.861,1.066,1.328,1.729,2.093,2.539,2.861],
+      [20,0.687,0.860,1.064,1.325,1.725,2.086,2.528,2.845],
+      [21,0.686,0.859,1.063,1.323,1.721,2.080,2.518,2.831],
+      [22,0.686,0.858,1.061,1.321,1.717,2.074,2.508,2.819],
+      [23,0.685,0.858,1.060,1.319,1.714,2.069,2.500,2.807],
+      [24,0.685,0.857,1.059,1.318,1.711,2.064,2.492,2.797],
+      [25,0.684,0.856,1.058,1.316,1.708,2.060,2.485,2.787],
+      [26,0.684,0.856,1.058,1.315,1.706,2.056,2.479,2.779],
+      [27,0.684,0.855,1.057,1.314,1.703,2.052,2.473,2.771],
+      [28,0.683,0.855,1.056,1.313,1.701,2.048,2.467,2.763],
+      [29,0.683,0.854,1.055,1.311,1.699,2.045,2.462,2.756],
+      [30,0.683,0.854,1.055,1.310,1.697,2.042,2.457,2.750],
+      ['∞',0.674,0.842,1.036,1.282,1.645,1.960,2.326,2.576]
+    ];
+    const ci = confidenceLevels.indexOf(Number(options.highlightConfidenceLevel));
+    const hdf = String(options.highlightDf ?? '');
+    const colour = options.highlightColor ?? 'red';
+    const table = document.createElement('table');
+    table.style.borderCollapse = 'collapse'; table.style.margin = '0 auto'; table.style.fontSize = options.fontSize ?? '10px'; table.style.whiteSpace = 'nowrap';
+    const style = (c, hi=false, bold=false) => { c.style.border=options.border ?? '1px solid black'; c.style.padding=options.cellPadding ?? '2px'; c.style.textAlign='center'; if (bold) c.style.fontWeight='700'; if (hi) { c.style.color=colour; c.style.fontWeight='700'; } };
+    const head = (label, vals, fmt) => { const tr=document.createElement('tr'); const a=document.createElement('th'); a.textContent=label; style(a,false,true); tr.appendChild(a); vals.forEach((v,i)=>{const th=document.createElement('th'); th.textContent=fmt(v); style(th,i===ci,true); tr.appendChild(th);}); table.appendChild(tr); };
+    head('Confidence Level', confidenceLevels, v=>`${v}%`); head('One-tail', oneTail, String); head('Two-tail', twoTail, String);
+    const dtr=document.createElement('tr'); const dth=document.createElement('th'); dth.textContent='df'; style(dth,false,true); dtr.appendChild(dth); confidenceLevels.forEach((_,i)=>{const th=document.createElement('th'); style(th,i===ci); dtr.appendChild(th);}); table.appendChild(dtr);
+    rows.forEach(r=>{ const tr=document.createElement('tr'); const rowHi=String(r[0])===hdf; const d=document.createElement('td'); d.textContent=r[0]; style(d,rowHi); tr.appendChild(d); for(let i=1;i<r.length;i++){const td=document.createElement('td'); td.textContent=Number(r[i]).toFixed(3); style(td,rowHi && i-1===ci); tr.appendChild(td);} table.appendChild(tr); });
+    el.innerHTML=''; el.appendChild(table);
+  }
+
+  renderStandardNormalTable('#standard-normal-table-1', {
+    highlightZs: [-1.28, 1.28],
+    highlightColor: 'red'
+  });
+
+  renderStandardNormalTable('#standard-normal-table-2', {
+    highlightZs: [-1.23, 1.23],
+    highlightColor: 'red'
+  });
+
+  renderTTable('#standard-t-table-1', { });
+
+  renderTTable('#standard-t-table-2', { highlightDf: 8, highlightConfidenceLevel: 60, highlightColor: 'red' });
+
+  
+  const startBtn = document.getElementById('start-btn');
+  const hintBtn = document.getElementById('hint-btn');
+  const nextBtn = document.getElementById('next-btn');
+
+  const questionText = document.getElementById('question-text');
+  const tableArea = document.getElementById('table-area');
+  const meanArea = document.getElementById('mean-area');
+  const workArea = document.getElementById('work-area');
+  const histogramArea = document.getElementById('histogram-area');
+  const stageFeedback = document.getElementById('stage-feedback');
+  const hintArea = document.getElementById('hint-area');
+
+  // -----------------------------
+  // Helpers
+  // -----------------------------
+  function playSound(id) {
+    const s = document.getElementById(id);
+    if (s) { s.currentTime = 0; s.play(); }
+  }
+
+  function randInt(a, b) {
+    return Math.floor(Math.random() * (b - a + 1)) + a;
+  }
+
+  function gcd(a, b) {
+    a = Math.abs(a); b = Math.abs(b);
+    while (b !== 0) { const t = a % b; a = b; b = t; }
+    return a === 0 ? 1 : a;
+  }
+
+  function reduceFrac(num, den) {
+    if (den < 0) { den = -den; num = -num; }
+    const g = gcd(num, den);
+    return [num / g, den / g];
+  }
+
+  function addFrac(aNum, aDen, bNum, bDen) {
+    const num = aNum * bDen + bNum * aDen;
+    const den = aDen * bDen;
+    return reduceFrac(num, den);
+  }
+
+  function subFrac(aNum, aDen, bNum, bDen) {
+    return addFrac(aNum, aDen, -bNum, bDen);
+  }
+
+  function mulFrac(aNum, aDen, bNum, bDen) {
+    return reduceFrac(aNum * bNum, aDen * bDen);
+  }
+
+  function fracToTex(num, den) {
+    const [n, d] = reduceFrac(num, den);
+    if (d === 1) return `${n}`;
+    return `\\frac{${n}}{${d}}`;
+  }
+
+  function fracToString(num, den) {
+    const [n, d] = reduceFrac(num, den);
+    if (d === 1) return `${n}`;
+    return `${n}/${d}`;
+  }
+
+  function typeset(elements = []) {
+    if (!window.MathJax) return;
+    if (MathJax.typesetPromise) {
+      if (elements.length > 0) MathJax.typesetPromise(elements);
+      else MathJax.typesetPromise();
+      return;
+    }
+    if (MathJax.typeset) {
+      if (elements.length > 0) MathJax.typeset(elements);
+      else MathJax.typeset();
+    }
+  }
+
+  function parseNumber(raw) {
+    // Accept integer, fraction, or decimal.
+    const s = (raw ?? '').trim().replace(/\s+/g, '');
+    if (!s) return { error: 'Please enter a value.' };
+
+    const fracMatch = s.match(/^([+-]?\d+)\/([+-]?\d+)$/);
+    if (fracMatch) {
+      const a = parseInt(fracMatch[1], 10);
+      const b = parseInt(fracMatch[2], 10);
+      if (b === 0) return { error: 'Denominator cannot be 0.' };
+      const [n, d] = reduceFrac(a, b);
+      return { kind: 'frac', num: n, den: d, value: n / d };
+    }
+
+    const intMatch = s.match(/^[+-]?\d+$/);
+    if (intMatch) {
+      const a = parseInt(s, 10);
+      return { kind: 'frac', num: a, den: 1, value: a };
+    }
+
+    const decMatch = s.match(/^[+-]?\d*\.\d+$/);
+    if (decMatch) {
+      const v = Number(s);
+      if (!Number.isFinite(v)) return { error: 'That decimal does not look valid.' };
+      return { kind: 'dec', value: v };
+    }
+
+    return { error: 'I couldn’t parse that. Use an integer, a fraction like 3/8, or a decimal like 0.375.' };
+  }
+
+  function relClose(a, b, relTol) {
+    const denom = Math.max(1e-12, Math.abs(b));
+    return Math.abs(a - b) <= relTol * denom;
+  }
+
+  function inputMatchesRational(parsed, tNum, tDen, relTol = 0.001) {
+    const target = tNum / tDen;
+    if (parsed.error) return false;
+    if (parsed.kind === 'frac') {
+      const [n, d] = reduceFrac(parsed.num, parsed.den);
+      const [tn, td] = reduceFrac(tNum, tDen);
+      return (n === tn && d === td);
+    }
+    if (parsed.kind === 'dec') return relClose(parsed.value, target, relTol);
+    return false;
+  }
+
+
+  // -----------------------------
+  // Reusable random-selection and normal-distribution helpers
+  // -----------------------------
+  function randomChoice(items) {
+    return items[randInt(0, items.length - 1)];
+  }
+
+  function weightedChoice(items) {
+    const total = items.reduce((sum, item) => sum + item.weight, 0);
+    let r = Math.random() * total;
+    for (const item of items) {
+      r -= item.weight;
+      if (r < 0) return item.value;
+    }
+    return items[items.length - 1].value;
+  }
+
+  function formatNumber(x) {
+    if (Number.isInteger(x)) return String(x);
+    return Number(x.toFixed(2)).toString();
+  }
+
+  function normalCdf(z) {
+    const a = Math.abs(z);
+    const t = 1 / (1 + 0.2316419 * a);
+    const density = 0.3989422804014327 * Math.exp(-0.5 * a * a);
+    const tail = density * t * (
+      0.319381530 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429)))
+    );
+    const cdf = 1 - tail;
+    return z >= 0 ? cdf : 1 - cdf;
+  }
+
+  function inverseNormalCdf(p) {
+    let lo = -4;
+    let hi = 4;
+    for (let i = 0; i < 70; i++) {
+      const mid = (lo + hi) / 2;
+      if (normalCdf(mid) < p) lo = mid;
+      else hi = mid;
+    }
+    return (lo + hi) / 2;
+  }
+
+  function normalZ(distribution, x) {
+    return (x - distribution.mu) / distribution.sigma;
+  }
+
+  function roundedZ(distribution, x) {
+    return Number(normalZ(distribution, x).toFixed(2));
+  }
+
+  
+  // -----------------------------
+  // Inline-SVG diagram for a uniform distribution
+  // -----------------------------
+  // selectedRanges and superSelectedRanges are arrays of [left, right] intervals.
+  function renderUniformDistribution(container, a, b, options = {}) {
+    const el = (typeof container === 'string') ? document.querySelector(container) : container;
+    if (!el || !(b > a)) return;
+
+    const W = options.width ?? 660;
+    const H = options.height ?? 260;
+    const pad = { left: 56, right: 24, top: 22, bottom: 48, ...(options.padding ?? {}) };
+
+    const lightBlue = options.lightBlue ?? '#b7d8f0';
+    const lightRed = options.lightRed ?? '#f2b6b6';
+    const darkRed = options.darkRed ?? '#c94f4f';
+    const axisColor = options.axisColor ?? 'currentColor';
+    const span = b - a;
+    const xMin = options.xMin ?? (a - 0.15 * span);
+    const xMax = options.xMax ?? (b + 0.15 * span);
+    const density = 1 / span;
+    const yMax = options.yMax ?? (1.35 * density);
+
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+    const xPx = x => pad.left + ((x - xMin) / (xMax - xMin)) * plotW;
+    const yPx = y => pad.top + (1 - y / yMax) * plotH;
+    const baseY = yPx(0);
+    const topY = yPx(density);
+
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', String(H));
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', options.ariaLabel ?? `Uniform distribution from ${a} to ${b}`);
+
+    const add = (name, attrs, parent = svg) => {
+      const node = document.createElementNS(svgNS, name);
+      for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, String(value));
+      parent.appendChild(node);
+      return node;
+    };
+
+    // Axes, with space above and on both sides of the density rectangle.
+    add('line', { x1: pad.left, y1: baseY, x2: pad.left + plotW, y2: baseY, stroke: axisColor, 'stroke-opacity': 0.65, 'stroke-width': 1.2 });
+    add('line', { x1: pad.left, y1: pad.top, x2: pad.left, y2: baseY, stroke: axisColor, 'stroke-opacity': 0.65, 'stroke-width': 1.2 });
+
+    const drawRange = (left, right, fill) => {
+      const L = Math.max(a, Math.min(b, left));
+      const R = Math.max(a, Math.min(b, right));
+      if (R <= L) return;
+      add('rect', {
+        x: xPx(L), y: topY, width: xPx(R) - xPx(L), height: baseY - topY,
+        fill, 'fill-opacity': 0.9
+      });
+    };
+
+    drawRange(a, b, lightBlue);
+    for (const range of (options.selectedRanges ?? [])) drawRange(range[0], range[1], lightRed);
+    for (const range of (options.superSelectedRanges ?? [])) drawRange(range[0], range[1], darkRed);
+
+    // Outline of the pdf.
+    add('path', {
+      d: `M ${xPx(a)} ${baseY} L ${xPx(a)} ${topY} L ${xPx(b)} ${topY} L ${xPx(b)} ${baseY}`,
+      fill: 'none', stroke: axisColor, 'stroke-width': 2, 'stroke-linejoin': 'round'
+    });
+
+    for (const x of (options.verticalLines ?? [])) {
+      if (x < a || x > b) continue;
+      add('line', { x1: xPx(x), y1: baseY, x2: xPx(x), y2: topY, stroke: options.verticalLineColor ?? darkRed, 'stroke-width': 3 });
+    }
+
+    const labelMap = new Map();
+    const putLabel = (x, label) => labelMap.set(Number(x), String(label));
+    putLabel(a, options.aLabel ?? a);
+    putLabel(b, options.bLabel ?? b);
+    for (const x of (options.tickValues ?? [])) putLabel(x, x);
+    for (const item of (options.tickLabels ?? [])) putLabel(item.value, item.label);
+
+    for (const [x, label] of [...labelMap.entries()].sort((u, v) => u[0] - v[0])) {
+      add('line', { x1: xPx(x), y1: baseY, x2: xPx(x), y2: baseY + 5, stroke: axisColor, 'stroke-width': 1 });
+      const t = add('text', { x: xPx(x), y: baseY + 21, 'text-anchor': 'middle', 'font-size': 13, fill: axisColor });
+      t.textContent = label;
+    }
+
+    const zero = add('text', { x: pad.left - 8, y: baseY + 4, 'text-anchor': 'end', 'font-size': 12, fill: axisColor, 'fill-opacity': 0.8 });
+    zero.textContent = '0';
+    const hLabel = add('text', { x: pad.left - 8, y: topY + 4, 'text-anchor': 'end', 'font-size': 12, fill: axisColor, 'fill-opacity': 0.8 });
+    hLabel.textContent = options.heightLabel ?? (Number.isInteger(span) ? `1/${span}` : density.toFixed(3));
+
+    const xLabel = add('text', { x: pad.left + plotW / 2, y: H - 10, 'text-anchor': 'middle', 'font-size': 12, fill: axisColor, 'fill-opacity': 0.85 });
+    xLabel.textContent = options.xLabel ?? 'x';
+    const yLabel = add('text', { x: 15, y: pad.top + plotH / 2, 'text-anchor': 'middle', 'font-size': 12, fill: axisColor, 'fill-opacity': 0.85, transform: `rotate(-90 15 ${pad.top + plotH / 2})` });
+    yLabel.textContent = options.yLabel ?? 'f(x)';
+
+    el.innerHTML = '';
+    el.appendChild(svg);
+  }
+
+  // Static uniform-distribution diagrams for the lesson text above.
+  renderUniformDistribution('#uniform-figure-1', 2, 8, {
+    aLabel: 'a', bLabel: 'b', heightLabel: '1/(b-a)', ariaLabel: 'Uniform distribution between positive values a and b'
+  });
+  renderUniformDistribution('#uniform-figure-2', 0, 30, {
+    selectedRanges: [[0, 20]], tickValues: [20], heightLabel: '1/30'
+  });
+  renderUniformDistribution('#uniform-figure-3', 0, 30, {
+    selectedRanges: [[3, 7], [20, 30]], tickValues: [3, 7, 20], heightLabel: '1/30'
+  });
+  renderUniformDistribution('#uniform-figure-4', 2, 12, { heightLabel: '1/10' });
+  renderUniformDistribution('#uniform-figure-5', 2, 12, {
+    selectedRanges: [[2, 5]], tickValues: [5], heightLabel: '1/10'
+  });
+  renderUniformDistribution('#uniform-figure-6', 2, 12, {
+    selectedRanges: [[6, 10]], tickValues: [6, 10], heightLabel: '1/10'
+  });
+  renderUniformDistribution('#uniform-figure-7', 2, 12, {
+    selectedRanges: [[2, 11]], tickValues: [11], heightLabel: '1/10'
+  });
+  renderUniformDistribution('#uniform-figure-8', 2, 12, {
+    selectedRanges: [[2, 6]], superSelectedRanges: [[2, 3]], tickValues: [3, 6], heightLabel: '1/10'
+  });
+  renderUniformDistribution('#uniform-figure-9', 2, 12, {
+    verticalLines: [7], tickValues: [7], heightLabel: '1/10'
+  });
+
+  // -----------------------------
+  // Inline-SVG histogram for Binomial(n,p)
+  // -----------------------------
+  // Usage:
+  //   renderBinomialHistogram('#div', 20, 5/18)              // all pale blue
+  //   renderBinomialHistogram('#div', 20, 5/18, {highlightXs:[6]}) // highlight x=6 in pale red
+  function renderBinomialHistogram(container, n, p, options = {}) {
+    const el = (typeof container === 'string') ? document.querySelector(container) : container;
+    if (!el) return;
+
+    const W = options.width ?? 640;
+    const H = options.height ?? 260;
+    const pad = { left: 48, right: 16, top: (options.title ? 30 : 14), bottom: 48, ...(options.padding ?? {}) };
+
+    const paleBlue = options.paleBlue ?? '#b7d8f0';
+    const paleRed = options.paleRed ?? '#f2b6b6';
+    const highlight = new Set(options.highlightXs ?? []);
+
+    // Compute the pmf by recurrence so large values of n do not overflow.
+    const data = [];
+    let maxP = 0;
+    if (p <= 0) {
+      for (let x = 0; x <= n; x++) data.push({ x, p: x === 0 ? 1 : 0 });
+      maxP = 1;
+    } else if (p >= 1) {
+      for (let x = 0; x <= n; x++) data.push({ x, p: x === n ? 1 : 0 });
+      maxP = 1;
+    } else {
+      const q = 1 - p;
+      let px = Math.pow(q, n);
+      for (let x = 0; x <= n; x++) {
+        data.push({ x, p: px });
+        if (px > maxP) maxP = px;
+        if (x < n) px *= ((n - x) / (x + 1)) * (p / q);
+      }
+    }
+
+    // Display only the portion of the distribution within four standard
+    // deviations of the mean, clipped to the possible values 0,...,n.
+    const mean = n * p;
+    const sigma = Math.sqrt(n * p * (1 - p));
+    const minDisplayedX = Math.max(0, Math.ceil(mean - 4 * sigma));
+    const maxDisplayedX = Math.min(n, Math.floor(mean + 4 * sigma));
+    const displayedData = data.filter(d => d.x >= minDisplayedX && d.x <= maxDisplayedX);
+
+    // Leave 20% headroom above the tallest displayed column.
+    const displayedMaxP = Math.max(...displayedData.map(d => d.p));
+    const yMax = 1.25 * displayedMaxP;
+
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+    const xStep = plotW / displayedData.length;
+    const barW = xStep * 0.78;
+
+    const y = (prob) => pad.top + (1 - (prob / yMax)) * plotH;
+    const x0 = (i) => pad.left + i * xStep + (xStep - barW) / 2;
+
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', String(H));
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', options.ariaLabel ?? `Histogram of Binomial(n=${n}, p=${p})`);
+
+    const g = document.createElementNS(svgNS, 'g');
+    svg.appendChild(g);
+
+    if (options.title) {
+      const t = document.createElementNS(svgNS, 'text');
+      t.setAttribute('x', String(W / 2));
+      t.setAttribute('y', '18');
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('font-size', '14');
+      t.setAttribute('font-weight', '600');
+      t.setAttribute('fill', 'currentColor');
+      t.textContent = options.title;
+      g.appendChild(t);
+    }
+
+    const axisColor = options.axisColor ?? 'currentColor';
+    const axisOpacity = options.axisOpacity ?? '0.55';
+
+    const xAxis = document.createElementNS(svgNS, 'line');
+    xAxis.setAttribute('x1', String(pad.left));
+    xAxis.setAttribute('y1', String(pad.top + plotH));
+    xAxis.setAttribute('x2', String(pad.left + plotW));
+    xAxis.setAttribute('y2', String(pad.top + plotH));
+    xAxis.setAttribute('stroke', axisColor);
+    xAxis.setAttribute('stroke-opacity', axisOpacity);
+    xAxis.setAttribute('stroke-width', '1');
+    g.appendChild(xAxis);
+
+    const yAxis = document.createElementNS(svgNS, 'line');
+    yAxis.setAttribute('x1', String(pad.left));
+    yAxis.setAttribute('y1', String(pad.top));
+    yAxis.setAttribute('x2', String(pad.left));
+    yAxis.setAttribute('y2', String(pad.top + plotH));
+    yAxis.setAttribute('stroke', axisColor);
+    yAxis.setAttribute('stroke-opacity', axisOpacity);
+    yAxis.setAttribute('stroke-width', '1');
+    g.appendChild(yAxis);
+
+    const ticks = options.yTicks ?? 3;
+    for (let k = 0; k < ticks; k++) {
+      const frac = (ticks === 1) ? 0 : k / (ticks - 1);
+      const yy = pad.top + (1 - frac) * plotH;
+
+      const tick = document.createElementNS(svgNS, 'line');
+      tick.setAttribute('x1', String(pad.left - 4));
+      tick.setAttribute('y1', String(yy));
+      tick.setAttribute('x2', String(pad.left));
+      tick.setAttribute('y2', String(yy));
+      tick.setAttribute('stroke', axisColor);
+      tick.setAttribute('stroke-opacity', axisOpacity);
+      tick.setAttribute('stroke-width', '1');
+      g.appendChild(tick);
+
+      const lab = document.createElementNS(svgNS, 'text');
+      lab.setAttribute('x', String(pad.left - 8));
+      lab.setAttribute('y', String(yy + 4));
+      lab.setAttribute('text-anchor', 'end');
+      lab.setAttribute('font-size', '12');
+      lab.setAttribute('fill', axisColor);
+      lab.setAttribute('fill-opacity', axisOpacity);
+      lab.textContent = (options.yFormatter ? options.yFormatter(frac * yMax) : (frac * yMax).toFixed(3).replace(/0+$/, '').replace(/\.$/, ''));
+      g.appendChild(lab);
+    }
+
+    for (let i = 0; i < displayedData.length; i++) {
+      const d = displayedData[i];
+      const xx = x0(i);
+      const yy = y(d.p);
+      const h = (pad.top + plotH) - yy;
+
+      const rect = document.createElementNS(svgNS, 'rect');
+      rect.setAttribute('x', String(xx));
+      rect.setAttribute('y', String(yy));
+      rect.setAttribute('width', String(barW));
+      rect.setAttribute('height', String(Math.max(0, h)));
+      rect.setAttribute('fill', highlight.has(d.x) ? paleRed : paleBlue);
+      rect.setAttribute('fill-opacity', '0.85');
+      rect.setAttribute('stroke', 'currentColor');
+      rect.setAttribute('stroke-opacity', '0.35');
+      rect.setAttribute('stroke-width', '1');
+      g.appendChild(rect);
+
+      // x labels: show every label for n<=25; otherwise thin out
+      const labelEvery = options.labelEvery ?? (n <= 25 ? 1 : Math.max(2, Math.ceil(n / 10)));
+      const showLabel = (d.x % labelEvery === 0) || i === 0 || i === displayedData.length - 1;
+      if (showLabel) {
+        const xl = document.createElementNS(svgNS, 'text');
+        xl.setAttribute('x', String(xx + barW / 2));
+        xl.setAttribute('y', String(pad.top + plotH + 20));
+        xl.setAttribute('text-anchor', 'middle');
+        xl.setAttribute('font-size', '12');
+        xl.setAttribute('fill', 'currentColor');
+        xl.setAttribute('fill-opacity', '0.85');
+        xl.textContent = String(d.x);
+        g.appendChild(xl);
+      }
+    }
+
+    if (options.xLabel) {
+      const xl2 = document.createElementNS(svgNS, 'text');
+      xl2.setAttribute('x', String(pad.left + plotW / 2));
+      xl2.setAttribute('y', String(H - 10));
+      xl2.setAttribute('text-anchor', 'middle');
+      xl2.setAttribute('font-size', '12');
+      xl2.setAttribute('fill', 'currentColor');
+      xl2.setAttribute('fill-opacity', '0.85');
+      xl2.textContent = options.xLabel;
+      g.appendChild(xl2);
+    }
+
+    if (options.yLabel) {
+      const yl2 = document.createElementNS(svgNS, 'text');
+      yl2.setAttribute('x', '16');
+      yl2.setAttribute('y', String(pad.top + plotH / 2));
+      yl2.setAttribute('text-anchor', 'middle');
+      yl2.setAttribute('font-size', '12');
+      yl2.setAttribute('fill', 'currentColor');
+      yl2.setAttribute('fill-opacity', '0.85');
+      yl2.setAttribute('transform', `rotate(-90 16 ${pad.top + plotH / 2})`);
+      yl2.textContent = options.yLabel;
+      g.appendChild(yl2);
+    }
+
+    el.innerHTML = '';
+    el.appendChild(svg);
+  }
+
+// -----------------------------
+  // Inline-SVG histogram for discrete pdfs (already used above)
+  // -----------------------------
+  // Usage:
+  //   renderDiscreteHistogram('#some-div', [{x:2,p:1/36}, ...], { title: '...' })
+  function renderDiscreteHistogram(container, points, options = {}) {
+    const el = (typeof container === 'string') ? document.querySelector(container) : container;
+    if (!el) return;
+
+    const W = options.width ?? 620;
+    const H = options.height ?? 240;
+    const pad = { left: 44, right: 16, top: (options.title ? 30 : 14), bottom: 46, ...(options.padding ?? {}) };
+
+    const data = (points || []).map(d => ({ x: d.x, p: d.p })).sort((a, b) => a.x - b.x);
+    if (data.length === 0) {
+      el.textContent = 'No data to plot.';
+      return;
+    }
+
+    const maxP = Math.max(...data.map(d => d.p));
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+
+    const xStep = plotW / data.length;
+
+    const y = (p) => pad.top + (1 - (p / maxP)) * plotH;
+    const barW = xStep * 0.78;
+    const x0 = (i) => pad.left + i * xStep + (xStep - barW) / 2;
+
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', String(H));
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', options.ariaLabel ?? 'Histogram of a discrete probability distribution');
+
+    const g = document.createElementNS(svgNS, 'g');
+    svg.appendChild(g);
+
+    if (options.title) {
+      const t = document.createElementNS(svgNS, 'text');
+      t.setAttribute('x', String(W / 2));
+      t.setAttribute('y', '18');
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('font-size', '14');
+      t.setAttribute('font-weight', '600');
+      t.setAttribute('fill', 'currentColor');
+      t.textContent = options.title;
+      g.appendChild(t);
+    }
+
+    const axisColor = options.axisColor ?? 'currentColor';
+    const axisOpacity = options.axisOpacity ?? '0.55';
+
+    const xAxis = document.createElementNS(svgNS, 'line');
+    xAxis.setAttribute('x1', String(pad.left));
+    xAxis.setAttribute('y1', String(pad.top + plotH));
+    xAxis.setAttribute('x2', String(pad.left + plotW));
+    xAxis.setAttribute('y2', String(pad.top + plotH));
+    xAxis.setAttribute('stroke', axisColor);
+    xAxis.setAttribute('stroke-opacity', axisOpacity);
+    xAxis.setAttribute('stroke-width', '1');
+    g.appendChild(xAxis);
+
+    const yAxis = document.createElementNS(svgNS, 'line');
+    yAxis.setAttribute('x1', String(pad.left));
+    yAxis.setAttribute('y1', String(pad.top));
+    yAxis.setAttribute('x2', String(pad.left));
+    yAxis.setAttribute('y2', String(pad.top + plotH));
+    yAxis.setAttribute('stroke', axisColor);
+    yAxis.setAttribute('stroke-opacity', axisOpacity);
+    yAxis.setAttribute('stroke-width', '1');
+    g.appendChild(yAxis);
+
+    const ticks = options.yTicks ?? 3;
+    for (let k = 0; k < ticks; k++) {
+      const frac = (ticks === 1) ? 0 : k / (ticks - 1);
+      const yy = pad.top + (1 - frac) * plotH;
+
+      const tick = document.createElementNS(svgNS, 'line');
+      tick.setAttribute('x1', String(pad.left - 4));
+      tick.setAttribute('y1', String(yy));
+      tick.setAttribute('x2', String(pad.left));
+      tick.setAttribute('y2', String(yy));
+      tick.setAttribute('stroke', axisColor);
+      tick.setAttribute('stroke-opacity', axisOpacity);
+      tick.setAttribute('stroke-width', '1');
+      g.appendChild(tick);
+
+      const lab = document.createElementNS(svgNS, 'text');
+      lab.setAttribute('x', String(pad.left - 8));
+      lab.setAttribute('y', String(yy + 4));
+      lab.setAttribute('text-anchor', 'end');
+      lab.setAttribute('font-size', '12');
+      lab.setAttribute('fill', axisColor);
+      lab.setAttribute('fill-opacity', axisOpacity);
+      const val = frac * maxP;
+      lab.textContent = (options.yFormatter ? options.yFormatter(val) : val.toFixed(3).replace(/0+$/, '').replace(/\.$/, ''));
+      g.appendChild(lab);
+    }
+
+    for (let i = 0; i < data.length; i++) {
+      const d = data[i];
+      const x = x0(i);
+      const yy = y(d.p);
+      const h = (pad.top + plotH) - yy;
+
+      const rect = document.createElementNS(svgNS, 'rect');
+      rect.setAttribute('x', String(x));
+      rect.setAttribute('y', String(yy));
+      rect.setAttribute('width', String(barW));
+      rect.setAttribute('height', String(Math.max(0, h)));
+      rect.setAttribute('fill', options.barFill ?? 'currentColor');
+      rect.setAttribute('fill-opacity', options.barFillOpacity ?? '0.35');
+      rect.setAttribute('stroke', options.barStroke ?? 'currentColor');
+      rect.setAttribute('stroke-opacity', options.barStrokeOpacity ?? '0.75');
+      rect.setAttribute('stroke-width', options.barStrokeWidth ?? '1');
+      g.appendChild(rect);
+
+      const xl = document.createElementNS(svgNS, 'text');
+      xl.setAttribute('x', String(x + barW / 2));
+      xl.setAttribute('y', String(pad.top + plotH + 20));
+      xl.setAttribute('text-anchor', 'middle');
+      xl.setAttribute('font-size', '12');
+      xl.setAttribute('fill', 'currentColor');
+      xl.setAttribute('fill-opacity', '0.85');
+      xl.textContent = String(d.x);
+      g.appendChild(xl);
+    }
+
+    if (options.xLabel) {
+      const xl2 = document.createElementNS(svgNS, 'text');
+      xl2.setAttribute('x', String(pad.left + plotW / 2));
+      xl2.setAttribute('y', String(H - 10));
+      xl2.setAttribute('text-anchor', 'middle');
+      xl2.setAttribute('font-size', '12');
+      xl2.setAttribute('fill', 'currentColor');
+      xl2.setAttribute('fill-opacity', '0.85');
+      xl2.textContent = options.xLabel;
+      g.appendChild(xl2);
+    }
+
+    if (options.yLabel) {
+      const yl2 = document.createElementNS(svgNS, 'text');
+      yl2.setAttribute('x', '14');
+      yl2.setAttribute('y', String(pad.top + plotH / 2));
+      yl2.setAttribute('text-anchor', 'middle');
+      yl2.setAttribute('font-size', '12');
+      yl2.setAttribute('fill', 'currentColor');
+      yl2.setAttribute('fill-opacity', '0.85');
+      yl2.setAttribute('transform', `rotate(-90 14 ${pad.top + plotH / 2})`);
+      yl2.textContent = options.yLabel;
+      g.appendChild(yl2);
+    }
+
+    el.innerHTML = '';
+    el.appendChild(svg);
+  }
+
+  
+
+  // -----------------------------
+  // Inline-SVG histogram for Geometric(p)
+  // -----------------------------
+  // X is the trial number of the first success, so x = 1, 2, 3, ...
+  function renderGeometricHistogram(container, p, options = {}) {
+    const el = (typeof container === 'string') ? document.querySelector(container) : container;
+    if (!el || !(p > 0 && p <= 1)) return;
+
+    const W = options.width ?? 640;
+    const H = options.height ?? 260;
+    const pad = { left: 48, right: 16, top: (options.title ? 30 : 14), bottom: 48, ...(options.padding ?? {}) };
+    const paleBlue = options.paleBlue ?? '#b7d8f0';
+    const paleRed = options.paleRed ?? '#f2b6b6';
+    const highlight = new Set(options.highlightXs ?? []);
+    const maxX = Math.max(1, Math.floor(options.maxX ?? Math.max(10, Math.ceil(Math.log(0.005) / Math.log(1 - p)))));
+
+    const data = [];
+    for (let x = 1; x <= maxX; x++) data.push({ x, p: Math.pow(1 - p, x - 1) * p });
+    renderDiscreteDistributionHistogram(el, data, {
+      ...options, width: W, height: H, padding: pad,
+      paleBlue, paleRed, highlightXs: [...highlight],
+      ariaLabel: options.ariaLabel ?? `Histogram of Geometric(p=${p})`
+    });
+  }
+
+  // -----------------------------
+  // Inline-SVG histogram for Poisson(mu)
+  // -----------------------------
+  function renderPoissonHistogram(container, mu, options = {}) {
+    const el = (typeof container === 'string') ? document.querySelector(container) : container;
+    if (!el || !(mu > 0)) return;
+
+    const W = options.width ?? 640;
+    const H = options.height ?? 260;
+    const pad = { left: 48, right: 16, top: (options.title ? 30 : 14), bottom: 48, ...(options.padding ?? {}) };
+    const paleBlue = options.paleBlue ?? '#b7d8f0';
+    const paleRed = options.paleRed ?? '#f2b6b6';
+    const highlight = new Set(options.highlightXs ?? []);
+    const defaultMax = Math.ceil(mu + 4 * Math.sqrt(mu));
+    const maxX = Math.max(1, Math.floor(options.maxX ?? defaultMax));
+
+    const data = [];
+    let px = Math.exp(-mu);
+    data.push({ x: 0, p: px });
+    for (let x = 1; x <= maxX; x++) {
+      px *= mu / x;
+      data.push({ x, p: px });
+    }
+    renderDiscreteDistributionHistogram(el, data, {
+      ...options, width: W, height: H, padding: pad,
+      paleBlue, paleRed, highlightXs: [...highlight],
+      ariaLabel: options.ariaLabel ?? `Histogram of Poisson(mu=${mu})`
+    });
+  }
+
+  // Shared renderer used by the geometric and Poisson helpers.
+  function renderDiscreteDistributionHistogram(container, data, options = {}) {
+    const el = (typeof container === 'string') ? document.querySelector(container) : container;
+    if (!el || !Array.isArray(data) || data.length === 0) return;
+
+    const W = options.width ?? 640;
+    const H = options.height ?? 260;
+    const pad = { left: 48, right: 16, top: (options.title ? 30 : 14), bottom: 48, ...(options.padding ?? {}) };
+    const paleBlue = options.paleBlue ?? '#b7d8f0';
+    const paleRed = options.paleRed ?? '#f2b6b6';
+    const highlight = new Set(options.highlightXs ?? []);
+    const maxP = Math.max(...data.map(d => d.p));
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+    const xStep = plotW / data.length;
+    const barW = xStep * 0.78;
+    const y = prob => pad.top + (1 - prob / maxP) * plotH;
+    const x0 = i => pad.left + i * xStep + (xStep - barW) / 2;
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', String(H));
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', options.ariaLabel ?? 'Histogram of a discrete probability distribution');
+    const g = document.createElementNS(svgNS, 'g');
+    svg.appendChild(g);
+
+    const add = (name, attrs) => {
+      const node = document.createElementNS(svgNS, name);
+      for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, String(value));
+      g.appendChild(node);
+      return node;
+    };
+
+    if (options.title) {
+      const t = add('text', { x: W / 2, y: 18, 'text-anchor': 'middle', 'font-size': 14, 'font-weight': 600, fill: 'currentColor' });
+      t.textContent = options.title;
+    }
+
+    const axisColor = options.axisColor ?? 'currentColor';
+    const axisOpacity = options.axisOpacity ?? 0.55;
+    const baseY = pad.top + plotH;
+    add('line', { x1: pad.left, y1: baseY, x2: pad.left + plotW, y2: baseY, stroke: axisColor, 'stroke-opacity': axisOpacity, 'stroke-width': 1 });
+    add('line', { x1: pad.left, y1: pad.top, x2: pad.left, y2: baseY, stroke: axisColor, 'stroke-opacity': axisOpacity, 'stroke-width': 1 });
+
+    const ticks = options.yTicks ?? 3;
+    for (let k = 0; k < ticks; k++) {
+      const frac = ticks === 1 ? 0 : k / (ticks - 1);
+      const yy = pad.top + (1 - frac) * plotH;
+      add('line', { x1: pad.left - 4, y1: yy, x2: pad.left, y2: yy, stroke: axisColor, 'stroke-opacity': axisOpacity, 'stroke-width': 1 });
+      const lab = add('text', { x: pad.left - 8, y: yy + 4, 'text-anchor': 'end', 'font-size': 12, fill: axisColor, 'fill-opacity': axisOpacity });
+      const val = frac * maxP;
+      lab.textContent = options.yFormatter ? options.yFormatter(val) : val.toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
+    }
+
+    const labelEvery = Math.max(1, Math.floor(options.labelEvery ?? (data.length <= 25 ? 1 : 2)));
+    data.forEach((d, i) => {
+      const xx = x0(i);
+      const yy = y(d.p);
+      add('rect', {
+        x: xx, y: yy, width: barW, height: Math.max(0, baseY - yy),
+        fill: highlight.has(d.x) ? paleRed : paleBlue,
+        'fill-opacity': 0.85, stroke: 'currentColor', 'stroke-opacity': 0.35, 'stroke-width': 1
+      });
+      if (i % labelEvery === 0 || i === data.length - 1) {
+        const lab = add('text', { x: xx + barW / 2, y: baseY + 20, 'text-anchor': 'middle', 'font-size': 12, fill: 'currentColor', 'fill-opacity': 0.85 });
+        lab.textContent = String(d.x);
+      }
+    });
+
+    if (options.xLabel) {
+      const lab = add('text', { x: pad.left + plotW / 2, y: H - 10, 'text-anchor': 'middle', 'font-size': 12, fill: 'currentColor', 'fill-opacity': 0.85 });
+      lab.textContent = options.xLabel;
+    }
+    if (options.yLabel) {
+      const lab = add('text', { x: 16, y: pad.top + plotH / 2, 'text-anchor': 'middle', 'font-size': 12, fill: 'currentColor', 'fill-opacity': 0.85, transform: `rotate(-90 16 ${pad.top + plotH / 2})` });
+      lab.textContent = options.yLabel;
+    }
+
+    el.innerHTML = '';
+    el.appendChild(svg);
+  }
+
+  // -----------------------------
+  // Inline-SVG diagram for Normal(mu, sigma)
+  // -----------------------------
+  // selectedRanges and superSelectedRanges are arrays of [left, right] intervals.
+  function renderNormalDistribution(container, mu, sigma, options = {}) {
+    const el = (typeof container === 'string') ? document.querySelector(container) : container;
+    if (!el || !(sigma > 0)) return;
+
+    const W = options.width ?? 660;
+    const H = options.height ?? 280;
+    const pad = { left: 56, right: 24, top: 24, bottom: 48, ...(options.padding ?? {}) };
+    const paleBlue = options.paleBlue ?? '#b7d8f0';
+    const paleRed = options.paleRed ?? '#f2b6b6';
+    const darkRed = options.darkRed ?? '#c94f4f';
+    const axisColor = options.axisColor ?? 'currentColor';
+    const xMin = options.xMin ?? (mu - 4 * sigma);
+    const xMax = options.xMax ?? (mu + 4 * sigma);
+    const peak = 1 / (sigma * Math.sqrt(2 * Math.PI));
+    const yMax = options.yMax ?? 1.25 * peak;
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+    const xPx = x => pad.left + ((x - xMin) / (xMax - xMin)) * plotW;
+    const yPx = y => pad.top + (1 - y / yMax) * plotH;
+    const pdf = x => Math.exp(-0.5 * Math.pow((x - mu) / sigma, 2)) / (sigma * Math.sqrt(2 * Math.PI));
+    const baseY = yPx(0);
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', String(H));
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', options.ariaLabel ?? `Normal distribution with mean ${mu} and standard deviation ${sigma}`);
+
+    const add = (name, attrs) => {
+      const node = document.createElementNS(svgNS, name);
+      for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, String(value));
+      svg.appendChild(node);
+      return node;
+    };
+    const pathForRange = (left, right, closeToAxis) => {
+      const L = Math.max(xMin, left);
+      const R = Math.min(xMax, right);
+      if (!(R > L)) return '';
+      const steps = Math.max(2, Math.ceil(240 * (R - L) / (xMax - xMin)));
+      let d = closeToAxis ? `M ${xPx(L)} ${baseY} L ${xPx(L)} ${yPx(pdf(L))}` : `M ${xPx(L)} ${yPx(pdf(L))}`;
+      for (let i = 1; i <= steps; i++) {
+        const x = L + (R - L) * i / steps;
+        d += ` L ${xPx(x)} ${yPx(pdf(x))}`;
+      }
+      if (closeToAxis) d += ` L ${xPx(R)} ${baseY} Z`;
+      return d;
+    };
+
+    add('line', { x1: pad.left, y1: baseY, x2: pad.left + plotW, y2: baseY, stroke: axisColor, 'stroke-opacity': 0.65, 'stroke-width': 1.2 });
+    add('line', { x1: pad.left, y1: pad.top, x2: pad.left, y2: baseY, stroke: axisColor, 'stroke-opacity': 0.65, 'stroke-width': 1.2 });
+    add('path', { d: pathForRange(xMin, xMax, true), fill: paleBlue, 'fill-opacity': 0.9, stroke: 'none' });
+    for (const [left, right] of (options.selectedRanges ?? [])) {
+      const d = pathForRange(left, right, true);
+      if (d) add('path', { d, fill: paleRed, 'fill-opacity': 0.92, stroke: 'none' });
+    }
+    for (const [left, right] of (options.superSelectedRanges ?? [])) {
+      const d = pathForRange(left, right, true);
+      if (d) add('path', { d, fill: darkRed, 'fill-opacity': 0.95, stroke: 'none' });
+    }
+    add('path', { d: pathForRange(xMin, xMax, false), fill: 'none', stroke: axisColor, 'stroke-width': 2 });
+
+    const tickValues = options.tickValues ?? [mu - 3 * sigma, mu - 2 * sigma, mu - sigma, mu, mu + sigma, mu + 2 * sigma, mu + 3 * sigma];
+    const tickLabels = new Map((options.tickLabels ?? []).map(item => [Number(item.value), String(item.label)]));
+    for (const x of tickValues) {
+      if (x < xMin || x > xMax) continue;
+      add('line', { x1: xPx(x), y1: baseY, x2: xPx(x), y2: baseY + 5, stroke: axisColor, 'stroke-width': 1 });
+      const lab = add('text', { x: xPx(x), y: baseY + 21, 'text-anchor': 'middle', 'font-size': 12, fill: axisColor });
+      lab.textContent = tickLabels.get(Number(x)) ?? (options.tickFormatter ? options.tickFormatter(x) : Number(x.toFixed(2)).toString());
+    }
+
+    const xLab = add('text', { x: pad.left + plotW / 2, y: H - 10, 'text-anchor': 'middle', 'font-size': 12, fill: axisColor, 'fill-opacity': 0.85 });
+    xLab.textContent = options.xLabel ?? 'x';
+    if (options.yLabel !== false && options.yLabel !== '') {
+      const yLab = add('text', { x: 15, y: pad.top + plotH / 2, 'text-anchor': 'middle', 'font-size': 12, fill: axisColor, 'fill-opacity': 0.85, transform: `rotate(-90 15 ${pad.top + plotH / 2})` });
+      yLab.textContent = options.yLabel ?? 'f(x)';
+    }
+
+    el.innerHTML = '';
+    el.appendChild(svg);
+  }
+
+
+  // -----------------------------
+  // Inline-SVG diagram for Student's t-distribution
+  // -----------------------------
+  // selectedRanges and superSelectedRanges are arrays of [left, right] intervals.
+  function renderStudentTDistribution(container, df, options = {}) {
+    const el = (typeof container === 'string') ? document.querySelector(container) : container;
+    if (!el || !(df > 0)) return;
+
+    const mu = Number.isFinite(options.mu) ? options.mu : 0;
+    const scale = Number.isFinite(options.scale) && options.scale > 0 ? options.scale : 1;
+    const W = options.width ?? 660;
+    const H = options.height ?? 280;
+    const pad = { left: 56, right: 24, top: 24, bottom: 48, ...(options.padding ?? {}) };
+    const paleBlue = options.paleBlue ?? '#b7d8f0';
+    const paleRed = options.paleRed ?? '#f2b6b6';
+    const darkRed = options.darkRed ?? '#c94f4f';
+    const axisColor = options.axisColor ?? 'currentColor';
+    const xMin = options.xMin ?? (mu - 4 * scale);
+    const xMax = options.xMax ?? (mu + 4 * scale);
+
+    function logGamma(z) {
+      const coeffs = [
+        676.5203681218851, -1259.1392167224028, 771.32342877765313,
+        -176.61502916214059, 12.507343278686905, -0.13857109526572012,
+        9.9843695780195716e-6, 1.5056327351493116e-7
+      ];
+      if (z < 0.5) return Math.log(Math.PI) - Math.log(Math.sin(Math.PI * z)) - logGamma(1 - z);
+      z -= 1;
+      let x = 0.99999999999980993;
+      for (let i = 0; i < coeffs.length; i++) x += coeffs[i] / (z + i + 1);
+      const t = z + coeffs.length - 0.5;
+      return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
+    }
+
+    const coefficient = Math.exp(logGamma((df + 1) / 2) - logGamma(df / 2)) /
+      (Math.sqrt(df * Math.PI) * scale);
+    const pdf = x => {
+      const u = (x - mu) / scale;
+      return coefficient * Math.pow(1 + (u * u) / df, -(df + 1) / 2);
+    };
+    const peak = pdf(mu);
+    const yMax = options.yMax ?? 1.25 * peak;
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+    const xPx = x => pad.left + ((x - xMin) / (xMax - xMin)) * plotW;
+    const yPx = y => pad.top + (1 - y / yMax) * plotH;
+    const baseY = yPx(0);
+
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', String(H));
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', options.ariaLabel ?? `Student t distribution with ${df} degrees of freedom`);
+
+    const add = (name, attrs) => {
+      const node = document.createElementNS(svgNS, name);
+      for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, String(value));
+      svg.appendChild(node);
+      return node;
+    };
+
+    const pathForRange = (left, right, closeToAxis) => {
+      const L = Math.max(xMin, left);
+      const R = Math.min(xMax, right);
+      if (!(R > L)) return '';
+      const steps = Math.max(2, Math.ceil(240 * (R - L) / (xMax - xMin)));
+      let d = closeToAxis ? `M ${xPx(L)} ${baseY} L ${xPx(L)} ${yPx(pdf(L))}` : `M ${xPx(L)} ${yPx(pdf(L))}`;
+      for (let i = 1; i <= steps; i++) {
+        const x = L + (R - L) * i / steps;
+        d += ` L ${xPx(x)} ${yPx(pdf(x))}`;
+      }
+      if (closeToAxis) d += ` L ${xPx(R)} ${baseY} Z`;
+      return d;
+    };
+
+    add('line', { x1: pad.left, y1: baseY, x2: pad.left + plotW, y2: baseY, stroke: axisColor, 'stroke-opacity': 0.65, 'stroke-width': 1.2 });
+    if (options.yAxis !== false) {
+      add('line', { x1: pad.left, y1: pad.top, x2: pad.left, y2: baseY, stroke: axisColor, 'stroke-opacity': 0.65, 'stroke-width': 1.2 });
+    }
+    add('path', { d: pathForRange(xMin, xMax, true), fill: paleBlue, 'fill-opacity': 0.9, stroke: 'none' });
+    for (const [left, right] of (options.selectedRanges ?? [])) {
+      const d = pathForRange(left, right, true);
+      if (d) add('path', { d, fill: paleRed, 'fill-opacity': 0.92, stroke: 'none' });
+    }
+    for (const [left, right] of (options.superSelectedRanges ?? [])) {
+      const d = pathForRange(left, right, true);
+      if (d) add('path', { d, fill: darkRed, 'fill-opacity': 0.95, stroke: 'none' });
+    }
+    add('path', { d: pathForRange(xMin, xMax, false), fill: 'none', stroke: axisColor, 'stroke-width': 2 });
+
+    const tickValues = options.tickValues ?? [mu - 3 * scale, mu - 2 * scale, mu - scale, mu, mu + scale, mu + 2 * scale, mu + 3 * scale];
+    const tickLabels = new Map((options.tickLabels ?? []).map(item => [Number(item.value), String(item.label)]));
+    for (const x of tickValues) {
+      if (x < xMin || x > xMax) continue;
+      add('line', { x1: xPx(x), y1: baseY, x2: xPx(x), y2: baseY + 5, stroke: axisColor, 'stroke-width': 1 });
+      const lab = add('text', { x: xPx(x), y: baseY + 21, 'text-anchor': 'middle', 'font-size': 12, fill: axisColor });
+      lab.textContent = tickLabels.get(Number(x)) ?? (options.tickFormatter ? options.tickFormatter(x) : Number(x.toFixed(3)).toString());
+    }
+
+    const xLab = add('text', { x: pad.left + plotW / 2, y: H - 10, 'text-anchor': 'middle', 'font-size': 12, fill: axisColor, 'fill-opacity': 0.85 });
+    xLab.textContent = options.xLabel ?? 't';
+    if (options.yLabel !== false && options.yLabel !== '') {
+      const yLab = add('text', { x: 15, y: pad.top + plotH / 2, 'text-anchor': 'middle', 'font-size': 12, fill: axisColor, 'fill-opacity': 0.85, transform: `rotate(-90 15 ${pad.top + plotH / 2})` });
+      yLab.textContent = options.yLabel ?? 'f(t)';
+    }
+
+    el.innerHTML = '';
+    el.appendChild(svg);
+  }
+
+
+
+  // Central Limit Theorem lesson figures.
+  renderBinomialHistogram('#clt-binom-50', 50, 0.413, {
+    title: 'f(x; 50, 0.413)', xLabel: 'x', yLabel: 'f(x)', labelEvery: 5
+  });
+  renderBinomialHistogram('#clt-binom-100', 100, 0.413, {
+    title: 'f(x; 100, 0.413)', xLabel: 'x', yLabel: 'f(x)', labelEvery: 10
+  });
+  renderBinomialHistogram('#clt-binom-200', 200, 0.413, {
+    title: 'f(x; 200, 0.413)', xLabel: 'x', yLabel: 'f(x)', labelEvery: 20
+  });
+  renderBinomialHistogram('#clt-binom-400', 400, 0.413, {
+    title: 'f(x; 400, 0.413)', xLabel: 'x', yLabel: 'f(x)', labelEvery: 40
+  });
+
+  const cltTailXs = [];
+  for (let x = 300; x <= 740; x++) cltTailXs.push(x);
+  renderBinomialHistogram('#clt-binom-740', 740, 0.413, {
+    xLabel: 'x', yLabel: 'f(x)', highlightXs: cltTailXs, labelEvery: 50,
+    width: 760, height: 300
+  });
+
+  renderNormalDistribution('#clt-normal-approx', 305.6, 13.4, {
+    selectedRanges: [[300, Infinity]],
+    tickValues: [265.4, 278.8, 292.2, 300, 305.6, 319, 332.4, 345.8],
+    title: 'Normal approximation',
+    xLabel: 'x', yLabel: 'g(x)', width: 760, height: 300
+  });
+
+  renderNormalDistribution('#confidence-middle-two-sd', 0, 1, {
+    selectedRanges: [[-2, 2]],
+    tickValues: [-2, 0, 2],
+    tickLabels: [
+      { value: -2, label: '\u03bc - 2\u03c3' },
+      { value: 0, label: '\u03bc' },
+      { value: 2, label: '\u03bc + 2\u03c3' }
+    ],
+    xLabel: 'x̄',
+    yLabel: false,
+    ariaLabel: 'Normal distribution with the central region from mu minus two sigma to mu plus two sigma selected',
+    width: 760,
+    height: 300
+  });
+
+  renderNormalDistribution('#confidence-z-80', 0, 1, {
+    selectedRanges: [[-1.28, 1.28]],
+    tickValues: [-1.28, 0, 1.28],
+    xLabel: 'Z',
+    yLabel: false,
+    ariaLabel: 'Standard normal distribution with the central interval from negative 1.28 to positive 1.28 selected',
+    width: 520,
+    height: 270
+  });
+
+  renderNormalDistribution('#confidence-xbar-80', 500, 2, {
+    selectedRanges: [[497.44, 502.56]],
+    tickValues: [497.44, 500, 502.56],
+    xLabel: 'x̄',
+    yLabel: false,
+    ariaLabel: 'Normal distribution for the sample mean with the confidence interval from 497.44 to 502.56 selected',
+    width: 520,
+    height: 270
+  });
+
+
+  renderNormalDistribution('#confidence-z-78', 0, 1, {
+    selectedRanges: [[-1.23, 1.23]],
+    tickValues: [-1.23, 0, 1.23],
+    xLabel: 'Z',
+    yLabel: false,
+    ariaLabel: 'Standard normal distribution with the central interval from negative 1.23 to positive 1.23 selected',
+    width: 520,
+    height: 270
+  });
+
+  renderNormalDistribution('#confidence-phat-78', 0.26, 0.062, {
+    selectedRanges: [[0.184, 0.336]],
+    tickValues: [0.184, 0.26, 0.336],
+    tickLabels: [
+      { value: 0.184, label: '0.184' },
+      { value: 0.26, label: '0.26' },
+      { value: 0.336, label: '0.336' }
+    ],
+    xLabel: 'p̂',
+    yLabel: false,
+    ariaLabel: 'Normal approximation for the sample proportion with the confidence interval from 0.184 to 0.336 selected',
+    width: 520,
+    height: 270
+  });
+
+
+  renderStudentTDistribution('#confidence-t-60', 8, {
+    mu: 0,
+    scale: 1,
+    selectedRanges: [[-0.889, 0.889]],
+    tickValues: [-0.889, 0, 0.889],
+    tickLabels: [
+      { value: -0.889, label: '-0.889' },
+      { value: 0, label: '0' },
+      { value: 0.889, label: '0.889' }
+    ],
+    xLabel: 't',
+    yLabel: false,
+    ariaLabel: 'Student t distribution with 8 degrees of freedom and the central interval from negative 0.889 to positive 0.889 selected',
+    width: 520,
+    height: 270
+  });
+
+  renderStudentTDistribution('#confidence-t-xbar-60', 8, {
+    mu: 65.11,
+    scale: 7.03,
+    selectedRanges: [[58.86, 71.36]],
+    tickValues: [58.86, 65.11, 71.36],
+    tickLabels: [
+      { value: 58.86, label: '58.86' },
+      { value: 65.11, label: '65.11' },
+      { value: 71.36, label: '71.36' }
+    ],
+    xLabel: 'x̄',
+    yLabel: false,
+    ariaLabel: 'Student t sampling distribution for the sample mean with the confidence interval from 58.86 to 71.36 selected',
+    width: 520,
+    height: 270
+  });
+
+  // -----------------------------
+  // Static binomial histograms for the lesson text above
+  // -----------------------------
+  const LESSON_N = 20;
+  const LESSON_P = 5/18;
+
+  renderBinomialHistogram('#binom-hist-1', LESSON_N, LESSON_P, {
+    xLabel: 'x',
+    yLabel: 'f(x)'
+  });
+
+  renderBinomialHistogram('#binom-hist-2', LESSON_N, LESSON_P, {
+    xLabel: 'x',
+    yLabel: 'f(x)',
+    highlightXs: [6]
+  });
+
+  renderBinomialHistogram('#binom-hist-3', LESSON_N, LESSON_P, {
+    xLabel: 'x',
+    yLabel: 'f(x)',
+    highlightXs: [0,1,2]
+  });
+
+
+
+  
+  // -----------------------------
+  // CLT activity: repository and question-selection framework
+  // -----------------------------
+  // This pass establishes the vocabulary, scenario repositories, distribution
+  // metadata, normal-question families, and a working draft-question preview.
+  // The later passes will attach the full numerical construction and hints.
+
+  const CLT_CONFIG = {
+    problemTypes: [
+      { value: 'means', weight: 1 },
+      { value: 'sums', weight: 1 },
+      { value: 'proportions', weight: 1 }
+    ],
+    // The original specification says four types but describes three.  Keep a
+    // reserved, disabled slot rather than silently inventing a fourth family.
+    reservedFourthType: { value: 'reserved', enabled: false },
+    directParameterChance: 0.5,
+    minimumSampleSize: 31,
+    maximumSampleSize: 200,
+    recentScenarioMemory: 6,
+    recentWordingMemory: 5
+  };
+
+  const SAMPLE_SIZES = [32, 36, 40, 45, 48, 50, 54, 60, 64, 72, 75, 80, 81, 90, 96, 100, 120, 125, 144, 150, 180, 200];
+  const PERCENTILES = [10, 20, 25, 30, 40, 60, 70, 75, 80, 90];
+
+  const CLT_UNIT_LIBRARY = {
+    distanceKm: { singular: 'kilometre', plural: 'kilometres', symbol: 'km', kind: 'distance', decimals: 1 },
+    distanceM: { singular: 'metre', plural: 'metres', symbol: 'm', kind: 'distance', decimals: 1 },
+    timeMinutes: { singular: 'minute', plural: 'minutes', symbol: 'minutes', kind: 'time', decimals: 1 },
+    timeSeconds: { singular: 'second', plural: 'seconds', symbol: 'seconds', kind: 'time', decimals: 1 },
+    money: { singular: 'dollar', plural: 'dollars', symbol: '$', kind: 'money', decimals: 2 },
+    massKg: { singular: 'kilogram', plural: 'kilograms', symbol: 'kg', kind: 'mass', decimals: 1 },
+    massG: { singular: 'gram', plural: 'grams', symbol: 'g', kind: 'mass', decimals: 1 },
+    volumeMl: { singular: 'millilitre', plural: 'millilitres', symbol: 'mL', kind: 'volume', decimals: 0 },
+    count: { singular: 'item', plural: 'items', symbol: '', kind: 'count', decimals: 0 },
+    points: { singular: 'point', plural: 'points', symbol: 'points', kind: 'score', decimals: 1 },
+    pages: { singular: 'page', plural: 'pages', symbol: 'pages', kind: 'count', decimals: 1 },
+    calories: { singular: 'calorie', plural: 'calories', symbol: 'calories', kind: 'energy', decimals: 0 }
+  };
+
+  const DIRECT_SCENARIOS = [
+    { id:'runs-month', cadence:['Each month','Over the course of a month','In a typical month'], action:'you go for {n} runs', observation:'the length of each run', itemSingular:'run', itemPlural:'runs', measureNoun:'run length', unit:'distanceKm', meanRange:[6,18], sdRange:[1.2,4.5] },
+    { id:'groceries-trip', cadence:['Whenever you shop for groceries','On each major grocery trip','Every time you stock up on groceries'], action:'you buy {n} items', observation:'the price of each item', itemSingular:'item', itemPlural:'items', measureNoun:'item price', unit:'money', meanRange:[3,14], sdRange:[0.8,4] },
+    { id:'gym-rests', cadence:['During each long gym session','Whenever you complete a full workout','On a high-volume training day'], action:'you take {n} rests between sets', observation:'the length of each rest', itemSingular:'rest', itemPlural:'rests', measureNoun:'rest length', unit:'timeSeconds', meanRange:[45,150], sdRange:[10,40] },
+    { id:'delivery-route', cadence:['On each delivery route','During a typical delivery shift','Whenever you cover your regular route'], action:'you make {n} stops', observation:'the time spent at each stop', itemSingular:'stop', itemPlural:'stops', measureNoun:'stop time', unit:'timeMinutes', meanRange:[3,12], sdRange:[0.8,3] },
+    { id:'coffee-shop', cadence:['During a morning shift at a coffee shop','On each busy café shift','Whenever you work the breakfast rush'], action:'you prepare {n} drinks', observation:'the preparation time for each drink', itemSingular:'drink', itemPlural:'drinks', measureNoun:'drink preparation time', unit:'timeSeconds', meanRange:[45,180], sdRange:[10,45] },
+    { id:'warehouse', cadence:['During each warehouse shift','On a typical order-packing day','Whenever you work in the shipping area'], action:'you pack {n} orders', observation:'the mass of each parcel', itemSingular:'parcel', itemPlural:'parcels', measureNoun:'parcel mass', unit:'massKg', meanRange:[1.5,12], sdRange:[0.4,3] },
+    { id:'reading-week', cadence:['Each week','Over a typical study week','During every week of the semester'], action:'you read {n} assigned sections', observation:'the number of pages in each section', itemSingular:'section', itemPlural:'sections', measureNoun:'section length', unit:'pages', meanRange:[5,24], sdRange:[1.5,7] },
+    { id:'restaurant', cadence:['During a dinner shift','On a busy evening at a restaurant','Whenever you work a full serving shift'], action:'you serve {n} tables', observation:'the tip left by each table', itemSingular:'table', itemPlural:'tables', measureNoun:'tip amount', unit:'money', meanRange:[8,30], sdRange:[2,9] },
+    { id:'cycling', cadence:['Each month of cycling season','During a typical training block','Over four weeks of bicycle training'], action:'you complete {n} rides', observation:'the distance of each ride', itemSingular:'ride', itemPlural:'rides', measureNoun:'ride distance', unit:'distanceKm', meanRange:[15,65], sdRange:[4,18] },
+    { id:'manufacturing', cadence:['During each production run','On a typical day at the factory','Whenever one batch is inspected'], action:'you inspect {n} components', observation:'the mass of each component', itemSingular:'component', itemPlural:'components', measureNoun:'component mass', unit:'massG', meanRange:[40,400], sdRange:[5,45] },
+    { id:'calls', cadence:['During each customer-service shift','On a typical day at the help desk','Whenever you work a full support shift'], action:'you handle {n} calls', observation:'the duration of each call', itemSingular:'call', itemPlural:'calls', measureNoun:'call duration', unit:'timeMinutes', meanRange:[4,18], sdRange:[1,6] },
+    { id:'meals', cadence:['Each week','During a week of meal preparation','Over a typical seven-day period'], action:'you prepare {n} meals', observation:'the number of calories in each meal', itemSingular:'meal', itemPlural:'meals', measureNoun:'meal energy', unit:'calories', meanRange:[350,850], sdRange:[50,180] },
+    { id:'practice-tests', cadence:['During an exam-preparation block','Over several weeks of test practice','Before a major certification exam'], action:'you complete {n} practice tests', observation:'the score on each test', itemSingular:'test', itemPlural:'tests', measureNoun:'test score', unit:'points', meanRange:[55,90], sdRange:[4,15] },
+    { id:'dog-walks', cadence:['Each month','Over a typical month of dog walking','During four weeks of work as a dog walker'], action:'you complete {n} walks', observation:'the length of each walk', itemSingular:'walk', itemPlural:'walks', measureNoun:'walk length', unit:'timeMinutes', meanRange:[20,75], sdRange:[5,18] },
+    { id:'fuel-stops', cadence:['Over a season of road trips','During a long driving assignment','Across several weeks of highway travel'], action:'you make {n} fuel stops', observation:'the amount spent at each stop', itemSingular:'stop', itemPlural:'stops', measureNoun:'fuel purchase', unit:'money', meanRange:[35,110], sdRange:[8,25] }
+  ];
+
+  const POISSON_SCENARIOS = [
+    { id:'litter', intro:(r)=>`You have noticed an average of ${r} pieces of litter along each kilometre of your walking route.`, sample:(n)=>`You pause at ${n} evenly spaced locations and count the pieces visible in a fixed one-metre strip.`, itemSingular:'count', itemPlural:'counts', measureNoun:'pieces of litter counted', unit:'count', rateRange:[2,12] },
+    { id:'emails', intro:(r)=>`A shared inbox receives an average of ${r} urgent messages per hour.`, sample:(n)=>`You observe ${n} separate one-hour periods.`, itemSingular:'hour', itemPlural:'hours', measureNoun:'urgent-message count', unit:'count', rateRange:[2,15] },
+    { id:'potholes', intro:(r)=>`A road survey finds an average of ${r} potholes per kilometre.`, sample:(n)=>`A crew examines ${n} independently selected one-kilometre sections.`, itemSingular:'section', itemPlural:'sections', measureNoun:'pothole count', unit:'count', rateRange:[1,10] },
+    { id:'arrivals', intro:(r)=>`Customers enter a small shop at an average rate of ${r} per ten-minute interval.`, sample:(n)=>`The manager records ${n} non-overlapping ten-minute intervals.`, itemSingular:'interval', itemPlural:'intervals', measureNoun:'customer count', unit:'count', rateRange:[2,14] },
+    { id:'typos', intro:(r)=>`A draft manuscript contains an average of ${r} typographical errors per chapter.`, sample:(n)=>`An editor reviews ${n} independently prepared chapters.`, itemSingular:'chapter', itemPlural:'chapters', measureNoun:'error count', unit:'count', rateRange:[1,8] },
+    { id:'meteors', intro:(r)=>`At a dark-sky site, an average of ${r} meteors are visible every fifteen minutes.`, sample:(n)=>`An observer records ${n} separate fifteen-minute windows.`, itemSingular:'window', itemPlural:'windows', measureNoun:'meteor count', unit:'count', rateRange:[2,12] },
+    { id:'defects', intro:(r)=>`A fabric line produces an average of ${r} visible flaws per roll.`, sample:(n)=>`Quality control inspects ${n} independently produced rolls.`, itemSingular:'roll', itemPlural:'rolls', measureNoun:'flaw count', unit:'count', rateRange:[1,7] },
+    { id:'calls-arriving', intro:(r)=>`A clinic receives an average of ${r} appointment calls every half-hour.`, sample:(n)=>`The receptionist records ${n} separate half-hour periods.`, itemSingular:'period', itemPlural:'periods', measureNoun:'call count', unit:'count', rateRange:[3,16] }
+  ];
+
+  const UNIFORM_SCENARIOS_CLT = [
+    { id:'taxes', intro:(a,b)=>`You are an accountant, and a tax return is equally likely to take anywhere from ${a} to ${b} hours to complete.`, sample:(n)=>`You complete returns in batches of ${n} before taking time off.`, itemSingular:'return', itemPlural:'returns', measureNoun:'completion time', unit:'timeMinutes', scale:60, aRange:[1,3], widthRange:[2,5] },
+    { id:'bus-wait', intro:(a,b)=>`A bus is equally likely to arrive anywhere from ${a} to ${b} minutes after you reach the stop.`, sample:(n)=>`You record your wait on ${n} independent trips.`, itemSingular:'trip', itemPlural:'trips', measureNoun:'waiting time', unit:'timeMinutes', scale:1, aRange:[0,8], widthRange:[8,25] },
+    { id:'package-fill', intro:(a,b)=>`A filling machine places an amount equally likely to be between ${a} and ${b} mL into each container.`, sample:(n)=>`A technician selects ${n} containers from separate production cycles.`, itemSingular:'container', itemPlural:'containers', measureNoun:'fill volume', unit:'volumeMl', scale:1, aRange:[200,450], widthRange:[30,120] },
+    { id:'repair-time', intro:(a,b)=>`A routine repair is equally likely to take between ${a} and ${b} minutes.`, sample:(n)=>`A maintenance team completes ${n} such repairs.`, itemSingular:'repair', itemPlural:'repairs', measureNoun:'repair time', unit:'timeMinutes', scale:1, aRange:[10,40], widthRange:[20,80] },
+    { id:'commute', intro:(a,b)=>`Because of a ferry connection, your commute is equally likely to last anywhere from ${a} to ${b} minutes.`, sample:(n)=>`You record ${n} commutes.`, itemSingular:'commute', itemPlural:'commutes', measureNoun:'commute time', unit:'timeMinutes', scale:1, aRange:[20,60], widthRange:[15,55] },
+    { id:'online-orders', intro:(a,b)=>`The value of a small online order is equally likely to fall between $${a} and $${b}.`, sample:(n)=>`The shop processes ${n} independent orders in one campaign.`, itemSingular:'order', itemPlural:'orders', measureNoun:'order value', unit:'money', scale:1, aRange:[5,30], widthRange:[15,80] },
+    { id:'trail-sections', intro:(a,b)=>`A trail section is equally likely to be anywhere from ${a} to ${b} kilometres long.`, sample:(n)=>`A route is assembled from ${n} independently chosen sections.`, itemSingular:'section', itemPlural:'sections', measureNoun:'section length', unit:'distanceKm', scale:1, aRange:[1,5], widthRange:[3,12] }
+  ];
+
+  const GEOMETRIC_SCENARIOS = [
+    { id:'free-throws', build:(p,n)=>`A gym class contains ${n} students. Remarkably, each student makes a free throw with probability ${formatPercent(p)}. At the end of class, every student shoots until making one, and then may leave.`, itemSingular:'student', itemPlural:'students', measureNoun:'attempts required', success:'made free throw' },
+    { id:'sales', build:(p,n)=>`A salesperson closes any independent call with probability ${formatPercent(p)}. On each of ${n} work blocks, they continue calling until making a sale.`, itemSingular:'work block', itemPlural:'work blocks', measureNoun:'calls required', success:'sale' },
+    { id:'inspection', build:(p,n)=>`Each independently selected component passes inspection with probability ${formatPercent(p)}. For each of ${n} orders, components are tested until one passes.`, itemSingular:'order', itemPlural:'orders', measureNoun:'components tested', success:'passing component' },
+    { id:'quiz', build:(p,n)=>`A student answers an unfamiliar multiple-choice question correctly with probability ${formatPercent(p)} on each independent attempt. They repeat this process for ${n} practice questions, continuing on each until the answer is correct.`, itemSingular:'question', itemPlural:'questions', measureNoun:'attempts required', success:'correct answer' },
+    { id:'seeds', build:(p,n)=>`Each seed germinates independently with probability ${formatPercent(p)}. In each of ${n} trays, seeds are planted one at a time until one germinates.`, itemSingular:'tray', itemPlural:'trays', measureNoun:'seeds planted', success:'germination' },
+    { id:'server', build:(p,n)=>`A connection attempt to a remote server succeeds independently with probability ${formatPercent(p)}. A monitoring program performs ${n} connection sessions, retrying within each session until it connects.`, itemSingular:'session', itemPlural:'sessions', measureNoun:'attempts required', success:'connection' }
+  ];
+
+  const PROPORTION_SCENARIOS = [
+    { id:'double-axel', direct:true, build:(p,n)=>`Each day, a figure skater practises a double Axel ${n} times. Their probability of landing any attempt is ${formatPercent(p)}.`, successNoun:'landed attempts', trialNoun:'attempts' },
+    { id:'penalties', direct:true, build:(p,n)=>`During training, a soccer player takes ${n} penalty kicks. They score on any kick with probability ${formatPercent(p)}.`, successNoun:'goals', trialNoun:'penalty kicks' },
+    { id:'quality', direct:true, build:(p,n)=>`A factory independently inspects ${n} components from a stable process. A component meets the premium standard with probability ${formatPercent(p)}.`, successNoun:'premium components', trialNoun:'components' },
+    { id:'survey', direct:true, build:(p,n)=>`A survey contacts ${n} independently selected residents. Historical data suggest that any resident supports the proposal with probability ${formatPercent(p)}.`, successNoun:'supporters', trialNoun:'residents' },
+    { id:'dice-max', direct:false, build:(p,n)=>`In a game, you roll two fair six-sided dice and keep the larger result. You win when that result is 5 or 6. You play ${n} independent rounds.`, successNoun:'wins', trialNoun:'rounds', fixedP:20/36 },
+    { id:'cards-red', direct:false, build:(p,n)=>`For each round, a card is drawn from a well-shuffled standard deck, its colour is recorded, and the card is replaced. You play ${n} rounds and call a red card a success.`, successNoun:'red cards', trialNoun:'draws', fixedP:1/2 },
+    { id:'spinner', direct:false, build:(p,n)=>`A fair spinner has eight equal sectors, three of which are shaded. It is spun ${n} independent times, and landing on a shaded sector counts as a success.`, successNoun:'shaded-sector results', trialNoun:'spins', fixedP:3/8 },
+    { id:'sum-seven', direct:false, build:(p,n)=>`Two fair six-sided dice are rolled ${n} times. A roll is called successful when the sum is 7.`, successNoun:'sums of 7', trialNoun:'rolls', fixedP:1/6 }
+  ];
+
+  const CONTEXT_OPENERS = [
+    ctx => `${ctx.cadence}, ${ctx.action}.`,
+    ctx => `${ctx.cadence}, your routine includes ${ctx.action.replace(/^you /,'')}.`,
+    ctx => `Suppose that ${ctx.cadence.toLowerCase()}, ${ctx.action}.`,
+    ctx => `${ctx.action.charAt(0).toUpperCase() + ctx.action.slice(1)} ${ctx.cadence.toLowerCase()}.`,
+    ctx => `Consider a period described as follows: ${ctx.cadence.toLowerCase()}, ${ctx.action}.`
+  ];
+
+  const DIRECT_PARAMETER_WORDINGS = [
+    c => `The ${c.measureNoun} has mean ${formatMeasurement(c.mu,c.unit)} and standard deviation ${formatMeasurement(c.sigma,c.unit)}.`,
+    c => `On average, each is ${formatMeasurement(c.mu,c.unit)}, with a standard deviation of ${formatMeasurement(c.sigma,c.unit)}.`,
+    c => `Historical records give an average ${c.measureNoun} of ${formatMeasurement(c.mu,c.unit)} and a standard deviation of ${formatMeasurement(c.sigma,c.unit)}.`,
+    c => `The long-run mean is ${formatMeasurement(c.mu,c.unit)}; the corresponding standard deviation is ${formatMeasurement(c.sigma,c.unit)}.`,
+    c => `For individual observations, <span class="math">\\(\\mu = ${formatMathMeasurement(c.mu,c.unit)}\\)</span> and <span class="math">\\(\\sigma = ${formatMathMeasurement(c.sigma,c.unit)}\\)</span>.`
+  ];
+
+  const NORMAL_EVENT_TYPES = [
+    { value:'range', weight:22 },
+    { value:'oneSided', weight:22 },
+    { value:'conditional', weight:18 },
+    { value:'percentileOfValue', weight:12 },
+    { value:'valueFromPercentile', weight:12 },
+    { value:'quartile', weight:7 },
+    { value:'iqr', weight:7 }
+  ];
+
+  // Proportion questions use the full normal-event family and also ask directly
+  // for descriptive features of the sampling distribution.
+  const PROPORTION_EVENT_TYPES = [
+    { value:'range', weight:16 },
+    { value:'oneSided', weight:16 },
+    { value:'conditional', weight:14 },
+    { value:'percentileOfValue', weight:10 },
+    { value:'valueFromPercentile', weight:10 },
+    { value:'quartile', weight:8 },
+    { value:'iqr', weight:7 },
+    { value:'mean', weight:5 },
+    { value:'median', weight:5 },
+    { value:'standardDeviation', weight:5 },
+    { value:'variance', weight:4 }
+  ];
+
+  const QUESTION_LEADS = {
+    probability: [
+      'What is the probability that',
+      'Determine the probability that',
+      'Approximately what proportion of occasions have',
+      'How likely is it that',
+      'Find the chance that'
+    ],
+    percentileValue: [
+      'What percentile corresponds to',
+      'Determine the percentile rank of',
+      'Approximately what percentage of outcomes are no greater than',
+      'Where does the following value lie in the sampling distribution:'
+    ],
+    inversePercentile: [
+      p => `Find the ${ordinal(p)} percentile of`,
+      p => `Determine the value below which approximately ${p}% of outcomes fall for`,
+      p => `What value marks the ${ordinal(p)} percentile of`,
+      p => `Find the cutoff for the lowest ${p}% of`
+    ]
+  };
+
+  const recentScenarioIds = [];
+  const recentWordingIds = [];
+  let currentCLTDraft = null;
+
+  function rememberRecent(list, value, maxLength) {
+    list.push(value);
+    while (list.length > maxLength) list.shift();
+  }
+
+  function choiceAvoidingRecent(items, idGetter, recentList) {
+    const fresh = items.filter(item => !recentList.includes(idGetter(item)));
+    return randomChoice(fresh.length ? fresh : items);
+  }
+
+  function formatPercent(p) {
+    const value = p * 100;
+    return `${Number(value.toFixed(value < 10 ? 1 : 0))}%`;
+  }
+
+  function ordinal(n) {
+    const mod100 = n % 100;
+    if (mod100 >= 11 && mod100 <= 13) return `${n}th`;
+    if (n % 10 === 1) return `${n}st`;
+    if (n % 10 === 2) return `${n}nd`;
+    if (n % 10 === 3) return `${n}rd`;
+    return `${n}th`;
+  }
+
+  function roundFriendly(x, decimals = 1) {
+    const factor = 10 ** decimals;
+    return Math.round(x * factor) / factor;
+  }
+
+  function formatMeasurement(value, unitKey) {
+    const unit = CLT_UNIT_LIBRARY[unitKey];
+    const number = Number(value.toFixed(unit.decimals));
+    if (unit.kind === 'money') return `$${number.toFixed(2)}`;
+    return `${number} ${unit.symbol}`.trim();
+  }
+
+  function formatMathMeasurement(value, unitKey) {
+    const unit = CLT_UNIT_LIBRARY[unitKey];
+    const number = Number(value.toFixed(unit.decimals));
+    if (unit.kind === 'money') return `\$${number.toFixed(2)}`;
+    return `${number}\\text{ ${unit.symbol}}`;
+  }
+
+  function makeDirectContext() {
+    const scenario = choiceAvoidingRecent(DIRECT_SCENARIOS, s => s.id, recentScenarioIds);
+    rememberRecent(recentScenarioIds, scenario.id, CLT_CONFIG.recentScenarioMemory);
+    const n = randomChoice(SAMPLE_SIZES);
+    const mu = roundFriendly(scenario.meanRange[0] + Math.random() * (scenario.meanRange[1] - scenario.meanRange[0]), CLT_UNIT_LIBRARY[scenario.unit].decimals);
+    const sigma = roundFriendly(scenario.sdRange[0] + Math.random() * (scenario.sdRange[1] - scenario.sdRange[0]), CLT_UNIT_LIBRARY[scenario.unit].decimals);
+    const cadence = randomChoice(scenario.cadence);
+    return { ...scenario, n, mu, sigma, cadence, action:scenario.action.replace('{n}', n), parameterSource:'direct' };
+  }
+
+  function makePoissonContext() {
+    const scenario = choiceAvoidingRecent(POISSON_SCENARIOS, s => s.id, recentScenarioIds);
+    rememberRecent(recentScenarioIds, scenario.id, CLT_CONFIG.recentScenarioMemory);
+    const n = randomChoice(SAMPLE_SIZES);
+    const lambda = randInt(scenario.rateRange[0], scenario.rateRange[1]);
+    return { ...scenario, n, lambda, mu:lambda, sigma:Math.sqrt(lambda), parameterSource:'poisson', introText:scenario.intro(lambda), sampleText:scenario.sample(n) };
+  }
+
+  function makeUniformContext() {
+    const scenario = choiceAvoidingRecent(UNIFORM_SCENARIOS_CLT, s => s.id, recentScenarioIds);
+    rememberRecent(recentScenarioIds, scenario.id, CLT_CONFIG.recentScenarioMemory);
+    const n = randomChoice(SAMPLE_SIZES);
+    const aBase = randInt(scenario.aRange[0], scenario.aRange[1]);
+    const width = randInt(scenario.widthRange[0], scenario.widthRange[1]);
+    const a = aBase * scenario.scale;
+    const b = (aBase + width) * scenario.scale;
+    return { ...scenario, n, a, b, mu:(a+b)/2, sigma:(b-a)/Math.sqrt(12), parameterSource:'uniform', introText:scenario.intro(aBase,aBase+width), sampleText:scenario.sample(n) };
+  }
+
+  function makeGeometricContext() {
+    const scenario = choiceAvoidingRecent(GEOMETRIC_SCENARIOS, s => s.id, recentScenarioIds);
+    rememberRecent(recentScenarioIds, scenario.id, CLT_CONFIG.recentScenarioMemory);
+    const n = randomChoice(SAMPLE_SIZES);
+    const p = randomChoice([0.2,0.25,0.3,1/3,0.4,0.5,0.6,0.7,0.75,0.8]);
+    return { ...scenario, n, p, mu:1/p, sigma:Math.sqrt(1-p)/p, parameterSource:'geometric', introText:scenario.build(p,n) };
+  }
+
+  function makeUnderlyingContext(type) {
+    if (Math.random() < CLT_CONFIG.directParameterChance) return makeDirectContext();
+    return randomChoice([makePoissonContext, makeUniformContext, makeGeometricContext])();
+  }
+
+  function makeProportionContext() {
+    const scenario = choiceAvoidingRecent(PROPORTION_SCENARIOS, s => s.id, recentScenarioIds);
+    rememberRecent(recentScenarioIds, scenario.id, CLT_CONFIG.recentScenarioMemory);
+    const p = Number.isFinite(scenario.fixedP) ? scenario.fixedP : randomChoice([0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.5,0.6,0.65,0.7,0.75,0.8,0.85,0.9]);
+
+    // Draw from a broad range so sample sizes are not restricted to neat values.
+    // Keep both expected successes and expected failures at least 10.
+    let n;
+    do {
+      n = randInt(40, 220);
+    } while (n * p < 10 || n * (1 - p) < 10);
+
+    return { ...scenario, n, p, mu:p, sigma:Math.sqrt(p*(1-p)/n), parameterSource:'binomial', introText:scenario.build(p,n) };
+  }
+
+  function samplingDistributionFor(type, context) {
+    if (type === 'means') return { variable:'sample mean', symbol:'\\overline{X}', mu:context.mu, sigma:context.sigma/Math.sqrt(context.n), unit:context.unit };
+    if (type === 'sums') return { variable:'sample total', symbol:'\\Sigma X', mu:context.n*context.mu, sigma:Math.sqrt(context.n)*context.sigma, unit:context.unit };
+    return { variable:'sample proportion', symbol:'\\hat{p}', mu:context.p, sigma:Math.sqrt(context.p*(1-context.p)/context.n), unit:null, n:context.n };
+  }
+
+  function chooseNormalEventType() {
+    return weightedChoice(NORMAL_EVENT_TYPES);
+  }
+
+  function samplingValueDecimals(dist) {
+    if (dist.variable === 'sample proportion') return 3;
+    return Math.min(2, Math.max(1, CLT_UNIT_LIBRARY[dist.unit]?.decimals ?? 2));
+  }
+
+  function eventValue(dist, z) {
+    const raw = dist.mu + z * dist.sigma;
+    if (dist.variable === 'sample proportion') {
+      const n = dist.n ?? 100;
+      return Math.max(1/n, Math.min((n-1)/n, Math.round(raw*n)/n));
+    }
+    // Store the cutoff at exactly the same precision used in the question.
+    // In particular, averages and totals of count variables may be non-integers.
+    return roundFriendly(raw, samplingValueDecimals(dist));
+  }
+
+  function randomZ(min, max, step = 0.1) {
+    const count = Math.round((max - min) / step);
+    return Number((min + randInt(0, count) * step).toFixed(2));
+  }
+
+  function distinctEventValueInRange(dist, minZ, maxZ, forbidden = []) {
+    let value = eventValue(dist, randomZ(minZ, maxZ, 0.1));
+    let attempts = 0;
+    while (forbidden.includes(value) && attempts < 60) {
+      value = eventValue(dist, randomZ(minZ, maxZ, 0.1));
+      attempts++;
+    }
+    return value;
+  }
+
+  function displayEventValue(value, dist) {
+    if (dist.variable === 'sample proportion') return formatPercent(value);
+    const unit = CLT_UNIT_LIBRARY[dist.unit];
+    const decimals = samplingValueDecimals(dist);
+    const number = Number(value).toFixed(decimals).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');
+    if (unit.kind === 'money') return `$${Number(value).toFixed(2)}`;
+    return `${number} ${unit.symbol}`.trim();
+  }
+
+  function describeTarget(type, context) {
+    if (type === 'means') return `the average ${context.measureNoun}`;
+    if (type === 'sums') {
+      if (context.unit === 'money') return `the total amount`;
+      if (context.unit === 'count') return `the total count`;
+      return `the total ${context.measureNoun.replace(/ time$/,' time').replace(/ length$/,'')}`;
+    }
+    return `the proportion of ${context.successNoun}`;
+  }
+
+  function makeNormalEventQuestion(type, context, dist) {
+    const eventType = type === 'proportions' ? weightedChoice(PROPORTION_EVENT_TYPES) : chooseNormalEventType();
+    const target = describeTarget(type, context);
+    const e = { type:eventType };
+    let wording = '';
+    let notation = '';
+
+    if (eventType === 'range') {
+      const z1 = randomZ(-2.8, 1.2, 0.1);
+      const z2 = randomZ(z1 + 0.5, 2.9, 0.1);
+      e.left = eventValue(dist,z1);
+      e.right = distinctEventValueInRange(dist, z1 + 0.5, 2.9, [e.left]);
+      wording = `${randomChoice(QUESTION_LEADS.probability)} ${target} is between ${displayEventValue(e.left,dist)} and ${displayEventValue(e.right,dist)}?`;
+      notation = `P(${e.left}\\leq ${dist.symbol}\\leq ${e.right})`;
+    } else if (eventType === 'oneSided') {
+      e.relation = randomChoice(['<','\\leq','>','\\geq']);
+      e.m = eventValue(dist, randomZ(-2.8, 2.8, 0.1));
+      const phrase = e.relation === '<' ? `less than ${displayEventValue(e.m,dist)}` : e.relation === '\\leq' ? `at most ${displayEventValue(e.m,dist)}` : e.relation === '>' ? `more than ${displayEventValue(e.m,dist)}` : `at least ${displayEventValue(e.m,dist)}`;
+      wording = `${randomChoice(QUESTION_LEADS.probability)} ${target} is ${phrase}?`;
+      notation = `P(${dist.symbol}${e.relation}${e.m})`;
+    } else if (eventType === 'conditional') {
+      const lowerZ = randomZ(-2.9, 0.6, 0.1);
+      const upperZ = randomZ(Math.max(lowerZ + 0.8, -0.1), 2.9, 0.1);
+      const targetZ = randomZ(lowerZ + 0.2, upperZ - 0.2, 0.1);
+      e.lower = eventValue(dist, lowerZ);
+      e.upper = distinctEventValueInRange(dist, Math.max(lowerZ + 0.8, -0.1), 2.9, [e.lower]);
+      e.m = distinctEventValueInRange(dist, lowerZ + 0.2, upperZ - 0.2, [e.lower, e.upper]);
+      e.targetRelation = randomChoice(['<','>']);
+      const targetPhrase = e.targetRelation === '<' ? `less than ${displayEventValue(e.m,dist)}` : `more than ${displayEventValue(e.m,dist)}`;
+      wording = `Given that ${target} lies between ${displayEventValue(e.lower,dist)} and ${displayEventValue(e.upper,dist)}, what is the probability that it is ${targetPhrase}?`;
+      notation = `P(${dist.symbol}${e.targetRelation}${e.m}\\mid ${e.lower}\\leq ${dist.symbol}\\leq ${e.upper})`;
+    } else if (eventType === 'percentileOfValue') {
+      e.m = eventValue(dist, randomZ(-2.8, 2.8, 0.1));
+      wording = `${randomChoice(QUESTION_LEADS.percentileValue)} ${displayEventValue(e.m,dist)} for ${target}?`;
+      notation = `P(${dist.symbol}\\leq ${e.m})`;
+    } else if (eventType === 'valueFromPercentile') {
+      e.percentile = randomChoice(PERCENTILES);
+      const lead = randomChoice(QUESTION_LEADS.inversePercentile)(e.percentile);
+      wording = `${lead} ${target}.`;
+      notation = `${e.percentile}\\text{th percentile}`;
+    } else if (eventType === 'iqr') {
+      wording = `Find the interquartile range of ${target}.`;
+      notation = 'Q_3-Q_1';
+    } else if (eventType === 'mean') {
+      wording = `Determine the mean of ${target}.`;
+      notation = `\\mu_{${dist.symbol}}`;
+    } else if (eventType === 'median') {
+      wording = `Determine the median of ${target}.`;
+      notation = `\\operatorname{Med}(${dist.symbol})`;
+    } else if (eventType === 'standardDeviation') {
+      wording = `Determine the standard deviation (standard error) of ${target}.`;
+      notation = `\\sigma_{${dist.symbol}}`;
+    } else if (eventType === 'variance') {
+      wording = `Determine the variance of ${target}.`;
+      notation = `\\operatorname{Var}(${dist.symbol})`;
+    } else {
+      const q = randomChoice([{name:'first quartile',symbol:'Q_1'},{name:'third quartile',symbol:'Q_3'}]);
+      e.quartileName=q.name; e.quartileSymbol=q.symbol;
+      wording = `Determine the ${q.name} of ${target}.`;
+      notation = q.symbol;
+    }
+    return { wording, notation, event:e };
+  }
+
+  function renderContext(type, context) {
+    if (type === 'proportions') return context.introText;
+    if (context.parameterSource === 'direct') {
+      const opener = randomChoice(CONTEXT_OPENERS)(context);
+      const parameterSentence = randomChoice(DIRECT_PARAMETER_WORDINGS)(context);
+      return `${opener} ${parameterSentence}`;
+    }
+    if (context.parameterSource === 'geometric') return context.introText;
+    return `${context.introText} ${context.sampleText}`;
+  }
+
+  function generateCLTQuestion() {
+    const type = weightedChoice(CLT_CONFIG.problemTypes);
+    const context = type === 'proportions' ? makeProportionContext() : makeUnderlyingContext(type);
+    const sampling = samplingDistributionFor(type, context);
+    const task = makeNormalEventQuestion(type, context, sampling);
+    const problem = { type, context, sampling, task, wording:`${renderContext(type,context)} ${task.wording}`, hintIndex:0 };
+    completeNormalEvent(problem);
+    if (type === 'proportions') completeProportionCounts(problem);
+    return problem;
+  }
+
+  function completeProportionCounts(problem) {
+    const c=problem.context,e=problem.task.event;
+    const toCount=x=>Math.max(0,Math.min(c.n,Math.round(c.n*x)));
+    if(e.type==='range'){e.countLeft=toCount(e.left);e.countRight=toCount(e.right);}
+    else if(e.type==='oneSided'){e.countM=toCount(e.m);}
+    else if(e.type==='conditional'){e.countLower=toCount(e.lower);e.countUpper=toCount(e.upper);e.countM=toCount(e.m);}
+    else if(e.type==='percentileOfValue'){e.countM=toCount(e.m);}
+    else if(e.type==='valueFromPercentile'||e.type==='quartile'||e.type==='median'){e.countAnswer=c.n*e.answer;}
+    else if(e.type==='iqr'){e.countQ1=c.n*e.q1;e.countQ3=c.n*e.q3;e.countAnswer=c.n*e.answer;}
+    else if(e.type==='mean'){e.countAnswer=c.n*e.answer;}
+    else if(e.type==='standardDeviation'){e.countAnswer=c.n*e.answer;}
+    else if(e.type==='variance'){e.countAnswer=c.n*c.n*e.answer;}
+  }
+
+  function completeNormalEvent(problem) {
+    const d = problem.sampling;
+    const e = problem.task.event;
+    const phi = z => normalCdf(Number(z.toFixed(2)));
+    if (e.type === 'range') {
+      e.z1 = roundedZ(d,e.left); e.z2 = roundedZ(d,e.right);
+      e.answer = phi(e.z2)-phi(e.z1);
+    } else if (e.type === 'oneSided') {
+      e.z = roundedZ(d,e.m);
+      const left = phi(e.z);
+      e.answer = (e.relation === '<' || e.relation === '\\leq') ? left : 1-left;
+    } else if (e.type === 'conditional') {
+      e.zLower=roundedZ(d,e.lower); e.zUpper=roundedZ(d,e.upper); e.zM=roundedZ(d,e.m);
+      const denom=phi(e.zUpper)-phi(e.zLower);
+      e.answer=e.targetRelation==='<' ? (phi(e.zM)-phi(e.zLower))/denom : (phi(e.zUpper)-phi(e.zM))/denom;
+    } else if (e.type === 'percentileOfValue') {
+      e.z=roundedZ(d,e.m); e.answer=phi(e.z);
+    } else if (e.type === 'valueFromPercentile') {
+      e.p=e.percentile/100; e.z=Number(inverseNormalCdf(e.p).toFixed(2));
+      e.answer=d.mu+e.z*d.sigma;
+    } else if (e.type === 'quartile') {
+      const map={Q_1:0.25,Q_2:0.5,Q_3:0.75}; e.p=map[e.quartileSymbol];
+      e.z=Number(inverseNormalCdf(e.p).toFixed(2)); e.answer=d.mu+e.z*d.sigma;
+    } else if (e.type === 'iqr') {
+      e.z1=-0.67; e.z3=0.67; e.q1=d.mu+e.z1*d.sigma; e.q3=d.mu+e.z3*d.sigma; e.answer=e.q3-e.q1;
+    } else if (e.type === 'mean' || e.type === 'median') {
+      e.answer=d.mu;
+    } else if (e.type === 'standardDeviation') {
+      e.answer=d.sigma;
+    } else if (e.type === 'variance') {
+      e.answer=d.sigma*d.sigma;
+    }
+  }
+
+  function clearCLTActivity() {
+    tableArea.innerHTML=''; meanArea.innerHTML=''; workArea.innerHTML=''; histogramArea.innerHTML='';
+    stageFeedback.textContent=''; hintArea.innerHTML='';
+  }
+
+  function fmt(x, digits=3) { return Number(Number(x).toFixed(digits)).toString(); }
+  function probFmt(x) { return Number(x).toFixed(4); }
+  function mathValue(x,d) {
+    if (d.unit === 'money') return `\\$${Number(x).toFixed(2)}`;
+    return fmt(x, samplingValueDecimals(d));
+  }
+  function displaySamplingValue(x,d) {
+    if (d.unit === 'money') return `$${Number(x).toFixed(2)}`;
+    return `${fmt(x,samplingValueDecimals(d))} ${CLT_UNIT_LIBRARY[d.unit]?.symbol ?? ''}`.trim();
+  }
+  function finalMathValue(x,d) {
+    return d.unit === 'money' ? `\\$${Number(x).toFixed(4)}` : Number(x).toFixed(4);
+  }
+  function finalDisplayValue(x,d) {
+    const unit=CLT_UNIT_LIBRARY[d.unit]?.symbol ?? '';
+    if (d.unit === 'money') return `$${Number(x).toFixed(4)}`;
+    return `${Number(x).toFixed(4)} ${unit}`.trim();
+  }
+  function zPhi(z){ return normalCdf(Number(z.toFixed(2))); }
+  function phiTex(z){ return probFmt(zPhi(z)); }
+
+  function makeHintWrapper() {
+    const wrapper = document.createElement('div');
+    wrapper.style.marginTop = '1rem';
+    hintArea.appendChild(wrapper);
+    return wrapper;
+  }
+
+  function underlyingStep(problem) {
+    const c=problem.context;
+    const wrapper=makeHintWrapper();
+    let html='';
+    if(c.parameterSource==='direct') {
+      html=`<p>The mean and standard deviation of the underlying distribution are given directly:</p>
+      <p>\\[\\mu_X=${formatMathMeasurement(c.mu,c.unit)}\\hspace{6mm}\\text{ and }\\hspace{6mm}\\sigma_X=${formatMathMeasurement(c.sigma,c.unit)}.\\]</p>`;
+    } else if(c.parameterSource==='uniform') {
+      html=`<p>The underlying distribution is uniform, with mean and standard deviation</p>
+      <p>\\[\\mu_X=\\frac{a+b}{2}=\\frac{${fmt(c.a,2)}+${fmt(c.b,2)}}{2}=${fmt(c.mu,3)}\\hspace{3mm}\\text{ and }\\hspace{3mm}\\sigma_X=\\sqrt{\\frac{(b-a)^2}{12}}=\\sqrt{\\frac{(${fmt(c.b,2)}-${fmt(c.a,2)})^2}{12}}\\approx ${fmt(c.sigma,3)}.\\]</p>`;
+    } else if(c.parameterSource==='poisson') {
+      html=`<p>The underlying distribution is Poisson with parameter \\(\\lambda=${fmt(c.lambda,2)}\\), with mean and standard deviation</p>
+      <p>\\[\\mu_X=\\lambda=${fmt(c.mu,3)}\\hspace{3mm}\\text{ and }\\hspace{3mm}\\sigma_X=\\sqrt{\\lambda}=\\sqrt{${fmt(c.lambda,2)}}\\approx ${fmt(c.sigma,3)}.\\]</p>`;
+    } else {
+      html=`<p>The underlying distribution is geometric with success probability \\(p=${fmt(c.p,3)}\\), with mean and standard deviation</p>
+      <p>\\[\\mu_X=\\frac{1}{p}=\\frac{1}{${fmt(c.p,3)}}=${fmt(c.mu,3)}\\hspace{3mm}\\text{ and }\\hspace{3mm}\\sigma_X=\\frac{\\sqrt{1-p}}{p}=\\frac{\\sqrt{1-${fmt(c.p,3)}}}{${fmt(c.p,3)}}\\approx ${fmt(c.sigma,3)}.\\]</p>`;
+    }
+    wrapper.innerHTML=html;
+    if(c.parameterSource!=='direct') {
+      const graph=document.createElement('div');
+      graph.style.maxWidth='740px'; graph.style.margin='0.75rem auto';
+      wrapper.appendChild(graph);
+      if(c.parameterSource==='uniform') {
+        renderUniformDistribution(graph,c.a,c.b,{xLabel:CLT_UNIT_LIBRARY[c.unit].symbol,heightLabel:`1/${fmt(c.b-c.a,2)}`});
+      } else if(c.parameterSource==='poisson') {
+        renderPoissonHistogram(graph,c.lambda,{xLabel:'x',yLabel:'f(x)',maxX:Math.max(12,Math.ceil(c.mu+4*c.sigma))});
+      } else {
+        renderGeometricHistogram(graph,c.p,{xLabel:'x',yLabel:'f(x)',maxX:Math.max(10,Math.ceil(c.mu+4*c.sigma))});
+      }
+    }
+    typeset([wrapper]);
+  }
+
+  function samplingStep(problem) {
+    const c=problem.context,d=problem.sampling;
+    const wrapper=makeHintWrapper();
+    const mu=fmt(d.mu,3), sig=fmt(d.sigma,3);
+    wrapper.innerHTML=problem.type==='means'
+      ? `<p>We are asked about an average, so we use the sample mean version of the Central Limit Theorem,</p>
+      <p>\\[\\mu_{\\overline{x}}=\\mu_X=${fmt(c.mu,3)}\\hspace{3mm}\\text{ and }\\hspace{3mm}\\sigma_{\\overline{x}}=\\frac{\\sigma_X}{\\sqrt{n}}=\\frac{${fmt(c.sigma,3)}}{\\sqrt{${c.n}}}\\approx ${sig}.\\]</p>`
+      : `<p>We are asked about a total, so we use the sample sum version of the Central Limit Theorem,</p>
+      <p>\\[\\mu_{\\Sigma X}=n\\mu_X=${c.n}(${fmt(c.mu,3)})\\approx ${mu}\\hspace{3mm}\\text{ and }\\hspace{3mm}\\sigma_{\\Sigma X}=\\sqrt{n}\\,\\sigma_X=\\sqrt{${c.n}}(${fmt(c.sigma,3)})\\approx ${sig}.\\]</p>`;
+    const graph=document.createElement('div');
+    graph.style.maxWidth='740px'; graph.style.margin='0.75rem auto';
+    wrapper.appendChild(graph);
+    renderNormalDistribution(graph,d.mu,d.sigma,{xLabel:problem.type==='means'?'sample mean':problem.type==='sums'?'sample total':'sample proportion'});
+    typeset([wrapper]);
+  }
+
+  function eventNotation(problem) {
+    const d=problem.sampling,e=problem.task.event,s=d.symbol;
+    if(e.type==='range')return `P(${e.left}\\leq ${s}\\leq ${e.right})`;
+    if(e.type==='oneSided')return `P(${s}${e.relation}${e.m})`;
+    if(e.type==='conditional')return `P(${s}${e.targetRelation}${e.m}\\mid ${e.lower}\\leq ${s}\\leq ${e.upper})`;
+    if(e.type==='percentileOfValue')return `P(${s}\\leq ${e.m})`;
+    return '';
+  }
+
+  function calculationStep(problem) {
+    const d=problem.sampling,e=problem.task.event,symbol=d.symbol;
+    const wrapper=makeHintWrapper();
+    let html='',zs=[],selected=[],superSelected=[],lines=[];
+    const zRaw=x=>`\\frac{${mathValue(x,d)}-${fmt(d.mu,3)}}{${fmt(d.sigma,3)}}`;
+    if(e.type==='oneSided') {
+      const left=e.relation==='<'||e.relation==='\\leq';
+      const rel=e.relation==='<'?'\\lt':e.relation;
+      const table=zPhi(e.z);
+      html=left
+        ? `<p>\\[\\begin{aligned}
+          P(${symbol}${rel}${mathValue(e.m,d)})
+          &=P\\left(Z\\leq ${zRaw(e.m)}\\right)\\\\
+          &=P(Z\\leq ${fmt(e.z,2)})\\approx ${probFmt(e.answer)}.
+        \\end{aligned}\\]</p>`
+        : `<p>\\[\\begin{aligned}
+          P(${symbol}${rel}${mathValue(e.m,d)})
+          &=P\\left(Z>${zRaw(e.m)}\\right)\\\\
+          &=P(Z>${fmt(e.z,2)})=1-P(Z\\leq ${fmt(e.z,2)})\\\\
+          &\\approx 1-${probFmt(table)}=${probFmt(e.answer)}.
+        \\end{aligned}\\]</p>`;
+      zs=[e.z]; selected=left?[[-Infinity,e.m]]:[[e.m,Infinity]]; lines=[e.m];
+    } else if(e.type==='range') {
+      html=`<p>\\[\\begin{aligned}
+        P(${mathValue(e.left,d)}\\leq ${symbol}\\leq ${mathValue(e.right,d)})
+        &=P\\left(${zRaw(e.left)}\\leq Z\\leq ${zRaw(e.right)}\\right)\\\\
+        &=P(${fmt(e.z1,2)}\\leq Z\\leq ${fmt(e.z2,2)})\\\\
+        &=${phiTex(e.z2)}-${phiTex(e.z1)}=${probFmt(e.answer)}.
+      \\end{aligned}\\]</p>`;
+      zs=[e.z1,e.z2]; selected=[[e.left,e.right]]; lines=[e.left,e.right];
+    } else if(e.type==='conditional') {
+      const rel=e.targetRelation==='<'?'\\lt':e.targetRelation;
+      const intersection=e.targetRelation==='<'?`${mathValue(e.lower,d)}\\leq ${symbol}\\lt ${mathValue(e.m,d)}`:`${mathValue(e.m,d)}\\lt ${symbol}\\leq ${mathValue(e.upper,d)}`;
+      const numZ=e.targetRelation==='<'?`${fmt(e.zLower,2)}\\leq Z\\lt ${fmt(e.zM,2)}`:`${fmt(e.zM,2)}\\lt Z\\leq ${fmt(e.zUpper,2)}`;
+      const numValues=e.targetRelation==='<'?`${phiTex(e.zM)}-${phiTex(e.zLower)}`:`${phiTex(e.zUpper)}-${phiTex(e.zM)}`;
+      html=`<p>\\[\\begin{aligned}
+        P(${symbol}${rel}${mathValue(e.m,d)}\\mid ${mathValue(e.lower,d)}\\leq ${symbol}\\leq ${mathValue(e.upper,d)})
+        &=\\frac{P(${symbol}${rel}${mathValue(e.m,d)})\\cap(${mathValue(e.lower,d)}\\leq ${symbol}\\leq ${mathValue(e.upper,d)})}{P(${mathValue(e.lower,d)}\\leq ${symbol}\\leq ${mathValue(e.upper,d)})}\\\\
+        &=\\frac{P(${intersection})}{P(${mathValue(e.lower,d)}\\leq ${symbol}\\leq ${mathValue(e.upper,d)})}\\\\
+        &=\\frac{P\\left(${e.targetRelation==='<' ? `${zRaw(e.lower)}\\leq Z\\lt ${zRaw(e.m)}` : `${zRaw(e.m)}\\lt Z\\leq ${zRaw(e.upper)}`}\\right)}{P\\left(${zRaw(e.lower)}\\leq Z\\leq ${zRaw(e.upper)}\\right)}\\\\
+        &=\\frac{P(${numZ})}{P(${fmt(e.zLower,2)}\\leq Z\\leq ${fmt(e.zUpper,2)})}\\\\
+        &=\\frac{${numValues}}{${phiTex(e.zUpper)}-${phiTex(e.zLower)}}\\approx ${probFmt(e.answer)}.
+      \\end{aligned}\\]</p>`;
+      zs=[e.zLower,e.zM,e.zUpper]; selected=[[e.lower,e.upper]]; superSelected=e.targetRelation==='<'?[[e.lower,e.m]]:[[e.m,e.upper]]; lines=[e.lower,e.m,e.upper];
+    } else if(e.type==='percentileOfValue') {
+      html=`<p>\\[\\begin{aligned}
+        P(${symbol}\\leq ${mathValue(e.m,d)})
+        &=P\\left(Z\\leq ${zRaw(e.m)}\\right)\\\\
+        &=P(Z\\leq ${fmt(e.z,2)})\\approx ${probFmt(e.answer)}.
+      \\end{aligned}\\]</p><p>Thus, ${displaySamplingValue(e.m,d)} is approximately the \\(${fmt(100*e.answer,1)}\\)th percentile.</p>`;
+      zs=[e.z]; selected=[[-Infinity,e.m]]; lines=[e.m];
+    } else if(e.type==='valueFromPercentile') {
+      html=`<p>Find the standard-normal table entry whose cumulative probability is closest to \\(${fmt(e.p,2)}\\): \\(Z\\approx ${fmt(e.z,2)}\\).</p>
+      <p>\\[x=\\mu+Z\\sigma=${fmt(d.mu,4)}+(${fmt(e.z,2)})(${fmt(d.sigma,4)})\\approx ${finalMathValue(e.answer,d)}.\\]</p>
+      <p>The requested percentile is approximately ${finalDisplayValue(e.answer,d)}.</p>`;
+      zs=[e.z]; selected=[[-Infinity,e.answer]]; lines=[e.answer];
+    } else if(e.type==='quartile') {
+      html=`<p>The cumulative probability for \\(${e.quartileSymbol}\\) is \\(${fmt(e.p,2)}\\), corresponding to \\(Z\\approx ${fmt(e.z,2)}\\) in the standard normal table.</p>
+      <p>\\[${e.quartileSymbol}=\\mu+Z\\sigma=${fmt(d.mu,4)}+(${fmt(e.z,2)})(${fmt(d.sigma,4)})\\approx ${finalMathValue(e.answer,d)}.\\]</p>`;
+      zs=[e.z]; selected=[[-Infinity,e.answer]]; lines=[e.answer];
+    } else if(e.type==='mean') {
+      html=`<p>The mean of the sampling distribution is its centre:</p><p>\\[\\mu_{${symbol}}=${finalMathValue(e.answer,d)}.\\]</p>`;
+      lines=[e.answer];
+    } else if(e.type==='median') {
+      html=`<p>The normal distribution is symmetric, so its median equals its mean:</p><p>\\[\\operatorname{Med}(${symbol})=\\mu_{${symbol}}=${finalMathValue(e.answer,d)}.\\]</p>`;
+      lines=[e.answer];
+    } else if(e.type==='standardDeviation') {
+      html=`<p>The standard deviation of the sampling distribution is</p><p>\\[\\sigma_{${symbol}}=${finalMathValue(e.answer,d)}.\\]</p>`;
+    } else if(e.type==='variance') {
+      html=`<p>Variance is the square of the standard deviation:</p><p>\\[\\operatorname{Var}(${symbol})=\\sigma_{${symbol}}^2=(${fmt(d.sigma,6)})^2\\approx ${finalMathValue(e.answer,d)}.\\]</p>`;
+    } else {
+      html=`<p>The cumulative probabilities \\(0.25\\) and \\(0.75\\) correspond to \\(Z\\approx -0.67\\) and \\(Z\\approx 0.67\\) in the standard normal table.</p>
+      <p>\\[\\begin{aligned}
+        Q_1&=${fmt(d.mu,4)}+(-0.67)(${fmt(d.sigma,4)})\\approx ${finalMathValue(e.q1,d)},\\\\
+        Q_3&=${fmt(d.mu,4)}+(0.67)(${fmt(d.sigma,4)})\\approx ${finalMathValue(e.q3,d)}.
+      \\end{aligned}\\]</p>
+      <p>\\[IQR=Q_3-Q_1\\approx ${finalMathValue(e.q3,d)}-${finalMathValue(e.q1,d)}=${finalMathValue(e.answer,d)}.\\]</p>`;
+      zs=[-0.67,0.67]; selected=[[e.q1,e.q3]]; lines=[e.q1,e.q3];
+    }
+    wrapper.innerHTML=html;
+    const graph=document.createElement('div');
+    graph.style.maxWidth='740px'; graph.style.margin='0.75rem auto';
+    wrapper.appendChild(graph);
+    renderNormalDistribution(graph,d.mu,d.sigma,{selectedRanges:selected,superSelectedRanges:superSelected,tickValues:[d.mu-3*d.sigma,d.mu-2*d.sigma,d.mu-d.sigma,d.mu,d.mu+d.sigma,d.mu+2*d.sigma,d.mu+3*d.sigma,...lines],xLabel:problem.type==='means'?'sample mean':problem.type==='sums'?'sample total':'sample proportion'});
+    const table=document.createElement('div');
+    table.style.margin='0.75rem auto';
+    wrapper.appendChild(table);
+    renderStandardNormalTable(table,{highlightZs:zs,minZ:-3.0,maxZ:3.0,fontSize:'10px'});
+    typeset([wrapper]);
+  }
+
+
+  function proportionPrimaryIsCLT(problem) {
+    return problem.context.direct === true;
+  }
+
+  function proportionEventData(problem, useCounts=false) {
+    const c=problem.context,e=problem.task.event;
+    const symbol=useCounts?'X':'\hat{p}';
+    const pick=x=>useCounts?c.n*x:x;
+    if(e.type==='range') return {symbol,zs:[e.z1,e.z2],selected:[[pick(e.left),pick(e.right)]],lines:[pick(e.left),pick(e.right)]};
+    if(e.type==='oneSided') return {symbol,zs:[e.z],selected:(e.relation==='<'||e.relation==='\leq')?[[-Infinity,pick(e.m)]]:[[pick(e.m),Infinity]],lines:[pick(e.m)]};
+    if(e.type==='conditional') return {symbol,zs:[e.zLower,e.zM,e.zUpper],selected:[[pick(e.lower),pick(e.upper)]],superSelected:e.targetRelation==='<'?[[pick(e.lower),pick(e.m)]]:[[pick(e.m),pick(e.upper)]],lines:[pick(e.lower),pick(e.m),pick(e.upper)]};
+    if(e.type==='percentileOfValue') return {symbol,zs:[e.z],selected:[[-Infinity,pick(e.m)]],lines:[pick(e.m)]};
+    if(e.type==='valueFromPercentile'||e.type==='quartile') return {symbol,zs:[e.z],selected:[[-Infinity,pick(e.answer)]],lines:[pick(e.answer)]};
+    if(e.type==='iqr') return {symbol,zs:[-0.67,0.67],selected:[[pick(e.q1),pick(e.q3)]],lines:[pick(e.q1),pick(e.q3)]};
+    if(e.type==='mean'||e.type==='median') return {symbol,selected:[],lines:[pick(e.answer)]};
+    return {symbol,selected:[],lines:[]};
+  }
+
+  function appendNormalAndTable(wrapper,mu,sigma,data,xLabel) {
+    const graph=document.createElement('div');
+    graph.style.maxWidth='740px';graph.style.margin='0.75rem auto';wrapper.appendChild(graph);
+    renderNormalDistribution(graph,mu,sigma,{selectedRanges:data?.selected??[],superSelectedRanges:data?.superSelected??[],tickValues:[mu-3*sigma,mu-2*sigma,mu-sigma,mu,mu+sigma,mu+2*sigma,mu+3*sigma,...(data?.lines??[])],xLabel});
+    if(data && Array.isArray(data.zs) && data.zs.length){
+      const table=document.createElement('div');table.style.margin='0.75rem auto';wrapper.appendChild(table);
+      renderStandardNormalTable(table,{highlightZs:data.zs,minZ:-3,maxZ:3,fontSize:'10px'});
+    }
+  }
+
+  function proportionCLTSetup(problem) {
+    const c=problem.context,d=problem.sampling,wrapper=makeHintWrapper();
+    wrapper.innerHTML=`<p>${c.direct ? 'We are asked about a proportion, so we use' : 'Alternatively, we can use'} the proportion version of the Central Limit Theorem,</p>
+      <p>\\[\\mu_{\\hat{p}}=p=${fmt(c.p,3)}\\hspace{3mm}\\text{ and }\\hspace{3mm}\\sigma_{\\hat{p}}=\\sqrt{\\frac{p(1-p)}{n}}=\\sqrt{\\frac{${fmt(c.p,3)}(1-${fmt(c.p,3)})}{${c.n}}}\\approx ${fmt(d.sigma,4)}.\\]</p>`;
+    appendNormalAndTable(wrapper,d.mu,d.sigma,null,'sample proportion');typeset([wrapper]);
+  }
+
+  function proportionCLTCalculation(problem) {
+    const d=problem.sampling,e=problem.task.event,wrapper=makeHintWrapper(),data=proportionEventData(problem,false);
+    let html='';
+    if(e.type==='range') html=`<p>\\[\\begin{aligned}
+      P(${fmt(e.left,2)}\\leq\\hat{p}\\leq${fmt(e.right,2)})
+      &=P\\left(\\frac{${fmt(e.left,2)}-${fmt(d.mu,3)}}{${fmt(d.sigma,4)}}\\leq Z\\leq\\frac{${fmt(e.right,2)}-${fmt(d.mu,3)}}{${fmt(d.sigma,4)}}\\right)\\\\
+      &\\approx P(${fmt(e.z1,2)}\\leq Z\\leq${fmt(e.z2,2)})\\\\
+      &=P(Z\\leq${fmt(e.z2,2)})-P(Z\\leq${fmt(e.z1,2)})\\\\
+      &=${phiTex(e.z2)}-${phiTex(e.z1)}=${probFmt(e.answer)}.
+      \\end{aligned}\\]</p>`;
+    else if(e.type==='oneSided') {
+      const left=e.relation==='<'||e.relation==='\\leq', rel=e.relation==='<'?'\\lt':e.relation;
+      html=left?`<p>\\[\\begin{aligned}P(\\hat{p}${rel}${fmt(e.m,2)})&=P\\left(Z\\leq\\frac{${fmt(e.m,2)}-${fmt(d.mu,3)}}{${fmt(d.sigma,4)}}\\right)\\\\&\\approx P(Z\\leq${fmt(e.z,2)})=${probFmt(e.answer)}.\\end{aligned}\\]</p>`:`<p>\\[\\begin{aligned}P(\\hat{p}${rel}${fmt(e.m,2)})&=P\\left(Z>\\frac{${fmt(e.m,2)}-${fmt(d.mu,3)}}{${fmt(d.sigma,4)}}\\right)\\\\&\\approx P(Z>${fmt(e.z,2)})=1-${phiTex(e.z)}=${probFmt(e.answer)}.\\end{aligned}\\]</p>`;
+    } else { wrapper.remove(); calculationStep(problem); return; }
+    wrapper.innerHTML=html;appendNormalAndTable(wrapper,d.mu,d.sigma,data,'sample proportion');typeset([wrapper]);
+  }
+
+  function proportionBinomialSetup(problem) {
+    const c=problem.context,wrapper=makeHintWrapper(),mu=c.n*c.p,sigma=Math.sqrt(c.n*c.p*(1-c.p));
+    const lead = proportionPrimaryIsCLT(problem)
+      ? 'Alternatively, the underlying distribution is binomial'
+      : 'The underlying distribution is binomial';
+    wrapper.innerHTML=`<p>${lead}, with \\(n=${c.n}\\) and \\(p=${fmt(c.p,3)}\\). It has mean and standard deviation</p>
+      <p>\\[\\mu_X=np=${c.n}(${fmt(c.p,3)})=${fmt(mu,3)}\\hspace{8mm}\\text{ and }\\hspace{8mm}\\sigma_X=\\sqrt{np(1-p)}=\\sqrt{${c.n}(${fmt(c.p,3)})(1-${fmt(c.p,3)})}\\approx ${fmt(sigma,3)}.\\]</p>`;
+    const graph=document.createElement('div');graph.style.maxWidth='740px';graph.style.margin='0.75rem auto';wrapper.appendChild(graph);
+    renderBinomialHistogram(graph,c.n,c.p,{xLabel:'x',yLabel:'f(x)'});typeset([wrapper]);
+  }
+
+  function proportionDeMoivreSetup(problem) {
+    const c=problem.context,wrapper=makeHintWrapper(),mu=c.n*c.p,sigma=Math.sqrt(c.n*c.p*(1-c.p));
+    wrapper.innerHTML='<p>We use the De Moivre–Laplace normal approximation of the binomial distribution with the same mean and standard deviation.</p>';
+    appendNormalAndTable(wrapper,mu,sigma,null,'number of successes');typeset([wrapper]);
+  }
+
+  function proportionConvertCounts(problem) {
+    const c=problem.context,e=problem.task.event,wrapper=makeHintWrapper();let html='';
+    if(e.type==='range') html=`<p>\\[${c.n}(${fmt(e.left,3)})=${e.countLeft}\\hspace{8mm}\\text{ and }\\hspace{8mm}${c.n}(${fmt(e.right,3)})=${e.countRight}.\\]</p>`;
+    else if(e.type==='oneSided'||e.type==='percentileOfValue') html=`<p>\\[${c.n}(${fmt(e.m,3)})=${e.countM}.\\]</p>`;
+    else if(e.type==='conditional') html=`<p>Convert all three proportion cutoffs to success counts:</p><p>\\[${c.n}(${fmt(e.lower,3)})=${e.countLower},\\qquad ${c.n}(${fmt(e.m,3)})=${e.countM},\\qquad ${c.n}(${fmt(e.upper,3)})=${e.countUpper}.\\]</p>`;
+    else if(e.type==='valueFromPercentile'||e.type==='quartile'||e.type==='median') html=`<p>A proportion cutoff corresponds to a success-count cutoff through \\(X=n\\hat p\\):</p><p>\\[X=${c.n}(${fmt(e.answer,4)})\\approx ${fmt(e.countAnswer,3)}.\\]</p>`;
+    else if(e.type==='iqr') html=`<p>Convert the quartiles and their separation from proportions to counts:</p><p>\\[Q_{1,X}=${c.n}(${fmt(e.q1,4)})\\approx ${fmt(e.countQ1,3)},\\qquad Q_{3,X}=${c.n}(${fmt(e.q3,4)})\\approx ${fmt(e.countQ3,3)},\\]</p><p>\\[IQR_X=${c.n}(${fmt(e.answer,4)})\\approx ${fmt(e.countAnswer,3)}.\\]</p>`;
+    else if(e.type==='mean') html=`<p>Since \\(X=n\\hat p\\), the means satisfy</p><p>\\[\\mu_X=n\\mu_{\\hat p}=${c.n}(${fmt(e.answer,4)})=${fmt(e.countAnswer,3)}.\\]</p>`;
+    else if(e.type==='standardDeviation') html=`<p>Since \\(X=n\\hat p\\), standard deviations scale by \\(n\\):</p><p>\\[\\sigma_X=n\\sigma_{\\hat p}=${c.n}(${fmt(e.answer,6)})\\approx ${fmt(e.countAnswer,3)}.\\]</p>`;
+    else if(e.type==='variance') html=`<p>Since \\(X=n\\hat p\\), variances scale by \\(n^2\\):</p><p>\\[\\operatorname{Var}(X)=n^2\\operatorname{Var}(\\hat p)=${c.n}^2(${fmt(e.answer,8)})\\approx ${fmt(e.countAnswer,3)}.\\]</p>`;
+    wrapper.innerHTML=html;typeset([wrapper]);
+  }
+
+  function proportionBinomialCalculation(problem) {
+    const c=problem.context,e=problem.task.event,wrapper=makeHintWrapper(),mu=c.n*c.p,sigma=Math.sqrt(c.n*c.p*(1-c.p)),data=proportionEventData(problem,true);let html='';
+    const zRaw=x=>`\\frac{${fmt(c.n*x,3)}-${fmt(mu,3)}}{${fmt(sigma,3)}}`;
+    if(e.type==='range') html=`<p>\\[\\begin{aligned}
+      P(${e.countLeft}\\leq X\\leq${e.countRight})
+      &=P\\left(${zRaw(e.left)}\\leq Z\\leq${zRaw(e.right)}\\right)\\\\
+      &\\approx P(${fmt(e.z1,2)}\\leq Z\\leq${fmt(e.z2,2)})\\\\
+      &=${phiTex(e.z2)}-${phiTex(e.z1)}=${probFmt(e.answer)}.
+      \\end{aligned}\\]</p>`;
+    else if(e.type==='oneSided') {
+      const left=e.relation==='<'||e.relation==='\\leq',rel=e.relation==='<'?'\\lt':e.relation;
+      html=left?`<p>\\[\\begin{aligned}P(X${rel}${e.countM})&=P\\left(Z\\leq${zRaw(e.m)}\\right)\\\\&\\approx P(Z\\leq${fmt(e.z,2)})=${probFmt(e.answer)}.\\end{aligned}\\]</p>`:`<p>\\[\\begin{aligned}P(X${rel}${e.countM})&=P\\left(Z>${zRaw(e.m)}\\right)\\\\&\\approx P(Z>${fmt(e.z,2)})=1-${phiTex(e.z)}=${probFmt(e.answer)}.\\end{aligned}\\]</p>`;
+    } else if(e.type==='conditional') {
+      const rel=e.targetRelation==='<'?'\\lt':'>';
+      const num=e.targetRelation==='<'?`${phiTex(e.zM)}-${phiTex(e.zLower)}`:`${phiTex(e.zUpper)}-${phiTex(e.zM)}`;
+      html=`<p>\\[\\begin{aligned}
+      P(X${rel}${e.countM}\\mid ${e.countLower}\\leq X\\leq${e.countUpper})
+      &=\\frac{P(${e.targetRelation==='<'?`${e.countLower}\\leq X<${e.countM}`:`${e.countM}<X\\leq${e.countUpper}`})}{P(${e.countLower}\\leq X\\leq${e.countUpper})}\\\\
+      &\\approx\\frac{${num}}{${phiTex(e.zUpper)}-${phiTex(e.zLower)}}=${probFmt(e.answer)}.
+      \\end{aligned}\\]</p>`;
+    } else if(e.type==='percentileOfValue') {
+      html=`<p>\\[P(X\\leq ${e.countM})\\approx P(Z\\leq ${fmt(e.z,2)})=${probFmt(e.answer)}.\\]</p><p>Thus, ${fmt(e.countM,3)} successes is approximately the \\(${fmt(100*e.answer,1)}\\)th percentile.</p>`;
+    } else if(e.type==='valueFromPercentile'||e.type==='quartile') {
+      const label=e.type==='quartile'?e.quartileSymbol:`P_${e.percentile}`;
+      html=`<p>The required cumulative probability gives \\(Z\\approx ${fmt(e.z,2)}\\). Hence</p><p>\\[${label}=\\mu_X+Z\\sigma_X=${fmt(mu,3)}+(${fmt(e.z,2)})(${fmt(sigma,3)})\\approx ${fmt(e.countAnswer,3)}\\text{ successes}.\\]</p><p>Dividing by \\(n=${c.n}\\) gives ${finalDisplayValue(e.answer,problem.sampling)}.</p>`;
+    } else if(e.type==='iqr') {
+      html=`<p>\\[\\begin{aligned}Q_{1,X}&=${fmt(mu,3)}-0.67(${fmt(sigma,3)})\\approx ${fmt(e.countQ1,3)},\\\\Q_{3,X}&=${fmt(mu,3)}+0.67(${fmt(sigma,3)})\\approx ${fmt(e.countQ3,3)}.\\end{aligned}\\]</p><p>\\[IQR_X\\approx ${fmt(e.countAnswer,3)},\\qquad IQR_{\\hat p}=\\frac{IQR_X}{${c.n}}\\approx ${finalMathValue(e.answer,problem.sampling)}.\\]</p>`;
+    } else if(e.type==='mean') {
+      html=`<p>\\[\\mu_X=np=${c.n}(${fmt(c.p,3)})=${fmt(mu,3)},\\qquad \\mu_{\\hat p}=\\frac{\\mu_X}{n}=\\frac{${fmt(mu,3)}}{${c.n}}=${finalMathValue(e.answer,problem.sampling)}.\\]</p>`;
+    } else if(e.type==='median') {
+      html=`<p>The approximating normal distribution is symmetric, so</p><p>\\[\\operatorname{Med}(X)\\approx\\mu_X=${fmt(mu,3)},\\qquad \\operatorname{Med}(\\hat p)\\approx\\frac{${fmt(mu,3)}}{${c.n}}=${finalMathValue(e.answer,problem.sampling)}.\\]</p>`;
+    } else if(e.type==='standardDeviation') {
+      html=`<p>\\[\\sigma_X=\\sqrt{np(1-p)}\\approx ${fmt(sigma,3)},\\qquad \\sigma_{\\hat p}=\\frac{\\sigma_X}{n}=\\frac{${fmt(sigma,3)}}{${c.n}}\\approx ${finalMathValue(e.answer,problem.sampling)}.\\]</p>`;
+    } else if(e.type==='variance') {
+      html=`<p>\\[\\operatorname{Var}(X)=np(1-p)=${fmt(sigma*sigma,4)},\\qquad \\operatorname{Var}(\\hat p)=\\frac{\\operatorname{Var}(X)}{n^2}=\\frac{${fmt(sigma*sigma,4)}}{${c.n}^2}\\approx ${finalMathValue(e.answer,problem.sampling)}.\\]</p>`;
+    }
+    wrapper.innerHTML=html;appendNormalAndTable(wrapper,mu,sigma,data,'number of successes');typeset([wrapper]);
+  }
+
+  function proportionHintStep(problem,index) {
+    const cltFirst=proportionPrimaryIsCLT(problem);
+    const steps=cltFirst
+      ? [proportionCLTSetup,proportionCLTCalculation,proportionBinomialSetup,proportionDeMoivreSetup,proportionConvertCounts,proportionBinomialCalculation]
+      : [proportionBinomialSetup,proportionDeMoivreSetup,proportionConvertCounts,proportionBinomialCalculation,proportionCLTSetup,proportionCLTCalculation];
+    steps[index-1](problem);
+    return steps.length;
+  }
+
+  function renderCLTProblem(problem) {
+    clearCLTActivity(); questionText.innerHTML=problem.wording;
+    hintBtn.disabled=false; hintBtn.textContent='Hint'; nextBtn.style.display='none';
+    typeset([questionText]);
+  }
+
+  startBtn.addEventListener('click',()=>{
+    playSound('click-sound'); currentCLTDraft=generateCLTQuestion(); renderCLTProblem(currentCLTDraft);
+  });
+
+  hintBtn.addEventListener('click',()=>{
+    playSound('click-sound'); if(!currentCLTDraft)return;
+    currentCLTDraft.hintIndex++;
+    if(currentCLTDraft.type==='proportions') {
+      const total=proportionHintStep(currentCLTDraft,currentCLTDraft.hintIndex);
+      if(currentCLTDraft.hintIndex>=total) hintBtn.disabled=true;
+    } else if(currentCLTDraft.hintIndex===1) underlyingStep(currentCLTDraft);
+    else if(currentCLTDraft.hintIndex===2) samplingStep(currentCLTDraft);
+    else if(currentCLTDraft.hintIndex===3){calculationStep(currentCLTDraft);hintBtn.disabled=true;}
+
+  });
+
+</script>
+
+
+
+  <audio id="click-sound" src="button.mp3" preload="auto"></audio>
+  <audio id="set-sound" src="set2.mp3" preload="auto"></audio>
+
+</body>
+</html>

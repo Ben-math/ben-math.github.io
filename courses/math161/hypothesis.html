@@ -53,24 +53,25 @@ fetch("/nav.html")
     </ul></p>
 
     <p>Over the course of their career, a power forward has averaged 5.6 defensive rebounds per game, with a standard deviation of 1 rebound.  
-    This season, they have a new coach who has given them tips to box out better.  They play in 72 games this season, and average 5.9 defensive rebounds 
-    per game.  Conduct a hypothesis test at a level of significance of \(\alpha = 0.03\) to determine whether the coach's advice changed their performance.
+    This season, they have a new coach who has given them new guidance on rebounding.  They play in 72 games this season, and average 5.4 defensive rebounds 
+    per game.  Conduct a hypothesis test at a level of significance of \(\alpha = 0.07\) to determine whether the coach's advice changed their performance.
     \[H_0: \mu = 5.6 \hspace{3mm} \text{ and } \hspace{3mm} H_a: \mu \neq 5.6\]
     This is a two-tailed test, since the alternative hypothesis lies in areas on both sides of the mean.<br><br>
     Since we are given the population standard deviation \(\sigma = 1\), and this is a question about means, we use the normal distribution for sample means, 
     which itself has mean and standard deviation
     \[\mu_{\overline{x}} = \mu_X = 5.6 \hspace{3mm} \text{ and } \hspace{3mm} \sigma_{\overline{x}} 
     = \frac{\sigma_X}{\sqrt{n}} = \frac{1}{\sqrt{72}} \approx 0.118\]
-    We find the probability of having a result as extreme (or more) than the one we obtained: that is, being farther than 0.3 rebounds from the mean.
-    \[P(\overline{x} > 5.9 \text{ OR } \overline{x} < 5.3) = 2 \cdot P(\overline{x} < 5.3) = 2 \cdot P\left(Z < \frac{5.3-5.6}{0.118}\right)\] 
-    \[= 2 \cdot P(Z < -2.54) = 2(0.0055) = 0.0110\]
-    Our \(p\)-value \(0.0110 < 0.03 = \alpha\), so we reject \(H_0\).  There is sufficient evidence to conclude the new coaching changed performance.<br><br>
-    Alternatively, we could find the bounds of rejection in terms of # of standard deviations from the mean.  Since \(\alpha = 0.03\), we have 1.5% of the 
-    area under the curve in each rejection tail.  We look up \(z_{0.015}\), finding \(-2.17\).  Since our result is farther right of \(2.17\), at \(2.54\) 
-    standard deviations, we reject \(H_0\).<br><br>
+    We find the probability of having a result as extreme (or more) than the one we obtained: that is, being farther than 0.2 rebounds from the mean.
+    \[P(\overline{x} > 5.8 \text{ OR } \overline{x} < 5.4) = 2 \cdot P(\overline{x} < 5.4) = 2 \cdot P\left(Z < \frac{5.4-5.6}{0.118}\right)\] 
+    \[= 2 \cdot P(Z < -1.69) = 2(0.0455) = 0.0910\]
+    Our \(p\)-value \(0.0910 > 0.07 = \alpha\), so we decline to reject \(H_0\).  There is insufficient evidence to conclude the new coaching changed 
+    performance.<br><br>
+    Alternatively, we could find the bounds of rejection in terms of # of standard deviations from the mean.  Since \(\alpha = 0.07\), we have 3.5% of the 
+    area under the curve in each rejection tail.  We look up \(z_{0.035}\), finding \(-1.81\).  Since our result is not as far left as \(-1.81\), at 
+    \(-1.69\) standard deviations, we decline to reject \(H_0\).<br><br>
     <i>Or</i>, we find the bounds of the rejection region in terms of # of rebounds:
-    \[5.6-2.17(0.118) = 5.34 \text{ rebounds} \hspace{3mm}\text { and } \hspace{3mm} 5.6+2.17(0.118) = 5.86 \text{ rebounds}\]
-    and our result of \(5.9\) rebounds is farther right than that, so we reject \(H_0\).</p>
+    \[5.6-1.81(0.118) = 5.39 \text{ rebounds} \hspace{3mm}\text { and } \hspace{3mm} 5.6+1.81(0.118) = 5.81 \text{ rebounds}\]
+    and our result of \(5.4\) does not make it that far left, so we decline to reject \(H_0\).</p>
 
     <p>Boxes of a particular cereal are advertised as containing more than 67 marshmallows.  You buy 5 boxes of the cereal, finding 80, 68, 102, 72, and 89 
     marshmallows in each of the boxes.  Conduct a hypothesis test at a level of significance of \(\alpha = 0.1\) to test the advertised claim.<br><br>

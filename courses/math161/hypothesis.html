@@ -96,7 +96,13 @@ fetch("/nav.html")
     and our result of \(82.2\) marshallows is farther right than that, so we reject \(H_0\).</p>
 
     <p>You are testing a new vaccine's efficacy.  You test 200 members of a community, and find that 3 of them are infected with the relevant virus.  
-    Conduct a hypothesis test at a level of significance of \(\alpha = 0.04\) to determine whether the vaccine provides greater than 92% protection.</p>
+    Conduct a hypothesis test at a level of significance of \(\alpha = 0.04\) to determine whether the vaccine provides greater than 92% protection.
+    \[H_0: \hat{p} \leq 0.92 \hspace{3mm} \text{ and } \hspace{3mm} H_a: \hat{p} > 0.92\]
+    This is a one-tailed test (left), since the alternative hypothesis lies in an area to the left of the mean.<br><br>
+    Since this is a question about proportions (we experimentally found \(\hat{p} = \frac{3}{200} = 0.015\)), we use the normal distribution for sample 
+    proportions, which itself has mean and standard deviation
+    \[\mu_{\hat{p}} = p = 0.015 \hspace{3mm} \text{ and } \hspace{3mm} \sigma_{\hat{p}} = \sqrt{\frac{p(1-p)}{n}} = \sqrt{\frac{0.015(0.985)}{200}} 
+    \approx 0.0086\]</p>
 
 <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

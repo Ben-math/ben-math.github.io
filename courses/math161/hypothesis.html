@@ -118,6 +118,27 @@ fetch("/nav.html")
     \[0.03-2.05(0.0086) = 0.0124\]
     and our result of \(0.015\) is not that far to the left, so we decline to reject \(H_0\).  <div id="hyp-normal-phat-prop" style="margin:1rem auto; max-width:760px;"></div></p>
 
+    <p>You want to determine whether lemons weigh more than limes, on average.  You sample 70 lemons, and they have an average weight of 80g, with a 
+    population standard deviation of 7g.  You sample 40 limes, and they have an average weight of 78g, with a population standard deviation of 5g.  Conduct 
+    a hypothesis test at a level of significance of \(\alpha = 0.05\) to determine whether lemons weigh more than limes on average.
+    \[H_0: \mu_c \leq \mu_d \implies \mu_c - \mu_d \leq 0 \hspace{3mm} \text{ and } \hspace{3mm} H_a: \mu_c > \mu_d \implies \mu_c - \mu_d > 0\]
+    Let \(c\) represent lemons and \(d\) represent limes.  This is a one-tailed test (right), since the alternative hypothesis lies in an area to the right of 
+    the mean.<br><br>
+    Since we are given the population standard deviations \(\sigma_c = 7\) and \(\sigma_d = 5\), and this is a question about a difference of means, we use the 
+    normal distribution for a difference of sample means, which itself has mean (since the status quo is ``no difference'') and standard deviation
+    \[\mu_{\overline{x}_c - \overline{x}_d} = 0 \hspace{3mm} \text{ and } \hspace{3mm} \sigma_{\overline{x}_c-\overline{x}_d} = \sqrt{\frac{(\sigma_c)^2}{n_c} 
+    + \frac{(\sigma_d)^2}{n_d}} = \sqrt{\frac{7^2}{70}+\frac{5^2}{40}} \approx 1.15\]
+    We find the probability of having a result as extreme (or more) than the one we obtained: that is, a difference in weight greater than \(80-78 = 2\) grams.
+    \[P(\overline{x}_c - \overline{x}_d > 3) = 1 - P\left(Z < \frac{2-0}{1.15}\right) = 1 - P(Z < 1.74)\] 
+    \[= 1 - 0.9591 = 0.0409\]
+    Our \(p\)-value \(0.0409 < 0.05 = \alpha\), so we reject \(H_0\).  There is sufficient evidence to conclude lemons weigh more than limes on average.<br><br>
+    Alternatively, we could find the bounds of rejection in terms of # of standard deviations from the mean.  Since \(\alpha = 0.05\), we have 5% of the area 
+    under the curve in the right rejection tail.  We look up \(z_{0.95} = 1.65\).  Since our result is farther right of \(1.65$\), at \(1.74\) standard 
+    deviations, we reject \(H_0\).<br><br>
+    <i>Or</i>, we find the bounds of the rejection region in terms of grams:
+    \[0+1.65(1.15) = 1.9 \text{ grams}\]
+    and our result of 2 grams is farther right than that, so we reject \(H_0\).</p>
+
 <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>

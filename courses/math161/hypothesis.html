@@ -64,14 +64,15 @@ fetch("/nav.html")
     We find the probability of having a result as extreme (or more) than the one we obtained: that is, being farther than 0.2 rebounds from the mean.
     \[P(\overline{x} > 5.8 \text{ OR } \overline{x} < 5.4) = 2 \cdot P(\overline{x} < 5.4) = 2 \cdot P\left(Z < \frac{5.4-5.6}{0.118}\right)\] 
     \[= 2 \cdot P(Z < -1.69) = 2(0.0455) = 0.0910\]
+    INSERT FIGURE HERE
     Our \(p\)-value \(0.0910 > 0.07 = \alpha\), so we decline to reject \(H_0\).  There is insufficient evidence to conclude the new coaching changed 
     performance.<br><br>
     Alternatively, we could find the bounds of rejection in terms of # of standard deviations from the mean.  Since \(\alpha = 0.07\), we have 3.5% of the 
-    area under the curve in each rejection tail.  We look up \(z_{0.035}\), finding \(-1.81\).  Since our result is not as far left as \(-1.81\), at 
-    \(-1.69\) standard deviations, we decline to reject \(H_0\).<br><br>
+    area under the curve in each rejection tail.  We look up \(z_{0.035}\), finding \(-1.81\).  INSERT FIGURE HERE  Since our result is not as far left as \(-1.81\), at 
+    \(-1.69\) standard deviations, we decline to reject \(H_0\).<br><br>INSERT FIGURE HERE
     <i>Or</i>, we find the bounds of the rejection region in terms of # of rebounds:
     \[5.6-1.81(0.118) = 5.39 \text{ rebounds} \hspace{3mm}\text { and } \hspace{3mm} 5.6+1.81(0.118) = 5.81 \text{ rebounds}\]
-    and our result of \(5.4\) does not make it that far left, so we decline to reject \(H_0\).</p>
+    and our result of \(5.4\) does not make it that far left, so we decline to reject \(H_0\).  INSERT FIGURE HERE</p>
 
     <p>Boxes of a particular cereal are advertised as containing more than 67 marshmallows.  You buy 5 boxes of the cereal, finding 80, 68, 102, 72, and 89 
     marshmallows in each of the boxes.  Conduct a hypothesis test at a level of significance of \(\alpha = 0.1\) to test the advertised claim.<br><br>
@@ -88,12 +89,12 @@ fetch("/nav.html")
     We find the probability of having a result as extreme (or more) than the one we obtained: that is, being farther right than 82.2 marshmallows.
     \[P(\overline{x} > 82.2) = P\left(t > \frac{82.2-67}{6.12}\right) = P(t > 2.484)\] 
     We can't directly compute probabilities for the \(t\)-distribution, but <i>can</i> find the bounds of the rejection region.  First, in terms of # of 
-    standard deviations from the mean, since \(\alpha = 0.1\) and \(df = n-1 = 4\), we check the \(t\)-table for a one-tailed test, finding \(t=1.533\).  
+    standard deviations from the mean, since \(\alpha = 0.1\) and \(df = n-1 = 4\), we check the \(t\)-table for a one-tailed test, finding \(t=1.533\).  INSERT FIGURE HERE
     Our result is farther to the right, at \(2.484\) standard deviations, so we reject \(H_0\).  So, there is sufficient evidence to conclude the boxes of 
-    cereal do in fact contain more than 67 marshmallows.<br><br>
+    cereal do in fact contain more than 67 marshmallows.<br><br>  INSERT FIGURE HERE
     <i>Or</i>, we could find the bounds of rejection in terms of # of marshmallows:
     \[67+1.533(6.12) = 76.38 \text{ marshmallows}\]
-    and our result of \(82.2\) marshallows is farther right than that, so we reject \(H_0\).</p>
+    and our result of \(82.2\) marshallows is farther right than that, so we reject \(H_0\).  INSERT FIGURE HERE</p>
 
     <p>You are testing a new vaccine's efficacy.  You test 200 members of a community, and find that 3 of them are infected with the relevant virus.  
     Conduct a hypothesis test at a level of significance of \(\alpha = 0.02\) to determine whether the vaccine provides greater than 97% protection.<br><br>
@@ -106,14 +107,15 @@ fetch("/nav.html")
     \approx 0.0086\]
     We find the probability of having a result as extreme (or more) than the one we obtained: that is, being farther left than \(0.015\).
     \[P(\hat{p} < 0.015) = P\left(Z < \frac{0.015-0.03}{0.0086}\right) = P(Z < -1.74) = 0.0409\] 
+    INSERT FIGURE HERE
     Our \(p\)-value \(0.0409 > 0.02 = \alpha\), so we decline to reject \(H_0\).  There is insufficient evidence to conclude that less than 3% of people 
-    are infected.<br><br>
+    are infected.<br><br>  INSERT FIGURE HERE
     Alternatively, we could find the bounds of rejection in terms of # of standard deviations from the mean.  Since \(\alpha = 0.02\), we have 2% of the area 
     under the curve in the left tail.  We look up \(z_{0.02} = -2.05\).  Since our result is not that far to the left, at \(-1.74\) standard deviations, 
-    we decline to reject \(H_0\).<br><br>
+    we decline to reject \(H_0\).  INSERT FIGURE HERE<br><br>
     <i>Or</i>, we find the bounds of the rejection region in terms of proportion:
     \[0.03-2.05(0.0086) = 0.0124\]
-    and our result of \(0.015\) is not that far to the left, so we decline to reject \(H_0\).</p>
+    and our result of \(0.015\) is not that far to the left, so we decline to reject \(H_0\).  INSERT FIGURE HERE</p>
 
 <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

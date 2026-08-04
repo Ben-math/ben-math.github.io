@@ -166,6 +166,55 @@ fetch("/nav.html")
     \[0+2.11(0.0277)  = 0.058447 \]
     and our result of \(0.05\) is not that far to the right, so we decline to reject \(H_0\).  INSERT FIGURE HERE</p>
 
+    <p>You want to determine whether the Green party is more popular with vegetarians.  You survey 100 vegetarians, 30 of whom say they plan to vote for the 
+    Green party.  You survey 120 non-vegetarians, 21 of whom say they plan to vote for the Green party.  Conduct a hypothesis test at a level of significance 
+    of \(\alpha = 0.02\) to see whether the Green party is more popular with vegetarians.
+    \[H_0: \mu_v \leq \mu_m \implies \mu_v - \mu_m \leq 0 \hspace{3mm} \text{ and } \hspace{3mm} H_a: \mu_v > \mu_m \implies \mu_v - \mu_m > 0\]
+    This is a one-tailed test (right), since the alternative hypothesis lies in an area to the right of the mean.<br><br>
+    Since this is a question about a difference of proportions (we experimentally found \(\hat{p}_v = \frac{30}{100} = 0.3\) and \(\hat{p}_m = \frac{21}{120} 
+    = 0.175\)), we use the normal distribution for a difference of sample proportions, which itself has mean (since the status quo is "no difference") and 
+    standard deviation
+    \[\mu_{\hat{p}_v - \hat{p}_m} = 0 \hspace{3mm} \text{ and } \hspace{3mm} \sigma_{\hat{p}_v-\hat{p}_m} = 
+    \sqrt{\left(\frac{x_v+x_m}{n_v+n_m}\right)\left(1 - \frac{x_v+x_m}{n_v+n_m}\right)\left(\frac{1}{n_v} + \frac{1}{n_m}\right)}\]
+    \[=\sqrt{\left(\frac{30+21}{100+120}\right)\left(1 - \frac{30+21}{100+120}\right)\left(\frac{1}{100} + \frac{1}{120}\right)} \approx 0.0571\]
+    We find the probability of having a result as extreme (or more) than the one we obtained: that is, a difference in proportion greater than 
+    \(0.3-0.175 = 0.125\).
+    \[P(\hat{p}_v - \hat{p}_m > 0.125) = 1 - P\left(Z < \frac{0.125-0}{0.0571}\right) = 1 - P(Z < 2.19)\] 
+    \[= 1 - 0.9857 = 0.0143\]
+    INSERT FIGURE HERE
+    Our \(p\)-value \(0.0143 < 0.02 = \alpha\), so we reject \(H_0\).  There is sufficient evidence to conclude the Green party is more popular with 
+    vegetarians.<br><br>
+    Alternatively, we could find the bounds of rejection in terms of # of standard deviations from the mean.  Since \(\alpha = 0.02\), we have 2% of the area 
+    under the curve in the right rejection tail.  We look up \(z_{0.98} = 2.05\).  INSERT FIGURE HERE  Since our result is farther right of \(2.05\), at \(2.19\) standard 
+    deviations, we reject \(H_0\).  INSERT FIGURE HERE<br><br>
+    <i>Or</i>, we find the bounds of the rejection region in terms of years:
+    \[0+2.05(0.0571) = 0.117055 \text{ years}\]
+    and our result of \(0.125\) is farther right than that, so we reject \(H_0\).  INSERT FIGURE HERE</p>
+
+    <p>Four students (Bart, Milhouse, Ralph, and Nelson) start taking the drug Focusyn to improve their ability to detect conspiracies.  Before taking Focusyn, 
+    in an average month, they detected 3, 1, 0, and 1 respectively.  After Focusyn, they detected 7, 9, 5, and 13 respectively.  Conduct a hypothesis test at 
+    a level of significance of \(\alpha = 0.01\) to determine whether Focusyn improves one's ability to uncover conspiracies.<br><br>
+    We start by finding the differences (they are our data -- this is a paired $t$-test since we have two measurements from the same sample):
+    \[\{7-3,9-1,5-0,13-1\} = \{4,8,5,12\}\]
+    and then computing the sample mean and sample standard deviation:
+    \[\overline{x} = \frac{4+8+5+12}{4} = 7.25\]
+    \[s = \sqrt{\frac{\sum(x-\overline{x})^2}{n-1}} = \sqrt{\frac{(4-7.25)^2+(8-7.25)^2+(5-7.25)^2+(12-7.25)^2}{4-1}} \approx 3.594\]
+    \[H_0: \mu \leq 0 \hspace{3mm} \text{ and } \hspace{3mm} H_a: \mu > 0\]
+    This is a one-tailed (right) test, since the alternative hypothesis lies in an area to the right of the mean.<br><br>
+    Since we are using the sample standard deviation \(s = 3.594\) to stand in for the population standard deviation \(\sigma\), we have a small sample 
+    size, and this is a question about means, we use Student's $t$-distribution for sample means, which itself has mean (since the status quo is 
+    "no difference") and standard deviation
+    \[\mu_{\overline{x}} = 0 \hspace{3mm} \text{ and } \hspace{3mm} \sigma_{\overline{x}} = \frac{\sigma_X}{\sqrt{n}} = \frac{3.594}{\sqrt{4}} = 1.797\]
+    We find the probability of having a result as extreme (or more) than the one we obtained: that is, being farther right than 9.1 hours.
+    \[P(\overline{x} > 7.25) = P\left(t > \frac{7.25-0}{1.797}\right) = P(t > 4.03)\]
+    We can't directly compute probabilities for the \(t\)-distribution, but <i>can</i> find the bounds of the rejection region.  First, in terms of # of 
+    standard deviations from the mean, since \(\alpha = 0.01\) and \(df = n-1 = 3\), we check the \(t\)-table for a one-tailed test, finding \(t=4.541\).  
+    INSERT FIGURE HERE Our result is not quite that far to the right, at \(4.03\) standard deviations, so we decline to reject \(H_0\).  
+    So, there is insufficient evidence to conclude Focusyn improves conspiracy detection ability.  INSERT FIGURE HERE <br><br>
+    <i>Or</i>, we could find the bounds of rejection in terms of # of conspiracies:
+    \[0+4.541(1.797) = 8.160177 \text{ conspiracies}\]
+    and our result of \(7.25\) hours is not that far to the right, so we decline to reject \(H_0\).  INSERT FIGURE HERE</p>
+
 <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>

@@ -140,6 +140,32 @@ fetch("/nav.html")
     \[0+1.65(1.15) = 1.9 \text{ grams}\]
     and our result of 2 grams is farther right than that, so we reject \(H_0\).  INSERT FIGURE HERE</p>
 
+    <p>Two teachers believe the students in their classes perform approximately the same on tests.  The 7 students in Class A had an average grade of 80% on 
+    a test, with a standard deviation of 5%.  The 12 students in Class B had an average grade of 75% on the same test, with a standard deviation of 7%.  
+    Conduct a hypothesis test at a level of significance of \(\alpha = 0.05\) to determine whether there is a significant difference between the classes' 
+    performance on tests.
+    \[H_0: \mu_A = \mu_B \implies \mu_A - \mu_B = 0 \hspace{3mm} \text{ and } \hspace{3mm} H_a: \mu_A \neq \mu_B \implies \mu_A - \mu_B \neq 0\]
+    This is a two-tailed test, since the alternative hypothesis lies in areas on both sides of the mean.<br><br>
+    Since we don't know the population standard deviations (and are using sample standard deviations \(s_A = 0.05\) and \(s_B = 0.07\) to stand in for 
+    \(\sigma_A\) and \(\sigma_B\)), and this is a question about a difference of means, we use Student's \(t\)-distribution for a difference of sample means, 
+    which itself has mean (since the status quo is "no difference") and standard deviation
+    \[\mu_{\overline{x}_A - \overline{x}_B} = 0 \hspace{3mm} \text{ and } \hspace{3mm} \sigma_{\overline{x}_A-\overline{x}_B} = 
+    \sqrt{\frac{(\sigma_A)^2}{n_A} + \frac{(\sigma_B)^2}{n_B}} = \sqrt{\frac{0.05^2}{7}+\frac{0.07^2}{12}} \approx 0.0277\]
+    We find the probability of having a result as extreme (or more) than the one we obtained: that is, a difference of more than \(80\%-75\% = 0.05\) in grades.
+    \[P(\overline{x}_A - \overline{x}_B > 0.05 \text{ OR } \overline{x}_A - \overline{x}_B < -0.05) = 2 \cdot P\left(t > \frac{0.05-0}{0.0277}\right) 
+    = 2 \cdot P(t > 1.81)\]
+    We can't directly compute probabilities for the $t$-distribution, but {\it can} find the bounds of the rejection region.  First, we find
+    \[df = \frac{\left(\frac{(s_A)^2}{n_A} + \frac{(s_B)^2}{n_B}\right)^2}{\left(\frac{1}{n_A-1}\right)\left(\frac{(s_A)^2}{n_A}\right)^2 + 
+    \left(\frac{1}{n_B-1}\right)\left(\frac{(s_B)^2}{n_B}\right)^2} = \frac{\left(\frac{0.05^2}{7} + 
+    \frac{0.07^2}{12}\right)^2}{\left(\frac{1}{7-1}\right)\left(\frac{0.05^2}{7}\right)^2 + \left(\frac{1}{12-1}\right)\left(\frac{0.07^2}{12}\right)^2}\]
+    \[\approx 16.09\]
+    so we round up and consult the \(t\)-table for a two-tailed test, \(\alpha = 0.05\), \(df = 17\), finding \(t = 2.11\).  INSERT FIGURE HERE  Our result is not that far to 
+    the right, at \(1.81\) standard deviations, so we decline to reject \(H_0\).  So, there is insufficient evidence to conclude there is a significant 
+    difference in the classes' performance on tests.  INSERT FIGURE HERE<br><br>
+    <i>Or</i>, we could find the bounds of rejection in terms of grades:
+    \[0+2.11(0.0277)  = 0.058447 \]
+    and our result of \(0.05\) is not that far to the right, so we decline to reject \(H_0\).  INSERT FIGURE HERE</p>
+
 <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>

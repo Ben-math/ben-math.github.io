@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2450,7 +2451,7 @@ fetch("/nav.html")
     const d=hypHintBox();
     let dfText='';
     if(p.type==='diffMeansUnknown') {
-      dfText=`<p>We find the Welch degrees of freedom:</p><p>\\[df\\approx${hypFmt(p.dfRaw,2)},\\]</p><p>so we round up and use \\(df=${p.df}\\).</p>`;
+      dfText=`<p>We find the degrees of freedom:</p><p>\\[df\\approx${hypFmt(p.dfRaw,2)},\\]</p><p>so we round up and use \\(df=${p.df}\\).</p>`;
     } else if(p.useT) {
       dfText=`<p>Here \\(df=n-1=${p.df}\\).</p>`;
     }

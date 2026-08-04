@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -131,14 +132,14 @@ fetch("/nav.html")
     We find the probability of having a result as extreme (or more) than the one we obtained: that is, a difference in weight greater than \(80-78 = 2\) grams.
     \[P(\overline{x}_c - \overline{x}_d > 3) = 1 - P\left(Z < \frac{2-0}{1.15}\right) = 1 - P(Z < 1.74)\] 
     \[= 1 - 0.9591 = 0.0409\]
-    INSERT FIGURE HERE
+    <div id="hyp-ztable-observed-diffmeans-known" style="margin:20px 0;"></div>
     Our \(p\)-value \(0.0409 < 0.05 = \alpha\), so we reject \(H_0\).  There is sufficient evidence to conclude lemons weigh more than limes on average.<br><br>
     Alternatively, we could find the bounds of rejection in terms of # of standard deviations from the mean.  Since \(\alpha = 0.05\), we have 5% of the area 
-    under the curve in the right rejection tail.  We look up \(z_{0.95} = 1.65\).  INSERT FIGURE HERE  Since our result is farther right of \(1.65\), at \(1.74\) standard 
-    deviations, we reject \(H_0\).  INSERT FIGURE HERE<br><br>
+    under the curve in the right rejection tail.  We look up \(z_{0.95} = 1.65\).  <div id="hyp-ztable-critical-diffmeans-known" style="margin:20px 0;"></div>  Since our result is farther right of \(1.65\), at \(1.74\) standard 
+    deviations, we reject \(H_0\).  <div id="hyp-normal-z-diffmeans-known" style="margin:1rem auto; max-width:760px;"></div><br><br>
     <i>Or</i>, we find the bounds of the rejection region in terms of grams:
     \[0+1.65(1.15) = 1.9 \text{ grams}\]
-    and our result of 2 grams is farther right than that, so we reject \(H_0\).  INSERT FIGURE HERE</p>
+    and our result of 2 grams is farther right than that, so we reject \(H_0\).  <div id="hyp-normal-diffmeans-known" style="margin:1rem auto; max-width:760px;"></div></p>
 
     <p>Two teachers believe the students in their classes perform approximately the same on tests.  The 7 students in Class A had an average grade of 80% on 
     a test, with a standard deviation of 5%.  The 12 students in Class B had an average grade of 75% on the same test, with a standard deviation of 7%.  
@@ -159,12 +160,12 @@ fetch("/nav.html")
     \left(\frac{1}{n_B-1}\right)\left(\frac{(s_B)^2}{n_B}\right)^2} = \frac{\left(\frac{0.05^2}{7} + 
     \frac{0.07^2}{12}\right)^2}{\left(\frac{1}{7-1}\right)\left(\frac{0.05^2}{7}\right)^2 + \left(\frac{1}{12-1}\right)\left(\frac{0.07^2}{12}\right)^2}\]
     \[\approx 16.09\]
-    so we round up and consult the \(t\)-table for a two-tailed test, \(\alpha = 0.05\), \(df = 17\), finding \(t = 2.11\).  INSERT FIGURE HERE  Our result is not that far to 
+    so we round up and consult the \(t\)-table for a two-tailed test, \(\alpha = 0.05\), \(df = 17\), finding \(t = 2.11\).  <div id="hyp-ttable-diffmeans-unknown" style="margin:20px auto; max-width:1100px; overflow-x:auto;"></div>  Our result is not that far to 
     the right, at \(1.81\) standard deviations, so we decline to reject \(H_0\).  So, there is insufficient evidence to conclude there is a significant 
-    difference in the classes' performance on tests.  INSERT FIGURE HERE<br><br>
+    difference in the classes' performance on tests.  <div id="hyp-t-z-diffmeans-unknown" style="margin:1rem auto; max-width:760px;"></div><br><br>
     <i>Or</i>, we could find the bounds of rejection in terms of grades:
     \[0+2.11(0.0277)  = 0.058447 \]
-    and our result of \(0.05\) is not that far to the right, so we decline to reject \(H_0\).  INSERT FIGURE HERE</p>
+    and our result of \(0.05\) is not that far to the right, so we decline to reject \(H_0\).  <div id="hyp-t-diffmeans-unknown" style="margin:1rem auto; max-width:760px;"></div></p>
 
     <p>You want to determine whether the Green party is more popular with vegetarians.  You survey 100 vegetarians, 30 of whom say they plan to vote for the 
     Green party.  You survey 120 non-vegetarians, 21 of whom say they plan to vote for the Green party.  Conduct a hypothesis test at a level of significance 
@@ -181,20 +182,20 @@ fetch("/nav.html")
     \(0.3-0.175 = 0.125\).
     \[P(\hat{p}_v - \hat{p}_m > 0.125) = 1 - P\left(Z < \frac{0.125-0}{0.0571}\right) = 1 - P(Z < 2.19)\] 
     \[= 1 - 0.9857 = 0.0143\]
-    INSERT FIGURE HERE
+    <div id="hyp-ztable-observed-diffprops" style="margin:20px 0;"></div>
     Our \(p\)-value \(0.0143 < 0.02 = \alpha\), so we reject \(H_0\).  There is sufficient evidence to conclude the Green party is more popular with 
     vegetarians.<br><br>
     Alternatively, we could find the bounds of rejection in terms of # of standard deviations from the mean.  Since \(\alpha = 0.02\), we have 2% of the area 
-    under the curve in the right rejection tail.  We look up \(z_{0.98} = 2.05\).  INSERT FIGURE HERE  Since our result is farther right of \(2.05\), at \(2.19\) standard 
-    deviations, we reject \(H_0\).  INSERT FIGURE HERE<br><br>
+    under the curve in the right rejection tail.  We look up \(z_{0.98} = 2.05\).  <div id="hyp-ztable-critical-diffprops" style="margin:20px 0;"></div>  Since our result is farther right of \(2.05\), at \(2.19\) standard 
+    deviations, we reject \(H_0\).  <div id="hyp-normal-z-diffprops" style="margin:1rem auto; max-width:760px;"></div><br><br>
     <i>Or</i>, we find the bounds of the rejection region in terms of years:
     \[0+2.05(0.0571) = 0.117055 \text{ years}\]
-    and our result of \(0.125\) is farther right than that, so we reject \(H_0\).  INSERT FIGURE HERE</p>
+    and our result of \(0.125\) is farther right than that, so we reject \(H_0\).  <div id="hyp-normal-diffprops" style="margin:1rem auto; max-width:760px;"></div></p>
 
     <p>Four students (Bart, Milhouse, Ralph, and Nelson) start taking the drug Focusyn to improve their ability to detect conspiracies.  Before taking Focusyn, 
     in an average month, they detected 3, 1, 0, and 1 respectively.  After Focusyn, they detected 7, 9, 5, and 13 respectively.  Conduct a hypothesis test at 
     a level of significance of \(\alpha = 0.01\) to determine whether Focusyn improves one's ability to uncover conspiracies.<br><br>
-    We start by finding the differences (they are our data -- this is a paired $t$-test since we have two measurements from the same sample):
+    We start by finding the differences (they are our data -- this is a paired \(t\)-test since we have two measurements from the same sample):
     \[\{7-3,9-1,5-0,13-1\} = \{4,8,5,12\}\]
     and then computing the sample mean and sample standard deviation:
     \[\overline{x} = \frac{4+8+5+12}{4} = 7.25\]
@@ -202,18 +203,18 @@ fetch("/nav.html")
     \[H_0: \mu \leq 0 \hspace{3mm} \text{ and } \hspace{3mm} H_a: \mu > 0\]
     This is a one-tailed (right) test, since the alternative hypothesis lies in an area to the right of the mean.<br><br>
     Since we are using the sample standard deviation \(s = 3.594\) to stand in for the population standard deviation \(\sigma\), we have a small sample 
-    size, and this is a question about means, we use Student's $t$-distribution for sample means, which itself has mean (since the status quo is 
+    size, and this is a question about means, we use Student's \(t\)-distribution for sample means, which itself has mean (since the status quo is 
     "no difference") and standard deviation
     \[\mu_{\overline{x}} = 0 \hspace{3mm} \text{ and } \hspace{3mm} \sigma_{\overline{x}} = \frac{\sigma_X}{\sqrt{n}} = \frac{3.594}{\sqrt{4}} = 1.797\]
     We find the probability of having a result as extreme (or more) than the one we obtained: that is, being farther right than 9.1 hours.
     \[P(\overline{x} > 7.25) = P\left(t > \frac{7.25-0}{1.797}\right) = P(t > 4.03)\]
     We can't directly compute probabilities for the \(t\)-distribution, but <i>can</i> find the bounds of the rejection region.  First, in terms of # of 
     standard deviations from the mean, since \(\alpha = 0.01\) and \(df = n-1 = 3\), we check the \(t\)-table for a one-tailed test, finding \(t=4.541\).  
-    INSERT FIGURE HERE Our result is not quite that far to the right, at \(4.03\) standard deviations, so we decline to reject \(H_0\).  
-    So, there is insufficient evidence to conclude Focusyn improves conspiracy detection ability.  INSERT FIGURE HERE <br><br>
+    <div id="hyp-ttable-paired" style="margin:20px auto; max-width:1100px; overflow-x:auto;"></div> Our result is not quite that far to the right, at \(4.03\) standard deviations, so we decline to reject \(H_0\).  
+    So, there is insufficient evidence to conclude Focusyn improves conspiracy detection ability.  <div id="hyp-t-z-paired" style="margin:1rem auto; max-width:760px;"></div> <br><br>
     <i>Or</i>, we could find the bounds of rejection in terms of # of conspiracies:
     \[0+4.541(1.797) = 8.160177 \text{ conspiracies}\]
-    and our result of \(7.25\) hours is not that far to the right, so we decline to reject \(H_0\).  INSERT FIGURE HERE</p>
+    and our result of \(7.25\) hours is not that far to the right, so we decline to reject \(H_0\).  <div id="hyp-t-paired" style="margin:1rem auto; max-width:760px;"></div></p>
 
 <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
@@ -1709,6 +1710,183 @@ fetch("/nav.html")
     yLabel: false,
     xMin: 0.03 - 4 * 0.0086,
     xMax: 0.03 + 4 * 0.0086,
+    width: 760,
+    height: 300
+  });
+
+
+  // Remaining hypothesis-testing lesson tables and rejection-region figures.
+
+  // Difference of means, population standard deviations known.
+  renderStandardNormalTable('#hyp-ztable-observed-diffmeans-known', {
+    highlightZs: [1.74],
+    highlightColor: 'red'
+  });
+
+  renderStandardNormalTable('#hyp-ztable-critical-diffmeans-known', {
+    highlightZs: [1.65],
+    highlightColor: 'red'
+  });
+
+  renderNormalDistribution('#hyp-normal-z-diffmeans-known', 0, 1, {
+    selectedRanges: [[-Infinity, 1.65]],
+    verticalLines: [{ value: 1.74, label: '1.74' }],
+    tickValues: [0, 1.65],
+    tickLabels: [
+      { value: 0, label: '0' },
+      { value: 1.65, label: '1.65' }
+    ],
+    xLabel: 'Z',
+    yLabel: false,
+    xMin: -4,
+    xMax: 4,
+    width: 760,
+    height: 300
+  });
+
+  renderNormalDistribution('#hyp-normal-diffmeans-known', 0, 1.15, {
+    selectedRanges: [[-Infinity, 1.9]],
+    verticalLines: [{ value: 2, label: '2' }],
+    tickValues: [0, 1.9],
+    tickLabels: [
+      { value: 0, label: '0' },
+      { value: 1.9, label: '1.9' }
+    ],
+    xLabel: 'x̄_c - x̄_d',
+    yLabel: false,
+    xMin: -4 * 1.15,
+    xMax: 4 * 1.15,
+    width: 760,
+    height: 300
+  });
+
+  // Difference of means, population standard deviations unknown.
+  renderTTable('#hyp-ttable-diffmeans-unknown', {
+    highlightDf: 17,
+    highlightConfidenceLevel: 95,
+    highlightColor: 'red'
+  });
+
+  renderStudentTDistribution('#hyp-t-z-diffmeans-unknown', 17, {
+    mu: 0,
+    scale: 1,
+    selectedRanges: [[-2.11, 2.11]],
+    verticalLines: [{ value: 1.81, label: '1.81' }],
+    tickValues: [-2.11, 0, 2.11],
+    tickLabels: [
+      { value: -2.11, label: '-2.11' },
+      { value: 0, label: '0' },
+      { value: 2.11, label: '2.11' }
+    ],
+    xLabel: 't',
+    yLabel: false,
+    xMin: -4,
+    xMax: 4,
+    width: 760,
+    height: 300
+  });
+
+  renderStudentTDistribution('#hyp-t-diffmeans-unknown', 17, {
+    mu: 0,
+    scale: 0.0277,
+    selectedRanges: [[-0.058447, 0.058447]],
+    verticalLines: [{ value: 0.05, label: '0.05' }],
+    tickValues: [-0.058447, 0, 0.058447],
+    tickLabels: [
+      { value: -0.058447, label: '-0.058447' },
+      { value: 0, label: '0' },
+      { value: 0.058447, label: '0.058447' }
+    ],
+    xLabel: 'x̄_A - x̄_B',
+    yLabel: false,
+    xMin: -4 * 0.0277,
+    xMax: 4 * 0.0277,
+    width: 760,
+    height: 300
+  });
+
+  // Difference of proportions.
+  renderStandardNormalTable('#hyp-ztable-observed-diffprops', {
+    highlightZs: [2.19],
+    highlightColor: 'red'
+  });
+
+  renderStandardNormalTable('#hyp-ztable-critical-diffprops', {
+    highlightZs: [2.05],
+    highlightColor: 'red'
+  });
+
+  renderNormalDistribution('#hyp-normal-z-diffprops', 0, 1, {
+    selectedRanges: [[-Infinity, 2.05]],
+    verticalLines: [{ value: 2.19, label: '2.19' }],
+    tickValues: [0, 2.05],
+    tickLabels: [
+      { value: 0, label: '0' },
+      { value: 2.05, label: '2.05' }
+    ],
+    xLabel: 'Z',
+    yLabel: false,
+    xMin: -4,
+    xMax: 4,
+    width: 760,
+    height: 300
+  });
+
+  renderNormalDistribution('#hyp-normal-diffprops', 0, 0.0571, {
+    selectedRanges: [[-Infinity, 0.117055]],
+    verticalLines: [{ value: 0.125, label: '0.125' }],
+    tickValues: [0, 0.117055],
+    tickLabels: [
+      { value: 0, label: '0' },
+      { value: 0.117055, label: '0.117055' }
+    ],
+    xLabel: 'p̂_v - p̂_m',
+    yLabel: false,
+    xMin: -4 * 0.0571,
+    xMax: 4 * 0.0571,
+    width: 760,
+    height: 300
+  });
+
+  // Paired t-test.
+  renderTTable('#hyp-ttable-paired', {
+    highlightDf: 3,
+    highlightConfidenceLevel: 98,
+    highlightColor: 'red'
+  });
+
+  renderStudentTDistribution('#hyp-t-z-paired', 3, {
+    mu: 0,
+    scale: 1,
+    selectedRanges: [[-Infinity, 4.541]],
+    verticalLines: [{ value: 4.03, label: '4.03' }],
+    tickValues: [0, 4.541],
+    tickLabels: [
+      { value: 0, label: '0' },
+      { value: 4.541, label: '4.541' }
+    ],
+    xLabel: 't',
+    yLabel: false,
+    xMin: -5,
+    xMax: 5,
+    width: 760,
+    height: 300
+  });
+
+  renderStudentTDistribution('#hyp-t-paired', 3, {
+    mu: 0,
+    scale: 1.797,
+    selectedRanges: [[-Infinity, 8.160177]],
+    verticalLines: [{ value: 7.25, label: '7.25' }],
+    tickValues: [0, 8.160177],
+    tickLabels: [
+      { value: 0, label: '0' },
+      { value: 8.160177, label: '8.160177' }
+    ],
+    xLabel: 'x̄',
+    yLabel: false,
+    xMin: -5 * 1.797,
+    xMax: 5 * 1.797,
     width: 760,
     height: 300
   });

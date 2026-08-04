@@ -96,13 +96,24 @@ fetch("/nav.html")
     and our result of \(82.2\) marshallows is farther right than that, so we reject \(H_0\).</p>
 
     <p>You are testing a new vaccine's efficacy.  You test 200 members of a community, and find that 3 of them are infected with the relevant virus.  
-    Conduct a hypothesis test at a level of significance of \(\alpha = 0.04\) to determine whether the vaccine provides greater than 92% protection.
-    \[H_0: \hat{p} \leq 0.92 \hspace{3mm} \text{ and } \hspace{3mm} H_a: \hat{p} > 0.92\]
+    Conduct a hypothesis test at a level of significance of \(\alpha = 0.02\) to determine whether the vaccine provides greater than 97% protection.<br><br>
+    We can interpret this problem in terms of the proportion of the population infected:
+    \[H_0: \hat{p} \geq 0.03 \hspace{3mm} \text{ and } \hspace{3mm} H_a: \hat{p} < 0.03\]
     This is a one-tailed test (left), since the alternative hypothesis lies in an area to the left of the mean.<br><br>
     Since this is a question about proportions (we experimentally found \(\hat{p} = \frac{3}{200} = 0.015\)), we use the normal distribution for sample 
     proportions, which itself has mean and standard deviation
     \[\mu_{\hat{p}} = p = 0.015 \hspace{3mm} \text{ and } \hspace{3mm} \sigma_{\hat{p}} = \sqrt{\frac{p(1-p)}{n}} = \sqrt{\frac{0.015(0.985)}{200}} 
-    \approx 0.0086\]</p>
+    \approx 0.0086\]
+    We find the probability of having a result as extreme (or more) than the one we obtained: that is, being farther left than \(0.015\).
+    \[P(\hat{p} < 0.015) = P\left(Z < \frac{0.015-0.03}{0.0086}\right) = P(Z < -1.74) = 0.0409\] 
+    Our \(p\)-value \(0.0409 > 0.02 = \alpha\), so we decline to reject \(H_0\).  There is insufficient evidence to conclude that less than 3% of people 
+    are infected.<br><br>
+    Alternatively, we could find the bounds of rejection in terms of \# of standard deviations from the mean.  Since \(\alpha = 0.02\), we have 2% of the area 
+    under the curve in the left tail.  We look up $z_{0.02} = -2.05$.  Since our result is not that far to the left, at $-1.74$ standard deviations, 
+    we decline to reject \(H_0\).<br><br>
+    <i>Or</i>, we find the bounds of the rejection region in terms of proportion:
+    \[0.03-2.05(0.0086) = 0.0124\]
+    and our result of \(0.015\) is not that far to the left, so we decline to reject \(H_0\).</p>
 
 <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

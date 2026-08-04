@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -55,7 +56,7 @@ fetch("/nav.html")
 
     <p>Over the course of their career, a power forward has averaged 5.6 defensive rebounds per game, with a standard deviation of 1 rebound.  
     This season, they have a new coach who has given them new guidance on rebounding.  They play in 72 games this season, and average 5.4 defensive rebounds 
-    per game.  Conduct a hypothesis test at a level of significance of \(\alpha = 0.07\) to determine whether the coach's advice changed their performance.
+    per game.  Conduct a hypothesis test using a level of significance of \(\alpha = 0.07\) to determine whether the coach's advice changed their performance.
     \[H_0: \mu = 5.6 \hspace{3mm} \text{ and } \hspace{3mm} H_a: \mu \neq 5.6\]
     This is a two-tailed test, since the alternative hypothesis lies in areas on both sides of the mean.<br><br>
     Since we are given the population standard deviation \(\sigma = 1\), and this is a question about means, we use the normal distribution for sample means, 
@@ -76,7 +77,7 @@ fetch("/nav.html")
     and our result of \(5.4\) does not make it that far left, so we decline to reject \(H_0\).  <div id="hyp-normal-xbar-mean" style="margin:1rem auto; max-width:760px;"></div></p>
 
     <p>Boxes of a particular cereal are advertised as containing more than 67 marshmallows.  You buy 5 boxes of the cereal, finding 80, 68, 102, 72, and 89 
-    marshmallows in each of the boxes.  Conduct a hypothesis test at a level of significance of \(\alpha = 0.1\) to test the advertised claim.<br><br>
+    marshmallows in each of the boxes.  Conduct a hypothesis test using a level of significance of \(\alpha = 0.1\) to test the advertised claim.<br><br>
     We start by computing the sample mean and sample standard deviation:
     \[\overline{x} = \frac{80+68+102+72+89}{5} = 82.2\]
     \[s = \sqrt{\frac{\sum(x-\overline{x})^2}{n-1}}\]
@@ -98,7 +99,7 @@ fetch("/nav.html")
     and our result of \(82.2\) marshallows is farther right than that, so we reject \(H_0\).  <div id="hyp-t-xbar" style="margin:1rem auto; max-width:760px;"></div></p>
 
     <p>You are testing a new vaccine's efficacy.  You test 200 members of a community, and find that 3 of them are infected with the relevant virus.  
-    Conduct a hypothesis test at a level of significance of \(\alpha = 0.02\) to determine whether the vaccine provides greater than 97% protection.<br><br>
+    Conduct a hypothesis test using a level of significance of \(\alpha = 0.02\) to determine whether the vaccine provides greater than 97% protection.<br><br>
     We can interpret this problem in terms of the proportion of the population infected:
     \[H_0: \hat{p} \geq 0.03 \hspace{3mm} \text{ and } \hspace{3mm} H_a: \hat{p} < 0.03\]
     This is a one-tailed test (left), since the alternative hypothesis lies in an area to the left of the mean.<br><br>
@@ -142,7 +143,7 @@ fetch("/nav.html")
 
     <p>Two teachers believe the students in their classes perform approximately the same on tests.  The 7 students in Class A had an average grade of 80% on 
     a test, with a standard deviation of 5%.  The 12 students in Class B had an average grade of 75% on the same test, with a standard deviation of 7%.  
-    Conduct a hypothesis test at a level of significance of \(\alpha = 0.05\) to determine whether there is a significant difference between the classes' 
+    Conduct a hypothesis test using a level of significance of \(\alpha = 0.05\) to determine whether there is a significant difference between the classes' 
     performance on tests.
     \[H_0: \mu_A = \mu_B \implies \mu_A - \mu_B = 0 \hspace{3mm} \text{ and } \hspace{3mm} H_a: \mu_A \neq \mu_B \implies \mu_A - \mu_B \neq 0\]
     This is a two-tailed test, since the alternative hypothesis lies in areas on both sides of the mean.<br><br>
@@ -167,7 +168,7 @@ fetch("/nav.html")
     and our result of \(0.05\) is not that far to the right, so we decline to reject \(H_0\).  <div id="hyp-t-diffmeans-unknown" style="margin:1rem auto; max-width:760px;"></div></p>
 
     <p>You want to determine whether the Green party is more popular with vegetarians.  You survey 100 vegetarians, 30 of whom say they plan to vote for the 
-    Green party.  You survey 120 non-vegetarians, 21 of whom say they plan to vote for the Green party.  Conduct a hypothesis test at a level of significance 
+    Green party.  You survey 120 non-vegetarians, 21 of whom say they plan to vote for the Green party.  Conduct a hypothesis test using a level of significance 
     of \(\alpha = 0.02\) to see whether the Green party is more popular with vegetarians.
     \[H_0: \mu_v \leq \mu_m \implies \mu_v - \mu_m \leq 0 \hspace{3mm} \text{ and } \hspace{3mm} H_a: \mu_v > \mu_m \implies \mu_v - \mu_m > 0\]
     This is a one-tailed test (right), since the alternative hypothesis lies in an area to the right of the mean.<br><br>
@@ -2248,7 +2249,7 @@ fetch("/nav.html")
       : tail==='left'
         ? `whether ${c.verb} is less than ${hypFmt(mu0,1)} ${c.unit}`
         : `whether ${c.verb} is greater than ${hypFmt(mu0,1)} ${c.unit}`;
-    const wording=`${c.subject} has historically reported ${c.verb} of ${hypFmt(mu0,1)} ${c.unit}, with population standard deviation ${hypFmt(sigma,1)} ${c.unit}. A random sample of ${n} ${c.item} has mean ${hypFmt(xbar,2)} ${c.unit}. Conduct a hypothesis test at a level of significance of \\(\\alpha=${hypFmt(ci.alpha,3)}\\) to determine ${goal}.`;
+    const wording=`${c.subject} has historically reported ${c.verb} of ${hypFmt(mu0,1)} ${c.unit}, with population standard deviation ${hypFmt(sigma,1)} ${c.unit}. A random sample of ${n} ${c.item} has mean ${hypFmt(xbar,2)} ${c.unit}. Conduct a hypothesis test using a level of significance of \\(\\alpha=${hypFmt(ci.alpha,3)}\\) to determine ${goal}.`;
     return {type:'meanKnown',tail,reject,useT:false,df:null,alpha:ci.alpha,crit:ci.crit,stat,p:pValue(stat,tail,false),wording,symbol:'\\mu',nullValue:mu0,estimate:xbar,se,n,sigma,context:c,xLabel:'x̄'};
   }
 
@@ -2264,7 +2265,7 @@ fetch("/nav.html")
       : tail==='left'
         ? `whether ${c.verb} is less than ${hypFmt(mu0,1)} ${c.unit}`
         : `whether ${c.verb} is greater than ${hypFmt(mu0,1)} ${c.unit}`;
-    const wording=`A researcher studies ${c.item}. The benchmark ${c.verb} is ${hypFmt(mu0,1)} ${c.unit}. A random sample gives the data \\(${data.join(', ')}\\). Conduct a hypothesis test at a level of significance of \\(\\alpha=${hypFmt(ci.alpha,3)}\\) to determine ${goal}.`;
+    const wording=`A researcher studies ${c.item}. The benchmark ${c.verb} is ${hypFmt(mu0,1)} ${c.unit}. A random sample gives the data \\(${data.join(', ')}\\). Conduct a hypothesis test using a level of significance of \\(\\alpha=${hypFmt(ci.alpha,3)}\\) to determine ${goal}.`;
     return {type:'meanUnknown',tail,reject,useT:true,df,alpha:ci.alpha,confidence:ci.confidence,crit:ci.crit,stat:actualStat,p:pValue(actualStat,tail,true,df),wording,symbol:'\\mu',nullValue:mu0,estimate:st.mean,se:st.s/Math.sqrt(n),n,s:st.s,data,context:c,xLabel:'x̄'};
   }
 
@@ -2280,7 +2281,7 @@ fetch("/nav.html")
           : tail==='left'
             ? `whether fewer than ${hypPercent(p0,0)} of ${c.population} are ${c.success.replace(/^.*? who /,'')}`
             : `whether more than ${hypPercent(p0,0)} of ${c.population} are ${c.success.replace(/^.*? who /,'')}`;
-        const wording=`The established proportion of ${c.success} is ${hypPercent(p0,0)}. In a random sample of ${n} ${c.population}, ${x} meet the criterion. Conduct a hypothesis test at a level of significance of \\(\\alpha=${hypFmt(ci.alpha,3)}\\) to determine ${goal}.`;
+        const wording=`The established proportion of ${c.success} is ${hypPercent(p0,0)}. In a random sample of ${n} ${c.population}, ${x} meet the criterion. Conduct a hypothesis test using a level of significance of \\(\\alpha=${hypFmt(ci.alpha,3)}\\) to determine ${goal}.`;
         return {type:'proportion',tail,reject,useT:false,df:null,alpha:ci.alpha,crit:ci.crit,stat,p:pValue(stat,tail,false),wording,symbol:'p',nullValue:p0,estimate:phat,se:Math.sqrt(p0*(1-p0)/n),n,x,context:c,xLabel:'p̂'};
       }
     }
@@ -2296,7 +2297,7 @@ fetch("/nav.html")
       : tail==='left'
         ? `whether ${c.a} have lower average ${c.item} than ${c.b}`
         : `whether ${c.a} have higher average ${c.item} than ${c.b}`;
-    const wording=`A study compares ${c.item} for ${c.a} and ${c.b}. The samples have \\(n_1=${n1},\\ \\overline{x}_1=${hypFmt(x1,2)},\\sigma_1=${hypFmt(s1,1)}\\) and \\(n_2=${n2},\\ \\overline{x}_2=${hypFmt(x2,2)},\\sigma_2=${hypFmt(s2,1)}\\), measured in ${c.unit}. Conduct a hypothesis test at a level of significance of \\(\\alpha=${hypFmt(ci.alpha,3)}\\) to determine ${goal}.`;
+    const wording=`A study compares ${c.item} for ${c.a} and ${c.b}. The samples have \\(n_1=${n1},\\ \\overline{x}_1=${hypFmt(x1,2)},\\sigma_1=${hypFmt(s1,1)}\\) and \\(n_2=${n2},\\ \\overline{x}_2=${hypFmt(x2,2)},\\sigma_2=${hypFmt(s2,1)}\\), measured in ${c.unit}. Conduct a hypothesis test using a level of significance of \\(\\alpha=${hypFmt(ci.alpha,3)}\\) to determine ${goal}.`;
     return {type:'diffMeansKnown',tail,reject,useT:false,alpha:ci.alpha,crit:ci.crit,stat,p:pValue(stat,tail,false),wording,symbol:'\\mu_1-\\mu_2',nullValue:0,estimate:x1-x2,se,n1,n2,s1,s2,x1,x2,context:c,xLabel:'x̄₁ − x̄₂'};
   }
 
@@ -2309,7 +2310,7 @@ fetch("/nav.html")
       : tail==='left'
         ? `whether ${c.a} have lower average ${c.item} than ${c.b}`
         : `whether ${c.a} have higher average ${c.item} than ${c.b}`;
-    const wording=`Independent samples compare ${c.item} for ${c.a} and ${c.b}: \\(n_1=${n1},\\overline{x}_1=${hypFmt(x1,2)},s_1=${hypFmt(s1,1)}\\) and \\(n_2=${n2},\\overline{x}_2=${hypFmt(x2,2)},s_2=${hypFmt(s2,1)}\\). Conduct a hypothesis test at a level of significance of \\(\\alpha=${hypFmt(ci.alpha,3)}\\) to determine ${goal}.`;
+    const wording=`A study compares ${c.item} for ${c.a} and ${c.b}: \\(n_1=${n1},\\overline{x}_1=${hypFmt(x1,2)},s_1=${hypFmt(s1,1)}\\) and \\(n_2=${n2},\\overline{x}_2=${hypFmt(x2,2)},s_2=${hypFmt(s2,1)}\\). Conduct a hypothesis test using a level of significance of \\(\\alpha=${hypFmt(ci.alpha,3)}\\) to determine ${goal}.`;
     return {type:'diffMeansUnknown',tail,reject,useT:true,df,dfRaw,confidence:ci.confidence,alpha:ci.alpha,crit:ci.crit,stat,p:pValue(stat,tail,true,df),wording,symbol:'\\mu_1-\\mu_2',nullValue:0,estimate:x1-x2,se,n1,n2,s1,s2,x1,x2,context:c,xLabel:'x̄₁ − x̄₂'};
   }
 
@@ -2323,11 +2324,11 @@ fetch("/nav.html")
       const actual=tail==='two'?Math.abs(stat)>ci.crit:tail==='left'?stat<-ci.crit:stat>ci.crit;
       if(actual===reject&&Math.abs(stat)<=3){
         const goal = tail==='two'
-          ? `whether the population proportions differ between Group 1 and Group 2`
+          ? `whether the population proportions differ between the two groups`
           : tail==='left'
-            ? `whether the population proportion is lower in Group 1 than in Group 2`
-            : `whether the population proportion is higher in Group 1 than in Group 2`;
-        const wording=`Two independent samples compare ${c1.success}. Group 1 has ${x1} successes among ${n1}; Group 2 has ${x2} among ${n2}. Conduct a hypothesis test at a level of significance of \\(\\alpha=${hypFmt(ci.alpha,3)}\\) to determine ${goal}.`;
+            ? `whether the a smaller proportion of the first group satisfy the condition than the second group`
+            : `whether the a larger proportion of the first group satisfy the condition than the second group`;
+        const wording=`Two groups are compared. ${c1.success}. The first group has ${x1} successes among ${n1}; the second group has ${x2} among ${n2}. Conduct a hypothesis test using a level of significance of \\(\\alpha=${hypFmt(ci.alpha,3)}\\) to determine ${goal}.`;
         return {type:'diffProportions',tail,reject,useT:false,alpha:ci.alpha,crit:ci.crit,stat,p:pValue(stat,tail,false),wording,symbol:'p_1-p_2',nullValue:0,estimate:ph1-ph2,se,n1,n2,x1,x2,ph1,ph2,pooled,context:c1,xLabel:'p̂₁ − p̂₂'};
       }
     }
@@ -2344,7 +2345,7 @@ fetch("/nav.html")
       : tail==='left'
         ? `whether the ${c.item} decreased after the intervention`
         : `whether the ${c.item} increased after the intervention`;
-    const wording=`The same ${n} subjects are measured ${c.before} and ${c.after}. Their ${c.item} (${c.unit}) are:<br>Before: \\(${before.join(', ')}\\)<br>After: \\(${after.join(', ')}\\)<br>Conduct a hypothesis test at a level of significance of \\(\\alpha=${hypFmt(ci.alpha,3)}\\) to determine ${goal}.`;
+    const wording=`The same ${n} subjects are measured ${c.before} and ${c.after}. Their ${c.item} (${c.unit}) are:<br>Before: \\(${before.join(', ')}\\)<br>After: \\(${after.join(', ')}\\)<br>Conduct a hypothesis test using a level of significance of \\(\\alpha=${hypFmt(ci.alpha,3)}\\) to determine ${goal}.`;
     return {type:'paired',tail,reject,useT:true,df,confidence:ci.confidence,alpha:ci.alpha,crit:ci.crit,stat:actualStat,p:pValue(actualStat,tail,true,df),wording,symbol:'\\mu_d',nullValue:0,estimate:st.mean,se:st.s/Math.sqrt(n),n,s:st.s,diffs,before,after,context:c,xLabel:'d̄'};
   }
 

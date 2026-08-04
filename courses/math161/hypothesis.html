@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2084,636 +2085,284 @@ fetch("/nav.html")
 
   const recentScenarioIds = [];
   const recentWordingIds = [];
-  let currentCLTDraft = null;
+  // -----------------------------
+  // Hypothesis-testing activity
+  // -----------------------------
+  let currentHypothesisProblem = null;
 
-  function rememberRecent(list, value, maxLength) {
-    list.push(value);
-    while (list.length > maxLength) list.shift();
+  const HYP_TYPES = [
+    'meanKnown', 'meanUnknown', 'proportion', 'diffMeansKnown',
+    'diffMeansUnknown', 'diffProportions', 'paired'
+  ];
+  const HYP_TAILS = ['two', 'left', 'right'];
+
+  const measurementContexts = [
+    {item:'delivery times', unit:'minutes', subject:'a courier service', verb:'average delivery time'},
+    {item:'battery lives', unit:'hours', subject:'a battery manufacturer', verb:'average battery life'},
+    {item:'coffee temperatures', unit:'°C', subject:'a café', verb:'average serving temperature'},
+    {item:'package weights', unit:'grams', subject:'a shipping company', verb:'average package weight'},
+    {item:'commute lengths', unit:'km', subject:'a transit agency', verb:'average commute length'},
+    {item:'reaction times', unit:'milliseconds', subject:'a game studio', verb:'average reaction time'},
+    {item:'plant heights', unit:'cm', subject:'a greenhouse', verb:'average plant height'},
+    {item:'weekly study times', unit:'hours', subject:'a university', verb:'average weekly study time'}
+  ];
+
+  const comparisonContexts = [
+    {a:'online orders', b:'in-store orders', item:'processing times', unit:'minutes'},
+    {a:'electric cars', b:'gasoline cars', item:'driving ranges', unit:'km'},
+    {a:'morning classes', b:'afternoon classes', item:'test grades', unit:'percentage points'},
+    {a:'urban gardens', b:'rural gardens', item:'tomato yields', unit:'kg'},
+    {a:'brand A bulbs', b:'brand B bulbs', item:'lifetimes', unit:'hours'},
+    {a:'cats', b:'dogs', item:'daily sleep times', unit:'hours'}
+  ];
+
+  const proportionContexts = [
+    {success:'customers who renew their memberships', population:'customers'},
+    {success:'devices that pass inspection', population:'devices'},
+    {success:'voters who support a proposal', population:'voters'},
+    {success:'seeds that germinate', population:'seeds'},
+    {success:'students who pass the exam', population:'students'},
+    {success:'flights that arrive on time', population:'flights'}
+  ];
+
+  const pairedContexts = [
+    {before:'before a training program', after:'after the training program', item:'typing speeds', unit:'words per minute'},
+    {before:'before taking a medication', after:'after taking the medication', item:'blood-pressure readings', unit:'mmHg'},
+    {before:'before a software update', after:'after the update', item:'task-completion times', unit:'seconds'},
+    {before:'before tutoring', after:'after tutoring', item:'quiz grades', unit:'points'},
+    {before:'before a new sleep routine', after:'after the routine', item:'hours slept', unit:'hours'}
+  ];
+
+  function hypFmt(x, digits=3) {
+    if (!Number.isFinite(x)) return String(x);
+    return Number(x.toFixed(digits)).toString();
   }
 
-  function choiceAvoidingRecent(items, idGetter, recentList) {
-    const fresh = items.filter(item => !recentList.includes(idGetter(item)));
-    return randomChoice(fresh.length ? fresh : items);
+  function hypPercent(x, digits=1) { return `${hypFmt(100*x,digits)}%`; }
+  function hypChoice(a) { return a[randInt(0,a.length-1)]; }
+
+  // Numerical Student t CDF/inverse, used to make rejection status exact.
+  function logGamma(z) {
+    const c=[676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+    if(z<0.5) return Math.log(Math.PI)-Math.log(Math.sin(Math.PI*z))-logGamma(1-z);
+    z-=1; let x=0.99999999999980993;
+    for(let i=0;i<c.length;i++) x+=c[i]/(z+i+1);
+    const t=z+c.length-0.5;
+    return 0.5*Math.log(2*Math.PI)+(z+0.5)*Math.log(t)-t+Math.log(x);
   }
-
-  function formatPercent(p) {
-    const value = p * 100;
-    return `${Number(value.toFixed(value < 10 ? 1 : 0))}%`;
-  }
-
-  function ordinal(n) {
-    const mod100 = n % 100;
-    if (mod100 >= 11 && mod100 <= 13) return `${n}th`;
-    if (n % 10 === 1) return `${n}st`;
-    if (n % 10 === 2) return `${n}nd`;
-    if (n % 10 === 3) return `${n}rd`;
-    return `${n}th`;
-  }
-
-  function roundFriendly(x, decimals = 1) {
-    const factor = 10 ** decimals;
-    return Math.round(x * factor) / factor;
-  }
-
-  function formatMeasurement(value, unitKey) {
-    const unit = CLT_UNIT_LIBRARY[unitKey];
-    const number = Number(value.toFixed(unit.decimals));
-    if (unit.kind === 'money') return `$${number.toFixed(2)}`;
-    return `${number} ${unit.symbol}`.trim();
-  }
-
-  function formatMathMeasurement(value, unitKey) {
-    const unit = CLT_UNIT_LIBRARY[unitKey];
-    const number = Number(value.toFixed(unit.decimals));
-    if (unit.kind === 'money') return `\$${number.toFixed(2)}`;
-    return `${number}\\text{ ${unit.symbol}}`;
-  }
-
-  function makeDirectContext() {
-    const scenario = choiceAvoidingRecent(DIRECT_SCENARIOS, s => s.id, recentScenarioIds);
-    rememberRecent(recentScenarioIds, scenario.id, CLT_CONFIG.recentScenarioMemory);
-    const n = randomChoice(SAMPLE_SIZES);
-    const mu = roundFriendly(scenario.meanRange[0] + Math.random() * (scenario.meanRange[1] - scenario.meanRange[0]), CLT_UNIT_LIBRARY[scenario.unit].decimals);
-    const sigma = roundFriendly(scenario.sdRange[0] + Math.random() * (scenario.sdRange[1] - scenario.sdRange[0]), CLT_UNIT_LIBRARY[scenario.unit].decimals);
-    const cadence = randomChoice(scenario.cadence);
-    return { ...scenario, n, mu, sigma, cadence, action:scenario.action.replace('{n}', n), parameterSource:'direct' };
-  }
-
-  function makePoissonContext() {
-    const scenario = choiceAvoidingRecent(POISSON_SCENARIOS, s => s.id, recentScenarioIds);
-    rememberRecent(recentScenarioIds, scenario.id, CLT_CONFIG.recentScenarioMemory);
-    const n = randomChoice(SAMPLE_SIZES);
-    const lambda = randInt(scenario.rateRange[0], scenario.rateRange[1]);
-    return { ...scenario, n, lambda, mu:lambda, sigma:Math.sqrt(lambda), parameterSource:'poisson', introText:scenario.intro(lambda), sampleText:scenario.sample(n) };
-  }
-
-  function makeUniformContext() {
-    const scenario = choiceAvoidingRecent(UNIFORM_SCENARIOS_CLT, s => s.id, recentScenarioIds);
-    rememberRecent(recentScenarioIds, scenario.id, CLT_CONFIG.recentScenarioMemory);
-    const n = randomChoice(SAMPLE_SIZES);
-    const aBase = randInt(scenario.aRange[0], scenario.aRange[1]);
-    const width = randInt(scenario.widthRange[0], scenario.widthRange[1]);
-    const a = aBase * scenario.scale;
-    const b = (aBase + width) * scenario.scale;
-    return { ...scenario, n, a, b, mu:(a+b)/2, sigma:(b-a)/Math.sqrt(12), parameterSource:'uniform', introText:scenario.intro(aBase,aBase+width), sampleText:scenario.sample(n) };
-  }
-
-  function makeGeometricContext() {
-    const scenario = choiceAvoidingRecent(GEOMETRIC_SCENARIOS, s => s.id, recentScenarioIds);
-    rememberRecent(recentScenarioIds, scenario.id, CLT_CONFIG.recentScenarioMemory);
-    const n = randomChoice(SAMPLE_SIZES);
-    const p = randomChoice([0.2,0.25,0.3,1/3,0.4,0.5,0.6,0.7,0.75,0.8]);
-    return { ...scenario, n, p, mu:1/p, sigma:Math.sqrt(1-p)/p, parameterSource:'geometric', introText:scenario.build(p,n) };
-  }
-
-  function makeUnderlyingContext(type) {
-    if (Math.random() < CLT_CONFIG.directParameterChance) return makeDirectContext();
-    return randomChoice([makePoissonContext, makeUniformContext, makeGeometricContext])();
-  }
-
-  function makeProportionContext() {
-    const scenario = choiceAvoidingRecent(PROPORTION_SCENARIOS, s => s.id, recentScenarioIds);
-    rememberRecent(recentScenarioIds, scenario.id, CLT_CONFIG.recentScenarioMemory);
-    const p = Number.isFinite(scenario.fixedP) ? scenario.fixedP : randomChoice([0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.5,0.6,0.65,0.7,0.75,0.8,0.85,0.9]);
-
-    // Draw from a broad range so sample sizes are not restricted to neat values.
-    // Keep both expected successes and expected failures at least 10.
-    let n;
-    do {
-      n = randInt(40, 220);
-    } while (n * p < 10 || n * (1 - p) < 10);
-
-    return { ...scenario, n, p, mu:p, sigma:Math.sqrt(p*(1-p)/n), parameterSource:'binomial', introText:scenario.build(p,n) };
-  }
-
-  function samplingDistributionFor(type, context) {
-    if (type === 'means') return { variable:'sample mean', symbol:'\\overline{X}', mu:context.mu, sigma:context.sigma/Math.sqrt(context.n), unit:context.unit };
-    if (type === 'sums') return { variable:'sample total', symbol:'\\Sigma X', mu:context.n*context.mu, sigma:Math.sqrt(context.n)*context.sigma, unit:context.unit };
-    return { variable:'sample proportion', symbol:'\\hat{p}', mu:context.p, sigma:Math.sqrt(context.p*(1-context.p)/context.n), unit:null, n:context.n };
-  }
-
-  function chooseNormalEventType() {
-    return weightedChoice(NORMAL_EVENT_TYPES);
-  }
-
-  function samplingValueDecimals(dist) {
-    if (dist.variable === 'sample proportion') return 3;
-    return Math.min(2, Math.max(1, CLT_UNIT_LIBRARY[dist.unit]?.decimals ?? 2));
-  }
-
-  function eventValue(dist, z) {
-    const raw = dist.mu + z * dist.sigma;
-    if (dist.variable === 'sample proportion') {
-      const n = dist.n ?? 100;
-      return Math.max(1/n, Math.min((n-1)/n, Math.round(raw*n)/n));
+  function betaCF(a,b,x) {
+    const MAX=200, EPS=3e-12, FPMIN=1e-300;
+    let qab=a+b,qap=a+1,qam=a-1,c=1,d=1-qab*x/qap;
+    if(Math.abs(d)<FPMIN)d=FPMIN; d=1/d; let h=d;
+    for(let m=1;m<=MAX;m++){
+      const m2=2*m;
+      let aa=m*(b-m)*x/((qam+m2)*(a+m2));
+      d=1+aa*d;if(Math.abs(d)<FPMIN)d=FPMIN;c=1+aa/c;if(Math.abs(c)<FPMIN)c=FPMIN;d=1/d;h*=d*c;
+      aa=-(a+m)*(qab+m)*x/((a+m2)*(qap+m2));
+      d=1+aa*d;if(Math.abs(d)<FPMIN)d=FPMIN;c=1+aa/c;if(Math.abs(c)<FPMIN)c=FPMIN;d=1/d;
+      const del=d*c;h*=del;if(Math.abs(del-1)<EPS)break;
     }
-    // Store the cutoff at exactly the same precision used in the question.
-    // In particular, averages and totals of count variables may be non-integers.
-    return roundFriendly(raw, samplingValueDecimals(dist));
+    return h;
+  }
+  function regBeta(x,a,b) {
+    if(x<=0)return 0;if(x>=1)return 1;
+    const bt=Math.exp(logGamma(a+b)-logGamma(a)-logGamma(b)+a*Math.log(x)+b*Math.log(1-x));
+    return x<(a+1)/(a+b+2) ? bt*betaCF(a,b,x)/a : 1-bt*betaCF(b,a,1-x)/b;
+  }
+  function studentTCdf(t,df) {
+    const x=df/(df+t*t), ib=regBeta(x,df/2,0.5);
+    return t>=0 ? 1-0.5*ib : 0.5*ib;
+  }
+  function inverseStudentT(p,df) {
+    let lo=-12,hi=12;
+    for(let i=0;i<80;i++){const m=(lo+hi)/2;if(studentTCdf(m,df)<p)lo=m;else hi=m;}
+    return (lo+hi)/2;
   }
 
-  function randomZ(min, max, step = 0.1) {
-    const count = Math.round((max - min) / step);
-    return Number((min + randInt(0, count) * step).toFixed(2));
-  }
-
-  function distinctEventValueInRange(dist, minZ, maxZ, forbidden = []) {
-    let value = eventValue(dist, randomZ(minZ, maxZ, 0.1));
-    let attempts = 0;
-    while (forbidden.includes(value) && attempts < 60) {
-      value = eventValue(dist, randomZ(minZ, maxZ, 0.1));
-      attempts++;
-    }
-    return value;
-  }
-
-  function displayEventValue(value, dist) {
-    if (dist.variable === 'sample proportion') return formatPercent(value);
-    const unit = CLT_UNIT_LIBRARY[dist.unit];
-    const decimals = samplingValueDecimals(dist);
-    const number = Number(value).toFixed(decimals).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');
-    if (unit.kind === 'money') return `$${Number(value).toFixed(2)}`;
-    return `${number} ${unit.symbol}`.trim();
-  }
-
-  function describeTarget(type, context) {
-    if (type === 'means') return `the average ${context.measureNoun}`;
-    if (type === 'sums') {
-      if (context.unit === 'money') return `the total amount`;
-      if (context.unit === 'count') return `the total count`;
-      return `the total ${context.measureNoun.replace(/ time$/,' time').replace(/ length$/,'')}`;
-    }
-    return `the proportion of ${context.successNoun}`;
-  }
-
-  function makeNormalEventQuestion(type, context, dist) {
-    const eventType = type === 'proportions' ? weightedChoice(PROPORTION_EVENT_TYPES) : chooseNormalEventType();
-    const target = describeTarget(type, context);
-    const e = { type:eventType };
-    let wording = '';
-    let notation = '';
-
-    if (eventType === 'range') {
-      const z1 = randomZ(-2.8, 1.2, 0.1);
-      const z2 = randomZ(z1 + 0.5, 2.9, 0.1);
-      e.left = eventValue(dist,z1);
-      e.right = distinctEventValueInRange(dist, z1 + 0.5, 2.9, [e.left]);
-      wording = `${randomChoice(QUESTION_LEADS.probability)} ${target} is between ${displayEventValue(e.left,dist)} and ${displayEventValue(e.right,dist)}?`;
-      notation = `P(${e.left}\\leq ${dist.symbol}\\leq ${e.right})`;
-    } else if (eventType === 'oneSided') {
-      e.relation = randomChoice(['<','\\leq','>','\\geq']);
-      e.m = eventValue(dist, randomZ(-2.8, 2.8, 0.1));
-      const phrase = e.relation === '<' ? `less than ${displayEventValue(e.m,dist)}` : e.relation === '\\leq' ? `at most ${displayEventValue(e.m,dist)}` : e.relation === '>' ? `more than ${displayEventValue(e.m,dist)}` : `at least ${displayEventValue(e.m,dist)}`;
-      wording = `${randomChoice(QUESTION_LEADS.probability)} ${target} is ${phrase}?`;
-      notation = `P(${dist.symbol}${e.relation}${e.m})`;
-    } else if (eventType === 'conditional') {
-      const lowerZ = randomZ(-2.9, 0.6, 0.1);
-      const upperZ = randomZ(Math.max(lowerZ + 0.8, -0.1), 2.9, 0.1);
-      const targetZ = randomZ(lowerZ + 0.2, upperZ - 0.2, 0.1);
-      e.lower = eventValue(dist, lowerZ);
-      e.upper = distinctEventValueInRange(dist, Math.max(lowerZ + 0.8, -0.1), 2.9, [e.lower]);
-      e.m = distinctEventValueInRange(dist, lowerZ + 0.2, upperZ - 0.2, [e.lower, e.upper]);
-      e.targetRelation = randomChoice(['<','>']);
-      const targetPhrase = e.targetRelation === '<' ? `less than ${displayEventValue(e.m,dist)}` : `more than ${displayEventValue(e.m,dist)}`;
-      wording = `Given that ${target} lies between ${displayEventValue(e.lower,dist)} and ${displayEventValue(e.upper,dist)}, what is the probability that it is ${targetPhrase}?`;
-      notation = `P(${dist.symbol}${e.targetRelation}${e.m}\\mid ${e.lower}\\leq ${dist.symbol}\\leq ${e.upper})`;
-    } else if (eventType === 'percentileOfValue') {
-      e.m = eventValue(dist, randomZ(-2.8, 2.8, 0.1));
-      wording = `${randomChoice(QUESTION_LEADS.percentileValue)} ${displayEventValue(e.m,dist)} for ${target}?`;
-      notation = `P(${dist.symbol}\\leq ${e.m})`;
-    } else if (eventType === 'valueFromPercentile') {
-      e.percentile = randomChoice(PERCENTILES);
-      const lead = randomChoice(QUESTION_LEADS.inversePercentile)(e.percentile);
-      wording = `${lead} ${target}.`;
-      notation = `${e.percentile}\\text{th percentile}`;
-    } else if (eventType === 'iqr') {
-      wording = `Find the interquartile range of ${target}.`;
-      notation = 'Q_3-Q_1';
-    } else if (eventType === 'mean') {
-      wording = `Determine the mean of ${target}.`;
-      notation = `\\mu_{${dist.symbol}}`;
-    } else if (eventType === 'median') {
-      wording = `Determine the median of ${target}.`;
-      notation = `\\operatorname{Med}(${dist.symbol})`;
-    } else if (eventType === 'standardDeviation') {
-      wording = `Determine the standard deviation (standard error) of ${target}.`;
-      notation = `\\sigma_{${dist.symbol}}`;
-    } else if (eventType === 'variance') {
-      wording = `Determine the variance of ${target}.`;
-      notation = `\\operatorname{Var}(${dist.symbol})`;
-    } else {
-      const q = randomChoice([{name:'first quartile',symbol:'Q_1'},{name:'third quartile',symbol:'Q_3'}]);
-      e.quartileName=q.name; e.quartileSymbol=q.symbol;
-      wording = `Determine the ${q.name} of ${target}.`;
-      notation = q.symbol;
-    }
-    return { wording, notation, event:e };
-  }
-
-  function renderContext(type, context) {
-    if (type === 'proportions') return context.introText;
-    if (context.parameterSource === 'direct') {
-      const opener = randomChoice(CONTEXT_OPENERS)(context);
-      const parameterSentence = randomChoice(DIRECT_PARAMETER_WORDINGS)(context);
-      return `${opener} ${parameterSentence}`;
-    }
-    if (context.parameterSource === 'geometric') return context.introText;
-    return `${context.introText} ${context.sampleText}`;
-  }
-
-  function generateCLTQuestion() {
-    const type = weightedChoice(CLT_CONFIG.problemTypes);
-    const context = type === 'proportions' ? makeProportionContext() : makeUnderlyingContext(type);
-    const sampling = samplingDistributionFor(type, context);
-    const task = makeNormalEventQuestion(type, context, sampling);
-    const problem = { type, context, sampling, task, wording:`${renderContext(type,context)} ${task.wording}`, hintIndex:0 };
-    completeNormalEvent(problem);
-    if (type === 'proportions') completeProportionCounts(problem);
-    return problem;
-  }
-
-  function completeProportionCounts(problem) {
-    const c=problem.context,e=problem.task.event;
-    const toCount=x=>Math.max(0,Math.min(c.n,Math.round(c.n*x)));
-    if(e.type==='range'){e.countLeft=toCount(e.left);e.countRight=toCount(e.right);}
-    else if(e.type==='oneSided'){e.countM=toCount(e.m);}
-    else if(e.type==='conditional'){e.countLower=toCount(e.lower);e.countUpper=toCount(e.upper);e.countM=toCount(e.m);}
-    else if(e.type==='percentileOfValue'){e.countM=toCount(e.m);}
-    else if(e.type==='valueFromPercentile'||e.type==='quartile'||e.type==='median'){e.countAnswer=c.n*e.answer;}
-    else if(e.type==='iqr'){e.countQ1=c.n*e.q1;e.countQ3=c.n*e.q3;e.countAnswer=c.n*e.answer;}
-    else if(e.type==='mean'){e.countAnswer=c.n*e.answer;}
-    else if(e.type==='standardDeviation'){e.countAnswer=c.n*e.answer;}
-    else if(e.type==='variance'){e.countAnswer=c.n*c.n*e.answer;}
-  }
-
-  function completeNormalEvent(problem) {
-    const d = problem.sampling;
-    const e = problem.task.event;
-    const phi = z => normalCdf(Number(z.toFixed(2)));
-    if (e.type === 'range') {
-      e.z1 = roundedZ(d,e.left); e.z2 = roundedZ(d,e.right);
-      e.answer = phi(e.z2)-phi(e.z1);
-    } else if (e.type === 'oneSided') {
-      e.z = roundedZ(d,e.m);
-      const left = phi(e.z);
-      e.answer = (e.relation === '<' || e.relation === '\\leq') ? left : 1-left;
-    } else if (e.type === 'conditional') {
-      e.zLower=roundedZ(d,e.lower); e.zUpper=roundedZ(d,e.upper); e.zM=roundedZ(d,e.m);
-      const denom=phi(e.zUpper)-phi(e.zLower);
-      e.answer=e.targetRelation==='<' ? (phi(e.zM)-phi(e.zLower))/denom : (phi(e.zUpper)-phi(e.zM))/denom;
-    } else if (e.type === 'percentileOfValue') {
-      e.z=roundedZ(d,e.m); e.answer=phi(e.z);
-    } else if (e.type === 'valueFromPercentile') {
-      e.p=e.percentile/100; e.z=Number(inverseNormalCdf(e.p).toFixed(2));
-      e.answer=d.mu+e.z*d.sigma;
-    } else if (e.type === 'quartile') {
-      const map={Q_1:0.25,Q_2:0.5,Q_3:0.75}; e.p=map[e.quartileSymbol];
-      e.z=Number(inverseNormalCdf(e.p).toFixed(2)); e.answer=d.mu+e.z*d.sigma;
-    } else if (e.type === 'iqr') {
-      e.z1=-0.67; e.z3=0.67; e.q1=d.mu+e.z1*d.sigma; e.q3=d.mu+e.z3*d.sigma; e.answer=e.q3-e.q1;
-    } else if (e.type === 'mean' || e.type === 'median') {
-      e.answer=d.mu;
-    } else if (e.type === 'standardDeviation') {
-      e.answer=d.sigma;
-    } else if (e.type === 'variance') {
-      e.answer=d.sigma*d.sigma;
-    }
-  }
-
-  function clearCLTActivity() {
-    tableArea.innerHTML=''; meanArea.innerHTML=''; workArea.innerHTML=''; histogramArea.innerHTML='';
-    stageFeedback.textContent=''; hintArea.innerHTML='';
-  }
-
-  function fmt(x, digits=3) { return Number(Number(x).toFixed(digits)).toString(); }
-  function probFmt(x) { return Number(x).toFixed(4); }
-  function mathValue(x,d) {
-    if (d.unit === 'money') return `\\$${Number(x).toFixed(2)}`;
-    return fmt(x, samplingValueDecimals(d));
-  }
-  function displaySamplingValue(x,d) {
-    if (d.unit === 'money') return `$${Number(x).toFixed(2)}`;
-    return `${fmt(x,samplingValueDecimals(d))} ${CLT_UNIT_LIBRARY[d.unit]?.symbol ?? ''}`.trim();
-  }
-  function finalMathValue(x,d) {
-    return d.unit === 'money' ? `\\$${Number(x).toFixed(4)}` : Number(x).toFixed(4);
-  }
-  function finalDisplayValue(x,d) {
-    const unit=CLT_UNIT_LIBRARY[d.unit]?.symbol ?? '';
-    if (d.unit === 'money') return `$${Number(x).toFixed(4)}`;
-    return `${Number(x).toFixed(4)} ${unit}`.trim();
-  }
-  function zPhi(z){ return normalCdf(Number(z.toFixed(2))); }
-  function phiTex(z){ return probFmt(zPhi(z)); }
-
-  function makeHintWrapper() {
-    const wrapper = document.createElement('div');
-    wrapper.style.marginTop = '1rem';
-    hintArea.appendChild(wrapper);
-    return wrapper;
-  }
-
-  function underlyingStep(problem) {
-    const c=problem.context;
-    const wrapper=makeHintWrapper();
-    let html='';
-    if(c.parameterSource==='direct') {
-      html=`<p>The mean and standard deviation of the underlying distribution are given directly:</p>
-      <p>\\[\\mu_X=${formatMathMeasurement(c.mu,c.unit)}\\hspace{6mm}\\text{ and }\\hspace{6mm}\\sigma_X=${formatMathMeasurement(c.sigma,c.unit)}.\\]</p>`;
-    } else if(c.parameterSource==='uniform') {
-      html=`<p>The underlying distribution is uniform, with mean and standard deviation</p>
-      <p>\\[\\mu_X=\\frac{a+b}{2}=\\frac{${fmt(c.a,2)}+${fmt(c.b,2)}}{2}=${fmt(c.mu,3)}\\hspace{3mm}\\text{ and }\\hspace{3mm}\\sigma_X=\\sqrt{\\frac{(b-a)^2}{12}}=\\sqrt{\\frac{(${fmt(c.b,2)}-${fmt(c.a,2)})^2}{12}}\\approx ${fmt(c.sigma,3)}.\\]</p>`;
-    } else if(c.parameterSource==='poisson') {
-      html=`<p>The underlying distribution is Poisson with parameter \\(\\lambda=${fmt(c.lambda,2)}\\), with mean and standard deviation</p>
-      <p>\\[\\mu_X=\\lambda=${fmt(c.mu,3)}\\hspace{3mm}\\text{ and }\\hspace{3mm}\\sigma_X=\\sqrt{\\lambda}=\\sqrt{${fmt(c.lambda,2)}}\\approx ${fmt(c.sigma,3)}.\\]</p>`;
-    } else {
-      html=`<p>The underlying distribution is geometric with success probability \\(p=${fmt(c.p,3)}\\), with mean and standard deviation</p>
-      <p>\\[\\mu_X=\\frac{1}{p}=\\frac{1}{${fmt(c.p,3)}}=${fmt(c.mu,3)}\\hspace{3mm}\\text{ and }\\hspace{3mm}\\sigma_X=\\frac{\\sqrt{1-p}}{p}=\\frac{\\sqrt{1-${fmt(c.p,3)}}}{${fmt(c.p,3)}}\\approx ${fmt(c.sigma,3)}.\\]</p>`;
-    }
-    wrapper.innerHTML=html;
-    if(c.parameterSource!=='direct') {
-      const graph=document.createElement('div');
-      graph.style.maxWidth='740px'; graph.style.margin='0.75rem auto';
-      wrapper.appendChild(graph);
-      if(c.parameterSource==='uniform') {
-        renderUniformDistribution(graph,c.a,c.b,{xLabel:CLT_UNIT_LIBRARY[c.unit].symbol,heightLabel:`1/${fmt(c.b-c.a,2)}`});
-      } else if(c.parameterSource==='poisson') {
-        renderPoissonHistogram(graph,c.lambda,{xLabel:'x',yLabel:'f(x)',maxX:Math.max(12,Math.ceil(c.mu+4*c.sigma))});
+  function criticalInfo(tail, useT, df=null) {
+    let alpha, confidence;
+    if(useT) {
+      if(tail==='two') {
+        alpha=hypChoice([0.20,0.10,0.05,0.02]);
+        confidence=Math.round(100*(1-alpha));
       } else {
-        renderGeometricHistogram(graph,c.p,{xLabel:'x',yLabel:'f(x)',maxX:Math.max(10,Math.ceil(c.mu+4*c.sigma))});
+        alpha=hypChoice([0.10,0.05,0.025,0.01]);
+        confidence=Math.round(100*(1-2*alpha));
+      }
+    } else {
+      alpha=hypChoice([0.10,0.07,0.05,0.04,0.02,0.01]);
+    }
+    const q=tail==='two'?1-alpha/2:1-alpha;
+    const crit=useT?inverseStudentT(q,df):inverseNormalCdf(q);
+    return {alpha,confidence,crit};
+  }
+
+  function chooseStatistic(crit, tail, reject) {
+    const max=2.95;
+    let mag;
+    if(reject) mag=crit+0.12+Math.random()*Math.max(0.08,max-crit-0.15);
+    else mag=0.15+Math.random()*Math.max(0.1,crit-0.35);
+    mag=Math.min(max,mag);
+    if(tail==='left') return -mag;
+    if(tail==='right') return mag;
+    return (Math.random()<0.5?-1:1)*mag;
+  }
+
+  function pValue(stat,tail,useT,df=null) {
+    const F=useT?(x=>studentTCdf(x,df)):normalCdf;
+    if(tail==='left') return F(stat);
+    if(tail==='right') return 1-F(stat);
+    return 2*Math.min(F(stat),1-F(stat));
+  }
+
+  function sampleStats(values) {
+    const n=values.length, mean=values.reduce((a,b)=>a+b,0)/n;
+    const s=Math.sqrt(values.reduce((a,x)=>a+(x-mean)**2,0)/(n-1));
+    return {n,mean,s};
+  }
+
+  function affineSample(n,targetMean,targetS,digits=1) {
+    let raw=Array.from({length:n},()=>Math.random()*2-1);
+    let r=sampleStats(raw);
+    let vals=raw.map(x=>targetMean+targetS*(x-r.mean)/r.s);
+    vals=vals.map(x=>Number(x.toFixed(digits)));
+    return vals;
+  }
+
+  function hypothesesTex(symbol,tail,nullValue='0') {
+    if(tail==='two') return `\\[H_0:${symbol}=${nullValue}\\hspace{5mm}\\text{ and }\\hspace{5mm}H_a:${symbol}\\neq${nullValue}\\]`;
+    if(tail==='left') return `\\[H_0:${symbol}\\geq${nullValue}\\hspace{5mm}\\text{ and }\\hspace{5mm}H_a:${symbol}<${nullValue}\\]`;
+    return `\\[H_0:${symbol}\\leq${nullValue}\\hspace{5mm}\\text{ and }\\hspace{5mm}H_a:${symbol}>${nullValue}\\]`;
+  }
+
+  function tailDescription(tail) {
+    return tail==='two'?'two-tailed':tail==='left'?'one-tailed (left)':'one-tailed (right)';
+  }
+
+  function generateMeanKnown(tail,reject) {
+    const c=hypChoice(measurementContexts), n=randInt(35,120), mu0=randInt(30,900)/10, sigma=randInt(15,120)/10;
+    const se=sigma/Math.sqrt(n), ci=criticalInfo(tail,false), stat=chooseStatistic(ci.crit,tail,reject), xbar=mu0+stat*se;
+    const wording=`${c.subject} has historically reported ${c.verb} of ${hypFmt(mu0,1)} ${c.unit}, with population standard deviation ${hypFmt(sigma,1)} ${c.unit}. A random sample of ${n} ${c.item} has mean ${hypFmt(xbar,2)} ${c.unit}. Conduct a ${tailDescription(tail)} hypothesis test at level of significance \\(\\alpha=${hypFmt(ci.alpha,3)}\\).`;
+    return {type:'meanKnown',tail,reject,useT:false,df:null,alpha:ci.alpha,crit:ci.crit,stat,p:pValue(stat,tail,false),wording,symbol:'\\mu',nullValue:mu0,estimate:xbar,se,n,sigma,context:c,xLabel:'x̄'};
+  }
+
+  function generateMeanUnknown(tail,reject) {
+    const c=hypChoice(measurementContexts), n=randInt(9,18), mu0=randInt(30,900)/10, targetS=randInt(15,100)/10, df=n-1;
+    const ci=criticalInfo(tail,true,df), stat=chooseStatistic(ci.crit,tail,reject), targetMean=mu0+stat*targetS/Math.sqrt(n);
+    const data=affineSample(n,targetMean,targetS,1), st=sampleStats(data), actualStat=(st.mean-mu0)/(st.s/Math.sqrt(n));
+    const actualReject=tail==='two'?Math.abs(actualStat)>ci.crit:tail==='left'?actualStat<-ci.crit:actualStat>ci.crit;
+    if(actualReject!==reject) return generateMeanUnknown(tail,reject);
+    const wording=`A researcher studies ${c.item}. The benchmark ${c.verb} is ${hypFmt(mu0,1)} ${c.unit}. A random sample gives the data \\(${data.join(', ')}\\). Conduct a ${tailDescription(tail)} hypothesis test at level \\(\\alpha=${hypFmt(ci.alpha,3)}\\).`;
+    return {type:'meanUnknown',tail,reject,useT:true,df,alpha:ci.alpha,confidence:ci.confidence,crit:ci.crit,stat:actualStat,p:pValue(actualStat,tail,true,df),wording,symbol:'\\mu',nullValue:mu0,estimate:st.mean,se:st.s/Math.sqrt(n),n,s:st.s,data,context:c,xLabel:'x̄'};
+  }
+
+  function generateProportion(tail,reject) {
+    const c=hypChoice(proportionContexts), p0=randInt(20,80)/100, n=randInt(120,400), ci=criticalInfo(tail,false);
+    for(let tries=0;tries<500;tries++){
+      const desired=chooseStatistic(ci.crit,tail,reject), x=Math.max(1,Math.min(n-1,Math.round(n*(p0+desired*Math.sqrt(p0*(1-p0)/n))))), phat=x/n;
+      const stat=(phat-p0)/Math.sqrt(p0*(1-p0)/n), actual=tail==='two'?Math.abs(stat)>ci.crit:tail==='left'?stat<-ci.crit:stat>ci.crit;
+      if(actual===reject && Math.abs(stat)<=3){
+        const wording=`The established proportion of ${c.success} is ${hypPercent(p0,0)}. In a random sample of ${n} ${c.population}, ${x} meet the criterion. Conduct a ${tailDescription(tail)} hypothesis test at level \\(\\alpha=${hypFmt(ci.alpha,3)}\\).`;
+        return {type:'proportion',tail,reject,useT:false,df:null,alpha:ci.alpha,crit:ci.crit,stat,p:pValue(stat,tail,false),wording,symbol:'p',nullValue:p0,estimate:phat,se:Math.sqrt(p0*(1-p0)/n),n,x,context:c,xLabel:'p̂'};
       }
     }
-    typeset([wrapper]);
+    return generateProportion(tail,reject);
   }
 
-  function samplingStep(problem) {
-    const c=problem.context,d=problem.sampling;
-    const wrapper=makeHintWrapper();
-    const mu=fmt(d.mu,3), sig=fmt(d.sigma,3);
-    wrapper.innerHTML=problem.type==='means'
-      ? `<p>We are asked about an average, so we use the sample mean version of the Central Limit Theorem,</p>
-      <p>\\[\\mu_{\\overline{x}}=\\mu_X=${fmt(c.mu,3)}\\hspace{3mm}\\text{ and }\\hspace{3mm}\\sigma_{\\overline{x}}=\\frac{\\sigma_X}{\\sqrt{n}}=\\frac{${fmt(c.sigma,3)}}{\\sqrt{${c.n}}}\\approx ${sig}.\\]</p>`
-      : `<p>We are asked about a total, so we use the sample sum version of the Central Limit Theorem,</p>
-      <p>\\[\\mu_{\\Sigma X}=n\\mu_X=${c.n}(${fmt(c.mu,3)})\\approx ${mu}\\hspace{3mm}\\text{ and }\\hspace{3mm}\\sigma_{\\Sigma X}=\\sqrt{n}\\,\\sigma_X=\\sqrt{${c.n}}(${fmt(c.sigma,3)})\\approx ${sig}.\\]</p>`;
-    const graph=document.createElement('div');
-    graph.style.maxWidth='740px'; graph.style.margin='0.75rem auto';
-    wrapper.appendChild(graph);
-    renderNormalDistribution(graph,d.mu,d.sigma,{xLabel:problem.type==='means'?'sample mean':problem.type==='sums'?'sample total':'sample proportion'});
-    typeset([wrapper]);
+  function generateDiffMeansKnown(tail,reject) {
+    const c=hypChoice(comparisonContexts), n1=randInt(35,100),n2=randInt(35,100),s1=randInt(20,100)/10,s2=randInt(20,100)/10;
+    const se=Math.sqrt(s1*s1/n1+s2*s2/n2),ci=criticalInfo(tail,false),stat=chooseStatistic(ci.crit,tail,reject),diff=stat*se,base=randInt(300,900)/10,x1=base+diff/2,x2=base-diff/2;
+    const wording=`A study compares ${c.item} for ${c.a} and ${c.b}. The samples have \\(n_1=${n1},\\ \overline{x}_1=${hypFmt(x1,2)},\\sigma_1=${hypFmt(s1,1)}\\) and \\(n_2=${n2},\\ \overline{x}_2=${hypFmt(x2,2)},\\sigma_2=${hypFmt(s2,1)}\\), measured in ${c.unit}. Conduct a ${tailDescription(tail)} test of whether the population means differ in the stated direction at \\(\\alpha=${hypFmt(ci.alpha,3)}\\).`;
+    return {type:'diffMeansKnown',tail,reject,useT:false,alpha:ci.alpha,crit:ci.crit,stat,p:pValue(stat,tail,false),wording,symbol:'\\mu_1-\\mu_2',nullValue:0,estimate:x1-x2,se,n1,n2,s1,s2,x1,x2,context:c,xLabel:'x̄₁ − x̄₂'};
   }
 
-  function eventNotation(problem) {
-    const d=problem.sampling,e=problem.task.event,s=d.symbol;
-    if(e.type==='range')return `P(${e.left}\\leq ${s}\\leq ${e.right})`;
-    if(e.type==='oneSided')return `P(${s}${e.relation}${e.m})`;
-    if(e.type==='conditional')return `P(${s}${e.targetRelation}${e.m}\\mid ${e.lower}\\leq ${s}\\leq ${e.upper})`;
-    if(e.type==='percentileOfValue')return `P(${s}\\leq ${e.m})`;
-    return '';
+  function welchDf(s1,n1,s2,n2){const a=s1*s1/n1,b=s2*s2/n2;return (a+b)**2/(a*a/(n1-1)+b*b/(n2-1));}
+  function generateDiffMeansUnknown(tail,reject) {
+    const c=hypChoice(comparisonContexts),n1=randInt(8,24),n2=randInt(8,24),s1=randInt(20,100)/10,s2=randInt(20,100)/10,se=Math.sqrt(s1*s1/n1+s2*s2/n2),dfRaw=welchDf(s1,n1,s2,n2),df=Math.min(30,Math.max(8,Math.ceil(dfRaw))),ci=criticalInfo(tail,true,df),stat=chooseStatistic(ci.crit,tail,reject),diff=stat*se,base=randInt(300,900)/10,x1=base+diff/2,x2=base-diff/2;
+    const wording=`Independent samples compare ${c.item} for ${c.a} and ${c.b}: \\(n_1=${n1},\\overline{x}_1=${hypFmt(x1,2)},s_1=${hypFmt(s1,1)}\\) and \\(n_2=${n2},\\overline{x}_2=${hypFmt(x2,2)},s_2=${hypFmt(s2,1)}\\). Conduct a ${tailDescription(tail)} Welch two-sample \\(t\\)-test at \\(\\alpha=${hypFmt(ci.alpha,3)}\\).`;
+    return {type:'diffMeansUnknown',tail,reject,useT:true,df,dfRaw,confidence:ci.confidence,alpha:ci.alpha,crit:ci.crit,stat,p:pValue(stat,tail,true,df),wording,symbol:'\\mu_1-\\mu_2',nullValue:0,estimate:x1-x2,se,n1,n2,s1,s2,x1,x2,context:c,xLabel:'x̄₁ − x̄₂'};
   }
 
-  function calculationStep(problem) {
-    const d=problem.sampling,e=problem.task.event,symbol=d.symbol;
-    const wrapper=makeHintWrapper();
-    let html='',zs=[],selected=[],superSelected=[],lines=[];
-    const zRaw=x=>`\\frac{${mathValue(x,d)}-${fmt(d.mu,3)}}{${fmt(d.sigma,3)}}`;
-    if(e.type==='oneSided') {
-      const left=e.relation==='<'||e.relation==='\\leq';
-      const rel=e.relation==='<'?'\\lt':e.relation;
-      const table=zPhi(e.z);
-      html=left
-        ? `<p>\\[\\begin{aligned}
-          P(${symbol}${rel}${mathValue(e.m,d)})
-          &=P\\left(Z\\leq ${zRaw(e.m)}\\right)\\\\
-          &=P(Z\\leq ${fmt(e.z,2)})\\approx ${probFmt(e.answer)}.
-        \\end{aligned}\\]</p>`
-        : `<p>\\[\\begin{aligned}
-          P(${symbol}${rel}${mathValue(e.m,d)})
-          &=P\\left(Z>${zRaw(e.m)}\\right)\\\\
-          &=P(Z>${fmt(e.z,2)})=1-P(Z\\leq ${fmt(e.z,2)})\\\\
-          &\\approx 1-${probFmt(table)}=${probFmt(e.answer)}.
-        \\end{aligned}\\]</p>`;
-      zs=[e.z]; selected=left?[[-Infinity,e.m]]:[[e.m,Infinity]]; lines=[e.m];
-    } else if(e.type==='range') {
-      html=`<p>\\[\\begin{aligned}
-        P(${mathValue(e.left,d)}\\leq ${symbol}\\leq ${mathValue(e.right,d)})
-        &=P\\left(${zRaw(e.left)}\\leq Z\\leq ${zRaw(e.right)}\\right)\\\\
-        &=P(${fmt(e.z1,2)}\\leq Z\\leq ${fmt(e.z2,2)})\\\\
-        &=${phiTex(e.z2)}-${phiTex(e.z1)}=${probFmt(e.answer)}.
-      \\end{aligned}\\]</p>`;
-      zs=[e.z1,e.z2]; selected=[[e.left,e.right]]; lines=[e.left,e.right];
-    } else if(e.type==='conditional') {
-      const rel=e.targetRelation==='<'?'\\lt':e.targetRelation;
-      const intersection=e.targetRelation==='<'?`${mathValue(e.lower,d)}\\leq ${symbol}\\lt ${mathValue(e.m,d)}`:`${mathValue(e.m,d)}\\lt ${symbol}\\leq ${mathValue(e.upper,d)}`;
-      const numZ=e.targetRelation==='<'?`${fmt(e.zLower,2)}\\leq Z\\lt ${fmt(e.zM,2)}`:`${fmt(e.zM,2)}\\lt Z\\leq ${fmt(e.zUpper,2)}`;
-      const numValues=e.targetRelation==='<'?`${phiTex(e.zM)}-${phiTex(e.zLower)}`:`${phiTex(e.zUpper)}-${phiTex(e.zM)}`;
-      html=`<p>\\[\\begin{aligned}
-        P(${symbol}${rel}${mathValue(e.m,d)}\\mid ${mathValue(e.lower,d)}\\leq ${symbol}\\leq ${mathValue(e.upper,d)})
-        &=\\frac{P(${symbol}${rel}${mathValue(e.m,d)})\\cap(${mathValue(e.lower,d)}\\leq ${symbol}\\leq ${mathValue(e.upper,d)})}{P(${mathValue(e.lower,d)}\\leq ${symbol}\\leq ${mathValue(e.upper,d)})}\\\\
-        &=\\frac{P(${intersection})}{P(${mathValue(e.lower,d)}\\leq ${symbol}\\leq ${mathValue(e.upper,d)})}\\\\
-        &=\\frac{P\\left(${e.targetRelation==='<' ? `${zRaw(e.lower)}\\leq Z\\lt ${zRaw(e.m)}` : `${zRaw(e.m)}\\lt Z\\leq ${zRaw(e.upper)}`}\\right)}{P\\left(${zRaw(e.lower)}\\leq Z\\leq ${zRaw(e.upper)}\\right)}\\\\
-        &=\\frac{P(${numZ})}{P(${fmt(e.zLower,2)}\\leq Z\\leq ${fmt(e.zUpper,2)})}\\\\
-        &=\\frac{${numValues}}{${phiTex(e.zUpper)}-${phiTex(e.zLower)}}\\approx ${probFmt(e.answer)}.
-      \\end{aligned}\\]</p>`;
-      zs=[e.zLower,e.zM,e.zUpper]; selected=[[e.lower,e.upper]]; superSelected=e.targetRelation==='<'?[[e.lower,e.m]]:[[e.m,e.upper]]; lines=[e.lower,e.m,e.upper];
-    } else if(e.type==='percentileOfValue') {
-      html=`<p>\\[\\begin{aligned}
-        P(${symbol}\\leq ${mathValue(e.m,d)})
-        &=P\\left(Z\\leq ${zRaw(e.m)}\\right)\\\\
-        &=P(Z\\leq ${fmt(e.z,2)})\\approx ${probFmt(e.answer)}.
-      \\end{aligned}\\]</p><p>Thus, ${displaySamplingValue(e.m,d)} is approximately the \\(${fmt(100*e.answer,1)}\\)th percentile.</p>`;
-      zs=[e.z]; selected=[[-Infinity,e.m]]; lines=[e.m];
-    } else if(e.type==='valueFromPercentile') {
-      html=`<p>Find the standard-normal table entry whose cumulative probability is closest to \\(${fmt(e.p,2)}\\): \\(Z\\approx ${fmt(e.z,2)}\\).</p>
-      <p>\\[x=\\mu+Z\\sigma=${fmt(d.mu,4)}+(${fmt(e.z,2)})(${fmt(d.sigma,4)})\\approx ${finalMathValue(e.answer,d)}.\\]</p>
-      <p>The requested percentile is approximately ${finalDisplayValue(e.answer,d)}.</p>`;
-      zs=[e.z]; selected=[[-Infinity,e.answer]]; lines=[e.answer];
-    } else if(e.type==='quartile') {
-      html=`<p>The cumulative probability for \\(${e.quartileSymbol}\\) is \\(${fmt(e.p,2)}\\), corresponding to \\(Z\\approx ${fmt(e.z,2)}\\) in the standard normal table.</p>
-      <p>\\[${e.quartileSymbol}=\\mu+Z\\sigma=${fmt(d.mu,4)}+(${fmt(e.z,2)})(${fmt(d.sigma,4)})\\approx ${finalMathValue(e.answer,d)}.\\]</p>`;
-      zs=[e.z]; selected=[[-Infinity,e.answer]]; lines=[e.answer];
-    } else if(e.type==='mean') {
-      html=`<p>The mean of the sampling distribution is its centre:</p><p>\\[\\mu_{${symbol}}=${finalMathValue(e.answer,d)}.\\]</p>`;
-      lines=[e.answer];
-    } else if(e.type==='median') {
-      html=`<p>The normal distribution is symmetric, so its median equals its mean:</p><p>\\[\\operatorname{Med}(${symbol})=\\mu_{${symbol}}=${finalMathValue(e.answer,d)}.\\]</p>`;
-      lines=[e.answer];
-    } else if(e.type==='standardDeviation') {
-      html=`<p>The standard deviation of the sampling distribution is</p><p>\\[\\sigma_{${symbol}}=${finalMathValue(e.answer,d)}.\\]</p>`;
-    } else if(e.type==='variance') {
-      html=`<p>Variance is the square of the standard deviation:</p><p>\\[\\operatorname{Var}(${symbol})=\\sigma_{${symbol}}^2=(${fmt(d.sigma,6)})^2\\approx ${finalMathValue(e.answer,d)}.\\]</p>`;
-    } else {
-      html=`<p>The cumulative probabilities \\(0.25\\) and \\(0.75\\) correspond to \\(Z\\approx -0.67\\) and \\(Z\\approx 0.67\\) in the standard normal table.</p>
-      <p>\\[\\begin{aligned}
-        Q_1&=${fmt(d.mu,4)}+(-0.67)(${fmt(d.sigma,4)})\\approx ${finalMathValue(e.q1,d)},\\\\
-        Q_3&=${fmt(d.mu,4)}+(0.67)(${fmt(d.sigma,4)})\\approx ${finalMathValue(e.q3,d)}.
-      \\end{aligned}\\]</p>
-      <p>\\[IQR=Q_3-Q_1\\approx ${finalMathValue(e.q3,d)}-${finalMathValue(e.q1,d)}=${finalMathValue(e.answer,d)}.\\]</p>`;
-      zs=[-0.67,0.67]; selected=[[e.q1,e.q3]]; lines=[e.q1,e.q3];
+  function generateDiffProportions(tail,reject) {
+    const c1=hypChoice(proportionContexts), n1=randInt(120,300),n2=randInt(120,300),base=randInt(25,70)/100,ci=criticalInfo(tail,false);
+    for(let tries=0;tries<700;tries++){
+      const desired=chooseStatistic(ci.crit,tail,reject), approxSe=Math.sqrt(base*(1-base)*(1/n1+1/n2)), diff=desired*approxSe;
+      let p1=Math.min(.95,Math.max(.05,base+diff/2)),p2=Math.min(.95,Math.max(.05,base-diff/2));
+      const x1=Math.round(n1*p1),x2=Math.round(n2*p2),ph1=x1/n1,ph2=x2/n2,pooled=(x1+x2)/(n1+n2),se=Math.sqrt(pooled*(1-pooled)*(1/n1+1/n2)),stat=(ph1-ph2)/se;
+      const actual=tail==='two'?Math.abs(stat)>ci.crit:tail==='left'?stat<-ci.crit:stat>ci.crit;
+      if(actual===reject&&Math.abs(stat)<=3){
+        const wording=`Two independent samples compare the proportion of ${c1.success}. Group 1 has ${x1} successes among ${n1}; group 2 has ${x2} among ${n2}. Conduct a ${tailDescription(tail)} test for a difference in population proportions at \\(\\alpha=${hypFmt(ci.alpha,3)}\\).`;
+        return {type:'diffProportions',tail,reject,useT:false,alpha:ci.alpha,crit:ci.crit,stat,p:pValue(stat,tail,false),wording,symbol:'p_1-p_2',nullValue:0,estimate:ph1-ph2,se,n1,n2,x1,x2,ph1,ph2,pooled,context:c1,xLabel:'p̂₁ − p̂₂'};
+      }
     }
-    wrapper.innerHTML=html;
-    const graph=document.createElement('div');
-    graph.style.maxWidth='740px'; graph.style.margin='0.75rem auto';
-    wrapper.appendChild(graph);
-    renderNormalDistribution(graph,d.mu,d.sigma,{selectedRanges:selected,superSelectedRanges:superSelected,tickValues:[d.mu-3*d.sigma,d.mu-2*d.sigma,d.mu-d.sigma,d.mu,d.mu+d.sigma,d.mu+2*d.sigma,d.mu+3*d.sigma,...lines],xLabel:problem.type==='means'?'sample mean':problem.type==='sums'?'sample total':'sample proportion'});
-    const table=document.createElement('div');
-    table.style.margin='0.75rem auto';
-    wrapper.appendChild(table);
-    renderStandardNormalTable(table,{highlightZs:zs,minZ:-3.0,maxZ:3.0,fontSize:'10px'});
-    typeset([wrapper]);
+    return generateDiffProportions(tail,reject);
   }
 
-
-  function proportionPrimaryIsCLT(problem) {
-    return problem.context.direct === true;
+  function generatePaired(tail,reject) {
+    const c=hypChoice(pairedContexts),n=randInt(9,16),targetS=randInt(15,80)/10,df=n-1,ci=criticalInfo(tail,true,df),stat=chooseStatistic(ci.crit,tail,reject),targetMean=stat*targetS/Math.sqrt(n),diffs=affineSample(n,targetMean,targetS,1),st=sampleStats(diffs),actualStat=st.mean/(st.s/Math.sqrt(n)),actual=tail==='two'?Math.abs(actualStat)>ci.crit:tail==='left'?actualStat<-ci.crit:actualStat>ci.crit;
+    if(actual!==reject)return generatePaired(tail,reject);
+    const before=Array.from({length:n},()=>randInt(40,120)/10),after=before.map((x,i)=>Number((x+diffs[i]).toFixed(1)));
+    const wording=`The same ${n} subjects are measured ${c.before} and ${c.after}. Their ${c.item} (${c.unit}) are:<br>Before: \\(${before.join(', ')}\\)<br>After: \\(${after.join(', ')}\\)<br>Conduct a ${tailDescription(tail)} paired \\(t\\)-test at \\(\\alpha=${hypFmt(ci.alpha,3)}\\).`;
+    return {type:'paired',tail,reject,useT:true,df,confidence:ci.confidence,alpha:ci.alpha,crit:ci.crit,stat:actualStat,p:pValue(actualStat,tail,true,df),wording,symbol:'\\mu_d',nullValue:0,estimate:st.mean,se:st.s/Math.sqrt(n),n,s:st.s,diffs,before,after,context:c,xLabel:'d̄'};
   }
 
-  function proportionEventData(problem, useCounts=false) {
-    const c=problem.context,e=problem.task.event;
-    const symbol=useCounts?'X':'\hat{p}';
-    const pick=x=>useCounts?c.n*x:x;
-    if(e.type==='range') return {symbol,zs:[e.z1,e.z2],selected:[[pick(e.left),pick(e.right)]],lines:[pick(e.left),pick(e.right)]};
-    if(e.type==='oneSided') return {symbol,zs:[e.z],selected:(e.relation==='<'||e.relation==='\leq')?[[-Infinity,pick(e.m)]]:[[pick(e.m),Infinity]],lines:[pick(e.m)]};
-    if(e.type==='conditional') return {symbol,zs:[e.zLower,e.zM,e.zUpper],selected:[[pick(e.lower),pick(e.upper)]],superSelected:e.targetRelation==='<'?[[pick(e.lower),pick(e.m)]]:[[pick(e.m),pick(e.upper)]],lines:[pick(e.lower),pick(e.m),pick(e.upper)]};
-    if(e.type==='percentileOfValue') return {symbol,zs:[e.z],selected:[[-Infinity,pick(e.m)]],lines:[pick(e.m)]};
-    if(e.type==='valueFromPercentile'||e.type==='quartile') return {symbol,zs:[e.z],selected:[[-Infinity,pick(e.answer)]],lines:[pick(e.answer)]};
-    if(e.type==='iqr') return {symbol,zs:[-0.67,0.67],selected:[[pick(e.q1),pick(e.q3)]],lines:[pick(e.q1),pick(e.q3)]};
-    if(e.type==='mean'||e.type==='median') return {symbol,selected:[],lines:[pick(e.answer)]};
-    return {symbol,selected:[],lines:[]};
+  function generateHypothesisProblem() {
+    const type=hypChoice(HYP_TYPES),tail=hypChoice(HYP_TAILS),reject=Math.random()<0.5;
+    const gens={meanKnown:generateMeanKnown,meanUnknown:generateMeanUnknown,proportion:generateProportion,diffMeansKnown:generateDiffMeansKnown,diffMeansUnknown:generateDiffMeansUnknown,diffProportions:generateDiffProportions,paired:generatePaired};
+    const p=gens[type](tail,reject);p.hintIndex=0;return p;
   }
 
-  function appendNormalAndTable(wrapper,mu,sigma,data,xLabel) {
-    const graph=document.createElement('div');
-    graph.style.maxWidth='740px';graph.style.margin='0.75rem auto';wrapper.appendChild(graph);
-    renderNormalDistribution(graph,mu,sigma,{selectedRanges:data?.selected??[],superSelectedRanges:data?.superSelected??[],tickValues:[mu-3*sigma,mu-2*sigma,mu-sigma,mu,mu+sigma,mu+2*sigma,mu+3*sigma,...(data?.lines??[])],xLabel});
-    if(data && Array.isArray(data.zs) && data.zs.length){
-      const table=document.createElement('div');table.style.margin='0.75rem auto';wrapper.appendChild(table);
-      renderStandardNormalTable(table,{highlightZs:data.zs,minZ:-3,maxZ:3,fontSize:'10px'});
-    }
+  function clearHypothesisActivity() {
+    questionText.innerHTML=''; tableArea.innerHTML='';meanArea.innerHTML='';workArea.innerHTML='';histogramArea.innerHTML='';stageFeedback.textContent='';hintArea.innerHTML='';hintBtn.disabled=true;
+  }
+  function hypHintBox(){const d=document.createElement('div');d.className='math';d.style.margin='1rem 0';hintArea.appendChild(d);return d;}
+
+  function rejectionRanges(p,scale=false) {
+    const center=scale?Number(p.nullValue):0, s=scale?p.se:1, c=p.crit*s;
+    if(p.tail==='two') return {selected:[[center-c,center+c]],ticks:[center-c,center,center+c]};
+    if(p.tail==='left') return {selected:[[center-c,Infinity]],ticks:[center-c,center]};
+    return {selected:[[-Infinity,center+c]],ticks:[center,center+c]};
   }
 
-  function proportionCLTSetup(problem) {
-    const c=problem.context,d=problem.sampling,wrapper=makeHintWrapper();
-    wrapper.innerHTML=`<p>${c.direct ? 'We are asked about a proportion, so we use' : 'Alternatively, we can use'} the proportion version of the Central Limit Theorem,</p>
-      <p>\\[\\mu_{\\hat{p}}=p=${fmt(c.p,3)}\\hspace{3mm}\\text{ and }\\hspace{3mm}\\sigma_{\\hat{p}}=\\sqrt{\\frac{p(1-p)}{n}}=\\sqrt{\\frac{${fmt(c.p,3)}(1-${fmt(c.p,3)})}{${c.n}}}\\approx ${fmt(d.sigma,4)}.\\]</p>`;
-    appendNormalAndTable(wrapper,d.mu,d.sigma,null,'sample proportion');typeset([wrapper]);
+  function renderHypGraph(container,p,scale=false) {
+    const rr=rejectionRanges(p,scale),mu=scale?Number(p.nullValue):0,sigma=scale?p.se:1,obs=scale?p.estimate:p.stat;
+    const opts={selectedRanges:rr.selected,verticalLines:[{value:obs,label:hypFmt(obs,3)}],tickValues:rr.ticks,tickLabels:rr.ticks.map(v=>({value:v,label:hypFmt(v,3)})),xLabel:scale?p.xLabel:(p.useT?'t':'Z'),yLabel:false,xMin:mu-4*sigma,xMax:mu+4*sigma,width:760,height:300};
+    if(p.useT) renderStudentTDistribution(container,p.df,{mu,scale:sigma,...opts}); else renderNormalDistribution(container,mu,sigma,opts);
   }
 
-  function proportionCLTCalculation(problem) {
-    const d=problem.sampling,e=problem.task.event,wrapper=makeHintWrapper(),data=proportionEventData(problem,false);
-    let html='';
-    if(e.type==='range') html=`<p>\\[\\begin{aligned}
-      P(${fmt(e.left,2)}\\leq\\hat{p}\\leq${fmt(e.right,2)})
-      &=P\\left(\\frac{${fmt(e.left,2)}-${fmt(d.mu,3)}}{${fmt(d.sigma,4)}}\\leq Z\\leq\\frac{${fmt(e.right,2)}-${fmt(d.mu,3)}}{${fmt(d.sigma,4)}}\\right)\\\\
-      &\\approx P(${fmt(e.z1,2)}\\leq Z\\leq${fmt(e.z2,2)})\\\\
-      &=P(Z\\leq${fmt(e.z2,2)})-P(Z\\leq${fmt(e.z1,2)})\\\\
-      &=${phiTex(e.z2)}-${phiTex(e.z1)}=${probFmt(e.answer)}.
-      \\end{aligned}\\]</p>`;
-    else if(e.type==='oneSided') {
-      const left=e.relation==='<'||e.relation==='\\leq', rel=e.relation==='<'?'\\lt':e.relation;
-      html=left?`<p>\\[\\begin{aligned}P(\\hat{p}${rel}${fmt(e.m,2)})&=P\\left(Z\\leq\\frac{${fmt(e.m,2)}-${fmt(d.mu,3)}}{${fmt(d.sigma,4)}}\\right)\\\\&\\approx P(Z\\leq${fmt(e.z,2)})=${probFmt(e.answer)}.\\end{aligned}\\]</p>`:`<p>\\[\\begin{aligned}P(\\hat{p}${rel}${fmt(e.m,2)})&=P\\left(Z>\\frac{${fmt(e.m,2)}-${fmt(d.mu,3)}}{${fmt(d.sigma,4)}}\\right)\\\\&\\approx P(Z>${fmt(e.z,2)})=1-${phiTex(e.z)}=${probFmt(e.answer)}.\\end{aligned}\\]</p>`;
-    } else { wrapper.remove(); calculationStep(problem); return; }
-    wrapper.innerHTML=html;appendNormalAndTable(wrapper,d.mu,d.sigma,data,'sample proportion');typeset([wrapper]);
-  }
+  function hint1(p){const d=hypHintBox();let extra='';
+    if(p.type==='meanUnknown') extra=`<p>From the data, \\(\\overline{x}=${hypFmt(p.estimate,3)}\\) and \\(s=${hypFmt(p.s,3)}\\).</p>`;
+    if(p.type==='paired') extra=`<p>The paired differences (after minus before) are \\(${p.diffs.join(', ')}\\), with \\(\\overline d=${hypFmt(p.estimate,3)}\\) and \\(s_d=${hypFmt(p.s,3)}\\).</p>`;
+    d.innerHTML=`${extra}<p>${hypothesesTex(p.symbol,p.tail,hypFmt(p.nullValue,3))}</p><p>This is a ${tailDescription(p.tail)} test.</p>`;typeset([d]);}
 
-  function proportionBinomialSetup(problem) {
-    const c=problem.context,wrapper=makeHintWrapper(),mu=c.n*c.p,sigma=Math.sqrt(c.n*c.p*(1-c.p));
-    const lead = proportionPrimaryIsCLT(problem)
-      ? 'Alternatively, the underlying distribution is binomial'
-      : 'The underlying distribution is binomial';
-    wrapper.innerHTML=`<p>${lead}, with \\(n=${c.n}\\) and \\(p=${fmt(c.p,3)}\\). It has mean and standard deviation</p>
-      <p>\\[\\mu_X=np=${c.n}(${fmt(c.p,3)})=${fmt(mu,3)}\\hspace{8mm}\\text{ and }\\hspace{8mm}\\sigma_X=\\sqrt{np(1-p)}=\\sqrt{${c.n}(${fmt(c.p,3)})(1-${fmt(c.p,3)})}\\approx ${fmt(sigma,3)}.\\]</p>`;
-    const graph=document.createElement('div');graph.style.maxWidth='740px';graph.style.margin='0.75rem auto';wrapper.appendChild(graph);
-    renderBinomialHistogram(graph,c.n,c.p,{xLabel:'x',yLabel:'f(x)'});typeset([wrapper]);
-  }
+  function hint2(p){const d=hypHintBox();let formula='';
+    if(p.type==='meanKnown') formula=`\\sigma_{\\overline{x}}=\\frac{\\sigma}{\\sqrt n}=\\frac{${hypFmt(p.sigma,3)}}{\\sqrt{${p.n}}}=${hypFmt(p.se,4)}`;
+    else if(p.type==='meanUnknown'||p.type==='paired') formula=`s_{\\overline{x}}=\\frac{s}{\\sqrt n}=\\frac{${hypFmt(p.s,3)}}{\\sqrt{${p.n}}}=${hypFmt(p.se,4)},\\qquad df=${p.df}`;
+    else if(p.type==='proportion') formula=`\\sigma_{\\hat p}=\\sqrt{\\frac{p_0(1-p_0)}{n}}=\\sqrt{\\frac{${hypFmt(p.nullValue,3)}(1-${hypFmt(p.nullValue,3)})}{${p.n}}}=${hypFmt(p.se,5)}`;
+    else if(p.type==='diffMeansKnown'||p.type==='diffMeansUnknown') formula=`SE=\\sqrt{\\frac{${hypFmt(p.s1,3)}^2}{${p.n1}}+\\frac{${hypFmt(p.s2,3)}^2}{${p.n2}}}=${hypFmt(p.se,5)}${p.useT?`,\\qquad df\\approx${p.df}`:''}`;
+    else formula=`\\hat p=\\frac{${p.x1+p.x2}}{${p.n1+p.n2}}=${hypFmt(p.pooled,4)},\\qquad SE=\\sqrt{\\hat p(1-\\hat p)\\left(\\frac1{${p.n1}}+\\frac1{${p.n2}}\\right)}=${hypFmt(p.se,5)}`;
+    d.innerHTML=`<p>Use the ${p.useT?`Student's \\(t\\)-distribution`:'normal distribution'} with</p><p>\\[${formula}\\]</p>`;typeset([d]);}
 
-  function proportionDeMoivreSetup(problem) {
-    const c=problem.context,wrapper=makeHintWrapper(),mu=c.n*c.p,sigma=Math.sqrt(c.n*c.p*(1-c.p));
-    wrapper.innerHTML='<p>We use the De Moivre–Laplace normal approximation of the binomial distribution with the same mean and standard deviation.</p>';
-    appendNormalAndTable(wrapper,mu,sigma,null,'number of successes');typeset([wrapper]);
-  }
+  function hint3(p){const d=hypHintBox(),cdf=p.useT?'t':'Z';
+    d.innerHTML=`<p>The experimental test statistic is</p><p>\\[${cdf}=\\frac{${hypFmt(p.estimate,4)}-${hypFmt(p.nullValue,4)}}{${hypFmt(p.se,5)}}=${hypFmt(p.stat,3)}.\\]</p><p>The corresponding ${p.tail==='two'?'two-tailed ':''}p-value is approximately \\(${hypFmt(p.p,4)}\\).</p>`;
+    if(!p.useT){const table=document.createElement('div');d.appendChild(table);renderStandardNormalTable(table,{highlightZs:[Number(p.stat.toFixed(2))],minZ:-3,maxZ:3});}
+    typeset([d]);}
 
-  function proportionConvertCounts(problem) {
-    const c=problem.context,e=problem.task.event,wrapper=makeHintWrapper();let html='';
-    if(e.type==='range') html=`<p>\\[${c.n}(${fmt(e.left,3)})=${e.countLeft}\\hspace{8mm}\\text{ and }\\hspace{8mm}${c.n}(${fmt(e.right,3)})=${e.countRight}.\\]</p>`;
-    else if(e.type==='oneSided'||e.type==='percentileOfValue') html=`<p>\\[${c.n}(${fmt(e.m,3)})=${e.countM}.\\]</p>`;
-    else if(e.type==='conditional') html=`<p>Convert all three proportion cutoffs to success counts:</p><p>\\[${c.n}(${fmt(e.lower,3)})=${e.countLower},\\qquad ${c.n}(${fmt(e.m,3)})=${e.countM},\\qquad ${c.n}(${fmt(e.upper,3)})=${e.countUpper}.\\]</p>`;
-    else if(e.type==='valueFromPercentile'||e.type==='quartile'||e.type==='median') html=`<p>A proportion cutoff corresponds to a success-count cutoff through \\(X=n\\hat p\\):</p><p>\\[X=${c.n}(${fmt(e.answer,4)})\\approx ${fmt(e.countAnswer,3)}.\\]</p>`;
-    else if(e.type==='iqr') html=`<p>Convert the quartiles and their separation from proportions to counts:</p><p>\\[Q_{1,X}=${c.n}(${fmt(e.q1,4)})\\approx ${fmt(e.countQ1,3)},\\qquad Q_{3,X}=${c.n}(${fmt(e.q3,4)})\\approx ${fmt(e.countQ3,3)},\\]</p><p>\\[IQR_X=${c.n}(${fmt(e.answer,4)})\\approx ${fmt(e.countAnswer,3)}.\\]</p>`;
-    else if(e.type==='mean') html=`<p>Since \\(X=n\\hat p\\), the means satisfy</p><p>\\[\\mu_X=n\\mu_{\\hat p}=${c.n}(${fmt(e.answer,4)})=${fmt(e.countAnswer,3)}.\\]</p>`;
-    else if(e.type==='standardDeviation') html=`<p>Since \\(X=n\\hat p\\), standard deviations scale by \\(n\\):</p><p>\\[\\sigma_X=n\\sigma_{\\hat p}=${c.n}(${fmt(e.answer,6)})\\approx ${fmt(e.countAnswer,3)}.\\]</p>`;
-    else if(e.type==='variance') html=`<p>Since \\(X=n\\hat p\\), variances scale by \\(n^2\\):</p><p>\\[\\operatorname{Var}(X)=n^2\\operatorname{Var}(\\hat p)=${c.n}^2(${fmt(e.answer,8)})\\approx ${fmt(e.countAnswer,3)}.\\]</p>`;
-    wrapper.innerHTML=html;typeset([wrapper]);
-  }
+  function hint4(p){const d=hypHintBox();
+    const side=p.tail==='two'?`\\alpha/2=${hypFmt(p.alpha/2,3)} in each tail`:`\\alpha=${hypFmt(p.alpha,3)} in the rejection tail`;
+    d.innerHTML=`<p>For ${side}, the critical value is \\(${p.useT?'t':'z'}^*=${hypFmt(p.crit,3)}\\).</p>`;
+    const table=document.createElement('div');d.appendChild(table);
+    if(p.useT)renderTTable(table,{highlightDf:p.df,highlightConfidenceLevel:p.confidence,highlightColor:'red'});else renderStandardNormalTable(table,{highlightZs:p.tail==='two'?[-Number(p.crit.toFixed(2)),Number(p.crit.toFixed(2))]:[p.tail==='left'?-Number(p.crit.toFixed(2)):Number(p.crit.toFixed(2))],minZ:-3,maxZ:3});
+    const graph=document.createElement('div');graph.style.maxWidth='760px';graph.style.margin='1rem auto';d.appendChild(graph);renderHypGraph(graph,p,false);typeset([d]);}
 
-  function proportionBinomialCalculation(problem) {
-    const c=problem.context,e=problem.task.event,wrapper=makeHintWrapper(),mu=c.n*c.p,sigma=Math.sqrt(c.n*c.p*(1-c.p)),data=proportionEventData(problem,true);let html='';
-    const zRaw=x=>`\\frac{${fmt(c.n*x,3)}-${fmt(mu,3)}}{${fmt(sigma,3)}}`;
-    if(e.type==='range') html=`<p>\\[\\begin{aligned}
-      P(${e.countLeft}\\leq X\\leq${e.countRight})
-      &=P\\left(${zRaw(e.left)}\\leq Z\\leq${zRaw(e.right)}\\right)\\\\
-      &\\approx P(${fmt(e.z1,2)}\\leq Z\\leq${fmt(e.z2,2)})\\\\
-      &=${phiTex(e.z2)}-${phiTex(e.z1)}=${probFmt(e.answer)}.
-      \\end{aligned}\\]</p>`;
-    else if(e.type==='oneSided') {
-      const left=e.relation==='<'||e.relation==='\\leq',rel=e.relation==='<'?'\\lt':e.relation;
-      html=left?`<p>\\[\\begin{aligned}P(X${rel}${e.countM})&=P\\left(Z\\leq${zRaw(e.m)}\\right)\\\\&\\approx P(Z\\leq${fmt(e.z,2)})=${probFmt(e.answer)}.\\end{aligned}\\]</p>`:`<p>\\[\\begin{aligned}P(X${rel}${e.countM})&=P\\left(Z>${zRaw(e.m)}\\right)\\\\&\\approx P(Z>${fmt(e.z,2)})=1-${phiTex(e.z)}=${probFmt(e.answer)}.\\end{aligned}\\]</p>`;
-    } else if(e.type==='conditional') {
-      const rel=e.targetRelation==='<'?'\\lt':'>';
-      const num=e.targetRelation==='<'?`${phiTex(e.zM)}-${phiTex(e.zLower)}`:`${phiTex(e.zUpper)}-${phiTex(e.zM)}`;
-      html=`<p>\\[\\begin{aligned}
-      P(X${rel}${e.countM}\\mid ${e.countLower}\\leq X\\leq${e.countUpper})
-      &=\\frac{P(${e.targetRelation==='<'?`${e.countLower}\\leq X<${e.countM}`:`${e.countM}<X\\leq${e.countUpper}`})}{P(${e.countLower}\\leq X\\leq${e.countUpper})}\\\\
-      &\\approx\\frac{${num}}{${phiTex(e.zUpper)}-${phiTex(e.zLower)}}=${probFmt(e.answer)}.
-      \\end{aligned}\\]</p>`;
-    } else if(e.type==='percentileOfValue') {
-      html=`<p>\\[P(X\\leq ${e.countM})\\approx P(Z\\leq ${fmt(e.z,2)})=${probFmt(e.answer)}.\\]</p><p>Thus, ${fmt(e.countM,3)} successes is approximately the \\(${fmt(100*e.answer,1)}\\)th percentile.</p>`;
-    } else if(e.type==='valueFromPercentile'||e.type==='quartile') {
-      const label=e.type==='quartile'?e.quartileSymbol:`P_${e.percentile}`;
-      html=`<p>The required cumulative probability gives \\(Z\\approx ${fmt(e.z,2)}\\). Hence</p><p>\\[${label}=\\mu_X+Z\\sigma_X=${fmt(mu,3)}+(${fmt(e.z,2)})(${fmt(sigma,3)})\\approx ${fmt(e.countAnswer,3)}\\text{ successes}.\\]</p><p>Dividing by \\(n=${c.n}\\) gives ${finalDisplayValue(e.answer,problem.sampling)}.</p>`;
-    } else if(e.type==='iqr') {
-      html=`<p>\\[\\begin{aligned}Q_{1,X}&=${fmt(mu,3)}-0.67(${fmt(sigma,3)})\\approx ${fmt(e.countQ1,3)},\\\\Q_{3,X}&=${fmt(mu,3)}+0.67(${fmt(sigma,3)})\\approx ${fmt(e.countQ3,3)}.\\end{aligned}\\]</p><p>\\[IQR_X\\approx ${fmt(e.countAnswer,3)},\\qquad IQR_{\\hat p}=\\frac{IQR_X}{${c.n}}\\approx ${finalMathValue(e.answer,problem.sampling)}.\\]</p>`;
-    } else if(e.type==='mean') {
-      html=`<p>\\[\\mu_X=np=${c.n}(${fmt(c.p,3)})=${fmt(mu,3)},\\qquad \\mu_{\\hat p}=\\frac{\\mu_X}{n}=\\frac{${fmt(mu,3)}}{${c.n}}=${finalMathValue(e.answer,problem.sampling)}.\\]</p>`;
-    } else if(e.type==='median') {
-      html=`<p>The approximating normal distribution is symmetric, so</p><p>\\[\\operatorname{Med}(X)\\approx\\mu_X=${fmt(mu,3)},\\qquad \\operatorname{Med}(\\hat p)\\approx\\frac{${fmt(mu,3)}}{${c.n}}=${finalMathValue(e.answer,problem.sampling)}.\\]</p>`;
-    } else if(e.type==='standardDeviation') {
-      html=`<p>\\[\\sigma_X=\\sqrt{np(1-p)}\\approx ${fmt(sigma,3)},\\qquad \\sigma_{\\hat p}=\\frac{\\sigma_X}{n}=\\frac{${fmt(sigma,3)}}{${c.n}}\\approx ${finalMathValue(e.answer,problem.sampling)}.\\]</p>`;
-    } else if(e.type==='variance') {
-      html=`<p>\\[\\operatorname{Var}(X)=np(1-p)=${fmt(sigma*sigma,4)},\\qquad \\operatorname{Var}(\\hat p)=\\frac{\\operatorname{Var}(X)}{n^2}=\\frac{${fmt(sigma*sigma,4)}}{${c.n}^2}\\approx ${finalMathValue(e.answer,problem.sampling)}.\\]</p>`;
-    }
-    wrapper.innerHTML=html;appendNormalAndTable(wrapper,mu,sigma,data,'number of successes');typeset([wrapper]);
-  }
+  function hint5(p){const d=hypHintBox(),decision=p.reject?'reject':'decline to reject';
+    d.innerHTML=`<p>Because the experimental statistic \\(${hypFmt(p.stat,3)}\\) ${p.reject?'lies in':'does not lie in'} the rejection region (equivalently, \\(p=${hypFmt(p.p,4)}${p.reject?'<':'>'}\\alpha=${hypFmt(p.alpha,3)}\\)), we <b>${decision} \\(H_0\\)</b>.</p><p>${p.reject?'There is sufficient evidence in favour of the alternative hypothesis.':'There is insufficient evidence to support the alternative hypothesis.'}</p>`;
+    const graph=document.createElement('div');graph.style.maxWidth='760px';graph.style.margin='1rem auto';d.appendChild(graph);renderHypGraph(graph,p,true);typeset([d]);}
 
-  function proportionHintStep(problem,index) {
-    const cltFirst=proportionPrimaryIsCLT(problem);
-    const steps=cltFirst
-      ? [proportionCLTSetup,proportionCLTCalculation,proportionBinomialSetup,proportionDeMoivreSetup,proportionConvertCounts,proportionBinomialCalculation]
-      : [proportionBinomialSetup,proportionDeMoivreSetup,proportionConvertCounts,proportionBinomialCalculation,proportionCLTSetup,proportionCLTCalculation];
-    steps[index-1](problem);
-    return steps.length;
-  }
+  function renderHypothesisProblem(p){clearHypothesisActivity();questionText.innerHTML=p.wording;hintBtn.disabled=false;typeset([questionText]);}
 
-  function renderCLTProblem(problem) {
-    clearCLTActivity(); questionText.innerHTML=problem.wording;
-    hintBtn.disabled=false; hintBtn.textContent='Hint'; nextBtn.style.display='none';
-    typeset([questionText]);
-  }
-
-  startBtn.addEventListener('click',()=>{
-    playSound('click-sound'); currentCLTDraft=generateCLTQuestion(); renderCLTProblem(currentCLTDraft);
-  });
-
-  hintBtn.addEventListener('click',()=>{
-    playSound('click-sound'); if(!currentCLTDraft)return;
-    currentCLTDraft.hintIndex++;
-    if(currentCLTDraft.type==='proportions') {
-      const total=proportionHintStep(currentCLTDraft,currentCLTDraft.hintIndex);
-      if(currentCLTDraft.hintIndex>=total) hintBtn.disabled=true;
-    } else if(currentCLTDraft.hintIndex===1) underlyingStep(currentCLTDraft);
-    else if(currentCLTDraft.hintIndex===2) samplingStep(currentCLTDraft);
-    else if(currentCLTDraft.hintIndex===3){calculationStep(currentCLTDraft);hintBtn.disabled=true;}
-
-  });
+  startBtn.addEventListener('click',()=>{playSound('click-sound');currentHypothesisProblem=generateHypothesisProblem();renderHypothesisProblem(currentHypothesisProblem);});
+  hintBtn.addEventListener('click',()=>{playSound('click-sound');if(!currentHypothesisProblem)return;currentHypothesisProblem.hintIndex++;[hint1,hint2,hint3,hint4,hint5][currentHypothesisProblem.hintIndex-1](currentHypothesisProblem);if(currentHypothesisProblem.hintIndex>=5)hintBtn.disabled=true;});
 
 </script>
 

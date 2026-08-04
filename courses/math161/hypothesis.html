@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -64,15 +65,15 @@ fetch("/nav.html")
     We find the probability of having a result as extreme (or more) than the one we obtained: that is, being farther than 0.2 rebounds from the mean.
     \[P(\overline{x} > 5.8 \text{ OR } \overline{x} < 5.4) = 2 \cdot P(\overline{x} < 5.4) = 2 \cdot P\left(Z < \frac{5.4-5.6}{0.118}\right)\] 
     \[= 2 \cdot P(Z < -1.69) = 2(0.0455) = 0.0910\]
-    INSERT FIGURE HERE
+    <div id="hyp-ztable-observed-mean" style="margin:20px 0;"></div>
     Our \(p\)-value \(0.0910 > 0.07 = \alpha\), so we decline to reject \(H_0\).  There is insufficient evidence to conclude the new coaching changed 
     performance.<br><br>
     Alternatively, we could find the bounds of rejection in terms of # of standard deviations from the mean.  Since \(\alpha = 0.07\), we have 3.5% of the 
-    area under the curve in each rejection tail.  We look up \(z_{0.035}\), finding \(-1.81\).  INSERT FIGURE HERE  Since our result is not as far left as \(-1.81\), at 
-    \(-1.69\) standard deviations, we decline to reject \(H_0\).<br><br>INSERT FIGURE HERE
+    area under the curve in each rejection tail.  We look up \(z_{0.035}\), finding \(-1.81\).  <div id="hyp-ztable-critical-mean" style="margin:20px 0;"></div>  Since our result is not as far left as \(-1.81\), at 
+    \(-1.69\) standard deviations, we decline to reject \(H_0\).<br><br><div id="hyp-normal-z-mean" style="margin:1rem auto; max-width:760px;"></div>
     <i>Or</i>, we find the bounds of the rejection region in terms of # of rebounds:
     \[5.6-1.81(0.118) = 5.39 \text{ rebounds} \hspace{3mm}\text { and } \hspace{3mm} 5.6+1.81(0.118) = 5.81 \text{ rebounds}\]
-    and our result of \(5.4\) does not make it that far left, so we decline to reject \(H_0\).  INSERT FIGURE HERE</p>
+    and our result of \(5.4\) does not make it that far left, so we decline to reject \(H_0\).  <div id="hyp-normal-xbar-mean" style="margin:1rem auto; max-width:760px;"></div></p>
 
     <p>Boxes of a particular cereal are advertised as containing more than 67 marshmallows.  You buy 5 boxes of the cereal, finding 80, 68, 102, 72, and 89 
     marshmallows in each of the boxes.  Conduct a hypothesis test at a level of significance of \(\alpha = 0.1\) to test the advertised claim.<br><br>
@@ -89,12 +90,12 @@ fetch("/nav.html")
     We find the probability of having a result as extreme (or more) than the one we obtained: that is, being farther right than 82.2 marshmallows.
     \[P(\overline{x} > 82.2) = P\left(t > \frac{82.2-67}{6.12}\right) = P(t > 2.484)\] 
     We can't directly compute probabilities for the \(t\)-distribution, but <i>can</i> find the bounds of the rejection region.  First, in terms of # of 
-    standard deviations from the mean, since \(\alpha = 0.1\) and \(df = n-1 = 4\), we check the \(t\)-table for a one-tailed test, finding \(t=1.533\).  INSERT FIGURE HERE
+    standard deviations from the mean, since \(\alpha = 0.1\) and \(df = n-1 = 4\), we check the \(t\)-table for a one-tailed test, finding \(t=1.533\).  <div id="hyp-ttable-critical" style="margin:20px auto; max-width:1100px; overflow-x:auto;"></div>
     Our result is farther to the right, at \(2.484\) standard deviations, so we reject \(H_0\).  So, there is sufficient evidence to conclude the boxes of 
-    cereal do in fact contain more than 67 marshmallows.<br><br>  INSERT FIGURE HERE
+    cereal do in fact contain more than 67 marshmallows.<br><br>  <div id="hyp-t-z" style="margin:1rem auto; max-width:760px;"></div>
     <i>Or</i>, we could find the bounds of rejection in terms of # of marshmallows:
     \[67+1.533(6.12) = 76.38 \text{ marshmallows}\]
-    and our result of \(82.2\) marshallows is farther right than that, so we reject \(H_0\).  INSERT FIGURE HERE</p>
+    and our result of \(82.2\) marshallows is farther right than that, so we reject \(H_0\).  <div id="hyp-t-xbar" style="margin:1rem auto; max-width:760px;"></div></p>
 
     <p>You are testing a new vaccine's efficacy.  You test 200 members of a community, and find that 3 of them are infected with the relevant virus.  
     Conduct a hypothesis test at a level of significance of \(\alpha = 0.02\) to determine whether the vaccine provides greater than 97% protection.<br><br>
@@ -107,15 +108,15 @@ fetch("/nav.html")
     \approx 0.0086\]
     We find the probability of having a result as extreme (or more) than the one we obtained: that is, being farther left than \(0.015\).
     \[P(\hat{p} < 0.015) = P\left(Z < \frac{0.015-0.03}{0.0086}\right) = P(Z < -1.74) = 0.0409\] 
-    INSERT FIGURE HERE
+    <div id="hyp-ztable-observed-prop" style="margin:20px 0;"></div>
     Our \(p\)-value \(0.0409 > 0.02 = \alpha\), so we decline to reject \(H_0\).  There is insufficient evidence to conclude that less than 3% of people 
-    are infected.<br><br>  INSERT FIGURE HERE
+    are infected.<br><br>  <div id="hyp-ztable-critical-prop" style="margin:20px 0;"></div>
     Alternatively, we could find the bounds of rejection in terms of # of standard deviations from the mean.  Since \(\alpha = 0.02\), we have 2% of the area 
     under the curve in the left tail.  We look up \(z_{0.02} = -2.05\).  Since our result is not that far to the left, at \(-1.74\) standard deviations, 
-    we decline to reject \(H_0\).  INSERT FIGURE HERE<br><br>
+    we decline to reject \(H_0\).  <div id="hyp-normal-z-prop" style="margin:1rem auto; max-width:760px;"></div><br><br>
     <i>Or</i>, we find the bounds of the rejection region in terms of proportion:
     \[0.03-2.05(0.0086) = 0.0124\]
-    and our result of \(0.015\) is not that far to the left, so we decline to reject \(H_0\).  INSERT FIGURE HERE</p>
+    and our result of \(0.015\) is not that far to the left, so we decline to reject \(H_0\).  <div id="hyp-normal-phat-prop" style="margin:1rem auto; max-width:760px;"></div></p>
 
 <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
@@ -1198,6 +1199,23 @@ fetch("/nav.html")
     }
     add('path', { d: pathForRange(xMin, xMax, false), fill: 'none', stroke: axisColor, 'stroke-width': 2 });
 
+    for (const item of (options.verticalLines ?? [])) {
+      const value = (typeof item === 'number') ? item : item.value;
+      if (!Number.isFinite(value) || value < xMin || value > xMax) continue;
+      const lineColor = (typeof item === 'object' && item.color) ? item.color : darkRed;
+      const lineWidth = (typeof item === 'object' && item.width) ? item.width : 3;
+      add('line', {
+        x1: xPx(value), y1: baseY, x2: xPx(value), y2: yPx(pdf(value)),
+        stroke: lineColor, 'stroke-width': lineWidth
+      });
+      const label = (typeof item === 'object' && item.label !== undefined) ? String(item.label) : Number(value.toFixed(3)).toString();
+      const lab = add('text', {
+        x: xPx(value), y: baseY - 8, 'text-anchor': 'middle',
+        'font-size': 12, fill: lineColor, 'font-weight': 700
+      });
+      lab.textContent = label;
+    }
+
     const tickValues = options.tickValues ?? [mu - 3 * sigma, mu - 2 * sigma, mu - sigma, mu, mu + sigma, mu + 2 * sigma, mu + 3 * sigma];
     const tickLabels = new Map((options.tickLabels ?? []).map(item => [Number(item.value), String(item.label)]));
     for (const x of tickValues) {
@@ -1310,6 +1328,23 @@ fetch("/nav.html")
       if (d) add('path', { d, fill: darkRed, 'fill-opacity': 0.95, stroke: 'none' });
     }
     add('path', { d: pathForRange(xMin, xMax, false), fill: 'none', stroke: axisColor, 'stroke-width': 2 });
+
+    for (const item of (options.verticalLines ?? [])) {
+      const value = (typeof item === 'number') ? item : item.value;
+      if (!Number.isFinite(value) || value < xMin || value > xMax) continue;
+      const lineColor = (typeof item === 'object' && item.color) ? item.color : darkRed;
+      const lineWidth = (typeof item === 'object' && item.width) ? item.width : 3;
+      add('line', {
+        x1: xPx(value), y1: baseY, x2: xPx(value), y2: yPx(pdf(value)),
+        stroke: lineColor, 'stroke-width': lineWidth
+      });
+      const label = (typeof item === 'object' && item.label !== undefined) ? String(item.label) : Number(value.toFixed(3)).toString();
+      const lab = add('text', {
+        x: xPx(value), y: baseY - 8, 'text-anchor': 'middle',
+        'font-size': 12, fill: lineColor, 'font-weight': 700
+      });
+      lab.textContent = label;
+    }
 
     const tickValues = options.tickValues ?? [mu - 3 * scale, mu - 2 * scale, mu - scale, mu, mu + scale, mu + 2 * scale, mu + 3 * scale];
     const tickLabels = new Map((options.tickLabels ?? []).map(item => [Number(item.value), String(item.label)]));
@@ -1456,6 +1491,131 @@ fetch("/nav.html")
     width: 520,
     height: 270
   });
+
+
+  // Hypothesis-testing lesson tables and rejection-region figures.
+  renderStandardNormalTable('#hyp-ztable-observed-mean', {
+    highlightZs: [-1.69],
+    highlightColor: 'red'
+  });
+
+  renderStandardNormalTable('#hyp-ztable-critical-mean', {
+    highlightZs: [-1.81],
+    highlightColor: 'red'
+  });
+
+  renderNormalDistribution('#hyp-normal-z-mean', 0, 1, {
+    selectedRanges: [[-1.81, 1.81]],
+    verticalLines: [{ value: -1.69, label: '-1.69' }],
+    tickValues: [-1.81, 0, 1.81],
+    tickLabels: [
+      { value: -1.81, label: '-1.81' },
+      { value: 0, label: '0' },
+      { value: 1.81, label: '1.81' }
+    ],
+    xLabel: 'Z',
+    yLabel: false,
+    width: 760,
+    height: 300
+  });
+
+  renderNormalDistribution('#hyp-normal-xbar-mean', 5.6, 0.118, {
+    selectedRanges: [[5.39, 5.81]],
+    verticalLines: [{ value: 5.4, label: '5.4' }],
+    tickValues: [5.39, 5.6, 5.81],
+    tickLabels: [
+      { value: 5.39, label: '5.39' },
+      { value: 5.6, label: '5.6' },
+      { value: 5.81, label: '5.81' }
+    ],
+    xLabel: 'x̄',
+    yLabel: false,
+    width: 760,
+    height: 300
+  });
+
+  renderTTable('#hyp-ttable-critical', {
+    highlightDf: 4,
+    highlightConfidenceLevel: 80,
+    highlightColor: 'red'
+  });
+
+  renderStudentTDistribution('#hyp-t-z', 4, {
+    mu: 0,
+    scale: 1,
+    selectedRanges: [[-Infinity, 1.533]],
+    verticalLines: [{ value: 2.484, label: '2.484' }],
+    tickValues: [0, 1.533],
+    tickLabels: [
+      { value: 0, label: '0' },
+      { value: 1.533, label: '1.533' }
+    ],
+    xLabel: 't',
+    yLabel: false,
+    xMin: -4,
+    xMax: 4,
+    width: 760,
+    height: 300
+  });
+
+  renderStudentTDistribution('#hyp-t-xbar', 4, {
+    mu: 67,
+    scale: 6.12,
+    selectedRanges: [[-Infinity, 76.38]],
+    verticalLines: [{ value: 82.2, label: '82.2' }],
+    tickValues: [67, 76.38],
+    tickLabels: [
+      { value: 67, label: '67' },
+      { value: 76.38, label: '76.38' }
+    ],
+    xLabel: 'x̄',
+    yLabel: false,
+    xMin: 67 - 4 * 6.12,
+    xMax: 67 + 4 * 6.12,
+    width: 760,
+    height: 300
+  });
+
+  renderStandardNormalTable('#hyp-ztable-observed-prop', {
+    highlightZs: [-1.74],
+    highlightColor: 'red'
+  });
+
+  renderStandardNormalTable('#hyp-ztable-critical-prop', {
+    highlightZs: [-2.05],
+    highlightColor: 'red'
+  });
+
+  renderNormalDistribution('#hyp-normal-z-prop', 0, 1, {
+    selectedRanges: [[-2.05, Infinity]],
+    verticalLines: [{ value: -1.74, label: '-1.74' }],
+    tickValues: [-2.05, 0],
+    tickLabels: [
+      { value: -2.05, label: '-2.05' },
+      { value: 0, label: '0' }
+    ],
+    xLabel: 'Z',
+    yLabel: false,
+    width: 760,
+    height: 300
+  });
+
+  renderNormalDistribution('#hyp-normal-phat-prop', 0.03, 0.0086, {
+    selectedRanges: [[0.0124, Infinity]],
+    verticalLines: [{ value: 0.015, label: '0.015' }],
+    tickValues: [0.0124, 0.03],
+    tickLabels: [
+      { value: 0.0124, label: '0.0124' },
+      { value: 0.03, label: '0.03' }
+    ],
+    xLabel: 'p̂',
+    yLabel: false,
+    xMin: 0.03 - 4 * 0.0086,
+    xMax: 0.03 + 4 * 0.0086,
+    width: 760,
+    height: 300
+  });
+
 
   // -----------------------------
   // Static binomial histograms for the lesson text above

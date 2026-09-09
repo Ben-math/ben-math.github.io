@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta charset="UTF-8" />
+  <title>Date Squares</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Date Squares</h1>
+    <div id="nav-placeholder"></div>
+      <script>
+fetch("/nav.html")
+  .then(response => response.text())
+  .then(html => {
+    document.getElementById("nav-placeholder").innerHTML = html;
+
+    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+    const navLinks = document.querySelectorAll("#nav-placeholder a");
+    navLinks.forEach(link => {
+      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+      if (linkPath === currentPath) {
+        link.classList.add("active");
+      }
+    });
+
+    const s = document.createElement("script");
+    s.src = "/mascot.js";
+    s.defer = true;
+    document.body.appendChild(s); 
+  })
+  .catch(err => {
+    console.error("Failed to load nav:", err);
+  });
+</script>
+  </header>
+  <main>
+
+    <figure>
+        <img src="fig10.JPG" alt="Oreo Truffles">
+    </figure>
+
+    <p>This recipe is one of my more original recipes - it is both vegan and gluten-free!</p>
+    
+    <p><u><b>Ingredients:</b></u></p>
+
+    <p>\(2\frac{1}{4}\) cups rolled oats<br>
+    \(2\frac{1}{4}\) cups gluten-free flour<br>
+    \(\frac{3}{8}\) tsp salt<br>
+    2 cups brown sugar<br>
+    \(1\frac{1}{8}\) tsp baking soda<br>
+    \(1\frac{1}{2}\) cups plant butter<br>
+    \(\frac{3}{8}\) cups apple sauce (one snack size cup)<br>
+    \(1\frac{1}{8}\) lbs diced pitted dates<br>
+    \(\frac{1}{2}\) tbsp lemon juice</p>
+
+    <p><u><b>Instructions:</b></u></p>
+
+    <p>Combine rolled oats, pastry flour, salt, \(1\frac{1}{2}\) cups brown sugar, and baking soda in a bowl.<br>
+    Mix in \(1\frac{1}{2}\) cups plant butter, and \(\frac{3}{8}\) cups apple sauce (1 of the snack size cups).<br>
+    Press half of the mixture into a 13X9 pan, and bake 15 minutes at 350F.<br>
+    In a pot, combine \(1\frac{1}{8}\) lbs diced pitted dates, \(1\frac{1}{2}\) cups water, and \(\frac{1}{2}\) cup brown sugar.<br>
+    Bring to boil, cook until thickened.  Then add \(\frac{1}{2}\) tbsp lemon juice.  Remove from heat, spread over base, and then pat remaining mixture on top (the patting on top is to me the most difficult part: do it delicately so as not to mix the top layer at all with the filling).<br>
+    Bake 20-25 minutes (23 in my oven) at 350F until top is lightly toasted.<br>
+    Cool before serving, and enjoy!</p>
+
+
+    
+  </main>
+</body>
+</html>

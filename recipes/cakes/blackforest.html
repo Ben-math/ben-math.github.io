@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta charset="UTF-8" />
+  <title>Tiramisu</title>
+  <link rel="stylesheet" href="/style.css" />
+
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+</head>
+<body>
+  <header>
+    <h1>Tiramisu</h1>
+    <div id="nav-placeholder"></div>
+      <script>
+fetch("/nav.html")
+  .then(response => response.text())
+  .then(html => {
+    document.getElementById("nav-placeholder").innerHTML = html;
+
+    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+    const navLinks = document.querySelectorAll("#nav-placeholder a");
+    navLinks.forEach(link => {
+      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+      if (linkPath === currentPath) {
+        link.classList.add("active");
+      }
+    });
+
+    const s = document.createElement("script");
+    s.src = "/mascot.js";
+    s.defer = true;
+    document.body.appendChild(s); 
+  })
+  .catch(err => {
+    console.error("Failed to load nav:", err);
+  });
+</script>
+  </header>
+  <main>
+
+    <figure>
+        <img src="fig12.png" alt="Black forest cake">
+    </figure>
+    
+    <p>Usually, black forest cakes are round and tall - I made this recipe for a 13X9 pan in an attempt to make it short enough to fit in my cake carrier (it 
+    didn't).  If adjusting to make a round cake, you will likely get more layers out of it (multiplying by \(\frac{3}{4}\) should get you a 4 layer 8" cake 
+    (split each of 2 cakes to make 4 layers).</p>
+
+    <p>This recipe is for a <b>traditional</b> black forest cake - it will taste nothing like the sweet cakes you are likely to find in a north american 
+    grocery store.  This cake is not nearly as sweet, and has a strong cherry flavour provided in part by a difficult-to-find cherry brandy called 
+    kirschwasser (cherry liquor <b>cannot</b> be substituted here, which is far sweeter: cherry juice would be a better - although suboptimal - substitute).  
+    The key to this cake is to make a chocolate sponge cake which is not too sweet, sturdy, and somewhat on the dry side so that it can absorb the kirsch 
+    syrup, from which it obtains its moistness.  This cake obtains its leavening primarily from eggs in the traditional cake, and does not contain butter or 
+    oil.</p>
+    
+    <p><u><b>Ingredients:</b></u></p>
+
+    <p>8 eggs<br>
+    \(1\frac{1}{3}\) cups cake flour<br>
+    \(\frac{1}{2}\) cups cocoa powder<br>
+    2 tsp baking powder<br>
+    \(2\frac{1}{2}\) cups sugar<br>
+    \(\frac{1}{4}\) tsp salt<br>
+    1 tsp vanilla extract<br>
+    28 oz jar sour pitted cherries<br>
+    5 tbsp corn starch<br>
+    9 tbsp kirschwasser</p>
+
+    <p><u><b>Instructions:</b></u></p>
+
+    <p>Line 2 13X9 pans with parchment paper, and <b>do not butter</b> (this is key to making a sponge cake, so it doesn't pull away from the sides).<br>
+    Combine flour, cocoa powder, baking powder, and salt.<br>
+    Separate the eggs.  Whisk egg whites and \(\frac{3}{4}\) cups sugar to soft peaks.  Separately whisk egg yolks and \(\frac{3}{4}\) cups sugar for 3-5 minutes until pale yellow.<br>
+    Fold egg yolk mixture into egg whites, and then fold together with dry ingredients (delicately, so that egg whites do not deflate, but just until the flour is fully incorporated and the mixture is homogeneous - do not overmix).<br>
+    Split batter between pants and cook about 30 minutes at 350F.<p>
+    
+    <p>Layer ladyfingers, cheese mixture, and whipped cream, and repeat (you can probably get 3 cycles in each wine cup).<br>
+    Sprinkle top with cocoa powder to garnish.  Keep refridgerated: best served after at least 4 hours in the fridge.</p>
+
+
+    
+  </main>
+</body>
+</html>

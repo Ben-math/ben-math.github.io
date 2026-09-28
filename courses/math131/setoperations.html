@@ -6,6 +6,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -54,6 +55,7 @@ fetch("/nav.html")
     </div>
     
     <p id="question-text"></p>
+    <div id="operation-question" class="math"></div>
 
 
     <div class="button-container">
@@ -64,6 +66,7 @@ fetch("/nav.html")
   </main>
   <style>
     #question-text {text-align:center;line-height:1.8;margin:1.3em auto;max-width:1100px}
+    #operation-question {text-align:center;margin:1em auto 1.5em;max-width:1100px;font-size:1.1em}
     #my-activity canvas {width:100%;height:auto;display:block;cursor:pointer}
     #my-activity .region-popup {position:absolute;z-index:3;background:white;border:2px solid #444;border-radius:8px;padding:12px 18px;max-width:340px;box-shadow:0 3px 12px #999;font-size:17px}
     #my-activity .region-popup button {float:right;margin-left:10px;cursor:pointer}
@@ -72,11 +75,56 @@ fetch("/nav.html")
     const startBtn = document.getElementById('start-btn');
     const hintBtn = document.getElementById('hint-btn');
     const questionText = document.getElementById('question-text');
+    const operationQuestion = document.getElementById('operation-question');
     const activityBox = document.getElementById('my-activity');
     const hintArea = document.getElementById('hint-area');
     const pick = xs => xs[Math.floor(Math.random() * xs.length)];
     const rand = (a,b) => a + Math.floor(Math.random() * (b-a+1));
     let problem = null, regions = null;
+
+    const SET_NAMES=['A','B','C','empty','universe'];
+    const OPERATIONS=['intersection','union','difference'];
+    const TEX_NAMES={A:'A',B:'B',C:'C',empty:'\\emptyset',universe:'U'};
+    const TEX_OPERATIONS={intersection:'\\cap',union:'\\cup',difference:'\\setminus'};
+    function generateSetExpression() {
+      const pairCount=rand(1,3);
+      const pairs=Array.from({length:pairCount},()=>{
+        const pair={type:'operation',operation:pick(OPERATIONS),
+          left:{type:'set',name:pick(SET_NAMES)},
+          right:{type:'set',name:pick(SET_NAMES)}};
+        return Math.random()<0.3 ? {type:'complement',operand:pair} : pair;
+      });
+      let expression=pairs[0];
+      for(let i=1;i<pairs.length;i++) {
+        expression={type:'operation',operation:pick(OPERATIONS),left:expression,right:pairs[i]};
+      }
+      return Math.random()<0.3 ? {type:'complement',operand:expression} : expression;
+    }
+    function expressionTex(node) {
+      if(node.type==='set') return TEX_NAMES[node.name];
+      if(node.type==='complement') {
+        const operand=expressionTex(node.operand);
+        return node.operand.type==='complement'
+          ? `\\left[${operand}\\right]^{\\complement}`
+          : `${operand}^{\\complement}`;
+      }
+      const left=expressionTex(node.left),right=expressionTex(node.right);
+      const opening=node.left.type==='set' ? '(' : '\\left(';
+      const closing=node.left.type==='set' ? ')' : '\\right)';
+      return `${opening}${left} ${TEX_OPERATIONS[node.operation]} ${right}${closing}`;
+    }
+    function expressionContains(node,mask) {
+      if(node.type==='set') {
+        if(node.name==='empty') return false;
+        if(node.name==='universe') return true;
+        return !!(mask&(1<<'ABC'.indexOf(node.name)));
+      }
+      if(node.type==='complement') return !expressionContains(node.operand,mask);
+      const left=expressionContains(node.left,mask),right=expressionContains(node.right,mask);
+      if(node.operation==='intersection') return left&&right;
+      if(node.operation==='union') return left||right;
+      return left&&!right;
+    }
 
     // Common, concrete words; a word contributes each of its distinct letters once.
     const WORDS = `apple orange banana lemon lime peach pear plum grape cherry berry melon mango kiwi fig date coconut pineapple apricot avocado tomato potato carrot onion garlic celery lettuce cabbage spinach broccoli cauliflower pepper cucumber pumpkin squash zucchini radish turnip beet pea bean corn rice wheat oats barley bread toast bagel biscuit muffin cake cookie pie tart candy chocolate sugar honey syrup butter cheese milk cream yogurt egg bacon sausage ham chicken turkey duck beef pork fish salmon tuna shrimp crab lobster oyster clam soup salad sandwich pizza pasta noodle dumpling pancake waffle cereal
@@ -546,9 +594,13 @@ fetch("/nav.html")
     }
     startBtn.addEventListener('click',()=>{
       problem=makeProblem(); regions=null;activityBox.innerHTML='';hintArea.innerHTML='';hintBtn.disabled=false;
+      problem.expression=generateSetExpression();
+      problem.solutionMasks=new Set([...problem.masks].filter(mask=>expressionContains(problem.expression,mask)));
       questionText.innerHTML=`Let \\(U\\) be the ${problem.kind==='word'?'set of letters of the English alphabet':problem.labels[0].includes('mathbb{N}')?'set of natural numbers \\(\\{1,2,3,\\ldots\\}\\)':'set of integers'}.
         \\(A=${problem.labels[0]}\\),<br>\\(B=${problem.labels[1]}\\),<br>\\(C=${problem.labels[2]}\\)`;
-      window.MathJax?.typesetPromise?.([questionText]);
+      operationQuestion.innerHTML=`Find the set \\[${expressionTex(problem.expression)}\\]
+        <small>Here, \\(X^{\\complement}=U\\setminus X\\).</small>`;
+      window.MathJax?.typesetPromise?.([questionText,operationQuestion]);
     });
     hintBtn.addEventListener('click',()=>{
       if(!problem||regions)return;

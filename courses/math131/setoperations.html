@@ -3,6 +3,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -53,15 +54,11 @@ fetch("/nav.html")
     <p id="question-text"></p>
 
 
-    <div class="activity-box" id="my-activity">
-
-    </div>
-    
     <div class="button-container">
       <button id="hint-btn" class="rubber-button" disabled>Hint</button>
     </div>
-    <div id="hint-area" class="math" style="margin:1em auto;text-align:center;"></div>
     <div class="activity-box" id="my-activity" style="position:relative;max-width:1100px;margin:auto;"></div>
+    <div id="hint-area" class="math" style="margin:1em auto;text-align:center;"></div>
   </main>
   <style>
     #question-text {text-align:center;line-height:1.8;margin:1.3em auto;max-width:1100px}
@@ -157,21 +154,21 @@ fetch("/nav.html")
     }
     function makeProblem() {
       const kind=rand(0,2);
-      const target=Math.random(); // 20% disjoint; 20% proper subset; 60% unrestricted
+      const target=Math.random(); // 30% disjoint; 30% proper subset; 40% neither
       let fallback;
       for(let k=0;k<3200;k++) {
         const p=kind===0?wordProblem():intervalProblem(kind===2);
         if(!p)continue;
         fallback=p;
         const r=relations(p);
-        if (target<0.2 ? r.disjoint && !r.subset : target<0.4 ? r.subset && !r.disjoint : !r.disjoint && !r.subset) return p;
+        if (target<0.3 ? r.disjoint && !r.subset : target<0.6 ? r.subset && !r.disjoint : !r.disjoint && !r.subset) return p;
       }
       return fallback;
     }
 
     // Where all three sets meet, use the familiar three-circle Venn diagram.
     // Its other regions can be empty without changing the diagram.
-    const U={x:70,y:55,w:960,h:440};
+    const U={x:70,y:55,w:960,h:470};
     function inShape(x,y,c) {
       if (!c) return false;
       const distance=Math.hypot(x-c.x,y-c.y);
@@ -197,6 +194,17 @@ fetch("/nav.html")
       if (pairs.every(([i,j])=>!overlaps(i,j))) return {circles:[
         {x:270,y:275,r:120},{x:550,y:275,r:120},{x:830,y:275,r:120}
       ]};
+      // An intersection equal to a named set needs only the two outer circles.
+      for (let i=0;i<3;i++) {
+        const [j,k]=[0,1,2].filter(index=>index!==i);
+        if ([...actual].every(mask=>includes(mask,i)===(includes(mask,j)&&includes(mask,k)))) {
+          const circles=[];
+          circles[j]={x:420,y:275,r:165};
+          circles[k]={x:640,y:275,r:165};
+          circles[i]=null;
+          return {circles,alias:i,intersection:[j,k]};
+        }
+      }
       // Show proper containment before checking the triple intersection.
       const child=[0,1,2].find(i=>[0,1,2].filter(j=>proper(i,j)).length===2)
         ?? [0,1,2].find(i=>[0,1,2].some(j=>proper(i,j)));
@@ -239,10 +247,10 @@ fetch("/nav.html")
         }
         return {circles};
       }
-      if (actual.has(7)) return {circles:[
-        {x:410,y:230,r:150},
-        {x:650,y:230,r:150},
-        {x:530,y:365,r:150}
+      if (actual.has(7)) return {standard:true,circles:[
+        {x:460,y:210,r:120},
+        {x:640,y:210,r:120},
+        {x:550,y:365,r:120}
       ]};
       // Three pairwise overlaps with no common element form an annulus.
       if ([3,5,6].every(mask=>actual.has(mask))) return {circles:
@@ -341,6 +349,36 @@ fetch("/nav.html")
       const words=included.length ? `in ${included.join(', ')}${excluded.length?' but not in '+excluded.join(', '):''}` : 'outside A, B, and C';
       return {latex,words:`Elements ${words}.`};
     }
+    function diagramExplanation(actual,layout) {
+      if (layout?.standard) return '';
+      const names=['A','B','C'];
+      const includes=(mask,i)=>!!(mask&(1<<i));
+      const subset=(i,j)=>[...actual].every(mask=>!includes(mask,i)||includes(mask,j));
+      const facts=[];
+      if (layout?.intersection) {
+        const [j,k]=layout.intersection;
+        facts.push(`${names[layout.alias]}=${names[j]}\\cap ${names[k]}`);
+      } else {
+        const child=[0,1,2].find(i=>[0,1,2].filter(j=>i!==j&&subset(i,j)&&!subset(j,i)).length===2);
+        if (child!==undefined) {
+          const [j,k]=[0,1,2].filter(i=>i!==child);
+          const properIntersection=[...actual].some(mask=>includes(mask,j)&&includes(mask,k)&&!includes(mask,child));
+          facts.push(`${names[child]}${properIntersection?'\\subsetneq':'='}(${names[j]}\\cap ${names[k]})`);
+        } else {
+          for(let i=0;i<3;i++) for(let j=i+1;j<3;j++) {
+            if (subset(i,j)&&subset(j,i)) facts.push(`${names[i]}=${names[j]}`);
+            else if (subset(i,j)) facts.push(`${names[i]}\\subsetneq ${names[j]}`);
+            else if (subset(j,i)) facts.push(`${names[j]}\\subsetneq ${names[i]}`);
+          }
+        }
+      }
+      for(let i=0;i<3;i++) for(let j=i+1;j<3;j++) {
+        if (![...actual].some(mask=>includes(mask,i)&&includes(mask,j)))
+          facts.push(`${names[i]}\\cap ${names[j]}=\\emptyset`);
+      }
+      if (!actual.has(7) && !facts.length) facts.push('A\\cap B\\cap C=\\emptyset');
+      return facts.length ? `The diagram reflects \\(${facts.join('\\), \\(')}\\).` : '';
+    }
     function render() {
       activityBox.innerHTML='';
       const canvas=document.createElement('canvas');canvas.width=1100;canvas.height=550;
@@ -367,7 +405,10 @@ fetch("/nav.html")
           if(!c)return;
           ctx.fillStyle=colors[i];ctx.font='bold 28px sans-serif';
           const label='ABC'[i]+(layout.equal!==undefined&&layout.equal===i?' = '+'ABC'[layout.alias]:'');
-          if(c.type==='annular-sector') ctx.fillText(label,c.x+205*Math.cos(c.angle)-12,c.y+205*Math.sin(c.angle)+8);
+          if(layout.standard) {
+            const positions=[[315,82],[765,82],[695,510]];
+            ctx.fillText(label,...positions[i]);
+          } else if(c.type==='annular-sector') ctx.fillText(label,c.x+205*Math.cos(c.angle)-12,c.y+205*Math.sin(c.angle)+8);
           else ctx.fillText(label,c.x-c.r-8,c.y-c.r+3);
         });
         if(layout.intersection) {ctx.fillStyle=colors[layout.alias];ctx.font='bold 28px sans-serif';ctx.fillText('ABC'[layout.alias],525,275);}
@@ -420,8 +461,9 @@ fetch("/nav.html")
     hintBtn.addEventListener('click',()=>{
       if(!problem||regions)return;
       document.getElementById('click-sound')?.play().catch(()=>{});
-      hintArea.textContent='Hint 1: Click a region of the diagram to see its set notation and meaning.';
       render();hintBtn.disabled=true;
+      hintArea.innerHTML=`Hint 1: Click a region of the diagram to see its set notation and meaning.<br>${diagramExplanation(problem.masks,regions.layout)}`;
+      window.MathJax?.typesetPromise?.([hintArea]);
     });
   </script>
   <audio id="click-sound" src="button.mp3" preload="auto"></audio>

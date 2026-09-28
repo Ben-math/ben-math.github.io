@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -128,15 +129,17 @@ fetch("/nav.html")
       const natural = Math.random() < 0.38;
       const domainMin = natural ? 1 : -Infinity;
       const intervals = Array.from({length:3}, () => {
-        let lo = rand(natural ? 0 : -12, natural ? 13 : 10), hi = lo + rand(2,13);
+        let lo = rand(natural ? -8 : -12, natural ? 13 : 10), hi = lo + rand(2,13);
         let left = Math.random()<0.5, right = Math.random()<0.5;
         if (unbounded && Math.random()<0.42) {
-          if (!natural && Math.random()<0.5) lo=-Infinity; else hi=Infinity;
+          if (Math.random()<0.5) lo=-Infinity; else hi=Infinity;
         }
         return {lo,hi,left,right};
       });
-      if (unbounded && !intervals.some(v => !isFinite(v.lo)||!isFinite(v.hi))) {
-        const v=pick(intervals); if (!natural && Math.random()<0.5) v.lo=-Infinity; else v.hi=Infinity;
+      // A lower-unbounded inequality over N is finite; require an upper-
+      // unbounded one somewhere so this problem type truly includes infinity.
+      if (unbounded && !intervals.some(v => v.hi===Infinity || (!natural && v.lo===-Infinity))) {
+        pick(intervals).hi=Infinity;
       }
       const contains=(v,x) => x>=domainMin && (x>v.lo || (v.left && x===v.lo)) && (x<v.hi || (v.right && x===v.hi));
       const endpoints = intervals.flatMap(v=>[v.lo,v.hi]).filter(Number.isFinite);
@@ -185,6 +188,57 @@ fetch("/nav.html")
       return found;
     }
     function circleLayout(actual) {
+      const includes=(mask,i)=>!!(mask&(1<<i));
+      const overlaps=(i,j)=>[...actual].some(mask=>includes(mask,i)&&includes(mask,j));
+      const subset=(i,j)=>i!==j && [...actual].every(mask=>!includes(mask,i)||includes(mask,j));
+      const proper=(i,j)=>subset(i,j)&&!subset(j,i);
+      const pairs=[[0,1],[0,2],[1,2]];
+      // All three disjoint sets have three separate, equally spaced circles.
+      if (pairs.every(([i,j])=>!overlaps(i,j))) return {circles:[
+        {x:270,y:275,r:120},{x:550,y:275,r:120},{x:830,y:275,r:120}
+      ]};
+      // Show proper containment before checking the triple intersection.
+      const child=[0,1,2].find(i=>[0,1,2].filter(j=>proper(i,j)).length===2)
+        ?? [0,1,2].find(i=>[0,1,2].some(j=>proper(i,j)));
+      if (child!==undefined) {
+        const parents=[0,1,2].filter(j=>proper(child,j));
+        const circles=[];
+        if (parents.length===2) {
+          const [first,second]=parents;
+          if (proper(first,second)||proper(second,first)) {
+            const middle=proper(first,second)?first:second;
+            const outer=middle===first?second:first;
+            circles[outer]={x:550,y:275,r:190};
+            circles[middle]={x:550,y:275,r:115};
+            circles[child]={x:550,y:275,r:48};
+          } else {
+            circles[first]={x:420,y:275,r:165};
+            circles[second]={x:640,y:275,r:165};
+            circles[child]={x:530,y:275,r:46};
+          }
+        } else {
+          const parent=parents[0],other=3-child-parent;
+          const childMeetsOther=overlaps(child,other);
+          if (proper(parent,other)) {
+            circles[other]={x:550,y:275,r:190};
+            circles[parent]={x:550,y:275,r:112};
+            circles[child]={x:550,y:275,r:48};
+          } else if (proper(other,parent)) {
+            circles[parent]={x:470,y:275,r:185};
+            circles[other]={x:540,y:275,r:62};
+            circles[child]={x:childMeetsOther?485:360,y:275,r:53};
+          } else if (!overlaps(parent,other)) {
+            circles[parent]={x:365,y:275,r:165};
+            circles[other]={x:800,y:275,r:145};
+            circles[child]={x:365,y:275,r:58};
+          } else {
+            circles[parent]={x:450,y:275,r:180};
+            circles[other]={x:640,y:275,r:150};
+            circles[child]={x:childMeetsOther?510:355,y:275,r:53};
+          }
+        }
+        return {circles};
+      }
       if (actual.has(7)) return {circles:[
         {x:410,y:230,r:150},
         {x:650,y:230,r:150},

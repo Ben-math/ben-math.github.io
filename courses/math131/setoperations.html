@@ -4,6 +4,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -363,12 +364,12 @@ fetch("/nav.html")
         if (child!==undefined) {
           const [j,k]=[0,1,2].filter(i=>i!==child);
           const properIntersection=[...actual].some(mask=>includes(mask,j)&&includes(mask,k)&&!includes(mask,child));
-          facts.push(`${names[child]}${properIntersection?'\\subsetneq':'='}(${names[j]}\\cap ${names[k]})`);
+          facts.push(`${names[child]}${properIntersection?'\\subset':'='}(${names[j]}\\cap ${names[k]})`);
         } else {
           for(let i=0;i<3;i++) for(let j=i+1;j<3;j++) {
             if (subset(i,j)&&subset(j,i)) facts.push(`${names[i]}=${names[j]}`);
-            else if (subset(i,j)) facts.push(`${names[i]}\\subsetneq ${names[j]}`);
-            else if (subset(j,i)) facts.push(`${names[j]}\\subsetneq ${names[i]}`);
+            else if (subset(i,j)) facts.push(`${names[i]}\\subset ${names[j]}`);
+            else if (subset(j,i)) facts.push(`${names[j]}\\subset ${names[i]}`);
           }
         }
       }
@@ -378,6 +379,52 @@ fetch("/nav.html")
       }
       if (!actual.has(7) && !facts.length) facts.push('A\\cap B\\cap C=\\emptyset');
       return facts.length ? `The diagram reflects \\(${facts.join('\\), \\(')}\\).` : '';
+    }
+    function drawCircleLabel(ctx,label,c,direction) {
+      const gap=12;
+      const diagonal=c.r/Math.SQRT2+gap;
+      let x=c.x,y=c.y-c.r-gap;
+      ctx.textAlign='center';
+      if(direction==='above-left') {
+        x=c.x-diagonal;y=c.y-diagonal;ctx.textAlign='right';
+      } else if(direction==='above-right') {
+        x=c.x+diagonal;y=c.y-diagonal;ctx.textAlign='left';
+      } else if(direction==='below-right') {
+        x=c.x+diagonal;y=c.y+diagonal+15;ctx.textAlign='left';
+      }
+      ctx.fillText(label,x,y);
+      ctx.textAlign='left';
+    }
+    function labelDirections(actual,layout) {
+      const directions=['above-left','above-right','above-right'];
+      if(layout.standard) return ['above-left','above-right','below-right'];
+      const circles=layout.circles;
+      if(circles.some(c=>!c || c.type==='annular-sector')) return directions;
+      const overlaps=(i,j)=>[...actual].some(mask=>(mask&(1<<i))&&(mask&(1<<j)));
+      const subset=(i,j)=>[...actual].every(mask=>!(mask&(1<<i))||(mask&(1<<j)));
+      const ordered=[0,1,2].sort((i,j)=>circles[j].r-circles[i].r);
+      const nested=circles.every(c=>Math.hypot(c.x-circles[0].x,c.y-circles[0].y)<1);
+      if(nested && circles[ordered[0]].r>circles[ordered[2]].r) {
+        directions[ordered[0]]='above-left';
+        directions[ordered[1]]='above-right';
+        directions[ordered[2]]='above';
+      } else {
+        const child=[0,1,2].find(i=>[0,1,2].every(j=>j===i||subset(i,j)));
+        if(child!==undefined && circles[child].r<Math.min(...[0,1,2].filter(i=>i!==child).map(i=>circles[i].r))) {
+          directions[child]='above';
+          const parents=[0,1,2].filter(i=>i!==child).sort((i,j)=>circles[i].x-circles[j].x);
+          directions[parents[0]]='above-left';
+          directions[parents[1]]='above-right';
+        } else {
+          const byX=[0,1,2].sort((i,j)=>circles[i].x-circles[j].x);
+          directions[byX[0]]='above-left';
+          directions[byX[1]]='above';
+          directions[byX[2]]='above-right';
+        }
+      }
+      // When A is isolated, identify it on the upper right of its circle.
+      if(!overlaps(0,1)&&!overlaps(0,2)) directions[0]='above-right';
+      return directions;
     }
     function render() {
       activityBox.innerHTML='';
@@ -400,16 +447,14 @@ fetch("/nav.html")
           } else ctx.arc(c.x,c.y,c.r,0,2*Math.PI);
           ctx.strokeStyle=colors[i];ctx.lineWidth=4;ctx.stroke();
         });
-        // Labels near their boundaries, including shared or intersection boundaries.
+        // Place labels at the same distance from each circular boundary.
+        const directions=labelDirections(problem.masks,layout);
         layout.circles.forEach((c,i)=>{
           if(!c)return;
           ctx.fillStyle=colors[i];ctx.font='bold 28px sans-serif';
           const label='ABC'[i]+(layout.equal!==undefined&&layout.equal===i?' = '+'ABC'[layout.alias]:'');
-          if(layout.standard) {
-            const positions=[[315,82],[765,82],[695,510]];
-            ctx.fillText(label,...positions[i]);
-          } else if(c.type==='annular-sector') ctx.fillText(label,c.x+205*Math.cos(c.angle)-12,c.y+205*Math.sin(c.angle)+8);
-          else ctx.fillText(label,c.x-c.r-8,c.y-c.r+3);
+          if(c.type==='annular-sector') ctx.fillText(label,c.x+205*Math.cos(c.angle)-12,c.y+205*Math.sin(c.angle)+8);
+          else drawCircleLabel(ctx,label,c,directions[i]);
         });
         if(layout.intersection) {ctx.fillStyle=colors[layout.alias];ctx.font='bold 28px sans-serif';ctx.fillText('ABC'[layout.alias],525,275);}
       } else {

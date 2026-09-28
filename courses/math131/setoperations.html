@@ -56,6 +56,15 @@ fetch("/nav.html")
     
     <p id="question-text"></p>
     <div id="operation-question" class="math"></div>
+    <div id="answer-area" style="display:none;text-align:center;margin:1em auto;max-width:1100px;">
+      <label for="set-answer" style="font-weight:bold;display:block;margin-bottom:0.4em;">Answer:</label>
+      <textarea id="set-answer" rows="2" aria-label="Describe the resulting set"></textarea>
+      <div class="answer-toolbar" aria-label="Math input buttons"></div>
+    </div>
+    <div class="button-container">
+      <button id="check-btn" class="rubber-button" style="display:none;">Check Answer</button>
+    </div>
+    <div class="button-container"><div id="feedbackText" class="center-feedback"></div></div>
 
 
     <div class="button-container">
@@ -67,6 +76,11 @@ fetch("/nav.html")
   <style>
     #question-text {text-align:center;line-height:1.8;margin:1.3em auto;max-width:1100px}
     #operation-question {text-align:center;margin:1em auto 1.5em;max-width:1100px;font-size:1.1em}
+    #set-answer {box-sizing:border-box;width:min(100%,850px);min-height:3.4em;padding:0.5em 0.65em;border:2px solid #555;border-radius:8px;background:white;font-size:1.15em;line-height:1.5;font-family:inherit;resize:vertical;text-align:left}
+    #set-answer:focus {outline:3px solid rgba(80,140,255,.35)}
+    .answer-toolbar {display:flex;flex-wrap:wrap;justify-content:center;gap:0.4em;margin:0.65em auto}
+    .math-symbol-button {border:2px solid #555;border-radius:8px;background:white;padding:0.25em 0.6em;font-size:1.05em;cursor:pointer}
+    .math-symbol-button:hover {background:#f2f2f2}
     #my-activity canvas {width:100%;height:auto;display:block;cursor:pointer}
     #my-activity .region-popup {position:absolute;z-index:3;background:white;border:2px solid #444;border-radius:8px;padding:12px 18px;max-width:340px;box-shadow:0 3px 12px #999;font-size:17px}
     #my-activity .region-popup button {float:right;margin-left:10px;cursor:pointer}
@@ -76,22 +90,46 @@ fetch("/nav.html")
     const hintBtn = document.getElementById('hint-btn');
     const questionText = document.getElementById('question-text');
     const operationQuestion = document.getElementById('operation-question');
+    const answerArea = document.getElementById('answer-area');
+    const answerEditor = document.getElementById('set-answer');
+    const answerToolbar = document.querySelector('.answer-toolbar');
+    const checkBtn = document.getElementById('check-btn');
+    const feedbackText = document.getElementById('feedbackText');
     const activityBox = document.getElementById('my-activity');
     const hintArea = document.getElementById('hint-area');
     const pick = xs => xs[Math.floor(Math.random() * xs.length)];
     const rand = (a,b) => a + Math.floor(Math.random() * (b-a+1));
     let problem = null, regions = null;
 
-    const SET_NAMES=['A','B','C','empty','universe'];
     const OPERATIONS=['intersection','union','difference'];
     const TEX_NAMES={A:'A',B:'B',C:'C',empty:'\\emptyset',universe:'U'};
     const TEX_OPERATIONS={intersection:'\\cap',union:'\\cup',difference:'\\setminus'};
+    function weightedSet(options) {
+      let roll=Math.random()*100;
+      for(const [name,weight] of options) {
+        roll-=weight;
+        if(roll<0)return name;
+      }
+      return options.at(-1)[0];
+    }
+    function firstPairSet() {
+      return weightedSet([['A',28],['B',28],['C',28],['universe',8],['empty',8]]);
+    }
+    function secondPairSet(first) {
+      if(first==='universe'||first==='empty') {
+        return weightedSet([['A',31],['B',31],['C',31],
+          [first==='universe'?'empty':'universe',7]]);
+      }
+      return weightedSet(['A','B','C'].map(name=>[name,name===first?4:40])
+        .concat([['universe',8],['empty',8]]));
+    }
     function generateSetExpression() {
       const pairCount=rand(1,3);
       const pairs=Array.from({length:pairCount},()=>{
+        const first=firstPairSet();
         const pair={type:'operation',operation:pick(OPERATIONS),
-          left:{type:'set',name:pick(SET_NAMES)},
-          right:{type:'set',name:pick(SET_NAMES)}};
+          left:{type:'set',name:first},
+          right:{type:'set',name:secondPairSet(first)}};
         return Math.random()<0.3 ? {type:'complement',operand:pair} : pair;
       });
       let expression=pairs[0];
@@ -104,14 +142,18 @@ fetch("/nav.html")
       if(node.type==='set') return TEX_NAMES[node.name];
       if(node.type==='complement') {
         const operand=expressionTex(node.operand);
-        return node.operand.type==='complement'
-          ? `\\left[${operand}\\right]^{\\complement}`
-          : `${operand}^{\\complement}`;
+        const nested=node.operand.type==='complement' || expressionHasComplement(node.operand);
+        const spaced=node.operand.type==='complement' ? `\\left[\\,${operand}\\,\\right]` : operand;
+        return `\\overline{\\vphantom{${nested?'\\Bigg|':'\\big|'}}\\,${spaced}\\,}`;
       }
       const left=expressionTex(node.left),right=expressionTex(node.right);
       const opening=node.left.type==='set' ? '(' : '\\left(';
       const closing=node.left.type==='set' ? ')' : '\\right)';
       return `${opening}${left} ${TEX_OPERATIONS[node.operation]} ${right}${closing}`;
+    }
+    function expressionHasComplement(node) {
+      return node.type==='complement' || (node.type==='operation' &&
+        (expressionHasComplement(node.left)||expressionHasComplement(node.right)));
     }
     function expressionContains(node,mask) {
       if(node.type==='set') {
@@ -168,7 +210,7 @@ fetch("/nav.html")
       const words = Array.from({length:3}, () => pick(UNIQUE_WORDS));
       if (new Set(words).size !== 3) return null;
       const sets = words.map(w => new Set(w));
-      const p = {kind:'word', labels:words.map(w => `\\{x\\mid x\\text{ is a letter in the word “${w}”}\\}`),
+      const p = {kind:'word',words,labels:words.map(w => `\\{x\\mid x\\text{ is a letter in the word “${w}”}\\}`),
         masks:masks(sets.map(s => x => s.has(x)), 'abcdefghijklmnopqrstuvwxyz')};
       return [1,2,4].every(bit => [...p.masks].some(m => m & bit)) ? p : null;
     }
@@ -188,6 +230,10 @@ fetch("/nav.html")
       if (unbounded && !intervals.some(v => v.hi===Infinity || (!natural && v.lo===-Infinity))) {
         pick(intervals).hi=Infinity;
       }
+      // A displayed unbounded condition must still put a genuine restriction on x.
+      // Over N, a lower bound below 1 describes the whole universe.
+      if(intervals.some(v => v.lo===-Infinity && v.hi===Infinity ||
+          natural && v.hi===Infinity && (v.lo<1 || v.lo===1 && v.left)))return null;
       const contains=(v,x) => x>=domainMin && (x>v.lo || (v.left && x===v.lo)) && (x<v.hi || (v.right && x===v.hi));
       const endpoints = intervals.flatMap(v=>[v.lo,v.hi]).filter(Number.isFinite);
       const min=Math.min(...endpoints, natural?1:-15)-2, max=Math.max(...endpoints,18)+2;
@@ -199,7 +245,8 @@ fetch("/nav.html")
         const hi=isFinite(v.hi)?`x ${v.right?'\\leq':'<'} ${v.hi}`:'';
         return `\\{x\\in ${domain}\\mid ${lo && hi ? `${lo} ${v.right?'\\leq':'<'} ${v.hi}` : lo || hi}\\}`;
       });
-      const p={kind:unbounded?'unbounded':'bounded',labels,masks:masks(intervals.map(v=>x=>contains(v,x)),samples)};
+      const p={kind:unbounded?'unbounded':'bounded',natural,intervals,labels,
+        masks:masks(intervals.map(v=>x=>contains(v,x)),samples)};
       return [1,2,4].every(bit=>[...p.masks].some(m=>m&bit))?p:null;
     }
     function relationshipCase(p) {
@@ -243,7 +290,7 @@ fetch("/nav.html")
         [shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];
       }
       const sets=shuffled.map(word=>new Set(word));
-      return {kind:'word',labels:shuffled.map(word=>`\\{x\\mid x\\text{ is a letter in the word “${word}”}\\}`),
+      return {kind:'word',words:shuffled,labels:shuffled.map(word=>`\\{x\\mid x\\text{ is a letter in the word “${word}”}\\}`),
         masks:masks(sets.map(set=>x=>set.has(x)),'abcdefghijklmnopqrstuvwxyz')};
     }
     function makeProblem() {
@@ -592,14 +639,241 @@ fetch("/nav.html")
       popup.style.top=Math.max(8,Math.min(clientY-box.top+10,box.height-popup.offsetHeight-8))+'px';
       window.MathJax?.typesetPromise?.([title]);
     }
+    // Integer ranges have inclusive endpoints; either endpoint may be infinite.
+    function mergeIntegerRanges(ranges) {
+      const sorted=ranges.filter(r=>r.lo<=r.hi).sort((a,b)=>a.lo-b.lo || a.hi-b.hi);
+      const result=[];
+      for(const range of sorted) {
+        const last=result[result.length-1];
+        if(last && range.lo<=last.hi+1) last.hi=Math.max(last.hi,range.hi);
+        else result.push({...range});
+      }
+      return result;
+    }
+    function intersectIntegerRanges(a,b) {
+      const result=[];
+      for(const first of a) for(const second of b) {
+        const lo=Math.max(first.lo,second.lo),hi=Math.min(first.hi,second.hi);
+        if(lo<=hi) result.push({lo,hi});
+      }
+      return mergeIntegerRanges(result);
+    }
+    function numericMaskAt(p,x) {
+      return p.intervals.reduce((mask,v,i)=>mask | ((x>=(p.natural?1:-Infinity) &&
+        (x>v.lo || v.left && x===v.lo) && (x<v.hi || v.right && x===v.hi)) ? 1<<i : 0),0);
+    }
+    function expectedIntegerRanges(p) {
+      const cuts=new Set(p.natural?[1]:[]);
+      for(const interval of p.intervals) {
+        if(Number.isFinite(interval.lo)) cuts.add(interval.lo+(interval.left?0:1));
+        if(Number.isFinite(interval.hi)) cuts.add(interval.hi+(interval.right?1:0));
+      }
+      const ordered=[...cuts].sort((a,b)=>a-b);
+      const starts=[-Infinity,...ordered],ends=[...ordered.map(x=>x-1),Infinity];
+      const selected=[];
+      for(let i=0;i<starts.length;i++) {
+        const lo=starts[i],hi=ends[i];
+        if(lo>hi)continue;
+        const sample=Number.isFinite(lo)?lo:Number.isFinite(hi)?hi:0;
+        if((!p.natural || sample>=1) && expressionContains(p.expression,numericMaskAt(p,sample)))
+          selected.push({lo,hi});
+      }
+      return mergeIntegerRanges(selected);
+    }
+    function expectedLetters(p) {
+      return new Set('abcdefghijklmnopqrstuvwxyz'.split('').filter(letter=>{
+        const mask=p.words.reduce((bits,word,i)=>bits|(word.includes(letter)?1<<i:0),0);
+        return expressionContains(p.expression,mask);
+      }));
+    }
+    function normalizeAnswerText(input) {
+      return input.trim().replace(/\u200b/g,'').replace(/−/g,'-')
+        .replace(/\\left|\\right/g,'').replace(/\\mathbb\s*\{\s*([ZN])\s*\}/gi,'$1')
+        .replace(/\\text\s*\{\s*([^{}]*)\s*\}/gi,'$1')
+        .replace(/\\(?:leq|le)\b/g,'≤').replace(/\\(?:geq|ge)\b/g,'≥')
+        .replace(/\\infty\b|\binfinity\b|\binfty\b/gi,'∞')
+        .replace(/\\cup\b/g,'∪').replace(/\\cap\b/g,'∩')
+        .replace(/\\emptyset\b|\\varnothing\b/g,'∅')
+        .replace(/\\in\b/g,'∈').replace(/\\mid\b/g,'|')
+        .replace(/\\\{/g,'{').replace(/\\\}/g,'}')
+        .replace(/>=/g,'≥').replace(/<=/g,'≤')
+        .replace(/ℤ/g,'Z').replace(/ℕ/g,'N')
+        .replace(/,\s*(?=or\b)/gi,' ')
+        .replace(/,\s*(?=inclusive\b|exclusive\b)/gi,' ')
+        .replace(/\b(?:greater than or equal to|at least|no less than)\b/gi,'≥')
+        .replace(/\b(?:less than or equal to|at most|no more than)\b/gi,'≤')
+        .replace(/\b(?:greater than|more than|above)\b/gi,'>')
+        .replace(/\b(?:less than|below|under)\b/gi,'<')
+        .replace(/\s+/g,' ').trim();
+    }
+    function parseElementList(text,kind) {
+      const match=/^\{\s*([^{}]*)\s*\}$/.exec(text);
+      if(!match)return null;
+      if(!match[1].trim())return [];
+      const items=match[1].split(',').map(item=>item.trim());
+      if(kind==='word') {
+        if(!items.every(item=>/^[a-z]$/i.test(item)))return null;
+        return [...new Set(items.map(item=>item.toLowerCase()))];
+      }
+      if(!items.every(item=>/^-?\d+$/.test(item)))return null;
+      return [...new Set(items.map(Number))].sort((a,b)=>a-b);
+    }
+    function parseEndpoint(text) {
+      const token=text.trim().replace(/^\+/,'');
+      if(token==='∞')return Infinity;
+      if(token==='-∞')return -Infinity;
+      return /^-?\d+$/.test(token)?Number(token):NaN;
+    }
+    function parseIntervalAtom(text) {
+      const t=text.replace(/\s+/g,'');
+      if(!/^[([]/.test(t) || !/[)\]]$/.test(t))return null;
+      const parts=t.slice(1,-1).split(',');
+      if(parts.length!==2)return null;
+      const left=parseEndpoint(parts[0]),right=parseEndpoint(parts[1]);
+      if(Number.isNaN(left)||Number.isNaN(right)||left===Infinity||right===-Infinity||left>right)return null;
+      const lo=left===-Infinity?-Infinity:left+(t[0]==='['?0:1);
+      const hi=right===Infinity?Infinity:right-(t.at(-1)===']'?0:1);
+      return lo<=hi?[{lo,hi}]:[];
+    }
+    function parseInequalityAtom(text) {
+      const t=text.toLowerCase().replace(/\bx\s+is\s+/g,'x ').replace(/\s+/g,'')
+        .replace(/≤/g,'<=').replace(/≥/g,'>=');
+      const tokens=t.match(/x|-?\d+|<=|>=|<|>/g);
+      if(!tokens||tokens.join('')!==t||![3,5].includes(tokens.length))return null;
+      let result=[{lo:-Infinity,hi:Infinity}];
+      for(let i=0;i<tokens.length-2;i+=2) {
+        const [left,op,right]=tokens.slice(i,i+3);
+        if((left==='x')===(right==='x')||!['<','<=','>','>='].includes(op))return null;
+        const n=Number(left==='x'?right:left);
+        if(!Number.isInteger(n))return null;
+        const xOnLeft=left==='x';
+        const lower=xOnLeft?(op==='>'||op==='>='):(op==='<'||op==='<=');
+        const inclusive=op==='>='||op==='<=',bound=lower?
+          {lo:n+(inclusive?0:1),hi:Infinity}:{lo:-Infinity,hi:n-(inclusive?0:1)};
+        result=intersectIntegerRanges(result,[bound]);
+      }
+      return result;
+    }
+    function parseWordAtom(text) {
+      const t=text.trim().replace(/^x\s+(?:is\s+)?/i,'');
+      const between=/^(?:between|from)\s+(-?\d+)\s+(?:and|to)\s+(-?\d+)(?:\s+(inclusive|exclusive))?$/i.exec(t);
+      if(between) {
+        const left=Number(between[1]),right=Number(between[2]),inclusive=between[3]?.toLowerCase()==='inclusive';
+        if(left>right)return null;
+        const lo=left+(inclusive?0:1),hi=right-(inclusive?0:1);
+        return lo<=hi?[{lo,hi}]:[];
+      }
+      const relation=/^(≤|≥|<|>)\s*(-?\d+)$/i.exec(t);
+      if(relation)return parseInequalityAtom(`x ${relation[1]} ${relation[2]}`);
+      const reversed=/^(-?\d+)\s*(≤|≥|<|>)\s*x$/i.exec(t);
+      if(reversed)return parseInequalityAtom(t);
+      return null;
+    }
+    function splitOutside(text,symbol,word) {
+      const parts=[];let current='',depth=0;
+      for(let i=0;i<text.length;i++) {
+        const ch=text[i];
+        if(ch==='('||ch==='[')depth++;
+        if(ch===')'||ch===']')depth--;
+        const matchWord=word && text.slice(i,i+word.length).toLowerCase()===word &&
+          !/[a-z]/i.test(text[i-1]||'') && !/[a-z]/i.test(text[i+word.length]||'');
+        if(depth===0 && (ch===symbol||matchWord)) {
+          parts.push(current.trim());current='';if(matchWord)i+=word.length-1;
+        } else current+=ch;
+        if(depth<0)return null;
+      }
+      if(depth!==0)return null;
+      parts.push(current.trim());
+      return parts.every(Boolean)?parts:null;
+    }
+    function parseNumericDescription(text) {
+      const t=text.trim().replace(/\b(between\s+-?\d+\s+|from\s+-?\d+\s+)and(?=\s+-?\d+\b)/gi,'$1to');
+      if(!t)return null;
+      const unions=splitOutside(t,'∪','or');
+      if(!unions)return null;
+      if(unions.length>1) {
+        const parsed=unions.map(parseNumericDescription);
+        return parsed.some(part=>part===null)?null:mergeIntegerRanges(parsed.flat());
+      }
+      const atom=parseIntervalAtom(t) ?? parseInequalityAtom(t) ?? parseWordAtom(t);
+      if(atom!==null)return atom;
+      const intersections=splitOutside(t,'∩','and');
+      if(!intersections||intersections.length===1)return null;
+      let result=[{lo:-Infinity,hi:Infinity}];
+      for(const part of intersections) {
+        const parsed=parseNumericDescription(part);
+        if(parsed===null)return null;
+        result=intersectIntegerRanges(result,parsed);
+      }
+      return result;
+    }
+    function parseNumericAnswer(raw,p) {
+      let text=normalizeAnswerText(raw);
+      if(text==='∅'||text==='{}')return [];
+      if(/^U$/i.test(text))return [{lo:p.natural?1:-Infinity,hi:Infinity}];
+      if(/^[NZ]$/i.test(text))return [{lo:text.toUpperCase()==='N'?1:-Infinity,hi:Infinity}];
+      const wholeDomain=/^\{\s*x\s*(?:∈|in)\s*([NZ])\s*\}$/i.exec(text);
+      if(wholeDomain)return [{lo:wholeDomain[1].toUpperCase()==='N'?1:-Infinity,hi:Infinity}];
+      const elements=parseElementList(text,'number');
+      if(elements!==null)return mergeIntegerRanges(elements.map(n=>({lo:n,hi:n})));
+      const builder=/^\{\s*x\s*(?:∈|in)\s*([ZN])\s*(?:\||:|such that)\s*([\s\S]+)\s*\}$/i.exec(text);
+      if(!builder)return null;
+      const domain=builder[1].toUpperCase();text=builder[2].trim();
+      text=text.replace(/^x\s*(?:∈|in)\s*(?=[([])/i,'');
+      const ranges=parseNumericDescription(text);
+      if(ranges===null)return null;
+      return domain==='N'?intersectIntegerRanges(ranges,[{lo:1,hi:Infinity}]):ranges;
+    }
+    function rangesEqual(a,b) {
+      return a.length===b.length && a.every((range,i)=>range.lo===b[i].lo&&range.hi===b[i].hi);
+    }
+    function checkSetAnswer() {
+      if(!problem)return false;
+      const raw=answerEditor.value.trim();
+      if(problem.kind==='word') {
+        const given=raw==='∅'||/^\\emptyset$/.test(raw)?[]:parseElementList(normalizeAnswerText(raw),'word');
+        return given!==null && given.length===problem.solutionLetters.size &&
+          given.every(letter=>problem.solutionLetters.has(letter));
+      }
+      const given=parseNumericAnswer(raw,problem);
+      return given!==null && rangesEqual(given,problem.solutionRanges);
+    }
+    const ANSWER_SYMBOLS=[['∅','∅'],['∪',' ∪ '],['∩',' ∩ '],['or',' or '],['and',' and '],
+      ['x','x'],['∞','∞'],['−∞','-∞'],['≥','≥'],['≤','≤'],['<','<'],['>','>'],
+      ['{','{'],['}','}'],['[','['],[']',']'],['(', '('],[')',')'],
+      ['∈',' ∈ '],['ℤ','ℤ'],['ℕ','ℕ'],['|',' | '],[',',', '],['inclusive',' inclusive']];
+    for(const [label,insert] of ANSWER_SYMBOLS) {
+      const button=document.createElement('button');
+      button.type='button';button.className='math-symbol-button';button.textContent=label;
+      button.setAttribute('aria-label',`Insert ${label}`);
+      button.addEventListener('mousedown',event=>event.preventDefault());
+      button.addEventListener('click',()=>{
+        const start=answerEditor.selectionStart,end=answerEditor.selectionEnd;
+        answerEditor.setRangeText(insert,start,end,'end');answerEditor.focus();
+        feedbackText.textContent='';
+      });
+      answerToolbar.appendChild(button);
+    }
+    answerEditor.addEventListener('input',()=>{feedbackText.textContent='';});
+    checkBtn.addEventListener('click',()=>{
+      if(!problem)return;
+      const correct=checkSetAnswer();
+      feedbackText.textContent=correct?'Correct!':'Incorrect, try again.';
+      feedbackText.style.color=correct?'green':'red';
+    });
     startBtn.addEventListener('click',()=>{
       problem=makeProblem(); regions=null;activityBox.innerHTML='';hintArea.innerHTML='';hintBtn.disabled=false;
       problem.expression=generateSetExpression();
       problem.solutionMasks=new Set([...problem.masks].filter(mask=>expressionContains(problem.expression,mask)));
+      if(problem.kind==='word')problem.solutionLetters=expectedLetters(problem);
+      else problem.solutionRanges=expectedIntegerRanges(problem);
+      answerArea.style.display='block';checkBtn.style.display='inline-block';
+      answerEditor.value='';feedbackText.textContent='';
+      answerEditor.placeholder=problem.kind==='word' ? '{a, b, c}' :
+        '{x ∈ ℤ | -2 ≤ x ≤ 3 or x ≥ 8}';
       questionText.innerHTML=`Let \\(U\\) be the ${problem.kind==='word'?'set of letters of the English alphabet':problem.labels[0].includes('mathbb{N}')?'set of natural numbers \\(\\{1,2,3,\\ldots\\}\\)':'set of integers'}.
         \\(A=${problem.labels[0]}\\),<br>\\(B=${problem.labels[1]}\\),<br>\\(C=${problem.labels[2]}\\)`;
-      operationQuestion.innerHTML=`Find the set \\[${expressionTex(problem.expression)}\\]
-        <small>Here, \\(X^{\\complement}=U\\setminus X\\).</small>`;
+      operationQuestion.innerHTML=`Find the set \\[${expressionTex(problem.expression)}\\]`;
       window.MathJax?.typesetPromise?.([questionText,operationQuestion]);
     });
     hintBtn.addEventListener('click',()=>{

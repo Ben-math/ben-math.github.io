@@ -5,6 +5,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -153,18 +154,64 @@ fetch("/nav.html")
       const p={kind:unbounded?'unbounded':'bounded',labels,masks:masks(intervals.map(v=>x=>contains(v,x)),samples)};
       return [1,2,4].every(bit=>[...p.masks].some(m=>m&bit))?p:null;
     }
+    function relationshipCase(p) {
+      const ms=[...p.masks];
+      const has=(mask,i)=>!!(mask&(1<<i));
+      const proper=(i,j)=>i!==j && ms.every(mask=>!has(mask,i)||has(mask,j)) &&
+        ms.some(mask=>has(mask,j)&&!has(mask,i));
+      const subsets=[];
+      for(let i=0;i<3;i++) for(let j=0;j<3;j++) if(proper(i,j)) subsets.push([i,j]);
+      const disjoint=[];
+      for(let i=0;i<3;i++) for(let j=i+1;j<3;j++)
+        if(!ms.some(mask=>has(mask,i)&&has(mask,j))) disjoint.push([i,j]);
+      if(subsets.length && disjoint.length) {
+        return disjoint.length===2 ? 'mixed-isolated' : 'mixed-overlap';
+      }
+      if(subsets.length) return subsets.length>=3 ? 'subset-chain' :
+        subsets.length===2 ? 'subset-both' : 'subset-one';
+      if(disjoint.length) return ['','disjoint-pair','disjoint-isolated','disjoint-all'][disjoint.length];
+      return 'neither';
+    }
+    // A word chain is rare under independent draws, so build its three words
+    // directly from their letter sets while keeping the word database random.
+    let wordChains=null;
+    function wordChainProblem() {
+      if(!wordChains) {
+        const letters=UNIQUE_WORDS.map(word=>[...word].reduce((bits,ch)=>bits|(1<<(ch.charCodeAt(0)-97)),0));
+        const smaller=letters.map(()=>[]),larger=letters.map(()=>[]);
+        for(let i=0;i<letters.length;i++) for(let j=0;j<letters.length;j++) {
+          if(letters[i]!==letters[j] && (letters[i]&letters[j])===letters[i]) {
+            larger[i].push(j);smaller[j].push(i);
+          }
+        }
+        wordChains={letters,smaller,larger,centres:letters.map((_,i)=>i).filter(i=>smaller[i].length&&larger[i].length)};
+      }
+      const centre=pick(wordChains.centres);
+      const words=[pick(wordChains.smaller[centre]),centre,pick(wordChains.larger[centre])]
+        .map(i=>UNIQUE_WORDS[i]);
+      const shuffled=[...words];
+      for(let i=shuffled.length-1;i>0;i--) {
+        const j=rand(0,i);
+        [shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];
+      }
+      const sets=shuffled.map(word=>new Set(word));
+      return {kind:'word',labels:shuffled.map(word=>`\\{x\\mid x\\text{ is a letter in the word “${word}”}\\}`),
+        masks:masks(sets.map(set=>x=>set.has(x)),'abcdefghijklmnopqrstuvwxyz')};
+    }
     function makeProblem() {
       const kind=rand(0,2);
-      const target=Math.random(); // 30% disjoint; 30% proper subset; 40% neither
-      let fallback;
-      for(let k=0;k<3200;k++) {
-        const p=kind===0?wordProblem():intervalProblem(kind===2);
-        if(!p)continue;
-        fallback=p;
-        const r=relations(p);
-        if (target<0.3 ? r.disjoint && !r.subset : target<0.6 ? r.subset && !r.disjoint : !r.disjoint && !r.subset) return p;
+      const target=Math.random();
+      const group=target<0.3 ? ['subset-one','subset-both','subset-chain'] :
+        target<0.6 ? ['disjoint-all','disjoint-isolated','disjoint-pair'] :
+        target<0.65 ? ['mixed-isolated'] :
+        target<0.7 ? ['mixed-overlap'] : ['neither'];
+      const chosen=pick(group); // equal chance for each case within the 30% groups
+      for(let attempt=0;attempt<30000;attempt++) {
+        const p=kind===0 && chosen==='subset-chain' ? wordChainProblem() :
+          kind===0 ? wordProblem() : intervalProblem(kind===2);
+        if(p && relationshipCase(p)===chosen) return p;
       }
-      return fallback;
+      throw new Error(`Unable to generate ${chosen} problem`);
     }
 
     // Where all three sets meet, use the familiar three-circle Venn diagram.

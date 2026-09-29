@@ -6,7 +6,6 @@
 
 
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -68,10 +67,17 @@ fetch("/nav.html")
 
 
     <div class="button-container">
-      <button id="hint-btn" class="rubber-button" disabled>Hint</button>
+      <button id="reveal-btn" class="rubber-button" style="display:none;">Reveal Diagram</button>
+      <button id="hint-btn" class="rubber-button" style="display:none;" disabled>Hint</button>
+    </div>
+    <div id="diagram-tools" class="button-container" role="group" aria-label="Venn diagram tools" style="display:none;">
+      <button type="button" class="diagram-tool" data-tool="cursor" aria-pressed="true">↖ Cursor</button>
+      <button type="button" class="diagram-tool" data-tool="brush" aria-pressed="false">🖌 Paint brush</button>
+      <button type="button" class="diagram-tool" data-tool="eraser" aria-pressed="false">⌫ Eraser</button>
     </div>
     <div class="activity-box" id="my-activity" style="position:relative;max-width:1100px;margin:auto;"></div>
     <div id="hint-area" class="math" style="margin:1em auto;text-align:center;"></div>
+    <div class="activity-box" id="working-activity" style="display:none;max-width:1100px;margin:1em auto;"></div>
   </main>
   <style>
     #question-text {text-align:center;line-height:1.8;margin:1.3em auto;max-width:1100px}
@@ -81,13 +87,31 @@ fetch("/nav.html")
     .answer-toolbar {display:flex;flex-wrap:wrap;justify-content:center;gap:0.4em;margin:0.65em auto}
     .math-symbol-button {border:2px solid #555;border-radius:8px;background:white;padding:0.25em 0.6em;font-size:1.05em;cursor:pointer}
     .math-symbol-button:hover {background:#f2f2f2}
+    #diagram-tools {display:flex;justify-content:center;gap:10px;margin:8px auto 14px}
+    .diagram-tool {border:2px solid #5c6980;border-radius:9px;background:white;color:#24364d;padding:8px 14px;font-size:1.05em;cursor:pointer}
+    .diagram-tool[aria-pressed="true"] {background:#d9eafb;border-color:#326bb4;box-shadow:0 0 0 2px #9cc5ed}
+    #my-activity[data-tool="brush"] canvas {cursor:crosshair}
+    #my-activity[data-tool="eraser"] canvas {cursor:cell}
     #my-activity canvas {width:100%;height:auto;display:block;cursor:pointer}
     #my-activity .region-popup {position:absolute;z-index:3;background:white;border:2px solid #444;border-radius:8px;padding:12px 18px;max-width:340px;box-shadow:0 3px 12px #999;font-size:17px}
     #my-activity .region-popup button {float:right;margin-left:10px;cursor:pointer}
+    #working-activity {box-sizing:border-box;padding:18px;background:#fff}
+    .working-row {display:flex;align-items:flex-start;justify-content:center;gap:8px;min-height:240px}
+    .working-row-bottom {border-top:1px solid #d8dde6;margin-top:12px;padding-top:14px;min-height:235px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+    .working-card {min-width:0;flex:1;text-align:center}
+    .working-row-bottom .working-card {width:100%}
+    .working-card canvas {display:block;width:100%;height:auto;max-width:320px;margin:auto}
+    .working-card-label {font-size:1.05em;min-height:2.5em;margin:5px auto;overflow-x:auto;overflow-y:hidden}
+    .working-sign {flex:0 0 auto;align-self:center;font-size:1.7em;font-weight:bold;margin:0 2px 48px}
+    .working-row-top.complement-step .working-card {flex:0 1 320px}
+    .working-note {text-align:center;margin:0 0 12px}
+    @media(max-width:720px) {.working-row {gap:2px}.working-sign {font-size:1.15em;margin:0 0 35px}.working-card-label {font-size:.8em}}
   </style>
   <script>
     const startBtn = document.getElementById('start-btn');
     const hintBtn = document.getElementById('hint-btn');
+    const revealBtn = document.getElementById('reveal-btn');
+    const diagramTools = document.getElementById('diagram-tools');
     const questionText = document.getElementById('question-text');
     const operationQuestion = document.getElementById('operation-question');
     const answerArea = document.getElementById('answer-area');
@@ -97,9 +121,11 @@ fetch("/nav.html")
     const feedbackText = document.getElementById('feedbackText');
     const activityBox = document.getElementById('my-activity');
     const hintArea = document.getElementById('hint-area');
+    const workingActivity = document.getElementById('working-activity');
     const pick = xs => xs[Math.floor(Math.random() * xs.length)];
     const rand = (a,b) => a + Math.floor(Math.random() * (b-a+1));
-    let problem = null, regions = null;
+    let problem = null, regions = null, hintStep = 0, workingSteps = [];
+    let diagramTool = 'cursor', paintedMasks = new Set();
 
     const OPERATIONS=['intersection','union','difference'];
     const TEX_NAMES={A:'A',B:'B',C:'C',empty:'\\emptyset',universe:'U'};
@@ -147,8 +173,8 @@ fetch("/nav.html")
         return `\\overline{\\vphantom{${nested?'\\Bigg|':'\\big|'}}\\,${spaced}\\,}`;
       }
       const left=expressionTex(node.left),right=expressionTex(node.right);
-      const opening=node.left.type==='set' ? '(' : '\\left(';
-      const closing=node.left.type==='set' ? ')' : '\\right)';
+      const opening=node.left.type==='set' ? '(' : '\\left[';
+      const closing=node.left.type==='set' ? ')' : '\\right]';
       return `${opening}${left} ${TEX_OPERATIONS[node.operation]} ${right}${closing}`;
     }
     function expressionHasComplement(node) {
@@ -575,6 +601,17 @@ fetch("/nav.html")
       const ctx=canvas.getContext('2d');
       const layout=circleLayout(problem.masks);
       const cells=[];
+      if(layout && paintedMasks.size) {
+        const pixels=ctx.createImageData(canvas.width,canvas.height);
+        for(let y=U.y;y<U.y+U.h;y++)for(let x=U.x;x<U.x+U.w;x++) {
+          const mask=expandedMask(pointMask(x+.5,y+.5,layout.circles),layout);
+          if(!paintedMasks.has(mask))continue;
+          const index=(y*canvas.width+x)*4;
+          pixels.data[index]=147;pixels.data[index+1]=191;
+          pixels.data[index+2]=231;pixels.data[index+3]=255;
+        }
+        ctx.putImageData(pixels,0,0);
+      }
       ctx.lineWidth=3;ctx.strokeStyle='#30343b';ctx.strokeRect(U.x,U.y,U.w,U.h);
       ctx.fillStyle='#202735';ctx.font='bold 25px sans-serif';ctx.fillText('U',U.x+U.w+12,U.y+18);
       if(layout) {
@@ -602,6 +639,7 @@ fetch("/nav.html")
       } else {
         // One cell for each nonempty logical region; cells are exact even for
         // relations no collection of three circles can draw.
+        if(paintedMasks.has(0)) {ctx.fillStyle='#93bfe7';ctx.fillRect(U.x+2,U.y+2,U.w-4,U.h-4);}
         const present=[...problem.masks].filter(m=>m>0).sort((a,b)=>a-b);
         const cols=present.length<=4?present.length:4;
         const w=190,h=145,gap=25;
@@ -609,7 +647,7 @@ fetch("/nav.html")
           const row=Math.floor(index/cols),col=index%cols;
           const x=U.x+(U.w-cols*w-(cols-1)*gap)/2+col*(w+gap);
           const y=U.y+45+row*(h+30);
-          ctx.fillStyle='#f0f5fb';ctx.fillRect(x,y,w,h);
+          ctx.fillStyle=paintedMasks.has(mask)?'#93bfe7':'#f0f5fb';ctx.fillRect(x,y,w,h);
           ctx.strokeStyle='#476582';ctx.lineWidth=3;ctx.strokeRect(x,y,w,h);
           ctx.fillStyle='#26374a';ctx.font='bold 37px sans-serif';ctx.textAlign='center';
           ctx.fillText(['A','B','C'].filter((_,i)=>mask&(1<<i)).join(' ∩ '),x+w/2,y+82);
@@ -623,8 +661,23 @@ fetch("/nav.html")
         const x=(e.clientX-rect.left)*canvas.width/rect.width,y=(e.clientY-rect.top)*canvas.height/rect.height;
         if(x<U.x||x>U.x+U.w||y<U.y||y>U.y+U.h)return;
         let mask=layout?expandedMask(pointMask(x,y,layout.circles),layout):cells.find(c=>x>=c.x&&x<=c.x+c.w&&y>=c.y&&y<=c.y+c.h)?.mask??0;
-        showRegion(mask,e.clientX,e.clientY);
+        if(diagramTool==='cursor')showRegion(mask,e.clientX,e.clientY);
+        else {
+          if(diagramTool==='brush')paintedMasks.add(mask);
+          else paintedMasks.delete(mask);
+          feedbackText.textContent='';
+          render();
+        }
       });
+    }
+    function diagramRegionMasks() {
+      if(!regions?.layout)return new Set([0,...[...problem.masks].filter(mask=>mask>0)]);
+      return new Set([...circleMasks(regions.layout.circles)].map(mask=>expandedMask(mask,regions.layout)));
+    }
+    function checkDiagramShading() {
+      const visible=diagramRegionMasks();
+      return [...visible].every(mask=>paintedMasks.has(mask)===expressionContains(problem.expression,mask)) &&
+        [...paintedMasks].every(mask=>visible.has(mask));
     }
     function showRegion(mask,clientX,clientY) {
       activityBox.querySelector('.region-popup')?.remove();
@@ -632,12 +685,136 @@ fetch("/nav.html")
       const close=document.createElement('button');close.textContent='×';close.setAttribute('aria-label','Close');close.onclick=()=>popup.remove();popup.appendChild(close);
       const title=document.createElement('strong');const desc=document.createElement('div');
       const info=describe(mask);title.textContent=`\\(${info.latex}\\)`;
-      desc.textContent=problem.masks.has(mask) ? info.words : 'This region is empty for these sets.';
+      desc.textContent=info.words;
       popup.append(title,desc);activityBox.appendChild(popup);
       const box=activityBox.getBoundingClientRect();
       popup.style.left=Math.max(8,Math.min(clientX-box.left+10,box.width-popup.offsetWidth-8))+'px';
       popup.style.top=Math.max(8,Math.min(clientY-box.top+10,box.height-popup.offsetHeight-8))+'px';
       window.MathJax?.typesetPromise?.([title]);
+    }
+    function operationSteps(node,steps=[]) {
+      if(node.type==='set')return steps;
+      if(node.type==='complement')operationSteps(node.operand,steps);
+      else {operationSteps(node.left,steps);operationSteps(node.right,steps);}
+      steps.push(node);
+      return steps;
+    }
+    function pendingResults(root,completed,current) {
+      if(current===root)return [];
+      const waiting=[];
+      function visit(node,parent) {
+        if(node.type==='set')return;
+        if(completed.has(node) && !completed.has(parent)) {
+          waiting.push(node);
+          return;
+        }
+        if(node.type==='complement')visit(node.operand,node);
+        else {visit(node.left,node);visit(node.right,node);}
+      }
+      visit(root,null);
+      return waiting;
+    }
+    function miniDiagram(canvas,node) {
+      canvas.width=320;canvas.height=192;
+      const ctx=canvas.getContext('2d');
+      const layout=regions.layout;
+      const sx=canvas.width/1100,sy=canvas.height/550;
+      ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+      if(layout) {
+        const pixels=ctx.createImageData(canvas.width,canvas.height);
+        for(let y=0;y<canvas.height;y++)for(let x=0;x<canvas.width;x++) {
+          const sourceX=(x+.5)/sx,sourceY=(y+.5)/sy;
+          if(sourceX<=U.x||sourceX>=U.x+U.w||sourceY<=U.y||sourceY>=U.y+U.h)continue;
+          const mask=expandedMask(pointMask(sourceX,sourceY,layout.circles),layout);
+          if(!expressionContains(node,mask))continue;
+          const index=(y*canvas.width+x)*4;
+          pixels.data[index]=147;pixels.data[index+1]=191;
+          pixels.data[index+2]=231;pixels.data[index+3]=255;
+        }
+        ctx.putImageData(pixels,0,0);
+      }
+      ctx.save();ctx.scale(sx,sy);
+      ctx.strokeStyle='#30343b';ctx.lineWidth=4;ctx.strokeRect(U.x,U.y,U.w,U.h);
+      ctx.fillStyle='#202735';ctx.font='bold 40px sans-serif';ctx.fillText('U',U.x+U.w+10,U.y+35);
+      if(layout) {
+        const colors=['#326bb4','#bd5050','#39805b'];
+        layout.circles.forEach((circle,i)=>{
+          if(!circle)return;
+          ctx.beginPath();
+          if(circle.type==='annular-sector') {
+            ctx.arc(circle.x,circle.y,circle.r,circle.angle-circle.halfAngle,circle.angle+circle.halfAngle);
+            ctx.arc(circle.x,circle.y,circle.inner,circle.angle+circle.halfAngle,circle.angle-circle.halfAngle,true);
+            ctx.closePath();
+          } else ctx.arc(circle.x,circle.y,circle.r,0,Math.PI*2);
+          ctx.strokeStyle=colors[i];ctx.lineWidth=5;ctx.stroke();
+        });
+        const directions=labelDirections(problem.masks,layout);
+        layout.circles.forEach((circle,i)=>{
+          if(!circle)return;
+          ctx.fillStyle=colors[i];ctx.font='bold 39px sans-serif';
+          const label='ABC'[i]+(layout.equal===i?' = '+'ABC'[layout.alias]:'');
+          if(circle.type==='annular-sector')ctx.fillText(label,circle.x+205*Math.cos(circle.angle)-12,circle.y+205*Math.sin(circle.angle)+8);
+          else drawCircleLabel(ctx,label,circle,directions[i]);
+        });
+        if(layout.intersection) {
+          ctx.fillStyle=colors[layout.alias];ctx.font='bold 39px sans-serif';
+          ctx.fillText('ABC'[layout.alias],525,275);
+        }
+      } else {
+        const present=[...problem.masks].filter(mask=>mask>0).sort((a,b)=>a-b);
+        const cols=Math.min(present.length,4),w=190,h=145,gap=25;
+        present.forEach((mask,index)=>{
+          const row=Math.floor(index/cols),col=index%cols;
+          const x=U.x+(U.w-cols*w-(cols-1)*gap)/2+col*(w+gap),y=U.y+45+row*(h+30);
+          if(expressionContains(node,mask)) {ctx.fillStyle='#93bfe7';ctx.fillRect(x,y,w,h);}
+          ctx.strokeStyle='#476582';ctx.lineWidth=3;ctx.strokeRect(x,y,w,h);
+          ctx.fillStyle='#26374a';ctx.font='bold 35px sans-serif';ctx.textAlign='center';
+          ctx.fillText(['A','B','C'].filter((_,i)=>mask&(1<<i)).join(' ∩ '),x+w/2,y+82);
+          ctx.textAlign='left';
+        });
+        if(problem.masks.has(0)&&expressionContains(node,0)) {
+          ctx.fillStyle='#93bfe7';ctx.fillRect(U.x+10,U.y+U.h-65,130,46);
+          ctx.fillStyle='#26374a';ctx.font='25px sans-serif';ctx.fillText('outside',U.x+17,U.y+U.h-32);
+        }
+      }
+      ctx.restore();
+    }
+    function workingCard(node) {
+      const card=document.createElement('div');card.className='working-card';
+      const canvas=document.createElement('canvas');
+      const label=document.createElement('div');label.className='working-card-label math';
+      label.innerHTML=`\\(${expressionTex(node)}\\)`;
+      card.append(canvas,label);miniDiagram(canvas,node);
+      return card;
+    }
+    function workingSign(symbol) {
+      const span=document.createElement('span');span.className='working-sign';
+      span.textContent=symbol;return span;
+    }
+    function showWorkingStep(index) {
+      const node=workingSteps[index];
+      workingActivity.style.display='block';workingActivity.innerHTML='';
+      const note=document.createElement('p');note.className='working-note';
+      note.textContent='Work through one operation at a time. Shaded regions show each set.';
+      workingActivity.appendChild(note);
+      const top=document.createElement('div');
+      top.className='working-row working-row-top'+(node.type==='complement'?' complement-step':'');
+      if(node.type==='complement') {
+        top.append(workingCard(node.operand),workingSign('→'),workingCard(node));
+      } else {
+        top.append(workingCard(node.left),workingSign({intersection:'∩',union:'∪',difference:'∖'}[node.operation]),
+          workingCard(node.right),workingSign('='),workingCard(node));
+      }
+      workingActivity.appendChild(top);
+      const bottom=document.createElement('div');bottom.className='working-row-bottom';
+      const completed=new Set(workingSteps.slice(0,index));
+      const waiting=pendingResults(problem.expression,completed,node);
+      for(let i=0;i<3;i++) {
+        if(waiting[i])bottom.appendChild(workingCard(waiting[i]));
+        else {const blank=document.createElement('div');bottom.appendChild(blank);}
+      }
+      workingActivity.appendChild(bottom);
+      window.MathJax?.typesetPromise?.([workingActivity]);
     }
     // Integer ranges have inclusive endpoints; either endpoint may be infinite.
     function mergeIntegerRanges(ranges) {
@@ -841,7 +1018,7 @@ fetch("/nav.html")
     const ANSWER_SYMBOLS=[['∅','∅'],['∪',' ∪ '],['∩',' ∩ '],['or',' or '],['and',' and '],
       ['x','x'],['∞','∞'],['−∞','-∞'],['≥','≥'],['≤','≤'],['<','<'],['>','>'],
       ['{','{'],['}','}'],['[','['],[']',']'],['(', '('],[')',')'],
-      ['∈',' ∈ '],['ℤ','ℤ'],['ℕ','ℕ'],['|',' | '],[',',', '],['inclusive',' inclusive']];
+      ['∈',' ∈ '],['ℤ','ℤ'],['ℕ','ℕ'],['|',' | '],[',',', ']];
     for(const [label,insert] of ANSWER_SYMBOLS) {
       const button=document.createElement('button');
       button.type='button';button.className='math-symbol-button';button.textContent=label;
@@ -855,33 +1032,60 @@ fetch("/nav.html")
       answerToolbar.appendChild(button);
     }
     answerEditor.addEventListener('input',()=>{feedbackText.textContent='';});
+    diagramTools.querySelectorAll('.diagram-tool').forEach(button=>button.addEventListener('click',()=>{
+      diagramTool=button.dataset.tool;
+      activityBox.dataset.tool=diagramTool;
+      diagramTools.querySelectorAll('.diagram-tool').forEach(item=>
+        item.setAttribute('aria-pressed',String(item===button)));
+    }));
     checkBtn.addEventListener('click',()=>{
-      if(!problem)return;
-      const correct=checkSetAnswer();
-      feedbackText.textContent=correct?'Correct!':'Incorrect, try again.';
-      feedbackText.style.color=correct?'green':'red';
+      if(!problem||!regions)return;
+      const textCorrect=checkSetAnswer(),shadingCorrect=checkDiagramShading();
+      feedbackText.textContent=textCorrect&&shadingCorrect?'Correct!':
+        !textCorrect&&!shadingCorrect?'Incorrect, try again.':
+        textCorrect?'The set description is correct but the Venn diagram shading is not.':
+          'The Venn diagram shading is correct but the set description is not.';
+      feedbackText.style.color=textCorrect&&shadingCorrect?'green':
+        !textCorrect&&!shadingCorrect?'red':'#9a6b00';
     });
     startBtn.addEventListener('click',()=>{
-      problem=makeProblem(); regions=null;activityBox.innerHTML='';hintArea.innerHTML='';hintBtn.disabled=false;
+      problem=makeProblem(); regions=null;hintStep=0;paintedMasks=new Set();diagramTool='cursor';
+      activityBox.innerHTML='';hintArea.innerHTML='';workingActivity.innerHTML='';workingActivity.style.display='none';
+      activityBox.dataset.tool='cursor';revealBtn.style.display='inline-block';
+      hintBtn.style.display='none';hintBtn.disabled=true;
+      diagramTools.style.display='none';
+      diagramTools.querySelectorAll('.diagram-tool').forEach(button=>
+        button.setAttribute('aria-pressed',String(button.dataset.tool==='cursor')));
       problem.expression=generateSetExpression();
+      workingSteps=operationSteps(problem.expression);
       problem.solutionMasks=new Set([...problem.masks].filter(mask=>expressionContains(problem.expression,mask)));
       if(problem.kind==='word')problem.solutionLetters=expectedLetters(problem);
       else problem.solutionRanges=expectedIntegerRanges(problem);
-      answerArea.style.display='block';checkBtn.style.display='inline-block';
+      answerArea.style.display='block';checkBtn.style.display='none';
       answerEditor.value='';feedbackText.textContent='';
       answerEditor.placeholder=problem.kind==='word' ? '{a, b, c}' :
         '{x ∈ ℤ | -2 ≤ x ≤ 3 or x ≥ 8}';
       questionText.innerHTML=`Let \\(U\\) be the ${problem.kind==='word'?'set of letters of the English alphabet':problem.labels[0].includes('mathbb{N}')?'set of natural numbers \\(\\{1,2,3,\\ldots\\}\\)':'set of integers'}.
         \\(A=${problem.labels[0]}\\),<br>\\(B=${problem.labels[1]}\\),<br>\\(C=${problem.labels[2]}\\)`;
-      operationQuestion.innerHTML=`Find the set \\[${expressionTex(problem.expression)}\\]`;
+      operationQuestion.innerHTML=`Find the set \\[${expressionTex(problem.expression)}\\]
+        <p>On paper, try drawing a Venn diagram representing the interactions between the sets, and shade in the desired region.<br>Then, press Reveal Diagram to reveal the unshaded diagram.</p>`;
       window.MathJax?.typesetPromise?.([questionText,operationQuestion]);
     });
-    hintBtn.addEventListener('click',()=>{
+    revealBtn.addEventListener('click',()=>{
       if(!problem||regions)return;
       document.getElementById('click-sound')?.play().catch(()=>{});
-      render();hintBtn.disabled=true;
-      hintArea.innerHTML=`Hint 1: Click a region of the diagram to see its set notation and meaning.<br>${diagramExplanation(problem.masks,regions.layout)}`;
+      render();revealBtn.style.display='none';
+      checkBtn.style.display='inline-block';hintBtn.style.display='inline-block';hintBtn.disabled=false;
+      diagramTools.style.display='flex';
+      hintArea.innerHTML=`Click a region of the diagram to see its set notation and meaning.<br>${diagramExplanation(problem.masks,regions.layout)}`;
       window.MathJax?.typesetPromise?.([hintArea]);
+    });
+    hintBtn.addEventListener('click',()=>{
+      if(!problem||!regions||hintStep>=workingSteps.length)return;
+      document.getElementById('click-sound')?.play().catch(()=>{});
+      showWorkingStep(hintStep);
+      hintStep++;
+      if(hintStep>=workingSteps.length)hintBtn.disabled=true;
     });
   </script>
   <audio id="click-sound" src="button.mp3" preload="auto"></audio>

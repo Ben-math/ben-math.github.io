@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta charset="UTF-8" />
+  <title>MATH 131 - Set Theory</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <h1>MATH 131 - Set Theory</h1>
+    <div id="nav-placeholder"></div>
+
+      <script>
+fetch("/nav.html")
+  .then(response => response.text())
+  .then(html => {
+    document.getElementById("nav-placeholder").innerHTML = html;
+
+    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+    const navLinks = document.querySelectorAll("#nav-placeholder a");
+    navLinks.forEach(link => {
+      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+      if (linkPath === currentPath) {
+        link.classList.add("active");
+      }
+    });
+
+    const s = document.createElement("script");
+    s.src = "/mascot.js";
+    s.defer = true;
+    document.body.appendChild(s);
+  })
+  .catch(err => {
+    console.error("Failed to load nav:", err);
+  });
+</script>
+
+
+      
+  </header>
+  <main>
+    <p>An activity on evaluating elementary limits:
+    <a href="/courses/math121/limits/limits1.html">Limits I</a></p>
+
+    <p>An activity on evaluating limits involving infinity:
+    <a href="/courses/math121/limits/limits2.html">Limits II</a></p>
+
+    <p>An activity on evaluating limits by looking at a graph:
+    <a href="/courses/math121/limits/visual.html">Visual Limits</a></p>
+
+    <p>An activity on the Intermediate Value Theorem:
+    <a href="/courses/math121/limits/IVT.html">Intermediate Value Theorem</a></p>
+
+    <p>An activity on continuity:
+    <a href="/courses/math121/limits/continuity.html">Continuity</a></p>
+    
+    <p>To help with understanding the precise definition of a limit: 
+    <a href="https://ben-math.github.io/courses/math121/limits/epsilondelta.html">Epsilon-Delta</a></p>
+
+    <p>An activity on L'Hôptial's Rule (yet to be made):
+    <a href="/courses/math121/limits/lhopitals.html">L'Hôptial's Rule</a></p>
+  </main>
+</body>
+</html>

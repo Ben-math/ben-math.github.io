@@ -871,6 +871,7 @@ fetch("/nav.html")
         .replace(/\\infty\b|\binfinity\b|\binfty\b/gi,'∞')
         .replace(/\\cup\b/g,'∪').replace(/\\cap\b/g,'∩')
         .replace(/\\emptyset\b|\\varnothing\b/g,'∅')
+        .replace(/\\(?:ldots|cdots|dots)\b|\.{3}|⋯/g,'…')
         .replace(/\\in\b/g,'∈').replace(/\\mid\b/g,'|')
         .replace(/\\\{/g,'{').replace(/\\\}/g,'}')
         .replace(/>=/g,'≥').replace(/<=/g,'≤')
@@ -894,6 +895,29 @@ fetch("/nav.html")
       }
       if(!items.every(item=>/^-?\d+$/.test(item)))return null;
       return [...new Set(items.map(Number))].sort((a,b)=>a-b);
+    }
+    function parseEllipsisList(text) {
+      const match=/^\{\s*([^{}]*)\s*\}$/.exec(text);
+      if(!match||!match[1].includes('…'))return null;
+      let items=match[1].split(',').map(item=>item.trim());
+      if(!items.every(item=>item==='…'||/^[+-]?\d+$/.test(item)))return null;
+      const numbers=items.filter(item=>item!=='…').map(Number);
+      if(numbers.length<2||!numbers.every(Number.isSafeInteger))return null;
+      // Descending lists mean the same set; normalize to increasing order.
+      if(numbers.every((number,i)=>i===0||number<numbers[i-1]))items=items.reverse();
+      const leading=items[0]==='…',trailing=items.at(-1)==='…';
+      if(leading)items=items.slice(1);
+      if(trailing)items=items.slice(0,-1);
+      // Each infinite tail needs consecutive integers to establish unit steps.
+      if(items.includes('…'))return null;
+      const values=items.map(Number);
+      if(values.some((value,i)=>i>0&&value<=values[i-1]))return null;
+      if(leading&&values[1]!==values[0]+1)return null;
+      if(trailing&&values.at(-1)!==values.at(-2)+1)return null;
+      const ranges=values.map(value=>({lo:value,hi:value}));
+      if(leading)ranges.push({lo:-Infinity,hi:values[0]});
+      if(trailing)ranges.push({lo:values.at(-1),hi:Infinity});
+      return mergeIntegerRanges(ranges);
     }
     function parseEndpoint(text) {
       const token=text.trim().replace(/^\+/,'');
@@ -993,6 +1017,8 @@ fetch("/nav.html")
       if(wholeDomain)return [{lo:wholeDomain[1].toUpperCase()==='N'?1:-Infinity,hi:Infinity}];
       const elements=parseElementList(text,'number');
       if(elements!==null)return mergeIntegerRanges(elements.map(n=>({lo:n,hi:n})));
+      const ellipsisList=parseEllipsisList(text);
+      if(ellipsisList!==null)return ellipsisList;
       const builder=/^\{\s*x\s*(?:∈|in)\s*([ZN])\s*(?:\||:|such that)\s*([\s\S]+)\s*\}$/i.exec(text);
       if(!builder)return null;
       const domain=builder[1].toUpperCase();text=builder[2].trim();
@@ -1015,7 +1041,7 @@ fetch("/nav.html")
       const given=parseNumericAnswer(raw,problem);
       return given!==null && rangesEqual(given,problem.solutionRanges);
     }
-    const ANSWER_SYMBOLS=[['∅','∅'],['∪',' ∪ '],['∩',' ∩ '],['or',' or '],['and',' and '],
+    const ANSWER_SYMBOLS=[['∅','∅'],['…','…'],['∪',' ∪ '],['∩',' ∩ '],['or',' or '],['and',' and '],
       ['x','x'],['∞','∞'],['−∞','-∞'],['≥','≥'],['≤','≤'],['<','<'],['>','>'],
       ['{','{'],['}','}'],['[','['],[']',']'],['(', '('],[')',')'],
       ['∈',' ∈ '],['ℤ','ℤ'],['ℕ','ℕ'],['|',' | '],[',',', ']];

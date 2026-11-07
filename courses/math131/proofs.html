@@ -139,6 +139,32 @@ fetch("/nav.html")
     integers are closed under addition and multiplication, \(2k^2 + 2k\) is an integer.  So we've expressed \(x^2\) as 
     the product of 2 and an integer, plus 1, and have successfully disproven the statement.</p>
 
+    <p>Finally, we'll conclude with 2 more complicated problems.  The first is one where our usual "forward" method of proof doesn't work (and we'll have 
+    to reverse things by proving the contrapositive statement of the original), and the second is a word problem where we'll have to assign variable 
+    names to the unknown quantities involved before rephrasing the problem as a statement in terms of the definitions we know.</p>
+
+    <p>\[\text{Question 5: Prove or disprove: If \(5x-2\) is odd, then \(x\) is odd.}\] We are in the left-hand 
+    column of the table, since this is a statement that something is true <i>in general</i>.  To prove it, we would need to show that for an 
+    <i>arbitrary</i> odd integer \(5x-2\) (we can't use a <i>specific</i> expression), that \(x\) must be odd.  After some experimentation (as before), 
+    you could convince yourself that this statement is probably true, and set out to prove it.  Your instinct is probably to let \(x\) be an arbitary 
+    odd integer, and then use the definition to show that \(5x-2\) is odd.</p>
+
+    <p>However, this would be incorrect.  You would be showing that \[\text{If } x \text{ is odd, then } 5x-2 \text{ is odd.}\] which is not equivalent 
+    to the original statement.  Your next attempt might be to start with the general form of what we know: \[\text{Let }5x-2 
+    \text{ be an arbitrary odd number.}\]  Then, use the definition: \[\text{Since } 5x-2 \text{ is odd, } 5x-2 = 2k+1 
+    \text{ for some integer }k.\]  Our goal is to show that \(x\) is odd: that is, to express it as 2 times an integer, plus 1.  Keeping this destination 
+    in mind, we try to obtain \(x\) from what we have: \[5x - 2 = 2k + 1 \implies 5x = 2k + 3 \implies x = \frac{2k + 3}{5}\]  There is no clear path 
+    forward here.  In this problem, we will need to use the contrapositive version of the original statement to prove it:
+    \[\text{If \(5x-2\) is odd, then \(x\) is odd.}\] is equivalent to the statement \[\text{If \(x\) is not odd, then \(5x-2\) is not odd.}\] That is, 
+    the statement \[\text{If \(x\) is even, then \(5x-2\) is even.}\]  This is far easier to solve: we proceed as usual.  \[\text{Let }x 
+    \text{ be an arbitrary even number.}\]  Then, use the definition: \[\text{Since } x \text{ is even, } x = 2k 
+    \text{ for some integer }k.\]  Our goal is to show that \(5x-2\) is even: that is, to express it as 2 times an integer.
+    With our target in mind, let's take a look at \(5x-2\), and use what we now know \(x\) is equal to: \[5x -2 = 5(2k) -2\]  Then, let's use some 
+    algebra to <i>hopefully</i> turn what we have into the form we want (2 times an integer): \[= 10k -2 = 2(5k-1)\]  And since the 
+    integers are closed under addition and multiplication, \(5k-1\) is an integer.  So we've expressed \(5x-2\) as 
+    the product of 2 and an integer, and have successfully proven it is even.  So since we've proven the contrapositive statement, which is equivalent 
+    to the original, we've successfully proven the original statement.</p>
+
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>
     </div>

@@ -113,11 +113,14 @@ fetch("/nav.html")
     since we know that 3 is odd, and the product of two odd numbers is itself odd, we conclude \(3x\) is odd.  Then, since \(3x\) is odd and 7 is odd, 
     and we know that the sum of two odd numbers is itself even, we conclude \(3x +7\) is even, and are done.</p>
 
-    <p>\[\text{Question 3: Prove or disprove: If \(x\) is even, then \(4x + 3\) is even.}\] We are in the left-hand 
+    <p>\[\text{Question 3: Prove or disprove: If \(x\) is even, then \(4x\) is divisible by 16.}\] We are in the left-hand 
     column of the above table, since this is a statement that something is true <i>in general</i>.  To prove it, we would need to show that for an 
-    <i>arbitrary</i> even integer (we can't use a <i>specific</i> integer), that if we multiply it by 4 and then add 3, we get an even integer.  To 
-    disprove it, we would need to come up with a counterexample: a specific integer which is even such that when we multiply it by 4 and then add 3, we 
-    <i>don't</i> get an even result.  Once again, we need to start by deciding whether or not the statement is true.</p>
+    <i>arbitrary</i> even integer (we can't use a <i>specific</i> integer), that if we multiply it by 4, the result is divisible by 16.  To 
+    disprove it, we would need to come up with a counterexample: a specific integer which is even such that when we multiply it by 4, we 
+    <i>don't</i> get a number which is divisible by 16.  Once again, we need to start by deciding whether or not the statement is true.  We try 
+    some examples of even numbers \(x\): If \(x = 4\), then \(4x = 4 \cdot 4 = 16 = 16 \cdot 1\).  If \(x = 8\), then \(4x = 4 \cdot 8 = 32 = 16 \cdot 2\). 
+    So far, the statement has held true.  But if \(x = 6\), then \(4x = 4 \cdot 6 = 24 = 16 \cdot 1.5\), so we have found a counterexample, and have 
+    disproven the statement.</p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

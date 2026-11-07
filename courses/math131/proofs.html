@@ -92,7 +92,7 @@ fetch("/nav.html")
     1\)), and by giving such an example we have proven the statement true.</p>
 
     <p>\[\text{Question 2: Prove or disprove: If \(x\) is odd, then \(3x + 7\) is even.}\] We are in the left-hand 
-    column of the above table, since this is a statement that something is true <i>in general</i>.  To prove it, we would need to show that for an 
+    column of the table, since this is a statement that something is true <i>in general</i>.  To prove it, we would need to show that for an 
     <i>arbitrary</i> odd integer (we can't use a <i>specific</i> integer), that if we multiply it by 3 and then add 7, we get an even integer.  To disprove 
     it, we would need to come up with a counterexample: a specific integer which is odd such that when we multiply it by 3 and then add 7, we <i>don't</i> 
     get an even result.  Once again, we need to start by deciding whether or not the statement is true.</p>
@@ -114,7 +114,7 @@ fetch("/nav.html")
     and we know that the sum of two odd numbers is itself even, we conclude \(3x +7\) is even, and are done.</p>
 
     <p>\[\text{Question 3: Prove or disprove: If \(x\) is even, then \(4x\) is divisible by 16.}\] We are in the left-hand 
-    column of the above table, since this is a statement that something is true <i>in general</i>.  To prove it, we would need to show that for an 
+    column of the table, since this is a statement that something is true <i>in general</i>.  To prove it, we would need to show that for an 
     <i>arbitrary</i> even integer (we can't use a <i>specific</i> integer), that if we multiply it by 4, the result is divisible by 16.  To 
     disprove it, we would need to come up with a counterexample: a specific integer which is even such that when we multiply it by 4, we 
     <i>don't</i> get a number which is divisible by 16.  Once again, we need to start by deciding whether or not the statement is true.  We try 
@@ -122,6 +122,22 @@ fetch("/nav.html")
     \[\text{If }x = 8, \text{ then }4x = 4 \cdot 8 = 32 = 16 \cdot 2\]
     So far, the statement has held true.  \[\text{If }x = 6, \text{ then }4x = 4 \cdot 6 = 24 = 16 \cdot 1.5\] so we have found a counterexample, and have 
     disproven the statement.</p>
+
+    <p>\[\text{Question 4: Prove or disprove: There exists an odd integer whose square is even. }\] We are in the right-hand 
+    column of the table, since this is a statement that something <i>exists</i>.  To prove it, we would need to find some <i>specific</i> odd integer
+    whose square is even.  To disprove it, we would need to show that the statement is not true <i>in general</i>.  That is, we would show that for an 
+    <i>arbitrary</i> odd integer, its square is never even.  Once again, we need to start by deciding whether or not the statement is true.  We try 
+    some examples of odd numbers \(x\): \[\text{If }x = 5, \text{ then }5^2 = 25, \text{ which is odd.}\]  
+    \[\text{If }x = 9, \text{ then }9^2 = 81, \text{ which is odd.}\]
+    If we keep trying odd numbers, the statement continues to be false, so we suspect it is false, and attempt to disprove it.  So, we must use the 
+    definition to disprove it in general.  To disprove the statement, we will have to start with the general form of what we know: \[\text{Let }x 
+    \text{ be an arbitrary odd number.}\]  Then we use the definition: \[\text{Since } x \text{ is odd, } x = 2k+1 \text{ for some integer }k.\]  Our end 
+    goal is to show that \(x^2\) is not even.  Since every integer is either even or odd, this is equivalent to showing that \(x^2\) is odd.  So, we will 
+    need to show that it's equal to 2 times an integer, plus 1.  With our target in mind, let's take a look at \(x^2\), and use what we now know \(x\) is 
+    equal to: \[x^2 = (2k+1)^2\]  Then, let's use some algebra to <i>hopefully</i> turn what we have into the form we want (2 times an integer plus 1): 
+    \[= (2k+1)(2k+1) = 4k^2 + 2k + 2k + 1 = 4k^2 + 4k + 1 = 2(2k^2 + 2k) + 1\]  And since the 
+    integers are closed under addition and multiplication, \(2k^2 + 2k\) is an integer.  So we've expressed \(x^2\) as 
+    the product of 2 and an integer, plus 1, and have successfully disproven the statement.</p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

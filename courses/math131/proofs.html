@@ -175,7 +175,15 @@ fetch("/nav.html")
     Converting this into an "if-then" statement, we are asked \[\text{Prove or disprove: If } y\mid 7x \text{ and } y\mid 5x, \text{ then } y\mid x\]
     We leave the experimentation process to the reader, which should convince you that the statement is true.  So, we try to prove it.  We start with 
     what we know: \[\text{Let } x \text{ and } y \text{ be arbitary integers such that } y\mid 7x \text{ and } y\mid 5x.\]  Then we use the definition 
-    of divisibility: \[\text{Since } y\mid 7x, 7x = yk \text{ for some integer \(k\), and since } y\mid 5x, 5x = yl \text{ for some integer \(l\).}\]</p>
+    of divisibility: \[\text{Since } y\mid 7x, 7x = yk \text{ for some integer \(k\), and since } y\mid 5x, 5x = yl \text{ for some integer \(l\).}\] 
+    We keep our goal in mind: we want to show that \(x\) is divisible by \(y\), that is, we want to express \(x\) as the product of \(y\) and some 
+    integer.  This problem is a bit more on the challenging side: we'll need to express \(x\) in terms of the things we know.  Some options would be 
+    to divide \(7x\) by 7, or \(5x\) by 5.  However, from experience (of a divisibility theorem we've learned), it would be <i>most</i> useful to 
+    express \(x\) as a <i>linear combination</i> of the things we know (that is, a sum/difference of multiplies of what we know).  It might take some 
+    playing around to discover how we can do this: \[x = 3(7x) - 4(5x)\]  Then, we substitute our known expression for \(7x\) and \(5x\), and attempt 
+    to factor \(y\) out of the result: \[= 3yk - 4yl = y(3k - 4l)\]  Since the integers are closed under multiplication and subtraction, \(3k-4l\) is 
+    an integer, and so we've expressed \(x\) as the product of \(y\) and an integer, so \(x\) is divisible by \(y\), and we conclude that it is 
+    possible to evenly share one box of chocolates with your friends.</p>
 
     <div class="button-container">
       <button id="start-btn" class="rubber-button">Start!</button>

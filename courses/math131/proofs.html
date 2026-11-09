@@ -218,6 +218,26 @@ fetch("/nav.html")
       <div id="completed-lets"></div>
       <div id="completed-math"></div>
     </section>
+
+    <section id="proof-solving" hidden aria-label="Prove or disprove">
+      <div id="decision-buttons" class="button-container">
+        <button type="button" id="prove-btn" class="rubber-button">Prove</button>
+        <button type="button" id="disprove-btn" class="rubber-button">Disprove</button>
+      </div>
+      <p id="decision-feedback" class="proof-error" role="status" aria-live="polite"></p>
+      <p id="decision-result"></p>
+      <div id="numerical-examples"></div>
+      <div id="witness-panel" hidden>
+        <label id="witness-label" for="witness-input"></label>
+        <input id="witness-input" type="text" aria-label="Example or counterexample variable values" autocomplete="off" spellcheck="false">
+      </div>
+      <div id="proof-step-controls" class="button-container" hidden>
+        <button type="button" id="proof-next" class="rubber-button">Next</button>
+        <button type="button" id="proof-hint" class="rubber-button">Hint</button>
+      </div>
+      <p id="witness-feedback" role="status" aria-live="polite"></p>
+      <div id="proof-conclusion"></div>
+    </section>
   </main>
   <style>
     #question-text {text-align:center;line-height:1.8;margin:1.3em auto;max-width:1100px}
@@ -242,6 +262,13 @@ fetch("/nav.html")
     #stage-feedback {color:#a12222;max-width:950px;margin:1em auto}
     #completed-lets {max-width:950px;margin:1.2em auto;text-align:left}
     #completed-math {margin:1.2em auto;overflow-x:auto}
+
+    #proof-solving {max-width:1100px;margin:1.2em auto;text-align:center;line-height:1.8}
+    #numerical-examples,#proof-conclusion {margin:1em auto;overflow-x:auto}
+    #witness-panel {display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:.6em;margin:1.2em auto}
+    #witness-input {width:min(100%,450px);box-sizing:border-box;padding:.5em;border:2px solid #777;border-radius:8px;font:inherit}
+    .proof-error {color:#a12222}
+    .proof-correct {color:#167331;font-weight:bold}
   </style>
   <script>
   (() => {
@@ -310,7 +337,8 @@ fetch("/nav.html")
       }
       const form=pick(c.truth?['gcd','linear','chain']:['gcd','chain']);
       if(form==='linear') {
-        const n=rand(1,100),m=rand(1,100),a=rand(1,100),b=rand(1,100);
+        const n=rand(1,100),m=rand(1,100),common=pick([4,6,8,9,10,12,14,15,16,18,20]);
+        const a=common*rand(1,Math.floor(100/common)),b=common*rand(1,Math.floor(100/common));
         return {form:'divisibility-linear',parameters:{n,m,a,b},tex:`\\text{For every integer }x,\\quad (x\\mid ${a}\\text{ and }x\\mid ${b})\\implies x\\mid(${n}\\cdot ${a}+${m}\\cdot ${b}).`};
       }
       if(form==='gcd') {
@@ -663,6 +691,145 @@ fetch("/nav.html")
     function renamedTex(q,mapping) {
       return q.tex.split(/(\\text\{[^}]*\})/g).map(part=>part.startsWith('\\text')?part:part.replace(/[xyz]/g,key=>mapping?.[key]||key)).join('');
     }
+    const divides=(d,n)=>d===0?n===0:n%d===0;
+    const parityOf=n=>Math.abs(n)%2;
+    function exampleVariables(q) {
+      if(q.form.startsWith('parity-'))return ['x'];
+      if(q.form==='common-divisor')return q.presentation==='word'?['x','y']:['k'];
+      if(q.form==='divisibility-linear')return ['x'];
+      return q.form==='divisibility-chain'?['x','y','z']:['x','y'];
+    }
+    function evaluateExample(q,values) {
+      const v=q.parameters,{x,y,z,k}=values;
+      switch(q.form) {
+        case 'parity-existential':return {premise:true,conclusion:parityOf(x)===v.p&&divides(v.k,v.n*x+v.m)};
+        case 'parity-direct':return {premise:parityOf(x)===v.p,conclusion:parityOf(v.n*x+v.m)===v.q};
+        case 'parity-reverse':return {premise:parityOf(v.n*x+v.m)===v.q,conclusion:parityOf(x)===v.p};
+        case 'common-divisor':return {premise:true,conclusion:q.presentation==='word'?y>1&&divides(y,v.n*x+v.m)&&divides(y,v.a*x+v.b):k>1&&[v.n,v.m,v.a,v.b].every(n=>divides(k,n))};
+        case 'divisibility-gcd':return {premise:divides(x,v.n*y)&&divides(x,v.m*y),conclusion:divides(x,v.a*y)};
+        case 'divisibility-linear':return {premise:divides(x,v.a)&&divides(x,v.b),conclusion:divides(x,v.n*v.a+v.m*v.b)};
+        case 'divisibility-chain':return {premise:divides(v.a*x,v.b*y)&&divides(v.c*y,v.d*z),conclusion:divides(v.n*x,v.m*z)};
+        case 'divisibility-contrapositive-offset':return {premise:!divides(x,v.m)&&divides(x,v.n*v.a*y+v.m),conclusion:!divides(x,y)};
+        case 'divisibility-contrapositive-sum':return {premise:!divides(x,(v.n*v.a+v.b)*y),conclusion:!divides(x,y)};
+      }
+      throw Error('Unknown example type.');
+    }
+    function isConcludingExample(q,values) {
+      if(!exampleVariables(q).every(key=>Number.isSafeInteger(values[key])&&Math.abs(values[key])<=Math.floor(Number.MAX_SAFE_INTEGER/10000)))return false;
+      if(q.presentation==='word'&&!exampleVariables(q).every(key=>values[key]>0))return false;
+      const result=evaluateExample(q,values);
+      return q.quantifier==='existential'?q.truth&&result.conclusion:!q.truth&&result.premise&&!result.conclusion;
+    }
+    function concludingExample(q) {
+      const v=q.parameters;
+      if(q.form==='common-divisor') {
+        if(q.presentation!=='word')return {k:gcd(gcd(v.n,v.m),gcd(v.a,v.b))};
+        const candidates=[];
+        for(let x=1;x<=100;x++){const y=gcd(v.n*x+v.m,v.a*x+v.b);if(y>1)candidates.push({x,y});}
+        if(candidates.length)return pick(candidates);
+      } else if(q.form.startsWith('parity-')) {
+        const candidates=[];
+        for(let x=1;x<=Math.max(30,2*(v.k||1));x++)if(isConcludingExample(q,{x}))candidates.push({x});
+        if(candidates.length)return pick(candidates);
+      } else if(q.form==='divisibility-gcd')return {x:gcd(v.n,v.m),y:1};
+      else if(q.form==='divisibility-chain') {
+        const x=v.b*v.d,y=v.a*v.d,z=v.a*v.c,g=gcd(gcd(x,y),z);
+        return {x:x/g,y:y/g,z:z/g};
+      }
+      throw Error('No concluding example is available.');
+    }
+    function illustrativeExamples(q) {
+      const candidates=[],v=q.parameters;
+      if(q.form.startsWith('parity-')) {
+        for(let x=1;x<=30;x++) {
+          const result=evaluateExample(q,{x});
+          if(q.quantifier==='existential'?parityOf(x)===v.p&&!result.conclusion:result.premise&&result.conclusion)candidates.push({x});
+        }
+      } else if(q.form==='common-divisor') {
+        if(q.presentation==='word') {
+          for(let x=1;x<=30;x++)candidates.push({x,y:rand(2,30)});
+        } else {
+          for(let k=2;k<=30;k++) {
+            // If k does not divide all coefficients, x=0 or x=1 exposes it.
+            const x=[0,1].find(x=>!divides(k,v.n*x+v.m)||!divides(k,v.a*x+v.b));
+            if(x!==undefined)candidates.push({k,x});
+          }
+        }
+      } else if(q.form==='divisibility-chain') {
+        // Construct premise-satisfying triples; small x may require larger y,z.
+        for(let x=1;x<=30;x++) {
+          const y=v.a*x/gcd(v.a*x,v.b),z=v.c*y/gcd(v.c*y,v.d);
+          candidates.push({x,y,z});
+        }
+      } else if(q.form==='divisibility-linear') {
+        for(let x=1;x<=30;x++)if(evaluateExample(q,{x}).premise)candidates.push({x});
+        // There may be fewer than three positive common divisors. Use distinct
+        // negative divisors too; all variables in this math statement are integers.
+        if(q.presentation==='math'&&candidates.length<3)for(let x=-1;x>=-30;x--)if(evaluateExample(q,{x}).premise)candidates.push({x});
+      } else {
+        for(let x=1;x<=30;x++)for(let y=1;y<=30;y++) {
+          const result=evaluateExample(q,{x,y});if(result.premise&&result.conclusion)candidates.push({x,y});
+        }
+      }
+      // Sampling without replacement whenever three distinct choices exist.
+      const pool=[...candidates],chosen=[];
+      if(!pool.length)throw Error('No numerical examples satisfy the hypotheses.');
+      while(chosen.length<3){const index=rand(0,pool.length-1);chosen.push(pool[index]);if(pool.length>1)pool.splice(index,1);}
+      return chosen;
+    }
+    function parseExampleInput(q,text,mapping={}) {
+      const canonical=exampleVariables(q),names=canonical.map(key=>mapping[key]||key);
+      const clean=text.toLowerCase().replace(/\\[()]/g,'').replace(/\b(?:and|for)\b/g,',').trim();
+      const values={};
+      if(/[a-z]/.test(clean)) {
+        const pattern=/([a-z])\s*=\s*([+-]?\s*\d+)/g;let match;let end=0;
+        while((match=pattern.exec(clean))) {
+          if(clean.slice(end,match.index).replace(/[\s,;()]/g,''))return {ok:false,message:'Enter integer assignments such as x = 3, y = 2.'};
+          const index=names.indexOf(match[1]);if(index<0)return {ok:false,message:`Use only these variables: ${names.join(', ')}.`};
+          const key=canonical[index];if(Object.hasOwn(values,key))return {ok:false,message:`Give ${match[1]} only one value.`};
+          values[key]=Number(match[2].replace(/\s/g,''));end=pattern.lastIndex;
+        }
+        if(clean.slice(end).replace(/[\s,;()]/g,''))return {ok:false,message:'Enter integer assignments such as x = 3, y = 2.'};
+      } else {
+        const bare=clean.replace(/[()]/g,'').trim();
+        if(!/^[+-]?\d+(?:[\s,;]+[+-]?\d+)*$/.test(bare))return {ok:false,message:'Enter whole integer values, using a comma between variables.'};
+        const parts=bare.split(/[\s,;]+/);if(parts.length!==names.length)return {ok:false,message:`Give ${names.length} value${names.length===1?'':'s'}: ${names.join(', ')}.`};
+        canonical.forEach((key,i)=>values[key]=Number(parts[i]));
+      }
+      const missing=canonical.filter(key=>!Object.hasOwn(values,key));
+      if(missing.length)return {ok:false,message:`Missing value${missing.length===1?'':'s'} for ${missing.map(key=>mapping[key]||key).join(', ')}.`};
+      if(!canonical.every(key=>Number.isSafeInteger(values[key])))return {ok:false,message:'Use integer values within the exact integer range.'};
+      if(!canonical.every(key=>Math.abs(values[key])<=Math.floor(Number.MAX_SAFE_INTEGER/10000)))return {ok:false,message:'Use smaller integer values so the calculations can be checked exactly.'};
+      if(q.presentation==='word'&&!canonical.every(key=>values[key]>0))return {ok:false,message:'Use positive whole numbers for the quantities in this word problem.'};
+      if(!isConcludingExample(q,values)) {
+        const result=evaluateExample(q,values);
+        return {ok:false,message:q.quantifier==='universal'&&!result.premise?'These values do not satisfy all the hypotheses. A counterexample must satisfy the hypotheses and make the conclusion false.':q.quantifier==='universal'?'The conclusion is true for these values. Try values that make it false while satisfying every hypothesis.':'These values do not satisfy all the conditions in the existential statement. Try another example.'};
+      }
+      return {ok:true,values};
+    }
+    function exampleExplanation(q,values,mapping={}) {
+      const v=q.parameters,{x,y,z,k}=values;
+      const named=key=>mapping[key]||key;
+      const assignment=exampleVariables(q).map(key=>`${named(key)}=${values[key]}`).join(',\\; ');
+      const relation=(d,n)=>`${d} ${divides(d,n)?'\\mid':'\\nmid'} ${n}`;
+      const calc=(n,x,m)=>`${n}(${x})+${m}=${n*x+m}`;
+      let text;
+      if(q.form==='parity-direct')text=`${math(String(x))} is ${parity(parityOf(x))} and ${math(calc(v.n,x,v.m))} is ${parity(parityOf(v.n*x+v.m))}.`;
+      else if(q.form==='parity-reverse')text=`${math(calc(v.n,x,v.m))} is ${parity(parityOf(v.n*x+v.m))} and ${math(String(x))} is ${parity(parityOf(x))}.`;
+      else if(q.form==='parity-existential')text=`${math(String(x))} is ${parity(parityOf(x))}, ${math(calc(v.n,x,v.m))}, and ${math(relation(v.k,v.n*x+v.m))}.`;
+      else if(q.form==='common-divisor'&&q.presentation==='math'&&q.truth) {
+        text=`${math(relation(k,v.n))}, ${math(relation(k,v.m))}, ${math(relation(k,v.a))}, and ${math(relation(k,v.b))}. Thus ${math(`${k}\\mid(${lin(v.n,'x',v.m)})`)} and ${math(`${k}\\mid(${lin(v.a,'x',v.b)})`)} for every integer ${math('x')}.`;
+      } else if(q.form==='common-divisor') {
+        const d=q.presentation==='word'?y:k;
+        text=`${math(calc(v.n,x,v.m))} and ${math(calc(v.a,x,v.b))}; ${math(relation(d,v.n*x+v.m))} and ${math(relation(d,v.a*x+v.b))}.`;
+        if(q.presentation==='math')text=`At ${math(`x=${x}`)}, `+text;
+      } else if(q.form==='divisibility-gcd')text=`${math(`${v.n}(${y})=${v.n*y}`)} and ${math(`${v.m}(${y})=${v.m*y}`)}; ${math(relation(x,v.n*y))} and ${math(relation(x,v.m*y))}, ${divides(x,v.a*y)?'and':'but'} ${math(`${v.a}(${y})=${v.a*y}`)} and ${math(relation(x,v.a*y))}.`;
+      else if(q.form==='divisibility-linear')text=`${math(relation(x,v.a))} and ${math(relation(x,v.b))}; ${math(`${v.n}(${v.a})+${v.m}(${v.b})=${v.n*v.a+v.m*v.b}`)} and ${math(relation(x,v.n*v.a+v.m*v.b))}.`;
+      else if(q.form==='divisibility-chain')text=`${math(relation(v.a*x,v.b*y))} and ${math(relation(v.c*y,v.d*z))}, ${divides(v.n*x,v.m*z)?'and':'but'} ${math(relation(v.n*x,v.m*z))}.`;
+      else if(q.form==='divisibility-contrapositive-offset')text=`${math(relation(x,v.m))}; ${math(`${v.n*v.a}(${y})+${v.m}=${v.n*v.a*y+v.m}`)} and ${math(relation(x,v.n*v.a*y+v.m))}; ${math(relation(x,y))}.`;
+      else text=`${math(`${v.n*v.a}(${y})+${v.b}(${y})=${(v.n*v.a+v.b)*y}`)} and ${math(relation(x,(v.n*v.a+v.b)*y))}; ${math(relation(x,y))}.`;
+      return `${math(assignment)}: ${text}`;
+    }
     let activeProblem=null,stage=null,variableMapping={},selectedRow=null;
     const element=id=>document.getElementById(id);
     let typesetQueue=Promise.resolve();
@@ -736,7 +903,52 @@ fetch("/nav.html")
       const target=element('completed-math');clearMath(target);
       const intro=document.createElement('p');intro.textContent='Prove or disprove the following statement.';
       const statement=document.createElement('div');statement.className='math';statement.textContent='\\['+renamedTex(activeProblem,variableMapping)+'\\]';
-      target.append(intro,statement);typeset([target]);
+      target.append(intro,statement);typeset([target]);startDecision();
+    }
+    function startDecision() {
+      element('proof-solving').hidden=false;element('decision-buttons').hidden=false;
+      element('decision-result').textContent='';element('decision-feedback').textContent='';
+      clearMath(element('numerical-examples'));clearMath(element('proof-conclusion'));
+      element('witness-panel').hidden=true;element('proof-step-controls').hidden=true;
+      element('witness-feedback').textContent='';element('witness-input').value='';stage='decision';
+    }
+    function chooseProof(prove) {
+      if(stage!=='decision')return;
+      if(prove!==activeProblem.truth){element('decision-feedback').textContent='Experiment with some more values for the variables, then choose again.';return;}
+      element('decision-feedback').textContent='';element('decision-buttons').hidden=true;
+      element('decision-result').textContent=prove?'We will prove the statement.':'We will disprove the statement.';
+      const needsGeneralProof=(prove&&activeProblem.quantifier==='universal')||(!prove&&activeProblem.quantifier==='existential');
+      if(needsGeneralProof) {
+        const target=element('numerical-examples');clearMath(target);
+        for(const values of illustrativeExamples(activeProblem)) {
+          const line=document.createElement('p');line.textContent=exampleExplanation(activeProblem,values,variableMapping);target.appendChild(line);
+        }
+        stage='general-proof';typeset([target]);return;
+      }
+      stage='witness';element('witness-panel').hidden=false;element('proof-step-controls').hidden=false;
+      element('witness-label').textContent=prove?'The statement is true for':'The statement is false for';
+      element('witness-input').placeholder=exampleVariables(activeProblem).map(key=>`${variableMapping[key]||key} = …`).join(', ');
+      element('witness-input').focus();
+    }
+    function finishExample(hint=false) {
+      if(stage!=='witness')return;
+      let values;
+      if(hint)values=concludingExample(activeProblem);
+      else {
+        const checked=parseExampleInput(activeProblem,element('witness-input').value,variableMapping);
+        if(!checked.ok){element('witness-feedback').textContent=checked.message;element('witness-feedback').className='proof-error';return;}
+        values=checked.values;
+      }
+      if(!isConcludingExample(activeProblem,values))throw Error('Invalid concluding example.');
+      const target=element('proof-conclusion');clearMath(target);
+      const calculation=document.createElement('p');calculation.textContent=exampleExplanation(activeProblem,values,variableMapping);
+      const finalLine=document.createElement('p');
+      const assignment=exampleVariables(activeProblem).map(key=>`${variableMapping[key]||key}=${values[key]}`).join(',\\; ');
+      finalLine.textContent=`The statement is ${activeProblem.truth?'true':'false'} for ${math(assignment)}. `;
+      const qed=document.createElement('span');qed.textContent=math('\\square');qed.setAttribute('aria-label','End of proof');finalLine.appendChild(qed);
+      target.append(calculation,finalLine);
+      element('witness-feedback').textContent='Correct!';element('witness-feedback').className='proof-correct';
+      element('witness-panel').hidden=true;element('proof-step-controls').hidden=true;stage='proof-complete';typeset([target]);
     }
     function showProblem(problem) {
       activeProblem=problem;window.currentProofProblem=problem;variableMapping={};selectedRow=null;
@@ -749,9 +961,17 @@ fetch("/nav.html")
       stage=problem.presentation==='word'?'lets':null;
       element('stage-instruction').textContent='Create let statements for variables';
       element('let-panel').hidden=false;element('translation-panel').hidden=true;element('stage-controls').hidden=false;
-      // Start with an empty list, matching the add/remove input in Limits II.
+      // Reset every later proof stage when Start generates another question.
+      element('proof-solving').hidden=true;clearMath(element('numerical-examples'));clearMath(element('proof-conclusion'));
+      element('decision-feedback').textContent='';element('decision-result').textContent='';element('witness-feedback').textContent='';
+      element('witness-input').value='';element('witness-panel').hidden=true;element('proof-step-controls').hidden=true;
+      if(problem.presentation==='math')startDecision();
       typeset([question,statement]);
     }
+    element('prove-btn').addEventListener('click',()=>chooseProof(true));
+    element('disprove-btn').addEventListener('click',()=>chooseProof(false));
+    element('proof-next').addEventListener('click',()=>finishExample());
+    element('proof-hint').addEventListener('click',()=>finishExample(true));
     setupToolbar();
     element('add-let-btn').addEventListener('click',addLetRow);
     element('remove-let-btn').addEventListener('click',()=>{if(selectedRow){selectedRow.remove();selectedRow=null;}});
@@ -760,7 +980,8 @@ fetch("/nav.html")
     element('start-btn').addEventListener('click',()=>showProblem(makeProblem()));
     // Retain pure checkers for future proof stages and regression checks.
     window.ProofQuestions=Object.freeze({makeProblem,categories,wordBank:deepFreeze(wordBank),wordProblem,
-      checkLetStatements,checkTranslation,expectedTranslation,parseTranslation,showProblem});
+      checkLetStatements,checkTranslation,expectedTranslation,parseTranslation,showProblem,
+      exampleVariables,evaluateExample,isConcludingExample,concludingExample,illustrativeExamples,parseExampleInput,exampleExplanation});
   })();
   </script>
   <audio id="click-sound" src="button.mp3" preload="auto"></audio>

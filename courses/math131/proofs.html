@@ -190,7 +190,7 @@ fetch("/nav.html")
     possible to evenly share one box of chocolates with your friends.</p>
 
     <div class="button-container">
-      <button id="start-btn" class="rubber-button">Start!</button>
+      <button id="start-btn" class="rubber-button">Start</button>
     </div>
     
     <p id="question-text"></p>
@@ -209,7 +209,7 @@ fetch("/nav.html")
     const parity=p=>p?'odd':'even';
     const lin=(n,v,m)=>`${n===1?'':n}${v}+${m}`;
     // Weights are percentage points OF ALL questions, repeated for each topic.
-    // Word slots retain their eventual allocation but render mathematics for now.
+    // Presentation is chosen independently: half word problems, half mathematics.
     const categories=[
       {id:'existential-true',weight:5,truth:true,quantifier:'existential'},
       {id:'existential-false',weight:10,truth:false,quantifier:'existential'},
@@ -263,7 +263,7 @@ fetch("/nav.html")
         const n=rand(1,10),a=rand(1,10),b=rand(1,100);
         if(rand(0,1))return {form:'divisibility-contrapositive-sum',parameters:{n,a,b},tex:`\\text{For all integers }x,y,\\quad x\\nmid(${n*a}y+${b}y)\\implies x\\nmid y.`};
         const m=rand(1,100);
-        return {form:'divisibility-contrapositive-offset',parameters:{n,a,m},tex:`\\text{For all integers }x,y\\text{ with }x\\nmid ${m},\\quad x\\mid(${n*a}y+${m})\\implies x\\nmid y.`};
+        return {form:'divisibility-contrapositive-offset',parameters:{n,a,m},tex:`\\text{For all integers }x,y\\text{ such that }x\\nmid ${m},\\quad x\\mid(${n*a}y+${m})\\implies x\\nmid y.`};
       }
       const form=pick(c.truth?['gcd','linear','chain']:['gcd','chain']);
       if(form==='linear') {
@@ -294,15 +294,137 @@ fetch("/nav.html")
       }
       return {form:'divisibility-chain',parameters:{a,b,c:cc,d,n,m},tex:`\\text{For all integers }x,y,z,\\quad (${a}x\\mid ${b}y\\text{ and }${cc}y\\mid ${d}z)\\implies ${n}x\\mid ${m}z.`};
     }
+
+    // Compatible combinations prevent such things as crates of classrooms.
+    // Each item is countable and indivisible in these problems.
+    const wordBank={
+      collections:[
+        {place:'a school supply room',items:['pencils','erasers','crayons','markers','rulers','glue sticks','notebooks','exercise books'],containers:['box','bag','carton','crate']},
+        {place:'a craft cupboard',items:['beads','buttons','pom-poms','wooden stars','craft sticks','stickers','paper flowers'],containers:['box','bag','packet','tub']},
+        {place:'a toy store',items:['marbles','toy cars','building blocks','figurines','bouncy balls','puzzle pieces'],containers:['box','bag','carton','crate']},
+        {place:'a food bank',items:['soup cans','cereal boxes','juice cartons','rice packets','oat bars'],containers:['box','bag','carton','crate']},
+        {place:'an orchard',items:['apples','pears','oranges','peaches','plums'],containers:['box','bag','basket','crate']},
+        {place:'a bakery',items:['cookies','muffins','bagels','buns','cupcakes'],containers:['box','bag','basket','tray']},
+        {place:'a game club',items:['counters','game tokens','dice','playing cards','chess pieces'],containers:['box','bag','packet','tub']},
+        {place:'a hardware store',items:['screws','washers','bolts','nails','hooks'],containers:['box','bag','packet','tub']},
+        {place:'a gardening club',items:['seed packets','plant labels','flower bulbs','small pots'],containers:['box','bag','basket','crate']},
+        {place:'a sports club',items:['tennis balls','shuttlecocks','table-tennis balls','wristbands'],containers:['box','bag','carton','crate']},
+        {place:'a community event',items:['tickets','badges','wristbands','prize tokens','balloons'],containers:['box','bag','packet','tub']},
+        {place:'a library fundraiser',items:['bookmarks','postcards','greeting cards','small books'],containers:['box','bag','carton','crate']}
+      ],
+      containers:{box:'boxes',bag:'bags',carton:'cartons',crate:'crates',packet:'packets',tub:'tubs',basket:'baskets',tray:'trays'},
+      nested:[
+        {outer:'crate',inner:'box'}, {outer:'carton',inner:'packet'},
+        {outer:'box',inner:'bag'}, {outer:'crate',inner:'carton'},
+        {outer:'tub',inner:'packet'}, {outer:'basket',inner:'bag'}
+      ],
+      recipients:['friends','students','volunteers','club members','teammates','guests'],
+      destinations:['identical party bags','identical prize packs','identical classroom kits','identical gift boxes'],
+      // Templates always treat items as whole objects: no cutting or fractions.
+      parity:[
+        {even:'{amount} can be paired up with none left over',odd:'{amount} cannot be paired up with none left over'},
+        {even:'{amount} can be divided into two equal groups with none left over',odd:'{amount} cannot be divided into two equal groups with none left over'},
+        {even:'{amount} can be arranged in two equal rows with none left over',odd:'{amount} cannot be arranged in two equal rows with none left over'},
+        {even:'{amount} can be packed two to a bundle with none left over',odd:'{amount} cannot be packed two to a bundle with none left over'},
+        {even:'pairing up {amount} leaves no unpaired item',odd:'pairing up {amount} leaves exactly one unpaired item'}
+      ],
+      divisibility:[
+        {yes:'{amount} can be shared equally among {divisor} {recipients} with none left over',no:'{amount} cannot be shared equally among {divisor} {recipients} with none left over'},
+        {yes:'{amount} can be divided into {divisor} equal groups with none left over',no:'{amount} cannot be divided into {divisor} equal groups with none left over'},
+        {yes:'{amount} can fill {divisor} {destination}, each containing the same number, with none left over',no:'{amount} cannot fill {divisor} {destination}, each containing the same number, with none left over'},
+        {yes:'{amount} can be arranged in rows of {divisor} with none left over',no:'{amount} cannot be arranged in rows of {divisor} with none left over'},
+        {yes:'{amount} can be packed into groups of {divisor} with none left over',no:'{amount} cannot be packed into groups of {divisor} with none left over'}
+      ],
+      implications:['If {hypothesis}, then {conclusion}.'],
+      existence:['There is a choice of {choice} such that {condition}.','It is possible to choose {choice} so that {condition}.','Some choice of {choice} makes the following possible: {condition}.']
+    };
+    const fill=(template,values)=>template.replace(/\{(\w+)\}/g,(_,key)=>values[key]);
+    const math=x=>'\\('+x+'\\)';
+    const singularItem=item=>({dice:'die',marbles:'marble',badges:'badge',wristbands:'wristband',peaches:'peach',boxes:'box'})[item]||item.replace(/boxes$/, 'box').replace(/ies$/, 'y').replace(/s$/, '');
+    function wordContext() {
+      const collection=pick(wordBank.collections);
+      const container=pick(collection.containers);
+      return {place:collection.place,item:pick(collection.items),container,
+        plural:wordBank.containers[container],
+        // Match the inner container to its collection; choose a compatible outer.
+        nested:pick(wordBank.nested.filter(pair=>collection.containers.includes(pair.inner))),
+        recipients:pick(wordBank.recipients),destination:pick(wordBank.destinations),
+        parity:pick(wordBank.parity),divisibility:pick(wordBank.divisibility)};
+    }
+    function wordProblem(q) {
+      const v=q.parameters,w=wordContext();
+      const count=t=>math(t);
+      const items=t=>`${count(t)} ${t==='1'?singularItem(w.item):w.item}`;
+      const parityPhrase=(amount,p)=>fill(w.parity[p?'odd':'even'],{amount});
+      const divides=(amount,divisor,yes=true)=>fill(w.divisibility[yes?'yes':'no'],{
+        amount,divisor:count(divisor),recipients:w.recipients,destination:w.destination});
+      const implies=(hypothesis,conclusion)=>fill(pick(wordBank.implications),{hypothesis,conclusion});
+      const exists=(choice,condition)=>fill(pick(wordBank.existence),{choice,condition});
+      const setup=`At ${w.place}, all ${w.item} are counted as whole items; none may be split. `;
+      const boxes=t=>`${count(t)} ${t==='1'?w.container:w.plural}`;
+      const packed=(t,variable='x')=>`the ${w.item} in ${boxes(t)} holding ${count(variable)} ${w.item} each`;
+      let text;
+      if(q.form==='parity-direct'||q.form==='parity-reverse'||q.form==='parity-existential') {
+        const total=`the collection formed from ${packed(String(v.n))}, together with ${items(String(v.m))} added loose`;
+        if(q.form==='parity-existential') {
+          text=exists(`a positive whole number ${count('x')} of ${w.item} per ${w.container}`,
+            `${parityPhrase(`the ${w.item} in one ${w.container}`,v.p)} and ${divides(total,String(v.k))}`);
+        } else {
+          text=`Every ${w.container} holds the same positive whole number ${count('x')} of ${w.item}. `+
+            (q.form==='parity-direct'?implies(parityPhrase(`the ${w.item} in one ${w.container}`,v.p),parityPhrase(total,v.q)):
+              implies(parityPhrase(total,v.q),parityPhrase(`the ${w.item} in one ${w.container}`,v.p)));
+        }
+      } else if(q.form==='common-divisor') {
+        text=`Each ${w.container} holds the same positive whole number ${count('x')} of ${w.item}. `+
+          exists(`a fixed whole number ${count('k>1')} of ${w.recipients}`,
+            `for every possible ${count('x')}, both of these collections can be shared equally among those same ${count('k')} ${w.recipients}, with neither collection having any left over: `+
+            `the ${w.item} in ${boxes(String(v.n))} plus ${items(String(v.m))} added loose, and the ${w.item} in ${boxes(String(v.a))} plus ${items(String(v.b))} added loose`);
+      } else if(q.form==='divisibility-gcd') {
+        text=`Every ${w.container} holds the same positive whole number ${count('y')} of ${w.item}. For every positive whole number ${count('x')}, `+
+          implies(`${divides(packed(String(v.n),'y'),'x')} and ${divides(packed(String(v.m),'y'),'x')}`,
+            divides(packed(String(v.a),'y'),'x'));
+      } else if(q.form==='divisibility-linear') {
+        text=`There are two kinds of ${w.plural}: one holds ${items(String(v.a))} and the other holds ${items(String(v.b))}. For every positive whole number ${count('x')}, `+
+          implies(`${divides(`the ${w.item} in one ${w.container} of the first kind`,'x')} and ${divides(`the ${w.item} in one ${w.container} of the second kind`,'x')}`,
+            divides(`the combined contents of ${boxes(String(v.n))} of the first kind and ${boxes(String(v.m))} of the second kind`,'x'));
+      } else if(q.form==='divisibility-chain') {
+        text=`Let ${count('x,y,z')} be any positive whole numbers. `+
+          implies(`${divides(items(`${v.b}y`),`${v.a}x`)} and ${divides(items(`${v.d}z`),`${v.c}y`)}`,
+            divides(items(`${v.m}z`),`${v.n}x`));
+      } else {
+        const inner=w.nested.inner,outer=w.nested.outer;
+        const nested=`the ${w.item} in ${count(String(v.n))} ${v.n===1?outer:wordBank.containers[outer]} (each holding ${count(String(v.a))} ${v.a===1?inner:wordBank.containers[inner]} of ${count('y')} ${w.item} each)`;
+        const unit=`the ${w.item} in one ${inner}`;
+        text=`Every ${inner} holds the same positive whole number ${count('y')} of ${w.item}. `;
+        if(q.form==='divisibility-contrapositive-offset') {
+          text+=`Consider any positive whole number ${count('x')} such that ${divides(items(String(v.m)),'x',false)}. `+
+            implies(divides(`the collection consisting of ${nested}, together with ${items(String(v.m))} added loose`,'x'),divides(unit,'x',false));
+        } else {
+          text+=`For every positive whole number ${count('x')}, `+
+            implies(divides(`the collection obtained by combining ${nested} with ${count(String(v.b))} additional ${v.b===1?inner:wordBank.containers[inner]} of ${count('y')} ${w.item} each`,'x',false),divides(unit,'x',false));
+        }
+      }
+      return setup+text.replace(/, If /g,', if ');
+    }
     function makeProblem() {
       const topic=pick(['divisibility','even-odd']),c=category();
       const presentation=pick(['word','math']);
-      return {topic,category:c.id,truth:c.truth,quantifier:c.quantifier,
-        presentation,wordProblemPending:presentation==='word',
+      const result={topic,category:c.id,truth:c.truth,quantifier:c.quantifier,
+        presentation,wordProblemPending:false,
         ...(topic==='even-odd'?evenOdd(c):divisibility(c))};
+      // Use verbal implications while retaining the mathematical notation.
+      if(result.tex.includes('\\implies'))result.tex=result.tex
+        .replace('\\quad ','\\quad \\text{If }')
+        .replace('\\implies','\\text{, then }');
+      if(presentation==='word')result.wordText=wordProblem(result);
+      return result;
     }
-    // Public generator for future word-problem, hint, and answer interfaces.
-    window.ProofQuestions=Object.freeze({makeProblem,categories});
+    function deepFreeze(value) {
+      Object.values(value).forEach(child=>{if(child&&typeof child==='object')deepFreeze(child);});
+      return Object.freeze(value);
+    }
+    // Keep the underlying statement and truth metadata for future hints/input.
+    window.ProofQuestions=Object.freeze({makeProblem,categories,wordBank:deepFreeze(wordBank),wordProblem});
     let renderQueue=Promise.resolve();
     document.getElementById('start-btn').addEventListener('click',()=>{
       const problem=makeProblem();
@@ -312,8 +434,8 @@ fetch("/nav.html")
         const statement=document.getElementById('operation-question');
         window.MathJax?.typesetClear?.([question,statement]);
         question.textContent='Prove or disprove the following statement.';
-        statement.textContent='\\['+problem.tex+'\\]';
-        document.getElementById('start-btn').textContent='New Problem';
+        statement.textContent=problem.presentation==='word'?problem.wordText:'\\['+problem.tex+'\\]';
+        document.getElementById('start-btn').textContent='Start';
         if(window.MathJax?.startup?.promise)await window.MathJax.startup.promise;
         await window.MathJax?.typesetPromise?.([question,statement]);
       });

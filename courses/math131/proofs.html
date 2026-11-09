@@ -195,1064 +195,130 @@ fetch("/nav.html")
     
     <p id="question-text"></p>
     <div id="operation-question" class="math"></div>
-    <div id="answer-area" style="display:none;text-align:center;margin:1em auto;max-width:1100px;">
-      <label for="set-answer" style="font-weight:bold;display:block;margin-bottom:0.4em;">Answer:</label>
-      <textarea id="set-answer" rows="2" aria-label="Describe the resulting set"></textarea>
-      <div class="answer-toolbar" aria-label="Math input buttons"></div>
-    </div>
-    <div class="button-container">
-      <button id="check-btn" class="rubber-button" style="display:none;">Check Answer</button>
-    </div>
-    <div class="button-container"><div id="feedbackText" class="center-feedback"></div></div>
-
-
-    <div class="button-container">
-      <button id="reveal-btn" class="rubber-button" style="display:none;">Reveal Diagram</button>
-      <button id="hint-btn" class="rubber-button" style="display:none;" disabled>Hint</button>
-    </div>
-    <div id="diagram-tools" class="button-container" role="group" aria-label="Venn diagram tools" style="display:none;">
-      <button type="button" class="diagram-tool" data-tool="cursor" aria-pressed="true">↖ Cursor</button>
-      <button type="button" class="diagram-tool" data-tool="brush" aria-pressed="false">🖌 Paint brush</button>
-      <button type="button" class="diagram-tool" data-tool="eraser" aria-pressed="false">⌫ Eraser</button>
-    </div>
-    <div class="activity-box" id="my-activity" style="position:relative;max-width:1100px;margin:auto;"></div>
-    <div id="hint-area" class="math" style="margin:1em auto;text-align:center;"></div>
-    <div class="activity-box" id="working-activity" style="display:none;max-width:1100px;margin:1em auto;"></div>
   </main>
   <style>
     #question-text {text-align:center;line-height:1.8;margin:1.3em auto;max-width:1100px}
-    #operation-question {text-align:center;margin:1em auto 1.5em;max-width:1100px;font-size:1.1em}
-    #set-answer {box-sizing:border-box;width:min(100%,850px);min-height:3.4em;padding:0.5em 0.65em;border:2px solid #555;border-radius:8px;background:white;font-size:1.15em;line-height:1.5;font-family:inherit;resize:vertical;text-align:left}
-    #set-answer:focus {outline:3px solid rgba(80,140,255,.35)}
-    .answer-toolbar {display:flex;flex-wrap:wrap;justify-content:center;gap:0.4em;margin:0.65em auto}
-    .math-symbol-button {border:2px solid #555;border-radius:8px;background:white;padding:0.25em 0.6em;font-size:1.05em;cursor:pointer}
-    .math-symbol-button:hover {background:#f2f2f2}
-    #diagram-tools {display:flex;justify-content:center;gap:10px;margin:8px auto 14px}
-    .diagram-tool {border:2px solid #5c6980;border-radius:9px;background:white;color:#24364d;padding:8px 14px;font-size:1.05em;cursor:pointer}
-    .diagram-tool[aria-pressed="true"] {background:#d9eafb;border-color:#326bb4;box-shadow:0 0 0 2px #9cc5ed}
-    #my-activity[data-tool="brush"] canvas {cursor:crosshair}
-    #my-activity[data-tool="eraser"] canvas {cursor:cell}
-    #my-activity canvas {width:100%;height:auto;display:block;cursor:pointer}
-    #my-activity .region-popup {position:absolute;z-index:3;background:white;border:2px solid #444;border-radius:8px;padding:12px 18px;max-width:340px;box-shadow:0 3px 12px #999;font-size:17px}
-    #my-activity .region-popup button {float:right;margin-left:10px;cursor:pointer}
-    #working-activity {box-sizing:border-box;padding:18px;background:#fff}
-    .working-row {display:flex;align-items:flex-start;justify-content:center;gap:8px;min-height:240px}
-    .working-row-bottom {border-top:1px solid #d8dde6;margin-top:12px;padding-top:14px;min-height:235px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-    .working-card {min-width:0;flex:1;text-align:center}
-    .working-row-bottom .working-card {width:100%}
-    .working-card canvas {display:block;width:100%;height:auto;max-width:320px;margin:auto}
-    .working-card-label {font-size:1.05em;min-height:2.5em;margin:5px auto;overflow-x:auto;overflow-y:hidden}
-    .working-sign {flex:0 0 auto;align-self:center;font-size:1.7em;font-weight:bold;margin:0 2px 48px}
-    .working-row-top.complement-step .working-card {flex:0 1 320px}
-    .working-note {text-align:center;margin:0 0 12px}
-    @media(max-width:720px) {.working-row {gap:2px}.working-sign {font-size:1.15em;margin:0 0 35px}.working-card-label {font-size:.8em}}
+    #operation-question {text-align:center;line-height:1.8;margin:1em auto 1.5em;max-width:1100px;font-size:1.1em;overflow-x:auto}
   </style>
   <script>
-    const startBtn = document.getElementById('start-btn');
-    const hintBtn = document.getElementById('hint-btn');
-    const revealBtn = document.getElementById('reveal-btn');
-    const diagramTools = document.getElementById('diagram-tools');
-    const questionText = document.getElementById('question-text');
-    const operationQuestion = document.getElementById('operation-question');
-    const answerArea = document.getElementById('answer-area');
-    const answerEditor = document.getElementById('set-answer');
-    const answerToolbar = document.querySelector('.answer-toolbar');
-    const checkBtn = document.getElementById('check-btn');
-    const feedbackText = document.getElementById('feedbackText');
-    const activityBox = document.getElementById('my-activity');
-    const hintArea = document.getElementById('hint-area');
-    const workingActivity = document.getElementById('working-activity');
-    const pick = xs => xs[Math.floor(Math.random() * xs.length)];
-    const rand = (a,b) => a + Math.floor(Math.random() * (b-a+1));
-    let problem = null, regions = null, hintStep = 0, workingSteps = [];
-    let diagramTool = 'cursor', paintedMasks = new Set();
-
-    const OPERATIONS=['intersection','union','difference'];
-    const TEX_NAMES={A:'A',B:'B',C:'C',empty:'\\emptyset',universe:'U'};
-    const TEX_OPERATIONS={intersection:'\\cap',union:'\\cup',difference:'\\setminus'};
-    function weightedSet(options) {
-      let roll=Math.random()*100;
-      for(const [name,weight] of options) {
-        roll-=weight;
-        if(roll<0)return name;
+  (() => {
+    'use strict';
+    const rand=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+    const pick=xs=>xs[rand(0,xs.length-1)];
+    const gcd=(a,b)=>b?gcd(b,a%b):Math.abs(a);
+    const parity=p=>p?'odd':'even';
+    const lin=(n,v,m)=>`${n===1?'':n}${v}+${m}`;
+    // Weights are percentage points OF ALL questions, repeated for each topic.
+    // Word slots retain their eventual allocation but render mathematics for now.
+    const categories=[
+      {id:'existential-true',weight:5,truth:true,quantifier:'existential'},
+      {id:'existential-false',weight:10,truth:false,quantifier:'existential'},
+      {id:'universal-direct',weight:15,truth:true,quantifier:'universal'},
+      {id:'universal-contrapositive',weight:10,truth:true,quantifier:'universal'},
+      {id:'universal-false',weight:10,truth:false,quantifier:'universal'}
+    ];
+    function category() {
+      let r=Math.random()*50;
+      for(const c of categories) {r-=c.weight;if(r<0)return c;}
+      return categories[categories.length-1];
+    }
+    // Select uniformly from eligible finite candidates, with no rejection loops.
+    function eligible(values,test) {return pick(values.filter(test));}
+    const positive=Array.from({length:100},(_,i)=>i+1);
+    function evenOdd(c) {
+      let n=rand(1,100),m=rand(1,100),p=rand(0,1);
+      if(c.quantifier==='existential') {
+        // x=2t+p: solvable iff gcd(2n,k) divides np+m.
+        // Even k guarantees an obstruction is available for false statements.
+        const k=c.truth?rand(1,100):2*rand(1,50);
+        m=eligible(positive,m=>(((n*p+m)%gcd(2*n,k))===0)===c.truth);
+        return {form:'parity-existential',parameters:{n,m,p,k},tex:`\\text{There exists an ${parity(p)} integer }x\\text{ such that }${k}\\mid(${lin(n,'x',m)}).`};
       }
-      return options.at(-1)[0];
-    }
-    function firstPairSet() {
-      return weightedSet([['A',28],['B',28],['C',28],['universe',8],['empty',8]]);
-    }
-    function secondPairSet(first) {
-      if(first==='universe'||first==='empty') {
-        return weightedSet([['A',31],['B',31],['C',31],
-          [first==='universe'?'empty':'universe',7]]);
+      const reverse=c.id==='universal-contrapositive'||(!c.truth&&rand(0,1)===1);
+      if(reverse) {
+        // True reverse implications need odd n; false ones use even n and an
+        // attainable antecedent, so they have actual counterexamples.
+        const a=c.truth?2*rand(0,49)+1:2*rand(1,50);
+        const q=c.truth?(p+m)%2:m%2;
+        return {form:'parity-reverse',parameters:{n:a,m,p,q},tex:`\\text{For every integer }x,\\quad ${lin(a,'x',m)}\\text{ is ${parity(q)}}\\implies x\\text{ is ${parity(p)}}.`};
       }
-      return weightedSet(['A','B','C'].map(name=>[name,name===first?4:40])
-        .concat([['universe',8],['empty',8]]));
+      const q=((n*p+m)%2+(c.truth?0:1))%2;
+      return {form:'parity-direct',parameters:{n,m,p,q},tex:`\\text{For every integer }x,\\quad x\\text{ is ${parity(p)}}\\implies ${lin(n,'x',m)}\\text{ is ${parity(q)}}.`};
     }
-    function generateSetExpression() {
-      const pairCount=rand(1,3);
-      const pairs=Array.from({length:pairCount},()=>{
-        const first=firstPairSet();
-        const pair={type:'operation',operation:pick(OPERATIONS),
-          left:{type:'set',name:first},
-          right:{type:'set',name:secondPairSet(first)}};
-        return Math.random()<0.3 ? {type:'complement',operand:pair} : pair;
-      });
-      let expression=pairs[0];
-      for(let i=1;i<pairs.length;i++) {
-        expression={type:'operation',operation:pick(OPERATIONS),left:expression,right:pairs[i]};
-      }
-      return Math.random()<0.3 ? {type:'complement',operand:expression} : expression;
-    }
-    function expressionTex(node) {
-      if(node.type==='set') return TEX_NAMES[node.name];
-      if(node.type==='complement') {
-        const operand=expressionTex(node.operand);
-        const nested=node.operand.type==='complement' || expressionHasComplement(node.operand);
-        const spaced=node.operand.type==='complement' ? `\\left[\\,${operand}\\,\\right]` : operand;
-        return `\\overline{\\vphantom{${nested?'\\Bigg|':'\\big|'}}\\,${spaced}\\,}`;
-      }
-      const left=expressionTex(node.left),right=expressionTex(node.right);
-      const opening=node.left.type==='set' ? '(' : '\\left[';
-      const closing=node.left.type==='set' ? ')' : '\\right]';
-      return `${opening}${left} ${TEX_OPERATIONS[node.operation]} ${right}${closing}`;
-    }
-    function expressionHasComplement(node) {
-      return node.type==='complement' || (node.type==='operation' &&
-        (expressionHasComplement(node.left)||expressionHasComplement(node.right)));
-    }
-    function expressionContains(node,mask) {
-      if(node.type==='set') {
-        if(node.name==='empty') return false;
-        if(node.name==='universe') return true;
-        return !!(mask&(1<<'ABC'.indexOf(node.name)));
-      }
-      if(node.type==='complement') return !expressionContains(node.operand,mask);
-      const left=expressionContains(node.left,mask),right=expressionContains(node.right,mask);
-      if(node.operation==='intersection') return left&&right;
-      if(node.operation==='union') return left||right;
-      return left&&!right;
-    }
-
-    // Common, concrete words; a word contributes each of its distinct letters once.
-    const WORDS = `apple orange banana lemon lime peach pear plum grape cherry berry melon mango kiwi fig date coconut pineapple apricot avocado tomato potato carrot onion garlic celery lettuce cabbage spinach broccoli cauliflower pepper cucumber pumpkin squash zucchini radish turnip beet pea bean corn rice wheat oats barley bread toast bagel biscuit muffin cake cookie pie tart candy chocolate sugar honey syrup butter cheese milk cream yogurt egg bacon sausage ham chicken turkey duck beef pork fish salmon tuna shrimp crab lobster oyster clam soup salad sandwich pizza pasta noodle dumpling pancake waffle cereal
-    cat dog rabbit hamster mouse rat squirrel chipmunk beaver otter fox wolf bear deer moose elk horse donkey cow calf goat sheep lamb pig boar lion tiger leopard cheetah zebra giraffe elephant rhino hippo monkey ape gorilla panda koala kangaroo camel llama alpaca bat hedgehog raccoon skunk badger weasel seal walrus whale dolphin shark octopus squid penguin eagle hawk owl sparrow robin pigeon crow raven parrot flamingo peacock swan goose hen rooster frog toad snake lizard turtle tortoise crocodile alligator gecko iguana butterfly moth bee wasp ant beetle spider worm snail slug mosquito dragonfly cricket grasshopper ladybug fly flea termite
-    tree leaf branch root trunk bark forest woods jungle garden grass lawn flower rose tulip daisy lily orchid sunflower violet lavender fern moss cactus bamboo palm pine oak maple birch cedar willow elm ash acorn seed sprout vine shrub bush blossom petal thorn pollen soil dirt mud sand clay stone rock pebble gravel mountain hill valley canyon cliff cave river creek stream lake pond ocean sea beach shore coast island desert meadow prairie field swamp marsh glacier volcano waterfall rain snow hail sleet frost ice cloud fog mist wind storm thunder lightning rainbow sunshine sunlight shadow sky star moon sun planet comet meteor galaxy universe earth nature season spring summer autumn winter
-    red blue green yellow orange purple pink brown black white gray gold silver bronze copper turquoise violet indigo scarlet crimson navy teal beige tan maroon color shade paint pencil pen marker crayon chalk brush paper notebook book page chapter story poem novel comic magazine newspaper letter alphabet word sentence grammar spelling language dictionary library school classroom teacher student pupil lesson homework quiz test exam grade desk chair table board eraser ruler scissors glue tape folder backpack lunch recess playground university college course study learn read write count add subtract multiply divide number fraction decimal equation geometry algebra
-    house home apartment cabin cottage castle palace hut tent shelter roof wall floor ceiling window door gate fence porch balcony garage driveway chimney stairs ladder hallway kitchen bedroom bathroom closet attic basement living dining pantry garden yard path road street avenue bridge tunnel sidewalk crossing corner square circle triangle rectangle oval cube sphere cone pyramid line curve angle point shape pattern design diagram map compass clock calendar watch timer hour minute second day week month year morning afternoon evening night dawn dusk noon midnight yesterday today tomorrow
-    mother father parent brother sister cousin aunt uncle nephew niece grandparent grandmother grandfather baby child kid toddler teen adult friend neighbor guest host family person people group team crowd stranger teacher doctor nurse dentist surgeon patient pilot driver sailor captain farmer baker chef waiter clerk cashier artist actor dancer singer musician writer author poet painter builder carpenter plumber electrician mechanic engineer scientist researcher mathematician lawyer judge firefighter officer soldier athlete coach player referee leader worker manager president mayor citizen
-    head hair face eye eyebrow eyelash ear nose mouth lip tooth tongue chin cheek neck shoulder arm elbow wrist hand finger thumb nail chest back belly waist hip leg knee ankle foot toe heel skin bone muscle heart lung brain blood body smile laugh cry shout whisper talk speak listen hear see look watch touch smell taste think dream sleep wake rest walk run jump skip hop crawl climb swim dive fly ride drive dance sing play throw catch kick hit push pull lift carry hold drop
-    shirt blouse sweater jacket coat hoodie vest dress skirt pants jeans shorts socks shoes boots sandals hat cap scarf gloves belt tie glasses necklace ring bracelet watch uniform pocket button zipper cotton wool silk leather fabric cloth thread needle string rope ribbon blanket pillow mattress bed sofa couch bench stool lamp light candle mirror shelf drawer cabinet cupboard sink faucet shower bathtub toilet towel soap shampoo sponge broom mop bucket vacuum refrigerator freezer oven stove microwave kettle toaster blender plate bowl cup mug glass fork spoon knife napkin bottle jar can box bag basket suitcase trunk key lock handle tool hammer saw drill nail screw wrench pliers shovel rake hose wheel bicycle scooter motorcycle car truck bus train subway airplane helicopter boat ship canoe kayak ferry taxi wagon tractor elevator escalator
-    happy sad angry calm brave afraid eager proud shy curious clever silly funny serious kind gentle polite honest fair loyal patient quiet loud fast slow quick lazy busy tired sleepy hungry thirsty warm hot cold cool wet dry clean dirty smooth rough soft hard sharp dull heavy light big small tiny huge tall short long wide narrow thick thin deep shallow high low near far close distant early late young old new ancient modern fresh stale rich poor empty full open closed safe dangerous healthy sick strong weak bright dark clear cloudy beautiful ugly simple difficult easy tricky useful important special common rare strange normal real imaginary true false right wrong same different equal extra
-    begin start finish end stop continue pause change turn move grow shrink increase decrease rise fall enter leave arrive depart return follow lead choose decide try attempt practice remember forget discover explore create make build fix repair break destroy find lose hide seek give take buy sell pay save spend borrow lend send receive share keep own use need want like love hate enjoy prefer hope wish expect believe know understand explain describe compare sort arrange organize collect gather select separate combine connect include exclude count measure estimate check prove solve answer ask question reply tell show draw sketch shade color label name call
-    city town village country nation province state capital world continent region place area location address park museum theater cinema hospital clinic station airport market shop store mall restaurant cafe bakery bank post office hotel motel church temple mosque stadium gym pool court field farm factory office company business job work money coin dollar cent price cost value sale discount bill receipt account budget tax salary income profit loss economy trade travel trip journey holiday vacation tourism adventure picnic camp hike trail forest river ocean mountain desert island map route direction north south east west left right forward backward above below over under inside outside beside between around through across along beyond toward away before after during while until since
-    music song melody rhythm beat tune note chord guitar piano violin cello drum flute trumpet saxophone clarinet instrument concert orchestra band choir voice sound noise silence radio television movie film video camera photo picture image drawing painting sculpture art craft game puzzle toy doll block ball marble card dice chess checkers soccer baseball basketball football hockey tennis golf volleyball badminton skiing skating surfing cycling running swimming race contest match tournament score goal win lose prize trophy medal ribbon award festival party celebration birthday wedding anniversary invitation present gift surprise decoration balloon confetti fireworks
-    water fire air earth wood metal glass plastic rubber paper fabric cotton wool silk stone brick concrete steel iron gold silver copper electricity energy heat temperature pressure force motion speed distance length height width weight mass volume capacity space time gravity magnet battery wire cable switch plug screen keyboard mouse computer laptop tablet phone smartphone internet website browser search email message letter stamp envelope package parcel delivery network signal code program application device machine robot engine motor generator circuit sensor light bulb flashlight lantern candle torch
-    breakfast lunch dinner supper snack meal recipe ingredient flavour flavor sweet sour salty bitter spicy tasty delicious fresh rotten ripe raw cooked baked boiled fried grilled roasted steamed chopped sliced diced mixed stirred poured served washed rinsed dried frozen melted heated cooled opened closed covered uncovered stored prepared measured weighed added removed tasted eaten drunk chewed swallowed baked boiled brewed filtered blended
-    January February March April May June July August September October November December Monday Tuesday Wednesday Thursday Friday Saturday Sunday one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty thirty forty fifty sixty seventy eighty ninety hundred thousand million first second third fourth fifth sixth seventh eighth ninth tenth last next previous single double triple half quarter whole part piece pair couple dozen several many few some all none each every any either both neither
-    animal plant mineral object item thing stuff material substance solid liquid gas vapor steam smoke dust ash powder grain crystal diamond emerald ruby pearl shell feather fur scale horn claw paw hoof wing tail beak fin gill web nest egg cocoon hive den burrow habitat environment ecosystem species population community food chain predator prey hunter gatherer seed fruit vegetable grain root stem blossom branch canopy
-    autumnal afternoon alarm album airport answer arrow art attic author avenue award axis balance ball band basket beach bicycle blanket bottle bridge building butterfly calendar candle candy carpet carrot castle ceiling ceremony channel chapter cherry circle citizen classroom climate cloud coffee colony comfort compass concert condition confidence consequence continent conversation corner cotton country courage creature culture curtain customer cycle danger daughter decision dentist department desert detail diamond difference dinner dinosaur direction discovery distance doctor dollar dolphin drama drawer driver earthquake education elephant elevator emergency energy engineer envelope equation equipment evening example exercise experience experiment explanation factory family favorite feather festival fiction finger flower forest fortune freedom friendship furniture future galaxy garden geography gesture glacier government grammar grandfather grandmother gratitude greenhouse grocery guitar hallway happiness headline health history holiday hospital imagination improvement industry information ingredient insect island jacket journey jungle justice kangaroo kitchen knowledge language laughter lemonade library lightning literature location luggage machine magazine magnet manager marble mathematics memory message mountain mushroom mystery notebook necklace neighborhood newspaper number ocean opportunity orange orchestra ornament oxygen package painting paragraph parent passenger pattern payment peanut pencil penguin pepper photograph picture pillow pineapple planet plastic playground pocket poem police popcorn popular potato practice present president pressure problem program project promise pumpkin puzzle question rainbow railroad rectangle recycle refrigerator relationship religion remember restaurant river rocket sandwich satellite science scientist scissors sculpture season sentence shadow shelter shoulder sidewalk silence silver sister skeleton slipper society solution sparkle speaker special spider spinach squirrel station stomach stranger strawberry student subject subway suitcase sunshine surprise sweater swimming symbol teacher telescope television temperature theater thunder ticket tiger together tomorrow tornado tourist tournament tractor tradition triangle trouble trumpet turtle umbrella understanding uniform universe vacation valley vegetable vehicle victory village violet violin visitor volcano volunteer waterfall weather weekend welcome whale wilderness window winter wonder worksheet writer yellow yogurt zebra`.toLowerCase().split(/\s+/);
-    const UNIQUE_WORDS = [...new Set(WORDS.filter(w => /^[a-z]{3,}$/.test(w)))];
-
-    function masks(sets, universe) {
-      const result = new Set();
-      for (const x of universe) {
-        let mask = 0;
-        sets.forEach((set,i) => { if (set(x)) mask |= 1 << i; });
-        result.add(mask);
-      }
-      return result;
-    }
-    function relations(p) {
-      const m = p.masks;
-      const subset = [0,1,2].some(i => [0,1,2].some(j => i !== j &&
-        [...m].every(v => !(v & (1<<i)) || (v & (1<<j))) &&
-        [...m].some(v => (v & (1<<j)) && !(v & (1<<i)))));
-      const disjoint = [0,1,2].some(i => [0,1,2].some(j => i < j &&
-        ![...m].some(v => (v & (1<<i)) && (v & (1<<j)))));
-      return {subset,disjoint};
-    }
-    function wordProblem() {
-      const words = Array.from({length:3}, () => pick(UNIQUE_WORDS));
-      if (new Set(words).size !== 3) return null;
-      const sets = words.map(w => new Set(w));
-      const p = {kind:'word',words,labels:words.map(w => `\\{x\\mid x\\text{ is a letter in the word “${w}”}\\}`),
-        masks:masks(sets.map(s => x => s.has(x)), 'abcdefghijklmnopqrstuvwxyz')};
-      return [1,2,4].every(bit => [...p.masks].some(m => m & bit)) ? p : null;
-    }
-    function intervalProblem(unbounded) {
-      const natural = Math.random() < 0.38;
-      const domainMin = natural ? 1 : -Infinity;
-      const intervals = Array.from({length:3}, () => {
-        let lo = rand(natural ? -8 : -12, natural ? 13 : 10), hi = lo + rand(2,13);
-        let left = Math.random()<0.5, right = Math.random()<0.5;
-        if (unbounded && Math.random()<0.42) {
-          if (Math.random()<0.5) lo=-Infinity; else hi=Infinity;
+    function divisibility(c) {
+      if(c.quantifier==='existential') {
+        // A single common nonunit divisor for all x exists exactly when
+        // gcd(n,m,a,b)>1. Construct the true case, filter b for the false case.
+        let n,m,a,b;
+        if(c.truth) {
+          const d=rand(2,20),limit=Math.floor(100/d);
+          [n,m,a,b]=Array.from({length:4},()=>d*rand(1,limit));
+        } else {
+          n=rand(1,100);m=rand(1,100);a=rand(1,100);
+          b=eligible(positive,b=>gcd(gcd(gcd(n,m),a),b)===1);
         }
-        return {lo,hi,left,right};
-      });
-      // A lower-unbounded inequality over N is finite; require an upper-
-      // unbounded one somewhere so this problem type truly includes infinity.
-      if (unbounded && !intervals.some(v => v.hi===Infinity || (!natural && v.lo===-Infinity))) {
-        pick(intervals).hi=Infinity;
+        return {form:'common-divisor',parameters:{n,m,a,b},tex:`\\text{There exists an integer }k>1\\text{ such that, for every integer }x,\\quad k\\mid(${lin(n,'x',m)})\\text{ and }k\\mid(${lin(a,'x',b)}).`};
       }
-      // A displayed unbounded condition must still put a genuine restriction on x.
-      // Over N, a lower bound below 1 describes the whole universe.
-      if(intervals.some(v => v.lo===-Infinity && v.hi===Infinity ||
-          natural && v.hi===Infinity && (v.lo<1 || v.lo===1 && v.left)))return null;
-      const contains=(v,x) => x>=domainMin && (x>v.lo || (v.left && x===v.lo)) && (x<v.hi || (v.right && x===v.hi));
-      const endpoints = intervals.flatMap(v=>[v.lo,v.hi]).filter(Number.isFinite);
-      const min=Math.min(...endpoints, natural?1:-15)-2, max=Math.max(...endpoints,18)+2;
-      const samples=[]; for(let x=min;x<=max;x++) samples.push(x);
-      if (!natural) samples.push(min-10000); samples.push(max+10000);
-      const domain=natural?'\\mathbb{N}':'\\mathbb{Z}';
-      const labels=intervals.map(v => {
-        const lo=isFinite(v.lo)?`${v.lo} ${v.left?'\\leq':'<'} x`:'';
-        const hi=isFinite(v.hi)?`x ${v.right?'\\leq':'<'} ${v.hi}`:'';
-        return `\\{x\\in ${domain}\\mid ${lo && hi ? `${lo} ${v.right?'\\leq':'<'} ${v.hi}` : lo || hi}\\}`;
-      });
-      const p={kind:unbounded?'unbounded':'bounded',natural,intervals,labels,
-        masks:masks(intervals.map(v=>x=>contains(v,x)),samples)};
-      return [1,2,4].every(bit=>[...p.masks].some(m=>m&bit))?p:null;
-    }
-    function relationshipCase(p) {
-      const ms=[...p.masks];
-      const has=(mask,i)=>!!(mask&(1<<i));
-      const proper=(i,j)=>i!==j && ms.every(mask=>!has(mask,i)||has(mask,j)) &&
-        ms.some(mask=>has(mask,j)&&!has(mask,i));
-      const subsets=[];
-      for(let i=0;i<3;i++) for(let j=0;j<3;j++) if(proper(i,j)) subsets.push([i,j]);
-      const disjoint=[];
-      for(let i=0;i<3;i++) for(let j=i+1;j<3;j++)
-        if(!ms.some(mask=>has(mask,i)&&has(mask,j))) disjoint.push([i,j]);
-      if(subsets.length && disjoint.length) {
-        return disjoint.length===2 ? 'mixed-isolated' : 'mixed-overlap';
+      if(c.id==='universal-contrapositive') {
+        const n=rand(1,10),a=rand(1,10),b=rand(1,100);
+        if(rand(0,1))return {form:'divisibility-contrapositive-sum',parameters:{n,a,b},tex:`\\text{For all integers }x,y,\\quad x\\nmid(${n*a}y+${b}y)\\implies x\\nmid y.`};
+        const m=rand(1,100);
+        return {form:'divisibility-contrapositive-offset',parameters:{n,a,m},tex:`\\text{For all integers }x,y\\text{ with }x\\nmid ${m},\\quad x\\mid(${n*a}y+${m})\\implies x\\nmid y.`};
       }
-      if(subsets.length) return subsets.length>=3 ? 'subset-chain' :
-        subsets.length===2 ? 'subset-both' : 'subset-one';
-      if(disjoint.length) return ['','disjoint-pair','disjoint-isolated','disjoint-all'][disjoint.length];
-      return 'neither';
-    }
-    // A word chain is rare under independent draws, so build its three words
-    // directly from their letter sets while keeping the word database random.
-    let wordChains=null;
-    function wordChainProblem() {
-      if(!wordChains) {
-        const letters=UNIQUE_WORDS.map(word=>[...word].reduce((bits,ch)=>bits|(1<<(ch.charCodeAt(0)-97)),0));
-        const smaller=letters.map(()=>[]),larger=letters.map(()=>[]);
-        for(let i=0;i<letters.length;i++) for(let j=0;j<letters.length;j++) {
-          if(letters[i]!==letters[j] && (letters[i]&letters[j])===letters[i]) {
-            larger[i].push(j);smaller[j].push(i);
-          }
-        }
-        wordChains={letters,smaller,larger,centres:letters.map((_,i)=>i).filter(i=>smaller[i].length&&larger[i].length)};
+      const form=pick(c.truth?['gcd','linear','chain']:['gcd','chain']);
+      if(form==='linear') {
+        const n=rand(1,100),m=rand(1,100),a=rand(1,100),b=rand(1,100);
+        return {form:'divisibility-linear',parameters:{n,m,a,b},tex:`\\text{For every integer }x,\\quad (x\\mid ${a}\\text{ and }x\\mid ${b})\\implies x\\mid(${n}\\cdot ${a}+${m}\\cdot ${b}).`};
       }
-      const centre=pick(wordChains.centres);
-      const words=[pick(wordChains.smaller[centre]),centre,pick(wordChains.larger[centre])]
-        .map(i=>UNIQUE_WORDS[i]);
-      const shuffled=[...words];
-      for(let i=shuffled.length-1;i>0;i--) {
-        const j=rand(0,i);
-        [shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];
+      if(form==='gcd') {
+        // gcd(n,m)|a is necessary and sufficient. A false case needs gcd>1.
+        let n,m;
+        if(c.truth){n=rand(1,100);m=rand(1,100);}
+        else {const d=rand(2,20);n=d*rand(1,Math.floor(100/d));m=d*rand(1,Math.floor(100/d));}
+        const g=gcd(n,m),a=eligible(positive,a=>(a%g===0)===c.truth);
+        return {form:'divisibility-gcd',parameters:{n,m,a},tex:`\\text{For all integers }x,y,\\quad (x\\mid ${n}y\\text{ and }x\\mid ${m}y)\\implies x\\mid ${a}y.`};
       }
-      const sets=shuffled.map(word=>new Set(word));
-      return {kind:'word',words:shuffled,labels:shuffled.map(word=>`\\{x\\mid x\\text{ is a letter in the word “${word}”}\\}`),
-        masks:masks(sets.map(set=>x=>set.has(x)),'abcdefghijklmnopqrstuvwxyz')};
+      // ax|by and cy|dz imply ac*x|bd*z. Thus the exact criterion is
+      // n*b*d | m*a*c. Construct true coefficients; false case uses n=100
+      // when needed to ensure an eligible m exists, without retry loops.
+      let a,b,cc,d,n,m;
+      if(c.truth) {
+        b=rand(1,10);d=rand(1,10);n=rand(1,10);
+        a=b*rand(1,10);cc=d*rand(1,10);
+        m=eligible(positive,m=>(m*a*cc)%(n*b*d)===0);
+      } else {
+        a=rand(1,100);b=rand(1,100);cc=rand(1,100);d=rand(1,100);
+        const ns=positive.filter(t=>(a*cc)%(t*b*d)!==0);
+        // ns cannot be empty: lcm(1,...,100) exceeds a*c <=10000.
+        n=pick(ns);m=eligible(positive,m=>(m*a*cc)%(n*b*d)!==0);
+      }
+      return {form:'divisibility-chain',parameters:{a,b,c:cc,d,n,m},tex:`\\text{For all integers }x,y,z,\\quad (${a}x\\mid ${b}y\\text{ and }${cc}y\\mid ${d}z)\\implies ${n}x\\mid ${m}z.`};
     }
     function makeProblem() {
-      const kind=rand(0,2);
-      const target=Math.random();
-      const group=target<0.3 ? ['subset-one','subset-both','subset-chain'] :
-        target<0.6 ? ['disjoint-all','disjoint-isolated','disjoint-pair'] :
-        target<0.65 ? ['mixed-isolated'] :
-        target<0.7 ? ['mixed-overlap'] : ['neither'];
-      const chosen=pick(group); // equal chance for each case within the 30% groups
-      for(let attempt=0;attempt<30000;attempt++) {
-        const p=kind===0 && chosen==='subset-chain' ? wordChainProblem() :
-          kind===0 ? wordProblem() : intervalProblem(kind===2);
-        if(p && relationshipCase(p)===chosen) return p;
-      }
-      throw new Error(`Unable to generate ${chosen} problem`);
+      const topic=pick(['divisibility','even-odd']),c=category();
+      const presentation=pick(['word','math']);
+      return {topic,category:c.id,truth:c.truth,quantifier:c.quantifier,
+        presentation,wordProblemPending:presentation==='word',
+        ...(topic==='even-odd'?evenOdd(c):divisibility(c))};
     }
-
-    // Where all three sets meet, use the familiar three-circle Venn diagram.
-    // Its other regions can be empty without changing the diagram.
-    const U={x:70,y:55,w:960,h:470};
-    function inShape(x,y,c) {
-      if (!c) return false;
-      const distance=Math.hypot(x-c.x,y-c.y);
-      if (c.type !== 'annular-sector') return distance<c.r;
-      const angle=Math.atan2(y-c.y,x-c.x);
-      const difference=Math.atan2(Math.sin(angle-c.angle),Math.cos(angle-c.angle));
-      return distance>=c.inner && distance<=c.r && Math.abs(difference)<c.halfAngle;
-    }
-    const pointMask=(x,y,circles) => circles.reduce((v,c,i)=>v | (inShape(x,y,c) ? 1<<i:0),0);
-    function circleMasks(circles) {
-      const found=new Set([0]);
-      for(let y=U.y+4;y<U.y+U.h;y+=12) for(let x=U.x+4;x<U.x+U.w;x+=12)
-        found.add(pointMask(x,y,circles));
-      return found;
-    }
-    function circleLayout(actual) {
-      const includes=(mask,i)=>!!(mask&(1<<i));
-      const overlaps=(i,j)=>[...actual].some(mask=>includes(mask,i)&&includes(mask,j));
-      const subset=(i,j)=>i!==j && [...actual].every(mask=>!includes(mask,i)||includes(mask,j));
-      const proper=(i,j)=>subset(i,j)&&!subset(j,i);
-      const pairs=[[0,1],[0,2],[1,2]];
-      // All three disjoint sets have three separate, equally spaced circles.
-      if (pairs.every(([i,j])=>!overlaps(i,j))) return {circles:[
-        {x:270,y:275,r:120},{x:550,y:275,r:120},{x:830,y:275,r:120}
-      ]};
-      // An intersection equal to a named set needs only the two outer circles.
-      for (let i=0;i<3;i++) {
-        const [j,k]=[0,1,2].filter(index=>index!==i);
-        if ([...actual].every(mask=>includes(mask,i)===(includes(mask,j)&&includes(mask,k)))) {
-          const circles=[];
-          circles[j]={x:420,y:275,r:165};
-          circles[k]={x:640,y:275,r:165};
-          circles[i]=null;
-          return {circles,alias:i,intersection:[j,k]};
-        }
-      }
-      // Show proper containment before checking the triple intersection.
-      const child=[0,1,2].find(i=>[0,1,2].filter(j=>proper(i,j)).length===2)
-        ?? [0,1,2].find(i=>[0,1,2].some(j=>proper(i,j)));
-      if (child!==undefined) {
-        const parents=[0,1,2].filter(j=>proper(child,j));
-        const circles=[];
-        if (parents.length===2) {
-          const [first,second]=parents;
-          if (proper(first,second)||proper(second,first)) {
-            const middle=proper(first,second)?first:second;
-            const outer=middle===first?second:first;
-            circles[outer]={x:550,y:275,r:190};
-            circles[middle]={x:550,y:275,r:115};
-            circles[child]={x:550,y:275,r:48};
-          } else {
-            circles[first]={x:420,y:275,r:165};
-            circles[second]={x:640,y:275,r:165};
-            circles[child]={x:530,y:275,r:46};
-          }
-        } else {
-          const parent=parents[0],other=3-child-parent;
-          const childMeetsOther=overlaps(child,other);
-          if (proper(parent,other)) {
-            circles[other]={x:550,y:275,r:190};
-            circles[parent]={x:550,y:275,r:112};
-            circles[child]={x:550,y:275,r:48};
-          } else if (proper(other,parent)) {
-            circles[parent]={x:470,y:275,r:185};
-            circles[other]={x:540,y:275,r:62};
-            circles[child]={x:childMeetsOther?485:360,y:275,r:53};
-          } else if (!overlaps(parent,other)) {
-            circles[parent]={x:365,y:275,r:165};
-            circles[other]={x:800,y:275,r:145};
-            circles[child]={x:365,y:275,r:58};
-          } else {
-            circles[parent]={x:450,y:275,r:180};
-            circles[other]={x:640,y:275,r:150};
-            circles[child]={x:childMeetsOther?510:355,y:275,r:53};
-          }
-        }
-        return {circles};
-      }
-      if (actual.has(7)) return {standard:true,circles:[
-        {x:460,y:210,r:120},
-        {x:640,y:210,r:120},
-        {x:550,y:365,r:120}
-      ]};
-      // Three pairwise overlaps with no common element form an annulus.
-      if ([3,5,6].every(mask=>actual.has(mask))) return {circles:
-        [-Math.PI/2,Math.PI/6,5*Math.PI/6].map(angle=>({
-          type:'annular-sector',x:550,y:275,inner:72,r:180,
-          angle,halfAngle:4*Math.PI/9
-        }))
-      };
-      // One isolated set and two intersecting sets: all three circles match in size.
-      for (let isolated=0; isolated<3; isolated++) {
-        const [first,second]=[0,1,2].filter(i=>i!==isolated);
-        const pair=1<<first | 1<<second;
-        if (actual.has(pair) && ![...actual].some(mask=>
-          (mask&(1<<isolated)) && (mask&(1<<first | 1<<second)))) {
-          const circles=[];
-          circles[first]={x:360,y:275,r:140};
-          circles[second]={x:560,y:275,r:140};
-          circles[isolated]={x:850,y:275,r:140};
-          return {circles};
-        }
-      }
-      const wanted=[...actual].filter(Boolean);
-      const candidate=(a,b,c)=>[a,b,c];
-      const patterns=[];
-      const left={x:420,y:275,r:165},right={x:640,y:275,r:165};
-      for(let i=0;i<3;i++) {
-        let j=(i+1)%3,k=(i+2)%3;
-        const other=[left,right];
-        // If a set is the intersection of two others, their shared lens is its boundary.
-        const intersection=[...actual].every(m=>!!(m&(1<<i))===!!((m&(1<<j))&&(m&(1<<k))));
-        if(intersection) {
-          const circles=[];circles[j]=other[0];circles[k]=other[1];circles[i]=null;
-          patterns.push({circles, alias:i, intersection:[j,k]});
-        }
-        const inside=[...actual].every(m=>!(m&(1<<i)) || !!((m&(1<<j))&&(m&(1<<k))));
-        if(inside && !intersection) {
-          const circles=[];circles[j]=other[0];circles[k]=other[1];circles[i]={x:530,y:275,r:49};
-          patterns.push({circles});
-        }
-      }
-      // Equality: omit the duplicate boundary and label both names on one circle.
-      for(let i=0;i<3;i++)for(let j=i+1;j<3;j++) {
-        if([...actual].every(m=>!!(m&(1<<i))===!!(m&(1<<j)))) {
-          const k=3-i-j, circles=[];circles[i]=left;circles[j]=null;circles[k]=right;
-          patterns.push({circles,alias:j,equal:i});
-        }
-      }
-      const bases=[
-        [{x:410,y:230,r:150},{x:650,y:230,r:150},{x:530,y:365,r:150}],
-        [{x:350,y:265,r:130},{x:675,y:265,r:130},{x:530,y:300,r:135}],
-        [{x:340,y:260,r:125},{x:590,y:260,r:125},{x:835,y:260,r:125}],
-        [{x:520,y:275,r:190},{x:510,y:275,r:90},{x:760,y:275,r:95}],
-        [{x:380,y:275,r:175},{x:590,y:275,r:110},{x:650,y:275,r:52}],
-        [{x:390,y:270,r:170},{x:650,y:270,r:170},{x:520,y:270,r:60}],
-        [{x:330,y:265,r:120},{x:615,y:265,r:120},{x:795,y:265,r:78}]
-      ];
-      for(const base of bases) for(const order of [[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]]) {
-        const circles=[];order.forEach((index,i)=>circles[index]=base[i]);patterns.push({circles});
-      }
-      for(const pattern of patterns) {
-        const got=circleMasks(pattern.circles);
-        if(pattern.alias!==undefined) {
-          const source=pattern.intersection ? null : pattern.equal;
-          const expanded=new Set([...got].map(m=> m | ((pattern.intersection ? pattern.intersection.every(i=>m&(1<<i)) : m&(1<<source)) ? 1<<pattern.alias : 0)));
-          if(wanted.every(m=>expanded.has(m)) && [...expanded].every(m=>actual.has(m)))return pattern;
-        } else if(wanted.every(m=>got.has(m)) && [...got].every(m=>actual.has(m)))return pattern;
-      }
-      // The strict templates above may reject a circle picture solely because
-      // it includes a region with no elements. Keep that region empty instead.
-      const overlappingPairs=[[0,1],[0,2],[1,2]].filter(([i,j])=>
-        [...actual].some(mask=>(mask&(1<<i)) && (mask&(1<<j))));
-      if (overlappingPairs.length===2) {
-        const middle=[0,1,2].find(i=>overlappingPairs.every(pair=>pair.includes(i)));
-        const [leftIndex,rightIndex]=[0,1,2].filter(i=>i!==middle);
-        const circles=[];
-        circles[leftIndex]={x:340,y:275,r:145};
-        circles[middle]={x:550,y:275,r:145};
-        circles[rightIndex]={x:760,y:275,r:145};
-        return {circles};
-      }
-      if (overlappingPairs.length===0) return {circles:[
-        {x:270,y:275,r:120},{x:550,y:275,r:120},{x:830,y:275,r:120}
-      ]};
-      return null;
-    }
-    function expandedMask(mask,layout) {
-      if(layout.alias===undefined) return mask;
-      const yes=layout.intersection ? layout.intersection.every(i=>mask&(1<<i)) : !!(mask&(1<<layout.equal));
-      return mask | (yes?1<<layout.alias:0);
-    }
-    function describe(mask) {
-      const included=['A','B','C'].filter((_,i)=>mask&(1<<i));
-      const excluded=['A','B','C'].filter((_,i)=>!(mask&(1<<i)));
-      const formula=included.length ? included.join(' \\cap ') : 'U';
-      const latex=excluded.length ? `${included.length>1?'('+formula+')':formula} \\setminus ${excluded.length>1?'('+excluded.join(' \\cup ')+')':excluded[0]}`:formula;
-      const words=included.length ? `in ${included.join(', ')}${excluded.length?' but not in '+excluded.join(', '):''}` : 'outside A, B, and C';
-      return {latex,words:`Elements ${words}.`};
-    }
-    function diagramExplanation(actual,layout) {
-      if (layout?.standard) return '';
-      const names=['A','B','C'];
-      const includes=(mask,i)=>!!(mask&(1<<i));
-      const subset=(i,j)=>[...actual].every(mask=>!includes(mask,i)||includes(mask,j));
-      const facts=[];
-      if (layout?.intersection) {
-        const [j,k]=layout.intersection;
-        facts.push(`${names[layout.alias]}=${names[j]}\\cap ${names[k]}`);
-      } else {
-        const child=[0,1,2].find(i=>[0,1,2].filter(j=>i!==j&&subset(i,j)&&!subset(j,i)).length===2);
-        if (child!==undefined) {
-          const [j,k]=[0,1,2].filter(i=>i!==child);
-          const properIntersection=[...actual].some(mask=>includes(mask,j)&&includes(mask,k)&&!includes(mask,child));
-          facts.push(`${names[child]}${properIntersection?'\\subset':'='}(${names[j]}\\cap ${names[k]})`);
-        } else {
-          for(let i=0;i<3;i++) for(let j=i+1;j<3;j++) {
-            if (subset(i,j)&&subset(j,i)) facts.push(`${names[i]}=${names[j]}`);
-            else if (subset(i,j)) facts.push(`${names[i]}\\subset ${names[j]}`);
-            else if (subset(j,i)) facts.push(`${names[j]}\\subset ${names[i]}`);
-          }
-        }
-      }
-      for(let i=0;i<3;i++) for(let j=i+1;j<3;j++) {
-        if (![...actual].some(mask=>includes(mask,i)&&includes(mask,j)))
-          facts.push(`${names[i]}\\cap ${names[j]}=\\emptyset`);
-      }
-      if (!actual.has(7) && !facts.length) facts.push('A\\cap B\\cap C=\\emptyset');
-      return facts.length ? `The diagram reflects \\(${facts.join('\\), \\(')}\\).` : '';
-    }
-    function drawCircleLabel(ctx,label,c,direction) {
-      const gap=12;
-      const diagonal=c.r/Math.SQRT2+gap;
-      let x=c.x,y=c.y-c.r-gap;
-      ctx.textAlign='center';
-      if(direction==='above-left') {
-        x=c.x-diagonal;y=c.y-diagonal;ctx.textAlign='right';
-      } else if(direction==='above-right') {
-        x=c.x+diagonal;y=c.y-diagonal;ctx.textAlign='left';
-      } else if(direction==='below-right') {
-        x=c.x+diagonal;y=c.y+diagonal+15;ctx.textAlign='left';
-      }
-      ctx.fillText(label,x,y);
-      ctx.textAlign='left';
-    }
-    function labelDirections(actual,layout) {
-      const directions=['above-left','above-right','above-right'];
-      if(layout.standard) return ['above-left','above-right','below-right'];
-      const circles=layout.circles;
-      if(circles.some(c=>!c || c.type==='annular-sector')) return directions;
-      const overlaps=(i,j)=>[...actual].some(mask=>(mask&(1<<i))&&(mask&(1<<j)));
-      const subset=(i,j)=>[...actual].every(mask=>!(mask&(1<<i))||(mask&(1<<j)));
-      const ordered=[0,1,2].sort((i,j)=>circles[j].r-circles[i].r);
-      const nested=circles.every(c=>Math.hypot(c.x-circles[0].x,c.y-circles[0].y)<1);
-      if(nested && circles[ordered[0]].r>circles[ordered[2]].r) {
-        directions[ordered[0]]='above-left';
-        directions[ordered[1]]='above-right';
-        directions[ordered[2]]='above';
-      } else {
-        const child=[0,1,2].find(i=>[0,1,2].every(j=>j===i||subset(i,j)));
-        if(child!==undefined && circles[child].r<Math.min(...[0,1,2].filter(i=>i!==child).map(i=>circles[i].r))) {
-          directions[child]='above';
-          const parents=[0,1,2].filter(i=>i!==child).sort((i,j)=>circles[i].x-circles[j].x);
-          directions[parents[0]]='above-left';
-          directions[parents[1]]='above-right';
-        } else {
-          const byX=[0,1,2].sort((i,j)=>circles[i].x-circles[j].x);
-          directions[byX[0]]='above-left';
-          directions[byX[1]]='above';
-          directions[byX[2]]='above-right';
-        }
-      }
-      // When A is isolated, identify it on the upper right of its circle.
-      if(!overlaps(0,1)&&!overlaps(0,2)) directions[0]='above-right';
-      return directions;
-    }
-    function render() {
-      activityBox.innerHTML='';
-      const canvas=document.createElement('canvas');canvas.width=1100;canvas.height=550;
-      activityBox.appendChild(canvas);
-      const ctx=canvas.getContext('2d');
-      const layout=circleLayout(problem.masks);
-      const cells=[];
-      if(layout && paintedMasks.size) {
-        const pixels=ctx.createImageData(canvas.width,canvas.height);
-        for(let y=U.y;y<U.y+U.h;y++)for(let x=U.x;x<U.x+U.w;x++) {
-          const mask=expandedMask(pointMask(x+.5,y+.5,layout.circles),layout);
-          if(!paintedMasks.has(mask))continue;
-          const index=(y*canvas.width+x)*4;
-          pixels.data[index]=147;pixels.data[index+1]=191;
-          pixels.data[index+2]=231;pixels.data[index+3]=255;
-        }
-        ctx.putImageData(pixels,0,0);
-      }
-      ctx.lineWidth=3;ctx.strokeStyle='#30343b';ctx.strokeRect(U.x,U.y,U.w,U.h);
-      ctx.fillStyle='#202735';ctx.font='bold 25px sans-serif';ctx.fillText('U',U.x+U.w+12,U.y+18);
-      if(layout) {
-        const colors=['#326bb4','#bd5050','#39805b'];
-        layout.circles.forEach((c,i)=>{
-          if(!c)return;
-          ctx.beginPath();
-          if(c.type==='annular-sector') {
-            ctx.arc(c.x,c.y,c.r,c.angle-c.halfAngle,c.angle+c.halfAngle);
-            ctx.arc(c.x,c.y,c.inner,c.angle+c.halfAngle,c.angle-c.halfAngle,true);
-            ctx.closePath();
-          } else ctx.arc(c.x,c.y,c.r,0,2*Math.PI);
-          ctx.strokeStyle=colors[i];ctx.lineWidth=4;ctx.stroke();
-        });
-        // Place labels at the same distance from each circular boundary.
-        const directions=labelDirections(problem.masks,layout);
-        layout.circles.forEach((c,i)=>{
-          if(!c)return;
-          ctx.fillStyle=colors[i];ctx.font='bold 28px sans-serif';
-          const label='ABC'[i]+(layout.equal!==undefined&&layout.equal===i?' = '+'ABC'[layout.alias]:'');
-          if(c.type==='annular-sector') ctx.fillText(label,c.x+205*Math.cos(c.angle)-12,c.y+205*Math.sin(c.angle)+8);
-          else drawCircleLabel(ctx,label,c,directions[i]);
-        });
-        if(layout.intersection) {ctx.fillStyle=colors[layout.alias];ctx.font='bold 28px sans-serif';ctx.fillText('ABC'[layout.alias],525,275);}
-      } else {
-        // One cell for each nonempty logical region; cells are exact even for
-        // relations no collection of three circles can draw.
-        if(paintedMasks.has(0)) {ctx.fillStyle='#93bfe7';ctx.fillRect(U.x+2,U.y+2,U.w-4,U.h-4);}
-        const present=[...problem.masks].filter(m=>m>0).sort((a,b)=>a-b);
-        const cols=present.length<=4?present.length:4;
-        const w=190,h=145,gap=25;
-        present.forEach((mask,index)=>{
-          const row=Math.floor(index/cols),col=index%cols;
-          const x=U.x+(U.w-cols*w-(cols-1)*gap)/2+col*(w+gap);
-          const y=U.y+45+row*(h+30);
-          ctx.fillStyle=paintedMasks.has(mask)?'#93bfe7':'#f0f5fb';ctx.fillRect(x,y,w,h);
-          ctx.strokeStyle='#476582';ctx.lineWidth=3;ctx.strokeRect(x,y,w,h);
-          ctx.fillStyle='#26374a';ctx.font='bold 37px sans-serif';ctx.textAlign='center';
-          ctx.fillText(['A','B','C'].filter((_,i)=>mask&(1<<i)).join(' ∩ '),x+w/2,y+82);
-          ctx.textAlign='left';cells.push({x,y,w,h,mask});
-        });
-        ctx.fillStyle='#465568';ctx.font='18px sans-serif';ctx.fillText('Each box is one nonempty region; click a box'+(problem.masks.has(0)?' or the space outside them.':'.'),U.x+26,U.y+U.h-17);
-      }
-      regions={canvas,layout,cells};
-      canvas.addEventListener('click',e=>{
-        const rect=canvas.getBoundingClientRect();
-        const x=(e.clientX-rect.left)*canvas.width/rect.width,y=(e.clientY-rect.top)*canvas.height/rect.height;
-        if(x<U.x||x>U.x+U.w||y<U.y||y>U.y+U.h)return;
-        let mask=layout?expandedMask(pointMask(x,y,layout.circles),layout):cells.find(c=>x>=c.x&&x<=c.x+c.w&&y>=c.y&&y<=c.y+c.h)?.mask??0;
-        if(diagramTool==='cursor')showRegion(mask,e.clientX,e.clientY);
-        else {
-          if(diagramTool==='brush')paintedMasks.add(mask);
-          else paintedMasks.delete(mask);
-          feedbackText.textContent='';
-          render();
-        }
+    // Public generator for future word-problem, hint, and answer interfaces.
+    window.ProofQuestions=Object.freeze({makeProblem,categories});
+    let renderQueue=Promise.resolve();
+    document.getElementById('start-btn').addEventListener('click',()=>{
+      const problem=makeProblem();
+      window.currentProofProblem=problem;
+      renderQueue=renderQueue.catch(()=>{}).then(async()=>{
+        const question=document.getElementById('question-text');
+        const statement=document.getElementById('operation-question');
+        window.MathJax?.typesetClear?.([question,statement]);
+        question.textContent='Prove or disprove the following statement.';
+        statement.textContent='\\['+problem.tex+'\\]';
+        document.getElementById('start-btn').textContent='New Problem';
+        if(window.MathJax?.startup?.promise)await window.MathJax.startup.promise;
+        await window.MathJax?.typesetPromise?.([question,statement]);
       });
-    }
-    function diagramRegionMasks() {
-      if(!regions?.layout)return new Set([0,...[...problem.masks].filter(mask=>mask>0)]);
-      return new Set([...circleMasks(regions.layout.circles)].map(mask=>expandedMask(mask,regions.layout)));
-    }
-    function checkDiagramShading() {
-      const visible=diagramRegionMasks();
-      return [...visible].every(mask=>paintedMasks.has(mask)===expressionContains(problem.expression,mask)) &&
-        [...paintedMasks].every(mask=>visible.has(mask));
-    }
-    function showRegion(mask,clientX,clientY) {
-      activityBox.querySelector('.region-popup')?.remove();
-      const popup=document.createElement('div');popup.className='region-popup';
-      const close=document.createElement('button');close.textContent='×';close.setAttribute('aria-label','Close');close.onclick=()=>popup.remove();popup.appendChild(close);
-      const title=document.createElement('strong');const desc=document.createElement('div');
-      const info=describe(mask);title.textContent=`\\(${info.latex}\\)`;
-      desc.textContent=info.words;
-      popup.append(title,desc);activityBox.appendChild(popup);
-      const box=activityBox.getBoundingClientRect();
-      popup.style.left=Math.max(8,Math.min(clientX-box.left+10,box.width-popup.offsetWidth-8))+'px';
-      popup.style.top=Math.max(8,Math.min(clientY-box.top+10,box.height-popup.offsetHeight-8))+'px';
-      window.MathJax?.typesetPromise?.([title]);
-    }
-    function operationSteps(node,steps=[]) {
-      if(node.type==='set')return steps;
-      if(node.type==='complement')operationSteps(node.operand,steps);
-      else {operationSteps(node.left,steps);operationSteps(node.right,steps);}
-      steps.push(node);
-      return steps;
-    }
-    function pendingResults(root,completed,current) {
-      if(current===root)return [];
-      const waiting=[];
-      function visit(node,parent) {
-        if(node.type==='set')return;
-        if(completed.has(node) && !completed.has(parent)) {
-          waiting.push(node);
-          return;
-        }
-        if(node.type==='complement')visit(node.operand,node);
-        else {visit(node.left,node);visit(node.right,node);}
-      }
-      visit(root,null);
-      return waiting;
-    }
-    function miniDiagram(canvas,node) {
-      canvas.width=320;canvas.height=192;
-      const ctx=canvas.getContext('2d');
-      const layout=regions.layout;
-      const sx=canvas.width/1100,sy=canvas.height/550;
-      ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
-      if(layout) {
-        const pixels=ctx.createImageData(canvas.width,canvas.height);
-        for(let y=0;y<canvas.height;y++)for(let x=0;x<canvas.width;x++) {
-          const sourceX=(x+.5)/sx,sourceY=(y+.5)/sy;
-          if(sourceX<=U.x||sourceX>=U.x+U.w||sourceY<=U.y||sourceY>=U.y+U.h)continue;
-          const mask=expandedMask(pointMask(sourceX,sourceY,layout.circles),layout);
-          if(!expressionContains(node,mask))continue;
-          const index=(y*canvas.width+x)*4;
-          pixels.data[index]=147;pixels.data[index+1]=191;
-          pixels.data[index+2]=231;pixels.data[index+3]=255;
-        }
-        ctx.putImageData(pixels,0,0);
-      }
-      ctx.save();ctx.scale(sx,sy);
-      ctx.strokeStyle='#30343b';ctx.lineWidth=4;ctx.strokeRect(U.x,U.y,U.w,U.h);
-      ctx.fillStyle='#202735';ctx.font='bold 40px sans-serif';ctx.fillText('U',U.x+U.w+10,U.y+35);
-      if(layout) {
-        const colors=['#326bb4','#bd5050','#39805b'];
-        layout.circles.forEach((circle,i)=>{
-          if(!circle)return;
-          ctx.beginPath();
-          if(circle.type==='annular-sector') {
-            ctx.arc(circle.x,circle.y,circle.r,circle.angle-circle.halfAngle,circle.angle+circle.halfAngle);
-            ctx.arc(circle.x,circle.y,circle.inner,circle.angle+circle.halfAngle,circle.angle-circle.halfAngle,true);
-            ctx.closePath();
-          } else ctx.arc(circle.x,circle.y,circle.r,0,Math.PI*2);
-          ctx.strokeStyle=colors[i];ctx.lineWidth=5;ctx.stroke();
-        });
-        const directions=labelDirections(problem.masks,layout);
-        layout.circles.forEach((circle,i)=>{
-          if(!circle)return;
-          ctx.fillStyle=colors[i];ctx.font='bold 39px sans-serif';
-          const label='ABC'[i]+(layout.equal===i?' = '+'ABC'[layout.alias]:'');
-          if(circle.type==='annular-sector')ctx.fillText(label,circle.x+205*Math.cos(circle.angle)-12,circle.y+205*Math.sin(circle.angle)+8);
-          else drawCircleLabel(ctx,label,circle,directions[i]);
-        });
-        if(layout.intersection) {
-          ctx.fillStyle=colors[layout.alias];ctx.font='bold 39px sans-serif';
-          ctx.fillText('ABC'[layout.alias],525,275);
-        }
-      } else {
-        const present=[...problem.masks].filter(mask=>mask>0).sort((a,b)=>a-b);
-        const cols=Math.min(present.length,4),w=190,h=145,gap=25;
-        present.forEach((mask,index)=>{
-          const row=Math.floor(index/cols),col=index%cols;
-          const x=U.x+(U.w-cols*w-(cols-1)*gap)/2+col*(w+gap),y=U.y+45+row*(h+30);
-          if(expressionContains(node,mask)) {ctx.fillStyle='#93bfe7';ctx.fillRect(x,y,w,h);}
-          ctx.strokeStyle='#476582';ctx.lineWidth=3;ctx.strokeRect(x,y,w,h);
-          ctx.fillStyle='#26374a';ctx.font='bold 35px sans-serif';ctx.textAlign='center';
-          ctx.fillText(['A','B','C'].filter((_,i)=>mask&(1<<i)).join(' ∩ '),x+w/2,y+82);
-          ctx.textAlign='left';
-        });
-        if(problem.masks.has(0)&&expressionContains(node,0)) {
-          ctx.fillStyle='#93bfe7';ctx.fillRect(U.x+10,U.y+U.h-65,130,46);
-          ctx.fillStyle='#26374a';ctx.font='25px sans-serif';ctx.fillText('outside',U.x+17,U.y+U.h-32);
-        }
-      }
-      ctx.restore();
-    }
-    function workingCard(node) {
-      const card=document.createElement('div');card.className='working-card';
-      const canvas=document.createElement('canvas');
-      const label=document.createElement('div');label.className='working-card-label math';
-      label.innerHTML=`\\(${expressionTex(node)}\\)`;
-      card.append(canvas,label);miniDiagram(canvas,node);
-      return card;
-    }
-    function workingSign(symbol) {
-      const span=document.createElement('span');span.className='working-sign';
-      span.textContent=symbol;return span;
-    }
-    function showWorkingStep(index) {
-      const node=workingSteps[index];
-      workingActivity.style.display='block';workingActivity.innerHTML='';
-      const note=document.createElement('p');note.className='working-note';
-      note.textContent='Work through one operation at a time. Shaded regions show each set.';
-      workingActivity.appendChild(note);
-      const top=document.createElement('div');
-      top.className='working-row working-row-top'+(node.type==='complement'?' complement-step':'');
-      if(node.type==='complement') {
-        top.append(workingCard(node.operand),workingSign('→'),workingCard(node));
-      } else {
-        top.append(workingCard(node.left),workingSign({intersection:'∩',union:'∪',difference:'∖'}[node.operation]),
-          workingCard(node.right),workingSign('='),workingCard(node));
-      }
-      workingActivity.appendChild(top);
-      const bottom=document.createElement('div');bottom.className='working-row-bottom';
-      const completed=new Set(workingSteps.slice(0,index));
-      const waiting=pendingResults(problem.expression,completed,node);
-      for(let i=0;i<3;i++) {
-        if(waiting[i])bottom.appendChild(workingCard(waiting[i]));
-        else {const blank=document.createElement('div');bottom.appendChild(blank);}
-      }
-      workingActivity.appendChild(bottom);
-      window.MathJax?.typesetPromise?.([workingActivity]);
-    }
-    // Integer ranges have inclusive endpoints; either endpoint may be infinite.
-    function mergeIntegerRanges(ranges) {
-      const sorted=ranges.filter(r=>r.lo<=r.hi).sort((a,b)=>a.lo-b.lo || a.hi-b.hi);
-      const result=[];
-      for(const range of sorted) {
-        const last=result[result.length-1];
-        if(last && range.lo<=last.hi+1) last.hi=Math.max(last.hi,range.hi);
-        else result.push({...range});
-      }
-      return result;
-    }
-    function intersectIntegerRanges(a,b) {
-      const result=[];
-      for(const first of a) for(const second of b) {
-        const lo=Math.max(first.lo,second.lo),hi=Math.min(first.hi,second.hi);
-        if(lo<=hi) result.push({lo,hi});
-      }
-      return mergeIntegerRanges(result);
-    }
-    function numericMaskAt(p,x) {
-      return p.intervals.reduce((mask,v,i)=>mask | ((x>=(p.natural?1:-Infinity) &&
-        (x>v.lo || v.left && x===v.lo) && (x<v.hi || v.right && x===v.hi)) ? 1<<i : 0),0);
-    }
-    function expectedIntegerRanges(p) {
-      const cuts=new Set(p.natural?[1]:[]);
-      for(const interval of p.intervals) {
-        if(Number.isFinite(interval.lo)) cuts.add(interval.lo+(interval.left?0:1));
-        if(Number.isFinite(interval.hi)) cuts.add(interval.hi+(interval.right?1:0));
-      }
-      const ordered=[...cuts].sort((a,b)=>a-b);
-      const starts=[-Infinity,...ordered],ends=[...ordered.map(x=>x-1),Infinity];
-      const selected=[];
-      for(let i=0;i<starts.length;i++) {
-        const lo=starts[i],hi=ends[i];
-        if(lo>hi)continue;
-        const sample=Number.isFinite(lo)?lo:Number.isFinite(hi)?hi:0;
-        if((!p.natural || sample>=1) && expressionContains(p.expression,numericMaskAt(p,sample)))
-          selected.push({lo,hi});
-      }
-      return mergeIntegerRanges(selected);
-    }
-    function expectedLetters(p) {
-      return new Set('abcdefghijklmnopqrstuvwxyz'.split('').filter(letter=>{
-        const mask=p.words.reduce((bits,word,i)=>bits|(word.includes(letter)?1<<i:0),0);
-        return expressionContains(p.expression,mask);
-      }));
-    }
-    function normalizeAnswerText(input) {
-      return input.trim().replace(/\u200b/g,'').replace(/−/g,'-')
-        .replace(/\\left|\\right/g,'').replace(/\\mathbb\s*\{\s*([ZN])\s*\}/gi,'$1')
-        .replace(/\\text\s*\{\s*([^{}]*)\s*\}/gi,'$1')
-        .replace(/\\(?:leq|le)\b/g,'≤').replace(/\\(?:geq|ge)\b/g,'≥')
-        .replace(/\\infty\b|\binfinity\b|\binfty\b/gi,'∞')
-        .replace(/\\cup\b/g,'∪').replace(/\\cap\b/g,'∩')
-        .replace(/\\emptyset\b|\\varnothing\b/g,'∅')
-        .replace(/\\(?:ldots|cdots|dots)\b|\.{3}|⋯/g,'…')
-        .replace(/\\in\b/g,'∈').replace(/\\mid\b/g,'|')
-        .replace(/\\\{/g,'{').replace(/\\\}/g,'}')
-        .replace(/>=/g,'≥').replace(/<=/g,'≤')
-        .replace(/ℤ/g,'Z').replace(/ℕ/g,'N')
-        .replace(/,\s*(?=or\b)/gi,' ')
-        .replace(/,\s*(?=inclusive\b|exclusive\b)/gi,' ')
-        .replace(/\b(?:greater than or equal to|at least|no less than)\b/gi,'≥')
-        .replace(/\b(?:less than or equal to|at most|no more than)\b/gi,'≤')
-        .replace(/\b(?:greater than|more than|above)\b/gi,'>')
-        .replace(/\b(?:less than|below|under)\b/gi,'<')
-        .replace(/\s+/g,' ').trim();
-    }
-    function parseElementList(text,kind) {
-      const match=/^\{\s*([^{}]*)\s*\}$/.exec(text);
-      if(!match)return null;
-      if(!match[1].trim())return [];
-      const items=match[1].split(',').map(item=>item.trim());
-      if(kind==='word') {
-        if(!items.every(item=>/^[a-z]$/i.test(item)))return null;
-        return [...new Set(items.map(item=>item.toLowerCase()))];
-      }
-      if(!items.every(item=>/^-?\d+$/.test(item)))return null;
-      return [...new Set(items.map(Number))].sort((a,b)=>a-b);
-    }
-    function parseEllipsisList(text) {
-      const match=/^\{\s*([^{}]*)\s*\}$/.exec(text);
-      if(!match||!match[1].includes('…'))return null;
-      let items=match[1].split(',').map(item=>item.trim());
-      if(!items.every(item=>item==='…'||/^[+-]?\d+$/.test(item)))return null;
-      const numbers=items.filter(item=>item!=='…').map(Number);
-      if(numbers.length<2||!numbers.every(Number.isSafeInteger))return null;
-      // Descending lists mean the same set; normalize to increasing order.
-      if(numbers.every((number,i)=>i===0||number<numbers[i-1]))items=items.reverse();
-      const leading=items[0]==='…',trailing=items.at(-1)==='…';
-      if(leading)items=items.slice(1);
-      if(trailing)items=items.slice(0,-1);
-      // Each infinite tail needs consecutive integers to establish unit steps.
-      if(items.includes('…'))return null;
-      const values=items.map(Number);
-      if(values.some((value,i)=>i>0&&value<=values[i-1]))return null;
-      if(leading&&values[1]!==values[0]+1)return null;
-      if(trailing&&values.at(-1)!==values.at(-2)+1)return null;
-      const ranges=values.map(value=>({lo:value,hi:value}));
-      if(leading)ranges.push({lo:-Infinity,hi:values[0]});
-      if(trailing)ranges.push({lo:values.at(-1),hi:Infinity});
-      return mergeIntegerRanges(ranges);
-    }
-    function parseEndpoint(text) {
-      const token=text.trim().replace(/^\+/,'');
-      if(token==='∞')return Infinity;
-      if(token==='-∞')return -Infinity;
-      return /^-?\d+$/.test(token)?Number(token):NaN;
-    }
-    function parseIntervalAtom(text) {
-      const t=text.replace(/\s+/g,'');
-      if(!/^[([]/.test(t) || !/[)\]]$/.test(t))return null;
-      const parts=t.slice(1,-1).split(',');
-      if(parts.length!==2)return null;
-      const left=parseEndpoint(parts[0]),right=parseEndpoint(parts[1]);
-      if(Number.isNaN(left)||Number.isNaN(right)||left===Infinity||right===-Infinity||left>right)return null;
-      const lo=left===-Infinity?-Infinity:left+(t[0]==='['?0:1);
-      const hi=right===Infinity?Infinity:right-(t.at(-1)===']'?0:1);
-      return lo<=hi?[{lo,hi}]:[];
-    }
-    function parseInequalityAtom(text) {
-      const t=text.toLowerCase().replace(/\bx\s+is\s+/g,'x ').replace(/\s+/g,'')
-        .replace(/≤/g,'<=').replace(/≥/g,'>=');
-      const tokens=t.match(/x|-?\d+|<=|>=|<|>/g);
-      if(!tokens||tokens.join('')!==t||![3,5].includes(tokens.length))return null;
-      let result=[{lo:-Infinity,hi:Infinity}];
-      for(let i=0;i<tokens.length-2;i+=2) {
-        const [left,op,right]=tokens.slice(i,i+3);
-        if((left==='x')===(right==='x')||!['<','<=','>','>='].includes(op))return null;
-        const n=Number(left==='x'?right:left);
-        if(!Number.isInteger(n))return null;
-        const xOnLeft=left==='x';
-        const lower=xOnLeft?(op==='>'||op==='>='):(op==='<'||op==='<=');
-        const inclusive=op==='>='||op==='<=',bound=lower?
-          {lo:n+(inclusive?0:1),hi:Infinity}:{lo:-Infinity,hi:n-(inclusive?0:1)};
-        result=intersectIntegerRanges(result,[bound]);
-      }
-      return result;
-    }
-    function parseWordAtom(text) {
-      const t=text.trim().replace(/^x\s+(?:is\s+)?/i,'');
-      const between=/^(?:between|from)\s+(-?\d+)\s+(?:and|to)\s+(-?\d+)(?:\s+(inclusive|exclusive))?$/i.exec(t);
-      if(between) {
-        const left=Number(between[1]),right=Number(between[2]),inclusive=between[3]?.toLowerCase()==='inclusive';
-        if(left>right)return null;
-        const lo=left+(inclusive?0:1),hi=right-(inclusive?0:1);
-        return lo<=hi?[{lo,hi}]:[];
-      }
-      const relation=/^(≤|≥|<|>)\s*(-?\d+)$/i.exec(t);
-      if(relation)return parseInequalityAtom(`x ${relation[1]} ${relation[2]}`);
-      const reversed=/^(-?\d+)\s*(≤|≥|<|>)\s*x$/i.exec(t);
-      if(reversed)return parseInequalityAtom(t);
-      return null;
-    }
-    function splitOutside(text,symbol,word) {
-      const parts=[];let current='',depth=0;
-      for(let i=0;i<text.length;i++) {
-        const ch=text[i];
-        if(ch==='('||ch==='[')depth++;
-        if(ch===')'||ch===']')depth--;
-        const matchWord=word && text.slice(i,i+word.length).toLowerCase()===word &&
-          !/[a-z]/i.test(text[i-1]||'') && !/[a-z]/i.test(text[i+word.length]||'');
-        if(depth===0 && (ch===symbol||matchWord)) {
-          parts.push(current.trim());current='';if(matchWord)i+=word.length-1;
-        } else current+=ch;
-        if(depth<0)return null;
-      }
-      if(depth!==0)return null;
-      parts.push(current.trim());
-      return parts.every(Boolean)?parts:null;
-    }
-    function parseNumericDescription(text) {
-      const t=text.trim().replace(/\b(between\s+-?\d+\s+|from\s+-?\d+\s+)and(?=\s+-?\d+\b)/gi,'$1to');
-      if(!t)return null;
-      const unions=splitOutside(t,'∪','or');
-      if(!unions)return null;
-      if(unions.length>1) {
-        const parsed=unions.map(parseNumericDescription);
-        return parsed.some(part=>part===null)?null:mergeIntegerRanges(parsed.flat());
-      }
-      const atom=parseIntervalAtom(t) ?? parseInequalityAtom(t) ?? parseWordAtom(t);
-      if(atom!==null)return atom;
-      const intersections=splitOutside(t,'∩','and');
-      if(!intersections||intersections.length===1)return null;
-      let result=[{lo:-Infinity,hi:Infinity}];
-      for(const part of intersections) {
-        const parsed=parseNumericDescription(part);
-        if(parsed===null)return null;
-        result=intersectIntegerRanges(result,parsed);
-      }
-      return result;
-    }
-    function parseNumericAnswer(raw,p) {
-      let text=normalizeAnswerText(raw);
-      if(text==='∅'||text==='{}')return [];
-      if(/^U$/i.test(text))return [{lo:p.natural?1:-Infinity,hi:Infinity}];
-      if(/^[NZ]$/i.test(text))return [{lo:text.toUpperCase()==='N'?1:-Infinity,hi:Infinity}];
-      const wholeDomain=/^\{\s*x\s*(?:∈|in)\s*([NZ])\s*\}$/i.exec(text);
-      if(wholeDomain)return [{lo:wholeDomain[1].toUpperCase()==='N'?1:-Infinity,hi:Infinity}];
-      const elements=parseElementList(text,'number');
-      if(elements!==null)return mergeIntegerRanges(elements.map(n=>({lo:n,hi:n})));
-      const ellipsisList=parseEllipsisList(text);
-      if(ellipsisList!==null)return ellipsisList;
-      const builder=/^\{\s*x\s*(?:∈|in)\s*([ZN])\s*(?:\||:|such that)\s*([\s\S]+)\s*\}$/i.exec(text);
-      if(!builder)return null;
-      const domain=builder[1].toUpperCase();text=builder[2].trim();
-      text=text.replace(/^x\s*(?:∈|in)\s*(?=[([])/i,'');
-      const ranges=parseNumericDescription(text);
-      if(ranges===null)return null;
-      return domain==='N'?intersectIntegerRanges(ranges,[{lo:1,hi:Infinity}]):ranges;
-    }
-    function rangesEqual(a,b) {
-      return a.length===b.length && a.every((range,i)=>range.lo===b[i].lo&&range.hi===b[i].hi);
-    }
-    function checkSetAnswer() {
-      if(!problem)return false;
-      const raw=answerEditor.value.trim();
-      if(problem.kind==='word') {
-        const given=raw==='∅'||/^\\emptyset$/.test(raw)?[]:parseElementList(normalizeAnswerText(raw),'word');
-        return given!==null && given.length===problem.solutionLetters.size &&
-          given.every(letter=>problem.solutionLetters.has(letter));
-      }
-      const given=parseNumericAnswer(raw,problem);
-      return given!==null && rangesEqual(given,problem.solutionRanges);
-    }
-    const ANSWER_SYMBOLS=[['∅','∅'],['…','…'],['∪',' ∪ '],['∩',' ∩ '],['or',' or '],['and',' and '],
-      ['x','x'],['∞','∞'],['−∞','-∞'],['≥','≥'],['≤','≤'],['<','<'],['>','>'],
-      ['{','{'],['}','}'],['[','['],[']',']'],['(', '('],[')',')'],
-      ['∈',' ∈ '],['ℤ','ℤ'],['ℕ','ℕ'],['|',' | '],[',',', ']];
-    for(const [label,insert] of ANSWER_SYMBOLS) {
-      const button=document.createElement('button');
-      button.type='button';button.className='math-symbol-button';button.textContent=label;
-      button.setAttribute('aria-label',`Insert ${label}`);
-      button.addEventListener('mousedown',event=>event.preventDefault());
-      button.addEventListener('click',()=>{
-        const start=answerEditor.selectionStart,end=answerEditor.selectionEnd;
-        answerEditor.setRangeText(insert,start,end,'end');answerEditor.focus();
-        feedbackText.textContent='';
-      });
-      answerToolbar.appendChild(button);
-    }
-    answerEditor.addEventListener('input',()=>{feedbackText.textContent='';});
-    diagramTools.querySelectorAll('.diagram-tool').forEach(button=>button.addEventListener('click',()=>{
-      diagramTool=button.dataset.tool;
-      activityBox.dataset.tool=diagramTool;
-      diagramTools.querySelectorAll('.diagram-tool').forEach(item=>
-        item.setAttribute('aria-pressed',String(item===button)));
-    }));
-    checkBtn.addEventListener('click',()=>{
-      if(!problem||!regions)return;
-      const textCorrect=checkSetAnswer(),shadingCorrect=checkDiagramShading();
-      feedbackText.textContent=textCorrect&&shadingCorrect?'Correct!':
-        !textCorrect&&!shadingCorrect?'Incorrect, try again.':
-        textCorrect?'The set description is correct but the Venn diagram shading is not.':
-          'The Venn diagram shading is correct but the set description is not.';
-      feedbackText.style.color=textCorrect&&shadingCorrect?'green':
-        !textCorrect&&!shadingCorrect?'red':'#9a6b00';
     });
-    startBtn.addEventListener('click',()=>{
-      problem=makeProblem(); regions=null;hintStep=0;paintedMasks=new Set();diagramTool='cursor';
-      activityBox.innerHTML='';hintArea.innerHTML='';workingActivity.innerHTML='';workingActivity.style.display='none';
-      activityBox.dataset.tool='cursor';revealBtn.style.display='inline-block';
-      hintBtn.style.display='none';hintBtn.disabled=true;
-      diagramTools.style.display='none';
-      diagramTools.querySelectorAll('.diagram-tool').forEach(button=>
-        button.setAttribute('aria-pressed',String(button.dataset.tool==='cursor')));
-      problem.expression=generateSetExpression();
-      workingSteps=operationSteps(problem.expression);
-      problem.solutionMasks=new Set([...problem.masks].filter(mask=>expressionContains(problem.expression,mask)));
-      if(problem.kind==='word')problem.solutionLetters=expectedLetters(problem);
-      else problem.solutionRanges=expectedIntegerRanges(problem);
-      answerArea.style.display='block';checkBtn.style.display='none';
-      answerEditor.value='';feedbackText.textContent='';
-      answerEditor.placeholder=problem.kind==='word' ? '{a, b, c}' :
-        '{x ∈ ℤ | -2 ≤ x ≤ 3 or x ≥ 8}';
-      questionText.innerHTML=`Let \\(U\\) be the ${problem.kind==='word'?'set of letters of the English alphabet':problem.labels[0].includes('mathbb{N}')?'set of natural numbers \\(\\{1,2,3,\\ldots\\}\\)':'set of integers'}.
-        \\(A=${problem.labels[0]}\\),<br>\\(B=${problem.labels[1]}\\),<br>\\(C=${problem.labels[2]}\\)`;
-      operationQuestion.innerHTML=`Find the set \\[${expressionTex(problem.expression)}\\]
-        <p>On paper, try drawing a Venn diagram representing the interactions between the sets, and shade in the desired region.<br>Then, press Reveal Diagram to reveal the unshaded diagram.</p>`;
-      window.MathJax?.typesetPromise?.([questionText,operationQuestion]);
-    });
-    revealBtn.addEventListener('click',()=>{
-      if(!problem||regions)return;
-      document.getElementById('click-sound')?.play().catch(()=>{});
-      render();revealBtn.style.display='none';
-      checkBtn.style.display='inline-block';hintBtn.style.display='inline-block';hintBtn.disabled=false;
-      diagramTools.style.display='flex';
-      hintArea.innerHTML=`Click a region of the diagram to see its set notation and meaning.<br>${diagramExplanation(problem.masks,regions.layout)}`;
-      window.MathJax?.typesetPromise?.([hintArea]);
-    });
-    hintBtn.addEventListener('click',()=>{
-      if(!problem||!regions||hintStep>=workingSteps.length)return;
-      document.getElementById('click-sound')?.play().catch(()=>{});
-      showWorkingStep(hintStep);
-      hintStep++;
-      if(hintStep>=workingSteps.length)hintBtn.disabled=true;
-    });
+  })();
   </script>
   <audio id="click-sound" src="button.mp3" preload="auto"></audio>
 </body>

@@ -226,6 +226,7 @@ fetch("/nav.html")
       </div>
       <p id="decision-feedback" class="proof-error" role="status" aria-live="polite"></p>
       <p id="decision-result"></p>
+      <p id="decision-reason"></p>
       <div id="numerical-examples"></div>
       <div id="witness-panel" hidden>
         <label id="witness-label" for="witness-input"></label>
@@ -907,7 +908,7 @@ fetch("/nav.html")
     }
     function startDecision() {
       element('proof-solving').hidden=false;element('decision-buttons').hidden=false;
-      element('decision-result').textContent='';element('decision-feedback').textContent='';
+      element('decision-result').textContent='';element('decision-reason').textContent='';element('decision-feedback').textContent='';
       clearMath(element('numerical-examples'));clearMath(element('proof-conclusion'));
       element('witness-panel').hidden=true;element('proof-step-controls').hidden=true;
       element('witness-feedback').textContent='';element('witness-input').value='';stage='decision';
@@ -919,12 +920,14 @@ fetch("/nav.html")
       element('decision-result').textContent=prove?'We will prove the statement.':'We will disprove the statement.';
       const needsGeneralProof=(prove&&activeProblem.quantifier==='universal')||(!prove&&activeProblem.quantifier==='existential');
       if(needsGeneralProof) {
+        element('decision-result').textContent=prove?'We will prove the statement, because we see it is true for some examples:':'We will disprove the statement, because we see it is false for some examples:';
         const target=element('numerical-examples');clearMath(target);
         for(const values of illustrativeExamples(activeProblem)) {
           const line=document.createElement('p');line.textContent=exampleExplanation(activeProblem,values,variableMapping);target.appendChild(line);
         }
         stage='general-proof';typeset([target]);return;
       }
+      element('decision-reason').textContent=prove?'Since it is an existential statement, we will find an example for which it is true':'Since it is a universal statement, we will find a counterexample for which it is false';
       stage='witness';element('witness-panel').hidden=false;element('proof-step-controls').hidden=false;
       element('witness-label').textContent=prove?'The statement is true for':'The statement is false for';
       element('witness-input').placeholder=exampleVariables(activeProblem).map(key=>`${variableMapping[key]||key} = …`).join(', ');
@@ -963,7 +966,7 @@ fetch("/nav.html")
       element('let-panel').hidden=false;element('translation-panel').hidden=true;element('stage-controls').hidden=false;
       // Reset every later proof stage when Start generates another question.
       element('proof-solving').hidden=true;clearMath(element('numerical-examples'));clearMath(element('proof-conclusion'));
-      element('decision-feedback').textContent='';element('decision-result').textContent='';element('witness-feedback').textContent='';
+      element('decision-feedback').textContent='';element('decision-result').textContent='';element('decision-reason').textContent='';element('witness-feedback').textContent='';
       element('witness-input').value='';element('witness-panel').hidden=true;element('proof-step-controls').hidden=true;
       if(problem.presentation==='math')startDecision();
       typeset([question,statement]);

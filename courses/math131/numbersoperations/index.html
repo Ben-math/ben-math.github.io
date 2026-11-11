@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta charset="UTF-8" />
+  <title>MATH 131 - Numbers and Operations</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <h1>MATH 131 - Numbers and Operations</h1>
+    <div id="nav-placeholder"></div>
+
+      <script>
+fetch("/nav.html")
+  .then(response => response.text())
+  .then(html => {
+    document.getElementById("nav-placeholder").innerHTML = html;
+
+    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+    const navLinks = document.querySelectorAll("#nav-placeholder a");
+    navLinks.forEach(link => {
+      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+      if (linkPath === currentPath) {
+        link.classList.add("active");
+      }
+    });
+
+    const s = document.createElement("script");
+    s.src = "/mascot.js";
+    s.defer = true;
+    document.body.appendChild(s);
+  })
+  .catch(err => {
+    console.error("Failed to load nav:", err);
+  });
+</script>
+
+
+      
+  </header>
+  <main>
+    <p>A shape-sorting activity to acquaint yourself with set operations and identifying regions of a Venn Diagram:
+      <a href="https://ben-math.github.io/courses/math131/sets/shapesort.html">Shape Sort Activity</a></p>
+
+    <p>Counting the number of elements in different regions of a Venn Diagram:
+      <a href="https://ben-math.github.io/courses/math131/sets/setcardinality.html">Set Cardinality Activity</a></p>
+
+    <p>Drawing a Venn diagram and identifying regions using the notation of set operations:
+      <a href="https://ben-math.github.io/courses/math131/sets/setoperations.html">Set Operations</a></p>
+  </main>
+</body>
+</html>

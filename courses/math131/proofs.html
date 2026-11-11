@@ -294,6 +294,19 @@ fetch("/nav.html")
         <button type="button" id="proof-hint" class="rubber-button">Hint</button>
       </div>
       <p id="witness-feedback" role="status" aria-live="polite"></p>
+      <div id="final-proof-panel" hidden>
+        <p id="final-proof-destination"></p>
+        <p id="final-proof-instruction"></p>
+        <div id="final-proof-entry">
+          <label id="final-proof-prefix" for="final-proof-input"></label>
+          <input id="final-proof-input" class="let-input" type="text" aria-label="Sequence of equalities" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="button-container">
+          <button type="button" id="final-proof-next" class="rubber-button">Next</button>
+          <button type="button" id="final-proof-hint" class="rubber-button">Hint</button>
+        </div>
+        <p id="final-proof-feedback" class="proof-error" role="status" aria-live="polite"></p>
+      </div>
       <div id="proof-conclusion"></div>
     </section>
   </main>
@@ -328,6 +341,9 @@ fetch("/nav.html")
     #numerical-examples,#proof-conclusion,#completed-implication,#completed-contrapositive {margin:1em auto;overflow-x:auto}
     #witness-panel {display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:.6em;margin:1.2em auto}
     #witness-input {width:min(100%,450px);box-sizing:border-box;padding:.5em;border:2px solid #777;border-radius:8px;font:inherit}
+    #final-proof-entry {display:flex;align-items:center;gap:.5em;max-width:950px;margin:1em auto}
+    #final-proof-prefix {flex:none}
+    #final-proof-input {min-width:0}
     .proof-error {color:#a12222}
   </style>
   <script>
@@ -409,17 +425,25 @@ fetch("/nav.html")
       const q=((n*p+m)%2+(c.truth?0:1))%2;
       return {form:'parity-direct',parameters:{n,m,p,q},tex:`\\text{For every integer }x,\\quad x\\text{ is ${parity(p)}}\\implies ${lin(n,'x',m)}\\text{ is ${parity(q)}}.`};
     }
+    function smallLinearCombinations(n,m) {
+      const pairs=[];
+      for(const a of [1,-1,2,-2,3,-3])for(const b of [1,-1,2,-2,3,-3]) {
+        const value=a*n+b*m;
+        if(value>0&&value<=100&&value!==n&&value!==m)pairs.push([a,b]);
+      }
+      return pairs;
+    }
     function divisibility(c, retryForm) {
       if(c.quantifier==='existential') {
         // A single common nonunit divisor for all x exists exactly when
-        // gcd(n,m,a,b)>1. Construct the true case, filter b for the false case.
+        // gcd(n,m,a,b)>1. The false case has a short multiple-plus-one proof.
         let n,m,a,b;
         if(c.truth) {
           const d=rand(2,20),limit=Math.floor(100/d);
           [n,m,a,b]=Array.from({length:4},()=>d*rand(1,limit));
         } else {
-          n=rand(1,100);m=rand(1,100);a=rand(1,100);
-          b=eligible(positive,b=>gcd(gcd(gcd(n,m),a),b)===1);
+          const scale=rand(1,9),limit=Math.floor(99/scale);
+          n=rand(1,limit);m=rand(1,limit);a=scale*n;b=scale*m+1;
         }
         return {form:'common-divisor',parameters:{n,m,a,b},tex:`\\text{There exists an integer }k>1\\text{ such that, for every integer }x,\\quad k\\mid(${lin(n,'x',m)})\\text{ and }k\\mid(${lin(a,'x',b)}).`};
       }
@@ -436,12 +460,22 @@ fetch("/nav.html")
         return {form:'divisibility-linear',parameters:{n,m,a,b},tex:`\\text{For every integer }x,\\quad (x\\mid ${a}\\text{ and }x\\mid ${b})\\implies x\\mid(${n}\\cdot ${a}+${m}\\cdot ${b}).`};
       }
       if(form==='gcd') {
-        // gcd(n,m)|a is necessary and sufficient. A false case needs gcd>1.
-        let n,m;
-        if(c.truth){n=rand(1,100);m=rand(1,100);}
-        else {const d=rand(2,20);n=d*rand(1,Math.floor(100/d));m=d*rand(1,Math.floor(100/d));}
-        const g=gcd(n,m),a=eligible(positive,a=>(a%g===0)===c.truth);
-        return {form:'divisibility-gcd',parameters:{n,m,a},tex:`\\text{For all integers }x,y,\\quad (x\\mid ${n}y\\text{ and }x\\mid ${m}y)\\implies x\\mid ${a}y.`};
+        let n,m,a,combination;
+        if(c.truth) {
+          let choices;
+          do {
+            n=rand(1,100);m=rand(1,100);
+            choices=n===m?[]:smallLinearCombinations(n,m);
+          } while(!choices.length);
+          combination=pick(choices);
+          a=combination[0]*n+combination[1]*m;
+        } else {
+          const d=rand(2,20);
+          n=d*rand(1,Math.floor(100/d));m=d*rand(1,Math.floor(100/d));
+          const g=gcd(n,m);
+          a=eligible(positive,value=>value%g!==0);
+        }
+        return {form:'divisibility-gcd',parameters:{n,m,a},combination,tex:`\\text{For all integers }x,y,\\quad (x\\mid ${n}y\\text{ and }x\\mid ${m}y)\\implies x\\mid ${a}y.`};
       }
       // ax|by and cy|dz imply ac*x|bd*z. Thus the exact criterion is
       // n*b*d | m*a*c. Construct true coefficients; false case uses n=100
@@ -1491,7 +1525,304 @@ fetch("/nav.html")
       if(setup.choice)lines.unshift(`If the divisibility hypothesis holds for the integer ${math(setup.choice)} we choose, then:`);
       showProofSetupLines('completed-definitions',lines);
       element('proof-setup-panel').hidden=true;
-      stage='general-proof';
+      startFinalProof(setup,checked.letters);
+    }
+    // Parse algebra only. Keeping the expression tree lets us check that the
+    // last line actually displays the requested factor and remainder.
+    function parseProofExpression(text) {
+      const input=text.toLowerCase().replace(/\\[()[\]]|\$|\\left|\\right|\\[,;! ]/g,'')
+        .replace(/\\(?:cdot|times)|[·×]/g,'*').replace(/[−–]/g,'-').replace(/²/g,'^2')
+        .replace(/\{/g,'(').replace(/\}/g,')');
+      const tokens=input.match(/\\frac|\d+|[a-z]|[^\s]/g)||[];
+      let index=0;
+      const take=token=>tokens[index]===token&&(index++,true);
+      function group() {
+        if(!take('('))throw Error('Put parentheses around the numerator and denominator.');
+        const value=sum();
+        if(!take(')'))throw Error('Check the parentheses.');
+        return value;
+      }
+      function primary() {
+        if(take('\\frac'))return ['/',group(),group()];
+        if(tokens[index]==='(')return group();
+        const token=tokens[index++]||'';
+        if(/^\d+$/.test(token)&&Number.isSafeInteger(Number(token)))return ['number',Number(token)];
+        if(/^[a-z]$/.test(token))return ['variable',token];
+        throw Error('Enter an algebraic expression at every equality.');
+      }
+      function power() {
+        if(take('+'))return power();
+        if(take('-'))return ['*',['number',-1],power()];
+        const base=primary();
+        if(!take('^'))return base;
+        const exponent=primary();
+        if(exponent[0]!=='number'||exponent[1]>20)throw Error('Use a nonnegative whole-number exponent up to 20.');
+        return ['^',base,exponent[1]];
+      }
+      function product() {
+        let value=power();
+        while(index<tokens.length) {
+          if(take('*'))value=['*',value,power()];
+          else if(take('/'))value=['/',value,power()];
+          else if(/^(?:\d+|[a-z]|\(|\\frac)$/.test(tokens[index]))value=['*',value,power()];
+          else break;
+        }
+        return value;
+      }
+      function sum() {
+        let value=product();
+        while(tokens[index]==='+'||tokens[index]==='-') {
+          const operator=tokens[index++];
+          value=[operator,value,product()];
+        }
+        return value;
+      }
+      const tree=sum();
+      if(index!==tokens.length)throw Error('Check the symbols in the equality.');
+      return tree;
+    }
+    function proofPolySize(poly) {
+      return Object.values(poly).reduce((size,coefficient)=>size+Math.abs(coefficient),0);
+    }
+    function proofPolyMultiply(a,b) {
+      if(proofPolySize(a)*proofPolySize(b)>Number.MAX_SAFE_INTEGER)throw Error('Use smaller coefficients in the calculation.');
+      return polyMul(a,b);
+    }
+    function proofExpressionValue(tree,substitutions={},allowVariableDivision=false) {
+      const [operator,left,right]=tree;
+      const one={'':1};
+      if(operator==='number')return [left?{'':left}:{},one];
+      if(operator==='variable')return substitutions[left]||[{[left]:1},one];
+      const [a,b]=proofExpressionValue(left,substitutions,allowVariableDivision);
+      if(operator==='^') {
+        let numerator=one,denominator=one;
+        for(let i=0;i<right;i++){
+          numerator=proofPolyMultiply(numerator,a);
+          denominator=proofPolyMultiply(denominator,b);
+        }
+        return [numerator,denominator];
+      }
+      const [c,d]=proofExpressionValue(right,substitutions,allowVariableDivision);
+      if(operator==='*')return [proofPolyMultiply(a,c),proofPolyMultiply(b,d)];
+      if(operator==='/') {
+        if(!Object.keys(c).length||(!allowVariableDivision&&Object.keys(c).some(key=>key)))throw Error('Divide only by a nonzero constant.');
+        return [proofPolyMultiply(a,d),proofPolyMultiply(b,c)];
+      }
+      const first=proofPolyMultiply(a,d),second=proofPolyMultiply(c,b);
+      if(proofPolySize(first)+proofPolySize(second)>Number.MAX_SAFE_INTEGER)throw Error('Use smaller coefficients in the calculation.');
+      return [polyAdd(first,second,operator==='+'?1:-1),proofPolyMultiply(b,d)];
+    }
+    function integerProofPolynomial(tree) {
+      const [numerator,denominator]=proofExpressionValue(tree);
+      const divisor=denominator[''];
+      if(!divisor||Object.keys(denominator).some(key=>key)||Object.values(numerator).some(value=>value%divisor))return null;
+      return Object.fromEntries(Object.entries(numerator).map(([key,value])=>[key,value/divisor]));
+    }
+    function proofPolynomialTex(poly) {
+      const terms=Object.entries(poly).sort(([a],[b])=>b.length-a.length||a.localeCompare(b));
+      return terms.map(([key,value],i)=>{
+        const variables=key.replace(/([a-z])\1+/g,match=>match[0]+'^'+match.length);
+        const coefficient=Math.abs(value);
+        return (value<0?'-':i?'+':'')+(coefficient===1&&key?'':coefficient)+variables;
+      }).join('')||'0';
+    }
+    function proofExpressionTex(tree) {
+      const [operator,left,right]=tree;
+      if(operator==='number'||operator==='variable')return String(left);
+      if(operator==='/')return `\\frac{${proofExpressionTex(left)}}{${proofExpressionTex(right)}}`;
+      const grouped=(part,operators)=>operators.includes(part[0])?'('+proofExpressionTex(part)+')':proofExpressionTex(part);
+      if(operator==='^')return grouped(left,['+','-','*','/','^'])+`^{${right}}`;
+      if(operator==='*') {
+        const a=grouped(left,['+','-']),b=grouped(right,['+','-']);
+        const separator=/^\d/.test(b)?'\\cdot ':'';
+        return a+separator+(/^[-]/.test(b)?'('+b+')':b);
+      }
+      return proofExpressionTex(left)+operator+grouped(right,operator==='-'?['+','-']:[]);
+    }
+    function proofGoal(q,setup,letters,mapping={}) {
+      const v=q.parameters;
+      const x=mapping.x||'x',y=mapping.y||'y',z=mapping.z||'z',k=mapping.k||'k';
+      const [u,w]=letters;
+      const rhs=i=>setup.equations[i].factor+letters[i]+(setup.equations[i].offset?'+1':'');
+      const combine=(a,b,first,second)=>`${a===1?'':a===-1?'-':a}${first}${b>=0?'+':''}${b===1?'':b===-1?'-':b}${second}`;
+      const goal={remainder:0,steps:[],substitutions:[{}]};
+      if(q.form.startsWith('parity-')) {
+        goal.substitutions=[{[x]:rhs(0)}];
+        goal.divisor='2';
+        if(q.form==='parity-pair') {
+          goal.left=parityPolynomialTex(v.terms);
+          goal.steps.push(parityPolynomialTex(v.terms,{x:rhs(0),y:rhs(1)}));
+          goal.substitutions[0][y]=rhs(1);
+          goal.remainder=v.q;
+        } else {
+          goal.left=lin(v.n,x,v.m);
+          goal.steps.push(`${v.n}(${rhs(0)})+${v.m}`);
+          goal.remainder=q.form==='parity-reverse'?1-v.q:v.q;
+          if(q.form==='parity-existential') {
+            goal.factorOf=v.k;
+            const constant=v.n*v.p+v.m;
+            const factor=positive.find(d=>d>1&&v.k%d===0&&2*v.n%d===0&&constant%d!==0);
+            goal.divisor=String(factor);
+            goal.remainder=constant%factor;
+          }
+        }
+        const expanded=integerProofPolynomial(parseProofExpression(goal.steps[0]));
+        goal.steps.push(proofPolynomialTex(expanded));
+        const divisor=Number(goal.divisor);
+        const quotient=polyAdd(expanded,{'':goal.remainder},-1);
+        goal.steps.push(`${divisor}(${proofPolynomialTex(Object.fromEntries(Object.entries(quotient).map(([key,n])=>[key,n/divisor])))})`+(goal.remainder?'+'+goal.remainder:''));
+        return goal;
+      }
+      if(q.form==='divisibility-gcd') {
+        const [a,b]=q.combination||smallLinearCombinations(v.n,v.m).find(pair=>pair[0]*v.n+pair[1]*v.m===v.a);
+        return {...goal,left:`${v.a}${y}`,divisor:x,
+          steps:[`(${combine(a,b,`(${v.n})`,`(${v.m})`)})${y}`,
+            combine(a,b,`(${v.n}${y})`,`(${v.m}${y})`),
+            combine(a,b,`(${x}${u})`,`(${x}${w})`),`${x}(${combine(a,b,u,w)})`],
+          substitutions:[{[y]:`${x}${u}/${v.n}`,[w]:`${v.m}${u}/${v.n}`},{[x]:'0',[y]:'0'}]};
+      }
+      if(q.form==='divisibility-linear')return {...goal,left:`${v.n}*${v.a}+${v.m}*${v.b}`,divisor:x,
+        steps:[`${v.n}(${x}${u})+${v.m}(${x}${w})`,`${x}(${v.n}${u}+${v.m}${w})`],
+        substitutions:[{[u]:`${v.a}/${x}`,[w]:`${v.b}/${x}`}]};
+      if(q.form==='divisibility-chain') {
+        const a=v.a/v.b,c=v.c/v.d;
+        return {...goal,left:`${v.m}${z}`,divisor:`${v.n===1?'':v.n}${x}`,
+          steps:[`${v.m}(${c}${y}${w})`,`${v.m}(${c})(${a}${x}${u})${w}`,
+            `${v.n===1?'':v.n}${x}(${v.m*a*c/v.n}${u}${w})`],
+          substitutions:[{[y]:`${a}${x}${u}`,[z]:`${a*c}${x}${u}${w}`}]};
+      }
+      if(q.form==='divisibility-contrapositive-sum')return {...goal,left:`${v.n*v.a}${y}+${v.b}${y}`,divisor:x,
+        steps:[`${v.n*v.a}(${x}${u})+${v.b}(${x}${u})`,`${x}(${v.n*v.a+v.b}${u})`],
+        substitutions:[{[y]:x+u}]};
+      if(q.form==='divisibility-contrapositive-offset')return {...goal,left:lin(v.n*v.a,y,v.m),divisor:x,remainder:v.m,knownRemainder:true,
+        steps:[`${v.n*v.a}(${x}${u})+${v.m}`,`${x}(${v.n*v.a}${u})+${v.m}`],
+        substitutions:[{[y]:x+u}]};
+      const divisor=q.presentation==='word'?y:k,scale=v.a/v.n;
+      return {...goal,left:lin(v.a,x,v.b),divisor,remainder:1,knownRemainder:true,
+        choice:q.presentation==='math'?x:null,
+        steps:[`${scale}(${lin(v.n,x,v.m)})+1`,`${scale}(${divisor}${u})+1`,`${divisor}(${scale}${u})+1`],
+        substitutions:[{[x]:`(${divisor}${u}-${v.m})/${v.n}`}]};
+    }
+    function proofConstant(tree) {
+      const polynomial=integerProofPolynomial(tree);
+      if(polynomial&&Object.keys(polynomial).every(key=>!key))return polynomial['']||0;
+      return null;
+    }
+    function isFactoredProofMultiple(tree,divisor) {
+      const polynomial=integerProofPolynomial(tree);
+      if(!polynomial)return false;
+      const [[key,coefficient]]=Object.entries(integerProofPolynomial(parseProofExpression(divisor)));
+      if(!Object.keys(polynomial).length)return true;
+      if(!Object.entries(polynomial).every(([monomial,value])=>monomial.includes(key)&&value%coefficient===0))return false;
+      const factors=part=>part[0]==='*'?[...factors(part[1]),...factors(part[2])]:[part];
+      let displayedCoefficient=1n,hasVariable=!key;
+      for(const part of factors(tree)) {
+        const factor=integerProofPolynomial(part);
+        const terms=factor?Object.entries(factor):[];
+        if(terms.length!==1)continue;
+        const [[monomial,value]]=terms;
+        if(!monomial||monomial===key) {
+          displayedCoefficient*=BigInt(value);
+          if(monomial===key)hasVariable=true;
+        }
+      }
+      return hasVariable&&displayedCoefficient%BigInt(coefficient)===0n;
+    }
+    function hasProofDestination(tree,goal) {
+      if(!goal.remainder&&!goal.factorOf)return isFactoredProofMultiple(tree,goal.divisor);
+      if(tree[0]!=='+')return false;
+      for(const [product,remainder] of [[tree[1],tree[2]],[tree[2],tree[1]]]) {
+        const r=proofConstant(remainder);
+        if(r===null||r<=0)continue;
+        if(goal.factorOf) {
+          if(positive.some(d=>d>r&&goal.factorOf%d===0&&isFactoredProofMultiple(product,String(d))))return true;
+        } else if(r===goal.remainder&&isFactoredProofMultiple(product,goal.divisor))return true;
+      }
+      return false;
+    }
+    function checkFinalProof(goal,text) {
+      try {
+        const expressions=text.trim().replace(/^=\s*/,'').split('=').map(parseProofExpression);
+        const left=parseProofExpression(goal.left);
+        const usesKnownVariables=tree=>{
+          if(tree[0]==='variable')return goal.variables.includes(tree[1]);
+          return tree.slice(1).every(part=>!Array.isArray(part)||usesKnownVariables(part));
+        };
+        for(const tree of expressions) {
+          if(!usesKnownVariables(tree))return {error:'Use the variables and integer letters already introduced in the proof.'};
+          proofExpressionValue(tree);
+        }
+        for(const assumptions of goal.substitutions) {
+          const substitutions=Object.fromEntries(Object.entries(assumptions).map(([letter,expression])=>
+            [letter,proofExpressionValue(parseProofExpression(expression),{},true)]));
+          const [a,b]=proofExpressionValue(left,substitutions,true);
+          for(const [index,tree] of expressions.entries()) {
+            const [c,d]=proofExpressionValue(tree,substitutions,true);
+            if(polyKey(proofPolyMultiply(a,d))!==polyKey(proofPolyMultiply(c,b))) {
+              return {error:`Check expression ${index+1}. It must be equal to the expression on the left using the hypotheses.`};
+            }
+          }
+        }
+        if(!hasProofDestination(expressions.at(-1),goal))return {error:'The equalities are valid. Put the last expression in the requested factored form.'};
+        return {expressions};
+      } catch(error) {
+        return {error:error.message};
+      }
+    }
+    let finalProof=null;
+    function startFinalProof(setup,letters) {
+      finalProof=proofGoal(activeProblem,setup,letters,variableMapping);
+      finalProof.variables=[...setup.variables,...letters,setup.choice].filter(Boolean);
+      const {left,divisor,remainder,factorOf,knownRemainder}=finalProof;
+      const expressionTex=proofExpressionTex(parseProofExpression(left));
+      const expression=math(expressionTex);
+      const factor=math(divisor);
+      let destination,instruction;
+      if(factorOf) {
+        destination=math(`${factorOf}\\nmid (${expressionTex})`);
+        instruction=`as a multiple of a factor of ${math(String(factorOf))}, plus a nonzero remainder which is less than that factor`;
+      } else if(knownRemainder) {
+        destination=`${factor} does not divide ${expression}`;
+        instruction=`as a multiple of ${factor}, plus ${math(String(remainder))}, which ${factor} does not divide`;
+      } else if(activeProblem.form.startsWith('parity-')) {
+        destination=`${expression} is ${parity(remainder)}`;
+        instruction='as 2 times an integer'+(remainder?', plus 1':'');
+      } else {
+        destination=`${factor} divides ${expression}`;
+        instruction=`as ${factor} times an integer`;
+      }
+      element('final-proof-destination').textContent=`Keep our eye on the destination (conclusion) we are trying to reach: that ${destination}`;
+      element('final-proof-instruction').textContent=`So, we want to write ${expression} ${instruction}`;
+      element('final-proof-prefix').textContent=math(expressionTex+'=');
+      element('final-proof-panel').hidden=false;
+      element('final-proof-input').focus();
+      stage='final-proof';
+      typeset([element('final-proof-panel')]);
+    }
+    function finishFinalProof(hint=false) {
+      if(stage!=='final-proof')return;
+      const input=element('final-proof-input');
+      const checked=checkFinalProof(finalProof,hint?finalProof.steps.join('='):input.value);
+      if(checked.error){element('final-proof-feedback').textContent=checked.error;return;}
+      const target=element('proof-conclusion');
+      clearMath(target);
+      if(finalProof.choice) {
+        const choice=document.createElement('p');
+        choice.textContent=`We can choose ${math(finalProof.choice+'=0')} because the following calculation proves the implication for every integer ${math(finalProof.choice)}.`;
+        target.appendChild(choice);
+      }
+      const line=document.createElement('p');
+      const expressions=[parseProofExpression(finalProof.left),...checked.expressions];
+      line.textContent=math(expressions.map(proofExpressionTex).join('='))+' ';
+      const qed=document.createElement('span');
+      qed.textContent=math('\\square');
+      qed.setAttribute('aria-label','End of proof');
+      line.appendChild(qed);
+      target.appendChild(line);
+      element('final-proof-panel').hidden=true;
+      element('final-proof-feedback').textContent='';
+      stage='proof-complete';
+      typeset([target]);
     }
     function showProofSetupLines(id,lines) {
       const target=element(id);
@@ -1542,6 +1873,13 @@ fetch("/nav.html")
       clearMath(element('proof-setup-instruction'));
       clearMath(element('completed-proof-lets'));
       clearMath(element('completed-definitions'));
+      finalProof=null;
+      element('final-proof-panel').hidden=true;
+      element('final-proof-input').value='';
+      element('final-proof-feedback').textContent='';
+      clearMath(element('final-proof-destination'));
+      clearMath(element('final-proof-instruction'));
+      clearMath(element('final-proof-prefix'));
       // Reset every later proof stage when Start generates another question.
       element('proof-solving').hidden=true;clearMath(element('numerical-examples'));clearMath(element('proof-conclusion'));
       element('method-buttons').hidden=true;clearMath(element('method-explanation'));resetImplication();
@@ -1558,6 +1896,8 @@ fetch("/nav.html")
     element('contrapositive-proof-btn').addEventListener('click',chooseMethod);
     element('prove-btn').addEventListener('click',()=>chooseProof(true));
     element('disprove-btn').addEventListener('click',()=>chooseProof(false));
+    element('final-proof-next').addEventListener('click',()=>finishFinalProof());
+    element('final-proof-hint').addEventListener('click',()=>finishFinalProof(true));
     element('proof-next').addEventListener('click',()=>finishExample());
     element('proof-hint').addEventListener('click',()=>finishExample(true));
     setupToolbar();

@@ -228,6 +228,23 @@ fetch("/nav.html")
       <p id="decision-result"></p>
       <p id="decision-reason"></p>
       <div id="numerical-examples"></div>
+      <div id="implication-stage" hidden>
+        <p>To disprove an existential statement, we must show that no example satisfies all its conditions.</p>
+        <p><label for="implication-input"><strong>Rewrite the statement as an implication we are trying to prove</strong></label></p>
+        <textarea id="implication-input" rows="4" aria-label="Implication to prove" spellcheck="false"></textarea>
+        <div id="implication-toolbar" aria-label="Implication words and symbols"></div>
+        <div class="button-container">
+          <button type="button" id="implication-next" class="rubber-button">Next</button>
+          <button type="button" id="implication-hint" class="rubber-button">Hint</button>
+        </div>
+        <p id="implication-feedback" class="proof-error" role="status" aria-live="polite"></p>
+      </div>
+      <div id="completed-implication"></div>
+      <div id="method-buttons" class="button-container" hidden>
+        <button type="button" id="direct-proof-btn" class="rubber-button">Direct Proof</button>
+        <button type="button" id="contrapositive-proof-btn" class="rubber-button">Contrapositive Proof</button>
+      </div>
+      <div id="method-explanation" aria-live="polite"></div>
       <div id="witness-panel" hidden>
         <label id="witness-label" for="witness-input"></label>
         <input id="witness-input" type="text" aria-label="Example or counterexample variable values" autocomplete="off" spellcheck="false">
@@ -258,14 +275,14 @@ fetch("/nav.html")
     .let-small-button,.translation-symbol {border:2px solid #555;border-radius:8px;background:white;padding:.2em .6em;font:inherit;cursor:pointer}
     .let-small-button {font-size:1.15em}
     .translation-symbol:hover {background:#eef4fc}
-    #translation-input {width:min(100%,950px);box-sizing:border-box;resize:vertical;font:inherit;padding:.6em;border:2px solid #777;border-radius:8px}
+    #translation-input,#implication-input {width:min(100%,950px);box-sizing:border-box;resize:vertical;font:inherit;padding:.6em;border:2px solid #777;border-radius:8px}
     .translation-toolbar-row {margin:.5em auto}
     #stage-feedback {color:#a12222;max-width:950px;margin:1em auto}
     #completed-lets {max-width:950px;margin:1.2em auto;text-align:left}
     #completed-math {margin:1.2em auto;overflow-x:auto}
 
     #proof-solving {max-width:1100px;margin:1.2em auto;text-align:center;line-height:1.8}
-    #numerical-examples,#proof-conclusion {margin:1em auto;overflow-x:auto}
+    #numerical-examples,#proof-conclusion,#completed-implication {margin:1em auto;overflow-x:auto}
     #witness-panel {display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:.6em;margin:1.2em auto}
     #witness-input {width:min(100%,450px);box-sizing:border-box;padding:.5em;border:2px solid #777;border-radius:8px;font:inherit}
     .proof-error {color:#a12222}
@@ -356,7 +373,8 @@ fetch("/nav.html")
       let a,b,cc,d,n,m;
       if(c.truth) {
         b=rand(1,10);d=rand(1,10);n=rand(1,10);
-        a=b*rand(1,10);cc=d*rand(1,10);
+        const ratios=[];for(let r=1;r<=6;r++)for(let t=1;t<=6;t++)if(r*t<=6)ratios.push([r,t]);
+        const [r,t]=pick(ratios);a=b*r;cc=d*t;
         m=eligible(positive,m=>(m*a*cc)%(n*b*d)===0);
       } else {
         a=rand(1,100);b=rand(1,100);cc=rand(1,100);d=rand(1,100);
@@ -544,8 +562,8 @@ fetch("/nav.html")
         .replace(/\\(?:left|right)\b/g,'').replace(/\\[()[\]]/g,'')
         .replace(/\\(?:forall)\b|∀/g,' forall ').replace(/\\exists\b|∃/g,' exists ')
         .replace(/\\(?:implies|Rightarrow|rightarrow)\b|⇒|→|=>|->/gi,' then ')
-        .replace(/\\nmid(?![a-z])|∤|!\|/g,' notdiv ').replace(/\\mid(?![a-z])|∣|\|/g,' div ')
-        .replace(/\\land(?![a-z])|∧|&&/g,' and ').replace(/\\(?:geq|ge)(?![a-z])|≥/g,' >= ')
+        .replace(/\|\|/g,' or ').replace(/\\nmid(?![a-z])|∤|!\|/g,' notdiv ').replace(/\\mid(?![a-z])|∣|\|/g,' div ')
+        .replace(/\\lor(?![a-z])|∨|\|\|/g,' or ').replace(/\\land(?![a-z])|∧|&&/g,' and ').replace(/\\(?:geq|ge)(?![a-z])|≥/g,' >= ')
         .replace(/\\(?:leq|le)(?![a-z])|≤/g,' <= ').replace(/\\(?:neq|ne)\b|≠/g,' != ')
         .replace(/\\in\b|∈/g,' in ').replace(/\\(?:cdot|times)\b|·|×/g,' * ')
         .replace(/\\[,;! ]|\$/g,' ').replace(/\bfor (?:all|every|each)\b/g,'forall')
@@ -595,6 +613,11 @@ fetch("/nav.html")
       const unique=[...new Map(flat.map(n=>[JSON.stringify(n),n])).values()].sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b)));
       return unique.length===1?unique[0]:['and',...unique];
     }
+    function disjunction(nodes) {
+      const flat=nodes.flatMap(n=>n[0]==='or'?n.slice(1):[n]);
+      const unique=[...new Map(flat.map(n=>[JSON.stringify(n),n])).values()].sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b)));
+      return unique.length===1?unique[0]:['or',...unique];
+    }
     function implication(a,b) {
       if(b[0]==='implies')return ['implies',conjunction([a,b[1]]),b[2]];
       return ['implies',a,b];
@@ -619,9 +642,14 @@ fetch("/nav.html")
           }
           if(!names.length)throw Error('Name the quantified variables.');
           if(eat('in')){domain();if(peek()==='z')i++;}
+          let restricted=false;
+          if(['>','<','>=','<='].includes(peek())) {
+            const op=tokens[i++];qualifiers.push(atom(op,{[names.at(-1)]:1},sum()));restricted=true;
+          }
           while(eat(',')){};eat('st');
           bound.push({kind,names:names.sort()});
           if(parity)for(const name of names)qualifiers.push(atom(parity,{[name]:1}));
+          if(restricted)break;
         }
       }
       function primary() {
@@ -653,17 +681,27 @@ fetch("/nav.html")
         }
         return conjunction(parts);
       }
+      function or() {
+        const parts=[and()];while(eat('or'))parts.push(and());return disjunction(parts);
+      }
       function logic() {
-        if(eat('if')){const left=and();while(eat(',')){};if(!eat('then'))throw Error('Include then or an implication arrow.');return implication(left,logic());}
-        const left=and();while(eat(',')){};
+        if(peek()==='exists'||peek()==='forall') {
+          const startB=bound.length,startQ=qualifiers.length;binders();
+          const scopedBounds=bound.splice(startB),scopedQualifiers=qualifiers.splice(startQ);
+          let body=logic();
+          if(scopedQualifiers.length)body=scopedBounds.some(b=>b.kind==='exists')?conjunction([...scopedQualifiers,body]):implication(conjunction(scopedQualifiers),body);
+          return ['quantified',scopedBounds,body];
+        }
+        if(eat('if')){const left=or();while(eat(',')){};if(!eat('then'))throw Error('Include then or an implication arrow.');return implication(left,logic());}
+        const left=or();while(eat(',')){};
         if(eat('then'))return implication(left,logic());
-        // A restriction introduced by “such that”, followed by an if statement.
-        if(peek()==='if')return implication(left,logic());
+        // A quantified restriction may precede an if statement or an existence claim.
+        if(['if','exists','forall'].includes(peek()))return implication(left,logic());
         return left;
       }
       while(eat(',')){};binders();const body=logic();while(eat(',')){};
       if(i!==tokens.length)throw Error('Check the wording or grouping of the statement.');
-      return {bound,body:qualifiers.length?conjunction([...qualifiers,body]):body};
+      return {bound,body:qualifiers.length?(bound.some(b=>b.kind==='exists')?conjunction([...qualifiers,body]):implication(conjunction(qualifiers),body)):body};
     }
     function expectedTranslation(q,mapping) {
       const v=q.parameters,N=key=>mapping?.[key]||key;
@@ -742,33 +780,33 @@ fetch("/nav.html")
     function illustrativeExamples(q) {
       const candidates=[],v=q.parameters;
       if(q.form.startsWith('parity-')) {
-        for(let x=1;x<=30;x++) {
+        for(let x=1;x<=20;x++) {
           const result=evaluateExample(q,{x});
           if(q.quantifier==='existential'?parityOf(x)===v.p&&!result.conclusion:result.premise&&result.conclusion)candidates.push({x});
         }
       } else if(q.form==='common-divisor') {
         if(q.presentation==='word') {
-          for(let x=1;x<=30;x++)candidates.push({x,y:rand(2,30)});
+          for(let x=1;x<=20;x++)candidates.push({x,y:rand(2,20)});
         } else {
-          for(let k=2;k<=30;k++) {
+          for(let k=2;k<=20;k++) {
             // If k does not divide all coefficients, x=0 or x=1 exposes it.
             const x=[0,1].find(x=>!divides(k,v.n*x+v.m)||!divides(k,v.a*x+v.b));
             if(x!==undefined)candidates.push({k,x});
           }
         }
       } else if(q.form==='divisibility-chain') {
-        // Construct premise-satisfying triples; small x may require larger y,z.
-        for(let x=1;x<=30;x++) {
-          const y=v.a*x/gcd(v.a*x,v.b),z=v.c*y/gcd(v.c*y,v.d);
-          candidates.push({x,y,z});
+        // Keep all three variables within the sample bound.
+        for(let x=1;x<=20;x++)for(let y=1;y<=20;y++)for(let z=1;z<=20;z++) {
+          const result=evaluateExample(q,{x,y,z});
+          if(result.premise&&result.conclusion)candidates.push({x,y,z});
         }
       } else if(q.form==='divisibility-linear') {
-        for(let x=1;x<=30;x++)if(evaluateExample(q,{x}).premise)candidates.push({x});
+        for(let x=1;x<=20;x++)if(evaluateExample(q,{x}).premise)candidates.push({x});
         // There may be fewer than three positive common divisors. Use distinct
         // negative divisors too; all variables in this math statement are integers.
-        if(q.presentation==='math'&&candidates.length<3)for(let x=-1;x>=-30;x--)if(evaluateExample(q,{x}).premise)candidates.push({x});
+        if(q.presentation==='math'&&candidates.length<3)for(let x=-1;x>=-20;x--)if(evaluateExample(q,{x}).premise)candidates.push({x});
       } else {
-        for(let x=1;x<=30;x++)for(let y=1;y<=30;y++) {
+        for(let x=1;x<=20;x++)for(let y=1;y<=20;y++) {
           const result=evaluateExample(q,{x,y});if(result.premise&&result.conclusion)candidates.push({x,y});
         }
       }
@@ -853,19 +891,20 @@ fetch("/nav.html")
       [['∣','∣','\\mid'],['divides','divides'],['is divisible by','is divisible by'],['∤','∤','\\nmid'],['does not divide','does not divide'],['is not divisible by','is not divisible by'],['⇒','⇒','\\implies'],['If','If'],['then','then'],['∧','∧','\\land'],['and','and']],
       [['∃','∃','\\exists'],['There exists','There exists'],['such that','such that'],['∀','∀','\\forall'],['For all','For all'],['∈','∈','\\in'],['ℤ','ℤ','\\mathbb{Z}'],['integers','integers'],['>','>'],['<','<'],['≥','≥','\\geq'],['≤','≤','\\leq']]
     ];
-    function setupToolbar() {
-      for(const entries of toolbarRows) {
+    function setupToolbar(targetId='translation-toolbar',inputId='translation-input') {
+      for(let index=0;index<toolbarRows.length;index++) {
+        const entries=targetId==='implication-toolbar'&&index===0?[...toolbarRows[index],['∨','∨','\\lor'],['or','or']]:toolbarRows[index];
         const row=document.createElement('div');row.className='translation-toolbar-row';
         for(const [label,value,title]of entries) {
           const button=document.createElement('button');button.type='button';button.className='translation-symbol';button.textContent=label;button.title=title||label;
           button.addEventListener('click',()=>{
-            const input=element('translation-input');const start=input.selectionStart,end=input.selectionEnd;
+            const input=element(inputId);const start=input.selectionStart,end=input.selectionEnd;
             const left=start&& !/\s/.test(input.value[start-1])?' ':'';
             const right=end<input.value.length&&!/\s/.test(input.value[end])?' ':' ';
             input.setRangeText(left+value+right,start,end,'end');input.focus();
           });row.appendChild(button);
         }
-        element('translation-toolbar').appendChild(row);
+        element(targetId).appendChild(row);
       }
     }
     function completedLets() {
@@ -906,10 +945,81 @@ fetch("/nav.html")
       const statement=document.createElement('div');statement.className='math';statement.textContent='\\['+renamedTex(activeProblem,variableMapping)+'\\]';
       target.append(intro,statement);typeset([target]);startDecision();
     }
+    function implicationTarget(q,mapping={}) {
+      const v=q.parameters,x=mapping.x||'x',y=mapping.y||'y',k=mapping.k||'k';
+      const linear=(n,t,m)=>`${n}${t}+${m}`;
+      if(q.form==='parity-existential')return {
+        text:`For all integers ${x}, if ${x} is ${parity(v.p)}, then ${v.k} does not divide ${linear(v.n,x,v.m)}`,
+        tex:`\\text{For every integer }${x},\\quad\\text{If }${x}\\text{ is ${parity(v.p)}, then }${v.k}\\nmid(${lin(v.n,x,v.m)}).`,
+        alternatives:[`forall ${x} if ${v.k} divides ${linear(v.n,x,v.m)} then ${x} is ${parity(1-v.p)}`]
+      };
+      if(q.form==='common-divisor'&&q.presentation==='word') {
+        const A=linear(v.n,x,v.m),B=linear(v.a,x,v.b);
+        return {
+          text:`For all integers ${x},${y}, if ${y}>1 and ${y} divides ${A}, then ${y} does not divide ${B}`,
+          tex:`\\text{For all integers }${x},${y},\\quad\\text{If }${y}>1\\text{ and }${y}\\mid(${lin(v.n,x,v.m)}),\\text{ then }${y}\\nmid(${lin(v.a,x,v.b)}).`,
+          alternatives:[
+            `forall ${x},${y} if ${y}>1 and ${y} divides ${B} then ${y} does not divide ${A}`,
+            `forall ${x},${y} if ${y}>1 then ${y} does not divide ${A} or ${y} does not divide ${B}`,
+            `forall ${x},${y} if ${y} divides ${A} and ${y} divides ${B} then ${y}<=1`
+          ]
+        };
+      }
+      if(q.form==='common-divisor') {
+        // Negate the existing nested quantifiers faithfully:
+        // Present the equivalent conditional directly, without a disjunction step.
+        const A=linear(v.n,x,v.m),B=linear(v.a,x,v.b);
+        const coefficients=[v.n,v.m,v.a,v.b];
+        return {
+          text:`For every integer ${k}>1, there exists an integer ${x} such that if ${k} divides ${A}, then ${k} does not divide ${B}`,
+          tex:`\\text{For every integer }${k}>1,\\text{ there exists an integer }${x}\\text{ such that If }${k}\\mid(${lin(v.n,x,v.m)}),\\text{ then }${k}\\nmid(${lin(v.a,x,v.b)}).`,
+          // Equivalently, no k>1 divides all four coefficients.
+          alternatives:[
+            `forall ${k} if ${k}>1 then exists ${x} st if ${k} divides ${B} then ${k} does not divide ${A}`,
+            `forall ${k} if ${k}>1 then exists ${x} st ${k} does not divide ${A} or ${k} does not divide ${B}`,
+            ...coefficients.map((n,i)=>`forall ${k} if ${k}>1 and ${coefficients.filter((_,j)=>j!==i).map(c=>`${k} divides ${c}`).join(' and ')} then ${k} does not divide ${n}`)
+          ]
+        };
+      }
+      throw Error('This statement does not need an existential-negation step.');
+    }
+    function checkImplication(q,text,mapping={}) {
+      try {
+        const actual=parseTranslation(text),target=implicationTarget(q,mapping);
+        if(actual.body[0]!=='implies'||actual.bound.some(b=>b.kind!=='forall'))return {ok:false,message:'Write a universal implication that proves there is no example satisfying the existential statement.'};
+        const names=p=>p.bound.flatMap(b=>b.names).sort().join(',');
+        for(const expectedText of [target.text,...target.alternatives]) {
+          const expected=parseTranslation(expectedText);
+          if((!actual.bound.length||names(actual)===names(expected))&&JSON.stringify(actual.body)===JSON.stringify(expected.body))return {ok:true};
+        }
+        return {ok:false,message:'Check the quantifiers and the negated conclusion. The implication must rule out every example satisfying the original existential statement.'};
+      } catch(error) {return {ok:false,message:error.message||'Check the implication and its quantifiers.'};}
+    }
+    function startImplication() {
+      stage='implication';element('implication-stage').hidden=false;
+      element('implication-feedback').textContent='';element('implication-input').value='';element('implication-input').focus();
+    }
+    function advanceImplication(hint=false) {
+      if(stage!=='implication')return;
+      if(!hint) {
+        const checked=checkImplication(activeProblem,element('implication-input').value,variableMapping);
+        if(!checked.ok){element('implication-feedback').textContent=checked.message;return;}
+      }
+      const target=element('completed-implication');clearMath(target);
+      const intro=document.createElement('p');intro.textContent='Since we are disproving the statement, we will prove its negation.  That is, the statement:';
+      const statement=document.createElement('div');statement.className='math';statement.textContent='\\['+implicationTarget(activeProblem,variableMapping).tex+'\\]';
+      target.append(intro,statement);element('implication-stage').hidden=true;
+      stage='method-choice';element('method-buttons').hidden=false;typeset([target]);
+    }
+    function resetImplication() {
+      element('implication-stage').hidden=true;element('implication-input').value='';
+      element('implication-feedback').textContent='';clearMath(element('completed-implication'));
+    }
     function startDecision() {
       element('proof-solving').hidden=false;element('decision-buttons').hidden=false;
       element('decision-result').textContent='';element('decision-reason').textContent='';element('decision-feedback').textContent='';
       clearMath(element('numerical-examples'));clearMath(element('proof-conclusion'));
+      element('method-buttons').hidden=true;clearMath(element('method-explanation'));resetImplication();
       element('witness-panel').hidden=true;element('proof-step-controls').hidden=true;
       element('witness-feedback').textContent='';element('witness-input').value='';stage='decision';
     }
@@ -925,13 +1035,54 @@ fetch("/nav.html")
         for(const values of illustrativeExamples(activeProblem)) {
           const line=document.createElement('p');line.textContent=exampleExplanation(activeProblem,values,variableMapping);target.appendChild(line);
         }
-        stage='general-proof';typeset([target]);return;
+        typeset([target]);
+        if(!prove&&activeProblem.quantifier==='existential')startImplication();
+        else {stage='method-choice';element('method-buttons').hidden=false;}
+        return;
       }
       element('decision-reason').textContent=prove?'Since it is an existential statement, we will find an example for which it is true':'Since it is a universal statement, we will find a counterexample for which it is false';
       stage='witness';element('witness-panel').hidden=false;element('proof-step-controls').hidden=false;
       element('witness-label').textContent=prove?'The statement is true for':'The statement is false for';
       element('witness-input').placeholder=exampleVariables(activeProblem).map(key=>`${variableMapping[key]||key} = …`).join(', ');
       element('witness-input').focus();
+    }
+    function directHypothesisTex(q,mapping={}) {
+      const v=q.parameters,x=mapping.x||'x',y=mapping.y||'y',z=mapping.z||'z',k=mapping.k||'k';
+      switch(q.form) {
+        case 'parity-direct':
+        case 'parity-existential':return `${x}\\text{ is ${parity(v.p)}}`;
+        case 'divisibility-gcd':return `${x}\\mid ${v.n}${y}\\text{ and }${x}\\mid ${v.m}${y}`;
+        case 'divisibility-linear':return `${x}\\mid ${v.a}\\text{ and }${x}\\mid ${v.b}`;
+        case 'divisibility-chain':return `${v.a}${x}\\mid ${v.b}${y}\\text{ and }${v.c}${y}\\mid ${v.d}${z}`;
+        case 'common-divisor':return q.presentation==='word'?`${y}>1\\text{ and }${y}\\mid(${lin(v.n,x,v.m)})`:`${k}\\mid(${lin(v.n,x,v.m)})`;
+      }
+      throw Error('No direct-proof hypothesis for this problem type.');
+    }
+    function chooseMethod() {
+      if(stage!=='method-choice')return;
+      element('method-buttons').hidden=true;
+      const target=element('method-explanation');clearMath(target);
+      const contrapositive=activeProblem.category==='universal-contrapositive';
+      const method=document.createElement('p');method.textContent=contrapositive?'We will use a contrapositive proof.':'We will use a direct proof.';
+      const reason=document.createElement('p');
+      reason.textContent=contrapositive?'The hypothesis would be difficult from which to work forward:':`The hypothesis ${math(directHypothesisTex(activeProblem,variableMapping))} is “simple” enough to proceed directly.`;
+      target.append(method,reason);
+      if(contrapositive) {
+        const detail=document.createElement('p');
+        if(activeProblem.form.startsWith('parity-'))detail.textContent='We would have to divide to isolate the variable.';
+        else {
+          const v=activeProblem.parameters,x=variableMapping.x||'x',y=variableMapping.y||'y';
+          const dividend=activeProblem.form==='divisibility-contrapositive-offset'?String(v.m):`${v.n*v.a}${y}+${v.b}${y}`;
+          const lead=document.createElement('span');lead.textContent=`The fact that ${math(x)} does `;
+          const not=document.createElement('em');not.textContent='not';
+          const middle=document.createElement('span');middle.textContent=` divide ${math(dividend)} doesn’t have as simple a definition as something which `;
+          const does=document.createElement('em');does.textContent='does';
+          const end=document.createElement('span');end.textContent=' divide something.';
+          detail.append(lead,not,middle,does,end);
+        }
+        target.appendChild(detail);
+      }
+      stage='general-proof';typeset([target]);
     }
     function finishExample(hint=false) {
       if(stage!=='witness')return;
@@ -966,16 +1117,22 @@ fetch("/nav.html")
       element('let-panel').hidden=false;element('translation-panel').hidden=true;element('stage-controls').hidden=false;
       // Reset every later proof stage when Start generates another question.
       element('proof-solving').hidden=true;clearMath(element('numerical-examples'));clearMath(element('proof-conclusion'));
+      element('method-buttons').hidden=true;clearMath(element('method-explanation'));resetImplication();
       element('decision-feedback').textContent='';element('decision-result').textContent='';element('decision-reason').textContent='';element('witness-feedback').textContent='';
       element('witness-input').value='';element('witness-panel').hidden=true;element('proof-step-controls').hidden=true;
       if(problem.presentation==='math')startDecision();
       typeset([question,statement]);
     }
+    element('direct-proof-btn').addEventListener('click',chooseMethod);
+    element('contrapositive-proof-btn').addEventListener('click',chooseMethod);
     element('prove-btn').addEventListener('click',()=>chooseProof(true));
     element('disprove-btn').addEventListener('click',()=>chooseProof(false));
     element('proof-next').addEventListener('click',()=>finishExample());
     element('proof-hint').addEventListener('click',()=>finishExample(true));
     setupToolbar();
+    setupToolbar('implication-toolbar','implication-input');
+    element('implication-next').addEventListener('click',()=>advanceImplication());
+    element('implication-hint').addEventListener('click',()=>advanceImplication(true));
     element('add-let-btn').addEventListener('click',addLetRow);
     element('remove-let-btn').addEventListener('click',()=>{if(selectedRow){selectedRow.remove();selectedRow=null;}});
     element('stage-next').addEventListener('click',()=>{if(stage==='lets')advanceLets();else if(stage==='translation')advanceTranslation();});
@@ -984,7 +1141,7 @@ fetch("/nav.html")
     // Retain pure checkers for future proof stages and regression checks.
     window.ProofQuestions=Object.freeze({makeProblem,categories,wordBank:deepFreeze(wordBank),wordProblem,
       checkLetStatements,checkTranslation,expectedTranslation,parseTranslation,showProblem,
-      exampleVariables,evaluateExample,isConcludingExample,concludingExample,illustrativeExamples,parseExampleInput,exampleExplanation});
+      exampleVariables,evaluateExample,isConcludingExample,concludingExample,illustrativeExamples,parseExampleInput,exampleExplanation,implicationTarget,checkImplication});
   })();
   </script>
   <audio id="click-sound" src="button.mp3" preload="auto"></audio>

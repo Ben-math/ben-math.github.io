@@ -245,6 +245,17 @@ fetch("/nav.html")
         <button type="button" id="contrapositive-proof-btn" class="rubber-button">Contrapositive Proof</button>
       </div>
       <div id="method-explanation" aria-live="polite"></div>
+      <div id="contrapositive-stage" hidden>
+        <p><label for="contrapositive-input"><strong>State the contrapositive of the statement we are trying to prove</strong></label></p>
+        <textarea id="contrapositive-input" rows="4" aria-label="Contrapositive to prove" spellcheck="false"></textarea>
+        <div id="contrapositive-toolbar" aria-label="Contrapositive words and symbols"></div>
+        <div class="button-container">
+          <button type="button" id="contrapositive-next" class="rubber-button">Next</button>
+          <button type="button" id="contrapositive-hint" class="rubber-button">Hint</button>
+        </div>
+        <p id="contrapositive-feedback" class="proof-error" role="status" aria-live="polite"></p>
+      </div>
+      <div id="completed-contrapositive"></div>
       <div id="witness-panel" hidden>
         <label id="witness-label" for="witness-input"></label>
         <input id="witness-input" type="text" aria-label="Example or counterexample variable values" autocomplete="off" spellcheck="false">
@@ -275,14 +286,14 @@ fetch("/nav.html")
     .let-small-button,.translation-symbol {border:2px solid #555;border-radius:8px;background:white;padding:.2em .6em;font:inherit;cursor:pointer}
     .let-small-button {font-size:1.15em}
     .translation-symbol:hover {background:#eef4fc}
-    #translation-input,#implication-input {width:min(100%,950px);box-sizing:border-box;resize:vertical;font:inherit;padding:.6em;border:2px solid #777;border-radius:8px}
+    #translation-input,#implication-input,#contrapositive-input {width:min(100%,950px);box-sizing:border-box;resize:vertical;font:inherit;padding:.6em;border:2px solid #777;border-radius:8px}
     .translation-toolbar-row {margin:.5em auto}
     #stage-feedback {color:#a12222;max-width:950px;margin:1em auto}
     #completed-lets {max-width:950px;margin:1.2em auto;text-align:left}
     #completed-math {margin:1.2em auto;overflow-x:auto}
 
     #proof-solving {max-width:1100px;margin:1.2em auto;text-align:center;line-height:1.8}
-    #numerical-examples,#proof-conclusion,#completed-implication {margin:1em auto;overflow-x:auto}
+    #numerical-examples,#proof-conclusion,#completed-implication,#completed-contrapositive {margin:1em auto;overflow-x:auto}
     #witness-panel {display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:.6em;margin:1.2em auto}
     #witness-input {width:min(100%,450px);box-sizing:border-box;padding:.5em;border:2px solid #777;border-radius:8px;font:inherit}
     .proof-error {color:#a12222}
@@ -333,7 +344,7 @@ fetch("/nav.html")
       const q=((n*p+m)%2+(c.truth?0:1))%2;
       return {form:'parity-direct',parameters:{n,m,p,q},tex:`\\text{For every integer }x,\\quad x\\text{ is ${parity(p)}}\\implies ${lin(n,'x',m)}\\text{ is ${parity(q)}}.`};
     }
-    function divisibility(c) {
+    function divisibility(c, retryForm) {
       if(c.quantifier==='existential') {
         // A single common nonunit divisor for all x exists exactly when
         // gcd(n,m,a,b)>1. Construct the true case, filter b for the false case.
@@ -353,7 +364,7 @@ fetch("/nav.html")
         const m=rand(1,100);
         return {form:'divisibility-contrapositive-offset',parameters:{n,a,m},tex:`\\text{For all integers }x,y\\text{ such that }x\\nmid ${m},\\quad x\\mid(${n*a}y+${m})\\implies x\\nmid y.`};
       }
-      const form=pick(c.truth?['gcd','linear','chain']:['gcd','chain']);
+      const form=retryForm||pick(c.truth?['gcd','linear','chain']:['gcd','chain']);
       if(form==='linear') {
         const n=rand(1,100),m=rand(1,100),common=pick([4,6,8,9,10,12,14,15,16,18,20]);
         const a=common*rand(1,Math.floor(100/common)),b=common*rand(1,Math.floor(100/common));
@@ -508,15 +519,29 @@ fetch("/nav.html")
     function makeProblem() {
       const topic=pick(['divisibility','even-odd']),c=category();
       const presentation=pick(['word','math']);
-      const result={topic,category:c.id,truth:c.truth,quantifier:c.quantifier,
-        presentation,wordProblemPending:false,
-        ...(topic==='even-odd'?evenOdd(c):divisibility(c))};
-      // Use verbal implications while retaining the mathematical notation.
-      if(result.tex.includes('\\implies'))result.tex=result.tex
-        .replace('\\quad ','\\quad \\text{If }')
-        .replace('\\implies','\\text{, then }');
-      if(presentation==='word')result.wordText=wordProblem(result);
-      return result;
+      const needsExample=c.id==='existential-true'||c.id==='universal-false';
+      let retryForm;
+      while(true) {
+        const generated=topic==='even-odd'?evenOdd(c):divisibility(c,retryForm);
+        const result={topic,category:c.id,truth:c.truth,quantifier:c.quantifier,
+          presentation,wordProblemPending:false,...generated};
+        // Keep the original problem form and probabilities when retrying.
+        if(result.form==='divisibility-gcd')retryForm='gcd';
+        if(result.form==='divisibility-chain')retryForm='chain';
+        // Common-divisor word problems generate their own coefficients.
+        const preparesWordCoefficients=presentation==='word'&&result.form==='common-divisor';
+        if(preparesWordCoefficients)result.wordText=wordProblem(result);
+        if(needsExample) {
+          result.smallExample=findSmallExample(result);
+          if(!result.smallExample)continue;
+        }
+        // Use verbal implications while retaining the mathematical notation.
+        if(result.tex.includes('\\implies'))result.tex=result.tex
+          .replace('\\quad ','\\quad \\text{If }')
+          .replace('\\implies','\\text{, then }');
+        if(presentation==='word'&&!preparesWordCoefficients)result.wordText=wordProblem(result);
+        return result;
+      }
     }
     function deepFreeze(value) {
       Object.values(value).forEach(child=>{if(child&&typeof child==='object')deepFreeze(child);});
@@ -759,7 +784,39 @@ fetch("/nav.html")
       const result=evaluateExample(q,values);
       return q.quantifier==='existential'?q.truth&&result.conclusion:!q.truth&&result.premise&&!result.conclusion;
     }
+    function findSmallExample(q) {
+      const keys=exampleVariables(q);
+      const v=q.parameters;
+      for(let limit=q.presentation==='math'?0:1;limit<10;limit++) {
+        if(q.form==='divisibility-chain') {
+          // For each positive x, the least admissible y and z divide all
+          // other admissible values of their respective variables. If this
+          // triple satisfies the conclusion, its larger multiples do too.
+          for(let x=1;x<=limit;x++) {
+            const y=v.a*x/gcd(v.a*x,v.b);
+            const z=v.c*y/gcd(v.c*y,v.d);
+            if(y<=limit&&z<=limit&&isConcludingExample(q,{x,y,z}))return {x,y,z};
+          }
+          continue;
+        }
+        const choices=positive.slice(0,limit);
+        if(q.presentation==='math')choices.push(0,...choices.map(n=>-n));
+        for(const first of choices) {
+          const values={[keys[0]]:first};
+          if(keys.length===1) {
+            if(isConcludingExample(q,values))return values;
+          } else {
+            for(const second of choices) {
+              values[keys[1]]=second;
+              if(isConcludingExample(q,values))return values;
+            }
+          }
+        }
+      }
+      return null;
+    }
     function concludingExample(q) {
+      if(q.smallExample)return {...q.smallExample};
       const v=q.parameters;
       if(q.form==='common-divisor') {
         if(q.presentation!=='word')return {k:gcd(gcd(v.n,v.m),gcd(v.a,v.b))};
@@ -893,7 +950,7 @@ fetch("/nav.html")
     ];
     function setupToolbar(targetId='translation-toolbar',inputId='translation-input') {
       for(let index=0;index<toolbarRows.length;index++) {
-        const entries=targetId==='implication-toolbar'&&index===0?[...toolbarRows[index],['∨','∨','\\lor'],['or','or']]:toolbarRows[index];
+        const entries=targetId!=='translation-toolbar'&&index===0?[...toolbarRows[index],['∨','∨','\\lor'],['or','or']]:toolbarRows[index];
         const row=document.createElement('div');row.className='translation-toolbar-row';
         for(const [label,value,title]of entries) {
           const button=document.createElement('button');button.type='button';button.className='translation-symbol';button.textContent=label;button.title=title||label;
@@ -983,15 +1040,18 @@ fetch("/nav.html")
       }
       throw Error('This statement does not need an existential-negation step.');
     }
+    function matchesUniversalImplication(text,target) {
+      const actual=parseTranslation(text);
+      if(actual.body[0]!=='implies'||actual.bound.some(b=>b.kind!=='forall'))return false;
+      const names=p=>p.bound.flatMap(b=>b.names).sort().join(',');
+      return [target.text,...target.alternatives].some(expectedText=>{
+        const expected=parseTranslation(expectedText);
+        return (!actual.bound.length||names(actual)===names(expected))&&JSON.stringify(actual.body)===JSON.stringify(expected.body);
+      });
+    }
     function checkImplication(q,text,mapping={}) {
       try {
-        const actual=parseTranslation(text),target=implicationTarget(q,mapping);
-        if(actual.body[0]!=='implies'||actual.bound.some(b=>b.kind!=='forall'))return {ok:false,message:'Write a universal implication that proves there is no example satisfying the existential statement.'};
-        const names=p=>p.bound.flatMap(b=>b.names).sort().join(',');
-        for(const expectedText of [target.text,...target.alternatives]) {
-          const expected=parseTranslation(expectedText);
-          if((!actual.bound.length||names(actual)===names(expected))&&JSON.stringify(actual.body)===JSON.stringify(expected.body))return {ok:true};
-        }
+        if(matchesUniversalImplication(text,implicationTarget(q,mapping)))return {ok:true};
         return {ok:false,message:'Check the quantifiers and the negated conclusion. The implication must rule out every example satisfying the original existential statement.'};
       } catch(error) {return {ok:false,message:error.message||'Check the implication and its quantifiers.'};}
     }
@@ -1020,6 +1080,10 @@ fetch("/nav.html")
       element('decision-result').textContent='';element('decision-reason').textContent='';element('decision-feedback').textContent='';
       clearMath(element('numerical-examples'));clearMath(element('proof-conclusion'));
       element('method-buttons').hidden=true;clearMath(element('method-explanation'));resetImplication();
+      element('contrapositive-stage').hidden=true;
+      element('contrapositive-input').value='';
+      element('contrapositive-feedback').textContent='';
+      clearMath(element('completed-contrapositive'));
       element('witness-panel').hidden=true;element('proof-step-controls').hidden=true;
       element('witness-feedback').textContent='';element('witness-input').value='';stage='decision';
     }
@@ -1082,7 +1146,66 @@ fetch("/nav.html")
         }
         target.appendChild(detail);
       }
-      stage='general-proof';typeset([target]);
+      stage='general-proof';
+      if(contrapositive) {
+        stage='contrapositive';
+        element('contrapositive-stage').hidden=false;
+        element('contrapositive-input').focus();
+      }
+      typeset([target]);
+    }
+    function contrapositiveTarget(q,mapping={}) {
+      const v=q.parameters,x=mapping.x||'x',y=mapping.y||'y';
+      if(q.form==='parity-reverse') {
+        const expression=lin(v.n,x,v.m);
+        const hypothesis=parity(1-v.p),conclusion=parity(1-v.q);
+        return {
+          text:`forall ${x} if ${x} is ${hypothesis} then ${expression} is ${conclusion}`,
+          tex:`\\text{For every integer }${x},\\quad\\text{If }${x}\\text{ is ${hypothesis}, then }${expression}\\text{ is ${conclusion}.}`,
+          alternatives:[]
+        };
+      }
+      if(q.form==='divisibility-contrapositive-offset') {
+        const expression=lin(v.n*v.a,y,v.m);
+        return {
+          text:`forall ${x},${y} if ${x} does not divide ${v.m} and ${x} divides ${y} then ${x} does not divide ${expression}`,
+          tex:`\\text{For all integers }${x},${y}\\text{ such that }${x}\\nmid ${v.m},\\quad\\text{If }${x}\\mid ${y},\\text{ then }${x}\\nmid(${expression}).`,
+          alternatives:[`forall ${x},${y} if ${x} divides ${y} then ${x} divides ${v.m} or ${x} does not divide ${expression}`]
+        };
+      }
+      const expression=`${v.n*v.a}${y}+${v.b}${y}`;
+      return {
+        text:`forall ${x},${y} if ${x} divides ${y} then ${x} divides ${expression}`,
+        tex:`\\text{For all integers }${x},${y},\\quad\\text{If }${x}\\mid ${y},\\text{ then }${x}\\mid(${expression}).`,
+        alternatives:[]
+      };
+    }
+    function advanceContrapositive(hint=false) {
+      if(stage!=='contrapositive')return;
+      const statement=contrapositiveTarget(activeProblem,variableMapping);
+      if(!hint) {
+        const feedback=element('contrapositive-feedback');
+        try {
+          if(!matchesUniversalImplication(element('contrapositive-input').value,statement)) {
+            feedback.textContent='Switch the hypothesis and conclusion, and negate both. Keep any restrictions on the variables.';
+            return;
+          }
+        } catch(error) {
+          feedback.textContent=error.message;
+          return;
+        }
+      }
+      const target=element('completed-contrapositive');
+      const intro=document.createElement('p');
+      intro.textContent='We will prove the contrapositive.';
+      const formula=document.createElement('div');
+      formula.className='math';
+      formula.textContent='\\['+statement.tex+'\\]';
+      clearMath(target);
+      target.append(intro,formula);
+      element('contrapositive-stage').hidden=true;
+      stage='general-proof';
+      typeset([target]);
     }
     function finishExample(hint=false) {
       if(stage!=='witness')return;
@@ -1118,6 +1241,10 @@ fetch("/nav.html")
       // Reset every later proof stage when Start generates another question.
       element('proof-solving').hidden=true;clearMath(element('numerical-examples'));clearMath(element('proof-conclusion'));
       element('method-buttons').hidden=true;clearMath(element('method-explanation'));resetImplication();
+      element('contrapositive-stage').hidden=true;
+      element('contrapositive-input').value='';
+      element('contrapositive-feedback').textContent='';
+      clearMath(element('completed-contrapositive'));
       element('decision-feedback').textContent='';element('decision-result').textContent='';element('decision-reason').textContent='';element('witness-feedback').textContent='';
       element('witness-input').value='';element('witness-panel').hidden=true;element('proof-step-controls').hidden=true;
       if(problem.presentation==='math')startDecision();
@@ -1131,6 +1258,9 @@ fetch("/nav.html")
     element('proof-hint').addEventListener('click',()=>finishExample(true));
     setupToolbar();
     setupToolbar('implication-toolbar','implication-input');
+    setupToolbar('contrapositive-toolbar','contrapositive-input');
+    element('contrapositive-next').addEventListener('click',()=>advanceContrapositive());
+    element('contrapositive-hint').addEventListener('click',()=>advanceContrapositive(true));
     element('implication-next').addEventListener('click',()=>advanceImplication());
     element('implication-hint').addEventListener('click',()=>advanceImplication(true));
     element('add-let-btn').addEventListener('click',addLetRow);

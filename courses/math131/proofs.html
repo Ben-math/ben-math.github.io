@@ -355,6 +355,40 @@ fetch("/nav.html")
     // Select uniformly from eligible finite candidates, with no rejection loops.
     function eligible(values,test) {return pick(values.filter(test));}
     const positive=Array.from({length:100},(_,i)=>i+1);
+    function parityPolynomialTex(terms,values=null) {
+      const x=values?`(${values.x})`:'x';
+      const y=values?`(${values.y})`:'y';
+      const components={x,y,'x^2':x+'^2','y^2':y+'^2',xy:x+y,'':''};
+      return terms.map(({coefficient,component},index)=>{
+        const magnitude=Math.abs(coefficient);
+        const sign=coefficient<0?'-':index>0?'+':'';
+        return sign+(magnitude===1&&component?'':magnitude)+components[component];
+      }).join('');
+    }
+    function parityPolynomialValue(terms,x,y) {
+      // Keep the displayed arithmetic exact even for large integer answers.
+      const a=BigInt(x),b=BigInt(y);
+      const values={x:a,y:b,'x^2':a*a,'y^2':b*b,xy:a*b,'':1n};
+      return terms.reduce((total,{coefficient,component})=>total+BigInt(coefficient)*values[component],0n);
+    }
+    const polynomialParity=(terms,x,y)=>Math.abs(Number(parityPolynomialValue(terms,x,y)%2n));
+    function evenOddPair(category) {
+      const p=rand(0,1),r=rand(0,1);
+      const count=rand(2,4);
+      let components;
+      do {
+        const available=['x','y','x^2','y^2','xy',''];
+        components=Array.from({length:count},()=>available.splice(rand(0,available.length-1),1)[0]);
+      } while(!components.some(component=>component.includes('x'))||!components.some(component=>component.includes('y')));
+      const terms=components.map(component=>({component,coefficient:rand(1,10)*(rand(0,1)?1:-1)}));
+      const actual=polynomialParity(terms,p,r);
+      const q=category.truth?actual:1-actual;
+      const expression=parityPolynomialTex(terms);
+      return {
+        form:'parity-pair',parameters:{p,r,q,terms},
+        tex:`\\text{For all integers }x,y\\text{ such that }x\\text{ is ${parity(p)} and }y\\text{ is ${parity(r)}, } ${expression}\\text{ is ${parity(q)}.}`
+      };
+    }
     function evenOdd(c) {
       let n=rand(1,100),m=rand(1,100),p=rand(0,1);
       if(c.quantifier==='existential') {
@@ -554,9 +588,11 @@ fetch("/nav.html")
       const topic=pick(['divisibility','even-odd']),c=category();
       const presentation=pick(['word','math']);
       const needsExample=c.id==='existential-true'||c.id==='universal-false';
+      const parityGenerator=topic==='even-odd'&&presentation==='math'&&c.quantifier==='universal'&&c.id!=='universal-contrapositive'&&rand(0,1)
+        ?evenOddPair:evenOdd;
       let retryForm;
       while(true) {
-        const generated=topic==='even-odd'?evenOdd(c):divisibility(c,retryForm);
+        const generated=topic==='even-odd'?parityGenerator(c):divisibility(c,retryForm);
         const result={topic,category:c.id,truth:c.truth,quantifier:c.quantifier,
           presentation,wordProblemPending:false,...generated};
         // Keep the original problem form and probabilities when retrying.
@@ -792,6 +828,7 @@ fetch("/nav.html")
     const divides=(d,n)=>d===0?n===0:n%d===0;
     const parityOf=n=>Math.abs(n)%2;
     function exampleVariables(q) {
+      if(q.form==='parity-pair')return ['x','y'];
       if(q.form.startsWith('parity-'))return ['x'];
       if(q.form==='common-divisor')return q.presentation==='word'?['x','y']:['k'];
       if(q.form==='divisibility-linear')return ['x'];
@@ -800,6 +837,7 @@ fetch("/nav.html")
     function evaluateExample(q,values) {
       const v=q.parameters,{x,y,z,k}=values;
       switch(q.form) {
+        case 'parity-pair':return {premise:parityOf(x)===v.p&&parityOf(y)===v.r,conclusion:polynomialParity(v.terms,x,y)===v.q};
         case 'parity-existential':return {premise:true,conclusion:parityOf(x)===v.p&&divides(v.k,v.n*x+v.m)};
         case 'parity-direct':return {premise:parityOf(x)===v.p,conclusion:parityOf(v.n*x+v.m)===v.q};
         case 'parity-reverse':return {premise:parityOf(v.n*x+v.m)===v.q,conclusion:parityOf(x)===v.p};
@@ -857,6 +895,9 @@ fetch("/nav.html")
         const candidates=[];
         for(let x=1;x<=100;x++){const y=gcd(v.n*x+v.m,v.a*x+v.b);if(y>1)candidates.push({x,y});}
         if(candidates.length)return pick(candidates);
+      } else if(q.form==='parity-pair') {
+        const example=findSmallExample(q);
+        if(example)return example;
       } else if(q.form.startsWith('parity-')) {
         const candidates=[];
         for(let x=1;x<=Math.max(30,2*(v.k||1));x++)if(isConcludingExample(q,{x}))candidates.push({x});
@@ -870,7 +911,7 @@ fetch("/nav.html")
     }
     function illustrativeExamples(q) {
       const candidates=[],v=q.parameters;
-      if(q.form.startsWith('parity-')) {
+      if(q.form.startsWith('parity-')&&q.form!=='parity-pair') {
         for(let x=1;x<=20;x++) {
           const result=evaluateExample(q,{x});
           if(q.quantifier==='existential'?parityOf(x)===v.p&&!result.conclusion:result.premise&&result.conclusion)candidates.push({x});
@@ -944,7 +985,11 @@ fetch("/nav.html")
       const relation=(d,n)=>`${d} ${divides(d,n)?'\\mid':'\\nmid'} ${n}`;
       const calc=(n,x,m)=>`${n}(${x})+${m}=${n*x+m}`;
       let text;
-      if(q.form==='parity-direct')text=`${math(String(x))} is ${parity(parityOf(x))} and ${math(calc(v.n,x,v.m))} is ${parity(parityOf(v.n*x+v.m))}.`;
+      if(q.form==='parity-pair') {
+        const result=parityPolynomialValue(v.terms,x,y);
+        const calculation=parityPolynomialTex(v.terms,{x,y})+'='+result;
+        text=`${math(String(x))} is ${parity(parityOf(x))} and ${math(String(y))} is ${parity(parityOf(y))}. Then ${math(calculation)} is ${parity(Math.abs(Number(result%2n)))}.`;
+      } else if(q.form==='parity-direct')text=`${math(String(x))} is ${parity(parityOf(x))} and ${math(calc(v.n,x,v.m))} is ${parity(parityOf(v.n*x+v.m))}.`;
       else if(q.form==='parity-reverse')text=`${math(calc(v.n,x,v.m))} is ${parity(parityOf(v.n*x+v.m))} and ${math(String(x))} is ${parity(parityOf(x))}.`;
       else if(q.form==='parity-existential')text=`${math(String(x))} is ${parity(parityOf(x))}, ${math(calc(v.n,x,v.m))}, and ${math(relation(v.k,v.n*x+v.m))}.`;
       else if(q.form==='common-divisor'&&q.presentation==='math'&&q.truth) {
@@ -1155,6 +1200,7 @@ fetch("/nav.html")
     function directHypothesisTex(q,mapping={}) {
       const v=q.parameters,x=mapping.x||'x',y=mapping.y||'y',z=mapping.z||'z',k=mapping.k||'k';
       switch(q.form) {
+        case 'parity-pair':return `${x}\\text{ is ${parity(v.p)} and }${y}\\text{ is ${parity(v.r)}}`;
         case 'parity-direct':
         case 'parity-existential':return `${x}\\text{ is ${parity(v.p)}}`;
         case 'divisibility-gcd':return `${x}\\mid ${v.n}${y}\\text{ and }${x}\\mid ${v.m}${y}`;
@@ -1252,12 +1298,15 @@ fetch("/nav.html")
       const v=q.parameters;
       const x=mapping.x||'x',y=mapping.y||'y',z=mapping.z||'z',k=mapping.k||'k';
       const equation=(left,factor,offset=0)=>({left,factor,offset});
+      const parityEquation=(name,remainder)=>({...equation(name,'2',remainder),parity:parity(remainder)});
       switch(q.form) {
+        case 'parity-pair':
+          return {variables:[x,y],equations:[parityEquation(x,v.p),parityEquation(y,v.r)]};
         case 'parity-direct':
         case 'parity-existential':
         case 'parity-reverse': {
           const remainder=q.form==='parity-reverse'?1-v.p:v.p;
-          return {variables:[x],equations:[{...equation(x,'2',remainder),parity:parity(remainder)}]};
+          return {variables:[x],equations:[parityEquation(x,remainder)]};
         }
         case 'divisibility-gcd':
           return {variables:[x,y],equations:[equation(`${v.n}${y}`,x),equation(`${v.m}${y}`,x)]};
@@ -1337,7 +1386,7 @@ fetch("/nav.html")
         if(!suffix&&!prefix)return 'Say which letter is an integer using “for some integer” or “for every integer”.';
         const letter=suffix?suffix[3]:prefix[2];
         const universal=suffix?suffix[2]==='forall':prefix[1]==='forall';
-        if(used.has(letter))return 'Use a fresh integer letter for each definition.';
+        if(setup.variables.includes(letter)||setup.choice===letter)return 'Use a fresh integer letter for each definition.';
         const allowed=new Set([...setup.variables,setup.choice,letter]);
         const expand=expression=>expression.replace(/[a-z]{2,}/g,word=>[...word].every(c=>allowed.has(c))?[...word].join('*'):word);
         let parsed,hypothesis;
@@ -1356,6 +1405,16 @@ fetch("/nav.html")
             &&JSON.stringify(parsed.body)===JSON.stringify(expected.body);
         });
         if(index<0)return 'Match each equation or inequality to the part of the hypothesis that justifies it.';
+        if(used.has(letter)) {
+          const prior=setup.equations[letters.indexOf(letter)];
+          const current=setup.equations[index];
+          if(prior.parity&&current.parity) {
+            const relation=prior.parity===current.parity?'equal':'consecutive integers';
+            const [x,y]=setup.variables;
+            return `Re-using the variable ${letter} says that ${x} and ${y} are ${relation}; use a different variable for each`;
+          }
+          return 'Use a fresh integer letter for each definition.';
+        }
         letters[index]=letter;
         used.add(letter);
       }

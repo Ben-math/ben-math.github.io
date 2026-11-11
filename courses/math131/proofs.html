@@ -315,7 +315,6 @@ fetch("/nav.html")
     #witness-panel {display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:.6em;margin:1.2em auto}
     #witness-input {width:min(100%,450px);box-sizing:border-box;padding:.5em;border:2px solid #777;border-radius:8px;font:inherit}
     .proof-error {color:#a12222}
-    .proof-correct {color:#167331;font-weight:bold}
   </style>
   <script>
   (() => {
@@ -1413,7 +1412,7 @@ fetch("/nav.html")
       finalLine.textContent=`The statement is ${activeProblem.truth?'true':'false'} for ${math(assignment)}. `;
       const qed=document.createElement('span');qed.textContent=math('\\square');qed.setAttribute('aria-label','End of proof');finalLine.appendChild(qed);
       target.append(calculation,finalLine);
-      element('witness-feedback').textContent='Correct!';element('witness-feedback').className='proof-correct';
+      element('witness-feedback').textContent='';
       element('witness-panel').hidden=true;element('proof-step-controls').hidden=true;stage='proof-complete';typeset([target]);
     }
     function showProblem(problem) {

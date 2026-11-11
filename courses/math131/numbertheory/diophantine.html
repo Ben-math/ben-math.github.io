@@ -1,0 +1,1791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="description" content="Personal website of Ben Fraser, with math education activities for students and teachers.">
+  <meta charset="UTF-8" />
+  <title>Diophantine Equations</title>
+  <link rel="stylesheet" href="/style.css" />
+
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+</head>
+<body>
+  <header>
+    <h1>Diophantine Equations</h1>
+    <div id="nav-placeholder"></div>
+      <script>
+fetch("/nav.html")
+  .then(response => response.text())
+  .then(html => {
+    document.getElementById("nav-placeholder").innerHTML = html;
+
+    const currentPath = window.location.pathname.replace(/\/index\.html$/, "/");
+    const navLinks = document.querySelectorAll("#nav-placeholder a");
+    navLinks.forEach(link => {
+      const linkPath = new URL(link.href).pathname.replace(/\/index\.html$/, "/");
+      if (linkPath === currentPath) {
+        link.classList.add("active");
+      }
+    });
+
+    const s = document.createElement("script");
+    s.src = "/mascot.js";
+    s.defer = true;
+    document.body.appendChild(s); 
+  })
+  .catch(err => {
+    console.error("Failed to load nav:", err);
+  });
+</script>
+  </header>
+  <main>
+
+    <p>This page hasn't yet been made - and I probably won't have time to complete it for quite a while :(</p>
+
+    <div class="button-container">
+      <button id="start-btn" class="rubber-button">Start</button>
+    </div>
+    
+    <p id="question-text"></p>
+    <div id="operation-question" class="math"></div>
+
+    <section id="proof-workflow" hidden aria-label="Word problem translation">
+      <p id="stage-instruction"></p>
+      <div id="let-panel" class="let-entry-panel">
+        <div class="entry-title">Let statements</div>
+        <div id="let-entry-box" class="let-entry-box"></div>
+        <div class="let-control-row">
+          <button type="button" id="add-let-btn" class="let-small-button" aria-label="Add let statement">+</button>
+          <button type="button" id="remove-let-btn" class="let-small-button" aria-label="Remove selected let statement">−</button>
+        </div>
+      </div>
+      <div id="translation-panel" hidden>
+        <textarea id="translation-input" rows="4" aria-label="Mathematical statement" spellcheck="false"></textarea>
+        <div id="translation-toolbar" aria-label="Mathematical words and symbols"></div>
+      </div>
+      <div id="stage-controls" class="button-container">
+        <button type="button" id="stage-next" class="rubber-button">Next</button>
+        <button type="button" id="stage-hint" class="rubber-button">Hint</button>
+      </div>
+      <p id="stage-feedback" role="status" aria-live="polite"></p>
+      <div id="completed-lets"></div>
+      <div id="completed-math"></div>
+    </section>
+
+    <section id="proof-solving" hidden aria-label="Prove or disprove">
+      <div id="decision-buttons" class="button-container">
+        <button type="button" id="prove-btn" class="rubber-button">Prove</button>
+        <button type="button" id="disprove-btn" class="rubber-button">Disprove</button>
+      </div>
+      <p id="decision-feedback" class="proof-error" role="status" aria-live="polite"></p>
+      <p id="decision-result"></p>
+      <p id="decision-reason"></p>
+      <div id="numerical-examples"></div>
+      <div id="implication-stage" hidden>
+        <p>To disprove an existential statement, we must show that no example satisfies all its conditions.</p>
+        <p><label for="implication-input"><strong>Rewrite the statement as an implication we are trying to prove</strong></label></p>
+        <textarea id="implication-input" rows="4" aria-label="Implication to prove" spellcheck="false"></textarea>
+        <div id="implication-toolbar" aria-label="Implication words and symbols"></div>
+        <div class="button-container">
+          <button type="button" id="implication-next" class="rubber-button">Next</button>
+          <button type="button" id="implication-hint" class="rubber-button">Hint</button>
+        </div>
+        <p id="implication-feedback" class="proof-error" role="status" aria-live="polite"></p>
+      </div>
+      <div id="completed-implication"></div>
+      <div id="method-buttons" class="button-container" hidden>
+        <button type="button" id="direct-proof-btn" class="rubber-button">Direct Proof</button>
+        <button type="button" id="contrapositive-proof-btn" class="rubber-button">Contrapositive Proof</button>
+      </div>
+      <div id="method-explanation" aria-live="polite"></div>
+      <div id="contrapositive-stage" hidden>
+        <p><label for="contrapositive-input"><strong>State the contrapositive of the statement we are trying to prove</strong></label></p>
+        <textarea id="contrapositive-input" rows="4" aria-label="Contrapositive to prove" spellcheck="false"></textarea>
+        <div id="contrapositive-toolbar" aria-label="Contrapositive words and symbols"></div>
+        <div class="button-container">
+          <button type="button" id="contrapositive-next" class="rubber-button">Next</button>
+          <button type="button" id="contrapositive-hint" class="rubber-button">Hint</button>
+        </div>
+        <p id="contrapositive-feedback" class="proof-error" role="status" aria-live="polite"></p>
+      </div>
+      <div id="completed-contrapositive"></div>
+      <div id="completed-proof-lets"></div>
+      <div id="completed-definitions"></div>
+      <div id="proof-setup-panel" hidden>
+        <p id="proof-setup-instruction"></p>
+        <div class="let-entry-panel">
+          <div id="proof-setup-title" class="entry-title"></div>
+          <div class="proof-setup-columns">
+            <div>
+              <div id="proof-setup-rows" class="let-entry-box"></div>
+              <div class="let-control-row">
+                <button type="button" id="add-proof-statement" class="let-small-button" aria-label="Add statement">+</button>
+                <button type="button" id="remove-proof-statement" class="let-small-button" aria-label="Remove selected statement">−</button>
+              </div>
+            </div>
+            <div id="proof-hypothesis-column" hidden>
+              <div id="proof-hypothesis-rows" class="let-entry-box"></div>
+              <div class="let-control-row">
+                <button type="button" id="add-proof-hypothesis" class="let-small-button" aria-label="Add hypothesis">+</button>
+                <button type="button" id="remove-proof-hypothesis" class="let-small-button" aria-label="Remove selected hypothesis">−</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="button-container">
+          <button type="button" id="proof-setup-next" class="rubber-button">Next</button>
+          <button type="button" id="proof-setup-hint" class="rubber-button">Hint</button>
+        </div>
+        <p id="proof-setup-feedback" class="proof-error" role="status" aria-live="polite"></p>
+      </div>
+      <div id="witness-panel" hidden>
+        <label id="witness-label" for="witness-input"></label>
+        <input id="witness-input" type="text" aria-label="Example or counterexample variable values" autocomplete="off" spellcheck="false">
+      </div>
+      <div id="proof-step-controls" class="button-container" hidden>
+        <button type="button" id="proof-next" class="rubber-button">Next</button>
+        <button type="button" id="proof-hint" class="rubber-button">Hint</button>
+      </div>
+      <p id="witness-feedback" role="status" aria-live="polite"></p>
+      <div id="final-proof-panel" hidden>
+        <p id="final-proof-destination"></p>
+        <p id="final-proof-instruction"></p>
+        <div id="final-proof-entry">
+          <label id="final-proof-prefix" for="final-proof-input"></label>
+          <input id="final-proof-input" class="let-input" type="text" aria-label="Sequence of equalities" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="button-container">
+          <button type="button" id="final-proof-next" class="rubber-button">Next</button>
+          <button type="button" id="final-proof-hint" class="rubber-button">Hint</button>
+        </div>
+        <p id="final-proof-feedback" class="proof-error" role="status" aria-live="polite"></p>
+      </div>
+      <div id="proof-conclusion"></div>
+    </section>
+  </main>
+  <style>
+    #question-text {text-align:center;line-height:1.8;margin:1.3em auto;max-width:1100px}
+    #operation-question {text-align:center;line-height:1.8;margin:1em auto 1.5em;max-width:1100px;font-size:1.1em;overflow-x:auto}
+
+    [hidden] {display:none !important}
+    #proof-workflow {max-width:1100px;margin:1.2em auto;text-align:center;line-height:1.6}
+    #stage-instruction {font-weight:bold}
+    .let-entry-panel {max-width:620px;margin:1.1em auto;padding:.85em;border:2px solid #ddd;border-radius:12px;background:#fafafa;text-align:left}
+    .entry-title {font-weight:bold;text-align:center}
+    .let-entry-box {min-height:54px;border:2px solid #bbb;border-radius:8px;background:white;padding:.35em;margin:.55em 0}
+    .let-entry-row {display:flex;align-items:center;gap:.35em;padding:.25em .35em;border-radius:6px;cursor:pointer}
+    .proof-setup-columns {display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:.65em}
+    .proof-setup-columns .let-input {min-width:0}
+    .let-entry-row .fixed-prefix {flex:none;white-space:nowrap}
+    .let-entry-row.selected {background:rgba(80,140,255,.18)}
+    .let-entry-row.incorrect {outline:2px solid #b83232}
+    .let-input {width:100%;box-sizing:border-box;padding:.35em;border:1.5px solid #777;border-radius:6px;font:inherit}
+    .let-control-row,.translation-toolbar-row {display:flex;flex-wrap:wrap;gap:.45em;align-items:center;justify-content:center}
+    .let-small-button,.translation-symbol {border:2px solid #555;border-radius:8px;background:white;padding:.2em .6em;font:inherit;cursor:pointer}
+    .let-small-button {font-size:1.15em}
+    .translation-symbol:hover {background:#eef4fc}
+    #translation-input,#implication-input,#contrapositive-input {width:min(100%,950px);box-sizing:border-box;resize:vertical;font:inherit;padding:.6em;border:2px solid #777;border-radius:8px}
+    .translation-toolbar-row {margin:.5em auto}
+    #stage-feedback {color:#a12222;max-width:950px;margin:1em auto}
+    #completed-lets {max-width:950px;margin:1.2em auto;text-align:left}
+    #completed-math {margin:1.2em auto;overflow-x:auto}
+
+    #proof-solving {max-width:1100px;margin:1.2em auto;text-align:center;line-height:1.8}
+    #numerical-examples,#proof-conclusion,#completed-implication,#completed-contrapositive {margin:1em auto;overflow-x:auto}
+    #witness-panel {display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:.6em;margin:1.2em auto}
+    #witness-input {width:min(100%,450px);box-sizing:border-box;padding:.5em;border:2px solid #777;border-radius:8px;font:inherit}
+    #final-proof-entry {display:flex;align-items:center;gap:.5em;max-width:950px;margin:1em auto}
+    #final-proof-prefix {flex:none}
+    #final-proof-input {min-width:0}
+    .proof-error {color:#a12222}
+  </style>
+  <script>
+  (() => {
+    'use strict';
+    const rand=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+    const pick=xs=>xs[rand(0,xs.length-1)];
+    const gcd=(a,b)=>b?gcd(b,a%b):Math.abs(a);
+    const parity=p=>p?'odd':'even';
+    const lin=(n,v,m)=>`${n===1?'':n}${v}+${m}`;
+    // Weights are percentage points OF ALL questions, repeated for each topic.
+    // Presentation is chosen independently: half word problems, half mathematics.
+    const categories=[
+      {id:'existential-true',weight:5,truth:true,quantifier:'existential'},
+      {id:'existential-false',weight:10,truth:false,quantifier:'existential'},
+      {id:'universal-direct',weight:15,truth:true,quantifier:'universal'},
+      {id:'universal-contrapositive',weight:10,truth:true,quantifier:'universal'},
+      {id:'universal-false',weight:10,truth:false,quantifier:'universal'}
+    ];
+    function category() {
+      let r=Math.random()*50;
+      for(const c of categories) {r-=c.weight;if(r<0)return c;}
+      return categories[categories.length-1];
+    }
+    // Select uniformly from eligible finite candidates, with no rejection loops.
+    function eligible(values,test) {return pick(values.filter(test));}
+    const positive=Array.from({length:100},(_,i)=>i+1);
+    function parityPolynomialTex(terms,values=null) {
+      const x=values?`(${values.x})`:'x';
+      const y=values?`(${values.y})`:'y';
+      const components={x,y,'x^2':x+'^2','y^2':y+'^2',xy:x+y,'':''};
+      return terms.map(({coefficient,component},index)=>{
+        const magnitude=Math.abs(coefficient);
+        const sign=coefficient<0?'-':index>0?'+':'';
+        return sign+(magnitude===1&&component?'':magnitude)+components[component];
+      }).join('');
+    }
+    function parityPolynomialValue(terms,x,y) {
+      // Keep the displayed arithmetic exact even for large integer answers.
+      const a=BigInt(x),b=BigInt(y);
+      const values={x:a,y:b,'x^2':a*a,'y^2':b*b,xy:a*b,'':1n};
+      return terms.reduce((total,{coefficient,component})=>total+BigInt(coefficient)*values[component],0n);
+    }
+    const polynomialParity=(terms,x,y)=>Math.abs(Number(parityPolynomialValue(terms,x,y)%2n));
+    function evenOddPair(category) {
+      const p=rand(0,1),r=rand(0,1);
+      const count=rand(2,4);
+      let components;
+      do {
+        const available=['x','y','x^2','y^2','xy',''];
+        components=Array.from({length:count},()=>available.splice(rand(0,available.length-1),1)[0]);
+      } while(!components.some(component=>component.includes('x'))||!components.some(component=>component.includes('y')));
+      const terms=components.map(component=>({component,coefficient:rand(1,10)*(rand(0,1)?1:-1)}));
+      const actual=polynomialParity(terms,p,r);
+      const q=category.truth?actual:1-actual;
+      const expression=parityPolynomialTex(terms);
+      return {
+        form:'parity-pair',parameters:{p,r,q,terms},
+        tex:`\\text{For all integers }x,y\\text{ such that }x\\text{ is ${parity(p)} and }y\\text{ is ${parity(r)}, } ${expression}\\text{ is ${parity(q)}.}`
+      };
+    }
+    function evenOdd(c) {
+      let n=rand(1,100),m=rand(1,100),p=rand(0,1);
+      if(c.quantifier==='existential') {
+        // x=2t+p: solvable iff gcd(2n,k) divides np+m.
+        // Even k guarantees an obstruction is available for false statements.
+        const k=c.truth?rand(1,100):2*rand(1,50);
+        m=eligible(positive,m=>(((n*p+m)%gcd(2*n,k))===0)===c.truth);
+        return {form:'parity-existential',parameters:{n,m,p,k},tex:`\\text{There exists an ${parity(p)} integer }x\\text{ such that }${k}\\mid(${lin(n,'x',m)}).`};
+      }
+      const reverse=c.id==='universal-contrapositive'||(!c.truth&&rand(0,1)===1);
+      if(reverse) {
+        // True reverse implications need odd n; false ones use even n and an
+        // attainable antecedent, so they have actual counterexamples.
+        const a=c.truth?2*rand(0,49)+1:2*rand(1,50);
+        const q=c.truth?(p+m)%2:m%2;
+        return {form:'parity-reverse',parameters:{n:a,m,p,q},tex:`\\text{For every integer }x,\\quad ${lin(a,'x',m)}\\text{ is ${parity(q)}}\\implies x\\text{ is ${parity(p)}}.`};
+      }
+      const q=((n*p+m)%2+(c.truth?0:1))%2;
+      return {form:'parity-direct',parameters:{n,m,p,q},tex:`\\text{For every integer }x,\\quad x\\text{ is ${parity(p)}}\\implies ${lin(n,'x',m)}\\text{ is ${parity(q)}}.`};
+    }
+    function smallLinearCombinations(n,m) {
+      const pairs=[];
+      for(const a of [1,-1,2,-2,3,-3])for(const b of [1,-1,2,-2,3,-3]) {
+        const value=a*n+b*m;
+        if(value>0&&value<=100&&value!==n&&value!==m)pairs.push([a,b]);
+      }
+      return pairs;
+    }
+    function divisibility(c, retryForm) {
+      if(c.quantifier==='existential') {
+        // A single common nonunit divisor for all x exists exactly when
+        // gcd(n,m,a,b)>1. The false case has a short multiple-plus-one proof.
+        let n,m,a,b;
+        if(c.truth) {
+          const d=rand(2,20),limit=Math.floor(100/d);
+          [n,m,a,b]=Array.from({length:4},()=>d*rand(1,limit));
+        } else {
+          const scale=rand(1,9),limit=Math.floor(99/scale);
+          n=rand(1,limit);m=rand(1,limit);a=scale*n;b=scale*m+1;
+        }
+        return {form:'common-divisor',parameters:{n,m,a,b},tex:`\\text{There exists an integer }k>1\\text{ such that, for every integer }x,\\quad k\\mid(${lin(n,'x',m)})\\text{ and }k\\mid(${lin(a,'x',b)}).`};
+      }
+      if(c.id==='universal-contrapositive') {
+        const n=rand(1,10),a=rand(1,10),b=rand(1,100);
+        if(rand(0,1))return {form:'divisibility-contrapositive-sum',parameters:{n,a,b},tex:`\\text{For all integers }x,y,\\quad x\\nmid(${n*a}y+${b}y)\\implies x\\nmid y.`};
+        const m=rand(1,100);
+        return {form:'divisibility-contrapositive-offset',parameters:{n,a,m},tex:`\\text{For all integers }x,y\\text{ such that }x\\nmid ${m},\\quad x\\mid(${n*a}y+${m})\\implies x\\nmid y.`};
+      }
+      const form=retryForm||pick(c.truth?['gcd','linear','chain']:['gcd','chain']);
+      if(form==='linear') {
+        const n=rand(1,100),m=rand(1,100),common=pick([4,6,8,9,10,12,14,15,16,18,20]);
+        const a=common*rand(1,Math.floor(100/common)),b=common*rand(1,Math.floor(100/common));
+        return {form:'divisibility-linear',parameters:{n,m,a,b},tex:`\\text{For every integer }x,\\quad (x\\mid ${a}\\text{ and }x\\mid ${b})\\implies x\\mid(${n}\\cdot ${a}+${m}\\cdot ${b}).`};
+      }
+      if(form==='gcd') {
+        let n,m,a,combination;
+        if(c.truth) {
+          let choices;
+          do {
+            n=rand(1,100);m=rand(1,100);
+            choices=n===m?[]:smallLinearCombinations(n,m);
+          } while(!choices.length);
+          combination=pick(choices);
+          a=combination[0]*n+combination[1]*m;
+        } else {
+          const d=rand(2,20);
+          n=d*rand(1,Math.floor(100/d));m=d*rand(1,Math.floor(100/d));
+          const g=gcd(n,m);
+          a=eligible(positive,value=>value%g!==0);
+        }
+        return {form:'divisibility-gcd',parameters:{n,m,a},combination,tex:`\\text{For all integers }x,y,\\quad (x\\mid ${n}y\\text{ and }x\\mid ${m}y)\\implies x\\mid ${a}y.`};
+      }
+      // ax|by and cy|dz imply ac*x|bd*z. Thus the exact criterion is
+      // n*b*d | m*a*c. Construct true coefficients; false case uses n=100
+      // when needed to ensure an eligible m exists, without retry loops.
+      let a,b,cc,d,n,m;
+      if(c.truth) {
+        b=rand(1,10);d=rand(1,10);n=rand(1,10);
+        const ratios=[];for(let r=1;r<=6;r++)for(let t=1;t<=6;t++)if(r*t<=6)ratios.push([r,t]);
+        const [r,t]=pick(ratios);a=b*r;cc=d*t;
+        m=eligible(positive,m=>(m*a*cc)%(n*b*d)===0);
+      } else {
+        a=rand(1,100);b=rand(1,100);cc=rand(1,100);d=rand(1,100);
+        const ns=positive.filter(t=>(a*cc)%(t*b*d)!==0);
+        // ns cannot be empty: lcm(1,...,100) exceeds a*c <=10000.
+        n=pick(ns);m=eligible(positive,m=>(m*a*cc)%(n*b*d)!==0);
+      }
+      return {form:'divisibility-chain',parameters:{a,b,c:cc,d,n,m},tex:`\\text{For all integers }x,y,z,\\quad (${a}x\\mid ${b}y\\text{ and }${cc}y\\mid ${d}z)\\implies ${n}x\\mid ${m}z.`};
+    }
+
+    // Compatible combinations prevent such things as crates of classrooms.
+    // Each item is countable and indivisible in these problems.
+    const wordBank={
+      collections:[
+        {place:'a school supply room',items:['pencils','erasers','crayons','markers','rulers','glue sticks','notebooks','exercise books'],containers:['box','bag','carton','crate']},
+        {place:'a craft cupboard',items:['beads','buttons','pom-poms','wooden stars','craft sticks','stickers','paper flowers'],containers:['box','bag','packet','tub']},
+        {place:'a toy store',items:['marbles','toy cars','building blocks','figurines','bouncy balls','puzzle pieces'],containers:['box','bag','carton','crate']},
+        {place:'a food bank',items:['soup cans','cereal boxes','juice cartons','rice packets','oat bars'],containers:['box','bag','carton','crate']},
+        {place:'an orchard',items:['apples','pears','oranges','peaches','plums'],containers:['box','bag','basket','crate']},
+        {place:'a bakery',items:['cookies','muffins','bagels','buns','cupcakes'],containers:['box','bag','basket','tray']},
+        {place:'a game club',items:['counters','game tokens','dice','playing cards','chess pieces'],containers:['box','bag','packet','tub']},
+        {place:'a hardware store',items:['screws','washers','bolts','nails','hooks'],containers:['box','bag','packet','tub']},
+        {place:'a gardening club',items:['seed packets','plant labels','flower bulbs','small pots'],containers:['box','bag','basket','crate']},
+        {place:'a sports club',items:['tennis balls','shuttlecocks','table-tennis balls','wristbands'],containers:['box','bag','carton','crate']},
+        {place:'a community event',items:['tickets','badges','wristbands','prize tokens','balloons'],containers:['box','bag','packet','tub']},
+        {place:'a library fundraiser',items:['bookmarks','postcards','greeting cards','small books'],containers:['box','bag','carton','crate']}
+      ],
+      containers:{box:'boxes',bag:'bags',carton:'cartons',crate:'crates',packet:'packets',tub:'tubs',basket:'baskets',tray:'trays'},
+      nested:[
+        {outer:'crate',inner:'box'}, {outer:'carton',inner:'packet'},
+        {outer:'box',inner:'bag'}, {outer:'crate',inner:'carton'},
+        {outer:'tub',inner:'packet'}, {outer:'basket',inner:'bag'}
+      ],
+      recipients:['friends','students','volunteers','club members','teammates','guests'],
+      destinations:['identical party bags','identical prize packs','identical classroom kits','identical gift boxes'],
+      // Templates always treat items as whole objects: no cutting or fractions.
+      parity:[
+        {even:'{amount} can be paired up with none left over',odd:'{amount} cannot be paired up with none left over'},
+        {even:'{amount} can be divided into two equal groups with none left over',odd:'{amount} cannot be divided into two equal groups with none left over'},
+        {even:'{amount} can be arranged in two equal rows with none left over',odd:'{amount} cannot be arranged in two equal rows with none left over'},
+        {even:'{amount} can be packed two to a bundle with none left over',odd:'{amount} cannot be packed two to a bundle with none left over'},
+        {even:'pairing up {amount} leaves no unpaired item',odd:'pairing up {amount} leaves exactly one unpaired item'}
+      ],
+      divisibility:[
+        {yes:'{amount} can be shared equally among {divisor} {recipients} with none left over',no:'{amount} cannot be shared equally among {divisor} {recipients} with none left over'},
+        {yes:'{amount} can be divided into {divisor} equal groups with none left over',no:'{amount} cannot be divided into {divisor} equal groups with none left over'},
+        {yes:'{amount} can fill {divisor} {destination}, with none left over',no:'{amount} cannot fill {divisor} {destination}, with none left over'},
+        {yes:'{amount} can be arranged in rows of {divisor} with none left over',no:'{amount} cannot be arranged in rows of {divisor} with none left over'},
+        {yes:'{amount} can be packed into groups of {divisor} with none left over',no:'{amount} cannot be packed into groups of {divisor} with none left over'}
+      ],
+      implications:['If {hypothesis}, then {conclusion}.'],
+      existence:['There is a choice of {choice} such that {condition}.','It is possible to choose {choice} so that {condition}.','Some choice of {choice} makes the following possible: {condition}.']
+    };
+    const fill=(template,values)=>template.replace(/\{(\w+)\}/g,(_,key)=>values[key]);
+    const math=x=>'\\('+x+'\\)';
+    const singularItem=item=>({dice:'die',marbles:'marble',badges:'badge',wristbands:'wristband',peaches:'peach',boxes:'box'})[item]||item.replace(/boxes$/, 'box').replace(/ies$/, 'y').replace(/s$/, '');
+    function wordContext() {
+      const collection=pick(wordBank.collections);
+      const container=pick(collection.containers);
+      return {place:collection.place,item:pick(collection.items),container,
+        plural:wordBank.containers[container],
+        // Match the inner container to its collection; choose a compatible outer.
+        nested:pick(wordBank.nested.filter(pair=>collection.containers.includes(pair.inner))),
+        recipients:pick(wordBank.recipients),destination:pick(wordBank.destinations),
+        parity:pick(wordBank.parity),divisibility:pick(wordBank.divisibility)};
+    }
+    function wordProblem(q) {
+      const v=q.parameters,w=wordContext();q.context=w;
+      const items=t=>`${math(String(t))} ${String(t)==='1'?singularItem(w.item):w.item}`;
+      const boxes=t=>`${math(String(t))} ${t===1?w.container:w.plural}`;
+      const packed=t=>`the ${w.item} in ${boxes(t)}`;
+      const total=(n,m)=>`${packed(n)} plus ${items(m)} added loose`;
+      const parityPhrase=(amount,p)=>fill(w.parity[p?'odd':'even'],{amount});
+      const askParity=(amount,p)=>parityPhrase(amount,p).replace(' cannot ',' not ').replace(' can ',' ').replace(/^pairing up (.*) leaves /,'pairing up $1 leave ');
+      const shared=(amount,yes=true)=>`${amount} ${yes?'can':'cannot'} be shared evenly among the ${w.recipients} with none left over`;
+      const askShared=(amount,yes=true)=>`${amount} ${yes?'be':'not be'} shared evenly among the ${w.recipients} with none left over`;
+      const conditional=(hyp,conclusion)=>`If ${hyp}, then can ${conclusion}?`;
+      const itemRole=name=>({name,kind:'items',description:`the number of ${w.item} in a ${w.container}`,item:w.item,container:w.container});
+      const peopleRole=name=>({name,kind:'people',description:`the number of ${w.recipients}`,people:w.recipients});
+      let text;
+      if(q.form.startsWith('parity-')) {
+        q.roles=[itemRole('x')];
+        const single=`the ${w.item} in one ${w.container}`,collection=`the collection consisting of ${total(v.n,v.m)}`;
+        if(q.form==='parity-existential') {
+          const predicate=fill(w.divisibility.yes,{amount:collection,divisor:math(String(v.k)),recipients:w.recipients,destination:w.destination});
+          text=`Is it possible to choose how many ${w.item} go in a ${w.container} so that ${parityPhrase(single,v.p)} and ${predicate}?`;
+        } else text=q.form==='parity-direct'?conditional(parityPhrase(single,v.p),askParity(collection,v.q)):
+          conditional(parityPhrase(collection,v.q),askParity(single,v.p));
+      } else if(q.form==='common-divisor') {
+        q.roles=[itemRole('x'),peopleRole('y')];
+        // This wording asks for a bag size AND a group size, rather than a
+        // fixed common divisor valid for every bag size.
+        if(q.truth) {
+          const witness=rand(1,20),k=rand(2,20);
+          v.n=rand(1,100);v.a=rand(1,100);
+          v.m=eligible(positive,m=>(v.n*witness+m)%k===0);
+          v.b=eligible(positive,b=>(v.a*witness+b)%k===0);
+        } else {
+          const scale=rand(1,9),limit=Math.floor(99/scale);
+          v.n=rand(1,limit);v.m=rand(1,limit);v.a=scale*v.n;v.b=scale*v.m+1;
+          // Second expression = scale*first + 1: no common divisor >1.
+        }
+        q.tex=`\\text{There exist integers }x,y\\text{ such that }y>1\\text{ and }y\\mid(${lin(v.n,'x',v.m)})\\text{ and }y\\mid(${lin(v.a,'x',v.b)}).`;
+        text=`Is it possible to have a group of more than one ${singularItem(w.recipients)} such that ${total(v.n,v.m)} could be shared evenly among them, and ${total(v.a,v.b)} could also be shared evenly among them?`;
+      } else if(q.form==='divisibility-gcd') {
+        q.roles=[peopleRole('x'),itemRole('y')];
+        text=conditional(`${shared(packed(v.n))}, and ${shared(packed(v.m))}`,askShared(packed(v.a)));
+      } else if(q.form==='divisibility-linear') {
+        q.roles=[peopleRole('x')];
+        text=`There are two kinds of ${w.plural}: one holds ${items(v.a)} and the other holds ${items(v.b)}. `+
+          conditional(`${shared(`the ${w.item} in one ${w.container} of the first kind`)}, and ${shared(`the ${w.item} in one ${w.container} of the second kind`)}`,
+            askShared(`the combined contents of ${boxes(v.n)} of the first kind and ${boxes(v.m)} of the second kind`));
+      } else if(q.form==='divisibility-chain') {
+        const kit=singularItem(w.destination.replace(/^identical /,''));
+        q.roles=[{name:'t',kind:'items',item:w.item,container:kit,description:`the number of ${w.item} in a ${kit}`}];
+        q.givenVariables=['x','y','z'];
+        const divide=(amount,count,question=false)=>
+          `${amount} ${question?'fill':'can fill'} ${math(count)} ${w.destination} with none left over`;
+        text=`Let ${math('x,y,z')} be positive whole numbers. If ${divide(items(`${v.b}y`),`${v.a}x`)}, and ${divide(items(`${v.d}z`),`${v.c}y`)}, then can ${divide(items(`${v.m}z`),`${v.n}x`,true)}?`;
+      } else {
+        const inner=w.nested.inner,outer=w.nested.outer;
+        q.roles=[peopleRole('x'),{...itemRole('y'),container:inner,description:`the number of ${w.item} in a ${inner}`}];
+        const nested=`the ${w.item} in ${math(String(v.n))} ${v.n===1?outer:wordBank.containers[outer]} (each holding ${math(String(v.a))} ${v.a===1?inner:wordBank.containers[inner]})`;
+        const single=`the ${w.item} in one ${inner}`;
+        if(q.form==='divisibility-contrapositive-offset') {
+          text=conditional(`${shared(items(v.m),false)}, but ${shared(`the collection consisting of ${nested}, together with ${items(v.m)} added loose`)}`,
+            askShared(single,false));
+        } else {
+          text=conditional(shared(`the combined collection of ${nested} and ${math(String(v.b))} additional ${v.b===1?inner:wordBank.containers[inner]}`,false),askShared(single,false));
+        }
+      }
+      return text;
+    }
+    function makeProblem() {
+      const topic=pick(['divisibility','even-odd']),c=category();
+      const presentation=pick(['word','math']);
+      const needsExample=c.id==='existential-true'||c.id==='universal-false';
+      const parityGenerator=topic==='even-odd'&&presentation==='math'&&c.quantifier==='universal'&&c.id!=='universal-contrapositive'&&rand(0,1)
+        ?evenOddPair:evenOdd;
+      let retryForm;
+      while(true) {
+        const generated=topic==='even-odd'?parityGenerator(c):divisibility(c,retryForm);
+        const result={topic,category:c.id,truth:c.truth,quantifier:c.quantifier,
+          presentation,wordProblemPending:false,...generated};
+        // Keep the original problem form and probabilities when retrying.
+        if(result.form==='divisibility-gcd')retryForm='gcd';
+        if(result.form==='divisibility-chain')retryForm='chain';
+        // Common-divisor word problems generate their own coefficients.
+        const preparesWordCoefficients=presentation==='word'&&result.form==='common-divisor';
+        if(preparesWordCoefficients)result.wordText=wordProblem(result);
+        if(needsExample) {
+          result.smallExample=findSmallExample(result);
+          if(!result.smallExample)continue;
+        }
+        // Use verbal implications while retaining the mathematical notation.
+        if(result.tex.includes('\\implies'))result.tex=result.tex
+          .replace('\\quad ','\\quad \\text{If }')
+          .replace('\\implies','\\text{, then }');
+        if(presentation==='word'&&!preparesWordCoefficients)result.wordText=wordProblem(result);
+        return result;
+      }
+    }
+    function deepFreeze(value) {
+      Object.values(value).forEach(child=>{if(child&&typeof child==='object')deepFreeze(child);});
+      return Object.freeze(value);
+    }
+    function descriptionKey(text) {
+      return text.toLowerCase().replace(/#/g,' number ').replace(/\b(?:quantity|count|amount)\b/g,'number')
+        .replace(/\b(?:per|inside)\b/g,'in').replace(/\bcontained in\b/g,'in').replace(/[^a-z\s]/g,' ').split(/\s+/).filter(Boolean)
+        .filter(t=>!['the','a','an','of','in','each','one','number'].includes(t))
+        .map(singularItem).sort().join(' ');
+    }
+    function matchesRole(description,role) {
+      const key=descriptionKey(description);
+      if(role.kind==='given')return [role.name,`positive whole number ${role.name}`,`integer ${role.name}`,`value of ${role.name}`].some(t=>descriptionKey(t)===key);
+      if(key===descriptionKey(role.description))return true;
+      if(role.kind==='people'&&role.people==='club members')return ['number of members','number of members in the club','number of members in the craft club','number of people in the club'].some(t=>descriptionKey(t)===key);
+      return false;
+    }
+    function checkLetStatements(q,rows) {
+      const entries=rows.map((text,index)=>{
+        const clean=text.replace(/\\[()]/g,'').trim();
+        const m=clean.match(/^let\s+([a-z])\s*(?:=|\bbe\b)\s*(.+?)\s*[.]?$/i);
+        const role=m?q.roles.find(r=>matchesRole(m[2],r)||(r.kind==='given'&&r.name===m[1].toLowerCase()&&['positive whole number','positive integer','integer','whole number'].some(t=>descriptionKey(t)===descriptionKey(m[2])))):null;
+        return {index,variable:m?.[1].toLowerCase(),role,correct:!!role};
+      });
+      const mapping={},seen=new Set();
+      for(const e of entries) {
+        if(!e.correct)continue;
+        if(seen.has(e.variable)||mapping[e.role.name]||q.givenVariables?.includes(e.variable)){e.correct=false;continue;}
+        seen.add(e.variable);mapping[e.role.name]=e.variable;
+      }
+      // Every occurrence of a repeated variable is invalid, not only the last.
+      const duplicateVariables=new Set(entries.filter(e=>e.variable&&entries.filter(f=>f.variable===e.variable).length>1).map(e=>e.variable));
+      for(const e of entries)if(duplicateVariables.has(e.variable)){e.correct=false;if(e.role)delete mapping[e.role.name];}
+      const missing=q.roles.filter(r=>!mapping[r.name]);
+      return {ok:entries.length===q.roles.length&&entries.every(e=>e.correct)&&!missing.length,entries,mapping,missing};
+    }
+    // A small structural parser: never execute student input. Expressions are
+    // polynomials; statements retain their quantifiers and logical structure.
+    function normalizeTranslation(text) {
+      return text.toLowerCase().replace(/\\(?:text|mathrm)\{([^{}]*)\}/g,' $1 ')
+        .replace(/\\mathbb\s*\{?z\}?|ℤ/g,' integer ')
+        .replace(/\\(?:left|right)\b/g,'').replace(/\\[()[\]]/g,'')
+        .replace(/\\(?:forall)\b|∀/g,' forall ').replace(/\\exists\b|∃/g,' exists ')
+        .replace(/\\(?:implies|Rightarrow|rightarrow)\b|⇒|→|=>|->/gi,' then ')
+        .replace(/\|\|/g,' or ').replace(/\\nmid(?![a-z])|∤|!\|/g,' notdiv ').replace(/\\mid(?![a-z])|∣|\|/g,' div ')
+        .replace(/\\lor(?![a-z])|∨|\|\|/g,' or ').replace(/\\land(?![a-z])|∧|&&/g,' and ').replace(/\\(?:geq|ge)(?![a-z])|≥/g,' >= ')
+        .replace(/\\(?:leq|le)(?![a-z])|≤/g,' <= ').replace(/\\(?:neq|ne)\b|≠/g,' != ')
+        .replace(/\\in\b|∈/g,' in ').replace(/\\(?:cdot|times)\b|·|×/g,' * ')
+        .replace(/\\[,;! ]|\$/g,' ').replace(/\bfor (?:all|every|each)\b/g,'forall')
+        .replace(/\bthere (?:exists?|is an?)\b/g,'exists').replace(/\bsuch that\b/g,' st ')
+        .replace(/\bdoes not divide\b/g,' notdiv ').replace(/\b(?:is|are) not divisible by\b/g,' notby ')
+        .replace(/\b(?:is|are) divisible by\b/g,' by ').replace(/\bdivides\b/g,' div ')
+        .replace(/\b(?:is|are) (?:an? )?(even|odd)(?: (?:integer|number))?\b/g,' $1 ')
+        .replace(/\b(?:integers|numbers)\b/g,'integer').replace(/\bimplies\b/g,' then ')
+        .replace(/\b(?:prove or disprove|the following statement)\b/g,'')
+        .replace(/[{}]/g,' ').replace(/[.:;]/g,' ').trim();
+    }
+    const polyAdd=(a,b,sign=1)=>{
+      const out={...a};for(const [k,v]of Object.entries(b))out[k]=(out[k]||0)+sign*v;
+      for(const k of Object.keys(out))if(!out[k])delete out[k];return out;
+    };
+    const polyMul=(a,b)=>{
+      let out={};for(const [ka,va]of Object.entries(a))for(const [kb,vb]of Object.entries(b))out=polyAdd(out,{[[...ka,...kb].sort().join('')]:va*vb});return out;
+    };
+    const polyKey=p=>Object.entries(p).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>`${v}:${k}`).join('|')||'0';
+    function atom(kind,a,b={}) {
+      if(kind==='by'||kind==='notby')return atom(kind==='by'?'div':'notdiv',b,a);
+      if(kind==='even'||kind==='odd') {
+        const p={};for(const [k,v]of Object.entries(a))if(Math.abs(v)%2)p[k]=1;
+        // Move constant parity to the right-hand side.
+        const parity=(kind==='odd'?1:0)^(p['']||0);delete p[''];
+        return ['parity',polyKey(p),parity];
+      }
+      if(kind==='div'||kind==='notdiv') {
+        const coeffs=[...Object.values(a),...Object.values(b)].map(Math.abs);
+        const g=coeffs.reduce(gcd,0)||1;
+        const normalized=p=>{const terms=Object.entries(p).sort(([a],[b])=>a.localeCompare(b));const sign=(terms[0]?.[1]||1)<0?-1:1;return polyKey(Object.fromEntries(terms.map(([k,v])=>[k,sign*v/g])));};
+        return [kind,normalized(a),normalized(b)];
+      }
+      let p=polyAdd(a,b,-1);
+      if(kind==='<'){p=polyMul(p,{'':-1});kind='>';}
+      if(kind==='<='){p=polyMul(p,{'':-1});kind='>=';}
+      // Integer-valued polynomials: p>0 iff p-1>=0.
+      if(kind==='>'){p=polyAdd(p,{'':-1});kind='>=';}
+      if(kind==='='||kind==='!='){
+        const terms=Object.entries(p).sort(([a],[b])=>a.localeCompare(b));
+        if(terms[0]?.[1]<0)p=polyMul(p,{'':-1});
+      }
+      return [kind,polyKey(p)];
+    }
+    function conjunction(nodes) {
+      const flat=nodes.flatMap(n=>n[0]==='and'?n.slice(1):[n]);
+      const unique=[...new Map(flat.map(n=>[JSON.stringify(n),n])).values()].sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b)));
+      return unique.length===1?unique[0]:['and',...unique];
+    }
+    function disjunction(nodes) {
+      const flat=nodes.flatMap(n=>n[0]==='or'?n.slice(1):[n]);
+      const unique=[...new Map(flat.map(n=>[JSON.stringify(n),n])).values()].sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b)));
+      return unique.length===1?unique[0]:['or',...unique];
+    }
+    function implication(a,b) {
+      if(b[0]==='implies')return ['implies',conjunction([a,b[1]]),b[2]];
+      return ['implies',a,b];
+    }
+    function parseTranslation(text) {
+      const normalized=normalizeTranslation(text);
+      const tokens=normalized.replace(/,/g,' ').match(/>=|<=|!=|[a-z]+|\d+|[^\s]/g)||[];
+      let i=0;const bound=[],qualifiers=[];
+      const peek=()=>tokens[i],eat=t=>{if(peek()===t){i++;return true;}return false;};
+      const single=t=>/^[a-z]$/.test(t||'');
+      const domain=()=>{while(['integer','positive','whole','an'].includes(peek()))i++;};
+      function binders() {
+        while(peek()==='forall'||peek()==='exists') {
+          const kind=tokens[i++];domain();let parity;
+          if(['even','odd'].includes(peek())){parity=tokens[i++];domain();}
+          const names=[];
+          while(single(peek())&&!names.includes(peek())) {
+            names.push(tokens[i++]);
+            if(peek()===','&&single(tokens[i+1])&&!names.includes(tokens[i+1])){i++;continue;}
+            if(peek()==='and'&&single(tokens[i+1])&&!names.includes(tokens[i+1])){i++;continue;}
+            if(!single(peek())||names.includes(peek()))break;
+          }
+          if(!names.length)throw Error('Name the quantified variables.');
+          if(eat('in')){domain();if(peek()==='z')i++;}
+          let restricted=false;
+          if(['>','<','>=','<='].includes(peek())) {
+            const op=tokens[i++];qualifiers.push(atom(op,{[names.at(-1)]:1},sum()));restricted=true;
+          }
+          while(eat(',')){};eat('st');
+          bound.push({kind,names:names.sort()});
+          if(parity)for(const name of names)qualifiers.push(atom(parity,{[name]:1}));
+          if(restricted)break;
+        }
+      }
+      function primary() {
+        if(eat('+'))return primary();if(eat('-'))return polyMul({'':-1},primary());
+        if(eat('(')){const p=sum();if(!eat(')'))throw Error('Close the expression parentheses.');return p;}
+        const t=tokens[i++];if(/^\d+$/.test(t||''))return Number(t)?{'':Number(t)}:{};
+        if(single(t))return {[t]:1};throw Error('Use an integer expression.');
+      }
+      function product() {
+        let p=primary();
+        while(peek()==='*'||/^\d+$/.test(peek()||'')||single(peek())||peek()==='('){eat('*');p=polyMul(p,primary());}
+        return p;
+      }
+      function sum() {let p=product();while(peek()==='+'||peek()==='-'){const sign=tokens[i++]==='+'?1:-1;p=polyAdd(p,product(),sign);}return p;}
+      function relation() {
+        if(peek()==='('){const save=i;i++;try{const value=logic();if(!eat(')'))throw Error();return value;}catch{i=save;}}
+        const a=sum(),op=tokens[i++];
+        if(op==='even'||op==='odd')return atom(op,a);
+        if(!['div','notdiv','by','notby','>','<','>=','<=','=','!='].includes(op))throw Error('Use divides, a parity condition, or an inequality.');
+        return atom(op,a,sum());
+      }
+      function and() {
+        const parts=[relation()];
+        while(peek()==='and'||peek()===',') {
+          while(eat(',')){};
+          if(['then','if',')',undefined].includes(peek()))break;
+          eat('and');while(eat(',')){};
+          parts.push(relation());
+        }
+        return conjunction(parts);
+      }
+      function or() {
+        const parts=[and()];while(eat('or'))parts.push(and());return disjunction(parts);
+      }
+      function logic() {
+        if(peek()==='exists'||peek()==='forall') {
+          const startB=bound.length,startQ=qualifiers.length;binders();
+          const scopedBounds=bound.splice(startB),scopedQualifiers=qualifiers.splice(startQ);
+          let body=logic();
+          if(scopedQualifiers.length)body=scopedBounds.some(b=>b.kind==='exists')?conjunction([...scopedQualifiers,body]):implication(conjunction(scopedQualifiers),body);
+          return ['quantified',scopedBounds,body];
+        }
+        if(eat('if')){const left=or();while(eat(',')){};if(!eat('then'))throw Error('Include then or an implication arrow.');return implication(left,logic());}
+        const left=or();while(eat(',')){};
+        if(eat('then'))return implication(left,logic());
+        // A quantified restriction may precede an if statement or an existence claim.
+        if(['if','exists','forall'].includes(peek()))return implication(left,logic());
+        return left;
+      }
+      while(eat(',')){};binders();const body=logic();while(eat(',')){};
+      if(i!==tokens.length)throw Error('Check the wording or grouping of the statement.');
+      return {bound,body:qualifiers.length?(bound.some(b=>b.kind==='exists')?conjunction([...qualifiers,body]):implication(conjunction(qualifiers),body)):body};
+    }
+    function expectedTranslation(q,mapping) {
+      const v=q.parameters,N=key=>mapping?.[key]||key;
+      const [x,y,z]=['x','y','z'].map(N),linear=(n,t,m)=>`${n}${t}+${m}`;
+      if(q.form==='parity-existential')return `exists ${x} st ${x} is ${parity(v.p)} and ${v.k} divides ${linear(v.n,x,v.m)}`;
+      if(q.form==='parity-direct')return `forall ${x} if ${x} is ${parity(v.p)} then ${linear(v.n,x,v.m)} is ${parity(v.q)}`;
+      if(q.form==='parity-reverse')return `forall ${x} if ${linear(v.n,x,v.m)} is ${parity(v.q)} then ${x} is ${parity(v.p)}`;
+      if(q.form==='common-divisor')return `exists ${x},${y} st ${y}>1 and ${y} divides ${linear(v.n,x,v.m)} and ${y} divides ${linear(v.a,x,v.b)}`;
+      if(q.form==='divisibility-gcd')return `forall ${x},${y} if ${x} divides ${v.n}${y} and ${x} divides ${v.m}${y} then ${x} divides ${v.a}${y}`;
+      if(q.form==='divisibility-linear')return `forall ${x} if ${x} divides ${v.a} and ${x} divides ${v.b} then ${x} divides ${v.n}*${v.a}+${v.m}*${v.b}`;
+      if(q.form==='divisibility-chain')return `forall ${x},${y},${z} if ${v.a}${x} divides ${v.b}${y} and ${v.c}${y} divides ${v.d}${z} then ${v.n}${x} divides ${v.m}${z}`;
+      if(q.form==='divisibility-contrapositive-offset')return `forall ${x},${y} if ${x} does not divide ${v.m} and ${x} divides ${v.n*v.a}${y}+${v.m} then ${x} does not divide ${y}`;
+      return `forall ${x},${y} if ${x} does not divide ${v.n*v.a}${y}+${v.b}${y} then ${x} does not divide ${y}`;
+    }
+    function checkTranslation(q,text,mapping) {
+      try {
+        const actual=parseTranslation(text),expected=parseTranslation(expectedTranslation(q,mapping));
+        const exist=p=>p.bound.filter(b=>b.kind==='exists').flatMap(b=>b.names).sort().join(',');
+        const all=p=>p.bound.filter(b=>b.kind==='forall').flatMap(b=>b.names).sort().join(',');
+        if(exist(actual)!==exist(expected))return {ok:false,message:'Check whether the statement is existential or universal, and which variables it quantifies.'};
+        if(all(actual)&&all(actual)!==all(expected))return {ok:false,message:'Check the variables in the universal quantifier.'};
+        if(JSON.stringify(actual.body)!==JSON.stringify(expected.body))return {ok:false,message:'Check each condition, the conclusion, and which expression divides which.'};
+        return {ok:true};
+      } catch(error) {return {ok:false,message:error.message||'Check the mathematical statement.'};}
+    }
+    function renamedTex(q,mapping) {
+      return q.tex.split(/(\\text\{[^}]*\})/g).map(part=>part.startsWith('\\text')?part:part.replace(/[xyz]/g,key=>mapping?.[key]||key)).join('');
+    }
+    const divides=(d,n)=>d===0?n===0:n%d===0;
+    const parityOf=n=>Math.abs(n)%2;
+    function exampleVariables(q) {
+      if(q.form==='parity-pair')return ['x','y'];
+      if(q.form.startsWith('parity-'))return ['x'];
+      if(q.form==='common-divisor')return q.presentation==='word'?['x','y']:['k'];
+      if(q.form==='divisibility-linear')return ['x'];
+      return q.form==='divisibility-chain'?['x','y','z']:['x','y'];
+    }
+    function evaluateExample(q,values) {
+      const v=q.parameters,{x,y,z,k}=values;
+      switch(q.form) {
+        case 'parity-pair':return {premise:parityOf(x)===v.p&&parityOf(y)===v.r,conclusion:polynomialParity(v.terms,x,y)===v.q};
+        case 'parity-existential':return {premise:true,conclusion:parityOf(x)===v.p&&divides(v.k,v.n*x+v.m)};
+        case 'parity-direct':return {premise:parityOf(x)===v.p,conclusion:parityOf(v.n*x+v.m)===v.q};
+        case 'parity-reverse':return {premise:parityOf(v.n*x+v.m)===v.q,conclusion:parityOf(x)===v.p};
+        case 'common-divisor':return {premise:true,conclusion:q.presentation==='word'?y>1&&divides(y,v.n*x+v.m)&&divides(y,v.a*x+v.b):k>1&&[v.n,v.m,v.a,v.b].every(n=>divides(k,n))};
+        case 'divisibility-gcd':return {premise:divides(x,v.n*y)&&divides(x,v.m*y),conclusion:divides(x,v.a*y)};
+        case 'divisibility-linear':return {premise:divides(x,v.a)&&divides(x,v.b),conclusion:divides(x,v.n*v.a+v.m*v.b)};
+        case 'divisibility-chain':return {premise:divides(v.a*x,v.b*y)&&divides(v.c*y,v.d*z),conclusion:divides(v.n*x,v.m*z)};
+        case 'divisibility-contrapositive-offset':return {premise:!divides(x,v.m)&&divides(x,v.n*v.a*y+v.m),conclusion:!divides(x,y)};
+        case 'divisibility-contrapositive-sum':return {premise:!divides(x,(v.n*v.a+v.b)*y),conclusion:!divides(x,y)};
+      }
+      throw Error('Unknown example type.');
+    }
+    function isConcludingExample(q,values) {
+      if(!exampleVariables(q).every(key=>Number.isSafeInteger(values[key])&&Math.abs(values[key])<=Math.floor(Number.MAX_SAFE_INTEGER/10000)))return false;
+      if(q.presentation==='word'&&!exampleVariables(q).every(key=>values[key]>0))return false;
+      const result=evaluateExample(q,values);
+      return q.quantifier==='existential'?q.truth&&result.conclusion:!q.truth&&result.premise&&!result.conclusion;
+    }
+    function findSmallExample(q) {
+      const keys=exampleVariables(q);
+      const v=q.parameters;
+      for(let limit=q.presentation==='math'?0:1;limit<10;limit++) {
+        if(q.form==='divisibility-chain') {
+          // For each positive x, the least admissible y and z divide all
+          // other admissible values of their respective variables. If this
+          // triple satisfies the conclusion, its larger multiples do too.
+          for(let x=1;x<=limit;x++) {
+            const y=v.a*x/gcd(v.a*x,v.b);
+            const z=v.c*y/gcd(v.c*y,v.d);
+            if(y<=limit&&z<=limit&&isConcludingExample(q,{x,y,z}))return {x,y,z};
+          }
+          continue;
+        }
+        const choices=positive.slice(0,limit);
+        if(q.presentation==='math')choices.push(0,...choices.map(n=>-n));
+        for(const first of choices) {
+          const values={[keys[0]]:first};
+          if(keys.length===1) {
+            if(isConcludingExample(q,values))return values;
+          } else {
+            for(const second of choices) {
+              values[keys[1]]=second;
+              if(isConcludingExample(q,values))return values;
+            }
+          }
+        }
+      }
+      return null;
+    }
+    function concludingExample(q) {
+      if(q.smallExample)return {...q.smallExample};
+      const v=q.parameters;
+      if(q.form==='common-divisor') {
+        if(q.presentation!=='word')return {k:gcd(gcd(v.n,v.m),gcd(v.a,v.b))};
+        const candidates=[];
+        for(let x=1;x<=100;x++){const y=gcd(v.n*x+v.m,v.a*x+v.b);if(y>1)candidates.push({x,y});}
+        if(candidates.length)return pick(candidates);
+      } else if(q.form==='parity-pair') {
+        const example=findSmallExample(q);
+        if(example)return example;
+      } else if(q.form.startsWith('parity-')) {
+        const candidates=[];
+        for(let x=1;x<=Math.max(30,2*(v.k||1));x++)if(isConcludingExample(q,{x}))candidates.push({x});
+        if(candidates.length)return pick(candidates);
+      } else if(q.form==='divisibility-gcd')return {x:gcd(v.n,v.m),y:1};
+      else if(q.form==='divisibility-chain') {
+        const x=v.b*v.d,y=v.a*v.d,z=v.a*v.c,g=gcd(gcd(x,y),z);
+        return {x:x/g,y:y/g,z:z/g};
+      }
+      throw Error('No concluding example is available.');
+    }
+    function illustrativeExamples(q) {
+      const candidates=[],v=q.parameters;
+      if(q.form.startsWith('parity-')&&q.form!=='parity-pair') {
+        for(let x=1;x<=20;x++) {
+          const result=evaluateExample(q,{x});
+          if(q.quantifier==='existential'?parityOf(x)===v.p&&!result.conclusion:result.premise&&result.conclusion)candidates.push({x});
+        }
+      } else if(q.form==='common-divisor') {
+        if(q.presentation==='word') {
+          for(let x=1;x<=20;x++)candidates.push({x,y:rand(2,20)});
+        } else {
+          for(let k=2;k<=20;k++) {
+            // If k does not divide all coefficients, x=0 or x=1 exposes it.
+            const x=[0,1].find(x=>!divides(k,v.n*x+v.m)||!divides(k,v.a*x+v.b));
+            if(x!==undefined)candidates.push({k,x});
+          }
+        }
+      } else if(q.form==='divisibility-chain') {
+        // Keep all three variables within the sample bound.
+        for(let x=1;x<=20;x++)for(let y=1;y<=20;y++)for(let z=1;z<=20;z++) {
+          const result=evaluateExample(q,{x,y,z});
+          if(result.premise&&result.conclusion)candidates.push({x,y,z});
+        }
+      } else if(q.form==='divisibility-linear') {
+        for(let x=1;x<=20;x++)if(evaluateExample(q,{x}).premise)candidates.push({x});
+        // There may be fewer than three positive common divisors. Use distinct
+        // negative divisors too; all variables in this math statement are integers.
+        if(q.presentation==='math'&&candidates.length<3)for(let x=-1;x>=-20;x--)if(evaluateExample(q,{x}).premise)candidates.push({x});
+      } else {
+        for(let x=1;x<=20;x++)for(let y=1;y<=20;y++) {
+          const result=evaluateExample(q,{x,y});if(result.premise&&result.conclusion)candidates.push({x,y});
+        }
+      }
+      // Sampling without replacement whenever three distinct choices exist.
+      const pool=[...candidates],chosen=[];
+      if(!pool.length)throw Error('No numerical examples satisfy the hypotheses.');
+      while(chosen.length<3){const index=rand(0,pool.length-1);chosen.push(pool[index]);if(pool.length>1)pool.splice(index,1);}
+      return chosen;
+    }
+    function parseExampleInput(q,text,mapping={}) {
+      const canonical=exampleVariables(q),names=canonical.map(key=>mapping[key]||key);
+      const clean=text.toLowerCase().replace(/\\[()]/g,'').replace(/\b(?:and|for)\b/g,',').trim();
+      const values={};
+      if(/[a-z]/.test(clean)) {
+        const pattern=/([a-z])\s*=\s*([+-]?\s*\d+)/g;let match;let end=0;
+        while((match=pattern.exec(clean))) {
+          if(clean.slice(end,match.index).replace(/[\s,;()]/g,''))return {ok:false,message:'Enter integer assignments such as x = 3, y = 2.'};
+          const index=names.indexOf(match[1]);if(index<0)return {ok:false,message:`Use only these variables: ${names.join(', ')}.`};
+          const key=canonical[index];if(Object.hasOwn(values,key))return {ok:false,message:`Give ${match[1]} only one value.`};
+          values[key]=Number(match[2].replace(/\s/g,''));end=pattern.lastIndex;
+        }
+        if(clean.slice(end).replace(/[\s,;()]/g,''))return {ok:false,message:'Enter integer assignments such as x = 3, y = 2.'};
+      } else {
+        const bare=clean.replace(/[()]/g,'').trim();
+        if(!/^[+-]?\d+(?:[\s,;]+[+-]?\d+)*$/.test(bare))return {ok:false,message:'Enter whole integer values, using a comma between variables.'};
+        const parts=bare.split(/[\s,;]+/);if(parts.length!==names.length)return {ok:false,message:`Give ${names.length} value${names.length===1?'':'s'}: ${names.join(', ')}.`};
+        canonical.forEach((key,i)=>values[key]=Number(parts[i]));
+      }
+      const missing=canonical.filter(key=>!Object.hasOwn(values,key));
+      if(missing.length)return {ok:false,message:`Missing value${missing.length===1?'':'s'} for ${missing.map(key=>mapping[key]||key).join(', ')}.`};
+      if(!canonical.every(key=>Number.isSafeInteger(values[key])))return {ok:false,message:'Use integer values within the exact integer range.'};
+      if(!canonical.every(key=>Math.abs(values[key])<=Math.floor(Number.MAX_SAFE_INTEGER/10000)))return {ok:false,message:'Use smaller integer values so the calculations can be checked exactly.'};
+      if(q.presentation==='word'&&!canonical.every(key=>values[key]>0))return {ok:false,message:'Use positive whole numbers for the quantities in this word problem.'};
+      if(!isConcludingExample(q,values)) {
+        const result=evaluateExample(q,values);
+        return {ok:false,message:q.quantifier==='universal'&&!result.premise?'These values do not satisfy all the hypotheses. A counterexample must satisfy the hypotheses and make the conclusion false.':q.quantifier==='universal'?'The conclusion is true for these values. Try values that make it false while satisfying every hypothesis.':'These values do not satisfy all the conditions in the existential statement. Try another example.'};
+      }
+      return {ok:true,values};
+    }
+    function exampleExplanation(q,values,mapping={}) {
+      const v=q.parameters,{x,y,z,k}=values;
+      const named=key=>mapping[key]||key;
+      const assignment=exampleVariables(q).map(key=>`${named(key)}=${values[key]}`).join(',\\; ');
+      const relation=(d,n)=>`${d} ${divides(d,n)?'\\mid':'\\nmid'} ${n}`;
+      const calc=(n,x,m)=>`${n}(${x})+${m}=${n*x+m}`;
+      let text;
+      if(q.form==='parity-pair') {
+        const result=parityPolynomialValue(v.terms,x,y);
+        const calculation=parityPolynomialTex(v.terms,{x,y})+'='+result;
+        text=`${math(String(x))} is ${parity(parityOf(x))} and ${math(String(y))} is ${parity(parityOf(y))}. Then ${math(calculation)} is ${parity(Math.abs(Number(result%2n)))}.`;
+      } else if(q.form==='parity-direct')text=`${math(String(x))} is ${parity(parityOf(x))} and ${math(calc(v.n,x,v.m))} is ${parity(parityOf(v.n*x+v.m))}.`;
+      else if(q.form==='parity-reverse')text=`${math(calc(v.n,x,v.m))} is ${parity(parityOf(v.n*x+v.m))} and ${math(String(x))} is ${parity(parityOf(x))}.`;
+      else if(q.form==='parity-existential')text=`${math(String(x))} is ${parity(parityOf(x))}, ${math(calc(v.n,x,v.m))}, and ${math(relation(v.k,v.n*x+v.m))}.`;
+      else if(q.form==='common-divisor'&&q.presentation==='math'&&q.truth) {
+        text=`${math(relation(k,v.n))}, ${math(relation(k,v.m))}, ${math(relation(k,v.a))}, and ${math(relation(k,v.b))}. Thus ${math(`${k}\\mid(${lin(v.n,'x',v.m)})`)} and ${math(`${k}\\mid(${lin(v.a,'x',v.b)})`)} for every integer ${math('x')}.`;
+      } else if(q.form==='common-divisor') {
+        const d=q.presentation==='word'?y:k;
+        text=`${math(calc(v.n,x,v.m))} and ${math(calc(v.a,x,v.b))}; ${math(relation(d,v.n*x+v.m))} and ${math(relation(d,v.a*x+v.b))}.`;
+        if(q.presentation==='math')text=`At ${math(`x=${x}`)}, `+text;
+      } else if(q.form==='divisibility-gcd')text=`${math(`${v.n}(${y})=${v.n*y}`)} and ${math(`${v.m}(${y})=${v.m*y}`)}; ${math(relation(x,v.n*y))} and ${math(relation(x,v.m*y))}, ${divides(x,v.a*y)?'and':'but'} ${math(`${v.a}(${y})=${v.a*y}`)} and ${math(relation(x,v.a*y))}.`;
+      else if(q.form==='divisibility-linear')text=`${math(relation(x,v.a))} and ${math(relation(x,v.b))}; ${math(`${v.n}(${v.a})+${v.m}(${v.b})=${v.n*v.a+v.m*v.b}`)} and ${math(relation(x,v.n*v.a+v.m*v.b))}.`;
+      else if(q.form==='divisibility-chain')text=`${math(relation(v.a*x,v.b*y))} and ${math(relation(v.c*y,v.d*z))}, ${divides(v.n*x,v.m*z)?'and':'but'} ${math(relation(v.n*x,v.m*z))}.`;
+      else if(q.form==='divisibility-contrapositive-offset')text=`${math(relation(x,v.m))}; ${math(`${v.n*v.a}(${y})+${v.m}=${v.n*v.a*y+v.m}`)} and ${math(relation(x,v.n*v.a*y+v.m))}; ${math(relation(x,y))}.`;
+      else text=`${math(`${v.n*v.a}(${y})+${v.b}(${y})=${(v.n*v.a+v.b)*y}`)} and ${math(relation(x,(v.n*v.a+v.b)*y))}; ${math(relation(x,y))}.`;
+      return `${math(assignment)}: ${text}`;
+    }
+    let activeProblem=null,stage=null,variableMapping={},selectedRow=null;
+    const element=id=>document.getElementById(id);
+    let typesetQueue=Promise.resolve();
+    function typeset(nodes) {
+      typesetQueue=typesetQueue.catch(()=>{}).then(async()=>{
+        if(window.MathJax?.startup?.promise)await window.MathJax.startup.promise;
+        await window.MathJax?.typesetPromise?.(nodes);
+      });return typesetQueue;
+    }
+    function clearMath(node) {window.MathJax?.typesetClear?.([node]);node.replaceChildren();}
+    function addStatementRow(boxId,label,prefix='',fixedPrefix='') {
+      const row=document.createElement('div');row.className='let-entry-row';
+      const input=document.createElement('input');input.type='text';input.value=prefix;input.className='let-input';
+      input.setAttribute('aria-label',label);input.autocomplete='off';input.spellcheck=false;
+      const box=element(boxId);
+      const select=()=>{box.querySelectorAll('.let-entry-row').forEach(r=>r.classList.remove('selected'));row.classList.add('selected');selectedRow=row;};
+      row.addEventListener('click',select);input.addEventListener('focus',select);
+      if(fixedPrefix) {
+        const labelText=document.createElement('span');
+        labelText.className='fixed-prefix';
+        labelText.textContent=fixedPrefix;
+        row.appendChild(labelText);
+      }
+      row.appendChild(input);box.appendChild(row);select();input.focus();input.setSelectionRange(prefix.length,prefix.length);
+    }
+    const toolbarRows=[
+      [['∣','∣','\\mid'],['divides','divides'],['is divisible by','is divisible by'],['∤','∤','\\nmid'],['does not divide','does not divide'],['is not divisible by','is not divisible by'],['⇒','⇒','\\implies'],['If','If'],['then','then'],['∧','∧','\\land'],['and','and']],
+      [['∃','∃','\\exists'],['There exists','There exists'],['such that','such that'],['∀','∀','\\forall'],['For all','For all'],['∈','∈','\\in'],['ℤ','ℤ','\\mathbb{Z}'],['integers','integers'],['>','>'],['<','<'],['≥','≥','\\geq'],['≤','≤','\\leq']]
+    ];
+    function setupToolbar(targetId='translation-toolbar',inputId='translation-input') {
+      for(let index=0;index<toolbarRows.length;index++) {
+        const entries=targetId!=='translation-toolbar'&&index===0?[...toolbarRows[index],['∨','∨','\\lor'],['or','or']]:toolbarRows[index];
+        const row=document.createElement('div');row.className='translation-toolbar-row';
+        for(const [label,value,title]of entries) {
+          const button=document.createElement('button');button.type='button';button.className='translation-symbol';button.textContent=label;button.title=title||label;
+          button.addEventListener('click',()=>{
+            const input=element(inputId);const start=input.selectionStart,end=input.selectionEnd;
+            const left=start&& !/\s/.test(input.value[start-1])?' ':'';
+            const right=end<input.value.length&&!/\s/.test(input.value[end])?' ':' ';
+            input.setRangeText(left+value+right,start,end,'end');input.focus();
+          });row.appendChild(button);
+        }
+        element(targetId).appendChild(row);
+      }
+    }
+    function completedLets() {
+      const target=element('completed-lets');clearMath(target);
+      for(const role of activeProblem.roles) {
+        const p=document.createElement('p');p.textContent=role.kind==='given'&&variableMapping[role.name]===role.name?`Let ${math(role.name)} be a positive whole number.`:`Let ${math(variableMapping[role.name])} = ${role.description}.`;target.appendChild(p);
+      }
+      typeset([target]);
+    }
+    function advanceLets(hint=false) {
+      if(hint)variableMapping=Object.fromEntries(activeProblem.roles.map(r=>[r.name,r.name]));
+      else {
+        const rows=[...element('let-entry-box').querySelectorAll('input')].map(input=>input.value);
+        const checked=checkLetStatements(activeProblem,rows);
+        const correct=checked.entries.filter(e=>e.correct).length,incorrect=checked.entries.filter(e=>!e.correct);
+        if(!checked.ok) {
+          const parts=[`${correct} let statement${correct===1?' is':'s are'} correct.`];
+          if(incorrect.length)parts.push(`Incorrect: ${incorrect.map(e=>`statement ${e.index+1}`).join(', ')}. Use a distinct letter and a description for each quantity.`);
+          if(incorrect.some(e=>activeProblem.givenVariables?.includes(e.variable)))parts.push(`The question already uses ${activeProblem.givenVariables.join(', ')}. Choose a different letter for the kit size.`);
+          if(checked.missing.length)parts.push(`Missing: ${checked.missing.map(r=>r.description).join('; ')}.`);
+          element('stage-feedback').textContent=parts.join(' ');
+          [...element('let-entry-box').children].forEach((row,i)=>row.classList.toggle('incorrect',!checked.entries[i]?.correct));return;
+        }
+        variableMapping=checked.mapping;
+      }
+      completedLets();stage='translation';element('let-panel').hidden=true;element('translation-panel').hidden=false;
+      element('stage-instruction').textContent='Give the statement which we are trying to prove or disprove';
+      element('stage-feedback').textContent='';element('translation-input').focus();
+    }
+    function advanceTranslation(hint=false) {
+      if(!hint) {
+        const checked=checkTranslation(activeProblem,element('translation-input').value,variableMapping);
+        if(!checked.ok){element('stage-feedback').textContent=checked.message;return;}
+      }
+      stage='complete';element('stage-instruction').textContent='';element('translation-panel').hidden=true;element('stage-controls').hidden=true;
+      element('stage-feedback').textContent='';
+      const target=element('completed-math');clearMath(target);
+      const intro=document.createElement('p');intro.textContent='Prove or disprove the following statement.';
+      const statement=document.createElement('div');statement.className='math';statement.textContent='\\['+renamedTex(activeProblem,variableMapping)+'\\]';
+      target.append(intro,statement);typeset([target]);startDecision();
+    }
+    function implicationTarget(q,mapping={}) {
+      const v=q.parameters,x=mapping.x||'x',y=mapping.y||'y',k=mapping.k||'k';
+      const linear=(n,t,m)=>`${n}${t}+${m}`;
+      if(q.form==='parity-existential')return {
+        text:`For all integers ${x}, if ${x} is ${parity(v.p)}, then ${v.k} does not divide ${linear(v.n,x,v.m)}`,
+        tex:`\\text{For every integer }${x},\\quad\\text{If }${x}\\text{ is ${parity(v.p)}, then }${v.k}\\nmid(${lin(v.n,x,v.m)}).`,
+        alternatives:[`forall ${x} if ${v.k} divides ${linear(v.n,x,v.m)} then ${x} is ${parity(1-v.p)}`]
+      };
+      if(q.form==='common-divisor'&&q.presentation==='word') {
+        const A=linear(v.n,x,v.m),B=linear(v.a,x,v.b);
+        return {
+          text:`For all integers ${x},${y}, if ${y}>1 and ${y} divides ${A}, then ${y} does not divide ${B}`,
+          tex:`\\text{For all integers }${x},${y},\\quad\\text{If }${y}>1\\text{ and }${y}\\mid(${lin(v.n,x,v.m)}),\\text{ then }${y}\\nmid(${lin(v.a,x,v.b)}).`,
+          alternatives:[
+            `forall ${x},${y} if ${y}>1 and ${y} divides ${B} then ${y} does not divide ${A}`,
+            `forall ${x},${y} if ${y}>1 then ${y} does not divide ${A} or ${y} does not divide ${B}`,
+            `forall ${x},${y} if ${y} divides ${A} and ${y} divides ${B} then ${y}<=1`
+          ]
+        };
+      }
+      if(q.form==='common-divisor') {
+        // Negate the existing nested quantifiers faithfully:
+        // Present the equivalent conditional directly, without a disjunction step.
+        const A=linear(v.n,x,v.m),B=linear(v.a,x,v.b);
+        const coefficients=[v.n,v.m,v.a,v.b];
+        return {
+          text:`For every integer ${k}>1, there exists an integer ${x} such that if ${k} divides ${A}, then ${k} does not divide ${B}`,
+          tex:`\\text{For every integer }${k}>1,\\text{ there exists an integer }${x}\\text{ such that If }${k}\\mid(${lin(v.n,x,v.m)}),\\text{ then }${k}\\nmid(${lin(v.a,x,v.b)}).`,
+          // Equivalently, no k>1 divides all four coefficients.
+          alternatives:[
+            `forall ${k} if ${k}>1 then exists ${x} st if ${k} divides ${B} then ${k} does not divide ${A}`,
+            `forall ${k} if ${k}>1 then exists ${x} st ${k} does not divide ${A} or ${k} does not divide ${B}`,
+            ...coefficients.map((n,i)=>`forall ${k} if ${k}>1 and ${coefficients.filter((_,j)=>j!==i).map(c=>`${k} divides ${c}`).join(' and ')} then ${k} does not divide ${n}`)
+          ]
+        };
+      }
+      throw Error('This statement does not need an existential-negation step.');
+    }
+    function matchesUniversalImplication(text,target) {
+      const actual=parseTranslation(text);
+      if(actual.body[0]!=='implies'||actual.bound.some(b=>b.kind!=='forall'))return false;
+      const names=p=>p.bound.flatMap(b=>b.names).sort().join(',');
+      return [target.text,...target.alternatives].some(expectedText=>{
+        const expected=parseTranslation(expectedText);
+        return (!actual.bound.length||names(actual)===names(expected))&&JSON.stringify(actual.body)===JSON.stringify(expected.body);
+      });
+    }
+    function checkImplication(q,text,mapping={}) {
+      try {
+        if(matchesUniversalImplication(text,implicationTarget(q,mapping)))return {ok:true};
+        return {ok:false,message:'Check the quantifiers and the negated conclusion. The implication must rule out every example satisfying the original existential statement.'};
+      } catch(error) {return {ok:false,message:error.message||'Check the implication and its quantifiers.'};}
+    }
+    function startImplication() {
+      stage='implication';element('implication-stage').hidden=false;
+      element('implication-feedback').textContent='';element('implication-input').value='';element('implication-input').focus();
+    }
+    function advanceImplication(hint=false) {
+      if(stage!=='implication')return;
+      if(!hint) {
+        const checked=checkImplication(activeProblem,element('implication-input').value,variableMapping);
+        if(!checked.ok){element('implication-feedback').textContent=checked.message;return;}
+      }
+      const target=element('completed-implication');clearMath(target);
+      const intro=document.createElement('p');intro.textContent='Since we are disproving the statement, we will prove its negation.  That is, the statement:';
+      const statement=document.createElement('div');statement.className='math';statement.textContent='\\['+implicationTarget(activeProblem,variableMapping).tex+'\\]';
+      target.append(intro,statement);element('implication-stage').hidden=true;
+      stage='method-choice';element('method-buttons').hidden=false;typeset([target]);
+    }
+    function resetImplication() {
+      element('implication-stage').hidden=true;element('implication-input').value='';
+      element('implication-feedback').textContent='';clearMath(element('completed-implication'));
+    }
+    function startDecision() {
+      element('proof-solving').hidden=false;element('decision-buttons').hidden=false;
+      element('decision-result').textContent='';element('decision-reason').textContent='';element('decision-feedback').textContent='';
+      clearMath(element('numerical-examples'));clearMath(element('proof-conclusion'));
+      element('method-buttons').hidden=true;clearMath(element('method-explanation'));resetImplication();
+      element('contrapositive-stage').hidden=true;
+      element('contrapositive-input').value='';
+      element('contrapositive-feedback').textContent='';
+      clearMath(element('completed-contrapositive'));
+      element('witness-panel').hidden=true;element('proof-step-controls').hidden=true;
+      element('witness-feedback').textContent='';element('witness-input').value='';stage='decision';
+    }
+    function chooseProof(prove) {
+      if(stage!=='decision')return;
+      if(prove!==activeProblem.truth){element('decision-feedback').textContent='Experiment with some more values for the variables, then choose again.';return;}
+      element('decision-feedback').textContent='';element('decision-buttons').hidden=true;
+      element('decision-result').textContent=prove?'We will prove the statement.':'We will disprove the statement.';
+      const needsGeneralProof=(prove&&activeProblem.quantifier==='universal')||(!prove&&activeProblem.quantifier==='existential');
+      if(needsGeneralProof) {
+        element('decision-result').textContent=prove?'We will prove the statement, because we see it is true for some examples:':'We will disprove the statement, because we see it is false for some examples:';
+        const target=element('numerical-examples');clearMath(target);
+        for(const values of illustrativeExamples(activeProblem)) {
+          const line=document.createElement('p');line.textContent=exampleExplanation(activeProblem,values,variableMapping);target.appendChild(line);
+        }
+        typeset([target]);
+        if(!prove&&activeProblem.quantifier==='existential')startImplication();
+        else {stage='method-choice';element('method-buttons').hidden=false;}
+        return;
+      }
+      element('decision-reason').textContent=prove?'Since it is an existential statement, we will find an example for which it is true':'Since it is a universal statement, we will find a counterexample for which it is false';
+      stage='witness';element('witness-panel').hidden=false;element('proof-step-controls').hidden=false;
+      element('witness-label').textContent=prove?'The statement is true for':'The statement is false for';
+      element('witness-input').placeholder=exampleVariables(activeProblem).map(key=>`${variableMapping[key]||key} = …`).join(', ');
+      element('witness-input').focus();
+    }
+    function directHypothesisTex(q,mapping={}) {
+      const v=q.parameters,x=mapping.x||'x',y=mapping.y||'y',z=mapping.z||'z',k=mapping.k||'k';
+      switch(q.form) {
+        case 'parity-pair':return `${x}\\text{ is ${parity(v.p)} and }${y}\\text{ is ${parity(v.r)}}`;
+        case 'parity-direct':
+        case 'parity-existential':return `${x}\\text{ is ${parity(v.p)}}`;
+        case 'divisibility-gcd':return `${x}\\mid ${v.n}${y}\\text{ and }${x}\\mid ${v.m}${y}`;
+        case 'divisibility-linear':return `${x}\\mid ${v.a}\\text{ and }${x}\\mid ${v.b}`;
+        case 'divisibility-chain':return `${v.a}${x}\\mid ${v.b}${y}\\text{ and }${v.c}${y}\\mid ${v.d}${z}`;
+        case 'common-divisor':return q.presentation==='word'?`${y}>1\\text{ and }${y}\\mid(${lin(v.n,x,v.m)})`:`${k}\\mid(${lin(v.n,x,v.m)})`;
+      }
+      throw Error('No direct-proof hypothesis for this problem type.');
+    }
+    function chooseMethod() {
+      if(stage!=='method-choice')return;
+      element('method-buttons').hidden=true;
+      const target=element('method-explanation');clearMath(target);
+      const contrapositive=activeProblem.category==='universal-contrapositive';
+      const method=document.createElement('p');method.textContent=contrapositive?'We will use a contrapositive proof.':'We will use a direct proof.';
+      const reason=document.createElement('p');
+      reason.textContent=contrapositive?'The hypothesis would be difficult from which to work forward:':`The hypothesis ${math(directHypothesisTex(activeProblem,variableMapping))} is “simple” enough to proceed directly.`;
+      target.append(method,reason);
+      if(contrapositive) {
+        const detail=document.createElement('p');
+        if(activeProblem.form.startsWith('parity-'))detail.textContent='We would have to divide to isolate the variable.';
+        else {
+          const v=activeProblem.parameters,x=variableMapping.x||'x',y=variableMapping.y||'y';
+          const dividend=activeProblem.form==='divisibility-contrapositive-offset'?String(v.m):`${v.n*v.a}${y}+${v.b}${y}`;
+          const lead=document.createElement('span');lead.textContent=`The fact that ${math(x)} does `;
+          const not=document.createElement('em');not.textContent='not';
+          const middle=document.createElement('span');middle.textContent=` divide ${math(dividend)} doesn’t have as simple a definition as something which `;
+          const does=document.createElement('em');does.textContent='does';
+          const end=document.createElement('span');end.textContent=' divide something.';
+          detail.append(lead,not,middle,does,end);
+        }
+        target.appendChild(detail);
+      }
+      if(contrapositive) {
+        stage='contrapositive';
+        element('contrapositive-stage').hidden=false;
+        element('contrapositive-input').focus();
+      } else startProofSetup();
+      typeset([target]);
+    }
+    function contrapositiveTarget(q,mapping={}) {
+      const v=q.parameters,x=mapping.x||'x',y=mapping.y||'y';
+      if(q.form==='parity-reverse') {
+        const expression=lin(v.n,x,v.m);
+        const hypothesis=parity(1-v.p),conclusion=parity(1-v.q);
+        return {
+          text:`forall ${x} if ${x} is ${hypothesis} then ${expression} is ${conclusion}`,
+          tex:`\\text{For every integer }${x},\\quad\\text{If }${x}\\text{ is ${hypothesis}, then }${expression}\\text{ is ${conclusion}.}`,
+          alternatives:[]
+        };
+      }
+      if(q.form==='divisibility-contrapositive-offset') {
+        const expression=lin(v.n*v.a,y,v.m);
+        return {
+          text:`forall ${x},${y} if ${x} does not divide ${v.m} and ${x} divides ${y} then ${x} does not divide ${expression}`,
+          tex:`\\text{For all integers }${x},${y}\\text{ such that }${x}\\nmid ${v.m},\\quad\\text{If }${x}\\mid ${y},\\text{ then }${x}\\nmid(${expression}).`,
+          alternatives:[`forall ${x},${y} if ${x} divides ${y} then ${x} divides ${v.m} or ${x} does not divide ${expression}`]
+        };
+      }
+      const expression=`${v.n*v.a}${y}+${v.b}${y}`;
+      return {
+        text:`forall ${x},${y} if ${x} divides ${y} then ${x} divides ${expression}`,
+        tex:`\\text{For all integers }${x},${y},\\quad\\text{If }${x}\\mid ${y},\\text{ then }${x}\\mid(${expression}).`,
+        alternatives:[]
+      };
+    }
+    function advanceContrapositive(hint=false) {
+      if(stage!=='contrapositive')return;
+      const statement=contrapositiveTarget(activeProblem,variableMapping);
+      if(!hint) {
+        const feedback=element('contrapositive-feedback');
+        try {
+          if(!matchesUniversalImplication(element('contrapositive-input').value,statement)) {
+            feedback.textContent='Switch the hypothesis and conclusion, and negate both. Keep any restrictions on the variables.';
+            return;
+          }
+        } catch(error) {
+          feedback.textContent=error.message;
+          return;
+        }
+      }
+      const target=element('completed-contrapositive');
+      const intro=document.createElement('p');
+      intro.textContent='We will prove the contrapositive.';
+      const formula=document.createElement('div');
+      formula.className='math';
+      formula.textContent='\\['+statement.tex+'\\]';
+      clearMath(target);
+      target.append(intro,formula);
+      element('contrapositive-stage').hidden=true;
+      startProofSetup();
+      typeset([target]);
+    }
+    function proofSetup(q,mapping={}) {
+      const v=q.parameters;
+      const x=mapping.x||'x',y=mapping.y||'y',z=mapping.z||'z',k=mapping.k||'k';
+      const equation=(left,factor,offset=0)=>({left,factor,offset});
+      const parityEquation=(name,remainder)=>({...equation(name,'2',remainder),parity:parity(remainder)});
+      switch(q.form) {
+        case 'parity-pair':
+          return {variables:[x,y],equations:[parityEquation(x,v.p),parityEquation(y,v.r)]};
+        case 'parity-direct':
+        case 'parity-existential':
+        case 'parity-reverse': {
+          const remainder=q.form==='parity-reverse'?1-v.p:v.p;
+          return {variables:[x],equations:[parityEquation(x,remainder)]};
+        }
+        case 'divisibility-gcd':
+          return {variables:[x,y],equations:[equation(`${v.n}${y}`,x),equation(`${v.m}${y}`,x)]};
+        case 'divisibility-linear':
+          return {variables:[x],equations:[equation(String(v.a),x),equation(String(v.b),x)]};
+        case 'divisibility-chain':
+          return {variables:[x,y,z],equations:[equation(`${v.b}${y}`,`${v.a}${x}`),equation(`${v.d}${z}`,`${v.c}${y}`)]};
+        case 'divisibility-contrapositive-sum':
+          return {variables:[x,y],equations:[equation(y,x)]};
+        case 'divisibility-contrapositive-offset':
+          return {variables:[x,y],restriction:`${x} does not divide ${v.m}`,equations:[equation(y,x),{...equation(String(v.m),x),universal:true}]};
+        case 'common-divisor':
+          if(q.presentation==='word')return {variables:[x,y],lowerBound:y,equations:[equation(lin(v.n,x,v.m),y)]};
+          return {variables:[k],lowerBound:k,choice:x,equations:[equation(lin(v.n,x,v.m),k)]};
+      }
+      throw Error('This problem has no general proof setup.');
+    }
+    function checkProofLets(setup,rows) {
+      const introduced=new Set();
+      let hasBound=false;
+      for(const row of rows) {
+        const text=normalizeTranslation(row).replace(/\s+/g,' ');
+        const match=text.match(/^let (.+?) (?:be|in) (?:an? )?(?:arbitrary )?integer\b(.*)$/);
+        if(!match)return 'Write a let statement introducing one or more arbitrary integers.';
+        let names=match[1].trim();
+        let restriction=match[2].trim().replace(/^,\s*/,'').replace(/^st\s+/,'');
+        const inline=names.match(/^(.*?)([a-z])\s*(>=|>)\s*(\d+)$/);
+        if(inline) {
+          if(restriction)return 'Give the lower bound once.';
+          names=inline[1]+inline[2];
+          restriction=inline[2]+inline[3]+inline[4];
+        }
+        const variables=names.replace(/\band\b/g,',').split(/[\s,]+/).filter(Boolean);
+        for(const name of variables) {
+          if(!setup.variables.includes(name))return 'Introduce the arbitrary variables in the statement.';
+          if(introduced.has(name))return `Introduce ${name} only once.`;
+          introduced.add(name);
+        }
+        if(restriction) {
+          if(variables.length===1)restriction=restriction.replace(/^greater than\s+/,variables[0]+'>').replace(/^at least\s+/,variables[0]+'>=');
+          try {
+            const actual=parseTranslation(restriction);
+            const matches=condition=>!actual.bound.length&&JSON.stringify(actual.body)===JSON.stringify(parseTranslation(condition).body);
+            if(setup.restriction&&matches(setup.restriction))continue;
+            if(!setup.lowerBound||!variables.includes(setup.lowerBound)||!matches(setup.lowerBound+'>1'))return 'Use the restrictions from the statement.';
+          } catch {
+            return 'Keep the lower bound from the statement.';
+          }
+          hasBound=true;
+        }
+      }
+      if(setup.variables.some(name=>!introduced.has(name)))return 'Introduce every arbitrary variable.';
+      if(setup.lowerBound&&!hasBound)return `Include the condition ${setup.lowerBound} > 1.`;
+      return '';
+    }
+    function definitionHypothesis(definition) {
+      if(definition.parity)return `${definition.left}\\text{ is ${definition.parity}}`;
+      const relation=definition.universal?'\\nmid':'\\mid';
+      return `${definition.factor} ${relation} (${definition.left})`;
+    }
+    function definitionEquation(definition,letter,tex=false) {
+      const product=definition.factor+letter;
+      const operator=definition.universal?(tex?'\\ne ':'!='):'=';
+      return definition.left+operator+product+(definition.offset?'+1':'');
+    }
+    function checkDefinitionRows(setup,rows) {
+      if(rows.length!==setup.equations.length)return `Give ${setup.equations.length} definition statement${setup.equations.length===1?'':'s'}.`;
+      const used=new Set([...setup.variables,setup.choice]);
+      const letters=Array(setup.equations.length).fill(null);
+      for(const row of rows) {
+        const text=normalizeTranslation(row).replace(/\s+/g,' ');
+        const justified=text.match(/^(?:since|because)\s+(.+?)(?:,\s*|\s+then\s+)(.+)$/);
+        if(!justified)return 'Begin with “Since” or “Because”, state the hypothesis, and follow it with a comma and the definition.';
+        const equationText=justified[2].replace(/^(?:we have|therefore)\s+/,'');
+        const suffix=equationText.match(/^(.+?)\s*,?\s+(for some|forall)\s+integer\s+([a-z])$/);
+        const prefix=equationText.match(/^(exists|forall)\s+(?:an?\s+)?(?:integer\s+)?([a-z])(?:\s+in\s+integer)?\s*,?\s*(?:st\s+)?(.+)$/);
+        if(!suffix&&!prefix)return 'Say which letter is an integer using “for some integer” or “for every integer”.';
+        const letter=suffix?suffix[3]:prefix[2];
+        const universal=suffix?suffix[2]==='forall':prefix[1]==='forall';
+        if(setup.variables.includes(letter)||setup.choice===letter)return 'Use a fresh integer letter for each definition.';
+        const allowed=new Set([...setup.variables,setup.choice,letter]);
+        const expand=expression=>expression.replace(/[a-z]{2,}/g,word=>[...word].every(c=>allowed.has(c))?[...word].join('*'):word);
+        let parsed,hypothesis;
+        try {
+          hypothesis=parseTranslation(justified[1]);
+          parsed=parseTranslation(expand(suffix?suffix[1]:prefix[3]));
+        } catch {
+          return 'Check the stated hypothesis and the equation or inequality it justifies.';
+        }
+        const index=setup.equations.findIndex((definition,i)=>{
+          if(letters[i]||Boolean(definition.universal)!==universal)return false;
+          const expected=parseTranslation(expand(definitionEquation(definition,letter)));
+          const expectedHypothesis=parseTranslation(definitionHypothesis(definition));
+          return !parsed.bound.length&&!hypothesis.bound.length
+            &&JSON.stringify(hypothesis.body)===JSON.stringify(expectedHypothesis.body)
+            &&JSON.stringify(parsed.body)===JSON.stringify(expected.body);
+        });
+        if(index<0)return 'Match each equation or inequality to the part of the hypothesis that justifies it.';
+        if(used.has(letter)) {
+          const prior=setup.equations[letters.indexOf(letter)];
+          const current=setup.equations[index];
+          if(prior.parity&&current.parity) {
+            const relation=prior.parity===current.parity?'equal':'consecutive integers';
+            const [x,y]=setup.variables;
+            return `Re-using the variable ${letter} says that ${x} and ${y} are ${relation}; use a different variable for each`;
+          }
+          return 'Use a fresh integer letter for each definition.';
+        }
+        letters[index]=letter;
+        used.add(letter);
+      }
+      return {letters};
+    }
+    function startProofSetup() {
+      stage='proof-lets';
+      element('proof-setup-panel').hidden=false;
+      element('proof-hypothesis-column').hidden=false;
+      element('proof-setup-title').textContent='Introduce the arbitrary variables and hypotheses';
+      element('proof-setup-instruction').textContent='Introduce the arbitrary integers on the left and state the hypotheses on the right. You can group entries or enter them separately.';
+      element('add-proof-statement').setAttribute('aria-label','Add let statement');
+    }
+    function proofLetHypotheses(setup) {
+      const hypotheses=setup.lowerBound?[setup.lowerBound+'>1']:[];
+      // In the nested existence claim, the divisibility condition applies
+      // only after choosing its integer. The outer let introduces k > 1.
+      if(!setup.choice)hypotheses.push(...setup.equations.map(definitionHypothesis));
+      return [...new Set(hypotheses)];
+    }
+    function checkProofHypotheses(expected,rows) {
+      try {
+        const statements=rows.map(row=>parseTranslation(row.replace(/^such that\s+/i,'')));
+        if(statements.some(statement=>statement.bound.length))return false;
+        const actual=conjunction(statements.map(statement=>statement.body));
+        const target=conjunction(expected.map(hypothesis=>parseTranslation(hypothesis).body));
+        return JSON.stringify(actual)===JSON.stringify(target);
+      } catch {
+        return false;
+      }
+    }
+    function advanceProofSetup(hint=false) {
+      if(stage!=='proof-lets'&&stage!=='proof-definitions')return;
+      const setup=proofSetup(activeProblem,variableMapping);
+      const rows=[...element('proof-setup-rows').querySelectorAll('input')].map(input=>input.value.trim());
+      const feedback=element('proof-setup-feedback');
+      if(stage==='proof-lets') {
+        const hypotheses=proofLetHypotheses(setup);
+        if(!hint) {
+          const lets=rows.map(row=>/^let\s/i.test(row)?row:'Let '+row);
+          const error=checkProofLets({variables:setup.variables},lets);
+          if(error){feedback.textContent=error;return;}
+          const conditions=[...element('proof-hypothesis-rows').querySelectorAll('input')].map(input=>input.value.trim());
+          if(!checkProofHypotheses(hypotheses,conditions)) {
+            feedback.textContent='Include all the hypotheses in the “such that” column.';
+            return;
+          }
+        }
+        const variables=setup.variables;
+        const domain=variables.length===1?'an arbitrary integer':'arbitrary integers';
+        const conditions=hypotheses.map(math).join(' and ');
+        showProofSetupLines('completed-proof-lets',[`Let ${math(variables.join(', '))} be ${domain} such that ${conditions}.`]);
+        element('proof-setup-rows').replaceChildren();
+        element('proof-hypothesis-rows').replaceChildren();
+        element('proof-hypothesis-column').hidden=true;
+        selectedRow=null;
+        feedback.textContent='';
+        stage='proof-definitions';
+        element('proof-setup-title').textContent='Apply the definitions to the hypothesis';
+        const instruction=element('proof-setup-instruction');
+        instruction.textContent='Apply the definition of even/odd numbers or divisibility to each statement in the hypothesis.';
+        if(setup.choice)instruction.textContent+=` For the integer ${math(setup.choice)} to be chosen, write what follows from the divisibility hypothesis if it holds.`;
+        element('add-proof-statement').setAttribute('aria-label','Add definition statement');
+        typeset([element('proof-setup-instruction')]);
+        return;
+      }
+      const available=[...'klmnpqrstuvwxyzabcdefghij'].filter(letter=>!setup.variables.includes(letter)&&letter!==setup.choice);
+      const checked=hint?{letters:available.slice(0,setup.equations.length)}:checkDefinitionRows(setup,rows);
+      if(typeof checked==='string'){feedback.textContent=checked;return;}
+      const lines=setup.equations.map((definition,i)=>{
+        const letter=checked.letters[i];
+        return `Since ${math(definitionHypothesis(definition))}, ${math(definitionEquation(definition,letter,true))} for ${definition.universal?'every':'some'} integer ${math(letter)}.`;
+      });
+      if(setup.choice)lines.unshift(`If the divisibility hypothesis holds for the integer ${math(setup.choice)} we choose, then:`);
+      showProofSetupLines('completed-definitions',lines);
+      element('proof-setup-panel').hidden=true;
+      startFinalProof(setup,checked.letters);
+    }
+    // Parse algebra only. Keeping the expression tree lets us check that the
+    // last line actually displays the requested factor and remainder.
+    function parseProofExpression(text) {
+      const input=text.toLowerCase().replace(/\\[()[\]]|\$|\\left|\\right|\\[,;! ]/g,'')
+        .replace(/\\(?:cdot|times)|[·×]/g,'*').replace(/[−–]/g,'-').replace(/²/g,'^2')
+        .replace(/\{/g,'(').replace(/\}/g,')');
+      const tokens=input.match(/\\frac|\d+|[a-z]|[^\s]/g)||[];
+      let index=0;
+      const take=token=>tokens[index]===token&&(index++,true);
+      function group() {
+        if(!take('('))throw Error('Put parentheses around the numerator and denominator.');
+        const value=sum();
+        if(!take(')'))throw Error('Check the parentheses.');
+        return value;
+      }
+      function primary() {
+        if(take('\\frac'))return ['/',group(),group()];
+        if(tokens[index]==='(')return group();
+        const token=tokens[index++]||'';
+        if(/^\d+$/.test(token)&&Number.isSafeInteger(Number(token)))return ['number',Number(token)];
+        if(/^[a-z]$/.test(token))return ['variable',token];
+        throw Error('Enter an algebraic expression at every equality.');
+      }
+      function power() {
+        if(take('+'))return power();
+        if(take('-'))return ['*',['number',-1],power()];
+        const base=primary();
+        if(!take('^'))return base;
+        const exponent=primary();
+        if(exponent[0]!=='number'||exponent[1]>20)throw Error('Use a nonnegative whole-number exponent up to 20.');
+        return ['^',base,exponent[1]];
+      }
+      function product() {
+        let value=power();
+        while(index<tokens.length) {
+          if(take('*'))value=['*',value,power()];
+          else if(take('/'))value=['/',value,power()];
+          else if(/^(?:\d+|[a-z]|\(|\\frac)$/.test(tokens[index]))value=['*',value,power()];
+          else break;
+        }
+        return value;
+      }
+      function sum() {
+        let value=product();
+        while(tokens[index]==='+'||tokens[index]==='-') {
+          const operator=tokens[index++];
+          value=[operator,value,product()];
+        }
+        return value;
+      }
+      const tree=sum();
+      if(index!==tokens.length)throw Error('Check the symbols in the equality.');
+      return tree;
+    }
+    function proofPolySize(poly) {
+      return Object.values(poly).reduce((size,coefficient)=>size+Math.abs(coefficient),0);
+    }
+    function proofPolyMultiply(a,b) {
+      if(proofPolySize(a)*proofPolySize(b)>Number.MAX_SAFE_INTEGER)throw Error('Use smaller coefficients in the calculation.');
+      return polyMul(a,b);
+    }
+    function proofExpressionValue(tree,substitutions={},allowVariableDivision=false) {
+      const [operator,left,right]=tree;
+      const one={'':1};
+      if(operator==='number')return [left?{'':left}:{},one];
+      if(operator==='variable')return substitutions[left]||[{[left]:1},one];
+      const [a,b]=proofExpressionValue(left,substitutions,allowVariableDivision);
+      if(operator==='^') {
+        let numerator=one,denominator=one;
+        for(let i=0;i<right;i++){
+          numerator=proofPolyMultiply(numerator,a);
+          denominator=proofPolyMultiply(denominator,b);
+        }
+        return [numerator,denominator];
+      }
+      const [c,d]=proofExpressionValue(right,substitutions,allowVariableDivision);
+      if(operator==='*')return [proofPolyMultiply(a,c),proofPolyMultiply(b,d)];
+      if(operator==='/') {
+        if(!Object.keys(c).length||(!allowVariableDivision&&Object.keys(c).some(key=>key)))throw Error('Divide only by a nonzero constant.');
+        return [proofPolyMultiply(a,d),proofPolyMultiply(b,c)];
+      }
+      const first=proofPolyMultiply(a,d),second=proofPolyMultiply(c,b);
+      if(proofPolySize(first)+proofPolySize(second)>Number.MAX_SAFE_INTEGER)throw Error('Use smaller coefficients in the calculation.');
+      return [polyAdd(first,second,operator==='+'?1:-1),proofPolyMultiply(b,d)];
+    }
+    function integerProofPolynomial(tree) {
+      const [numerator,denominator]=proofExpressionValue(tree);
+      const divisor=denominator[''];
+      if(!divisor||Object.keys(denominator).some(key=>key)||Object.values(numerator).some(value=>value%divisor))return null;
+      return Object.fromEntries(Object.entries(numerator).map(([key,value])=>[key,value/divisor]));
+    }
+    function proofPolynomialTex(poly) {
+      const terms=Object.entries(poly).sort(([a],[b])=>b.length-a.length||a.localeCompare(b));
+      return terms.map(([key,value],i)=>{
+        const variables=key.replace(/([a-z])\1+/g,match=>match[0]+'^'+match.length);
+        const coefficient=Math.abs(value);
+        return (value<0?'-':i?'+':'')+(coefficient===1&&key?'':coefficient)+variables;
+      }).join('')||'0';
+    }
+    function proofExpressionTex(tree) {
+      const [operator,left,right]=tree;
+      if(operator==='number'||operator==='variable')return String(left);
+      if(operator==='/')return `\\frac{${proofExpressionTex(left)}}{${proofExpressionTex(right)}}`;
+      const grouped=(part,operators)=>operators.includes(part[0])?'('+proofExpressionTex(part)+')':proofExpressionTex(part);
+      if(operator==='^')return grouped(left,['+','-','*','/','^'])+`^{${right}}`;
+      if(operator==='*') {
+        const a=grouped(left,['+','-']),b=grouped(right,['+','-']);
+        const separator=/^\d/.test(b)?'\\cdot ':'';
+        return a+separator+(/^[-]/.test(b)?'('+b+')':b);
+      }
+      return proofExpressionTex(left)+operator+grouped(right,operator==='-'?['+','-']:[]);
+    }
+    function proofGoal(q,setup,letters,mapping={}) {
+      const v=q.parameters;
+      const x=mapping.x||'x',y=mapping.y||'y',z=mapping.z||'z',k=mapping.k||'k';
+      const [u,w]=letters;
+      const rhs=i=>setup.equations[i].factor+letters[i]+(setup.equations[i].offset?'+1':'');
+      const combine=(a,b,first,second)=>`${a===1?'':a===-1?'-':a}${first}${b>=0?'+':''}${b===1?'':b===-1?'-':b}${second}`;
+      const goal={remainder:0,steps:[],substitutions:[{}]};
+      if(q.form.startsWith('parity-')) {
+        goal.substitutions=[{[x]:rhs(0)}];
+        goal.divisor='2';
+        if(q.form==='parity-pair') {
+          goal.left=parityPolynomialTex(v.terms);
+          goal.steps.push(parityPolynomialTex(v.terms,{x:rhs(0),y:rhs(1)}));
+          goal.substitutions[0][y]=rhs(1);
+          goal.remainder=v.q;
+        } else {
+          goal.left=lin(v.n,x,v.m);
+          goal.steps.push(`${v.n}(${rhs(0)})+${v.m}`);
+          goal.remainder=q.form==='parity-reverse'?1-v.q:v.q;
+          if(q.form==='parity-existential') {
+            goal.factorOf=v.k;
+            const constant=v.n*v.p+v.m;
+            const factor=positive.find(d=>d>1&&v.k%d===0&&2*v.n%d===0&&constant%d!==0);
+            goal.divisor=String(factor);
+            goal.remainder=constant%factor;
+          }
+        }
+        const expanded=integerProofPolynomial(parseProofExpression(goal.steps[0]));
+        goal.steps.push(proofPolynomialTex(expanded));
+        const divisor=Number(goal.divisor);
+        const quotient=polyAdd(expanded,{'':goal.remainder},-1);
+        goal.steps.push(`${divisor}(${proofPolynomialTex(Object.fromEntries(Object.entries(quotient).map(([key,n])=>[key,n/divisor])))})`+(goal.remainder?'+'+goal.remainder:''));
+        return goal;
+      }
+      if(q.form==='divisibility-gcd') {
+        const [a,b]=q.combination||smallLinearCombinations(v.n,v.m).find(pair=>pair[0]*v.n+pair[1]*v.m===v.a);
+        return {...goal,left:`${v.a}${y}`,divisor:x,
+          steps:[`(${combine(a,b,`(${v.n})`,`(${v.m})`)})${y}`,
+            combine(a,b,`(${v.n}${y})`,`(${v.m}${y})`),
+            combine(a,b,`(${x}${u})`,`(${x}${w})`),`${x}(${combine(a,b,u,w)})`],
+          substitutions:[{[y]:`${x}${u}/${v.n}`,[w]:`${v.m}${u}/${v.n}`},{[x]:'0',[y]:'0'}]};
+      }
+      if(q.form==='divisibility-linear')return {...goal,left:`${v.n}*${v.a}+${v.m}*${v.b}`,divisor:x,
+        steps:[`${v.n}(${x}${u})+${v.m}(${x}${w})`,`${x}(${v.n}${u}+${v.m}${w})`],
+        substitutions:[{[u]:`${v.a}/${x}`,[w]:`${v.b}/${x}`}]};
+      if(q.form==='divisibility-chain') {
+        const a=v.a/v.b,c=v.c/v.d;
+        return {...goal,left:`${v.m}${z}`,divisor:`${v.n===1?'':v.n}${x}`,
+          steps:[`${v.m}(${c}${y}${w})`,`${v.m}(${c})(${a}${x}${u})${w}`,
+            `${v.n===1?'':v.n}${x}(${v.m*a*c/v.n}${u}${w})`],
+          substitutions:[{[y]:`${a}${x}${u}`,[z]:`${a*c}${x}${u}${w}`}]};
+      }
+      if(q.form==='divisibility-contrapositive-sum')return {...goal,left:`${v.n*v.a}${y}+${v.b}${y}`,divisor:x,
+        steps:[`${v.n*v.a}(${x}${u})+${v.b}(${x}${u})`,`${x}(${v.n*v.a+v.b}${u})`],
+        substitutions:[{[y]:x+u}]};
+      if(q.form==='divisibility-contrapositive-offset')return {...goal,left:lin(v.n*v.a,y,v.m),divisor:x,remainder:v.m,knownRemainder:true,
+        steps:[`${v.n*v.a}(${x}${u})+${v.m}`,`${x}(${v.n*v.a}${u})+${v.m}`],
+        substitutions:[{[y]:x+u}]};
+      const divisor=q.presentation==='word'?y:k,scale=v.a/v.n;
+      return {...goal,left:lin(v.a,x,v.b),divisor,remainder:1,knownRemainder:true,
+        choice:q.presentation==='math'?x:null,
+        steps:[`${scale}(${lin(v.n,x,v.m)})+1`,`${scale}(${divisor}${u})+1`,`${divisor}(${scale}${u})+1`],
+        substitutions:[{[x]:`(${divisor}${u}-${v.m})/${v.n}`}]};
+    }
+    function proofConstant(tree) {
+      const polynomial=integerProofPolynomial(tree);
+      if(polynomial&&Object.keys(polynomial).every(key=>!key))return polynomial['']||0;
+      return null;
+    }
+    function isFactoredProofMultiple(tree,divisor) {
+      const polynomial=integerProofPolynomial(tree);
+      if(!polynomial)return false;
+      const [[key,coefficient]]=Object.entries(integerProofPolynomial(parseProofExpression(divisor)));
+      if(!Object.keys(polynomial).length)return true;
+      if(!Object.entries(polynomial).every(([monomial,value])=>monomial.includes(key)&&value%coefficient===0))return false;
+      const factors=part=>part[0]==='*'?[...factors(part[1]),...factors(part[2])]:[part];
+      let displayedCoefficient=1n,hasVariable=!key;
+      for(const part of factors(tree)) {
+        const factor=integerProofPolynomial(part);
+        const terms=factor?Object.entries(factor):[];
+        if(terms.length!==1)continue;
+        const [[monomial,value]]=terms;
+        if(!monomial||monomial===key) {
+          displayedCoefficient*=BigInt(value);
+          if(monomial===key)hasVariable=true;
+        }
+      }
+      return hasVariable&&displayedCoefficient%BigInt(coefficient)===0n;
+    }
+    function hasProofDestination(tree,goal) {
+      if(!goal.remainder&&!goal.factorOf)return isFactoredProofMultiple(tree,goal.divisor);
+      if(tree[0]!=='+')return false;
+      for(const [product,remainder] of [[tree[1],tree[2]],[tree[2],tree[1]]]) {
+        const r=proofConstant(remainder);
+        if(r===null||r<=0)continue;
+        if(goal.factorOf) {
+          if(positive.some(d=>d>r&&goal.factorOf%d===0&&isFactoredProofMultiple(product,String(d))))return true;
+        } else if(r===goal.remainder&&isFactoredProofMultiple(product,goal.divisor))return true;
+      }
+      return false;
+    }
+    function checkFinalProof(goal,text) {
+      try {
+        const expressions=text.trim().replace(/^=\s*/,'').split('=').map(parseProofExpression);
+        const left=parseProofExpression(goal.left);
+        const usesKnownVariables=tree=>{
+          if(tree[0]==='variable')return goal.variables.includes(tree[1]);
+          return tree.slice(1).every(part=>!Array.isArray(part)||usesKnownVariables(part));
+        };
+        for(const tree of expressions) {
+          if(!usesKnownVariables(tree))return {error:'Use the variables and integer letters already introduced in the proof.'};
+          proofExpressionValue(tree);
+        }
+        for(const assumptions of goal.substitutions) {
+          const substitutions=Object.fromEntries(Object.entries(assumptions).map(([letter,expression])=>
+            [letter,proofExpressionValue(parseProofExpression(expression),{},true)]));
+          const [a,b]=proofExpressionValue(left,substitutions,true);
+          for(const [index,tree] of expressions.entries()) {
+            const [c,d]=proofExpressionValue(tree,substitutions,true);
+            if(polyKey(proofPolyMultiply(a,d))!==polyKey(proofPolyMultiply(c,b))) {
+              return {error:`Check expression ${index+1}. It must be equal to the expression on the left using the hypotheses.`};
+            }
+          }
+        }
+        if(!hasProofDestination(expressions.at(-1),goal))return {error:'The equalities are valid. Put the last expression in the requested factored form.'};
+        return {expressions};
+      } catch(error) {
+        return {error:error.message};
+      }
+    }
+    let finalProof=null;
+    function startFinalProof(setup,letters) {
+      finalProof=proofGoal(activeProblem,setup,letters,variableMapping);
+      finalProof.variables=[...setup.variables,...letters,setup.choice].filter(Boolean);
+      const {left,divisor,remainder,factorOf,knownRemainder}=finalProof;
+      const expressionTex=proofExpressionTex(parseProofExpression(left));
+      const expression=math(expressionTex);
+      const factor=math(divisor);
+      let destination,instruction;
+      if(factorOf) {
+        destination=math(`${factorOf}\\nmid (${expressionTex})`);
+        instruction=`as a multiple of a factor of ${math(String(factorOf))}, plus a nonzero remainder which is less than that factor`;
+      } else if(knownRemainder) {
+        destination=`${factor} does not divide ${expression}`;
+        instruction=`as a multiple of ${factor}, plus ${math(String(remainder))}, which ${factor} does not divide`;
+      } else if(activeProblem.form.startsWith('parity-')) {
+        destination=`${expression} is ${parity(remainder)}`;
+        instruction='as 2 times an integer'+(remainder?', plus 1':'');
+      } else {
+        destination=`${factor} divides ${expression}`;
+        instruction=`as ${factor} times an integer`;
+      }
+      element('final-proof-destination').textContent=`Keep our eye on the destination (conclusion) we are trying to reach: that ${destination}`;
+      element('final-proof-instruction').textContent=`So, we want to write ${expression} ${instruction}`;
+      element('final-proof-prefix').textContent=math(expressionTex+'=');
+      element('final-proof-panel').hidden=false;
+      element('final-proof-input').focus();
+      stage='final-proof';
+      typeset([element('final-proof-panel')]);
+    }
+    function finishFinalProof(hint=false) {
+      if(stage!=='final-proof')return;
+      const input=element('final-proof-input');
+      const checked=checkFinalProof(finalProof,hint?finalProof.steps.join('='):input.value);
+      if(checked.error){element('final-proof-feedback').textContent=checked.error;return;}
+      const target=element('proof-conclusion');
+      clearMath(target);
+      if(finalProof.choice) {
+        const choice=document.createElement('p');
+        choice.textContent=`We can choose ${math(finalProof.choice+'=0')} because the following calculation proves the implication for every integer ${math(finalProof.choice)}.`;
+        target.appendChild(choice);
+      }
+      const line=document.createElement('p');
+      const expressions=[parseProofExpression(finalProof.left),...checked.expressions];
+      line.textContent=math(expressions.map(proofExpressionTex).join('='))+' ';
+      const qed=document.createElement('span');
+      qed.textContent=math('\\square');
+      qed.setAttribute('aria-label','End of proof');
+      line.appendChild(qed);
+      target.appendChild(line);
+      element('final-proof-panel').hidden=true;
+      element('final-proof-feedback').textContent='';
+      stage='proof-complete';
+      typeset([target]);
+    }
+    function showProofSetupLines(id,lines) {
+      const target=element(id);
+      clearMath(target);
+      for(const text of lines) {
+        const line=document.createElement('p');
+        line.textContent=text;
+        target.appendChild(line);
+      }
+      typeset([target]);
+    }
+    function finishExample(hint=false) {
+      if(stage!=='witness')return;
+      let values;
+      if(hint)values=concludingExample(activeProblem);
+      else {
+        const checked=parseExampleInput(activeProblem,element('witness-input').value,variableMapping);
+        if(!checked.ok){element('witness-feedback').textContent=checked.message;element('witness-feedback').className='proof-error';return;}
+        values=checked.values;
+      }
+      if(!isConcludingExample(activeProblem,values))throw Error('Invalid concluding example.');
+      const target=element('proof-conclusion');clearMath(target);
+      const calculation=document.createElement('p');calculation.textContent=exampleExplanation(activeProblem,values,variableMapping);
+      const finalLine=document.createElement('p');
+      const assignment=exampleVariables(activeProblem).map(key=>`${variableMapping[key]||key}=${values[key]}`).join(',\\; ');
+      finalLine.textContent=`The statement is ${activeProblem.truth?'true':'false'} for ${math(assignment)}. `;
+      const qed=document.createElement('span');qed.textContent=math('\\square');qed.setAttribute('aria-label','End of proof');finalLine.appendChild(qed);
+      target.append(calculation,finalLine);
+      element('witness-feedback').textContent='';
+      element('witness-panel').hidden=true;element('proof-step-controls').hidden=true;stage='proof-complete';typeset([target]);
+    }
+    function showProblem(problem) {
+      activeProblem=problem;window.currentProofProblem=problem;variableMapping={};selectedRow=null;
+      const question=element('question-text'),statement=element('operation-question');clearMath(question);clearMath(statement);
+      question.textContent=problem.presentation==='word'?'':'Prove or disprove the following statement.';
+      statement.textContent=problem.presentation==='word'?problem.wordText:'\\['+problem.tex+'\\]';
+      element('start-btn').textContent='Start';element('proof-workflow').hidden=problem.presentation!=='word';
+      clearMath(element('completed-lets'));clearMath(element('completed-math'));element('stage-feedback').textContent='';
+      element('let-entry-box').replaceChildren();element('translation-input').value='';
+      stage=problem.presentation==='word'?'lets':null;
+      element('stage-instruction').textContent='Create let statements for variables';
+      element('let-panel').hidden=false;element('translation-panel').hidden=true;element('stage-controls').hidden=false;
+      element('proof-setup-panel').hidden=true;
+      element('proof-hypothesis-column').hidden=true;
+      element('proof-hypothesis-rows').replaceChildren();
+      element('proof-setup-rows').replaceChildren();
+      element('proof-setup-feedback').textContent='';
+      clearMath(element('proof-setup-instruction'));
+      clearMath(element('completed-proof-lets'));
+      clearMath(element('completed-definitions'));
+      finalProof=null;
+      element('final-proof-panel').hidden=true;
+      element('final-proof-input').value='';
+      element('final-proof-feedback').textContent='';
+      clearMath(element('final-proof-destination'));
+      clearMath(element('final-proof-instruction'));
+      clearMath(element('final-proof-prefix'));
+      // Reset every later proof stage when Start generates another question.
+      element('proof-solving').hidden=true;clearMath(element('numerical-examples'));clearMath(element('proof-conclusion'));
+      element('method-buttons').hidden=true;clearMath(element('method-explanation'));resetImplication();
+      element('contrapositive-stage').hidden=true;
+      element('contrapositive-input').value='';
+      element('contrapositive-feedback').textContent='';
+      clearMath(element('completed-contrapositive'));
+      element('decision-feedback').textContent='';element('decision-result').textContent='';element('decision-reason').textContent='';element('witness-feedback').textContent='';
+      element('witness-input').value='';element('witness-panel').hidden=true;element('proof-step-controls').hidden=true;
+      if(problem.presentation==='math')startDecision();
+      typeset([question,statement]);
+    }
+    element('direct-proof-btn').addEventListener('click',chooseMethod);
+    element('contrapositive-proof-btn').addEventListener('click',chooseMethod);
+    element('prove-btn').addEventListener('click',()=>chooseProof(true));
+    element('disprove-btn').addEventListener('click',()=>chooseProof(false));
+    element('final-proof-next').addEventListener('click',()=>finishFinalProof());
+    element('final-proof-hint').addEventListener('click',()=>finishFinalProof(true));
+    element('proof-next').addEventListener('click',()=>finishExample());
+    element('proof-hint').addEventListener('click',()=>finishExample(true));
+    setupToolbar();
+    setupToolbar('implication-toolbar','implication-input');
+    setupToolbar('contrapositive-toolbar','contrapositive-input');
+    element('contrapositive-next').addEventListener('click',()=>advanceContrapositive());
+    element('contrapositive-hint').addEventListener('click',()=>advanceContrapositive(true));
+    element('implication-next').addEventListener('click',()=>advanceImplication());
+    element('implication-hint').addEventListener('click',()=>advanceImplication(true));
+    element('add-let-btn').addEventListener('click',()=>addStatementRow('let-entry-box','Let statement','Let '));
+    element('add-proof-statement').addEventListener('click',()=>{
+      const lets=stage==='proof-lets';
+      addStatementRow('proof-setup-rows',lets?'Let statement':'Definition statement','',lets?'Let':'');
+    });
+    element('add-proof-hypothesis').addEventListener('click',()=>addStatementRow('proof-hypothesis-rows','Such that statement','','such that'));
+    for(const [button,box] of [['remove-proof-statement','proof-setup-rows'],['remove-proof-hypothesis','proof-hypothesis-rows']]) {
+      element(button).addEventListener('click',()=>{
+        const row=element(box).querySelector('.let-entry-row.selected');
+        if(row===selectedRow)selectedRow=null;
+        row?.remove();
+      });
+    }
+    element('proof-setup-next').addEventListener('click',()=>advanceProofSetup());
+    element('proof-setup-hint').addEventListener('click',()=>advanceProofSetup(true));
+    element('remove-let-btn').addEventListener('click',()=>{if(selectedRow){selectedRow.remove();selectedRow=null;}});
+    element('stage-next').addEventListener('click',()=>{if(stage==='lets')advanceLets();else if(stage==='translation')advanceTranslation();});
+    element('stage-hint').addEventListener('click',()=>{if(stage==='lets')advanceLets(true);else if(stage==='translation')advanceTranslation(true);});
+    element('start-btn').addEventListener('click',()=>showProblem(makeProblem()));
+    // Retain pure checkers for future proof stages and regression checks.
+    window.ProofQuestions=Object.freeze({makeProblem,categories,wordBank:deepFreeze(wordBank),wordProblem,
+      checkLetStatements,checkTranslation,expectedTranslation,parseTranslation,showProblem,
+      exampleVariables,evaluateExample,isConcludingExample,concludingExample,illustrativeExamples,parseExampleInput,exampleExplanation,implicationTarget,checkImplication});
+  })();
+  </script>
+  <audio id="click-sound" src="button.mp3" preload="auto"></audio>
+</body>
+</html>

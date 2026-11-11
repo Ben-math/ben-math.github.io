@@ -262,10 +262,21 @@ fetch("/nav.html")
         <p id="proof-setup-instruction"></p>
         <div class="let-entry-panel">
           <div id="proof-setup-title" class="entry-title"></div>
-          <div id="proof-setup-rows" class="let-entry-box"></div>
-          <div class="let-control-row">
-            <button type="button" id="add-proof-statement" class="let-small-button" aria-label="Add statement">+</button>
-            <button type="button" id="remove-proof-statement" class="let-small-button" aria-label="Remove selected statement">−</button>
+          <div class="proof-setup-columns">
+            <div>
+              <div id="proof-setup-rows" class="let-entry-box"></div>
+              <div class="let-control-row">
+                <button type="button" id="add-proof-statement" class="let-small-button" aria-label="Add statement">+</button>
+                <button type="button" id="remove-proof-statement" class="let-small-button" aria-label="Remove selected statement">−</button>
+              </div>
+            </div>
+            <div id="proof-hypothesis-column" hidden>
+              <div id="proof-hypothesis-rows" class="let-entry-box"></div>
+              <div class="let-control-row">
+                <button type="button" id="add-proof-hypothesis" class="let-small-button" aria-label="Add hypothesis">+</button>
+                <button type="button" id="remove-proof-hypothesis" class="let-small-button" aria-label="Remove selected hypothesis">−</button>
+              </div>
+            </div>
           </div>
         </div>
         <div class="button-container">
@@ -297,6 +308,9 @@ fetch("/nav.html")
     .entry-title {font-weight:bold;text-align:center}
     .let-entry-box {min-height:54px;border:2px solid #bbb;border-radius:8px;background:white;padding:.35em;margin:.55em 0}
     .let-entry-row {display:flex;align-items:center;gap:.35em;padding:.25em .35em;border-radius:6px;cursor:pointer}
+    .proof-setup-columns {display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:.65em}
+    .proof-setup-columns .let-input {min-width:0}
+    .let-entry-row .fixed-prefix {flex:none;white-space:nowrap}
     .let-entry-row.selected {background:rgba(80,140,255,.18)}
     .let-entry-row.incorrect {outline:2px solid #b83232}
     .let-input {width:100%;box-sizing:border-box;padding:.35em;border:1.5px solid #777;border-radius:6px;font:inherit}
@@ -956,13 +970,19 @@ fetch("/nav.html")
       });return typesetQueue;
     }
     function clearMath(node) {window.MathJax?.typesetClear?.([node]);node.replaceChildren();}
-    function addStatementRow(boxId,label,prefix='') {
+    function addStatementRow(boxId,label,prefix='',fixedPrefix='') {
       const row=document.createElement('div');row.className='let-entry-row';
       const input=document.createElement('input');input.type='text';input.value=prefix;input.className='let-input';
       input.setAttribute('aria-label',label);input.autocomplete='off';input.spellcheck=false;
       const box=element(boxId);
       const select=()=>{box.querySelectorAll('.let-entry-row').forEach(r=>r.classList.remove('selected'));row.classList.add('selected');selectedRow=row;};
       row.addEventListener('click',select);input.addEventListener('focus',select);
+      if(fixedPrefix) {
+        const labelText=document.createElement('span');
+        labelText.className='fixed-prefix';
+        labelText.textContent=fixedPrefix;
+        row.appendChild(labelText);
+      }
       row.appendChild(input);box.appendChild(row);select();input.focus();input.setSelectionRange(prefix.length,prefix.length);
     }
     const toolbarRows=[
@@ -1344,9 +1364,28 @@ fetch("/nav.html")
     function startProofSetup() {
       stage='proof-lets';
       element('proof-setup-panel').hidden=false;
-      element('proof-setup-title').textContent='Introduce the arbitrary variables';
-      element('proof-setup-instruction').textContent='Write let statements for the arbitrary integers. You can introduce them together or separately.';
+      element('proof-hypothesis-column').hidden=false;
+      element('proof-setup-title').textContent='Introduce the arbitrary variables and hypotheses';
+      element('proof-setup-instruction').textContent='Introduce the arbitrary integers on the left and state the hypotheses on the right. You can group entries or enter them separately.';
       element('add-proof-statement').setAttribute('aria-label','Add let statement');
+    }
+    function proofLetHypotheses(setup) {
+      const hypotheses=setup.lowerBound?[setup.lowerBound+'>1']:[];
+      // In the nested existence claim, the divisibility condition applies
+      // only after choosing its integer. The outer let introduces k > 1.
+      if(!setup.choice)hypotheses.push(...setup.equations.map(definitionHypothesis));
+      return [...new Set(hypotheses)];
+    }
+    function checkProofHypotheses(expected,rows) {
+      try {
+        const statements=rows.map(row=>parseTranslation(row.replace(/^such that\s+/i,'')));
+        if(statements.some(statement=>statement.bound.length))return false;
+        const actual=conjunction(statements.map(statement=>statement.body));
+        const target=conjunction(expected.map(hypothesis=>parseTranslation(hypothesis).body));
+        return JSON.stringify(actual)===JSON.stringify(target);
+      } catch {
+        return false;
+      }
     }
     function advanceProofSetup(hint=false) {
       if(stage!=='proof-lets'&&stage!=='proof-definitions')return;
@@ -1354,14 +1393,24 @@ fetch("/nav.html")
       const rows=[...element('proof-setup-rows').querySelectorAll('input')].map(input=>input.value.trim());
       const feedback=element('proof-setup-feedback');
       if(stage==='proof-lets') {
-        const error=hint?'':checkProofLets(setup,rows);
-        if(error){feedback.textContent=error;return;}
-        const variables=setup.variables.filter(name=>name!==setup.lowerBound);
-        const lines=[];
-        if(variables.length)lines.push(`Let ${math(variables.join(', '))} be ${variables.length===1?'an arbitrary integer':'arbitrary integers'}.`);
-        if(setup.lowerBound)lines.push(`Let ${math(setup.lowerBound+'>1')} be an arbitrary integer.`);
-        showProofSetupLines('completed-proof-lets',lines);
+        const hypotheses=proofLetHypotheses(setup);
+        if(!hint) {
+          const lets=rows.map(row=>/^let\s/i.test(row)?row:'Let '+row);
+          const error=checkProofLets({variables:setup.variables},lets);
+          if(error){feedback.textContent=error;return;}
+          const conditions=[...element('proof-hypothesis-rows').querySelectorAll('input')].map(input=>input.value.trim());
+          if(!checkProofHypotheses(hypotheses,conditions)) {
+            feedback.textContent='Include all the hypotheses in the “such that” column.';
+            return;
+          }
+        }
+        const variables=setup.variables;
+        const domain=variables.length===1?'an arbitrary integer':'arbitrary integers';
+        const conditions=hypotheses.map(math).join(' and ');
+        showProofSetupLines('completed-proof-lets',[`Let ${math(variables.join(', '))} be ${domain} such that ${conditions}.`]);
         element('proof-setup-rows').replaceChildren();
+        element('proof-hypothesis-rows').replaceChildren();
+        element('proof-hypothesis-column').hidden=true;
         selectedRow=null;
         feedback.textContent='';
         stage='proof-definitions';
@@ -1427,6 +1476,8 @@ fetch("/nav.html")
       element('stage-instruction').textContent='Create let statements for variables';
       element('let-panel').hidden=false;element('translation-panel').hidden=true;element('stage-controls').hidden=false;
       element('proof-setup-panel').hidden=true;
+      element('proof-hypothesis-column').hidden=true;
+      element('proof-hypothesis-rows').replaceChildren();
       element('proof-setup-rows').replaceChildren();
       element('proof-setup-feedback').textContent='';
       clearMath(element('proof-setup-instruction'));
@@ -1460,11 +1511,16 @@ fetch("/nav.html")
     element('add-let-btn').addEventListener('click',()=>addStatementRow('let-entry-box','Let statement','Let '));
     element('add-proof-statement').addEventListener('click',()=>{
       const lets=stage==='proof-lets';
-      addStatementRow('proof-setup-rows',lets?'Let statement':'Definition statement',lets?'Let ':'');
+      addStatementRow('proof-setup-rows',lets?'Let statement':'Definition statement','',lets?'Let':'');
     });
-    element('remove-proof-statement').addEventListener('click',()=>{
-      if(selectedRow){selectedRow.remove();selectedRow=null;}
-    });
+    element('add-proof-hypothesis').addEventListener('click',()=>addStatementRow('proof-hypothesis-rows','Such that statement','','such that'));
+    for(const [button,box] of [['remove-proof-statement','proof-setup-rows'],['remove-proof-hypothesis','proof-hypothesis-rows']]) {
+      element(button).addEventListener('click',()=>{
+        const row=element(box).querySelector('.let-entry-row.selected');
+        if(row===selectedRow)selectedRow=null;
+        row?.remove();
+      });
+    }
     element('proof-setup-next').addEventListener('click',()=>advanceProofSetup());
     element('proof-setup-hint').addEventListener('click',()=>advanceProofSetup(true));
     element('remove-let-btn').addEventListener('click',()=>{if(selectedRow){selectedRow.remove();selectedRow=null;}});

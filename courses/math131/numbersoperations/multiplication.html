@@ -183,6 +183,15 @@ fetch("/nav.html")
     });
 
     let a, b;
+    // The selected base applies to the next problem; an active problem keeps its base.
+    let problemBase = 10;
+    function readProblemNumber(text) {
+      const digits = String(text).trim();
+      const valid = problemBase === 5 ? /^[0-4]+$/ : /^[0-9]+$/;
+      if (!valid.test(digits)) return NaN;
+      const value = parseInt(digits, problemBase);
+      return Number.isSafeInteger(value) ? value : NaN;
+    }
 
     let aParts = [];
     let bParts = [];
@@ -503,6 +512,7 @@ fetch("/nav.html")
 
     
   startBtn.addEventListener('click', () => {
+      problemBase = ruleCheckboxes.basefive.checked ? 5 : 10;
 
       const nextBtn = document.getElementById('hint-btn');
       nextBtn.disabled = true;
@@ -521,7 +531,7 @@ fetch("/nav.html")
       // Choose the mode, 1 is 2-digit*2-digit, 2 is 3-digit*2-digit, 3 is 3-digit*3-digit
       mode = Math.floor(Math.random() * 3) + 1;
 
-      if (ruleCheckboxes.basefive.checked) {
+      if (problemBase === 5) {
         if (mode === 1) {
           a = Math.floor(Math.random() * 20) + 5;
           b = Math.floor(Math.random() * 20) + 5;
@@ -554,8 +564,8 @@ fetch("/nav.html")
 
   
       // Display the question
-      questionText.textContent = `What is \\(${ruleCheckboxes.basefive.checked ? a.toString(5) : a.toString(10)} \\cdot 
-      ${ruleCheckboxes.basefive.checked ? b.toString(5) : b.toString(10)}\\)?`;
+      questionText.textContent = `What is \\(${problemBase === 5 ? a.toString(5) : a.toString(10)} \\cdot 
+      ${problemBase === 5 ? b.toString(5) : b.toString(10)}\\)?`;
 
       MathJax.typeset([questionText]);
 
@@ -569,7 +579,7 @@ fetch("/nav.html")
       const oldPartialProducts = document.getElementById('partial-products-inputs');
       if (oldPartialProducts) oldPartialProducts.remove();
 
-      if (ruleCheckboxes.basefive.checked) {
+      if (problemBase === 5) {
         aDigits = a.toString(5).split('').map(Number);
         bDigits = b.toString(5).split('').map(Number);
       } else {
@@ -581,7 +591,7 @@ fetch("/nav.html")
       bParts = [];
 
       
-      if (ruleCheckboxes.basefive.checked) {
+      if (problemBase === 5) {
         for (let i = 0; i < aDigits.length; i++) {
           const place = Math.pow(5, aDigits.length - 1 - i);
           aParts.push(aDigits[i] * place);
@@ -622,7 +632,7 @@ fetch("/nav.html")
       inputElements.forEach(input => {
         const expected = parseInt(input.dataset.expected);
         console.log(`Expected=${expected}`);
-        const value = parseInt(input.value, ruleCheckboxes.basefive.checked ? 5 : 10);
+        const value = readProblemNumber(input.value);
         console.log(`Input=${value}`);
     
         if (!isNaN(value) && value === expected) {
@@ -710,7 +720,7 @@ fetch("/nav.html")
       
           const finalInput = document.getElementById('final-input');
           finalInput.addEventListener('input', () => {
-            const value = parseInt(finalInput.value, ruleCheckboxes.basefive.checked ? 5 : 10);
+            const value = readProblemNumber(finalInput.value);
             const expected = parseInt(finalInput.dataset.expected);
       
             if (!isNaN(value) && value === expected) {
@@ -735,7 +745,7 @@ fetch("/nav.html")
   
     const allInputs = document.querySelectorAll('.decomp-input');
     const allCorrect = Array.from(allInputs).every(input => {
-      return parseInt(input.value, ruleCheckboxes.basefive.checked ? 5 : 10) === parseInt(input.dataset.expected);
+      return readProblemNumber(input.value) === parseInt(input.dataset.expected);
     });
   
     if (!allCorrect) return;
@@ -797,7 +807,7 @@ fetch("/nav.html")
       let allCorrect = true;
       partialInputs.forEach((input, index) => {
         const expected = parseInt(input.dataset.expected);
-        const value = parseInt(input.value, ruleCheckboxes.basefive.checked ? 5 : 10);
+        const value = readProblemNumber(input.value);
         console.log(`Partial input ${index}: value=${value}, expected=${expected}`);
     
         if (!isNaN(value) && value === expected) {

@@ -197,6 +197,10 @@ fetch("/nav.html")
     the answer displayed is exactly what you were trying to type, written slightly differently.  Good luck!</p>
 
     <div class="button-container">
+      <label class="difficulty-control">
+        <input type="checkbox" id="hard-mode-checkbox">
+        Hard Mode
+      </label>
       <button id="start-btn" class="rubber-button">Start</button>
     </div>
     
@@ -318,6 +322,8 @@ fetch("/nav.html")
     </section>
   </main>
   <style>
+    .difficulty-control {display:inline-flex;align-items:center;gap:.45em;margin-right:.9em;font-weight:bold}
+    .difficulty-control input {transform:scale(1.15)}
     #question-text {text-align:center;line-height:1.8;margin:1.3em auto;max-width:1100px}
     #operation-question {text-align:center;line-height:1.8;margin:1em auto 1.5em;max-width:1100px;font-size:1.1em;overflow-x:auto}
 
@@ -356,6 +362,7 @@ fetch("/nav.html")
   <script>
   (() => {
     'use strict';
+    const COEFFICIENT_MAX=15;
     const rand=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
     const pick=xs=>xs[rand(0,xs.length-1)];
     const gcd=(a,b)=>b?gcd(b,a%b):Math.abs(a);
@@ -377,7 +384,7 @@ fetch("/nav.html")
     }
     // Select uniformly from eligible finite candidates, with no rejection loops.
     function eligible(values,test) {return pick(values.filter(test));}
-    const positive=Array.from({length:100},(_,i)=>i+1);
+    const positive=Array.from({length:COEFFICIENT_MAX},(_,i)=>i+1);
     function parityPolynomialTex(terms,values=null) {
       const x=values?`(${values.x})`:'x';
       const y=values?`(${values.y})`:'y';
@@ -412,20 +419,20 @@ fetch("/nav.html")
         tex:`\\text{For all integers }x,y\\text{ such that }x\\text{ is ${parity(p)} and }y\\text{ is ${parity(r)}, } ${expression}\\text{ is ${parity(q)}.}`
       };
     }
-    function evenOdd(c) {
-      let n=rand(1,100),m=rand(1,100),p=rand(0,1);
+    function evenOdd(c,forceDirect=false) {
+      let n=rand(1,COEFFICIENT_MAX),m=rand(1,COEFFICIENT_MAX),p=rand(0,1);
       if(c.quantifier==='existential') {
         // x=2t+p: solvable iff gcd(2n,k) divides np+m.
         // Even k guarantees an obstruction is available for false statements.
-        const k=c.truth?rand(1,100):2*rand(1,50);
+        const k=c.truth?rand(1,COEFFICIENT_MAX):2*rand(1,Math.floor(COEFFICIENT_MAX/2));
         m=eligible(positive,m=>(((n*p+m)%gcd(2*n,k))===0)===c.truth);
         return {form:'parity-existential',parameters:{n,m,p,k},tex:`\\text{There exists an ${parity(p)} integer }x\\text{ such that }${k}\\mid(${lin(n,'x',m)}).`};
       }
-      const reverse=c.id==='universal-contrapositive'||(!c.truth&&rand(0,1)===1);
+      const reverse=!forceDirect&&(c.id==='universal-contrapositive'||(!c.truth&&rand(0,1)===1));
       if(reverse) {
         // True reverse implications need odd n; false ones use even n and an
         // attainable antecedent, so they have actual counterexamples.
-        const a=c.truth?2*rand(0,49)+1:2*rand(1,50);
+        const a=c.truth?2*rand(0,Math.floor((COEFFICIENT_MAX-1)/2))+1:2*rand(1,Math.floor(COEFFICIENT_MAX/2));
         const q=c.truth?(p+m)%2:m%2;
         return {form:'parity-reverse',parameters:{n:a,m,p,q},tex:`\\text{For every integer }x,\\quad ${lin(a,'x',m)}\\text{ is ${parity(q)}}\\implies x\\text{ is ${parity(p)}}.`};
       }
@@ -436,7 +443,7 @@ fetch("/nav.html")
       const pairs=[];
       for(const a of [1,-1,2,-2,3,-3])for(const b of [1,-1,2,-2,3,-3]) {
         const value=a*n+b*m;
-        if(value>0&&value<=100&&value!==n&&value!==m)pairs.push([a,b]);
+        if(value>0&&value<=COEFFICIENT_MAX&&value!==n&&value!==m)pairs.push([a,b]);
       }
       return pairs;
     }
@@ -446,24 +453,24 @@ fetch("/nav.html")
         // gcd(n,m,a,b)>1. The false case has a short multiple-plus-one proof.
         let n,m,a,b;
         if(c.truth) {
-          const d=rand(2,20),limit=Math.floor(100/d);
+          const d=rand(2,COEFFICIENT_MAX),limit=Math.floor(COEFFICIENT_MAX/d);
           [n,m,a,b]=Array.from({length:4},()=>d*rand(1,limit));
         } else {
-          const scale=rand(1,9),limit=Math.floor(99/scale);
+          const scale=rand(1,9),limit=Math.floor((COEFFICIENT_MAX-1)/scale);
           n=rand(1,limit);m=rand(1,limit);a=scale*n;b=scale*m+1;
         }
         return {form:'common-divisor',parameters:{n,m,a,b},tex:`\\text{There exists an integer }k>1\\text{ such that, for every integer }x,\\quad k\\mid(${lin(n,'x',m)})\\text{ and }k\\mid(${lin(a,'x',b)}).`};
       }
       if(c.id==='universal-contrapositive') {
-        const n=rand(1,10),a=rand(1,10),b=rand(1,100);
+        const n=rand(1,10),a=rand(1,Math.floor(COEFFICIENT_MAX/n)),b=rand(1,COEFFICIENT_MAX);
         if(rand(0,1))return {form:'divisibility-contrapositive-sum',parameters:{n,a,b},tex:`\\text{For all integers }x,y,\\quad x\\nmid(${n*a}y+${b}y)\\implies x\\nmid y.`};
-        const m=rand(1,100);
+        const m=rand(1,COEFFICIENT_MAX);
         return {form:'divisibility-contrapositive-offset',parameters:{n,a,m},tex:`\\text{For all integers }x,y\\text{ such that }x\\nmid ${m},\\quad x\\mid(${n*a}y+${m})\\implies x\\nmid y.`};
       }
       const form=retryForm||pick(c.truth?['gcd','linear','chain']:['gcd','chain']);
       if(form==='linear') {
-        const n=rand(1,100),m=rand(1,100),common=pick([4,6,8,9,10,12,14,15,16,18,20]);
-        const a=common*rand(1,Math.floor(100/common)),b=common*rand(1,Math.floor(100/common));
+        const n=rand(1,COEFFICIENT_MAX),m=rand(1,COEFFICIENT_MAX),common=pick([4,6,8,9,10,12,14,15]);
+        const a=common*rand(1,Math.floor(COEFFICIENT_MAX/common)),b=common*rand(1,Math.floor(COEFFICIENT_MAX/common));
         return {form:'divisibility-linear',parameters:{n,m,a,b},tex:`\\text{For every integer }x,\\quad (x\\mid ${a}\\text{ and }x\\mid ${b})\\implies x\\mid(${n}\\cdot ${a}+${m}\\cdot ${b}).`};
       }
       if(form==='gcd') {
@@ -471,32 +478,31 @@ fetch("/nav.html")
         if(c.truth) {
           let choices;
           do {
-            n=rand(1,100);m=rand(1,100);
+            n=rand(1,COEFFICIENT_MAX);m=rand(1,COEFFICIENT_MAX);
             choices=n===m?[]:smallLinearCombinations(n,m);
           } while(!choices.length);
           combination=pick(choices);
           a=combination[0]*n+combination[1]*m;
         } else {
-          const d=rand(2,20);
-          n=d*rand(1,Math.floor(100/d));m=d*rand(1,Math.floor(100/d));
+          const d=rand(2,COEFFICIENT_MAX);
+          n=d*rand(1,Math.floor(COEFFICIENT_MAX/d));m=d*rand(1,Math.floor(COEFFICIENT_MAX/d));
           const g=gcd(n,m);
           a=eligible(positive,value=>value%g!==0);
         }
         return {form:'divisibility-gcd',parameters:{n,m,a},combination,tex:`\\text{For all integers }x,y,\\quad (x\\mid ${n}y\\text{ and }x\\mid ${m}y)\\implies x\\mid ${a}y.`};
       }
       // ax|by and cy|dz imply ac*x|bd*z. Thus the exact criterion is
-      // n*b*d | m*a*c. Construct true coefficients; false case uses n=100
-      // when needed to ensure an eligible m exists, without retry loops.
+      // n*b*d | m*a*c. Keep each displayed coefficient within the cap.
       let a,b,cc,d,n,m;
       if(c.truth) {
         b=rand(1,10);d=rand(1,10);n=rand(1,10);
-        const ratios=[];for(let r=1;r<=6;r++)for(let t=1;t<=6;t++)if(r*t<=6)ratios.push([r,t]);
+        const ratios=[];for(let r=1;r<=6;r++)for(let t=1;t<=6;t++)if(r*t<=6&&b*r<=COEFFICIENT_MAX&&d*t<=COEFFICIENT_MAX)ratios.push([r,t]);
         const [r,t]=pick(ratios);a=b*r;cc=d*t;
         m=eligible(positive,m=>(m*a*cc)%(n*b*d)===0);
       } else {
-        a=rand(1,100);b=rand(1,100);cc=rand(1,100);d=rand(1,100);
+        a=rand(1,COEFFICIENT_MAX);b=rand(1,COEFFICIENT_MAX);cc=rand(1,COEFFICIENT_MAX);d=rand(1,COEFFICIENT_MAX);
         const ns=positive.filter(t=>(a*cc)%(t*b*d)!==0);
-        // ns cannot be empty: lcm(1,...,100) exceeds a*c <=10000.
+        // ns cannot be empty: lcm(1,...,15) exceeds a*c <=225.
         n=pick(ns);m=eligible(positive,m=>(m*a*cc)%(n*b*d)!==0);
       }
       return {form:'divisibility-chain',parameters:{a,b,c:cc,d,n,m},tex:`\\text{For all integers }x,y,z,\\quad (${a}x\\mid ${b}y\\text{ and }${cc}y\\mid ${d}z)\\implies ${n}x\\mid ${m}z.`};
@@ -585,12 +591,12 @@ fetch("/nav.html")
         // This wording asks for a bag size AND a group size, rather than a
         // fixed common divisor valid for every bag size.
         if(q.truth) {
-          const witness=rand(1,20),k=rand(2,20);
-          v.n=rand(1,100);v.a=rand(1,100);
+          const witness=rand(1,20),k=rand(2,COEFFICIENT_MAX);
+          v.n=rand(1,COEFFICIENT_MAX);v.a=rand(1,COEFFICIENT_MAX);
           v.m=eligible(positive,m=>(v.n*witness+m)%k===0);
           v.b=eligible(positive,b=>(v.a*witness+b)%k===0);
         } else {
-          const scale=rand(1,9),limit=Math.floor(99/scale);
+          const scale=rand(1,9),limit=Math.floor((COEFFICIENT_MAX-1)/scale);
           v.n=rand(1,limit);v.m=rand(1,limit);v.a=scale*v.n;v.b=scale*v.m+1;
           // Second expression = scale*first + 1: no common divisor >1.
         }
@@ -625,15 +631,16 @@ fetch("/nav.html")
       }
       return text;
     }
-    function makeProblem() {
-      const topic=pick(['divisibility','even-odd']),c=category();
-      const presentation=pick(['word','math']);
+    function makeProblem(hardMode=Boolean(document.getElementById('hard-mode-checkbox').checked)) {
+      const topic=pick(['divisibility','even-odd']);
+      const c=hardMode?category():pick(categories.filter(c=>c.id==='universal-direct'||c.id==='universal-false'));
+      const presentation=hardMode?pick(['word','math']):'math';
       const needsExample=c.id==='existential-true'||c.id==='universal-false';
-      const parityGenerator=topic==='even-odd'&&presentation==='math'&&c.quantifier==='universal'&&c.id!=='universal-contrapositive'&&rand(0,1)
+      const parityGenerator=hardMode&&topic==='even-odd'&&presentation==='math'&&c.quantifier==='universal'&&c.id!=='universal-contrapositive'&&rand(0,1)
         ?evenOddPair:evenOdd;
-      let retryForm;
+      let retryForm=hardMode?undefined:'gcd';
       while(true) {
-        const generated=topic==='even-odd'?parityGenerator(c):divisibility(c,retryForm);
+        const generated=topic==='even-odd'?parityGenerator(c,!hardMode):divisibility(c,retryForm);
         const result={topic,category:c.id,truth:c.truth,quantifier:c.quantifier,
           presentation,wordProblemPending:false,...generated};
         // Keep the original problem form and probabilities when retrying.

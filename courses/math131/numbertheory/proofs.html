@@ -469,11 +469,14 @@ fetch("/nav.html")
       }
       const form=retryForm||pick(c.truth?['gcd','linear','chain','simple-chain']:['gcd','chain','simple-chain']);
       if(form==='simple-chain') {
-        // x|Ay and By|Cz; A|B|C makes Cz a multiple of x.
-        const A=rand(1,COEFFICIENT_MAX);
-        const B=eligible(positive,b=>b%A===0);
-        const C=eligible(positive,c=>c%B===0);
-        const D=eligible(positive,d=>c.truth?d%C===0:(d*B)%(A*C)!==0);
+        // x|Ay and By|Cz; A|B and C|D suffice. This type has its own cap.
+        const chainPositive=Array.from({length:50},(_,i)=>i+1);
+        const A=rand(1,50);
+        const B=eligible(chainPositive,b=>b%A===0);
+        // Retain illustrative examples with all variables bounded by 20.
+        const C=eligible(chainPositive,value=>!c.truth||
+          (B/gcd(B,value)<=20&&value/gcd(B,value)<=20));
+        const D=eligible(chainPositive,d=>c.truth?d%C===0:(d*B)%(A*C)!==0);
         if(D===undefined)return divisibility(c,'simple-chain');
         return {form:'divisibility-chain',simpleChain:true,
           parameters:{a:1,b:A,c:B,d:C,n:1,m:D},

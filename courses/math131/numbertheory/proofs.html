@@ -467,7 +467,18 @@ fetch("/nav.html")
         const m=rand(1,COEFFICIENT_MAX);
         return {form:'divisibility-contrapositive-offset',parameters:{n,a,m},tex:`\\text{For all integers }x,y\\text{ such that }x\\nmid ${m},\\quad x\\mid(${n*a}y+${m})\\implies x\\nmid y.`};
       }
-      const form=retryForm||pick(c.truth?['gcd','linear','chain']:['gcd','chain']);
+      const form=retryForm||pick(c.truth?['gcd','linear','chain','simple-chain']:['gcd','chain','simple-chain']);
+      if(form==='simple-chain') {
+        // x|Ay and By|Cz; A|B|C makes Cz a multiple of x.
+        const A=rand(1,COEFFICIENT_MAX);
+        const B=eligible(positive,b=>b%A===0);
+        const C=eligible(positive,c=>c%B===0);
+        const D=eligible(positive,d=>c.truth?d%C===0:(d*B)%(A*C)!==0);
+        if(D===undefined)return divisibility(c,'simple-chain');
+        return {form:'divisibility-chain',simpleChain:true,
+          parameters:{a:1,b:A,c:B,d:C,n:1,m:D},
+          tex:`\\text{For all integers }x,y,z,\\quad (x\\mid ${A}y\\text{ and }${B}y\\mid ${C}z)\\implies x\\mid ${D}z.`};
+      }
       if(form==='linear') {
         const n=rand(1,COEFFICIENT_MAX),m=rand(1,COEFFICIENT_MAX),common=pick([4,6,8,9,10,12,14,15]);
         const a=common*rand(1,Math.floor(COEFFICIENT_MAX/common)),b=common*rand(1,Math.floor(COEFFICIENT_MAX/common));
@@ -638,14 +649,14 @@ fetch("/nav.html")
       const needsExample=c.id==='existential-true'||c.id==='universal-false';
       const parityGenerator=hardMode&&topic==='even-odd'&&presentation==='math'&&c.quantifier==='universal'&&c.id!=='universal-contrapositive'&&rand(0,1)
         ?evenOddPair:evenOdd;
-      let retryForm=hardMode?undefined:'gcd';
+      let retryForm=hardMode?undefined:'simple-chain';
       while(true) {
         const generated=topic==='even-odd'?parityGenerator(c,!hardMode):divisibility(c,retryForm);
         const result={topic,category:c.id,truth:c.truth,quantifier:c.quantifier,
-          presentation,wordProblemPending:false,...generated};
+          presentation,hardMode,wordProblemPending:false,...generated};
         // Keep the original problem form and probabilities when retrying.
         if(result.form==='divisibility-gcd')retryForm='gcd';
-        if(result.form==='divisibility-chain')retryForm='chain';
+        if(result.form==='divisibility-chain')retryForm=result.simpleChain?'simple-chain':'chain';
         // Common-divisor word problems generate their own coefficients.
         const preparesWordCoefficients=presentation==='word'&&result.form==='common-divisor';
         if(preparesWordCoefficients)result.wordText=wordProblem(result);
@@ -1236,6 +1247,7 @@ fetch("/nav.html")
         }
         typeset([target]);
         if(!prove&&activeProblem.quantifier==='existential')startImplication();
+        else if(!activeProblem.hardMode)startProofSetup();
         else {stage='method-choice';element('method-buttons').hidden=false;}
         return;
       }
@@ -1698,6 +1710,14 @@ fetch("/nav.html")
       if(q.form==='divisibility-linear')return {...goal,left:`${v.n}*${v.a}+${v.m}*${v.b}`,divisor:x,
         steps:[`${v.n}(${x}${u})+${v.m}(${x}${w})`,`${x}(${v.n}${u}+${v.m}${w})`],
         substitutions:[{[u]:`${v.a}/${x}`,[w]:`${v.b}/${x}`}]};
+      if(q.form==='divisibility-chain'&&q.simpleChain) {
+        const A=v.b,B=v.c,C=v.d,D=v.m;
+        return {...goal,left:`${D}${z}`,divisor:x,
+          steps:[`${D/C}(${C}${z})`,`${D/C}(${B}${y}${w})`,
+            `${D/C}(${B/A})(${A}${y})${w}`,
+            `${D/C}(${B/A})(${x}${u})${w}`,`${x}(${D/C*(B/A)}${u}${w})`],
+          substitutions:[{[y]:`${x}${u}/${A}`,[z]:`${B/A}/${C}*${x}${u}${w}`}]};
+      }
       if(q.form==='divisibility-chain') {
         const a=v.a/v.b,c=v.c/v.d;
         return {...goal,left:`${v.m}${z}`,divisor:`${v.n===1?'':v.n}${x}`,
